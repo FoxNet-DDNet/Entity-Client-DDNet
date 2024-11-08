@@ -238,11 +238,16 @@ MACRO_CONFIG_STR(ClRemoveTeamString, ac_delteam_string, 12, "del_team", CFGFLAG_
 MACRO_CONFIG_STR(ClAutoReplyMutedMsg, ac_auto_reply_muted_msg, 255, "I can't see your messages, you're muted", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply with then a muted player pings you")
 
 MACRO_CONFIG_STR(ClAutoNotifyName, ac_auto_notify_name, 16, "qxdFox", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
+
 MACRO_CONFIG_STR(ClAutoNotifyMsg, ac_auto_notify_msg, 256, "Your Fav Person Has Joined!", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What to Auto Whisper Them")
 MACRO_CONFIG_STR(ClAutoJoinTeamName, ac_auto_join_team_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
 
 
 MACRO_CONFIG_STR(ClTest, ac_test, 32, "test", CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
+
+
+
+MACRO_CONFIG_INT(ClAutoNotifySound, ac_auto_notify_sound, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Plays a Sound When The Player Joins")
 
 // In Spec Menu Prefixes
 
@@ -275,7 +280,8 @@ MACRO_CONFIG_INT(ClOwnTeeSkinCustomColor, cle_own_tee_custom_color, 0, 0, 1, CFG
 
 MACRO_CONFIG_STR(ClOwnTeeSkinName, cle_own_tee_skin_name, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Own Tee Skin Name")
 
-
+MACRO_CONFIG_COL(ClOwnTeeColorBody, cle_own_tee_color_body, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player body color")
+MACRO_CONFIG_COL(ClOwnTeeColorFeet, cle_own_tee_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player feet color")
 
 
 
