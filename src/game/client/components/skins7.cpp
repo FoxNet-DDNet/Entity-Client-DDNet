@@ -296,45 +296,17 @@ void CSkins7::OnInit()
 		m_ScanningPart = Part;
 		Storage()->ListDirectory(IStorage::TYPE_ALL, aBuf, SkinPartScan, this);
 
-		// add dummy skin part
-		if(m_avSkinParts[Part].empty())
-		{
-			CSkinPart DummySkinPart;
-			DummySkinPart.m_Flags = SKINFLAG_STANDARD;
-			str_copy(DummySkinPart.m_aName, "dummy");
-			DummySkinPart.m_BloodColor = vec3(1.0f, 1.0f, 1.0f);
-			m_avSkinParts[Part].emplace_back(DummySkinPart);
-		}
-
 		GameClient()->m_Menus.RenderLoading(Localize("AIODOB :3"), Localize("Loading skin files"), 0);
 	}
-
-	// create dummy skin
-	m_DummySkin.m_Flags = SKINFLAG_STANDARD;
-	str_copy(m_DummySkin.m_aName, "dummy");
-	for(int Part = 0; Part < protocol7::NUM_SKINPARTS; Part++)
-	{
-		int Default;
-		if(Part == protocol7::SKINPART_MARKING || Part == protocol7::SKINPART_DECORATION)
-			Default = FindSkinPart(Part, "", false);
-		else
-			Default = FindSkinPart(Part, "standard", false);
-		if(Default < 0)
-			Default = 0;
-		m_DummySkin.m_apParts[Part] = GetSkinPart(Part, Default);
-		m_DummySkin.m_aPartColors[Part] = Part == protocol7::SKINPART_MARKING ? (255 << 24) + 65408 : 65408;
-		m_DummySkin.m_aUseCustomColors[Part] = 0;
-	}
-	GameClient()->m_Menus.RenderLoading(Localize("AIODOB :D"), Localize("what"), 0);
 
 	// load skins
 	m_vSkins.clear();
 	Storage()->ListDirectory(IStorage::TYPE_ALL, SKINS_DIR, SkinScan, this);
-	GameClient()->m_Menus.RenderLoading(Localize("AIODOB :D"), Localize("YESSSIRRRR"), 0);
+	GameClient()->m_Menus.RenderLoading(Localize("AIODOB :3"), Localize("Loading skin files"), 0);
 
 	LoadXmasHat();
 	LoadBotDecoration();
-	GameClient()->m_Menus.RenderLoading(Localize("AIODOB :D"), Localize("Kaanun bla?"), 0);
+	GameClient()->m_Menus.RenderLoading(Localize("AIODOB :3"), Localize("Loading skin files"), 0);
 }
 
 void CSkins7::InitPlaceholderSkinParts()

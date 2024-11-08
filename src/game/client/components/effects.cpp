@@ -391,6 +391,30 @@ void CEffects::HammerHit(vec2 Pos, float Alpha)
 		m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
 }
 
+
+void CEffects::SparklePlayer(vec2 Pos, float Alpha)
+{
+	if(!m_Add50hz)
+		return;
+
+	CParticle p;
+	p.SetDefault();
+	p.m_Spr = SPRITE_PART_SPARKLE;
+	p.m_Pos = Pos + random_direction() * random_float(40.0f);
+	p.m_Vel = vec2(0, 0);
+	p.m_LifeSpan = 0.5f;
+	p.m_StartSize = 0.0f;
+	p.m_EndSize = random_float(20.0f, 30.0f);
+	p.m_UseAlphaFading = true;
+	p.m_StartAlpha = Alpha;
+	p.m_EndAlpha = std::min(0.2f, Alpha);
+	p.m_Collides = false;
+	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
+}
+
+
+
+
 void CEffects::OnRender()
 {
 	static int64_t s_LastUpdate100hz = 0;

@@ -1232,7 +1232,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			PlayerSettings.HSplitTop(100.0f, &PlayerSettings, &FreezeBarSettings);
+			PlayerSettings.HSplitTop(140.0f, &PlayerSettings, &FreezeBarSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1243,8 +1243,15 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
 
-				// create dropdown for rainbow modes
+				PlayerSettings.HSplitTop(46.0f, &Button, &MainView);
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffect, ("Sparkle Effect Self"), &g_Config.m_ClSparkleEffect, &MainView, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffectOthers, ("Sparkle Effect Others"), &g_Config.m_ClSparkleEffectOthers, &MainView, LineMargin);
+				}
 
+
+				// create dropdown for rainbow modes
+				PlayerSettings.HSplitTop(2.0f, &Button, &PlayerSettings);
 				{
 					PlayerSettings.HSplitTop(19.9f, &Button, &MainView);
 
@@ -1362,6 +1369,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					g_Config.m_SndChat = 0;
 				}
 
+				if(g_Config.m_ClNotifyOnJoin)
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoNotifySound, ("Do Fav Person Notify Sound"), &g_Config.m_ClAutoNotifySound, &SoundSettings, LineMargin);
 
 			}
 		}

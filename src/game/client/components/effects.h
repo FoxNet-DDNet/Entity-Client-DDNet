@@ -33,6 +33,8 @@ public:
 	void SparkleTrail(vec2 Pos, float Alpha = 1.0f);
 	void Confetti(vec2 Pos, float Alpha = 1.0f);
 
+	void SparklePlayer(vec2 Pos, float Alpha = 1.0f);
+
 	void Update();
 };
 #endif

@@ -58,6 +58,9 @@ class CChat : public CComponent
 		ColorRGBA m_ColorFeet;
 
 		bool m_HasRenderTee;
+
+		CTeeRenderInfo m_TeeRenderInfo;
+
 		float m_TextYOffset;
 
 		int m_TimesRepeated;
