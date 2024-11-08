@@ -184,8 +184,7 @@ void CRenderTools::GetRenderTeeAnimScaleAndBaseSize(const CTeeRenderInfo *pInfo,
 
 void CRenderTools::GetRenderTeeBodyScale(float BaseSize, float &BodyScale)
 {
-	BodyScale = g_Config.m_ClFatSkins ? BaseSize * 1.3f : BaseSize;
-	BodyScale = g_Config.m_ClSmallSkins ? BaseSize * 0.89f : BaseSize;
+	BodyScale = g_Config.m_ClFatSkins ? BaseSize * 1.3f : g_Config.m_ClSmallSkins ? BaseSize * 0.89f : BaseSize;
 	BodyScale /= 64.0f;
 }
 
