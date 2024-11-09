@@ -284,6 +284,14 @@ MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 50
 MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "shows ping range 76-77 in black (ping of a weirdo)")
 
 
+// Might be Cheating
+
+
+MACRO_CONFIG_INT(ClGrenadePath, ac_grenade_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Grenade Path Prediction")
+
+MACRO_CONFIG_INT(ClLaserPath, ac_laser_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser Path Prediction")
+
+
 // Tee
 
 MACRO_CONFIG_INT(ClOwnTeeSkin, cle_own_tee_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")

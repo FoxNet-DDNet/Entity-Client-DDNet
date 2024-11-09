@@ -10,6 +10,7 @@ class CLaserData;
 class CLaser : public CEntity
 {
 	friend class CGameWorld;
+	friend class CPlayers; // DClient addition
 
 public:
 	CLaser(CGameWorld *pGameWorld, vec2 Pos, vec2 Direction, float StartEnergy, int Owner, int Type);
@@ -22,6 +23,8 @@ public:
 	CLaser(CGameWorld *pGameWorld, int Id, CLaserData *pLaser);
 	bool Match(CLaser *pLaser);
 	CLaserData GetData() const;
+
+	CCharacter *laser_last_hit; // DClient addition
 
 protected:
 	bool HitCharacter(vec2 From, vec2 To);

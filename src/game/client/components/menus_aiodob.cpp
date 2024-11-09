@@ -1222,7 +1222,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect PlayerSettings, FreezeBarSettings,ResetButton, SoundSettings, WarVisual;
+		CUIRect PlayerSettings, FreezeBarSettings,ResetButton, SoundSettings, WarVisual, PredictionSettings;
 		MainView.VSplitMid(&PlayerSettings, &ResetButton);
 
 	
@@ -1414,9 +1414,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
 			if(g_Config.m_ClSweatMode)
-				WarVisual.HSplitTop(120.0f, &WarVisual, 0);
+				WarVisual.HSplitTop(120.0f, &WarVisual, &PredictionSettings);
 			else
-				WarVisual.HSplitTop(70.0f, &WarVisual, 0);
+				WarVisual.HSplitTop(70.0f, &WarVisual, &PredictionSettings);
 			if(s_ScrollRegion.AddRect(WarVisual))
 			{
 				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1459,6 +1459,22 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			}
 		}
 
+		{
+			PredictionSettings.HSplitTop(Margin, nullptr, &PredictionSettings);
+			PredictionSettings.HSplitTop(80.0f, &PredictionSettings, 0);
+			if(s_ScrollRegion.AddRect(PredictionSettings))
+			{
+				PredictionSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				PredictionSettings.VMargin(Margin, &PredictionSettings);
+
+				PredictionSettings.HSplitTop(HeaderHeight, &Button, &PredictionSettings);
+				Ui()->DoLabel(&Button, Localize("Laser/Grenade Prediction"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClLaserPath, ("Predict Laser Path"), &g_Config.m_ClLaserPath, &PredictionSettings, LineMargin);
+			
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGrenadePath, ("Predict Grenade Path"), &g_Config.m_ClGrenadePath, &PredictionSettings, LineMargin);
+			}
+		}
 		s_ScrollRegion.End();
 	}
 }
