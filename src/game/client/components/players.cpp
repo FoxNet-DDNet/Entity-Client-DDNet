@@ -386,7 +386,7 @@ void CPlayers::RenderHookCollLine(
 			}
 		}
 		// DClient FNG laser prediction
-		if(Local && g_Config.m_ClLaserPath && Player.m_Weapon == WEAPON_LASER && (GameClient()->m_GameWorld.m_WorldConfig.m_IsFNG || AlwaysRenderHookColl || RenderHookCollPlayer))
+		if(Local && g_Config.m_ClLaserPath && (Player.m_Weapon == WEAPON_LASER || Player.m_Weapon == WEAPON_SHOTGUN) && (GameClient()->m_GameWorld.m_WorldConfig.m_IsFNG || AlwaysRenderHookColl || RenderHookCollPlayer))
 		{
 			float LaserReach = GameClient()->m_PredictedWorld.Tuning()->m_LaserReach;
 			CLaser *Proj = new CLaser(&GameClient()->m_PredictedWorld, Position, Direction, LaserReach, ClientId, WEAPON_LASER);

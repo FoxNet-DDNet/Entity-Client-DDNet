@@ -198,24 +198,141 @@ void CWarList::DelClone()
 	if(!g_Config.m_ClDummy)
 	{
 		g_Config.m_ClCopyingSkin = 0;
+		g_Config.m_ClCloningPerson = 0;
 
 		str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
+		str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
+		str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
+
+
+		g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
 		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 		g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
+
+
+
 
 		m_pClient->m_Chat.AddLine(-2, 0, "Deleted Main Clone");
 	}
 	else if(g_Config.m_ClDummy)
 	{
 		g_Config.m_ClCopyingSkinDummy = 0;
+		g_Config.m_ClCloningPersonDummy = 0;
 
 		str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
+		str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
+		str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
+
+		g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
 		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
 		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
 		g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
 
 		m_pClient->m_Chat.AddLine(-2, 0, "Deleted Dummy Clone");
+	}
+}
+
+void CWarList::Clone(const char *pName)
+{
+	for(int i = 0, Count = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(!m_pClient->m_Snap.m_apInfoByName[i])
+			continue;
+
+		int Index = m_pClient->m_Snap.m_apInfoByName[i]->m_ClientId;
+		if(Index == m_pClient->m_Snap.m_LocalClientId)
+			continue;
+
+		if(!g_Config.m_ClDummy)
+		{
+			if(str_comp(m_pClient->m_aClients[Index].m_aName, pName) == 0)
+			{
+				if(g_Config.m_ClCloningPerson == 0)
+				{
+					// save skins then load new ones
+
+					str_copy(g_Config.m_ClSavedPlayerSkin, g_Config.m_ClPlayerSkin, sizeof(g_Config.m_ClSavedPlayerSkin));
+					str_copy(g_Config.m_ClSavedName, g_Config.m_PlayerName, sizeof(g_Config.m_ClSavedName));
+					str_copy(g_Config.m_ClSavedClan, g_Config.m_PlayerClan, sizeof(g_Config.m_ClSavedClan));
+
+					g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
+					g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
+					g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
+					g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
+
+
+					g_Config.m_ClCloningPerson = 1;
+				}
+
+				char aBuf[2048] = "Main Player Cloning: ";
+				str_append(aBuf, m_pClient->m_aClients[Index].m_aName);
+				m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+
+				char Dot[2048] = ".";
+
+				str_append(Dot, m_pClient->m_aClients[Index].m_aName);
+
+
+				str_copy(g_Config.m_ClPlayerSkin, m_pClient->m_aClients[Index].m_aSkinName, sizeof(g_Config.m_ClPlayerSkin));
+				str_copy(g_Config.m_PlayerName, Dot, sizeof(g_Config.m_PlayerName));
+				str_copy(g_Config.m_PlayerClan, m_pClient->m_aClients[Index].m_aClan, sizeof(g_Config.m_PlayerClan));
+
+				g_Config.m_PlayerCountry = m_pClient->m_aClients[Index].m_Country;
+
+				g_Config.m_ClPlayerUseCustomColor = m_pClient->m_aClients[Index].m_UseCustomColor;
+				g_Config.m_ClPlayerColorBody = m_pClient->m_aClients[Index].m_ColorBody;
+				g_Config.m_ClPlayerColorFeet = m_pClient->m_aClients[Index].m_ColorFeet;
+
+
+
+			}
+		}
+		else
+		{
+			if(str_comp(m_pClient->m_aClients[Index].m_aName, pName) == 0)
+			{
+				if(g_Config.m_ClCloningPersonDummy == 0)
+				{
+					// save skins then load new ones
+
+					str_copy(g_Config.m_ClSavedDummySkin, g_Config.m_ClDummySkin, sizeof(g_Config.m_ClSavedDummySkin));
+					str_copy(g_Config.m_ClSavedDummyName, g_Config.m_ClDummyName, sizeof(g_Config.m_ClSavedDummyName));
+					str_copy(g_Config.m_ClSavedDummyClan, g_Config.m_ClDummyClan, sizeof(g_Config.m_ClSavedDummyClan));
+
+					g_Config.m_ClSavedDummyCountry = g_Config.m_ClDummyCountry;
+					g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
+					g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
+					g_Config.m_ClSavedDummyColorFeet = g_Config.m_ClDummyColorFeet;
+
+
+
+
+					g_Config.m_ClCloningPersonDummy = 1;
+				}
+
+				char aBuf[2048] = "Dummy Player Cloning: ";
+					str_append(aBuf, m_pClient->m_aClients[Index].m_aName);
+						m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+
+				char Dot[2048] = ".";
+
+				str_append(Dot, m_pClient->m_aClients[Index].m_aName);
+
+				str_copy(g_Config.m_ClDummySkin, m_pClient->m_aClients[Index].m_aSkinName, sizeof(g_Config.m_ClDummySkin));
+				str_copy(g_Config.m_ClDummyName, Dot, sizeof(g_Config.m_ClDummyName));
+				str_copy(g_Config.m_ClDummyClan, m_pClient->m_aClients[Index].m_aClan, sizeof(g_Config.m_ClDummyClan));
+
+				g_Config.m_ClDummyCountry = m_pClient->m_aClients[Index].m_Country;
+
+
+
+				g_Config.m_ClDummyUseCustomColor = m_pClient->m_aClients[Index].m_UseCustomColor;
+
+				g_Config.m_ClDummyColorBody = m_pClient->m_aClients[Index].m_ColorBody;
+				g_Config.m_ClDummyColorFeet = m_pClient->m_aClients[Index].m_ColorFeet;
+			}
+		}
 	}
 }
 
@@ -372,6 +489,9 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		m_pClient->m_Chat.AddLine(-2, 0, "!delmute <name>");
 		m_pClient->m_Chat.AddLine(-2, 0, "!tempwar <name>");
 		m_pClient->m_Chat.AddLine(-2, 0, "!deltempwar <name>");
+		m_pClient->m_Chat.AddLine(-2, 0, "!delclone <name>");
+		m_pClient->m_Chat.AddLine(-2, 0, "!skin <name>");
+		m_pClient->m_Chat.AddLine(-2, 0, "!clone <name>");
 		// m_pClient->m_Chat.AddLine(-2, 0, "!search <name>");
 	}
 	else if(!str_comp(pCmd, "discord"))
@@ -448,6 +568,15 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	else if(!str_comp(pCmd, "skin"))
 	{
 		Skin(pRawArgLine);
+		if(!g_Config.m_ClDummy)
+			m_pClient->SendInfo(false);
+		else if(g_Config.m_ClDummy)
+			m_pClient->SendDummyInfo(false);
+		return true;
+	}
+	else if(!str_comp(pCmd, "clone") || !str_comp(pCmd, "copy"))
+	{
+		Clone(pRawArgLine);
 		if(!g_Config.m_ClDummy)
 			m_pClient->SendInfo(false);
 		else if(g_Config.m_ClDummy)

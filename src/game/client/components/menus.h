@@ -613,6 +613,8 @@ protected:
 	void ResetSettingsCustomization();
 	void ResetSettingsSprites();
 
+	void RenderSettingsAppearanceFont(CUIRect MainView);
+
 	class CMapListItem
 	{
 	public:

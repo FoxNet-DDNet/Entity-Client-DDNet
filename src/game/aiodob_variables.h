@@ -444,10 +444,18 @@ MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG
 
 // Testing
 
+MACRO_CONFIG_INT(ClCloningPerson, cloning_person, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
+
+MACRO_CONFIG_INT(ClCloningPersonDummy, cloning_person_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
+
+
 MACRO_CONFIG_INT(ClCopyingSkin, copying_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
 
 MACRO_CONFIG_INT(ClCopyingSkinDummy, copying_skin_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
 
+MACRO_CONFIG_INT(ClSavedCountry, saved_country, -1, -1, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Aiodob")
+
+MACRO_CONFIG_INT(ClSavedDummyCountry, saved_dummy_country, -1, -1, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Aiodob")
 
 
 MACRO_CONFIG_STR(ClSavedName, saved_name, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Aiodob")
@@ -465,12 +473,6 @@ MACRO_CONFIG_INT(ClSavedDummyUseCustomColor, saved_dummy_use_custom_color, 0, 0,
 MACRO_CONFIG_COL(ClSavedDummyColorBody, saved_dummy_color_body, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for cb_skin_stealer")
 MACRO_CONFIG_COL(ClSavedDummyColorFeet, saved_dummy_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for cb_skin_stealer")
 MACRO_CONFIG_STR(ClSavedDummySkin, saved_dummy_skin, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for cb_skin_stealer")
-
-
-
-
-
-
 
 
 // Custom Vairiables from My Server for the editor

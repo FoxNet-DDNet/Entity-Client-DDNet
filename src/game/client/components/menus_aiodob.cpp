@@ -37,6 +37,8 @@
 #include <string>
 #include <vector>
 
+#include "game/client/components/fontmgr.h"
+
 using namespace FontIcons;
 using namespace std::chrono_literals;
 

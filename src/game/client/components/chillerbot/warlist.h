@@ -242,6 +242,7 @@ public:
 
 	void DelClone();
 
+	void Clone(const char *pName);
 	void Skin(const char *pName);
 
 	void RemoveSimpleTeam(const char *pName);
