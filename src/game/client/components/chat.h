@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_COMPONENTS_CHAT_H
 #define GAME_CLIENT_COMPONENTS_CHAT_H
@@ -43,6 +43,7 @@ class CChat : public CComponent
 		bool m_Paused;
 		bool m_IsWar;
 		bool m_IsHelper;
+		bool m_IsWarClan;
 		bool m_IsTeam;
 		bool m_IsMute;
 		bool m_Highlighted;
@@ -128,10 +129,7 @@ class CChat : public CComponent
 		CCommand() = default;
 		CCommand(const char *pName, const char *pParams, const char *pHelpText)
 		{
-
-			
 			const char *cstrs[] = {"one", "two", "three"};
-			
 
 			str_copy(m_aName, pName);
 			str_copy(m_aParams, pParams);

@@ -237,7 +237,6 @@ void CChat::OnInit()
 
 bool CChat::OnInput(const IInput::CEvent &Event)
 {
-
 	if(m_Mode == MODE_NONE)
 		return false;
 
@@ -449,7 +448,6 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				m_PlaceholderLength = str_length(pSeparator) + str_length(pCompletionString);
 				m_Input.Set(aBuf);
 				m_Input.SetCursorOffset(m_PlaceholderOffset + m_PlaceholderLength);
-
 			}
 		}
 	}
@@ -652,7 +650,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor)));
 		else if(Team == 0)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor)));
-		
 	}
 
 	if(*pLine == 0 ||
@@ -724,7 +721,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 		}
 
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, pLine_->m_Whisper ? "whisper" : pLine_->m_IsMute ? "[Muted]" : (pLine_->m_Team ? "teamchat" : "chat"),
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, pLine_->m_Whisper ? "whisper" : pLine_->m_IsMute ? "[Muted]" :
+														     (pLine_->m_Team ? "teamchat" : "chat"),
 			aBuf, ChatLogColor);
 	};
 
@@ -809,13 +807,10 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		else
 			str_copy(pCurrentLine->m_aName, "— ");
 		str_copy(pCurrentLine->m_aText, pLine);
-		
 	}
 	else
 	{
 		auto &LineAuthor = m_pClient->m_aClients[pCurrentLine->m_ClientId];
-
-
 
 		if(LineAuthor.m_Team == TEAM_SPECTATORS)
 			pCurrentLine->m_NameColor = TEAM_SPECTATORS;
@@ -923,7 +918,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			{
 				if(str_find_nocase(pLine, "' changed name to '"))
 				{
-			
 					const char *aName = str_find_nocase(pLine, " '");
 					const char *OldName = str_find_nocase(pLine, "'");
 					const char *NameLength = str_find_nocase(pLine, "' ");
@@ -949,7 +943,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 						char CharOname[16];
 						strcpy(CharOname, oName.c_str());
-						if (!GameClient()->m_WarList.IsTeamlist(name))
+						if(!GameClient()->m_WarList.IsTeamlist(name))
 						{
 							if(GameClient()->m_WarList.IsMutelist(CharOname))
 								GameClient()->m_WarList.AddSimpleMute(name);
@@ -972,7 +966,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 					using namespace std;
 					if(str_find_nocase(pLine, g_Config.m_ClAutoJoinTeamName))
 					{
-		
 						int n = str_length(FindTeam);
 						string s(FindTeam);
 						s.erase(s.begin());
@@ -981,7 +974,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						char Team[16];
 						strcpy(Team, s.c_str());
 
-						
 						int a = str_length(NameLength);
 						int b = str_length(PName);
 
@@ -1078,7 +1070,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			char Name[1024];
 			str_format(Name, sizeof(Name), "%s", m_aLines[m_CurrentLine].m_aName);
 
-
 #if defined(CONF_VIDEORECORDER)
 			if(IVideo::Current())
 			{
@@ -1097,7 +1088,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 1.0f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 			}
-
 		}
 	}
 }
@@ -1214,7 +1204,6 @@ void CChat::OnPrepareLines(float y)
 
 				if(Line.m_Friend && g_Config.m_ClMessageFriend)
 				{
-					
 					TextRender()->TextEx(&Cursor, g_Config.m_ClFriendPrefix);
 				}
 				if(Line.m_Paused && g_Config.m_ClChatSpecPrefix)
@@ -1233,7 +1222,7 @@ void CChat::OnPrepareLines(float y)
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClEnemyPrefix);
 				}
-		}
+			}
 
 			TextRender()->TextEx(&Cursor, aClientId);
 			TextRender()->TextEx(&Cursor, Line.m_aName);

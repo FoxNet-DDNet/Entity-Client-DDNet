@@ -1224,7 +1224,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect PlayerSettings, FreezeBarSettings,ResetButton, SoundSettings;
+		CUIRect PlayerSettings, FreezeBarSettings,ResetButton, SoundSettings, WarVisual;
 		MainView.VSplitMid(&PlayerSettings, &ResetButton);
 
 	
@@ -1352,7 +1352,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			SoundSettings.HSplitTop(Margin, nullptr, &SoundSettings);
-			SoundSettings.HSplitTop(100.0f, &SoundSettings, 0);
+			SoundSettings.HSplitTop(100.0f, &SoundSettings, &WarVisual);
 			if(s_ScrollRegion.AddRect(SoundSettings))
 			{
 				SoundSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1374,6 +1374,53 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 			}
 		}
+
+		{
+			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
+			if(g_Config.m_ClSweatMode)
+				WarVisual.HSplitTop(125.0f, &WarVisual, 0);
+			else
+				WarVisual.HSplitTop(80.0f, &WarVisual, 0);
+			if(s_ScrollRegion.AddRect(WarVisual))
+			{
+				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				WarVisual.VMargin(Margin, &WarVisual);
+
+				WarVisual.HSplitTop(HeaderHeight, &Button, &WarVisual);
+				Ui()->DoLabel(&Button, Localize("Extra Warlist Visuals"), FontSize, TEXTALIGN_MC);
+
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode."), &g_Config.m_ClSweatMode, &WarVisual, LineMargin));
+
+				if(g_Config.m_ClSweatMode)
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSkin, ("Change Everyones Skin"), &g_Config.m_ClSweatModeSkin, &WarVisual, LineMargin);
+					
+
+					if(g_Config.m_ClSweatModeSkin)
+					{					
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &WarVisual, LineMargin);
+
+						static CLineInput s_Name;
+						s_Name.SetBuffer(g_Config.m_ClSweatModeSkinName, sizeof(g_Config.m_ClSweatModeSkinName));
+						s_Name.SetEmptyText("x_ninja");
+
+						WarVisual.HSplitTop(2.4f, &Label, &WarVisual);
+						WarVisual.VSplitLeft(25.0f, &WarVisual, &WarVisual);
+						Ui()->DoLabel(&WarVisual, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
+
+						WarVisual.HSplitTop(-1, &Button, &WarVisual);
+						WarVisual.HSplitTop(18.9f, &Button, &WarVisual);
+
+						Button.VSplitLeft(0.0f, &Button, &WarVisual);
+						Button.VSplitLeft(80.0f, &Label, &Button);
+						Button.VSplitLeft(120.0f, &Button, 0);
+
+						Ui()->DoEditBox(&s_Name, &Button, 14.0f);
+					}
+				}
+			}
+		}
+
 		s_ScrollRegion.End();
 	}
 }

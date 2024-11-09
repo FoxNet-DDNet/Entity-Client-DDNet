@@ -543,6 +543,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			auto IsTeam = GameClient()->m_WarList.IsTeamlist(ClientData.m_aName);
 			auto IsHelper = GameClient()->m_WarList.IsHelperlist(ClientData.m_aName);
 			auto IsMuted = GameClient()->m_WarList.IsMutelist(ClientData.m_aName);
+			auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(ClientData.m_aClan);
 
 			// skin
 			if(RenderDead)
@@ -678,7 +679,16 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 							TextRender()->TextColor(rgb.WithAlpha(1.0f));
 					}
 
-
+					if(IsWarClan && g_Config.m_ClAutoClanWar && !IsWar && !IsHelper && !IsTeam)
+					{
+						ColorRGBA rgb = (ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f));
+						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
+						{
+							TextRender()->TextColor(rgb.WithAlpha(0.4f));
+						}
+						else
+							TextRender()->TextColor(rgb.WithAlpha(1.0f));
+					}
 				
 				}
 				
@@ -718,8 +728,11 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			if(g_Config.m_ClEnablePingColor)
 			{
 				if(g_Config.m_ClAidsPingDetection)
+				{
 					if(pInfo->m_Latency == 77 || pInfo->m_Latency == 76)
-					TextRender()->TextColor(0.f, 0.f, 0.f, 1.f);
+						TextRender()->TextColor(0.f, 0.f, 0.f, 1.f);
+				}
+				else
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(pInfo->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f)));
 			}
 			else

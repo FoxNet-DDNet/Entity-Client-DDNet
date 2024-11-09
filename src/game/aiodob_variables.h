@@ -50,8 +50,17 @@ MACRO_CONFIG_INT(ClNameplatesWarReason, cb_nameplates_war_reason, 0, 0, 1, CFGFL
 MACRO_CONFIG_INT(ClWarListAutoReload, cb_war_list_auto_reload, 10, 0, 600, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reload warlist every x seconds 0=off")
 MACRO_CONFIG_INT(ClSilentChatCommands, cb_silent_chat_commands, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Send a Chatmessage After Correctly Typing in a Chat Command (!help...)")
 
+
+// Sweat mode
+
 MACRO_CONFIG_INT(ClSweatMode, ac_sweat_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
 
+MACRO_CONFIG_INT(ClSweatModeSkin, ac_sweat_mode_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
+
+MACRO_CONFIG_INT(ClSweatModeOnlyOthers, ac_sweat_mode_only_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
+
+
+MACRO_CONFIG_STR(ClSweatModeSkinName, ac_sweat_mode_skin_name, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have")
 
 
 
@@ -165,6 +174,9 @@ MACRO_CONFIG_INT(ClDoTeammateNameColor, ac_team_name_color, 1, 0, 1, CFGFLAG_CLI
 MACRO_CONFIG_INT(ClDoHelperNameColor, ac_helper_name_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Helper Nameplate Color")
 MACRO_CONFIG_INT(ClDoEnemyNameColor, ac_war_name_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enemy Nameplate Color")
 MACRO_CONFIG_INT(ClDoAfkColors, ac_do_afk_colors, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Makes Names Darker in Scoreboard if Player is afk")
+
+MACRO_CONFIG_INT(ClAutoClanWar, ac_auto_clan_war, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Automatically displays a name in a color if you have a player as an enemy in the same clan")
+
 
 MACRO_CONFIG_INT(ClScoreSpecPlayer, ac_do_score_spec_tee, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes The Tee in The Scoreboard to a Spectating Tee if The Player is Spectating")
 

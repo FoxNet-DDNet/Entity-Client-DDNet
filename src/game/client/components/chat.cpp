@@ -804,6 +804,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	const auto IsHelper = GameClient()->m_WarList.IsHelperlist(m_pClient->m_aClients[ClientId].m_aName);
 	const auto IsTeam = GameClient()->m_WarList.IsTeamlist(m_pClient->m_aClients[ClientId].m_aName);
 	const auto IsMute = GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName);
+	const auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(m_pClient->m_aClients[ClientId].m_aClan);
 
 	if(pCurrentLine->m_ClientId == SERVER_MSG)
 	{
@@ -858,6 +859,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		pCurrentLine->m_Friend = LineAuthor.m_Friend;
 		pCurrentLine->m_Paused = LineAuthor.m_Paused || LineAuthor.m_Spec;
 		pCurrentLine->m_IsWar = IsWar;
+		pCurrentLine->m_IsWarClan = IsWarClan;
 		pCurrentLine->m_IsHelper = IsHelper;
 		pCurrentLine->m_IsTeam = IsTeam;
 		pCurrentLine->m_IsMute = IsMute;
@@ -1187,17 +1189,21 @@ void CChat::OnPrepareLines(float y)
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
-				if(Line.m_IsWar && g_Config.m_ClChatTeammatePrefix)
+				if(Line.m_IsWar && g_Config.m_ClChatEnemyPrefix)
 				{
-					TextRender()->TextEx(&Cursor, g_Config.m_ClTeammatePrefix);
+					TextRender()->TextEx(&Cursor, g_Config.m_ClEnemyPrefix);
 				}
-				if(Line.m_IsHelper && g_Config.m_ClChatHelperPrefix)
+				if(Line.m_IsWarClan && !Line.m_IsWar && !Line.m_IsTeam && !Line.m_IsHelper && g_Config.m_ClChatEnemyPrefix)
+				{
+					TextRender()->TextEx(&Cursor, g_Config.m_ClEnemyPrefix);
+				}
+				if(Line.m_IsHelper && g_Config.m_ClChatHelperPrefix && g_Config.m_ClAutoClanWar)
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClHelperPrefix);
 				}
-				if(Line.m_IsTeam && g_Config.m_ClChatEnemyPrefix)
+				if(Line.m_IsTeam && g_Config.m_ClChatTeammatePrefix)
 				{
-					TextRender()->TextEx(&Cursor, g_Config.m_ClEnemyPrefix);
+					TextRender()->TextEx(&Cursor, g_Config.m_ClTeammatePrefix);
 				}
 		}
 
@@ -1249,6 +1255,11 @@ void CChat::OnPrepareLines(float y)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)).WithAlpha(1.f));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClSpecPrefix);
+			}
+			if(Line.m_IsWarClan && !Line.m_IsWar && g_Config.m_ClChatEnemyPrefix && g_Config.m_ClAutoClanWar)
+			{
+				TextRender()->TextColor(ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f).WithAlpha(1.f));
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClEnemyPrefix);
 			}
 			// if player is enemy
 			if(Line.m_IsWar && !Line.m_IsTeam && g_Config.m_ClChatEnemyPrefix)

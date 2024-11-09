@@ -645,7 +645,7 @@ void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor)
 		*pColor = ColorRGBA(7.0f, 0.2f, 0.2f, 1.0f);
 	else if(IsTeamClan(ClientId))
 		*pColor = ColorRGBA(0.0f, 0.9f, 0.2f, 1.0f);
-	else if(IsWarClanmate(ClientId))
+	else if(IsWarClanmate(ClientId) && g_Config.m_ClAutoClanWar)
 		*pColor = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
 }
 

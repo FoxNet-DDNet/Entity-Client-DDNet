@@ -750,6 +750,22 @@ void CPlayers::RenderPlayer(
 		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
 	}
 
+
+
+
+	if(g_Config.m_ClSparkleEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	{
+		GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
+	}
+
+	if(g_Config.m_ClSparkleEffectOthers && !Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	{
+		GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
+	}
+
+
+
+
 	if(ClientId < 0)
 		return;
 
@@ -846,7 +862,7 @@ void CPlayers::OnRender()
 	bool IsTeamplay = false;
 	if(m_pClient->m_Snap.m_pGameInfoObj)
 		IsTeamplay = (m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS) != 0;
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	for(int i = -1; i < MAX_CLIENTS; ++i)
 	{
 		aRenderInfo[i] = m_pClient->m_aClients[i].m_RenderInfo;
 		aRenderInfo[i].m_TeeRenderFlags = 0;
@@ -876,7 +892,136 @@ void CPlayers::OnRender()
 				}
 			}
 		}
+
+		const int Local = m_pClient->m_Snap.m_LocalClientId;
+
+		const auto IsWar = GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[i].m_aName);
+
+		const auto IsTeam = GameClient()->m_WarList.IsTeamlist(m_pClient->m_aClients[i].m_aName);
+
+		const auto IsHelper = GameClient()->m_WarList.IsHelperlist(m_pClient->m_aClients[i].m_aName);
+
+		const auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(m_pClient->m_aClients[i].m_aClan);
+		
+		const auto UsedDj = aRenderInfo[i].m_GotAirJump = 0;
+
+		if(g_Config.m_ClSweatMode)
+		{
+			// change the skin for the player to the ninja
+			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClSweatModeSkinName);
+			if(pSkin != nullptr)
+			{
+				aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
+				if(g_Config.m_ClSweatModeSkin)
+					if(i == Local)
+					{
+						if(!g_Config.m_ClSweatModeOnlyOthers)
+							aRenderInfo[i].Apply(pSkin);
+		
+					}
+					else
+						aRenderInfo[i].Apply(pSkin);
+
+
+				if(i == Local)
+				{
+					if(!g_Config.m_ClSweatModeOnlyOthers)
+						{
+						if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
+							aRenderInfo[i].m_CustomColoredSkin = 1;
+						aRenderInfo[i].m_ColorBody = ColorRGBA(1, 0, 0);
+						if(UsedDj)
+							aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 0, 0);
+						else
+							aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 0, 0);
+						}
+				
+				}
+				if(IsWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				{
+					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
+						aRenderInfo[i].m_CustomColoredSkin = 1;
+					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 0, 0);
+					if(UsedDj)
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(0.7, 0.3, 0.3);
+					else
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 0, 0);
+				}
+				else if(IsTeam && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				{
+					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
+						aRenderInfo[i].m_CustomColoredSkin = 1;
+					aRenderInfo[i].m_ColorBody = ColorRGBA(0, 1, 0);
+					if(UsedDj)
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(0.3, 0.7, 0.3);
+					else
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 1, 0);
+				}
+				else if(IsHelper && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				{
+					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
+						aRenderInfo[i].m_CustomColoredSkin = 1;
+					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 0);
+					if(UsedDj)
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(0.7, 0.7, 0.3);
+					else
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 0);
+				}
+				else if(IsWarClan && g_Config.m_ClAutoClanWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				{
+					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
+						aRenderInfo[i].m_CustomColoredSkin = 1;
+					aRenderInfo[i].m_ColorBody = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
+				}
+				else if(!(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+					{
+					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
+					{
+						aRenderInfo[i].m_CustomColoredSkin = 1;
+						aRenderInfo[i].m_ColorBody = ColorRGBA(0.5f, 0.5f, 0.5f);
+						if(UsedDj)
+							aRenderInfo[i].m_ColorFeet = ColorRGBA(0.3f, 0.3f, 0.3f);
+						else
+							aRenderInfo[i].m_ColorFeet = ColorRGBA(0.5f, 0.5f, 0.5f);
+					}
+				}
+			
+			}
+		}
+
+
+
+
+
+		if(g_Config.m_ClOwnTeeSkin &&  i == Local && !(m_pClient->m_aClients[Local].m_FreezeEnd > 0))
+		{
+			// change the skin for the player to the ninja
+			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClOwnTeeSkinName);
+			if(pSkin != nullptr)
+			{
+				aRenderInfo[Local].m_aSixup[g_Config.m_ClDummy].Reset();
+
+				aRenderInfo[Local].Apply(pSkin);
+
+
+				if(g_Config.m_ClOwnTeeSkinCustomColor)
+				{
+					aRenderInfo[Local].m_CustomColoredSkin = 1;
+					aRenderInfo[Local].m_ColorBody = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorBody)));
+					aRenderInfo[Local].m_ColorFeet = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorFeet)));
+				}
+					
+				else
+				{
+					aRenderInfo[Local].m_CustomColoredSkin = 0;
+					aRenderInfo[Local].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[Local].m_ColorFeet = ColorRGBA(1, 1, 1);
+				}
+			}
+		}
 	}
+
 	CTeeRenderInfo RenderInfoSpec;
 	RenderInfoSpec.Apply(m_pClient->m_Skins.Find("x_spec"));
 	RenderInfoSpec.m_Size = 64.0f;
