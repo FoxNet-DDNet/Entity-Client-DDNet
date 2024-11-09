@@ -1144,7 +1144,7 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 	const float Margin = 10.0f;
 	const float HeaderHeight = FontSize + 5.0f + Margin;
 
-	CUIRect MouseSettings, MovementSettings, WeaponSettings, VotingSettings, ChatSettings, DummySettings, MiscSettings, JoystickSettings, ResetButton, Button;
+	CUIRect MouseSettings, MovementSettings, WeaponSettings, VotingSettings, ChatSettings, DummySettings, MiscSettings, NewSettings, JoystickSettings, ResetButton, Button;
 	MainView.VSplitMid(&MouseSettings, &VotingSettings);
 
 	// mouse settings
@@ -1285,7 +1285,7 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 	// misc settings
 	{
 		MiscSettings.HSplitTop(Margin, nullptr, &MiscSettings);
-		MiscSettings.HSplitTop(300.0f, &MiscSettings, 0);
+		MiscSettings.HSplitTop(300.0f, &MiscSettings, &NewSettings);
 		if(s_ScrollRegion.AddRect(MiscSettings))
 		{
 			MiscSettings.Draw(ColorRGBA(1, 1, 1, 0.25f), IGraphics::CORNER_ALL, 10.0f);
@@ -1297,7 +1297,22 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 			DoSettingsControlsButtons(32, 44, MiscSettings);
 		}
 	}
+	/*
+		{
+		NewSettings.HSplitTop(Margin, nullptr, &NewSettings);
+		NewSettings.HSplitTop(80.0f, &NewSettings, 0);
+		if(s_ScrollRegion.AddRect(NewSettings))
+		{
+			NewSettings.Draw(ColorRGBA(1, 1, 1, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+			NewSettings.VMargin(Margin, &NewSettings);
 
+			NewSettings.HSplitTop(HeaderHeight, &Button, &NewSettings);
+			Ui()->DoLabel(&Button, Localize("New Settings"), FontSize, TEXTALIGN_ML);
+
+			DoSettingsControlsButtons(44, 46, NewSettings);
+		}
+	}
+		*/
 	s_ScrollRegion.End();
 }
 

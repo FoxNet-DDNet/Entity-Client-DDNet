@@ -1256,7 +1256,7 @@ void CChat::OnPrepareLines(float y)
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)).WithAlpha(1.f));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClSpecPrefix);
 			}
-			if(Line.m_IsWarClan && !Line.m_IsWar && g_Config.m_ClChatEnemyPrefix && g_Config.m_ClAutoClanWar)
+			if(Line.m_IsWarClan && !Line.m_IsWar && !Line.m_IsTeam && !Line.m_IsHelper && g_Config.m_ClChatEnemyPrefix && g_Config.m_ClAutoClanWar)
 			{
 				TextRender()->TextColor(ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f).WithAlpha(1.f));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClEnemyPrefix);
