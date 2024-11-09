@@ -1,5 +1,3 @@
-
-
 #include <base/log.h>
 #include <base/math.h>
 #include <base/system.h>
@@ -1019,7 +1017,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					{
 				ScoreboardSettings.HSplitTop(Margin, nullptr, &ScoreboardSettings);
-				ScoreboardSettings.HSplitTop(155.0f, &ScoreboardSettings, &MenuSettings);
+				ScoreboardSettings.HSplitTop(160.0f, &ScoreboardSettings, &MenuSettings);
 				if(s_ScrollRegion.AddRect(ScoreboardSettings))
 				{
 					ScoreboardSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1232,7 +1230,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			PlayerSettings.HSplitTop(140.0f, &PlayerSettings, &FreezeBarSettings);
+			if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
+				PlayerSettings.HSplitTop(165.0f, &PlayerSettings, &FreezeBarSettings);
+			else
+				PlayerSettings.HSplitTop(150.0f, &PlayerSettings, &FreezeBarSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1243,15 +1244,50 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
 
-				PlayerSettings.HSplitTop(46.0f, &Button, &MainView);
+				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffect, ("Sparkle Effect Self"), &g_Config.m_ClSparkleEffect, &PlayerSettings, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffectOthers, ("Sparkle Effect Others"), &g_Config.m_ClSparkleEffectOthers, &PlayerSettings, LineMargin);
+		
+
+				
+
+
+			
+				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
+				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClRainbow, Localize("Rainbow Tee"), g_Config.m_ClRainbow, &Button))
+					g_Config.m_ClRainbow ^= 1;
+
+	
+
+
+				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClRainbowHook, Localize("Rainbow Hook"), g_Config.m_ClRainbowHook, &Button))
+					g_Config.m_ClRainbowHook ^= 1;
+				if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
 				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffect, ("Sparkle Effect Self"), &g_Config.m_ClSparkleEffect, &MainView, LineMargin);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffectOthers, ("Sparkle Effect Others"), &g_Config.m_ClSparkleEffectOthers, &MainView, LineMargin);
+					PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "%");
+					PlayerSettings.HSplitTop(-20.f, &Button, &PlayerSettings);
 				}
+
+				PlayerSettings.VSplitLeft(0.f, &Button, &PlayerSettings);
+				PlayerSettings.VSplitLeft(150.f, &Button, &PlayerSettings);
+
+				PlayerSettings.HSplitTop(-40.f, &Button, &PlayerSettings);
+				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClRainbowOthers, Localize("Rainbow Tee Others"), g_Config.m_ClRainbowOthers, &Button))
+					g_Config.m_ClRainbowOthers ^= 1;
+
+				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClRainbowHookOthers, Localize("Rainbow Hook Others"), g_Config.m_ClRainbowHookOthers, &Button))
+					g_Config.m_ClRainbowHookOthers ^= 1;
+				
 
 
 				// create dropdown for rainbow modes
 				PlayerSettings.HSplitTop(2.0f, &Button, &PlayerSettings);
+				if(1 == 2)
 				{
 					PlayerSettings.HSplitTop(19.9f, &Button, &MainView);
 
@@ -1378,9 +1414,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
 			if(g_Config.m_ClSweatMode)
-				WarVisual.HSplitTop(125.0f, &WarVisual, 0);
+				WarVisual.HSplitTop(120.0f, &WarVisual, 0);
 			else
-				WarVisual.HSplitTop(80.0f, &WarVisual, 0);
+				WarVisual.HSplitTop(70.0f, &WarVisual, 0);
 			if(s_ScrollRegion.AddRect(WarVisual))
 			{
 				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1388,6 +1424,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				WarVisual.HSplitTop(HeaderHeight, &Button, &WarVisual);
 				Ui()->DoLabel(&Button, Localize("Extra Warlist Visuals"), FontSize, TEXTALIGN_MC);
+
+
 
 				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode."), &g_Config.m_ClSweatMode, &WarVisual, LineMargin));
 

@@ -107,7 +107,7 @@ public:
 				CreateFolder("assets/particles", TYPE_SAVE);
 				CreateFolder("assets/hud", TYPE_SAVE);
 				CreateFolder("assets/extras", TYPE_SAVE);
-				CreateFolder("assets/fonts", TYPE_SAVE);
+				CreateFolder("alle", TYPE_SAVE);
 
 #if defined(CONF_VIDEORECORDER)
 				CreateFolder("videos", TYPE_SAVE);
@@ -126,6 +126,7 @@ public:
 			CreateFolder("chillerbot", TYPE_SAVE);
 			CreateFolder("chillerbot/warlist", TYPE_SAVE);
 			CreateFolder("chillerbot/term_hist", TYPE_SAVE);
+			CreateFolder("chillerbot/templist", TYPE_SAVE);
 		}
 
 		return m_NumPaths ? 0 : 1;

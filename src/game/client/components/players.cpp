@@ -23,8 +23,6 @@
 #include <game/client/components/sounds.h>
 
 #include "players.h"
-
-#include "rainbow.h"
 #include <base/color.h>
 #include <base/math.h>
 
@@ -338,6 +336,8 @@ void CPlayers::RenderHook(
 
 	CTeeRenderInfo RenderInfo = *pRenderInfo;
 
+	bool Local = m_pClient->m_Snap.m_LocalClientId == ClientId;
+
 	// don't render hooks to not active character cores
 	if(pPlayerChar->m_HookedPlayer != -1 && !m_pClient->m_Snap.m_aCharacters[pPlayerChar->m_HookedPlayer].m_Active)
 		return;
@@ -382,7 +382,26 @@ void CPlayers::RenderHook(
 		// render head
 		int QuadOffset = NUM_WEAPONS * (g_Config.m_ClHookSizeX + 2) + (g_Config.m_ClHookSizeY + 2);
 		
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+		if(g_Config.m_ClRainbowHook == 0 || g_Config.m_ClRainbowHookOthers == 0)
+		{
+			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+		}
+		if(Local && g_Config.m_ClRainbowHook == 1)
+		{
+			ColorHSVA ColorHSV(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f);
+			ColorRGBA ColorWithAlpha = color_cast<ColorRGBA>(ColorHSV);
+			ColorWithAlpha.a = Alpha;
+
+			Graphics()->SetColor(ColorWithAlpha);
+		}
+		if(g_Config.m_ClRainbowHookOthers && !Local && !g_Config.m_ClSweatMode)
+		{
+			ColorHSVA ColorHSV(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f);
+			ColorRGBA ColorWithAlpha = color_cast<ColorRGBA>(ColorHSV);
+			ColorWithAlpha.a = Alpha;
+
+			Graphics()->SetColor(ColorWithAlpha);
+		}
 
 		Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, HookPos.x, HookPos.y);
 
@@ -539,6 +558,32 @@ void CPlayers::RenderPlayer(
 			Alpha);
 	}
 
+	// rainbow
+
+	bool IsRainbowBody = g_Config.m_ClRainbow,
+	     IsRainbowFeet = g_Config.m_ClRainbow;
+
+		bool IsRainbowBodyOthers = g_Config.m_ClRainbowOthers,
+	     IsRainbowFeetOthers = g_Config.m_ClRainbowOthers;
+
+	if(g_Config.m_ClRainbow == 1 && (m_pClient->m_Snap.m_LocalClientId == ClientId) == 1)
+	{
+		IsRainbowBody = true;
+		IsRainbowFeet = true;
+	}
+	else if(g_Config.m_ClRainbowOthers == 1 && (m_pClient->m_Snap.m_LocalClientId == ClientId) != 1 && !g_Config.m_ClSweatMode)
+	{
+		IsRainbowBodyOthers = true;
+		IsRainbowFeetOthers = true;
+	}
+	else
+	{
+		IsRainbowBody = false;
+		IsRainbowFeet = false;
+
+		IsRainbowBodyOthers = false;
+		IsRainbowFeetOthers = false;
+	}
 	// draw gun
 	{
 		if(!(RenderInfo.m_TeeRenderFlags & TEE_NO_WEAPON))
@@ -713,6 +758,18 @@ void CPlayers::RenderPlayer(
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 			Graphics()->QuadsSetRotation(0);
 
+			if(IsRainbowBody)
+			{
+				RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
+			}
+				
+
+			if(IsRainbowBodyOthers)
+			{
+				RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
+				
+			}
+
 			switch(Player.m_Weapon)
 			{
 			case WEAPON_GUN: RenderHand(&RenderInfo, WeaponPosition, Direction, -3 * pi / 4, vec2(-15, 4), Alpha); break;
@@ -735,6 +792,31 @@ void CPlayers::RenderPlayer(
 		CTeeRenderInfo Shadow = RenderInfo;
 		RenderTools()->RenderTee(&State, &Shadow, Player.m_Emote, Direction, ShadowPosition, 0.5f); // render ghost
 	}
+
+	if(IsRainbowBody && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	{
+		RenderInfo.m_CustomColoredSkin = 1;
+		RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
+	}
+	if(IsRainbowFeet && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	{
+		RenderInfo.m_CustomColoredSkin = 1;
+		RenderInfo.m_ColorFeet = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
+	}
+	
+	if(IsRainbowBodyOthers && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	{
+		RenderInfo.m_CustomColoredSkin = 1;
+		RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
+	}
+
+	if(IsRainbowFeetOthers && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	{
+		RenderInfo.m_CustomColoredSkin = 1;
+		RenderInfo.m_ColorFeet = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
+	}
+
+
 
 	RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position, Alpha);
 
@@ -1115,7 +1197,7 @@ void CPlayers::OnInit()
 	RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, 20.f);
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
 	RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, 20.f);
-
+	
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
 	RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, -12.f, -8.f, 24.f, 16.f);
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);

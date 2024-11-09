@@ -2416,8 +2416,6 @@ if(CLIENT)
     components/players.h
     components/race_demo.cpp
     components/race_demo.h
-    components/rainbow.cpp
-    components/rainbow.h
     components/scoreboard.cpp
     components/scoreboard.h
     components/skins.cpp

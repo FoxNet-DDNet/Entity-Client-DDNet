@@ -309,12 +309,17 @@ MACRO_CONFIG_INT(ClPlayerTrail, cle_player_trail, 0, 0, 1, CFGFLAG_CLIENT | CFGF
 
 // Rainbow
 
-MACRO_CONFIG_INT(ClRainbowHook, tc_rainbow_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
-MACRO_CONFIG_INT(ClRainbowModeHook, tc_rainbow_mode_hook, 1, 1, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: off, 2: rainbow, 3: pulse, 4: darkness)")
+MACRO_CONFIG_INT(ClRainbowSpeed, ac_rainbow_speed, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
 
-MACRO_CONFIG_INT(ClRainbowOthers, tc_rainbow_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow client side for others")
-MACRO_CONFIG_INT(ClRainbowMode, tc_rainbow_mode, 1, 1, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: off, 2: rainbow, 3: pulse, 4: darkness)")
+MACRO_CONFIG_INT(ClRainbowHookOthers, ac_rainbow_hook_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook for others client side")
 
+MACRO_CONFIG_INT(ClRainbowHook, ac_rainbow_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
+MACRO_CONFIG_INT(ClRainbowModeHook, ac_rainbow_mode_hook, 1, 1, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: off, 2: rainbow, 3: pulse, 4: darkness)")
+
+MACRO_CONFIG_INT(ClRainbowOthers, ac_rainbow_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow client side for others")
+MACRO_CONFIG_INT(ClRainbowMode, ac_rainbow_mode, 1, 1, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: off, 2: rainbow, 3: pulse, 4: darkness)")
+
+MACRO_CONFIG_INT(ClRainbow, ac_rainbow, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: off, 2: rainbow, 3: pulse, 4: darkness)")
 
 
 MACRO_CONFIG_INT(ClSmallSkins, cle_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
