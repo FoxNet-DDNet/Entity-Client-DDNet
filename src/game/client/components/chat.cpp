@@ -663,13 +663,27 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor)));
 		else if(Team == 0)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor)));
-		
+	}
+
+	if(GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat && !(GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName)))
+	{
+		char War[2048] = "[Enemy] ";
+		char WarWhisper[2048] = "[Enemy] ← ";
+
+		const char *Name = m_pClient->m_aClients[ClientId].m_aName;
+
+		str_append(War, Name);
+		str_append(WarWhisper, Name);
+		if(Team == 3)
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, WarWhisper, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClWarColor)));
+		else if(Team == 0)
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, War, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClWarColor)));
 	}
 
 	if(*pLine == 0 ||
 		(ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
-					  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName) || /* make this still appear in console */
+					  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName) || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))

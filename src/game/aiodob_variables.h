@@ -148,7 +148,12 @@ MACRO_CONFIG_INT(ClApplyProfileEmote, tc_profile_emote, 1, 0, 1, CFGFLAG_CLIENT 
 
 // muted settings
 
-MACRO_CONFIG_INT(ClShowMutedInConsole, ac_show_muted_in_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows messaged of muted people in the console")
+MACRO_CONFIG_INT(ClHideEnemyChat, ac_hide_enemy_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides Chat Messages  of Enemies")
+
+
+MACRO_CONFIG_INT(ClShowMutedInConsole, ac_show_muted_in_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows messages of muted people in the console")
+
+
 MACRO_CONFIG_INT(ClReplyMuted, ac_reply_muted, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "replies to muted player")
 MACRO_CONFIG_INT(ClMutedIconNameplate, ac_muted_icon_nameplate, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows an Icon Next to Nameplates of Muted Players")
 MACRO_CONFIG_INT(ClMutedIconScore, ac_muted_icon_Scoreboard, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows an Icon Next to Nameplates of Muted Players ")
@@ -283,6 +288,24 @@ MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 50
 
 MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "shows ping range 76-77 in black (ping of a weirdo)")
 
+MACRO_CONFIG_INT(ClShowChatSettings, ac_show_chat_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Chat Settings")
+
+
+MACRO_CONFIG_INT(ClShowOtherSettings, ac_show_other_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Other Settings")
+
+MACRO_CONFIG_INT(ClShowColorSettings, ac_show_color_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Color Settings")
+
+MACRO_CONFIG_INT(ClShowNameplateSettings, ac_show_nameplate_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Nameplate Settings")
+
+MACRO_CONFIG_INT(ClShowUiHudSettings, ac_show_ui_hud_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Ui/Hud Settings")
+
+MACRO_CONFIG_INT(ClShowMiscSettings, ac_show_misc_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Misc Settings")
+
+MACRO_CONFIG_INT(ClShowPlayerIndSettings, ac_show_player_ind_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Player Indicator Settings")
+
+MACRO_CONFIG_INT(ClShowScoreSettings, ac_show_score_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Scoreboard Settings")
+
+MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Menu Settings")
 
 // Might be Cheating
 
