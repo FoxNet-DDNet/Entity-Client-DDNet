@@ -349,7 +349,7 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		str_format(aBuf, sizeof(aBuf), "%s: %s", m_pClient->m_aClients[ClientId].m_aName, pMsg);
 		m_pChillerBot->SetComponentNoteLong("last ping", aBuf);
 	}
-	if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName))
+	if((g_Config.m_ClReplyMuted && GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName) || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat)))
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;

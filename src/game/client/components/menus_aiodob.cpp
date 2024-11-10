@@ -1012,9 +1012,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			if(g_Config.m_ClShowPlayerIndSettings)
 			{
 				if(g_Config.m_ClIndicatorVariableDistance)
-					PlayerIndicatorSettings.HSplitTop(350.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
+					PlayerIndicatorSettings.HSplitTop(370.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
 				else
-					PlayerIndicatorSettings.HSplitTop(300.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
+					PlayerIndicatorSettings.HSplitTop(320.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
 			}
 			else
 				PlayerIndicatorSettings.HSplitTop(40.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
@@ -1036,12 +1036,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				if(g_Config.m_ClShowPlayerIndSettings)
 				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, ("Show any enabled Indicators"), &g_Config.m_ClPlayerIndicator, &PlayerIndicatorSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicatorFreeze, ("Show only freeze Players"), &g_Config.m_ClPlayerIndicatorFreeze, &PlayerIndicatorSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, ("Only show after joining a team"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTees, ("Render tiny tees instead of circles"), &g_Config.m_ClIndicatorTees, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, ("Show Any Enabled Indicators"), &g_Config.m_ClPlayerIndicator, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicatorFreeze, ("Show Only Freeze Players"), &g_Config.m_ClPlayerIndicatorFreeze, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, ("Only Show After Joining a Team"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTees, ("Render Tiny Tees Instead of Circles"), &g_Config.m_ClIndicatorTees, &PlayerIndicatorSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorVariableDistance, ("Change indicator offset based on distance to other tees"), &g_Config.m_ClIndicatorVariableDistance, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorVariableDistance, ("Change Indicator Offset Based On Distance to other tees"), &g_Config.m_ClIndicatorVariableDistance, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorHideOnScreen, ("Hide Indicator if Tee is on Screen"), &g_Config.m_ClIndicatorHideOnScreen, &PlayerIndicatorSettings, LineSize);
 
 					static CButtonContainer IndicatorAliveColorID, IndicatorDeadColorID, IndicatorSavedColorID;
 					DoLine_ColorPicker(&IndicatorAliveColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator alive color"), &g_Config.m_ClIndicatorAlive, ColorRGBA(0.6f, 1.0f, 0.6f, 1.0f), true);
@@ -1107,82 +1108,81 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						g_Config.m_ClIndicatorMaxDistance = NewValue * 50;
 					}
 				}
+			}
+		}
 
+		{
+			ScoreboardSettings.HSplitTop(Margin, nullptr, &ScoreboardSettings);
+			if(g_Config.m_ClShowScoreSettings)
+				ScoreboardSettings.HSplitTop(160.0f, &ScoreboardSettings, &MenuSettings);
+			else
+				ScoreboardSettings.HSplitTop(40.0f, &ScoreboardSettings, &MenuSettings);
+			if(s_ScrollRegion.AddRect(ScoreboardSettings))
+			{
+				ScoreboardSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				ScoreboardSettings.VMargin(Margin, &ScoreboardSettings);
+				ScoreboardSettings.HSplitTop(HeaderHeight, &Button, &ScoreboardSettings);
+				Ui()->DoLabel(&Button, Localize("Scoreboard Settings"), FontSize, TEXTALIGN_MC);
+
+				ScoreboardSettings.VSplitLeft(111.f, &Button, &ScoreboardSettings);
+
+				ScoreboardSettings.HSplitTop(-24.5f, &Button, &ScoreboardSettings);
+				ScoreboardSettings.HSplitTop(20.f, &Button, &ScoreboardSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClShowScoreSettings, Localize(""), g_Config.m_ClShowScoreSettings, &Button))
+					g_Config.m_ClShowScoreSettings ^= 1;
+				ScoreboardSettings.VSplitLeft(-111.f, &Button, &ScoreboardSettings);
+
+				if(g_Config.m_ClShowScoreSettings)
 				{
-					ScoreboardSettings.HSplitTop(Margin, nullptr, &ScoreboardSettings);
-					if(g_Config.m_ClShowScoreSettings)
-						ScoreboardSettings.HSplitTop(160.0f, &ScoreboardSettings, &MenuSettings);
-					else
-						ScoreboardSettings.HSplitTop(40.0f, &ScoreboardSettings, &MenuSettings);
-					if(s_ScrollRegion.AddRect(ScoreboardSettings))
-					{
-						ScoreboardSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-						ScoreboardSettings.VMargin(Margin, &ScoreboardSettings);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMutedIconScore, Localize("Show an Indicator Next to Muted Players in Scoreboard"), &g_Config.m_ClMutedIconScore, &ScoreboardSettings, LineSize);
 
-						ScoreboardSettings.HSplitTop(HeaderHeight, &Button, &ScoreboardSettings);
-						Ui()->DoLabel(&Button, Localize("Scoreboard Settings"), FontSize, TEXTALIGN_MC);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoWarListColorScore, Localize("Do Warlist Name Colors in Scoreboard"), &g_Config.m_ClDoWarListColorScore, &ScoreboardSettings, LineSize);
 
-						ScoreboardSettings.VSplitLeft(111.f, &Button, &ScoreboardSettings);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoFriendColorScore, Localize("Do Friend Name Colors in Scoreboard"), &g_Config.m_ClDoFriendColorScore, &ScoreboardSettings, LineSize);
 
-						ScoreboardSettings.HSplitTop(-24.5f, &Button, &ScoreboardSettings);
-						ScoreboardSettings.HSplitTop(20.f, &Button, &ScoreboardSettings);
-						if(DoButton_CheckBox(&g_Config.m_ClShowScoreSettings, Localize(""), g_Config.m_ClShowScoreSettings, &Button))
-							g_Config.m_ClShowScoreSettings ^= 1;
-						ScoreboardSettings.VSplitLeft(-111.f, &Button, &ScoreboardSettings);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoAfkColors, Localize("Afk Name Colors in Scoreboard"), &g_Config.m_ClDoAfkColors, &ScoreboardSettings, LineSize);
 
-						if(g_Config.m_ClShowScoreSettings)
-						{
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMutedIconScore, Localize("Show an Indicator Next to Muted Players in Scoreboard"), &g_Config.m_ClMutedIconScore, &ScoreboardSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreSpecPlayer, Localize("Make Tees Sit in Scoreboard When Spectating"), &g_Config.m_ClScoreSpecPlayer, &ScoreboardSettings, LineSize);
 
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoWarListColorScore, Localize("Do Warlist Name Colors in Scoreboard"), &g_Config.m_ClDoWarListColorScore, &ScoreboardSettings, LineSize);
-
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoFriendColorScore, Localize("Do Friend Name Colors in Scoreboard"), &g_Config.m_ClDoFriendColorScore, &ScoreboardSettings, LineSize);
-
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoAfkColors, Localize("Afk Name Colors in Scoreboard"), &g_Config.m_ClDoAfkColors, &ScoreboardSettings, LineSize);
-
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreSpecPlayer, Localize("Make Tees Sit in Scoreboard When Spectating"), &g_Config.m_ClScoreSpecPlayer, &ScoreboardSettings, LineSize);
-
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreSpecPrefix, Localize("Show Spec Prefix in Scoreboard"), &g_Config.m_ClScoreSpecPrefix, &ScoreboardSettings, LineSize);
-						}
-					}
-				}
-
-				{
-					MenuSettings.HSplitTop(Margin, nullptr, &MenuSettings);
-					if(g_Config.m_ClShowMenuSettings)
-						MenuSettings.HSplitTop(120.0f, &MenuSettings, 0);
-					else
-						MenuSettings.HSplitTop(40.0f, &MenuSettings, 0);
-					if(s_ScrollRegion.AddRect(MenuSettings))
-					{
-						MenuSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-						MenuSettings.VMargin(Margin, &MenuSettings);
-
-						MenuSettings.HSplitTop(HeaderHeight, &Button, &MenuSettings);
-						Ui()->DoLabel(&Button, Localize("Menu Settings"), FontSize, TEXTALIGN_MC);
-
-						MenuSettings.VSplitLeft(126.f, &Button, &MenuSettings);
-
-						MenuSettings.HSplitTop(-24.5f, &Button, &MenuSettings);
-						MenuSettings.HSplitTop(20.f, &Button, &MenuSettings);
-						if(DoButton_CheckBox(&g_Config.m_ClShowMenuSettings, Localize(""), g_Config.m_ClShowMenuSettings, &Button))
-							g_Config.m_ClShowMenuSettings ^= 1;
-						MenuSettings.VSplitLeft(-126.f, &Button, &MenuSettings);
-
-						if(g_Config.m_ClShowMenuSettings)
-						{
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, Localize("Show Settigns Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &MenuSettings, LineSize);
-
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Player Colors in Spectate Menu"), &g_Config.m_ClSpecMenuColors, &MenuSettings, LineSize);
-
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, Localize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &MenuSettings, LineSize);
-
-							DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuFriendPrefix, Localize("Friend Prefix in Spectate Menu"), &g_Config.m_ClSpecMenuFriendPrefix, &MenuSettings, LineSize);
-						}
-					}
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreSpecPrefix, Localize("Show Spec Prefix in Scoreboard"), &g_Config.m_ClScoreSpecPrefix, &ScoreboardSettings, LineSize);
 				}
 			}
+		}
 
+		{
+			MenuSettings.HSplitTop(Margin, nullptr, &MenuSettings);
+			if(g_Config.m_ClShowMenuSettings)
+				MenuSettings.HSplitTop(120.0f, &MenuSettings, 0);
+			else
+				MenuSettings.HSplitTop(40.0f, &MenuSettings, 0);
+			if(s_ScrollRegion.AddRect(MenuSettings))
+			{
+				MenuSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				MenuSettings.VMargin(Margin, &MenuSettings);
+
+				MenuSettings.HSplitTop(HeaderHeight, &Button, &MenuSettings);
+				Ui()->DoLabel(&Button, Localize("Menu Settings"), FontSize, TEXTALIGN_MC);
+
+				MenuSettings.VSplitLeft(126.f, &Button, &MenuSettings);
+
+				MenuSettings.HSplitTop(-24.5f, &Button, &MenuSettings);
+				MenuSettings.HSplitTop(20.f, &Button, &MenuSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClShowMenuSettings, Localize(""), g_Config.m_ClShowMenuSettings, &Button))
+					g_Config.m_ClShowMenuSettings ^= 1;
+				MenuSettings.VSplitLeft(-126.f, &Button, &MenuSettings);
+
+				if(g_Config.m_ClShowMenuSettings)
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, Localize("Show Settigns Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &MenuSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Player Colors in Spectate Menu"), &g_Config.m_ClSpecMenuColors, &MenuSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, Localize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &MenuSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuFriendPrefix, Localize("Friend Prefix in Spectate Menu"), &g_Config.m_ClSpecMenuFriendPrefix, &MenuSettings, LineSize);
+					
+				}
+			}
 		}
 		s_ScrollRegion.End();
 	}
@@ -1474,7 +1474,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				}
 
 				if(g_Config.m_ClNotifyOnJoin)
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoNotifySound, ("Do Fav Person Notify Sound"), &g_Config.m_ClAutoNotifySound, &SoundSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoNotifySound, ("Do Notify on Player Join Sound Effect"), &g_Config.m_ClAutoNotifySound, &SoundSettings, LineMargin);
 
 			}
 		}
@@ -1503,7 +1503,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					
 
 					if(g_Config.m_ClSweatModeSkin)
-					{					
+					{
 						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &WarVisual, LineMargin);
 
 						static CLineInput s_Name;
@@ -1523,6 +1523,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 						Ui()->DoEditBox(&s_Name, &Button, 14.0f);
 					}
+					else
+						g_Config.m_ClSweatModeOnlyOthers = 0;
 				}
 			}
 		}
