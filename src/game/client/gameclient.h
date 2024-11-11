@@ -447,7 +447,14 @@ public:
 		bool m_Friend;
 		bool m_Foe;
 
+		// warlist
 		bool m_IsWar;
+		bool m_IsHelper;
+		bool m_IsTeam;
+		bool m_IsMuted;
+		bool m_IsWarClanmate;
+		bool m_IsClanWar;
+		bool m_IsClanTeam;
 
 		int m_AuthLevel;
 		bool m_Afk;

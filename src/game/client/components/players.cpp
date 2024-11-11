@@ -1100,21 +1100,14 @@ void CPlayers::OnRender()
 				}
 			}
 		}
-
 		const int Local = m_pClient->m_Snap.m_LocalClientId;
-
-		const auto IsWar = GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[i].m_aName);
-
-		const auto IsTeam = GameClient()->m_WarList.IsTeamlist(m_pClient->m_aClients[i].m_aName);
-
-		const auto IsHelper = GameClient()->m_WarList.IsHelperlist(m_pClient->m_aClients[i].m_aName);
-
-		const auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(m_pClient->m_aClients[i].m_aClan);
-		
-		const auto UsedDj = aRenderInfo[i].m_GotAirJump = 0;
 
 		if(g_Config.m_ClSweatMode)
 		{
+			
+
+			const auto UsedDj = aRenderInfo[i].m_GotAirJump = 0;
+
 			// change the skin for the player to the ninja
 			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClSweatModeSkinName);
 			if(pSkin != nullptr)
@@ -1145,7 +1138,7 @@ void CPlayers::OnRender()
 						}
 				
 				}
-				if(IsWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				if(m_pClient->m_aClients[i].m_IsWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
 						aRenderInfo[i].m_CustomColoredSkin = 1;
@@ -1155,7 +1148,7 @@ void CPlayers::OnRender()
 					else
 						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 0, 0);
 				}
-				else if(IsTeam && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				else if(m_pClient->m_aClients[i].m_IsTeam && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
 						aRenderInfo[i].m_CustomColoredSkin = 1;
@@ -1165,7 +1158,7 @@ void CPlayers::OnRender()
 					else
 						aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 1, 0);
 				}
-				else if(IsHelper && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				else if(m_pClient->m_aClients[i].m_IsHelper && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
 						aRenderInfo[i].m_CustomColoredSkin = 1;
@@ -1175,7 +1168,7 @@ void CPlayers::OnRender()
 					else
 						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 0);
 				}
-				else if(IsWarClan && g_Config.m_ClAutoClanWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				else if(m_pClient->m_aClients[i].m_IsWarClanmate && g_Config.m_ClAutoClanWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
 						aRenderInfo[i].m_CustomColoredSkin = 1;

@@ -1749,6 +1749,16 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_Predicted.ReadDDNet(pCharacterData);
 
 					m_Teams.SetSolo(Item.m_Id, pClient->m_Solo);
+
+					// Warlist
+					pClient->m_IsWar = m_WarList.IsWar(Item.m_Id);
+					pClient->m_IsHelper = m_WarList.IsHelper(Item.m_Id);
+					pClient->m_IsTeam = m_WarList.IsTeam(Item.m_Id);
+					pClient->m_IsMuted = m_WarList.IsMute(Item.m_Id);
+					pClient->m_IsWarClanmate = m_WarList.IsWarClanmate(Item.m_Id);
+					pClient->m_IsClanWar = m_WarList.IsWarClan(Item.m_Id);
+					pClient->m_IsClanTeam = m_WarList.IsTeamClan(Item.m_Id);
+
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_SPECCHAR)
