@@ -255,6 +255,3 @@ Maybe:
 - multiple replies for tabbed out reply and muted reply
 - show in scoreboard when someones in a menu
 - show when someones looking at the scoreboard
-
-BIG Maybe: 
-- Sex list.
