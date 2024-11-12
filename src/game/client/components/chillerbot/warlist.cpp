@@ -43,7 +43,7 @@ void CWarList::ReloadList()
 		LoadHelperNames("chillerbot/warlist/helper/helper");
 		LoadWarNames("chillerbot/warlist/war/war");
 		LoadTeamNames("chillerbot/warlist/team/team");
-		LoadTempNames("chillerbot/templist/temp/tempwar");
+		LoadTempWarNames("chillerbot/templist/temp/tempwar");
 	}
 
 	for(auto &WarPlayer : m_aWarPlayers)
@@ -174,7 +174,7 @@ int CWarList::LoadTempDir(const char *pDirname, int IsDir, int DirType, void *pU
 		return 0;
 	char aFilename[1024];
 	str_format(aFilename, sizeof(aFilename), "chillerbot/templist/temp/tempwar", pDirname);
-	return pSelf->LoadTempNames(aFilename);
+	return pSelf->LoadTempWarNames(aFilename);
 }
 
 int CWarList::LoadHelperDir(const char *pDirname, int IsDir, int DirType, void *pUser)
@@ -667,7 +667,7 @@ bool CWarList::RemoveMuteNameFromVector(const char *pDir, const char *pName)
 	return Hits > 0;
 }
 
-bool CWarList::RemoveTempNameFromVector(const char *pDir, const char *pName)
+bool CWarList::RemoveTempWarNameFromVector(const char *pDir, const char *pName)
 {
 	int Hits = 0;
 	m_vTempWarlist.erase(
@@ -881,7 +881,7 @@ int CWarList::LoadMuteNames(const char *pDir)
 	return 0;
 }
 
-bool CWarList::WriteTempNames(const char *pDir)
+bool CWarList::WriteTempWarNames(const char *pDir)
 {
 	if(!Storage())
 		return false;
@@ -908,7 +908,7 @@ bool CWarList::WriteTempNames(const char *pDir)
 	return true;
 }
 
-int CWarList::LoadTempNames(const char *pDir)
+int CWarList::LoadTempWarNames(const char *pDir)
 {
 	if(!Storage())
 	{
@@ -1601,6 +1601,10 @@ bool CWarList::AddTempWar(const char *pFolder, const char *pName)
 	ReloadList();
 	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
 	return true;
+
+	RemoveWarNoMsg(pName);
+	RemoveHelperNoMsg(pName);
+	RemoveTeamNoMsg(pName);
 }
 
 bool CWarList::AddHelper(const char *pFolder, const char *pName)

@@ -114,9 +114,9 @@ class CWarList : public CComponent
 
 	void GetTemplistPathByNeedle(const char *pSearch, int Size, char *pPath);
 	void GetTemplistPathByName(const char *pName, int Size, char *pPath);
-	bool RemoveTempNameFromVector(const char *pDir, const char *pName);
-	bool WriteTempNames(const char *pDir);
-	int LoadTempNames(const char *pDir);
+	bool RemoveTempWarNameFromVector(const char *pDir, const char *pName);
+	bool WriteTempWarNames(const char *pDir);
+	int LoadTempWarNames(const char *pDir);
 	void LoadTempList();
 	int m_TempDirs;
 	static int LoadTempDir(const char *pDirname, int IsDir, int DirType, void *pUser);
@@ -226,6 +226,7 @@ public:
 	void RemoveHelperNoMsg(const char *pName);
 	void RemoveWarNoMsg(const char *pName);
 	void RemoveTeamNoMsg(const char *pName);
+	void RemoveTempWarNoMsg(const char *pName);
 
 	void AddSimpleWar(const char *pName);
 	void AddSimpleTeam(const char *pName);

@@ -73,6 +73,7 @@ void CWarList::AddSimpleHelper(const char *pName)
 	AddHelper("helper", pName);
 	RemoveTeamNoMsg(pName);
 	RemoveWarNoMsg(pName);
+	RemoveWarNoMsg(pName);
 }
 
 void CWarList::AddSimpleWar(const char *pName)
@@ -96,6 +97,7 @@ void CWarList::AddSimpleWar(const char *pName)
 	AddWar("war", pName);
 	RemoveTeamNoMsg(pName);
 	RemoveHelperNoMsg(pName);
+	RemoveWarNoMsg(pName);
 }
 
 void CWarList::AddSimpleTeam(const char *pName)
@@ -118,19 +120,20 @@ void CWarList::AddSimpleTeam(const char *pName)
 
 	AddTeam("team", pName);
 	RemoveWarNoMsg(pName);
+	RemoveTempWarNoMsg(pName);
 	RemoveHelperNoMsg(pName);
 }
 
 void CWarList::RemoveSimpleTempWar(const char *pName)
 {
 	char aBuf[512];
-	if(!RemoveTempNameFromVector("chillerbot/templist/temp/tempwar", pName))
+	if(!RemoveTempWarNameFromVector("chillerbot/templist/temp/tempwar", pName))
 	{
 		str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the temp war list", pName);
 		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
 		return;
 	}
-	if(!WriteTempNames("chillerbot/templist/temp/tempwar"))
+	if(!WriteTempWarNames("chillerbot/templist/temp/tempwar"))
 	{
 		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to write temp war names");
 	}
@@ -444,6 +447,18 @@ void CWarList::RemoveTeamNoMsg(const char *pName)
 		return;
 	}
 	if(!WriteTeamNames("chillerbot/warlist/team/team"))
+	{
+	}
+	ReloadList();
+}
+
+void CWarList::RemoveTempWarNoMsg(const char *pName)
+{
+	if(!RemoveTempWarNameFromVector("chillerbot/templist/temp/tempwar", pName))
+	{
+		return;
+	}
+	if(!WriteTempWarNames("chillerbot/templist/temp/tempwar"))
 	{
 	}
 	ReloadList();

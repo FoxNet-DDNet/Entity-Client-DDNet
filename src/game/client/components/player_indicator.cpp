@@ -53,76 +53,65 @@ void CPlayerIndicator::OnRender()
 		{
 			if(!m_pClient->m_Snap.m_apPlayerInfos[i] || i == m_pClient->m_Snap.m_LocalClientId)
 				continue;
-			float Zoom = Client()->ChecksumData()->m_Zoom;
+
 			CGameClient::CClientData OtherTee = m_pClient->m_aClients[i];
 			CCharacterCore *pOtherCharacter = &m_pClient->m_aClients[i].m_Predicted;
-			if(OtherTee.m_Team == m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Team && !OtherTee.m_Spec)
+			if(
+				OtherTee.m_Team == m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Team &&
+				!OtherTee.m_Spec &&
+				m_pClient->m_Snap.m_aCharacters[i].m_Active)
 			{
-					if(g_Config.m_ClPlayerIndicatorFreeze && !(OtherTee.m_FreezeEnd > 0 || OtherTee.m_DeepFrozen))
-						continue;
+				float Zoom = Client()->ChecksumData()->m_Zoom;
+				if(g_Config.m_ClPlayerIndicatorFreeze && !(OtherTee.m_FreezeEnd > 0 || OtherTee.m_DeepFrozen))
+					continue;
 
-					vec2 norm = NormalizedDirection(m_pClient->m_aClients[i].m_RenderPos, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_RenderPos) * (-1);
+				vec2 norm = NormalizedDirection(m_pClient->m_aClients[i].m_RenderPos, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_RenderPos) * (-1);
 
-					float Offset = g_Config.m_ClIndicatorOffset;
-					if(g_Config.m_ClIndicatorVariableDistance)
+				float Offset = g_Config.m_ClIndicatorOffset;
+				if(g_Config.m_ClIndicatorVariableDistance)
+				{
+					Offset = mix((float)g_Config.m_ClIndicatorOffset, (float)g_Config.m_ClIndicatorOffsetMax,
+						std::min(DistanceBetweenTwoPoints(Position, OtherTee.m_RenderPos) / g_Config.m_ClIndicatorMaxDistance, 1.0f));
+				}
+
+				vec2 IndicatorPos(norm.x * Offset + Position.x, norm.y * Offset + Position.y);
+				CTeeRenderInfo TeeInfo = OtherTee.m_RenderInfo;
+				float Alpha = g_Config.m_ClIndicatorOpacity / 100.0f;
+				if(OtherTee.m_FreezeEnd > 0 || OtherTee.m_DeepFrozen)
+				{
+					// check if player is frozen or is getting saved
+					if(pOtherCharacter->m_IsInFreeze == 0)
 					{
-						Offset = mix((float)g_Config.m_ClIndicatorOffset, (float)g_Config.m_ClIndicatorOffsetMax,
-							std::min(DistanceBetweenTwoPoints(Position, OtherTee.m_RenderPos) / g_Config.m_ClIndicatorMaxDistance, 1.0f));
-					}
-
-					vec2 IndicatorPos(norm.x * Offset + Position.x, norm.y * Offset + Position.y);
-					CTeeRenderInfo TeeInfo = OtherTee.m_RenderInfo;
-					float Alpha = g_Config.m_ClIndicatorOpacity / 100.0f;
-					if(OtherTee.m_FreezeEnd > 0 || OtherTee.m_DeepFrozen)
-					{
-						// check if player is frozen or is getting saved
-						if(pOtherCharacter->m_IsInFreeze == 0)
-						{
-							// player is on the way to get free again
-							col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClIndicatorSaved));
-						}
-						else
-						{
-							// player is frozen
-							col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClIndicatorFreeze));
-						}
-						if(g_Config.m_ClIndicatorTees)
-						{
-							TeeInfo.m_ColorBody.r *= 0.4;
-							TeeInfo.m_ColorBody.g *= 0.4;
-							TeeInfo.m_ColorBody.b *= 0.4;
-							TeeInfo.m_ColorFeet.r *= 0.4;
-							TeeInfo.m_ColorFeet.g *= 0.4;
-							TeeInfo.m_ColorFeet.b *= 0.4;
-							Alpha *= 0.8;
-						}
+						// player is on the way to get free again
+						col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClIndicatorSaved));
 					}
 					else
 					{
-						col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClIndicatorAlive));
+						// player is frozen
+						col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClIndicatorFreeze));
 					}
-					col.a = Alpha;
-
-					TeeInfo.m_Size = g_Config.m_ClIndicatorRadius * 4.f;
-
-					if(g_Config.m_ClIndicatorHideOnScreen)
+					if(g_Config.m_ClIndicatorTees)
 					{
-						if((OtherTee.m_RenderPos.x < Position.x - Zoom * 720) || (OtherTee.m_RenderPos.x > Position.x + Zoom * 720) || (OtherTee.m_RenderPos.y > Position.y + Zoom * 400) || (OtherTee.m_RenderPos.y < Position.y - Zoom * 400))
-						{
-							if(g_Config.m_ClIndicatorTees)
-							{
-								RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, OtherTee.m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, col.a);
-							}
-							else
-							{
-								Graphics()->QuadsBegin();
-								Graphics()->SetColor(col);
-								Graphics()->DrawCircle(IndicatorPos.x, IndicatorPos.y, g_Config.m_ClIndicatorRadius, 16);
-								Graphics()->QuadsEnd();
-							}
-						}
+						TeeInfo.m_ColorBody.r *= 0.4;
+						TeeInfo.m_ColorBody.g *= 0.4;
+						TeeInfo.m_ColorBody.b *= 0.4;
+						TeeInfo.m_ColorFeet.r *= 0.4;
+						TeeInfo.m_ColorFeet.g *= 0.4;
+						TeeInfo.m_ColorFeet.b *= 0.4;
+						Alpha *= 0.8;
 					}
-					else
+				}
+				else
+				{
+					col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClIndicatorAlive));
+				}
+				col.a = Alpha;
+
+				TeeInfo.m_Size = g_Config.m_ClIndicatorRadius * 4.f;
+
+				if(g_Config.m_ClIndicatorHideOnScreen)
+				{
+					if((OtherTee.m_RenderPos.x < Position.x - Zoom * 720) || (OtherTee.m_RenderPos.x > Position.x + Zoom * 720) || (OtherTee.m_RenderPos.y > Position.y + Zoom * 400) || (OtherTee.m_RenderPos.y < Position.y - Zoom * 400))
 					{
 						if(g_Config.m_ClIndicatorTees)
 						{
@@ -136,6 +125,21 @@ void CPlayerIndicator::OnRender()
 							Graphics()->QuadsEnd();
 						}
 					}
+				}
+				else
+				{
+					if(g_Config.m_ClIndicatorTees)
+					{
+						RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, OtherTee.m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, col.a);
+					}
+					else
+					{
+						Graphics()->QuadsBegin();
+						Graphics()->SetColor(col);
+						Graphics()->DrawCircle(IndicatorPos.x, IndicatorPos.y, g_Config.m_ClIndicatorRadius, 16);
+						Graphics()->QuadsEnd();
+					}
+				}
 			}
 		}
 	}
