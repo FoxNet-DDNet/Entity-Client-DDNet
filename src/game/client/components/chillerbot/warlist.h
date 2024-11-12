@@ -120,8 +120,6 @@ class CWarList : public CComponent
 	int m_TempDirs;
 	static int LoadTempDir(const char *pDirname, int IsDir, int DirType, void *pUser);
 
-
-
 	static int LoadWarDir(const char *pDirname, int IsDir, int DirType, void *pUser);
 	static int LoadTeamDir(const char *pDirname, int IsDir, int DirType, void *pUser);
 	static int LoadTraitorDir(const char *pDirname, int IsDir, int DirType, void *pUser);
@@ -157,15 +155,16 @@ class CWarList : public CComponent
 	int LoadTeamClanNames(const char *pFilename);
 	int LoadWarClanPrefixNames(const char *pFilename);
 
-
 	virtual void OnRender() override;
 	virtual void OnConsoleInit() override;
-	
+
 	virtual void OnInit() override;
+
+	static void ConWars(IConsole::IResult *pResult, void *pUserData);
+	void Wars();
 
 	static void ConRemoveTempWar(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddTempWar(IConsole::IResult *pResult, void *pUserData);
-
 
 	static void ConRemoveMute(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
@@ -223,11 +222,9 @@ public:
 
 	bool OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *pCmd, int NumArgs, const char **ppArgs, const char *pRawArgLine);
 
-
 	void RemoveHelperNoMsg(const char *pName);
 	void RemoveWarNoMsg(const char *pName);
 	void RemoveTeamNoMsg(const char *pName);
-
 
 	void AddSimpleWar(const char *pName);
 	void AddSimpleTeam(const char *pName);

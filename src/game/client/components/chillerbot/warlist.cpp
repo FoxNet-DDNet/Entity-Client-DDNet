@@ -61,9 +61,7 @@ void CWarList::GetTemplistPathByNeedle(const char *pSearch, int Size, char *pPat
 	for(auto &Entry : m_vTemplist)
 		if(str_find(Entry.first.c_str(), pSearch))
 			str_copy(pPath, Entry.second.c_str(), Size);
-
 }
-
 
 void CWarList::GetHelperlistPathByNeedle(const char *pSearch, int Size, char *pPath)
 {
@@ -243,7 +241,6 @@ void CWarList::LoadTempList()
 {
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "chillerbot/templist/temp", LoadHelperDir, this);
 }
-
 
 void CWarList::LoadHelperList()
 {
@@ -691,7 +688,6 @@ bool CWarList::RemoveTempNameFromVector(const char *pDir, const char *pName)
 	return Hits > 0;
 }
 
-
 bool CWarList::RemoveHelperNameFromVector(const char *pDir, const char *pName)
 {
 	int Hits = 0;
@@ -733,8 +729,6 @@ bool CWarList::RemoveTeamNameFromVector(const char *pDir, const char *pName)
 		m_vTeamlist.end());
 	return Hits > 0;
 }
-
-
 
 bool CWarList::RemoveWarNameFromVector(const char *pDir, const char *pName)
 {
@@ -811,7 +805,7 @@ bool CWarList::WriteTeamNames(const char *pDir)
 	return true;
 }
 
-//MuteStuff
+// MuteStuff
 
 bool CWarList::WriteMuteNames(const char *pDir)
 {
@@ -1036,7 +1030,6 @@ int CWarList::LoadHelperNames(const char *pDir)
 
 	return 0;
 }
-
 
 int CWarList::LoadWarNames(const char *pDir)
 {
@@ -1336,7 +1329,6 @@ void CWarList::OnConsoleInit()
 	// Lots of love to chillerbot! But please, if you read this, make this be a default thing
 	// and also add silent commands with "." cause im too stupid! pls thx c:
 
-	
 	// Add Mute
 	Console()->Register("addhelper", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddHelper, this, "Adds a Name to The Helperlist");
 	Console()->Register("add_helper", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddHelper, this, "Adds a Name to The Helperlist");
@@ -1371,7 +1363,7 @@ void CWarList::OnConsoleInit()
 	Console()->Register("removeteam", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConRemoveTeam, this, "removes a Name from the Teamlist");
 
 	// Add War
-	Console()->Register("addwar", "s[name] ?s[clan]", CFGFLAG_CLIENT,ConAddWar, this, "Adds an Enemy to The Warlist");
+	Console()->Register("addwar", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddWar, this, "Adds an Enemy to The Warlist");
 	Console()->Register("add_war", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddWar, this, "Adds an Enemy to The Warlist");
 	Console()->Register("war", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddWar, this, "Adds an Enemy to The Warlist");
 
@@ -1391,8 +1383,43 @@ void CWarList::OnConsoleInit()
 	Console()->Register("del_temp_war", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConRemoveTempWar, this, "Removes an Enemy From The Warlist");
 	Console()->Register("removetempwar", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConRemoveTempWar, this, "Removes an Enemy From The Warlist");
 
+	Console()->Register("wars", "", CFGFLAG_CLIENT, ConWars, this, "wars");
+}
 
-	
+void CWarList::Wars()
+{
+	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
+	if(pConsole)
+	{
+		char aEnemyList[256]; // 255 max msg len
+		aEnemyList[0] = '\0';
+		int NumEnemies = 0;
+		for(auto &Client : GameClient()->m_aClients)
+		{
+			if(!Client.m_Active)
+				continue;
+			if(!GameClient()->m_WarList.IsWarlist(Client.m_aName) &&
+				!GameClient()->m_WarList.IsWarClanlist(Client.m_aClan))
+				continue;
+
+			NumEnemies++;
+			if(aEnemyList[0])
+			{
+				str_append(aEnemyList, ", ", sizeof(aEnemyList));
+			}
+			str_append(aEnemyList, Client.m_aName, sizeof(aEnemyList));
+		}
+		char aBuf[1024];
+		if(NumEnemies)
+			str_format(aBuf, sizeof(aBuf), "[%d Enemies]: %s", NumEnemies, aEnemyList);
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", aBuf, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+	}
+}
+
+void CWarList::ConWars(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	pSelf->Wars();
 }
 
 void CWarList::ConAddTempWar(IConsole::IResult *pResult, void *pUserData)
@@ -1407,7 +1434,6 @@ void CWarList::ConRemoveTempWar(IConsole::IResult *pResult, void *pUserData)
 	pSelf->RemoveSimpleTempWar(pResult->GetString(0));
 }
 
-
 void CWarList::ConAddHelper(IConsole::IResult *pResult, void *pUserData)
 {
 	CWarList *pSelf = (CWarList *)pUserData;
@@ -1419,9 +1445,6 @@ void CWarList::ConRemoveHelper(IConsole::IResult *pResult, void *pUserData)
 	CWarList *pSelf = (CWarList *)pUserData;
 	pSelf->RemoveSimpleHelper(pResult->GetString(0));
 }
-
-
-
 
 void CWarList::ConAddMute(IConsole::IResult *pResult, void *pUserData)
 {
@@ -1467,7 +1490,6 @@ void CWarList::ConchainWarList(IConsole::IResult *pResult, void *pUserData, ICon
 	{
 		pSelf->ReloadList();
 	}
-
 }
 
 void CWarList::OnRender()
@@ -1524,7 +1546,7 @@ bool CWarList::AddWar(const char *pFolder, const char *pName)
 		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
 		return false;
 	}
-	
+
 	io_write(File, pName, str_length(pName));
 	io_write_newline(File);
 	io_close(File);
@@ -1580,7 +1602,6 @@ bool CWarList::AddTempWar(const char *pFolder, const char *pName)
 	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
 	return true;
 }
-
 
 bool CWarList::AddHelper(const char *pFolder, const char *pName)
 {

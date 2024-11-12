@@ -252,6 +252,8 @@ void CWarList::Clone(const char *pName)
 				{
 					// save skins then load new ones
 
+					if(!g_Config.m_ClCopyingSkin)
+					{
 					str_copy(g_Config.m_ClSavedPlayerSkin, g_Config.m_ClPlayerSkin, sizeof(g_Config.m_ClSavedPlayerSkin));
 					str_copy(g_Config.m_ClSavedName, g_Config.m_PlayerName, sizeof(g_Config.m_ClSavedName));
 					str_copy(g_Config.m_ClSavedClan, g_Config.m_PlayerClan, sizeof(g_Config.m_ClSavedClan));
@@ -260,9 +262,16 @@ void CWarList::Clone(const char *pName)
 					g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 					g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
 					g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
+					}
+					else
+					{
+						str_copy(g_Config.m_ClSavedName, g_Config.m_PlayerName, sizeof(g_Config.m_ClSavedName));
+						str_copy(g_Config.m_ClSavedClan, g_Config.m_PlayerClan, sizeof(g_Config.m_ClSavedClan));
 
-
+						g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
+					}
 					g_Config.m_ClCloningPerson = 1;
+					g_Config.m_ClCopyingSkin = 1;
 				}
 
 				char aBuf[2048] = "Main Player Cloning: ";
@@ -295,20 +304,26 @@ void CWarList::Clone(const char *pName)
 				if(g_Config.m_ClCloningPersonDummy == 0)
 				{
 					// save skins then load new ones
+					if(!g_Config.m_ClCopyingSkin)
+					{
+						str_copy(g_Config.m_ClSavedDummySkin, g_Config.m_ClDummySkin, sizeof(g_Config.m_ClSavedDummySkin));
+						str_copy(g_Config.m_ClSavedDummyName, g_Config.m_ClDummyName, sizeof(g_Config.m_ClSavedDummyName));
+						str_copy(g_Config.m_ClSavedDummyClan, g_Config.m_ClDummyClan, sizeof(g_Config.m_ClSavedDummyClan));
 
-					str_copy(g_Config.m_ClSavedDummySkin, g_Config.m_ClDummySkin, sizeof(g_Config.m_ClSavedDummySkin));
-					str_copy(g_Config.m_ClSavedDummyName, g_Config.m_ClDummyName, sizeof(g_Config.m_ClSavedDummyName));
-					str_copy(g_Config.m_ClSavedDummyClan, g_Config.m_ClDummyClan, sizeof(g_Config.m_ClSavedDummyClan));
+						g_Config.m_ClSavedDummyCountry = g_Config.m_ClDummyCountry;
+						g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
+						g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
+						g_Config.m_ClSavedDummyColorFeet = g_Config.m_ClDummyColorFeet;
+					}
+					else
+					{
+						str_copy(g_Config.m_ClSavedDummyName, g_Config.m_ClDummyName, sizeof(g_Config.m_ClSavedDummyName));
+						str_copy(g_Config.m_ClSavedDummyClan, g_Config.m_ClDummyClan, sizeof(g_Config.m_ClSavedDummyClan));
 
-					g_Config.m_ClSavedDummyCountry = g_Config.m_ClDummyCountry;
-					g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
-					g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
-					g_Config.m_ClSavedDummyColorFeet = g_Config.m_ClDummyColorFeet;
-
-
-
-
+						g_Config.m_ClSavedDummyCountry = g_Config.m_ClDummyCountry;
+					}
 					g_Config.m_ClCloningPersonDummy = 1;
+					g_Config.m_ClCopyingSkinDummy = 1;
 				}
 
 				char aBuf[2048] = "Dummy Player Cloning: ";
@@ -420,7 +435,7 @@ void CWarList::RemoveSimpleTeam(const char *pName)
 	ReloadList();
 }
 
-// Send no message if removing an name from the list
+// Send no message if removing a name from the list
 
 void CWarList::RemoveTeamNoMsg(const char *pName)
 {
