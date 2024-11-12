@@ -78,6 +78,10 @@
 #include "prediction/entities/character.h"
 #include "prediction/entities/projectile.h"
 
+// Aiodob
+
+#include "components/aiodob.h"
+
 // Tater
 #include "components/player_indicator.h"
 #include "components/verify.h"
@@ -169,6 +173,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Tooltips,
 					      &CMenus::m_Binder,
 					      &m_GameConsole,
+					      &m_Aiodob,
 					      /* <<< chillerbot-ux */
 					      &m_ChillerBotUX,
 					      &m_ChatHelper,
@@ -1758,6 +1763,8 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_IsWarClanmate = m_WarList.IsWarClanmate(Item.m_Id);
 					pClient->m_IsClanWar = m_WarList.IsWarClan(Item.m_Id);
 					pClient->m_IsClanTeam = m_WarList.IsTeamClan(Item.m_Id);
+
+					pClient->m_IsTempWar = m_WarList.IsTempWar(Item.m_Id);
 
 				}
 			}

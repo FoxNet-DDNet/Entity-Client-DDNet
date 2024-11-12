@@ -28,7 +28,7 @@ void CWarList::ReloadList()
 	m_WarDirs = 0;
 	m_TeamDirs = 0;
 	m_TraitorDirs = 0;
-	m_vTemplist.clear();
+	m_vTempWarlist.clear();
 	m_vHelperlist.clear();
 	m_vMutelist.clear();
 	m_vWarlist.clear();
@@ -58,7 +58,7 @@ void CWarList::ReloadList()
 void CWarList::GetTemplistPathByNeedle(const char *pSearch, int Size, char *pPath)
 {
 	pPath[0] = '\0';
-	for(auto &Entry : m_vTemplist)
+	for(auto &Entry : m_vTempWarlist)
 		if(str_find(Entry.first.c_str(), pSearch))
 			str_copy(pPath, Entry.second.c_str(), Size);
 }
@@ -130,7 +130,7 @@ void CWarList::GetHelperlistPathByName(const char *pName, int Size, char *pPath)
 void CWarList::GetTemplistPathByName(const char *pName, int Size, char *pPath)
 {
 	pPath[0] = '\0';
-	for(auto &Entry : m_vTemplist)
+	for(auto &Entry : m_vTempWarlist)
 		if(std::string(pName) == Entry.first)
 			str_copy(pPath, Entry.second.c_str(), Size);
 }
@@ -297,9 +297,9 @@ bool CWarList::IsHelperlist(const char *pName)
 	return std::any_of(std::begin(m_vHelperlist), std::end(m_vHelperlist), [&pName](const std::pair<std::string, std::string> &Entry) { return std::string(pName) == Entry.first; });
 }
 
-bool CWarList::IsTemplist(const char *pName)
+bool CWarList::IsTempWarlist(const char *pName)
 {
-	return std::any_of(std::begin(m_vTemplist), std::end(m_vTemplist), [&pName](const std::pair<std::string, std::string> &Entry) { return std::string(pName) == Entry.first; });
+	return std::any_of(std::begin(m_vTempWarlist), std::end(m_vTempWarlist), [&pName](const std::pair<std::string, std::string> &Entry) { return std::string(pName) == Entry.first; });
 }
 
 bool CWarList::IsWarlist(const char *pName)
@@ -425,7 +425,7 @@ bool CWarList::IsMute(int ClientId)
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
@@ -446,7 +446,7 @@ bool CWarList::IsHelper(int ClientId)
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
@@ -468,7 +468,7 @@ bool CWarList::IsWar(int ClientId)
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
@@ -490,7 +490,7 @@ bool CWarList::IsTeam(int ClientId)
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
@@ -512,7 +512,7 @@ bool CWarList::IsTraitor(int ClientId)
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
@@ -536,7 +536,7 @@ bool CWarList::IsWarClan(int ClientId)
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
@@ -560,7 +560,7 @@ bool CWarList::IsTeamClan(int ClientId)
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
@@ -584,7 +584,7 @@ bool CWarList::IsWarClanmate(int ClientId)
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
@@ -596,19 +596,17 @@ bool CWarList::IsWarClanmate(int ClientId)
 	return false;
 }
 
-bool CWarList::IsTemp(int ClientId)
+bool CWarList::IsTempWar(int ClientId)
 {
 	const char *pName = m_pClient->m_aClients[ClientId].m_aName;
 	const char *pClan = m_pClient->m_aClients[ClientId].m_aClan;
-	if(!pClan[0])
-		return false;
-	if(!str_comp(pClan, m_aWarPlayers[ClientId].m_aClan))
+	if(!str_comp(pName, m_aWarPlayers[ClientId].m_aName))
 	{
 		return m_aWarPlayers[ClientId].m_IsTempWar;
 	}
 	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
 	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTemplist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
@@ -626,7 +624,9 @@ void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor)
 	if(!g_Config.m_ClWarList)
 		return;
 
-	if(IsWar(ClientId) || IsTemp(ClientId) && g_Config.m_ClDoEnemyNameColor)
+	if(IsWar(ClientId) && g_Config.m_ClDoEnemyNameColor)
+		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+	else if(IsTempWar(ClientId) && g_Config.m_ClDoEnemyNameColor)
 		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
 	else if(IsTeam(ClientId) && g_Config.m_ClDoTeammateNameColor)
 		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
@@ -670,8 +670,8 @@ bool CWarList::RemoveMuteNameFromVector(const char *pDir, const char *pName)
 bool CWarList::RemoveTempNameFromVector(const char *pDir, const char *pName)
 {
 	int Hits = 0;
-	m_vTemplist.erase(
-		std::remove_if(m_vTemplist.begin(), m_vTemplist.end(),
+	m_vTempWarlist.erase(
+		std::remove_if(m_vTempWarlist.begin(), m_vTempWarlist.end(),
 			[pName, pDir, &Hits](const std::pair<std::string, std::string> &Entry) {
 				// keep the same name in other directories
 				if(str_comp(pDir, Entry.second.c_str()))
@@ -684,7 +684,7 @@ bool CWarList::RemoveTempNameFromVector(const char *pDir, const char *pName)
 				}
 				return false;
 			}),
-		m_vTemplist.end());
+		m_vTempWarlist.end());
 	return Hits > 0;
 }
 
@@ -894,7 +894,7 @@ bool CWarList::WriteTempNames(const char *pDir)
 		return false;
 	}
 
-	for(auto &Entry : m_vTemplist)
+	for(auto &Entry : m_vTempWarlist)
 	{
 		// only write names from that directory
 		if(str_comp(Entry.second.c_str(), pDir))
@@ -949,7 +949,7 @@ int CWarList::LoadTempNames(const char *pDir)
 		std::pair<std::string, std::string> Entry;
 		Entry.first = std::string(pLine);
 		Entry.second = std::string(pDir);
-		m_vTemplist.emplace_back(Entry);
+		m_vTempWarlist.emplace_back(Entry);
 	}
 
 	return 0;

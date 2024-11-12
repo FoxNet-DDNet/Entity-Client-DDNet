@@ -521,7 +521,7 @@ void CSpectator::OnRender()
 			}
 		}
 
-		auto IsWar = GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName) || GameClient()->m_WarList.IsTemplist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName);
+		auto IsWar = GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName) || GameClient()->m_WarList.IsTempWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName);
 
 		auto IsTeam = GameClient()->m_WarList.IsTeamlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName);
 

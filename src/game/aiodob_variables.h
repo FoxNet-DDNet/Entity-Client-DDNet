@@ -269,7 +269,7 @@ MACRO_CONFIG_STR(ClSavedDummySkin, saved_dummy_skin, 24, "default", CFGFLAG_CLIE
 
 
 
-MACRO_CONFIG_STR(ClTest, ac_test, 32, "test", CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
+MACRO_CONFIG_INT(ClTest, ac_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 
 
 // In Spec Menu Prefixes

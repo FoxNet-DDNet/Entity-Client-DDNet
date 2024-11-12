@@ -539,7 +539,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 			const CGameClient::CClientData &ClientData = GameClient()->m_aClients[pInfo->m_ClientId];
 
-			auto IsWar = GameClient()->m_WarList.IsWarlist(ClientData.m_aName) || GameClient()->m_WarList.IsTemplist(ClientData.m_aName);
+			auto IsWar = GameClient()->m_WarList.IsWarlist(ClientData.m_aName) || GameClient()->m_WarList.IsTempWarlist(ClientData.m_aName);
 			auto IsTeam = GameClient()->m_WarList.IsTeamlist(ClientData.m_aName);
 			auto IsHelper = GameClient()->m_WarList.IsHelperlist(ClientData.m_aName);
 			auto IsMuted = GameClient()->m_WarList.IsMutelist(ClientData.m_aName);

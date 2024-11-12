@@ -2331,6 +2331,8 @@ if(CLIENT)
     animstate.h
     component.cpp
     component.h
+    components/aiodob.cpp
+    components/aiodob.h
     components/background.cpp
     components/background.h
     components/binds.cpp

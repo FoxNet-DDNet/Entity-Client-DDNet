@@ -41,7 +41,9 @@ class CChat : public CComponent
 		char m_aText[MAX_LINE_LENGTH];
 		bool m_Friend;
 		bool m_Paused;
+
 		bool m_IsWar;
+		bool m_IsTempWar;
 		bool m_IsHelper;
 		bool m_IsWarClan;
 		bool m_IsTeam;

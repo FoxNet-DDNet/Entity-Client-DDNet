@@ -60,6 +60,10 @@
 #include "components/tooltips.h"
 #include "components/voting.h"
 
+// Aiodob
+
+#include "components/aiodob.h"
+
 // Tater
 
 #include "components/bindwheel.h"
@@ -182,6 +186,10 @@ public:
 	CGhost m_Ghost;
 
 	CTooltips m_Tooltips;	
+
+	// Aiodob
+
+	CAiodob m_Aiodob;
 
 	// Tater	
 
@@ -455,6 +463,7 @@ public:
 		bool m_IsWarClanmate;
 		bool m_IsClanWar;
 		bool m_IsClanTeam;
+		bool m_IsTempWar;
 
 		int m_AuthLevel;
 		bool m_Afk;

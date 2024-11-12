@@ -59,9 +59,10 @@ class CWarList : public CComponent
 
 		pair<PlayerName, FilePath>
 	*/
-	std::vector<std::pair<std::string, std::string>> m_vTemplist;
+	std::vector<std::pair<std::string, std::string>> m_vTempWarlist;
 	/*
-		m_vTemplist
+		
+
 
 		pair<PlayerName, FilePath>
 	*/
@@ -255,8 +256,8 @@ public:
 	bool IsHelper(int ClientId);
 	bool IsHelperlist(const char *pName);
 
-	bool IsTemp(int ClientId);
-	bool IsTemplist(const char *pName);
+	bool IsTempWar(int ClientId);
+	bool IsTempWarlist(const char *pName);
 
 	bool IsWar(const char *pName, const char *pClan);
 	bool IsWarlist(const char *pName);
