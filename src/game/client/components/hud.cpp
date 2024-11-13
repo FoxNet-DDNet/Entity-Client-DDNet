@@ -598,7 +598,7 @@ void CHud::RenderCursor()
 		return;
 
 	RenderTools()->MapScreenToInterface(m_pClient->m_Camera.m_Center.x, m_pClient->m_Camera.m_Center.y);
-	int CurWeapon = maximum(0, m_pClient->m_Snap.m_pLocalCharacter->m_Weapon % NUM_WEAPONS);
+	int CurWeapon = 1;
 
 	// render cursor
 	if (m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW)
