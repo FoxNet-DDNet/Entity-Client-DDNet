@@ -34,7 +34,6 @@
 #include <base/color.h>
 #include <base/math.h>
 
-
 void CPlayers::RenderHand(const CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset, float Alpha)
 {
 	if(pInfo->m_aSixup[g_Config.m_ClDummy].m_aTextures[protocol7::SKINPART_BODY].IsValid())
@@ -711,6 +710,7 @@ void CPlayers::RenderPlayer(
 		IsRainbowFeetOthers = false;
 	}
 	// draw gun
+	if(Player.m_Weapon >= 0)
 	{
 		if(!(RenderInfo.m_TeeRenderFlags & TEE_NO_WEAPON))
 		{

@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_COMPONENTS_CHAT_H
 #define GAME_CLIENT_COMPONENTS_CHAT_H
@@ -49,6 +49,7 @@ class CChat : public CComponent
 		bool m_IsTeam;
 		bool m_IsMute;
 		bool m_Highlighted;
+		std::optional<ColorRGBA> m_CustomColor;
 
 		STextContainerIndex m_TextContainerIndex;
 		int m_QuadContainerIndex;
