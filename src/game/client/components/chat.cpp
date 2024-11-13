@@ -852,6 +852,16 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		// Set custom color
 		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageClientColor));
 	}
+	else if(pCurrentLine->m_ClientId == -3)
+	{
+		if(g_Config.m_ClChatClientPrefix)
+			str_copy(pCurrentLine->m_aName, g_Config.m_ClClientPrefix);
+		else
+			str_copy(pCurrentLine->m_aName, "— ");
+		str_copy(pCurrentLine->m_aText, pLine);
+		// Set custom color
+		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarlistMessageColor));
+	}
 	else
 	{
 		auto &LineAuthor = m_pClient->m_aClients[pCurrentLine->m_ClientId];
@@ -995,7 +1005,11 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						//	if player name is friend
 
 						//	if(GameClient()->Friends()->IsFriend(PlayerName, "\0", true))
-						//		m_pClient->m_Chat.AddLine(-2, 0, PlayerName);
+						//		
+						// 
+						// 
+						// 
+						// , 0, PlayerName);
 
 						int NameToJoin = str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName);
 						int Team0 = str_comp(Team, "0");
@@ -1007,7 +1021,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 							char Joined[2048] = "Auto Joined ";
 							str_append(Joined, PlayerName);
 
-							m_pClient->m_Chat.AddLine(-2, 0, Joined);
+							m_pClient->m_Chat.AddLine(-3, 0, Joined);
 						}
 					}
 				}
@@ -1037,7 +1051,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						if(NameToJoin == 0)
 						{
 							
-							m_pClient->m_Chat.AddLine(-2, 0, g_Config.m_ClAutoNotifyMsg);
+							m_pClient->m_Chat.AddLine(-3, 0, g_Config.m_ClAutoNotifyMsg);
 
 							if(g_Config.m_ClAutoNotifySound)
 							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 1.0f);

@@ -1543,7 +1543,7 @@ bool CWarList::AddWar(const char *pFolder, const char *pName)
 	if(!File)
 	{
 		str_format(aBuf, sizeof(aBuf), "failed to open war list file '%s'", aFilename);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return false;
 	}
 
@@ -1553,7 +1553,7 @@ bool CWarList::AddWar(const char *pFolder, const char *pName)
 
 	str_format(aBuf, sizeof(aBuf), "Added '%s' to the folder %s", pName, pFolder);
 	ReloadList();
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	return true;
 }
 
@@ -1566,7 +1566,7 @@ bool CWarList::AddTeam(const char *pFolder, const char *pName)
 	if(!File)
 	{
 		str_format(aBuf, sizeof(aBuf), "failed to open war list file '%s'", aFilename);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return false;
 	}
 
@@ -1576,7 +1576,7 @@ bool CWarList::AddTeam(const char *pFolder, const char *pName)
 
 	str_format(aBuf, sizeof(aBuf), "Added '%s' to the folder %s", pName, pFolder);
 	ReloadList();
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	return true;
 }
 
@@ -1589,7 +1589,7 @@ bool CWarList::AddTempWar(const char *pFolder, const char *pName)
 	if(!File)
 	{
 		str_format(aBuf, sizeof(aBuf), "failed to open temp war list file '%s'", aFilename);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return false;
 	}
 
@@ -1599,7 +1599,7 @@ bool CWarList::AddTempWar(const char *pFolder, const char *pName)
 
 	str_format(aBuf, sizeof(aBuf), "Added '%s' to the folder %s", pName, pFolder);
 	ReloadList();
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	return true;
 
 	RemoveWarNoMsg(pName);
@@ -1616,7 +1616,7 @@ bool CWarList::AddHelper(const char *pFolder, const char *pName)
 	if(!File)
 	{
 		str_format(aBuf, sizeof(aBuf), "failed to open helper list file '%s'", aFilename);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return false;
 	}
 
@@ -1626,7 +1626,7 @@ bool CWarList::AddHelper(const char *pFolder, const char *pName)
 
 	str_format(aBuf, sizeof(aBuf), "Added '%s' to the folder %s", pName, pFolder);
 	ReloadList();
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	return true;
 }
 
@@ -1639,7 +1639,7 @@ bool CWarList::AddMute(const char *pFolder, const char *pName)
 	if(!File)
 	{
 		str_format(aBuf, sizeof(aBuf), "failed to open mute list file '%s'", aFilename);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return false;
 	}
 
@@ -1649,7 +1649,7 @@ bool CWarList::AddMute(const char *pFolder, const char *pName)
 
 	str_format(aBuf, sizeof(aBuf), "Added '%s' to the folder %s", pName, pFolder);
 	ReloadList();
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	return true;
 }
 
@@ -1719,7 +1719,7 @@ bool CWarList::SearchName(const char *pName, bool AllowPartialMatch, bool Silent
 		if(pLine)
 		{
 			str_format(aBuf, sizeof(aBuf), "[%s] names: %s", pFilename, pLine);
-			m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		}
 
 		Found = true;
@@ -1729,7 +1729,7 @@ bool CWarList::SearchName(const char *pName, bool AllowPartialMatch, bool Silent
 		if(!Silent)
 		{
 			str_format(aBuf, sizeof(aBuf), "Name '%s' not found", pName);
-			m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		}
 		return false;
 	}

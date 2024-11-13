@@ -14,17 +14,17 @@ void CWarList::AddSimpleTempWar(const char *pName)
 {
 	if(!pName || pName[0] == '\0')
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: missing argument <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/templist/temp", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create temp folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp folder");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/templist/temp/tempwar", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create temp/tempwar folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp/tempwar folder");
 		return;
 	}
 
@@ -35,17 +35,17 @@ void CWarList::AddSimpleMute(const char *pName)
 {
 	if(!pName || pName[0] == '\0')
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: missing argument <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/warlist/mutes", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create mutes folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create mutes folder");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/warlist/mutes/mutes", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create mutes/mutes folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create mutes/mutes folder");
 		return;
 	}
 
@@ -56,17 +56,17 @@ void CWarList::AddSimpleHelper(const char *pName)
 {
 	if(!pName || pName[0] == '\0')
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: missing argument <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/warlist/helper", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create helper folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create helper folder");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/warlist/helper/helper", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create helper/helper folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create helper/helper folder");
 		return;
 	}
 
@@ -80,41 +80,41 @@ void CWarList::AddSimpleWar(const char *pName)
 {
 	if(!pName || pName[0] == '\0')
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: missing argument <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/warlist/war", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create war folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create war folder");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/warlist/war/war", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create war/war folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create war/war folder");
 		return;
 	}
 
 	AddWar("war", pName);
 	RemoveTeamNoMsg(pName);
 	RemoveHelperNoMsg(pName);
-	RemoveWarNoMsg(pName);
+	RemoveTempWarNoMsg(pName);
 }
 
 void CWarList::AddSimpleTeam(const char *pName)
 {
 	if(!pName || pName[0] == '\0')
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: missing argument <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/warlist/team", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create team folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create team folder");
 		return;
 	}
 	if(!Storage()->CreateFolder("chillerbot/warlist/team/team", IStorage::TYPE_SAVE))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to create team/team folder");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create team/team folder");
 		return;
 	}
 
@@ -130,15 +130,15 @@ void CWarList::RemoveSimpleTempWar(const char *pName)
 	if(!RemoveTempWarNameFromVector("chillerbot/templist/temp/tempwar", pName))
 	{
 		str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the temp war list", pName);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return;
 	}
 	if(!WriteTempWarNames("chillerbot/templist/temp/tempwar"))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to write temp war names");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write temp war names");
 	}
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the temp war list", pName);
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	ReloadList();
 }
 
@@ -148,15 +148,15 @@ void CWarList::RemoveSimpleHelper(const char *pName)
 	if(!RemoveHelperNameFromVector("chillerbot/warlist/helper/helper", pName))
 	{
 		str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the helper list", pName);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return;
 	}
 	if(!WriteHelperNames("chillerbot/warlist/helper/helper"))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to write helper names");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write helper names");
 	}
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the helper list", pName);
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	ReloadList();
 }
 
@@ -166,15 +166,15 @@ void CWarList::RemoveSimpleWar(const char *pName)
 	if(!RemoveWarNameFromVector("chillerbot/warlist/war/war", pName))
 	{
 		str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the war list", pName);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return;
 	}
 	if(!WriteWarNames("chillerbot/warlist/war/war"))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to write war names");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write war names");
 	}
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the war list", pName);
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	ReloadList();
 }
 
@@ -184,15 +184,15 @@ void CWarList::RemoveSimpleMute(const char *pName)
 	if(!RemoveMuteNameFromVector("chillerbot/warlist/mutes/mutes", pName))
 	{
 		str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the mute list", pName);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return;
 	}
 	if(!WriteMuteNames("chillerbot/warlist/mutes/mutes"))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to write war names");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write war names");
 	}
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the mutes list", pName);
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	ReloadList();
 }
 
@@ -216,7 +216,7 @@ void CWarList::DelClone()
 
 
 
-		m_pClient->m_Chat.AddLine(-2, 0, "Deleted Main Clone");
+		m_pClient->m_Chat.AddLine(-3, 0, "Deleted Main Clone");
 	}
 	else if(g_Config.m_ClDummy)
 	{
@@ -232,7 +232,7 @@ void CWarList::DelClone()
 		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
 		g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
 
-		m_pClient->m_Chat.AddLine(-2, 0, "Deleted Dummy Clone");
+		m_pClient->m_Chat.AddLine(-3, 0, "Deleted Dummy Clone");
 	}
 }
 
@@ -279,7 +279,7 @@ void CWarList::Clone(const char *pName)
 
 				char aBuf[2048] = "Main Player Cloning: ";
 				str_append(aBuf, m_pClient->m_aClients[Index].m_aName);
-				m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+				m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 
 				char Dot[2048] = ".";
 
@@ -331,7 +331,7 @@ void CWarList::Clone(const char *pName)
 
 				char aBuf[2048] = "Dummy Player Cloning: ";
 					str_append(aBuf, m_pClient->m_aClients[Index].m_aName);
-						m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+						m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 
 				char Dot[2048] = ".";
 
@@ -383,7 +383,7 @@ void CWarList::Skin(const char *pName)
 
 				char aBuf[2048] = "Copying Skin of ";
 				str_append(aBuf, m_pClient->m_aClients[Index].m_aName);
-				m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+				m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 
 				str_copy(g_Config.m_ClPlayerSkin, m_pClient->m_aClients[Index].m_aSkinName, sizeof(g_Config.m_ClPlayerSkin));
 				g_Config.m_ClPlayerUseCustomColor = m_pClient->m_aClients[Index].m_UseCustomColor;
@@ -409,7 +409,7 @@ void CWarList::Skin(const char *pName)
 
 				char aBuf[2048] = "Copying Skin of ";
 				str_append(aBuf, m_pClient->m_aClients[Index].m_aName);
-				m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+				m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 
 				str_copy(g_Config.m_ClDummySkin, m_pClient->m_aClients[Index].m_aSkinName, sizeof(g_Config.m_ClDummySkin));
 				g_Config.m_ClDummyUseCustomColor = m_pClient->m_aClients[Index].m_UseCustomColor;
@@ -426,15 +426,15 @@ void CWarList::RemoveSimpleTeam(const char *pName)
 	if(!RemoveTeamNameFromVector("chillerbot/warlist/team/team", pName))
 	{
 		str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the war list", pName);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return;
 	}
 	if(!WriteTeamNames("chillerbot/warlist/team/team"))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "Error: failed to write war names");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write war names");
 	}
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the team list", pName);
-	m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	ReloadList();
 }
 
@@ -496,37 +496,37 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		if(NumArgs != 1)
 		{
 			str_format(aBuf, sizeof(aBuf), "Error: expected 1 argument but got %d", NumArgs);
-			m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 			return true;
 		}
-		m_pClient->m_Chat.AddLine(-2, 0, "[search] fullmatch:");
+		m_pClient->m_Chat.AddLine(-3, 0, "[search] fullmatch:");
 		if(!SearchName(ppArgs[0], false))
 		{
-			m_pClient->m_Chat.AddLine(-2, 0, "[search] partial:");
+			m_pClient->m_Chat.AddLine(-3, 0, "[search] partial:");
 			SearchName(ppArgs[0], true);
 		}
 	}
 	else if(!str_comp(pCmd, "help"))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "=== Aiodob warlist ===");
-		m_pClient->m_Chat.AddLine(-2, 0, "!war <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!delwar <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!team <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!delteam <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!helper <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!delhelper <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!mute <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!delmute <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!tempwar <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!deltempwar <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!delclone <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!skin <name>");
-		m_pClient->m_Chat.AddLine(-2, 0, "!clone <name>");
-		// m_pClient->m_Chat.AddLine(-2, 0, "!search <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "=== Aiodob warlist ===");
+		m_pClient->m_Chat.AddLine(-3, 0, "!war <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!delwar <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!team <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!delteam <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!helper <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!delhelper <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!mute <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!delmute <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!tempwar <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!deltempwar <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!delclone <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!skin <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!clone <name>");
+		// m_pClient->m_Chat.AddLine(-3, 0, "!search <name>");
 	}
 	else if(!str_comp(pCmd, "discord"))
 	{
-		m_pClient->m_Chat.AddLine(-2, 0, "https://discord.gg/hAWVx9YJxA");
+		m_pClient->m_Chat.AddLine(-3, 0, "https://discord.gg/hAWVx9YJxA");
 	}
 	else if(!str_comp(pCmd, "github"))
 	{
@@ -620,7 +620,7 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	{
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "Error: %s only works in advanced warlist mode", pCmd);
-		m_pClient->m_Chat.AddLine(-2, 0, aBuf);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return true;
 	}
 	else

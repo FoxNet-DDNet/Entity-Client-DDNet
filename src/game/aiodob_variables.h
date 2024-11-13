@@ -43,6 +43,7 @@ MACRO_CONFIG_INT(ClNameplatesWarReason, cb_nameplates_war_reason, 0, 0, 1, CFGFL
 MACRO_CONFIG_INT(ClWarListAutoReload, cb_war_list_auto_reload, 10, 0, 600, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reload warlist every x seconds 0=off")
 MACRO_CONFIG_INT(ClSilentChatCommands, cb_silent_chat_commands, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Send a Chatmessage After Correctly Typing in a Chat Command (!help...)")
 
+MACRO_CONFIG_COL(ClWarlistMessageColor, cl_warlist_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
 
 // Sweat mode
 

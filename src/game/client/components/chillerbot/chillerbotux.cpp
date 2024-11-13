@@ -941,7 +941,7 @@ void CChillerBotUX::ReturnFromAfk(const char *pChatMessage)
 	m_AfkActivity++;
 	if(m_AfkActivity < 200)
 		return;
-	m_pClient->m_Chat.AddLine(-2, 0, "Welcome baaaack :DDD");
+	m_pClient->m_Chat.AddLine(-3, 0, "Welcome baaaack :DDD");
 	m_AfkTill = 0;
 }
 
