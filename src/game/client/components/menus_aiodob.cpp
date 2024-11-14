@@ -1012,9 +1012,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			if(g_Config.m_ClShowPlayerIndSettings)
 			{
 				if(g_Config.m_ClIndicatorVariableDistance)
-					PlayerIndicatorSettings.HSplitTop(370.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
+					PlayerIndicatorSettings.HSplitTop(390.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
 				else
-					PlayerIndicatorSettings.HSplitTop(320.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
+					PlayerIndicatorSettings.HSplitTop(340.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
 			}
 			else
 				PlayerIndicatorSettings.HSplitTop(40.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
@@ -1036,13 +1036,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				if(g_Config.m_ClShowPlayerIndSettings)
 				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, ("Show Any Enabled Indicators"), &g_Config.m_ClPlayerIndicator, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, ("Enable Player Indicators"), &g_Config.m_ClPlayerIndicator, &PlayerIndicatorSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicatorFreeze, ("Show Only Freeze Players"), &g_Config.m_ClPlayerIndicatorFreeze, &PlayerIndicatorSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, ("Only Show After Joining a Team"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTees, ("Render Tiny Tees Instead of Circles"), &g_Config.m_ClIndicatorTees, &PlayerIndicatorSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorVariableDistance, ("Change Indicator Offset Based On Distance to other tees"), &g_Config.m_ClIndicatorVariableDistance, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorVariableDistance, ("Change Indicator Offset Based On Distance to Other Tees"), &g_Config.m_ClIndicatorVariableDistance, &PlayerIndicatorSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorHideOnScreen, ("Hide Indicator if Tee is on Screen"), &g_Config.m_ClIndicatorHideOnScreen, &PlayerIndicatorSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, ("Only Show Indicator For Teammates"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
 
 					static CButtonContainer IndicatorAliveColorID, IndicatorDeadColorID, IndicatorSavedColorID;
 					DoLine_ColorPicker(&IndicatorAliveColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator alive color"), &g_Config.m_ClIndicatorAlive, ColorRGBA(0.6f, 1.0f, 0.6f, 1.0f), true);

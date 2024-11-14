@@ -536,7 +536,7 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	{
 		m_pClient->m_Chat.SendChat(0, "/kill");
 	}
-	else if(!str_comp(pCmd, "tempwar") || !str_comp(pCmd, "addtempwar") || !str_comp(pCmd, g_Config.m_ClAddTempWarString)) // "team <name>"
+	else if(!str_comp(pCmd, "tempwar") || !str_comp(pCmd, "addtempwar") || (!str_comp(pCmd, "temp") || !str_comp(pCmd, g_Config.m_ClAddTempWarString))) // "team <name>"
 	{
 		AddSimpleTempWar(pRawArgLine);
 		return true;
@@ -571,7 +571,7 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		RemoveSimpleMute(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "deltempwar") || !str_comp(pCmd, "untempwar") || !str_comp(pCmd, g_Config.m_ClRemoveTempWarString)) // "delwar <name>"
+	else if(!str_comp(pCmd, "deltempwar") || !str_comp(pCmd, "untempwar") || !str_comp(pCmd, "untemp") ||!str_comp(pCmd, g_Config.m_ClRemoveTempWarString)) // "delwar <name>"
 	{
 		RemoveSimpleTempWar(pRawArgLine);
 		return true;

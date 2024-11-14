@@ -23,11 +23,7 @@ class CChillerBotUX : public CComponent
 		STATE_WANTREFRESH,
 		STATE_REFRESHING,
 	};
-	int m_HeartbeatState = STATE_DONE;
-	int m_PlaytimeMinutes;
 	std::shared_ptr<CHttpRequest> m_pAliveGet = nullptr;
-	int64_t m_NextHeartbeat;
-	int64_t m_AfkTill;
 
 	bool m_IsNearFinish;
 
@@ -73,10 +69,9 @@ class CChillerBotUX : public CComponent
 	int m_CampClick;
 	int m_ForceDir;
 	int m_LastForceDir;
-	int64_t m_LastNotification;
-	int64_t m_NextSkinSteal;
 	// used for notifications when
 	// out
+	int64_t m_LastNotification;
 	int m_LastTile = -1;
 
 	// broadcasts
@@ -86,17 +81,13 @@ class CChillerBotUX : public CComponent
 
 	bool IsPlayerInfoAvailable(int ClientId) const;
 
-	void GoAfk(int Minutes, const char *pMsg = 0);
 	void ChangeTileNotifyTick();
 	void FinishRenameTick();
 	void CampHackTick();
 	void CheckEmptyTick();
 	void SelectCampArea(int Key);
 	void RenderEnabledComponents();
-	void TraceSpikes();
 	void DumpPlayers(const char *pSearch = 0);
-	void RenderDbgIntersect();
-	void PrintPlaytime();
 
 	// helpers
 	int CountOnlinePlayers();
@@ -106,12 +97,8 @@ class CChillerBotUX : public CComponent
 	virtual void OnConsoleInit() override;
 	virtual void OnInit() override;
 	virtual void OnShutdown() override;
-	virtual bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
-	virtual bool OnInput(const IInput::CEvent &Event) override;
 	virtual void OnStateChange(int NewState, int OldState) override;
 
-	static void ConPlaytime(IConsole::IResult *pResult, void *pUserData);
-	static void ConAfk(IConsole::IResult *pResult, void *pUserData);
 	static void ConCampHack(IConsole::IResult *pResult, void *pUserData);
 	static void ConCampHackAbs(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnCampHack(IConsole::IResult *pResult, void *pUserData);
@@ -130,21 +117,12 @@ public:
 
 	bool OnSendChat(int Team, const char *pLine);
 
-	void ReturnFromAfk(const char *pChatMessage = 0);
-	int64_t GetAfkTime() { return m_AfkTill; }
-	const char *GetAfkMessage() { return m_aAfkMessage; }
-	int GetAfkActivity() { return m_AfkActivity; }
-	bool IsAfk() { return GetAfkTime() && GetAfkActivity() < 25; }
-
 	void EnableComponent(const char *pComponent, const char *pNoteShort = 0, const char *pNoteLong = 0);
 	void DisableComponent(const char *pComponent);
 	bool SetComponentNoteShort(const char *pComponent, const char *pNoteShort = 0);
 	bool SetComponentNoteLong(const char *pComponent, const char *pNoteLong = 0);
 	void UpdateComponents();
 
-	int GetTotalJumps();
-	int GetUnusedJumps();
-	int GetPlayTimeHours() const;
 };
 
 #endif

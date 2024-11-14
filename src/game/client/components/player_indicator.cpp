@@ -109,16 +109,24 @@ void CPlayerIndicator::OnRender()
 
 				TeeInfo.m_Size = g_Config.m_ClIndicatorRadius * 4.f;
 
+
+
+				if(g_Config.m_ClIndicatorOnlyTeammates && !OtherTee.m_IsTeam)
+					return;
+			
 				if(g_Config.m_ClIndicatorHideOnScreen)
 				{
 					if((OtherTee.m_RenderPos.x < Position.x - Zoom * 720) || (OtherTee.m_RenderPos.x > Position.x + Zoom * 720) || (OtherTee.m_RenderPos.y > Position.y + Zoom * 400) || (OtherTee.m_RenderPos.y < Position.y - Zoom * 400))
 					{
 						if(g_Config.m_ClIndicatorTees)
 						{
+					
 							RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, OtherTee.m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, col.a);
 						}
 						else
 						{
+							
+							
 							Graphics()->QuadsBegin();
 							Graphics()->SetColor(col);
 							Graphics()->DrawCircle(IndicatorPos.x, IndicatorPos.y, g_Config.m_ClIndicatorRadius, 16);
@@ -130,10 +138,14 @@ void CPlayerIndicator::OnRender()
 				{
 					if(g_Config.m_ClIndicatorTees)
 					{
+						
+							
 						RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, OtherTee.m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, col.a);
 					}
 					else
 					{
+						
+							
 						Graphics()->QuadsBegin();
 						Graphics()->SetColor(col);
 						Graphics()->DrawCircle(IndicatorPos.x, IndicatorPos.y, g_Config.m_ClIndicatorRadius, 16);

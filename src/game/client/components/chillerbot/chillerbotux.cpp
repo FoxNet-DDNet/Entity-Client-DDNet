@@ -30,19 +30,11 @@
 
 void CChillerBotUX::OnRender()
 {
-	if(m_AfkTill)
-	{
-		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "(%d/%d)", m_AfkActivity, 200);
-		SetComponentNoteShort("afk", aBuf);
-	}
 	RenderEnabledComponents();
 	FinishRenameTick();
 	ChangeTileNotifyTick();
-	TraceSpikes();
 	m_ForceDir = 0;
 	CampHackTick();
-	RenderDbgIntersect();
 	if(!m_ForceDir && m_LastForceDir)
 	{
 		m_pClient->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy] = 0;
@@ -59,20 +51,6 @@ void CChillerBotUX::OnStateChange(int NewState, int OldState)
 		if(g_Config.m_ClAlwaysReconnect)
 			m_pClient->Client()->SetReconnectTime(time_get() + time_freq() * g_Config.m_ClReconnectTimeout + 10);
 	}
-}
-
-int CChillerBotUX::GetPlayTimeHours() const
-{
-	if(m_PlaytimeMinutes == -1)
-		return 0;
-	return m_PlaytimeMinutes / 60;
-}
-
-void CChillerBotUX::PrintPlaytime()
-{
-	char aBuf[512];
-	str_format(aBuf, sizeof(aBuf), "Hours: %d (tracking_id=%s)", GetPlayTimeHours(), g_Config.m_ClChillerbotId);
-	Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chillerbot", aBuf);
 }
 
 inline bool CChillerBotUX::IsPlayerInfoAvailable(int ClientId) const
@@ -121,7 +99,6 @@ bool CChillerBotUX::OnSendChat(int Team, const char* pLine)
 	}
 	if(pEnd != nullptr)
 		*pEnd = '\0';
-	ReturnFromAfk(aTrimmedLine);
 
 	int ClientId = m_pClient->m_aLocalIds[g_Config.m_ClDummy];
 	if(m_pClient->m_ChatCommand.OnChatMsg(ClientId, Team, aTrimmedLine))
@@ -255,63 +232,6 @@ bool CChillerBotUX::SetComponentNoteLong(const char *pComponent, const char *pNo
 	return false;
 }
 
-void CChillerBotUX::RenderDbgIntersect()
-{
-	if(!Config()->m_ClDbgIntersect)
-		return;
-
-	vec2 Position = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_RenderPos;
-	float Angle = 0.0f;
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		// just use the direct input if it's the local player we are rendering
-		Angle = angle(m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy]);
-	}
-	vec2 Direction = direction(Angle);
-	vec2 ExDirection = Direction;
-
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		ExDirection = normalize(vec2((int)m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy].x, (int)m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy].y));
-
-		// fix direction if mouse is exactly in the center
-		if(!(int)m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy].x && !(int)m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy].y)
-			ExDirection = vec2(1, 0);
-	}
-	vec2 InitPos = Position;
-	vec2 FinishPos = InitPos + ExDirection * (m_pClient->m_aTuning[g_Config.m_ClDummy].m_HookLength - 42.0f);
-
-	vec2 OutCol;
-	vec2 OutBeforeCol;
-	vec4 Color = vec4(1.0f, 0.0f, 0.0f, 1.0f);
-
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	RenderTools()->MapScreenToGroup(m_pClient->m_Camera.m_Center.x, m_pClient->m_Camera.m_Center.y, Layers()->GameGroup(), m_pClient->m_Camera.m_Zoom);
-
-	if(Collision()->IntersectLine(InitPos, FinishPos, &OutCol, &OutBeforeCol))
-	{
-		Graphics()->TextureClear();
-		Color = vec4(0.0f, 1.0f, 0.0f, 1.0f);
-		Graphics()->SetColor(Color);
-		Graphics()->DrawRect(OutCol.x, OutCol.y, 10, 10, ColorRGBA(0.0f, 0.0f, 1.0f, 0.5f), IGraphics::CORNER_ALL, 3.0f);
-		Graphics()->DrawRect(OutBeforeCol.x, OutBeforeCol.y, 10, 10, ColorRGBA(0.0f, 1.0f, 0.0f, 0.5f), IGraphics::CORNER_ALL, 3.0f);
-	}
-	else
-	{
-		Graphics()->DrawRect(OutCol.x, OutCol.y, 10, 10, ColorRGBA(0.0f, 0.0f, 1.0f, 0.5f), IGraphics::CORNER_ALL, 3.0f);
-		Graphics()->DrawRect(OutBeforeCol.x, OutBeforeCol.y, 10, 10, ColorRGBA(0.0f, 1.0f, 0.0f, 0.5f), IGraphics::CORNER_ALL, 3.0f);
-	}
-
-	Graphics()->TextureClear();
-	Graphics()->LinesBegin();
-	Graphics()->SetColor(Color);
-	IGraphics::CLineItem LineItem(InitPos.x, InitPos.y, FinishPos.x, FinishPos.y);
-	Graphics()->LinesDraw(&LineItem, 1);
-	Graphics()->LinesEnd();
-
-	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
-}
 
 void CChillerBotUX::CampHackTick()
 {
@@ -356,33 +276,6 @@ void CChillerBotUX::CampHackTick()
 	
 			m_pClient->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Direction = -1;
 	}
-}
-
-bool CChillerBotUX::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
-{
-	if(time_get() % 10 == 0)
-		ReturnFromAfk();
-	return false;
-}
-
-bool CChillerBotUX::OnInput(const IInput::CEvent &Event)
-{
-	ReturnFromAfk();
-	SelectCampArea(Event.m_Key);
-
-	if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_ESCAPE)
-	{
-		if(g_Config.m_ClReleaseMouse)
-		{
-			if(m_MouseModeAbs)
-				Input()->MouseModeRelative();
-			else
-				Input()->MouseModeAbsolute();
-			m_MouseModeAbs = !m_MouseModeAbs;
-		}
-	}
-
-	return false;
 }
 
 void CChillerBotUX::SelectCampArea(int Key)
@@ -471,7 +364,6 @@ void CChillerBotUX::OnInit()
 {
 	m_pChatHelper = &m_pClient->m_ChatHelper;
 
-	m_AfkTill = 0;
 	m_AfkActivity = 0;
 	m_aAfkMessage[0] = '\0';
 
@@ -488,13 +380,7 @@ void CChillerBotUX::OnInit()
 	m_aLastKillerTime[1][0] = '\0';
 	m_BroadcastTick = 0;
 	m_IsLeftSidedBroadcast = false;
-	m_HeartbeatState = STATE_WANTREFRESH;
-	m_NextHeartbeat = 0;
-	m_PlaytimeMinutes = -1;
 	// TODO: replace this with priv pub key pairs otherwise account ownership claims are trash
-	if(!g_Config.m_ClChillerbotId[0])
-		secure_random_password(g_Config.m_ClChillerbotId, sizeof(g_Config.m_ClChillerbotId), 16);
-	m_NextSkinSteal = 0;
 	m_LastTile = -1;
 }
 
@@ -532,38 +418,24 @@ void CChillerBotUX::UpdateComponents()
 		EnableComponent("war list");
 	else
 		DisableComponent("war list");
-	if(g_Config.m_ClShowLastKiller)
-		EnableComponent("last killer");
-	else
-		DisableComponent("last killer");
-	if(g_Config.m_ClShowLastPing)
-		EnableComponent("last ping");
-	else
-		DisableComponent("last ping");
 }
 
 void CChillerBotUX::OnConsoleInit()
 {
-	Console()->Register("playtime", "", CFGFLAG_CLIENT, ConPlaytime, this, "Get your time spent in this chillerbot-ux (cl_chillerbot_id, cl_send_online_time)");
-	
-
-
-
-	Console()->Register("afk", "?i[minutes]?r[message]", CFGFLAG_CLIENT, ConAfk, this, "Activate afk mode (auto chat respond)");
-	Console()->Register("camp", "?i[left]i[right]?s[tile|raw]", CFGFLAG_CLIENT, ConCampHack, this, "Activate camp mode relative to tee");
+		Console()->Register("camp", "?i[left]i[right]?s[tile|raw]", CFGFLAG_CLIENT, ConCampHack, this, "Activate camp mode relative to tee");
 	Console()->Register("camp_abs", "i[x1]i[y1]i[x2]i[y2]?s[tile|raw]", CFGFLAG_CLIENT, ConCampHackAbs, this, "Activate camp mode absolute in the map");
 	Console()->Register("uncamp", "", CFGFLAG_CLIENT, ConUnCampHack, this, "Same as cl_camp_hack 0 but resets walk input");
 	Console()->Register("dump_players", "?s[search]", CFGFLAG_CLIENT, ConDumpPlayers, this, "Prints players to console");
 	Console()->Register("force_quit", "", CFGFLAG_CLIENT, ConForceQuit, this, "Forces a dirty client quit all data will be lost");
 
-	Console()->Chain("cb_camp_hack", ConchainCampHack, this);
-	Console()->Chain("cb_auto_reply", ConchainAutoReply, this);
-	Console()->Chain("cb_finish_rename", ConchainFinishRename, this);
+	Console()->Chain("ac_camp_hack", ConchainCampHack, this);
+	Console()->Chain("ac_auto_reply", ConchainAutoReply, this);
+	Console()->Chain("ac_finish_rename", ConchainFinishRename, this);
 	
 	
 	
-	Console()->Chain("cb_show_last_killer", ConchainShowLastKiller, this);
-	Console()->Chain("cb_show_last_ping", ConchainShowLastPing, this);
+	Console()->Chain("ac_show_last_killer", ConchainShowLastKiller, this);
+	Console()->Chain("ac_show_last_ping", ConchainShowLastPing, this);
 }
 
 void CChillerBotUX::ConForceQuit(IConsole::IResult *pResult, void *pUserData)
@@ -606,17 +478,6 @@ void CChillerBotUX::ConchainShowLastPing(IConsole::IResult *pResult, void *pUser
 {
 	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
 	pfnCallback(pResult, pCallbackUserData);
-}
-
-
-void CChillerBotUX::ConAfk(IConsole::IResult *pResult, void *pUserData)
-{
-	((CChillerBotUX *)pUserData)->GoAfk(pResult->NumArguments() ? pResult->GetInteger(0) : -1, pResult->GetString(1));
-}
-
-void CChillerBotUX::ConPlaytime(IConsole::IResult *pResult, void *pUserData)
-{
-	((CChillerBotUX *)pUserData)->PrintPlaytime();
 }
 
 void CChillerBotUX::ConCampHackAbs(IConsole::IResult *pResult, void *pUserData)
@@ -785,55 +646,6 @@ void CChillerBotUX::ConUnCampHack(IConsole::IResult *pResult, void *pUserData)
 	pSelf->m_pClient->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] = 0;
 }
 
-void CChillerBotUX::TraceSpikes()
-{
-	if(!g_Config.m_ClSpikeTracer)
-		return;
-	if(!m_pClient->m_Snap.m_pLocalCharacter)
-		return;
-
-	// int CurrentX = (int)(m_pClient->m_Snap.m_aCharacters[m_pClient->m_aLocalIds[0]].m_Cur.m_X / 32);
-	// int CurrentY = (int)(m_pClient->m_Snap.m_aCharacters[m_pClient->m_aLocalIds[0]].m_Cur.m_Y / 32);
-	int CurrentX = (int)(m_pClient->m_Snap.m_pLocalCharacter->m_X / 32);
-	int CurrentY = (int)(m_pClient->m_Snap.m_pLocalCharacter->m_Y / 32);
-	int FromX = maximum(0, CurrentX - g_Config.m_ClSpikeTracer);
-	int ToX = minimum(Collision()->GetWidth(), CurrentX + g_Config.m_ClSpikeTracer);
-	int FromY = maximum(0, CurrentY - g_Config.m_ClSpikeTracer);
-	int ToY = minimum(Collision()->GetHeight(), CurrentY + g_Config.m_ClSpikeTracer);
-	float ScreenX0;
-	float ScreenX1;
-	float ScreenY0;
-	float ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	RenderTools()->MapScreenToGroup(m_pClient->m_Camera.m_Center.x, m_pClient->m_Camera.m_Center.y, Layers()->GameGroup(), m_pClient->m_Camera.m_Zoom);
-	for(int x = FromX; x < ToX; x++)
-	{
-		for(int y = FromY; y < ToY; y++)
-		{
-			int Tile = Collision()->GetIndex(x, y);
-			if(Tile == TILE_DEATH)
-			{
-				Graphics()->TextureClear();
-				bool IsIntersect = false;
-				if(Collision()->IntersectLine(vec2(x * 32, y * 32), vec2(CurrentX * 32, CurrentY * 32), 0, 0))
-				{
-					IsIntersect = true;
-					if(!g_Config.m_ClSpikeTracerWalls)
-						continue;
-				}
-				Graphics()->LinesBegin();
-				if(IsIntersect)
-					Graphics()->SetColor(1.f, 1.f, 1.f, 0.45f);
-				else
-					Graphics()->SetColor(1.f, 0.f, 0.f, 0.75f);
-				IGraphics::CLineItem LineItem(x * 32, y * 32, CurrentX * 32, CurrentY * 32);
-				Graphics()->LinesDraw(&LineItem, 1);
-				Graphics()->LinesEnd();
-			}
-		}
-	}
-	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
-}
 
 void CChillerBotUX::OnMessage(int MsgType, void *pRawMsg)
 {
@@ -901,48 +713,6 @@ void CChillerBotUX::OnMessage(int MsgType, void *pRawMsg)
 		m_BroadcastTick = Client()->GameTick(g_Config.m_ClDummy) + Client()->GameTickSpeed() * 10;
 		m_IsLeftSidedBroadcast = str_find(m_aBroadcastText, "                                ") != NULL;
 	}
-	else if(MsgType == NETMSGTYPE_SV_VOTESET)
-	{
-		if(g_Config.m_ClRunOnVoteStart[0])
-			Console()->ExecuteLine(g_Config.m_ClRunOnVoteStart);
-	}
-}
-
-void CChillerBotUX::GoAfk(int Minutes, const char *pMsg)
-{
-	if(pMsg)
-	{
-		str_copy(m_aAfkMessage, pMsg, sizeof(m_aAfkMessage));
-		if((unsigned long)str_length(pMsg) > sizeof(m_aAfkMessage))
-		{
-			char aBuf[128];
-			str_format(aBuf, sizeof(aBuf), "error: afk message too long %d/%lu", str_length(pMsg), sizeof(m_aAfkMessage));
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", aBuf);
-			return;
-		}
-	}
-	m_AfkTill = time_get() + time_freq() * 60 * Minutes;
-	m_AfkActivity = 0;
-	m_pChatHelper->ClearLastAfkPingMessage();
-	g_Config.m_ClShowLastKiller = 1;
-}
-
-void CChillerBotUX::ReturnFromAfk(const char *pChatMessage)
-{
-	if(!m_AfkTill)
-		return;
-	if(pChatMessage && pChatMessage[0] != '/')
-	{
-		if(m_IgnoreChatAfk > 0)
-			m_IgnoreChatAfk--;
-		else
-			m_AfkActivity += 400;
-	}
-	m_AfkActivity++;
-	if(m_AfkActivity < 200)
-		return;
-	m_pClient->m_Chat.AddLine(-3, 0, "Welcome baaaack :DDD");
-	m_AfkTill = 0;
 }
 
 int CChillerBotUX::CountOnlinePlayers()
@@ -953,70 +723,4 @@ int CChillerBotUX::CountOnlinePlayers()
 		if(pInfo)
 			Num++;
 	return Num;
-}
-
-int CChillerBotUX::GetTotalJumps()
-{
-	int ClientId = GameClient()->m_aLocalIds[g_Config.m_ClDummy];
-	CCharacterCore *pCharacter = &m_pClient->m_aClients[ClientId].m_Predicted;
-	if(m_pClient->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
-		return maximum(minimum(abs(pCharacter->m_Jumps), 10), 0);
-	else
-		return abs(m_pClient->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_Jumps);
-}
-
-int CChillerBotUX::GetUnusedJumps()
-{
-	int ClientId = GameClient()->m_aLocalIds[g_Config.m_ClDummy];
-	CCharacterCore *pCharacter = &m_pClient->m_aClients[ClientId].m_Predicted;
-	int TotalJumpsToDisplay = 0, AvailableJumpsToDisplay = 0;
-	if(m_pClient->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
-	{
-		bool Grounded = false;
-		if(Collision()->CheckPoint(pCharacter->m_Pos.x + CCharacterCore::PhysicalSize() / 2,
-			   pCharacter->m_Pos.y + CCharacterCore::PhysicalSize() / 2 + 5))
-		{
-			Grounded = true;
-		}
-		if(Collision()->CheckPoint(pCharacter->m_Pos.x - CCharacterCore::PhysicalSize() / 2,
-			   pCharacter->m_Pos.y + CCharacterCore::PhysicalSize() / 2 + 5))
-		{
-			Grounded = true;
-		}
-
-		int UsedJumps = pCharacter->m_JumpedTotal;
-		if(pCharacter->m_Jumps > 1)
-		{
-			UsedJumps += !Grounded;
-		}
-		else if(pCharacter->m_Jumps == 1)
-		{
-			// If the player has only one jump, each jump is the last one
-			UsedJumps = pCharacter->m_Jumped & 2;
-		}
-		else if(pCharacter->m_Jumps == -1)
-		{
-			// The player has only one ground jump
-			UsedJumps = !Grounded;
-		}
-
-		if(pCharacter->m_EndlessJump && UsedJumps >= abs(pCharacter->m_Jumps))
-		{
-			UsedJumps = abs(pCharacter->m_Jumps) - 1;
-		}
-
-		int UnusedJumps = abs(pCharacter->m_Jumps) - UsedJumps;
-		if(!(pCharacter->m_Jumped & 2) && UnusedJumps <= 0)
-		{
-			// In some edge cases when the player just got another number of jumps, UnusedJumps is not correct
-			UnusedJumps = 1;
-		}
-		TotalJumpsToDisplay = maximum(minimum(abs(pCharacter->m_Jumps), 10), 0);
-		AvailableJumpsToDisplay = maximum(minimum(UnusedJumps, TotalJumpsToDisplay), 0);
-	}
-	else
-	{
-		AvailableJumpsToDisplay = abs(m_pClient->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_Jumps);
-	}
-	return AvailableJumpsToDisplay;
 }

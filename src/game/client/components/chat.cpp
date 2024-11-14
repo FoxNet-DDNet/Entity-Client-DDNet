@@ -852,6 +852,21 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	const auto IsMute = m_pClient->m_aClients[ClientId].m_IsMuted;
 	const auto IsWarClan = m_pClient->m_aClients[ClientId].m_IsWarClanmate;
 
+	if(pCurrentLine->m_ClientId == MODE_ALL && ClientId != m_pClient->m_aLocalIds[0] && !(Team == TEAM_WHISPER_SEND) && g_Config.m_ClAutoVoteOnKrxMessage)
+	{
+		auto &LineAuthor = m_pClient->m_aClients[pCurrentLine->m_ClientId];
+
+		const char *name = LineAuthor.m_aName;
+
+		char text[1024];
+		str_format(text, sizeof(text), "%s: %s", name, pLine);
+		if(str_find_nocase(text, "krxclient") || (str_find_nocase(text, "krx client")))
+		{
+			m_pClient->m_Chat.AddLine(-3, 0, "name");
+			m_pClient->m_Voting.CallvoteKick(pCurrentLine->m_ClientId, "KRX");
+		}
+
+	}
 	if(pCurrentLine->m_ClientId == SERVER_MSG)
 	{
 		if(g_Config.m_ClChatServerPrefix)

@@ -316,39 +316,6 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		return;
 	char aBuf[2048];
 	PushPing(aName, m_pClient->m_aClients[ClientId].m_aClan, pMsg, Team);
-	int64_t AfkTill = m_pChillerBot->GetAfkTime();
-	if(m_pChillerBot->IsAfk())
-	{
-		char aNote[128];
-		str_format(aBuf, sizeof(aBuf), "%s: I am currently afk.", aName);
-		if(AfkTill > time_get() + time_freq() * 61)
-			str_format(aBuf, sizeof(aBuf), "%s: I am currently afk. Estimated return in %" PRId64 " minutes.", aName, (AfkTill - time_get()) / time_freq() / 60);
-		else if(AfkTill > time_get() + time_freq() * 10)
-			str_format(aBuf, sizeof(aBuf), "%s: I am currently afk. Estimated return in %" PRId64 " seconds.", aName, (AfkTill - time_get()) / time_freq());
-		if(m_pChillerBot->GetAfkMessage()[0])
-		{
-			str_format(aNote, sizeof(aNote), " (%s)", m_pChillerBot->GetAfkMessage());
-			str_append(aBuf, aNote, sizeof(aBuf));
-		}
-		if(aBuf[0] == '/' || aBuf[0] == '.' || aBuf[0] == '!')
-		{
-			char aEscape[256];
-			str_format(aEscape, sizeof(aEscape), ".%s", aBuf);
-			SayBuffer(aEscape, Team == 1 ? BUFFER_CHAT_TEAM : BUFFER_CHAT_ALL, true);
-		}
-		else
-		{
-			SayBuffer(aBuf, Team == 1 ? BUFFER_CHAT_TEAM : BUFFER_CHAT_ALL, true);
-		}
-		str_format(m_aLastAfkPing, sizeof(m_aLastAfkPing), "%s: %s", m_pClient->m_aClients[ClientId].m_aName, pMsg);
-		m_pChillerBot->SetComponentNoteLong("afk", m_aLastAfkPing);
-		return;
-	}
-	if(g_Config.m_ClShowLastPing)
-	{
-		str_format(aBuf, sizeof(aBuf), "%s: %s", m_pClient->m_aClients[ClientId].m_aName, pMsg);
-		m_pChillerBot->SetComponentNoteLong("last ping", aBuf);
-	}
 	if((g_Config.m_ClReplyMuted && GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName) || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat)))
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
@@ -506,30 +473,6 @@ bool CChatHelper::FilterChat(int ClientId, int Team, const char *pLine)
 			return true;
 		}
 	}
-	int Spam = IsSpam(ClientId, Team, pLine);
-	if(Spam)
-	{
-		
-
-		// if not afk auto respond to pings
-		if(!m_pChillerBot->IsAfk())
-		{
-			char aName[64];
-			str_copy(aName, m_pClient->m_aClients[ClientId].m_aName, sizeof(aName));
-			if(ClientId == 63 && !str_comp_num(m_pClient->m_aClients[ClientId].m_aName, " ", 2))
-			{
-				Get128Name(pLine, aName);
-				// dbg_msg("chillerbot", "fixname 128 player '%s' -> '%s'", m_pClient->m_aClients[ClientId].m_aName, aName);
-			}
-			char aResponse[1024];
-			// if(m_pReplyToPing->ReplyToLastPing(aName, m_pClient->m_aClients[ClientId].m_aClan, pLine, aResponse, sizeof(aResponse)))
-			// TODO: do we need PopPing() here? Can't we omit the pLine parameter then from this func?
-			// who is called first FilterChat() or OnChatMessage()
-			// m_aLastPingMessage[0] = '\0';
-		}
-		return true;
-	}
-	return false;
 }
 
 bool CChatHelper::OnAutocomplete(CLineInput *pInput, const char *pCompletionBuffer, int PlaceholderOffset, int PlaceholderLength, int *pOldChatStringLength, int *pCompletionChosen, bool ReverseTAB)
