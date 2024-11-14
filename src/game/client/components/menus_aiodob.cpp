@@ -63,7 +63,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 	const char *apTabNames[NUMBER_OF_AIODOB_TABS] = {
 		Localize("Usefull Settings"),
 		Localize("BindWheel"),
-		Localize("Visual/Sound Settings")};
+		Localize("Other Settings")};
 
 	for(int Tab = AIODOB_TAB_PAGE1; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
 	{
@@ -1482,20 +1482,26 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
 			if(g_Config.m_ClSweatMode)
-				WarVisual.HSplitTop(120.0f, &WarVisual, &PredictionSettings);
+				if(g_Config.m_ClSweatModeSkin)
+					WarVisual.HSplitTop(160.0f, &WarVisual, &PredictionSettings);
+				else
+					WarVisual.HSplitTop(120.0f, &WarVisual, &PredictionSettings);
 			else
-				WarVisual.HSplitTop(70.0f, &WarVisual, &PredictionSettings);
+				WarVisual.HSplitTop(100.0f, &WarVisual, &PredictionSettings);
 			if(s_ScrollRegion.AddRect(WarVisual))
 			{
 				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				WarVisual.VMargin(Margin, &WarVisual);
 
 				WarVisual.HSplitTop(HeaderHeight, &Button, &WarVisual);
-				Ui()->DoLabel(&Button, Localize("Extra Warlist Visuals"), FontSize, TEXTALIGN_MC);
+				Ui()->DoLabel(&Button, Localize("Extra Warlist Settings"), FontSize, TEXTALIGN_MC);
 
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistConsoleColors, ("Show Colors in Console"), &g_Config.m_ClWarlistConsoleColors, &WarVisual, LineMargin);
 
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoClanWar, ("Make Clanmates of Enemies Also Have a Red-Ish Color"), &g_Config.m_ClAutoClanWar, &WarVisual, LineMargin);
 
-				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode."), &g_Config.m_ClSweatMode, &WarVisual, LineMargin));
+				WarVisual.HSplitTop(2, &Button, &WarVisual);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode."), &g_Config.m_ClSweatMode, &WarVisual, LineMargin);
 
 				if(g_Config.m_ClSweatMode)
 				{
