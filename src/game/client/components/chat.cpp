@@ -662,7 +662,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		const char *Name = m_pClient->m_aClients[ClientId].m_aName;
 
 
-		if(g_Config.m_ClWarlistConsoleColors)
+		if(g_Config.m_ClWarlistConsoleColors || g_Config.m_ClMutedConsoleColor)
 			Colors = g_Config.m_ClMutedColor;
 
 		str_append(Muted, Name);

@@ -45,7 +45,9 @@ MACRO_CONFIG_INT(ClSilentChatCommands, cb_silent_chat_commands, 0, 0, 1, CFGFLAG
 
 MACRO_CONFIG_COL(ClWarlistMessageColor, cl_warlist_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
 
-MACRO_CONFIG_INT(ClWarlistConsoleColors, cl_warlist_console_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
+MACRO_CONFIG_INT(ClWarlistConsoleColors, cl_warlist_console_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
+
+MACRO_CONFIG_INT(ClMutedConsoleColor, cl_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
 
 // Sweat mode
