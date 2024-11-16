@@ -630,10 +630,6 @@ void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor)
 		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
 	else if(IsTeam(ClientId) && g_Config.m_ClDoTeammateNameColor)
 		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
-	else if(g_Config.m_ClDoFriendNameColor && ClientData.m_Friend)
-		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-	else if(g_Config.m_ClFoeNameColor && ClientData.m_Foe)
-		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFoeColor));
 	else if(IsHelper(ClientId) && g_Config.m_ClDoHelperNameColor)
 		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
 	else if(IsTraitor(ClientId))
@@ -644,6 +640,11 @@ void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor)
 		*pColor = ColorRGBA(0.0f, 0.9f, 0.2f, 1.0f);
 	else if(IsWarClanmate(ClientId) && g_Config.m_ClAutoClanWar)
 		*pColor = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
+
+	else if(g_Config.m_ClDoFriendNameColor && ClientData.m_Friend)
+		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+	else if(g_Config.m_ClFoeNameColor && ClientData.m_Foe)
+		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFoeColor));
 }
 
 bool CWarList::RemoveMuteNameFromVector(const char *pDir, const char *pName)

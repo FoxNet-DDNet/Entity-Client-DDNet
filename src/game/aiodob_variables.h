@@ -43,12 +43,8 @@ MACRO_CONFIG_INT(ClMutedConsoleColor, cl_muted_console_color, 1, 0, 1, CFGFLAG_C
 // Sweat mode
 
 MACRO_CONFIG_INT(ClSweatMode, ac_sweat_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
-
 MACRO_CONFIG_INT(ClSweatModeSkin, ac_sweat_mode_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
-
 MACRO_CONFIG_INT(ClSweatModeOnlyOthers, ac_sweat_mode_only_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
-
-
 MACRO_CONFIG_STR(ClSweatModeSkinName, ac_sweat_mode_skin_name, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have")
 
 
@@ -61,6 +57,21 @@ MACRO_CONFIG_INT(ClRunOnJoinDelay, ac_run_on_join_delay, 2, 7, 50000, CFGFLAG_CL
 MACRO_CONFIG_STR(ClRunOnJoinMsg, ac_run_on_join_console_msg, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 
 MACRO_CONFIG_INT(ClLimitMouseToScreen, ac_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundries")
+
+
+// Frozen Tee Display
+MACRO_CONFIG_INT(ClShowFrozenText, ac_frozen_tees_text, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show how many tees in your team are currently frozen. (0 - off, 1 - show alive, 2 - show frozen)")
+MACRO_CONFIG_INT(ClShowFrozenHud, ac_frozen_tees_hud, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show frozen tee HUD")
+MACRO_CONFIG_INT(ClShowFrozenHudSkins, ac_frozen_tees_hud_skins, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use ninja skin, or darkened skin for frozen tees on hud")
+
+MACRO_CONFIG_INT(ClFrozenHudTeeSize, ac_frozen_tees_size, 15, 8, 20, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Size of tees in frozen tee hud. (Default : 15)")
+MACRO_CONFIG_INT(ClFrozenMaxRows, ac_frozen_tees_max_rows, 1, 1, 6, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Maximum number of rows in frozen tee HUD display")
+MACRO_CONFIG_INT(ClFrozenHudTeamOnly, ac_frozen_tees_only_inteam, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only render frozen tee HUD display while in team")
+
+// Notify When Last
+MACRO_CONFIG_INT(ClNotifyWhenLast, tc_last_notify, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when you are last")
+MACRO_CONFIG_STR(ClNotifyWhenLastText, tc_last_notify_text, 64, "Last!", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Text for last notify")
+MACRO_CONFIG_COL(ClNotifyWhenLastColor, tc_last_notify_color, 29057, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color for last notify")
 
 
 
@@ -264,12 +275,6 @@ MACRO_CONFIG_COL(ClSavedDummyColorBody, saved_dummy_color_body, 65408, CFGFLAG_C
 MACRO_CONFIG_COL(ClSavedDummyColorFeet, saved_dummy_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_STR(ClSavedDummySkin, saved_dummy_skin, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 
-
-MACRO_CONFIG_INT(ClWarOntopAutoKill, ac_war_ontop_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
-
-
-
-
 MACRO_CONFIG_INT(ClAutoJoinTest, ac_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 MACRO_CONFIG_INT(ClTest, cl_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 
@@ -277,9 +282,7 @@ MACRO_CONFIG_INT(ClTest, cl_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test"
 // In Spec Menu Prefixes
 
 MACRO_CONFIG_INT(ClSpecMenuColors, ac_specmenu_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on colors in the spectate menu")
-
 MACRO_CONFIG_INT(ClSpecMenuFriendPrefix, ac_specmenu_friend_prefix, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Friend Prefix Next to Names in The Spectate Menu")
-
 MACRO_CONFIG_INT(ClSpecMenuPrefixes, ac_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Prefixes Next to Names in The Spectate Menu")
 
 // Notify on join
@@ -311,6 +314,7 @@ MACRO_CONFIG_INT(ClShowNameplateSettings, ac_show_nameplate_settings, 1, 0, 1, C
 MACRO_CONFIG_INT(ClShowUiHudSettings, ac_show_ui_hud_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Ui/Hud Settings")
 MACRO_CONFIG_INT(ClShowMiscSettings, ac_show_misc_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Misc Settings")
 MACRO_CONFIG_INT(ClShowPlayerIndSettings, ac_show_player_ind_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Player Indicator Settings")
+MACRO_CONFIG_INT(ClShowFrozenTeeHudSettings, ac_show_frozen_tee_hud_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Player Indicator Settings")
 MACRO_CONFIG_INT(ClShowScoreSettings, ac_show_score_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Scoreboard Settings")
 MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Menu Settings")
 
@@ -318,6 +322,15 @@ MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLI
 
 MACRO_CONFIG_INT(ClGrenadePath, ac_grenade_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Grenade Path Prediction")
 MACRO_CONFIG_INT(ClLaserPath, ac_laser_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser Path Prediction")
+
+MACRO_CONFIG_INT(ClAutoKill, ac_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+
+ MACRO_CONFIG_INT(ClAutoKillWarOnly, ac_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+
+
+MACRO_CONFIG_INT(ClWarOntop, ac_war_ontop_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+MACRO_CONFIG_INT(ClAutoKillRangeX, ac_autokill_range_x, 35, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "x coordinate range to autokill in ↔")
+MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
 
 // Tee
 

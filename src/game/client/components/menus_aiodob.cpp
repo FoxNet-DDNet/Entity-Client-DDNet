@@ -78,6 +78,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 	MainView.HSplitTop(10.0f, nullptr, &MainView);
 
+	const float LineMargin = 20.0f;
+
 	const float LineSize = 20.0f;
 	const float ColorPickerLineSize = 25.0f;
 	const float HeadlineFontSize = 20.0f;
@@ -107,45 +109,42 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect ChillerBotSettings, MiscSettings, PlayerIndicatorSettings, UiSettings, ColorSettings, ChatSettings, ScoreboardSettings, NameplateSettings, MenuSettings;
-		MainView.VSplitMid(&ChillerBotSettings, &UiSettings);
+		CUIRect OtherSettings, MiscSettings, PlayerIndicatorSettings, ColorSettings, ChatSettings, ScoreboardSettings, NameplateSettings, MenuSettings, FrozenTeeHudSettings;
+		MainView.VSplitMid(&OtherSettings, &MiscSettings);
 
 		{
-			ChillerBotSettings.VMargin(5.0f, &ChillerBotSettings);
+			OtherSettings.VMargin(5.0f, &OtherSettings);
 			if(g_Config.m_ClShowOtherSettings)
 			{
-
-			
 				if(g_Config.m_ClNotifyOnJoin)
-					ChillerBotSettings.HSplitTop(205.0f, &ChillerBotSettings, &ChatSettings);
+					OtherSettings.HSplitTop(185.0f, &OtherSettings, &ChatSettings);
 				else
-			ChillerBotSettings.HSplitTop(185.0f, &ChillerBotSettings, &ChatSettings);
+			OtherSettings.HSplitTop(165.0f, &OtherSettings, &ChatSettings);
 			}
 			else 
-				ChillerBotSettings.HSplitTop(40.0f, &ChillerBotSettings, &ChatSettings);
-			if(s_ScrollRegion.AddRect(ChillerBotSettings))
+				OtherSettings.HSplitTop(40.0f, &OtherSettings, &ChatSettings);
+			if(s_ScrollRegion.AddRect(OtherSettings))
 			{
-				ChillerBotSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				ChillerBotSettings.VMargin(Margin, &ChillerBotSettings);
+				OtherSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				OtherSettings.VMargin(Margin, &OtherSettings);
 
-				ChillerBotSettings.HSplitTop(HeaderHeight, &Button, &ChillerBotSettings);
+				OtherSettings.HSplitTop(HeaderHeight, &Button, &OtherSettings);
 				Ui()->DoLabel(&Button, Localize("Other Features"), FontSize, TEXTALIGN_MC);
 
 								
-				ChillerBotSettings.VSplitLeft(129.f, &Button, &ChillerBotSettings);
-
-				ChillerBotSettings.HSplitTop(-24.5f, &Button, &ChillerBotSettings);
-				ChillerBotSettings.HSplitTop(20.f, &Button, &ChillerBotSettings);
+				OtherSettings.VSplitLeft(129.f, &Button, &OtherSettings);
+				OtherSettings.HSplitTop(-24.5f, &Button, &OtherSettings);
+				OtherSettings.HSplitTop(20.f, &Button, &OtherSettings);
 				if(DoButton_CheckBox(&g_Config.m_ClShowOtherSettings, Localize(""), g_Config.m_ClShowOtherSettings, &Button))
 					g_Config.m_ClShowOtherSettings ^= 1;
-				ChillerBotSettings.VSplitLeft(-128.f, &Button, &ChillerBotSettings);
+				OtherSettings.VSplitLeft(-128.f, &Button, &OtherSettings);
 
 				if(g_Config.m_ClShowOtherSettings)
 				{
 					{
-						ChillerBotSettings.HSplitTop(20.0f, &Button, &MainView);
+						OtherSettings.HSplitTop(20.0f, &Button, &MainView);
 
-						Button.VSplitLeft(0.0f, &Button, &ChillerBotSettings);
+						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
 						Button.VSplitLeft(100.0f, &Label, &Button);
 						Button.VSplitLeft(300.0f, &Button, 0);
 
@@ -153,19 +152,19 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMsg, sizeof(g_Config.m_ClAutoReplyMsg));
 						s_ReplyMsg.SetEmptyText("I'm Currently Tabbed Out");
 
-						if(DoButton_CheckBox(&g_Config.m_ClTabbedOutMsg, "Auto reply", g_Config.m_ClTabbedOutMsg, &ChillerBotSettings))
+						if(DoButton_CheckBox(&g_Config.m_ClTabbedOutMsg, "Auto reply", g_Config.m_ClTabbedOutMsg, &OtherSettings))
 						{
 							g_Config.m_ClTabbedOutMsg ^= 1;
 						}
 						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 					}
 
-					ChillerBotSettings.HSplitTop(21.0f, &Button, &ChillerBotSettings);
+					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
 
 					{
-						ChillerBotSettings.HSplitTop(20.0f, &Button, &MainView);
+						OtherSettings.HSplitTop(20.0f, &Button, &MainView);
 
-						Button.VSplitLeft(0.0f, &Button, &ChillerBotSettings);
+						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
 						Button.VSplitLeft(110.0f, &Label, &Button);
 						Button.VSplitLeft(290.0f, &Button, 0);
 
@@ -173,19 +172,19 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMutedMsg, sizeof(g_Config.m_ClAutoReplyMutedMsg));
 						s_ReplyMsg.SetEmptyText("You're muted, I can't see your messages");
 
-						if(DoButton_CheckBox(&g_Config.m_ClReplyMuted, "Muted Reply", g_Config.m_ClReplyMuted, &ChillerBotSettings))
+						if(DoButton_CheckBox(&g_Config.m_ClReplyMuted, "Muted Reply", g_Config.m_ClReplyMuted, &OtherSettings))
 						{
 							g_Config.m_ClReplyMuted ^= 1;
 						}
 						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 					}
 
-					ChillerBotSettings.HSplitTop(21.0f, &Button, &ChillerBotSettings);
+					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
 
 					{
-						ChillerBotSettings.HSplitTop(19.9f, &Button, &MainView);
+						OtherSettings.HSplitTop(19.9f, &Button, &MainView);
 
-						Button.VSplitLeft(0.0f, &Button, &ChillerBotSettings);
+						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
 						Button.VSplitLeft(140.0f, &Label, &Button);
 						Button.VSplitLeft(170.0f, &Button, 0);
 
@@ -193,18 +192,18 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						s_ReplyMsg.SetBuffer(g_Config.m_ClFinishName, sizeof(g_Config.m_ClFinishName));
 						s_ReplyMsg.SetEmptyText("qxdFox");
 
-						if(DoButton_CheckBox(&g_Config.m_ClFinishRename, "Rename on Finish", g_Config.m_ClFinishRename, &ChillerBotSettings))
+						if(DoButton_CheckBox(&g_Config.m_ClFinishRename, "Rename on Finish", g_Config.m_ClFinishRename, &OtherSettings))
 						{
 							g_Config.m_ClFinishRename ^= 1;
 						}
 						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 					}
-					ChillerBotSettings.HSplitTop(21.0f, &Button, &ChillerBotSettings);
+					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
 
 					{
-						ChillerBotSettings.HSplitTop(19.9f, &Button, &MainView);
+						OtherSettings.HSplitTop(19.9f, &Button, &MainView);
 
-						Button.VSplitLeft(0.0f, &Button, &ChillerBotSettings);
+						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
 						Button.VSplitLeft(170.0f, &Button, 0);
 
@@ -212,7 +211,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						s_NotifyName.SetBuffer(g_Config.m_ClAutoNotifyName, sizeof(g_Config.m_ClAutoNotifyName));
 						s_NotifyName.SetEmptyText("qxdFox");
 
-						if(DoButton_CheckBox(&g_Config.m_ClNotifyOnJoin, "Notify on Join Name", g_Config.m_ClNotifyOnJoin, &ChillerBotSettings))
+						if(DoButton_CheckBox(&g_Config.m_ClNotifyOnJoin, "Notify on Join Name", g_Config.m_ClNotifyOnJoin, &OtherSettings))
 						{
 							g_Config.m_ClNotifyOnJoin ^= 1;
 						}
@@ -224,31 +223,28 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 						if(g_Config.m_ClNotifyOnJoin)
 						{
-							ChillerBotSettings.HSplitTop(21.0f, &Button, &ChillerBotSettings);
-							ChillerBotSettings.HSplitTop(19.9f, &Button, &MainView);
+							OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
+							OtherSettings.HSplitTop(19.9f, &Button, &MainView);
 
-							Button.VSplitLeft(25.0f, &Button, &ChillerBotSettings);
+							Button.VSplitLeft(25.0f, &Button, &OtherSettings);
 							Button.VSplitLeft(125.0f, &Label, &Button);
 							Button.VSplitLeft(275.0f, &Button, 0);
 
-							ChillerBotSettings.HSplitTop(2.8f, &Label, &ChillerBotSettings);
-							Ui()->DoLabel(&ChillerBotSettings, "Noitfy Message:", 12.5f, TEXTALIGN_LEFT);
+							OtherSettings.HSplitTop(2.8f, &Label, &OtherSettings);
+							Ui()->DoLabel(&OtherSettings, "Noitfy Message:", 12.5f, TEXTALIGN_LEFT);
 
 							Ui()->DoEditBox(&s_NotifyMsg, &Button, 14.0f);
 						}
 					}
 					if(g_Config.m_ClNotifyOnJoin)
 					{
-						ChillerBotSettings.VSplitLeft(-25.0f, &Button, &ChillerBotSettings);
+						OtherSettings.VSplitLeft(-25.0f, &Button, &OtherSettings);
 					}
-					ChillerBotSettings.HSplitTop(20.0f, &Button, &ChillerBotSettings);
+					OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 
-					if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, ("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &ChillerBotSettings, LineSize))
-						;
-					if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubble, ("Show Chat Bubble"), &g_Config.m_ClChatBubble, &ChillerBotSettings, LineSize))
-						;
-					if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoAddOnNameChange, Localize("Auto Add People Back to Lists on Name Change"), &g_Config.m_ClAutoAddOnNameChange, &ChillerBotSettings, LineSize))
-						;
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, ("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubble, ("Show Chat Bubble"), &g_Config.m_ClChatBubble, &OtherSettings, LineSize);
+				
 				}
 
 			}
@@ -878,78 +874,20 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		// right side
 
 			// UI/Hud Settings
-
-		{
-			UiSettings.VMargin(5.0f, &UiSettings);
-			if(g_Config.m_ClShowUiHudSettings)
-			{
-				if(g_Config.m_ClFpsSpoofer)
-				{
-					if(g_Config.m_ClShowAiodobPreview)
-						UiSettings.HSplitTop(160.0f, &UiSettings, &MiscSettings);
-					else
-						UiSettings.HSplitTop(160.0f, &UiSettings, &MiscSettings);
-				}
-				else
-				{
-					if(g_Config.m_ClShowAiodobPreview)
-						UiSettings.HSplitTop(125.0f, &UiSettings, &MiscSettings);
-					else
-						UiSettings.HSplitTop(125.0f, &UiSettings, &MiscSettings);
-				}
-			}
-			else
-				UiSettings.HSplitTop(40.0f, &UiSettings, &MiscSettings);
-			if(s_ScrollRegion.AddRect(UiSettings))
-			{
-				UiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				UiSettings.VMargin(10.0f, &UiSettings);
-
-				UiSettings.HSplitTop(HeaderHeight, &Button, &UiSettings);
-				Ui()->DoLabel(&Button, Localize("Ui/Hud Settings"), FontSize, TEXTALIGN_MC);
-
-				
-				UiSettings.VSplitLeft(126.f, &Button, &UiSettings);
-
-				UiSettings.HSplitTop(-24.5f, &Button, &UiSettings);
-				UiSettings.HSplitTop(20.f, &Button, &UiSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClShowUiHudSettings, Localize(""), g_Config.m_ClShowUiHudSettings, &Button))
-					g_Config.m_ClShowUiHudSettings ^= 1;
-				UiSettings.VSplitLeft(-126.f, &Button, &UiSettings);
-
-				if(g_Config.m_ClShowUiHudSettings)
-				{
-					UiSettings.HSplitTop(2 * LineSize, &Button, &UiSettings);
-					Ui()->DoScrollbarOption(&g_Config.m_ClCornerRoundness, &g_Config.m_ClCornerRoundness, &Button, Localize("How round Corners should be"), 0, 150, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
-
-					static CButtonContainer s_UiColor;
-					// DoLine_ColorPicker(&s_UiColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &FriendSettings, Localize("Foe (war?) Name Color (old)"), &g_Config.m_AiodobColor, ColorRGBA(1.0f, 1.0f, 1.0f, 0.10f), true);
-
-					DoLine_ColorPicker(&s_UiColor, 25.0f, 13.0f, 2.0f, &UiSettings, Localize("Background Color"), &g_Config.m_AiodobColor, color_cast<ColorRGBA>(ColorHSLA(654311494, true)), false, nullptr, true);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFpsSpoofer, Localize("Fps Spoofer"), &g_Config.m_ClFpsSpoofer, &UiSettings, LineSize);
-					if(g_Config.m_ClFpsSpoofer)
-					{
-						UiSettings.HSplitTop(2 * LineSize, &Button, &UiSettings);
-						Ui()->DoScrollbarOption(&g_Config.m_ClFpsSpoofPercentage, &g_Config.m_ClFpsSpoofPercentage, &Button, Localize("Fps Spoofer Margin"), 1, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
-					}
-				}
-			}
-		}
 		
 		{
-			MiscSettings.HSplitTop(Margin, nullptr, &MiscSettings);
+			MiscSettings.VMargin(5.0f, &MiscSettings);
 			if(g_Config.m_ClShowMiscSettings)
 			{
 				if(g_Config.m_ClRenderCursorSpec)
 				{
 					if(g_Config.m_ClDoCursorSpecOpacity)
-						MiscSettings.HSplitTop(180.0f, &MiscSettings, &PlayerIndicatorSettings);
+						MiscSettings.HSplitTop(210.0f, &MiscSettings, &PlayerIndicatorSettings);
 					else
-						MiscSettings.HSplitTop(140.0f, &MiscSettings, &PlayerIndicatorSettings);
+						MiscSettings.HSplitTop(170.0f, &MiscSettings, &PlayerIndicatorSettings);
 				}
 				else
-					MiscSettings.HSplitTop(120.0f, &MiscSettings, &PlayerIndicatorSettings);
+					MiscSettings.HSplitTop(150.0f, &MiscSettings, &PlayerIndicatorSettings);
 			}
 			else
 				MiscSettings.HSplitTop(40.0f, &MiscSettings, &PlayerIndicatorSettings);
@@ -974,6 +912,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoVerify, ("Auto Verify"), &g_Config.m_ClAutoVerify, &MiscSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &MiscSettings, LineSize);
 
+					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);
+
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderCursorSpec, ("Show Cursor While Spectating"), &g_Config.m_ClRenderCursorSpec, &MiscSettings, LineSize);
 					if(g_Config.m_ClRenderCursorSpec)
 					{
@@ -984,10 +924,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpecOpacity, &g_Config.m_ClRenderCursorSpecOpacity, &Button, Localize("Cursor Opacity While Spectating"), 1, 100, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
 						}
 					}
-
+					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);
 					{
 						MiscSettings.HSplitTop(20.0f, &Button, &MainView);
-
 						Button.VSplitLeft(0.0f, &Button, &MiscSettings);
 						Button.VSplitLeft(158.0f, &Label, &Button);
 						Button.VSplitLeft(248.0f, &Button, 0);
@@ -1002,6 +941,37 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						}
 						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 					}
+
+					{
+						MiscSettings.HSplitTop(25.0f, &Button, &MiscSettings);
+						MiscSettings.HSplitTop(20.0f, &Button, &MiscSettings);
+
+						Button.VSplitLeft(0.0f, &Button, &MiscSettings);
+						Button.VSplitLeft(175.0f, &Label, &Button);
+						Button.VSplitLeft(125.0f, &Button, 0);
+
+						static CLineInput s_LastInput;
+						s_LastInput.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
+						s_LastInput.SetEmptyText("Last!");
+
+						if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when you're last", g_Config.m_ClNotifyWhenLast, &MiscSettings))
+						{
+							g_Config.m_ClNotifyWhenLast ^= 1;
+						}
+
+						if(g_Config.m_ClNotifyWhenLast)
+						{
+							Ui()->DoEditBox(&s_LastInput, &Button, 14.0f);
+							static CLineInput s_NotifyMsg;
+							static CButtonContainer s_LastColor;
+							s_NotifyMsg.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
+							s_NotifyMsg.SetEmptyText("Last!");
+
+							MiscSettings.HSplitTop(-3.0f, &Label, &MiscSettings);
+
+							DoLine_ColorPicker(&s_LastColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &MiscSettings, Localize(""), &g_Config.m_ClNotifyWhenLastColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(29057)), true);
+						}
+					}
 				}
 			
 			}
@@ -1012,105 +982,177 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			if(g_Config.m_ClShowPlayerIndSettings)
 			{
 				if(g_Config.m_ClIndicatorVariableDistance)
-					PlayerIndicatorSettings.HSplitTop(390.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
+					PlayerIndicatorSettings.HSplitTop(390.0f, &PlayerIndicatorSettings, &FrozenTeeHudSettings);
 				else
-					PlayerIndicatorSettings.HSplitTop(340.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
+					PlayerIndicatorSettings.HSplitTop(340.0f, &PlayerIndicatorSettings, &FrozenTeeHudSettings);
 			}
 			else
-				PlayerIndicatorSettings.HSplitTop(40.0f, &PlayerIndicatorSettings, &ScoreboardSettings);
-			if(s_ScrollRegion.AddRect(PlayerIndicatorSettings))
-			{
-				PlayerIndicatorSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				PlayerIndicatorSettings.VMargin(Margin, &PlayerIndicatorSettings);
-
-				PlayerIndicatorSettings.HSplitTop(HeaderHeight, &Button, &PlayerIndicatorSettings);
-				Ui()->DoLabel(&Button, Localize("Player Indicator"), FontSize, TEXTALIGN_MC);
-
-				PlayerIndicatorSettings.VSplitLeft(126.f, &Button, &PlayerIndicatorSettings);
-
-				PlayerIndicatorSettings.HSplitTop(-24.5f, &Button, &PlayerIndicatorSettings);
-				PlayerIndicatorSettings.HSplitTop(20.f, &Button, &PlayerIndicatorSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClShowPlayerIndSettings, Localize(""), g_Config.m_ClShowPlayerIndSettings, &Button))
-					g_Config.m_ClShowPlayerIndSettings ^= 1;
-				PlayerIndicatorSettings.VSplitLeft(-126.f, &Button, &PlayerIndicatorSettings);
-
-				if(g_Config.m_ClShowPlayerIndSettings)
+				PlayerIndicatorSettings.HSplitTop(40.0f, &PlayerIndicatorSettings, &FrozenTeeHudSettings);
+				if (s_ScrollRegion.AddRect(PlayerIndicatorSettings))
 				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, ("Enable Player Indicators"), &g_Config.m_ClPlayerIndicator, &PlayerIndicatorSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicatorFreeze, ("Show Only Freeze Players"), &g_Config.m_ClPlayerIndicatorFreeze, &PlayerIndicatorSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, ("Only Show After Joining a Team"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTees, ("Render Tiny Tees Instead of Circles"), &g_Config.m_ClIndicatorTees, &PlayerIndicatorSettings, LineSize);
+					PlayerIndicatorSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+					PlayerIndicatorSettings.VMargin(Margin, &PlayerIndicatorSettings);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorVariableDistance, ("Change Indicator Offset Based On Distance to Other Tees"), &g_Config.m_ClIndicatorVariableDistance, &PlayerIndicatorSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorHideOnScreen, ("Hide Indicator if Tee is on Screen"), &g_Config.m_ClIndicatorHideOnScreen, &PlayerIndicatorSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, ("Only Show Indicator For Teammates"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
+					PlayerIndicatorSettings.HSplitTop(HeaderHeight, &Button, &PlayerIndicatorSettings);
+					Ui()->DoLabel(&Button, Localize("Player Indicator"), FontSize, TEXTALIGN_MC);
 
-					static CButtonContainer IndicatorAliveColorID, IndicatorDeadColorID, IndicatorSavedColorID;
-					DoLine_ColorPicker(&IndicatorAliveColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator alive color"), &g_Config.m_ClIndicatorAlive, ColorRGBA(0.6f, 1.0f, 0.6f, 1.0f), true);
+					PlayerIndicatorSettings.VSplitLeft(126.f, &Button, &PlayerIndicatorSettings);
 
-					DoLine_ColorPicker(&IndicatorDeadColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator dead color"), &g_Config.m_ClIndicatorFreeze, ColorRGBA(1.0f, 0.4f, 0.4f, 1.0f), true);
+					PlayerIndicatorSettings.HSplitTop(-24.5f, &Button, &PlayerIndicatorSettings);
+					PlayerIndicatorSettings.HSplitTop(20.f, &Button, &PlayerIndicatorSettings);
+					if (DoButton_CheckBox(&g_Config.m_ClShowPlayerIndSettings, Localize(""), g_Config.m_ClShowPlayerIndSettings, &Button))
+						g_Config.m_ClShowPlayerIndSettings ^= 1;
+					PlayerIndicatorSettings.VSplitLeft(-126.f, &Button, &PlayerIndicatorSettings);
 
-					DoLine_ColorPicker(&IndicatorSavedColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator save color"), &g_Config.m_ClIndicatorSaved, ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f), true);
+					if (g_Config.m_ClShowPlayerIndSettings)
+					{
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, ("Enable Player Indicators"), &g_Config.m_ClPlayerIndicator, &PlayerIndicatorSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicatorFreeze, ("Show Only Freeze Players"), &g_Config.m_ClPlayerIndicatorFreeze, &PlayerIndicatorSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, ("Only Show After Joining a Team"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTees, ("Render Tiny Tees Instead of Circles"), &g_Config.m_ClIndicatorTees, &PlayerIndicatorSettings, LineSize);
 
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorVariableDistance, ("Change Indicator Offset Based On Distance to Other Tees"), &g_Config.m_ClIndicatorVariableDistance, &PlayerIndicatorSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorHideOnScreen, ("Hide Indicator if Tee is on Screen"), &g_Config.m_ClIndicatorHideOnScreen, &PlayerIndicatorSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, ("Only Show Indicator For Teammates"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
+
+						static CButtonContainer IndicatorAliveColorID, IndicatorDeadColorID, IndicatorSavedColorID;
+						DoLine_ColorPicker(&IndicatorAliveColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator alive color"), &g_Config.m_ClIndicatorAlive, ColorRGBA(0.6f, 1.0f, 0.6f, 1.0f), true);
+
+						DoLine_ColorPicker(&IndicatorDeadColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator dead color"), &g_Config.m_ClIndicatorFreeze, ColorRGBA(1.0f, 0.4f, 0.4f, 1.0f), true);
+
+						DoLine_ColorPicker(&IndicatorSavedColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator save color"), &g_Config.m_ClIndicatorSaved, ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f), true);
+
+						{
+							CUIRect Button, Label;
+							PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
+							PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
+							Button.VSplitLeft(150.0f, &Label, &Button);
+							char aBuf[64];
+							str_format(aBuf, sizeof(aBuf), "%s: %i ", "Indicator size", g_Config.m_ClIndicatorRadius);
+							Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
+							g_Config.m_ClIndicatorRadius = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorRadius, &Button, (g_Config.m_ClIndicatorRadius - 1) / 15.0f) * 15.0f) + 1;
+						}
+						{
+							CUIRect Button, Label;
+							PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
+							PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
+							Button.VSplitLeft(150.0f, &Label, &Button);
+							char aBuf[64];
+							str_format(aBuf, sizeof(aBuf), "%s: %i ", "Indicator opacity", g_Config.m_ClIndicatorOpacity);
+							Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
+							g_Config.m_ClIndicatorOpacity = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorOpacity, &Button, (g_Config.m_ClIndicatorOpacity) / 100.0f) * 100.0f);
+						}
+						{
+							CUIRect Button, Label;
+							PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
+							PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
+							Button.VSplitLeft(150.0f, &Label, &Button);
+							char aBuf[64];
+							str_format(aBuf, sizeof(aBuf), "%s: %i ", "Indicator offset", g_Config.m_ClIndicatorOffset);
+							if (g_Config.m_ClIndicatorVariableDistance)
+								str_format(aBuf, sizeof(aBuf), "%s: %i ", "Min offset", g_Config.m_ClIndicatorOffset);
+							Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
+							g_Config.m_ClIndicatorOffset = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorOffset, &Button, (g_Config.m_ClIndicatorOffset - 16) / 184.0f) * 184.0f) + 16;
+						}
+						if (g_Config.m_ClIndicatorVariableDistance)
+						{
+							CUIRect Button, Label;
+							PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
+							PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
+							Button.VSplitLeft(150.0f, &Label, &Button);
+							char aBuf[64];
+							str_format(aBuf, sizeof(aBuf), "%s: %i ", "Max offset", g_Config.m_ClIndicatorOffsetMax);
+							Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
+							g_Config.m_ClIndicatorOffsetMax = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorOffsetMax, &Button, (g_Config.m_ClIndicatorOffsetMax - 16) / 184.0f) * 184.0f) + 16;
+						}
+						if (g_Config.m_ClIndicatorVariableDistance)
+						{
+							CUIRect Button, Label;
+							PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
+							PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
+							Button.VSplitLeft(150.0f, &Label, &Button);
+							char aBuf[64];
+							str_format(aBuf, sizeof(aBuf), "%s: %i ", "Max distance", g_Config.m_ClIndicatorMaxDistance);
+							Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
+							int NewValue = (g_Config.m_ClIndicatorMaxDistance) / 50.0f;
+							NewValue = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorMaxDistance, &Button, (NewValue - 10) / 130.0f) * 130.0f) + 10;
+							g_Config.m_ClIndicatorMaxDistance = NewValue * 50;
+						}
+					}
+				}
+		}
+
+		{
+			FrozenTeeHudSettings.HSplitTop(Margin, nullptr, &FrozenTeeHudSettings);
+			if(g_Config.m_ClShowFrozenTeeHudSettings)
+			{
+				FrozenTeeHudSettings.HSplitTop(155.0f, &FrozenTeeHudSettings, &ScoreboardSettings);
+			}
+			else
+				FrozenTeeHudSettings.HSplitTop(40.0f, &FrozenTeeHudSettings, &ScoreboardSettings);
+			if(s_ScrollRegion.AddRect(FrozenTeeHudSettings))
+			{
+				FrozenTeeHudSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				FrozenTeeHudSettings.VMargin(Margin, &FrozenTeeHudSettings);
+
+				FrozenTeeHudSettings.HSplitTop(HeaderHeight, &Button, &FrozenTeeHudSettings);
+				Ui()->DoLabel(&Button, Localize("Frozen Tee Hud"), FontSize, TEXTALIGN_MC);
+				
+				FrozenTeeHudSettings.VSplitLeft(124.f, &Button, &FrozenTeeHudSettings);
+
+				FrozenTeeHudSettings.HSplitTop(-24.5f, &Button, &FrozenTeeHudSettings);
+				FrozenTeeHudSettings.HSplitTop(20.f, &Button, &FrozenTeeHudSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClShowFrozenTeeHudSettings, Localize(""), g_Config.m_ClShowFrozenTeeHudSettings, &Button))
+					g_Config.m_ClShowFrozenTeeHudSettings ^= 1;
+				FrozenTeeHudSettings.VSplitLeft(-124.f, &Button, &FrozenTeeHudSettings);
+
+				if(g_Config.m_ClShowFrozenTeeHudSettings)
+				{
+					// ***** FROZEN TEE HUD ***** //
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHud, ("Show frozen tee display"), &g_Config.m_ClShowFrozenHud, &FrozenTeeHudSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHudSkins, ("Use skins instead of ninja tees"), &g_Config.m_ClShowFrozenHudSkins, &FrozenTeeHudSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFrozenHudTeamOnly, ("Only show after joining a team"), &g_Config.m_ClFrozenHudTeamOnly, &FrozenTeeHudSettings, LineMargin);
 					{
 						CUIRect Button, Label;
-						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
-						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
-						Button.VSplitLeft(150.0f, &Label, &Button);
+						FrozenTeeHudSettings.HSplitTop(20.0f, &Button, &FrozenTeeHudSettings);
+						Button.VSplitLeft(140.0f, &Label, &Button);
 						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %i ", "Indicator size", g_Config.m_ClIndicatorRadius);
+						str_format(aBuf, sizeof(aBuf), "%s: %i", "Max Rows", g_Config.m_ClFrozenMaxRows);
 						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClIndicatorRadius = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorRadius, &Button, (g_Config.m_ClIndicatorRadius - 1) / 15.0f) * 15.0f) + 1;
+						g_Config.m_ClFrozenMaxRows = (int)(Ui()->DoScrollbarH(&g_Config.m_ClFrozenMaxRows, &Button, (g_Config.m_ClFrozenMaxRows - 1) / 5.0f) * 5.0f) + 1;
 					}
 					{
 						CUIRect Button, Label;
-						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
-						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
-						Button.VSplitLeft(150.0f, &Label, &Button);
+						FrozenTeeHudSettings.HSplitTop(20.0f, &Button, &FrozenTeeHudSettings);
+						Button.VSplitLeft(140.0f, &Label, &Button);
 						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %i ", "Indicator opacity", g_Config.m_ClIndicatorOpacity);
+						str_format(aBuf, sizeof(aBuf), "%s: %i", "Tee Size", g_Config.m_ClFrozenHudTeeSize);
 						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClIndicatorOpacity = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorOpacity, &Button, (g_Config.m_ClIndicatorOpacity) / 100.0f) * 100.0f);
+						g_Config.m_ClFrozenHudTeeSize = (int)(Ui()->DoScrollbarH(&g_Config.m_ClFrozenHudTeeSize, &Button, (g_Config.m_ClFrozenHudTeeSize - 8) / 19.0f) * 19.0f) + 8;
 					}
+
 					{
-						CUIRect Button, Label;
-						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
-						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
-						Button.VSplitLeft(150.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %i ", "Indicator offset", g_Config.m_ClIndicatorOffset);
-						if(g_Config.m_ClIndicatorVariableDistance)
-							str_format(aBuf, sizeof(aBuf), "%s: %i ", "Min offset", g_Config.m_ClIndicatorOffset);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClIndicatorOffset = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorOffset, &Button, (g_Config.m_ClIndicatorOffset - 16) / 184.0f) * 184.0f) + 16;
-					}
-					if(g_Config.m_ClIndicatorVariableDistance)
-					{
-						CUIRect Button, Label;
-						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
-						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
-						Button.VSplitLeft(150.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %i ", "Max offset", g_Config.m_ClIndicatorOffsetMax);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClIndicatorOffsetMax = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorOffsetMax, &Button, (g_Config.m_ClIndicatorOffsetMax - 16) / 184.0f) * 184.0f) + 16;
-					}
-					if(g_Config.m_ClIndicatorVariableDistance)
-					{
-						CUIRect Button, Label;
-						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
-						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
-						Button.VSplitLeft(150.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %i ", "Max distance", g_Config.m_ClIndicatorMaxDistance);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						int NewValue = (g_Config.m_ClIndicatorMaxDistance) / 50.0f;
-						NewValue = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorMaxDistance, &Button, (NewValue - 10) / 130.0f) * 130.0f) + 10;
-						g_Config.m_ClIndicatorMaxDistance = NewValue * 50;
+						CUIRect CheckBoxRect, CheckBoxRect2;
+						FrozenTeeHudSettings.HSplitTop(LineMargin, &CheckBoxRect, &FrozenTeeHudSettings);
+						CheckBoxRect.VSplitMid(&CheckBoxRect, &CheckBoxRect2);
+						if(DoButton_CheckBox(&g_Config.m_ClShowFrozenText, Localize("Tees Left Alive Text"), g_Config.m_ClShowFrozenText >= 1, &CheckBoxRect))
+						{
+							g_Config.m_ClShowFrozenText = g_Config.m_ClShowFrozenText >= 1 ? 0 : 1;
+						}
+						if(g_Config.m_ClShowFrozenText)
+						{
+							static int s_CountFrozenText = 0;
+							if(DoButton_CheckBox(&s_CountFrozenText, Localize("Count Frozen Tees"), g_Config.m_ClShowFrozenText == 2, &CheckBoxRect2))
+							{
+								g_Config.m_ClShowFrozenText = g_Config.m_ClShowFrozenText != 2 ? 2 : 1;
+							}
+						}
 					}
 				}
 			}
 		}
+
 
 		{
 			ScoreboardSettings.HSplitTop(Margin, nullptr, &ScoreboardSettings);
@@ -1188,7 +1230,283 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		s_ScrollRegion.End();
 	}
 
-	const float LineMargin = 20.0f;
+	if(s_CurTab == AIODOB_TAB_VISUAL)
+	{
+		static CScrollRegion s_ScrollRegion;
+		vec2 ScrollOffset(0.0f, 0.0f);
+		CScrollRegionParams ScrollParams;
+		ScrollParams.m_ScrollUnit = 120.0f;
+		s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
+		MainView.y += ScrollOffset.y;
+
+		const float FontSize = 14.0f;
+		const float Margin = 10.0f;
+		const float HeaderHeight = FontSize + 5.0f + Margin;
+
+		// left side in settings menu
+
+		CUIRect PlayerSettings, FreezeBarSettings, ResetButton, SoundSettings, WarVisual, PredictionSettings, AutoKillOntopSettings, UiSettings;
+		MainView.VSplitMid(&PlayerSettings, &ResetButton);
+
+		// Weapon Settings
+
+		{
+			PlayerSettings.VMargin(5.0f, &PlayerSettings);
+			if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
+				PlayerSettings.HSplitTop(165.0f, &PlayerSettings, &UiSettings);
+			else
+				PlayerSettings.HSplitTop(150.0f, &PlayerSettings, &UiSettings);
+			if(s_ScrollRegion.AddRect(PlayerSettings))
+			{
+				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				PlayerSettings.VMargin(Margin, &PlayerSettings);
+
+				PlayerSettings.HSplitTop(HeaderHeight, &Button, &PlayerSettings);
+				Ui()->DoLabel(&Button, Localize("Cosmetic Settings"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
+
+				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffect, ("Sparkle Effect Self"), &g_Config.m_ClSparkleEffect, &PlayerSettings, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffectOthers, ("Sparkle Effect Others"), &g_Config.m_ClSparkleEffectOthers, &PlayerSettings, LineMargin);
+
+				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
+				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClRainbow, Localize("Rainbow Tee"), g_Config.m_ClRainbow, &Button))
+					g_Config.m_ClRainbow ^= 1;
+
+				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClRainbowHook, Localize("Rainbow Hook"), g_Config.m_ClRainbowHook, &Button))
+					g_Config.m_ClRainbowHook ^= 1;
+				if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
+				{
+					PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "%");
+					PlayerSettings.HSplitTop(-20.f, &Button, &PlayerSettings);
+				}
+
+				PlayerSettings.VSplitLeft(0.f, &Button, &PlayerSettings);
+				PlayerSettings.VSplitLeft(150.f, &Button, &PlayerSettings);
+
+				PlayerSettings.HSplitTop(-40.f, &Button, &PlayerSettings);
+				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClRainbowOthers, Localize("Rainbow Tee Others"), g_Config.m_ClRainbowOthers, &Button))
+					g_Config.m_ClRainbowOthers ^= 1;
+
+				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
+				if(DoButton_CheckBox(&g_Config.m_ClRainbowHookOthers, Localize("Rainbow Hook Others"), g_Config.m_ClRainbowHookOthers, &Button))
+					g_Config.m_ClRainbowHookOthers ^= 1;
+			}
+		}
+
+		{
+			UiSettings.HSplitTop(Margin, nullptr, &UiSettings);
+			if(g_Config.m_ClFpsSpoofer)
+				UiSettings.HSplitTop(160.0f, &UiSettings, &FreezeBarSettings);
+			else
+				UiSettings.HSplitTop(125.0f, &UiSettings, &FreezeBarSettings);
+			if(s_ScrollRegion.AddRect(UiSettings))
+			{
+				UiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				UiSettings.VMargin(10.0f, &UiSettings);
+
+				UiSettings.HSplitTop(HeaderHeight, &Button, &UiSettings);
+				Ui()->DoLabel(&Button, Localize("Ui/Hud Settings"), FontSize, TEXTALIGN_MC);
+
+				UiSettings.HSplitTop(2 * LineSize, &Button, &UiSettings);
+				Ui()->DoScrollbarOption(&g_Config.m_ClCornerRoundness, &g_Config.m_ClCornerRoundness, &Button, Localize("How round Corners should be"), 0, 150, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
+
+				static CButtonContainer s_UiColor;
+				// DoLine_ColorPicker(&s_UiColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &FriendSettings, Localize("Foe (war?) Name Color (old)"), &g_Config.m_AiodobColor, ColorRGBA(1.0f, 1.0f, 1.0f, 0.10f), true);
+
+				DoLine_ColorPicker(&s_UiColor, 25.0f, 13.0f, 2.0f, &UiSettings, Localize("Background Color"), &g_Config.m_AiodobColor, color_cast<ColorRGBA>(ColorHSLA(654311494, true)), false, nullptr, true);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFpsSpoofer, Localize("Fps Spoofer"), &g_Config.m_ClFpsSpoofer, &UiSettings, LineSize);
+				if(g_Config.m_ClFpsSpoofer)
+				{
+					UiSettings.HSplitTop(2 * LineSize, &Button, &UiSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClFpsSpoofPercentage, &g_Config.m_ClFpsSpoofPercentage, &Button, Localize("Fps Spoofer Margin"), 1, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
+				}
+			
+			}
+		}
+
+		// Hammer Settings
+
+		{
+			FreezeBarSettings.HSplitTop(Margin, nullptr, &FreezeBarSettings);
+			FreezeBarSettings.HSplitTop(195.0f, &FreezeBarSettings, 0);
+			if(s_ScrollRegion.AddRect(FreezeBarSettings))
+			{
+				FreezeBarSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				FreezeBarSettings.VMargin(Margin, &FreezeBarSettings);
+
+				FreezeBarSettings.HSplitTop(HeaderHeight, &Button, &FreezeBarSettings);
+				Ui()->DoLabel(&Button, Localize("Freeze Bar"), FontSize, TEXTALIGN_MC);
+
+				FreezeBarSettings.HSplitTop(2 * LineSize, &Button, &FreezeBarSettings);
+				Ui()->DoScrollbarOption(&g_Config.m_ClFreezeBarWidth, &g_Config.m_ClFreezeBarWidth, &Button, Localize("Freeze Bar Width"), -500, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
+
+				FreezeBarSettings.HSplitTop(2 * LineSize, &Button, &FreezeBarSettings);
+				Ui()->DoScrollbarOption(&g_Config.m_ClFreezeBarHeight, &g_Config.m_ClFreezeBarHeight, &Button, Localize("Freeze Bar Height"), -500, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
+
+				FreezeBarSettings.HSplitTop(2 * LineSize, &Button, &FreezeBarSettings);
+				Ui()->DoScrollbarOption(&g_Config.m_ClFreezeBarX, &g_Config.m_ClFreezeBarX, &Button, Localize("Freeze Bar X Position"), -500, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
+
+				FreezeBarSettings.HSplitTop(2 * LineSize, &Button, &FreezeBarSettings);
+				Ui()->DoScrollbarOption(&g_Config.m_ClFreezeBarY, &g_Config.m_ClFreezeBarY, &Button, Localize("Freeze Bar Y Position"), -500, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
+			}
+		}
+
+		// right side in settings menu
+
+		// defaults
+		{
+			ResetButton.VMargin(5.0f, &ResetButton);
+			ResetButton.HSplitTop(40.0f, &ResetButton, &SoundSettings);
+			if(s_ScrollRegion.AddRect(ResetButton))
+			{
+				ResetButton.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 7.5f));
+				ResetButton.Margin(10.0f, &ResetButton);
+				static CButtonContainer s_DefaultButton;
+				if(DoButton_Menu(&s_DefaultButton, Localize("Reset Sliders to Default"), 0, &ResetButton))
+				{
+					PopupConfirm(Localize("Reset Sliders"), Localize("Are You Sure You Want to Reset All Sliders to Default?"),
+						Localize("Reset"), Localize("Cancel"), &CMenus::ResetSettingsCustomization);
+				}
+			}
+		}
+
+		{
+			SoundSettings.HSplitTop(Margin, nullptr, &SoundSettings);
+			SoundSettings.HSplitTop(100.0f, &SoundSettings, &WarVisual);
+			if(s_ScrollRegion.AddRect(SoundSettings))
+			{
+				SoundSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				SoundSettings.VMargin(Margin, &SoundSettings);
+
+				SoundSettings.HSplitTop(HeaderHeight, &Button, &SoundSettings);
+				Ui()->DoLabel(&Button, Localize("Sound Settings"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_SndFriendChat, ("Do Chat Sound For Friends Only"), &g_Config.m_SndFriendChat, &SoundSettings, LineMargin);
+				if(g_Config.m_SndFriendChat)
+				{
+					g_Config.m_SndChat = 0;
+				}
+
+				if(g_Config.m_ClNotifyOnJoin)
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoNotifySound, ("Do 'Notify on Player Join' Sound Effect"), &g_Config.m_ClAutoNotifySound, &SoundSettings, LineMargin);
+			}
+		}
+
+		{
+			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
+			if(g_Config.m_ClSweatMode)
+				if(g_Config.m_ClSweatModeSkin)
+					WarVisual.HSplitTop(185.0f, &WarVisual, &PredictionSettings);
+				else
+					WarVisual.HSplitTop(145.0f, &WarVisual, &PredictionSettings);
+			else
+				WarVisual.HSplitTop(125.0f, &WarVisual, &PredictionSettings);
+			if(s_ScrollRegion.AddRect(WarVisual))
+			{
+				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				WarVisual.VMargin(Margin, &WarVisual);
+
+				WarVisual.HSplitTop(HeaderHeight, &Button, &WarVisual);
+				Ui()->DoLabel(&Button, Localize("Extra Warlist Settings"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistConsoleColors, ("Show Colors in Console"), &g_Config.m_ClWarlistConsoleColors, &WarVisual, LineMargin);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoClanWar, ("Make Clanmates of Enemies Also Have a Red-Ish Color"), &g_Config.m_ClAutoClanWar, &WarVisual, LineMargin);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoAddOnNameChange, Localize("Auto Add to Lists on Name Change"), &g_Config.m_ClAutoAddOnNameChange, &WarVisual, LineSize);
+
+				WarVisual.HSplitTop(2, &Button, &WarVisual);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode."), &g_Config.m_ClSweatMode, &WarVisual, LineMargin);
+
+				if(g_Config.m_ClSweatMode)
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSkin, ("Change Everyones Skin"), &g_Config.m_ClSweatModeSkin, &WarVisual, LineMargin);
+
+					if(g_Config.m_ClSweatModeSkin)
+					{
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &WarVisual, LineMargin);
+
+						static CLineInput s_Name;
+						s_Name.SetBuffer(g_Config.m_ClSweatModeSkinName, sizeof(g_Config.m_ClSweatModeSkinName));
+						s_Name.SetEmptyText("x_ninja");
+
+						WarVisual.HSplitTop(2.4f, &Label, &WarVisual);
+						WarVisual.VSplitLeft(25.0f, &WarVisual, &WarVisual);
+						Ui()->DoLabel(&WarVisual, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
+
+						WarVisual.HSplitTop(-1, &Button, &WarVisual);
+						WarVisual.HSplitTop(18.9f, &Button, &WarVisual);
+
+						Button.VSplitLeft(0.0f, &Button, &WarVisual);
+						Button.VSplitLeft(80.0f, &Label, &Button);
+						Button.VSplitLeft(120.0f, &Button, 0);
+
+						Ui()->DoEditBox(&s_Name, &Button, 14.0f);
+					}
+					else
+						g_Config.m_ClSweatModeOnlyOthers = 0;
+				}
+			}
+		}
+
+		{
+			PredictionSettings.HSplitTop(Margin, nullptr, &PredictionSettings);
+			PredictionSettings.HSplitTop(80.0f, &PredictionSettings, &AutoKillOntopSettings);
+			if(s_ScrollRegion.AddRect(PredictionSettings))
+			{
+				PredictionSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				PredictionSettings.VMargin(Margin, &PredictionSettings);
+
+				PredictionSettings.HSplitTop(HeaderHeight, &Button, &PredictionSettings);
+				Ui()->DoLabel(&Button, Localize("Laser/Grenade Prediction"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClLaserPath, ("Predict Laser Path"), &g_Config.m_ClLaserPath, &PredictionSettings, LineMargin);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGrenadePath, ("Predict Grenade Path"), &g_Config.m_ClGrenadePath, &PredictionSettings, LineMargin);
+			}
+		}
+
+		{
+			AutoKillOntopSettings.HSplitTop(Margin, nullptr, &AutoKillOntopSettings);
+			if(g_Config.m_ClAutoKill)
+				AutoKillOntopSettings.HSplitTop(180.0f, &AutoKillOntopSettings, 0);
+			else
+				AutoKillOntopSettings.HSplitTop(80.0f, &AutoKillOntopSettings, 0);
+			if(s_ScrollRegion.AddRect(AutoKillOntopSettings))
+			{
+				AutoKillOntopSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				AutoKillOntopSettings.VMargin(Margin, &AutoKillOntopSettings);
+
+				AutoKillOntopSettings.HSplitTop(HeaderHeight, &Button, &AutoKillOntopSettings);
+				Ui()->DoLabel(&Button, Localize("Auto Kill"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKill, ("Auto Kill if Frozen And You're Below a Player"), &g_Config.m_ClAutoKill, &AutoKillOntopSettings, LineMargin);
+				if(g_Config.m_ClAutoKill)
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillWarOnly, ("Only Kill if The Player is an Enemy"), &g_Config.m_ClAutoKillWarOnly, &AutoKillOntopSettings, LineMargin);
+
+
+					AutoKillOntopSettings.HSplitTop(2 * LineSize, &Button, &AutoKillOntopSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClAutoKillRangeX, &g_Config.m_ClAutoKillRangeX, &Button, Localize("x Axis ↔ Auto Kill Range"), 1, 100, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
+				
+					AutoKillOntopSettings.HSplitTop(2 * LineSize, &Button, &AutoKillOntopSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClAutoKillRangeY, &g_Config.m_ClAutoKillRangeY, &Button, Localize("y Axis ↕ Auto Kill Range"), 1, 100, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
+				
+				}
+			
+			
+			}
+			s_ScrollRegion.End();
+		}
+	}
+
 	CUIRect Column, Section;
 
 	if(s_CurTab == AIODOB_TAB_BINDWHEEL)
@@ -1327,232 +1645,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		LeftColumn.HSplitBottom(LineMargin, &LeftColumn, &Button);
 
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetBindWheelMouse, ("Reset position of mouse when opening bindwheel"), &g_Config.m_ClResetBindWheelMouse, &Button, LineMargin);
-	}
-
-	
-	if(s_CurTab == AIODOB_TAB_VISUAL)
-	{
-		static CScrollRegion s_ScrollRegion;
-		vec2 ScrollOffset(0.0f, 0.0f);
-		CScrollRegionParams ScrollParams;
-		ScrollParams.m_ScrollUnit = 120.0f;
-		s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
-		MainView.y += ScrollOffset.y;
-
-		const float FontSize = 14.0f;
-		const float Margin = 10.0f;
-		const float HeaderHeight = FontSize + 5.0f + Margin;
-
-		// left side in settings menu
-
-		CUIRect PlayerSettings, FreezeBarSettings,ResetButton, SoundSettings, WarVisual, PredictionSettings;
-		MainView.VSplitMid(&PlayerSettings, &ResetButton);
-
-	
-		// Weapon Settings
-
-		{
-			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
-				PlayerSettings.HSplitTop(165.0f, &PlayerSettings, &FreezeBarSettings);
-			else
-				PlayerSettings.HSplitTop(150.0f, &PlayerSettings, &FreezeBarSettings);
-			if(s_ScrollRegion.AddRect(PlayerSettings))
-			{
-				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				PlayerSettings.VMargin(Margin, &PlayerSettings);
-
-				PlayerSettings.HSplitTop(HeaderHeight, &Button, &PlayerSettings);
-				Ui()->DoLabel(&Button, Localize("Tee Settings"), FontSize, TEXTALIGN_MC);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
-
-				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffect, ("Sparkle Effect Self"), &g_Config.m_ClSparkleEffect, &PlayerSettings, LineMargin);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffectOthers, ("Sparkle Effect Others"), &g_Config.m_ClSparkleEffectOthers, &PlayerSettings, LineMargin);
-		
-
-				
-
-
-			
-				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
-				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClRainbow, Localize("Rainbow Tee"), g_Config.m_ClRainbow, &Button))
-					g_Config.m_ClRainbow ^= 1;
-
-	
-
-
-				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClRainbowHook, Localize("Rainbow Hook"), g_Config.m_ClRainbowHook, &Button))
-					g_Config.m_ClRainbowHook ^= 1;
-				if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
-				{
-					PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-					Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "%");
-					PlayerSettings.HSplitTop(-20.f, &Button, &PlayerSettings);
-				}
-
-				PlayerSettings.VSplitLeft(0.f, &Button, &PlayerSettings);
-				PlayerSettings.VSplitLeft(150.f, &Button, &PlayerSettings);
-
-				PlayerSettings.HSplitTop(-40.f, &Button, &PlayerSettings);
-				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClRainbowOthers, Localize("Rainbow Tee Others"), g_Config.m_ClRainbowOthers, &Button))
-					g_Config.m_ClRainbowOthers ^= 1;
-
-				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClRainbowHookOthers, Localize("Rainbow Hook Others"), g_Config.m_ClRainbowHookOthers, &Button))
-					g_Config.m_ClRainbowHookOthers ^= 1;
-			}
-		}
-
-		// Hammer Settings
-
-		
-		{
-			FreezeBarSettings.HSplitTop(Margin, nullptr, &FreezeBarSettings);
-			FreezeBarSettings.HSplitTop(195.0f, &FreezeBarSettings, 0);
-			if(s_ScrollRegion.AddRect(FreezeBarSettings))
-			{
-				FreezeBarSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				FreezeBarSettings.VMargin(Margin, &FreezeBarSettings);
-
-				FreezeBarSettings.HSplitTop(HeaderHeight, &Button, &FreezeBarSettings);
-				Ui()->DoLabel(&Button, Localize("Freeze Bar"), FontSize, TEXTALIGN_MC);
-
-				FreezeBarSettings.HSplitTop(2 * LineSize, &Button, &FreezeBarSettings);
-				Ui()->DoScrollbarOption(&g_Config.m_ClFreezeBarWidth, &g_Config.m_ClFreezeBarWidth, &Button, Localize("Freeze Bar Width"), -500, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
-
-				FreezeBarSettings.HSplitTop(2 * LineSize, &Button, &FreezeBarSettings);
-				Ui()->DoScrollbarOption(&g_Config.m_ClFreezeBarHeight, &g_Config.m_ClFreezeBarHeight, &Button, Localize("Freeze Bar Height"), -500, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
-
-				FreezeBarSettings.HSplitTop(2 * LineSize, &Button, &FreezeBarSettings);
-				Ui()->DoScrollbarOption(&g_Config.m_ClFreezeBarX, &g_Config.m_ClFreezeBarX, &Button, Localize("Freeze Bar X Position"), -500, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
-
-				FreezeBarSettings.HSplitTop(2 * LineSize, &Button, &FreezeBarSettings);
-				Ui()->DoScrollbarOption(&g_Config.m_ClFreezeBarY, &g_Config.m_ClFreezeBarY, &Button, Localize("Freeze Bar Y Position"), -500, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
-			}
-		}
-
-		// right side in settings menu
-
-		// defaults
-		{
-			ResetButton.VMargin(5.0f, &ResetButton);
-			ResetButton.HSplitTop(40.0f, &ResetButton, &SoundSettings);
-			if(s_ScrollRegion.AddRect(ResetButton))
-			{
-				ResetButton.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 7.5f));
-				ResetButton.Margin(10.0f, &ResetButton);
-				static CButtonContainer s_DefaultButton;
-				if(DoButton_Menu(&s_DefaultButton, Localize("Reset Sliders to Default"), 0, &ResetButton))
-				{
-					PopupConfirm(Localize("Reset Sliders"), Localize("Are You Sure You Want to Reset All Sliders to Default?"),
-						Localize("Reset"), Localize("Cancel"), &CMenus::ResetSettingsCustomization);
-				}
-			}
-		}
-
-		{
-			SoundSettings.HSplitTop(Margin, nullptr, &SoundSettings);
-			SoundSettings.HSplitTop(100.0f, &SoundSettings, &WarVisual);
-			if(s_ScrollRegion.AddRect(SoundSettings))
-			{
-				SoundSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				SoundSettings.VMargin(Margin, &SoundSettings);
-
-				SoundSettings.HSplitTop(HeaderHeight, &Button, &SoundSettings);
-				Ui()->DoLabel(&Button, Localize("Sound Settings"), FontSize, TEXTALIGN_MC);
-
-				
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_SndFriendChat, ("Do Chat Sound For Friends Only"), &g_Config.m_SndFriendChat, &SoundSettings, LineMargin);
-				if(g_Config.m_SndFriendChat)
-				{
-					g_Config.m_SndChat = 0;
-				}
-
-				if(g_Config.m_ClNotifyOnJoin)
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoNotifySound, ("Do Notify on Player Join Sound Effect"), &g_Config.m_ClAutoNotifySound, &SoundSettings, LineMargin);
-
-			}
-		}
-
-		{
-			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
-			if(g_Config.m_ClSweatMode)
-				if(g_Config.m_ClSweatModeSkin)
-					WarVisual.HSplitTop(160.0f, &WarVisual, &PredictionSettings);
-				else
-					WarVisual.HSplitTop(120.0f, &WarVisual, &PredictionSettings);
-			else
-				WarVisual.HSplitTop(100.0f, &WarVisual, &PredictionSettings);
-			if(s_ScrollRegion.AddRect(WarVisual))
-			{
-				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				WarVisual.VMargin(Margin, &WarVisual);
-
-				WarVisual.HSplitTop(HeaderHeight, &Button, &WarVisual);
-				Ui()->DoLabel(&Button, Localize("Extra Warlist Settings"), FontSize, TEXTALIGN_MC);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistConsoleColors, ("Show Colors in Console"), &g_Config.m_ClWarlistConsoleColors, &WarVisual, LineMargin);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoClanWar, ("Make Clanmates of Enemies Also Have a Red-Ish Color"), &g_Config.m_ClAutoClanWar, &WarVisual, LineMargin);
-
-				WarVisual.HSplitTop(2, &Button, &WarVisual);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode."), &g_Config.m_ClSweatMode, &WarVisual, LineMargin);
-
-				if(g_Config.m_ClSweatMode)
-				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSkin, ("Change Everyones Skin"), &g_Config.m_ClSweatModeSkin, &WarVisual, LineMargin);
-					
-
-					if(g_Config.m_ClSweatModeSkin)
-					{
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &WarVisual, LineMargin);
-
-						static CLineInput s_Name;
-						s_Name.SetBuffer(g_Config.m_ClSweatModeSkinName, sizeof(g_Config.m_ClSweatModeSkinName));
-						s_Name.SetEmptyText("x_ninja");
-
-						WarVisual.HSplitTop(2.4f, &Label, &WarVisual);
-						WarVisual.VSplitLeft(25.0f, &WarVisual, &WarVisual);
-						Ui()->DoLabel(&WarVisual, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
-
-						WarVisual.HSplitTop(-1, &Button, &WarVisual);
-						WarVisual.HSplitTop(18.9f, &Button, &WarVisual);
-
-						Button.VSplitLeft(0.0f, &Button, &WarVisual);
-						Button.VSplitLeft(80.0f, &Label, &Button);
-						Button.VSplitLeft(120.0f, &Button, 0);
-
-						Ui()->DoEditBox(&s_Name, &Button, 14.0f);
-					}
-					else
-						g_Config.m_ClSweatModeOnlyOthers = 0;
-				}
-			}
-		}
-
-		{
-			PredictionSettings.HSplitTop(Margin, nullptr, &PredictionSettings);
-			PredictionSettings.HSplitTop(80.0f, &PredictionSettings, 0);
-			if(s_ScrollRegion.AddRect(PredictionSettings))
-			{
-				PredictionSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				PredictionSettings.VMargin(Margin, &PredictionSettings);
-
-				PredictionSettings.HSplitTop(HeaderHeight, &Button, &PredictionSettings);
-				Ui()->DoLabel(&Button, Localize("Laser/Grenade Prediction"), FontSize, TEXTALIGN_MC);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClLaserPath, ("Predict Laser Path"), &g_Config.m_ClLaserPath, &PredictionSettings, LineMargin);
-			
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGrenadePath, ("Predict Grenade Path"), &g_Config.m_ClGrenadePath, &PredictionSettings, LineMargin);
-			}
-		}
-		s_ScrollRegion.End();
 	}
 }
 

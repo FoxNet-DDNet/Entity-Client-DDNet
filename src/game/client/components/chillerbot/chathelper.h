@@ -140,7 +140,6 @@ class CChatHelper : public CComponent
 			m_aLastPings[i] = m_aLastPings[i + 1];
 	}
 
-	char m_aaChatFilter[MAX_CHAT_FILTERS][MAX_CHAT_FILTER_LEN];
 	char m_aGreetName[32];
 	char m_aLastAfkPing[2048];
 
@@ -157,8 +156,6 @@ private:
 
 	void DoGreet();
 	void SayFormat(const char *pMsg);
-	void AddChatFilter(const char *pFilter);
-	void ListChatFilter();
 	enum
 	{
 		SPAM_NONE,
@@ -177,12 +174,8 @@ private:
 	static void ConReplyToLastPing(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayHi(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayFormat(IConsole::IResult *pResult, void *pUserData);
-	static void ConAddChatFilter(IConsole::IResult *pResult, void *pUserData);
-	static void ConListChatFilter(IConsole::IResult *pResult, void *pUserData);
-	static void ConDeleteChatFilter(IConsole::IResult *pResult, void *pUserData);
 
 public:
-	CChatHelper();
 	int Sizeof() const override { return sizeof(*this); }
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 	void RegisterCommand(const char *pName, const char *pParams, int Flags, const char *pHelp);
@@ -190,7 +183,6 @@ public:
 	const char *GetGreetName() { return m_aGreetName; }
 	const char *LastAfkPingMessage() { return m_aLastAfkPing; }
 	void ClearLastAfkPingMessage() { m_aLastAfkPing[0] = '\0'; }
-	bool HowToJoinClan(const char *pClan, char *pResponse, int SizeOfResponse);
 	CLangParser &LangParser() { return m_LangParser; }
 
 	/*
@@ -225,7 +217,7 @@ public:
 			StayAfk - Do not deactivate afk mode.
 	*/
 	void SayBuffer(const char *pMsg, int Team, bool StayAfk = false);
-	bool FilterChat(int ClientId, int Team, const char *pLine);
+
 	bool OnAutocomplete(CLineInput *pInput, const char *pCompletionBuffer, int PlaceholderOffset, int PlaceholderLength, int *pOldChatStringLength, int *pCompletionChosen, bool ReverseTAB);
 };
 

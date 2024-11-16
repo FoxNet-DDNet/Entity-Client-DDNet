@@ -13,14 +13,6 @@
 
 #include "chathelper.h"
 
-CChatHelper::CChatHelper()
-{
-	mem_zero(m_aaChatFilter, sizeof(m_aaChatFilter));
-#define CHILLERBOT_CHAT_CMD(name, params, flags, callback, userdata, help) RegisterCommand(name, params, flags, help);
-#include "chatcommands.h"
-	std::sort(m_vCommands.begin(), m_vCommands.end());
-}
-
 void CChatHelper::RegisterCommand(const char *pName, const char *pParams, int Flags, const char *pHelp)
 {
 	m_vCommands.emplace_back(pName, pParams);
@@ -111,9 +103,6 @@ void CChatHelper::OnConsoleInit()
 	Console()->Register("reply_to_last_ping", "", CFGFLAG_CLIENT, ConReplyToLastPing, this, "Respond to the last ping in chat");
 	Console()->Register("say_hi", "", CFGFLAG_CLIENT, ConSayHi, this, "Respond to the last greeting in chat");
 	Console()->Register("say_format", "s[message]", CFGFLAG_CLIENT, ConSayFormat, this, "send message replacing %n with last ping name");
-	Console()->Register("chat_filter_add", "s[text]", CFGFLAG_CLIENT, ConAddChatFilter, this, "Add string to chat filter. All messages containing that string will be ignored.");
-	Console()->Register("chat_filter_list", "", CFGFLAG_CLIENT, ConListChatFilter, this, "list all active filters");
-	Console()->Register("chat_filter_delete", "i[index]", CFGFLAG_CLIENT, ConDeleteChatFilter, this, "");
 }
 
 void CChatHelper::ConReplyToLastPing(IConsole::IResult *pResult, void *pUserData)
@@ -149,20 +138,6 @@ void CChatHelper::ConSayHi(IConsole::IResult *pResult, void *pUserData)
 void CChatHelper::ConSayFormat(IConsole::IResult *pResult, void *pUserData)
 {
 	((CChatHelper *)pUserData)->SayFormat(pResult->GetString(0));
-}
-
-void CChatHelper::ConAddChatFilter(IConsole::IResult *pResult, void *pUserData)
-{
-	((CChatHelper *)pUserData)->AddChatFilter(pResult->GetString(0));
-}
-
-void CChatHelper::ConListChatFilter(IConsole::IResult *pResult, void *pUserData)
-{
-	((CChatHelper *)pUserData)->ListChatFilter();
-}
-
-void CChatHelper::ConDeleteChatFilter(IConsole::IResult *pResult, void *pUserData)
-{
 }
 
 bool CChatHelper::LineShouldHighlight(const char *pLine, const char *pName)
@@ -213,23 +188,6 @@ void CChatHelper::SayFormat(const char *pMsg)
 	m_pClient->m_Chat.SendChat(0, aBuf);
 }
 
-bool CChatHelper::HowToJoinClan(const char *pClan, char *pResponse, int SizeOfResponse)
-{
-	if(!pResponse)
-		return false;
-	pResponse[0] = '\0';
-	if(!str_comp(pClan, "Chilli.*"))
-		str_copy(pResponse, "Chilli.* is a fun clan everybody that uses the skin greensward can join", SizeOfResponse);
-	else if(!str_comp(pClan, "|*KoG*|"))
-		str_copy(pResponse, "If you want to join the gores clan |*KoG*| visit their website kog.tw", SizeOfResponse);
-	else if(!str_comp(pClan, "χron"))
-		str_copy(pResponse, "If you want to join the vanilla clan χron visit their website aeon.teewars.com", SizeOfResponse);
-	else if(!str_comp(pClan, "ÆON"))
-		str_copy(pResponse, "If you want to join the vanilla clan ÆON visit their website aeon.teewars.com", SizeOfResponse);
-	else
-		return false;
-	return true;
-}
 
 void CChatHelper::DoGreet()
 {
@@ -373,29 +331,7 @@ void CChatHelper::OnMessage(int MsgType, void *pRawMsg)
 	}
 }
 
-void CChatHelper::ListChatFilter()
-{
-	for(int i = 0; i < MAX_CHAT_FILTERS; i++)
-	{
-		if(m_aaChatFilter[i][0] == '\0')
-			continue;
-		char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "%d. '%s'", i, m_aaChatFilter[i]);
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", aBuf);
-	}
-}
 
-void CChatHelper::AddChatFilter(const char *pFilter)
-{
-	for(auto &aChatFilter : m_aaChatFilter)
-	{
-		if(aChatFilter[0] == '\0')
-		{
-			str_copy(aChatFilter, pFilter, sizeof(aChatFilter));
-			return;
-		}
-	}
-}
 
 int CChatHelper::IsSpam(int ClientId, int Team, const char *pMsg)
 {
@@ -457,22 +393,6 @@ int CChatHelper::IsSpam(int ClientId, int Team, const char *pMsg)
 			return SPAM_OTHER;
 	}
 	return SPAM_NONE;
-}
-
-bool CChatHelper::FilterChat(int ClientId, int Team, const char *pLine)
-{
-	for(auto &aChatFilter : m_aaChatFilter)
-	{
-		if(aChatFilter[0] == '\0')
-			continue;
-		if(str_find_nocase(pLine, aChatFilter))
-		{
-			char aBuf[2048];
-			str_format(aBuf, sizeof(aBuf), "filter '%s' filtered msg: %s", aChatFilter, pLine);
-			Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "chillerbot", aBuf);
-			return true;
-		}
-	}
 }
 
 bool CChatHelper::OnAutocomplete(CLineInput *pInput, const char *pCompletionBuffer, int PlaceholderOffset, int PlaceholderLength, int *pOldChatStringLength, int *pCompletionChosen, bool ReverseTAB)
