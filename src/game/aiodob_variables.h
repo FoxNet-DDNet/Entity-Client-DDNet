@@ -33,11 +33,11 @@ MACRO_CONFIG_INT(ClNameplatesWarReason, ac_nameplates_war_reason, 0, 0, 1, CFGFL
 MACRO_CONFIG_INT(ClWarListAutoReload, ac_war_list_auto_reload, 10, 0, 600, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reload warlist every x seconds 0=off")
 MACRO_CONFIG_INT(ClSilentChatCommands, ac_silent_chat_commands, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Send a Chatmessage After Correctly Typing in a Chat Command (!help...)")
 
-MACRO_CONFIG_COL(ClWarlistMessageColor, cl_warlist_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
+MACRO_CONFIG_COL(ClWarlistMessageColor, ac_warlist_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
 
-MACRO_CONFIG_INT(ClWarlistConsoleColors, cl_warlist_console_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
+MACRO_CONFIG_INT(ClWarlistConsoleColors, ac_warlist_console_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
-MACRO_CONFIG_INT(ClMutedConsoleColor, cl_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
+MACRO_CONFIG_INT(ClMutedConsoleColor, ac_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
 
 // Sweat mode
@@ -69,9 +69,9 @@ MACRO_CONFIG_INT(ClFrozenMaxRows, ac_frozen_tees_max_rows, 1, 1, 6, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClFrozenHudTeamOnly, ac_frozen_tees_only_inteam, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only render frozen tee HUD display while in team")
 
 // Notify When Last
-MACRO_CONFIG_INT(ClNotifyWhenLast, tc_last_notify, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when you are last")
-MACRO_CONFIG_STR(ClNotifyWhenLastText, tc_last_notify_text, 64, "Last!", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Text for last notify")
-MACRO_CONFIG_COL(ClNotifyWhenLastColor, tc_last_notify_color, 29057, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color for last notify")
+MACRO_CONFIG_INT(ClNotifyWhenLast, ac_last_notify, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when you are last")
+MACRO_CONFIG_STR(ClNotifyWhenLastText, ac_last_notify_text, 64, "Last!", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Text for last notify")
+MACRO_CONFIG_COL(ClNotifyWhenLastColor, ac_last_notify_color, 29057, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color for last notify")
 
 
 
@@ -119,7 +119,7 @@ MACRO_CONFIG_INT(ClApplyProfileEmote, ac_profile_emote, 1, 0, 1, CFGFLAG_CLIENT 
 
 
 
-MACRO_CONFIG_INT(ClAutoVoteOnKrxMessage, cl_autovote_krx_message, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically votes a person that send a krx message")
+MACRO_CONFIG_INT(ClAutoVoteOnKrxMessage, ac_autovote_krx_message, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically votes a person that send a krx message")
 
 
 // Aiodob Variables
@@ -325,10 +325,8 @@ MACRO_CONFIG_INT(ClLaserPath, ac_laser_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_S
 
 MACRO_CONFIG_INT(ClAutoKill, ac_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
 
- MACRO_CONFIG_INT(ClAutoKillWarOnly, ac_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+MACRO_CONFIG_INT(ClAutoKillWarOnly, ac_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
 
-
-MACRO_CONFIG_INT(ClWarOntop, ac_war_ontop_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
 MACRO_CONFIG_INT(ClAutoKillRangeX, ac_autokill_range_x, 35, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "x coordinate range to autokill in ↔")
 MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
 

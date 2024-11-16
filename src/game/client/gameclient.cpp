@@ -531,6 +531,7 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 
 		mem_copy(pData, &m_DummyInput, sizeof(m_DummyInput));
 		return sizeof(m_DummyInput);
+
 	}
 	else
 	{

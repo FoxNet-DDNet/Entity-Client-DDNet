@@ -45,6 +45,7 @@ If anyone can help me with this Issue then please feel free to, I wont pay or an
 - Skin Profiles
 - AutoVerify
 - Player Indicator
+- Frozen Tee Hud
 - Ping Circle next to names
 - Nameplates in spec ig?
 - Render Cursor in Spec - with an opacity config
@@ -66,7 +67,8 @@ If anyone can help me with this Issue then please feel free to, I wont pay or an
 - show tee sitting in scoreboard if the player is spectating
 - darker names of people who are afk in scoreboard
 - Show when others are in a menu
-- Friend/Foe/Team/War/Helper nameplate colors
+- nameplate colors
+- auto kill if someones sittin ontop of you while you are IN a freeze tile
 - strong/weak hook color for cl_nameplate_ids
 - In Spectate Menu Prefixes and Name Colors 
 - Custom Chat Commands - add your own command that the warlist recognizes (eg. !addteeeem qxdFox)
@@ -89,6 +91,10 @@ If anyone can help me with this Issue then please feel free to, I wont pay or an
 ```
 ac_auto_add_on_name_change
 ac_auto_notify_on_join
+ac_autokill
+ac_autokill_war_only
+ac_autokill_range_x
+ac_autokill_range_y
 ac_chatbubble
 ac_client_msg_prefix
 ac_server_msg_prefix
@@ -131,52 +137,57 @@ ac_show_ids_chat
 ac_strong_weak_color_id
 ac_team_name_color
 ac_war_name_color
-
-cb_finish_rename
-cb_finish_name
-cb_camp_hack
-cb_auto_reply
-cb_auto_reply_msg
-cb_tabbed_out_msg
-cb_chillerbot_hud
-cb_change_tile_notification
-cb_enable_warlist
-cb_war_list_advanced
-cb_nameplates_war_reason
-cb_war_list_auto_relaod
-cb_silent_chat_commands
-
-tc_run_on_join_console
-tc_run_on_join_console_msg
-tc_run_on_join_delay
-tc_cursor_in_spec
-tc_do_cursor_opacity
-tc_cursor_opacity_in_spec
-tc_nameplate_ping_circle
-tc_indicator_alive
-tc_indicator_freeze
-tc_indicator_dead
-tc_indicatot_offset
-tc_indicator_offset_max
-tc_indicator_variable_distance
-tc_indicator_variable_max_distance
-tc_indicator_radius
-tc_indicator_opacity
-tc_player_indicator
-tc_player_indicator_freeze
-tc_indicator_inteam
-tc_indicator_tees
-tc_reset_bindwheel_mouse
-tc_rainbow_others
-tc_rainbow_mode
-tc_auto_verify
-tc_profile_skin
-tc_profile_name
-tc_profile_clan
-tc_profile_flag
-tc_profile_colors
-tc_profile_emote
-
+ac_finish_rename
+ac_finish_name
+ac_camp_hack
+ac_auto_reply
+ac_auto_reply_msg
+ac_tabbed_out_msg
+ac_chillerbot_hud
+ac_change_tile_notification
+ac_enable_warlist
+ac_war_list_advanced
+ac_nameplates_war_reason
+ac_war_list_auto_relaod
+ac_silent_chat_commands
+ac_run_on_join_console
+ac_run_on_join_console_msg
+ac_run_on_join_delay
+ac_cursor_in_spec
+ac_do_cursor_opacity
+ac_cursor_opacity_in_spec
+ac_nameplate_ping_circle
+ac_indicator_alive
+ac_indicator_freeze
+ac_indicator_dead
+ac_indicatot_offset
+ac_indicator_offset_max
+ac_indicator_variable_distance
+ac_indicator_variable_max_distance
+ac_indicator_radius
+ac_indicator_opacity
+ac_player_indicator
+ac_player_indicator_freeze
+ac_indicator_inteam
+ac_indicator_only_teammates
+ac_indicator_hide_on_screen
+ac_indicator_tees
+ac_reset_bindwheel_mouse
+ac_rainbow_others
+ac_rainbow
+ac_auto_verify
+ac_profile_skin
+ac_profile_name
+ac_profile_clan
+ac_profile_flag
+ac_profile_colors
+ac_profile_emote
+ac_frozen_tees_text
+ac_frozen_tees_hud
+ac_frozen_tees_hud_skins
+ac_frozen_tees_size
+ac_frozen_tees_max_rows
+ac_frozen_tees_only_inteam
 cle_small_skins
 cle_tee_size
 cle_tee_walkruntime

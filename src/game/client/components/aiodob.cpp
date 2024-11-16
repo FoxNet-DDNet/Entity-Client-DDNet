@@ -35,6 +35,8 @@ void CAiodob::OnRender()
 	{
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
+			CCollision *m_pCollision = GameClient()->Collision();
+
 			const int Local = m_pClient->m_Snap.m_LocalClientId;
 			CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
 
@@ -58,19 +60,37 @@ void CAiodob::OnRender()
 			const vec2 SelfPos = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pCurChar->m_X, pCurChar->m_Y), IntraTick) / 32.0f;
 
 			const vec2 EnemyPos = vec2(pPrevCharO->m_X, pPrevCharO->m_Y) / 32.0f;
-			const vec2 EnemyVel = mix(vec2(pPrevCharO->m_VelX, pPrevCharO->m_VelY), vec2(pCurCharO->m_VelX, pCurCharO->m_VelY), IntraTick) / 1000 / (g_Config.m_ClAutoKillRangeY / 10);
+			const vec2 EnemyVel = mix(vec2(pPrevCharO->m_VelX, pPrevCharO->m_VelY), vec2(pCurCharO->m_VelX, pCurCharO->m_VelY), IntraTick) / 1000 / 1.5;
 
-			int Range = g_Config.m_ClAutoKillRangeX / 100; 
+			const float RangeX = g_Config.m_ClAutoKillRangeX / static_cast<float>(100);
 
-			/*
-			char aBuf[100];
-			str_format(aBuf, sizeof(aBuf), "%d", round_to_int(abs(EnemyVel.y)));
-			TextRender()->Text(100, 100, 20, aBuf);
-			*/
+			float RangeY = g_Config.m_ClAutoKillRangeY / static_cast<float>(100);
 
-			if(pCharacter->m_IsInFreeze || (g_Config.m_ClAutoKillWarOnly && IsWar && pCharacter->m_IsInFreeze))
+			const bool Grounded = m_pCollision->CheckPoint(SelfPos.x + CCharacterCore::PhysicalSize() / 2, SelfPos.y + CCharacterCore::PhysicalSize() / 2 + 5) || m_pCollision->CheckPoint(SelfPos.x - CCharacterCore::PhysicalSize() / 2, SelfPos.y + CCharacterCore::PhysicalSize() / 2 + 5);
+
+		
+			int ClientId = !Local;
+
+			CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(~Local);
+
+			if(g_Config.m_ClTest)
 			{
-				if((EnemyPos.y < SelfPos.y && EnemyPos.y > SelfPos.y - 1.2 - EnemyVel.y) && ((EnemyPos.x <= SelfPos.x + 0.5) && (EnemyPos.x + 0.5 >= SelfPos.x)))
+				char aBuf[100];
+				str_format(aBuf, sizeof(aBuf), "%d", round_to_int(SelfPos.x));
+				TextRender()->Text(100, 100, 20, aBuf);
+
+				char bBuf[100];
+				str_format(bBuf, sizeof(bBuf), "%d", round_to_int(EnemyPos.x));
+				TextRender()->Text(200, 100, 20, bBuf);
+
+				if(pChar && pChar->IsGrounded())
+					TextRender()->Text(300, 100, 20, "grounded");
+			}
+		
+
+			if((pCharacter->m_IsInFreeze && !g_Config.m_ClAutoKillWarOnly) || (g_Config.m_ClAutoKillWarOnly && IsWar && pCharacter->m_IsInFreeze))
+			{
+				if((EnemyPos.y < SelfPos.y && EnemyPos.y > SelfPos.y - 1 - RangeY - EnemyVel.y) && ((EnemyPos.x <= SelfPos.x + RangeX) && (EnemyPos.x + RangeX >= SelfPos.x)))
 				{
 					GameClient()->SendKill(Local);
 					return;
