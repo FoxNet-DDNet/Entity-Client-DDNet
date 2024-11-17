@@ -31,14 +31,18 @@
 
 void CAiodob::OnRender()
 {
+	const int Local = m_pClient->m_Snap.m_LocalClientId;
+	CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
+	CCollision *m_pCollision = GameClient()->Collision();
+
 	if(g_Config.m_ClAutoKill)
 	{
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
-			CCollision *m_pCollision = GameClient()->Collision();
+			
 
-			const int Local = m_pClient->m_Snap.m_LocalClientId;
-			CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
+			
+		
 
 			const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Prev;
 			const CNetObj_Character *pCurChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Cur;
@@ -46,9 +50,8 @@ void CAiodob::OnRender()
 			const CNetObj_Character *pPrevCharO = &m_pClient->m_Snap.m_aCharacters[!Local].m_Prev;
 			const CNetObj_Character *pCurCharO = &m_pClient->m_Snap.m_aCharacters[!Local].m_Cur;
 
-
 			auto IsWar = 0;
-			
+
 			if(i != Local)
 			{
 				pPrevCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Prev;
@@ -68,12 +71,11 @@ void CAiodob::OnRender()
 
 			const bool Grounded = m_pCollision->CheckPoint(SelfPos.x + CCharacterCore::PhysicalSize() / 2, SelfPos.y + CCharacterCore::PhysicalSize() / 2 + 5) || m_pCollision->CheckPoint(SelfPos.x - CCharacterCore::PhysicalSize() / 2, SelfPos.y + CCharacterCore::PhysicalSize() / 2 + 5);
 
-		
 			int ClientId = !Local;
 
 			CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(~Local);
 
-			if(g_Config.m_ClTest)
+			if(g_Config.m_ClAutoKillDebug)
 			{
 				char aBuf[100];
 				str_format(aBuf, sizeof(aBuf), "%d", round_to_int(SelfPos.x));
@@ -86,7 +88,6 @@ void CAiodob::OnRender()
 				if(pChar && pChar->IsGrounded())
 					TextRender()->Text(300, 100, 20, "grounded");
 			}
-		
 
 			if((pCharacter->m_IsInFreeze && !g_Config.m_ClAutoKillWarOnly) || (g_Config.m_ClAutoKillWarOnly && IsWar && pCharacter->m_IsInFreeze))
 			{
@@ -102,10 +103,6 @@ void CAiodob::OnRender()
 	{
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
-			const int Local = m_pClient->m_Snap.m_LocalClientId;
-
-		
-
 			if(m_pClient->m_Teams.Team(i))
 			{
 				if(str_comp(m_pClient->m_aClients[i].m_aName, g_Config.m_ClAutoJoinTeamName) == 0)
@@ -133,10 +130,7 @@ void CAiodob::OnRender()
 							m_pClient->m_Chat.SendChat(0, aBuf);
 						}
 					}
-
-					
 				}
-
 			}
 		}
 	}
