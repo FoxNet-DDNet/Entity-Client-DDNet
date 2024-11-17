@@ -301,8 +301,26 @@ MACRO_CONFIG_STR(ClAutoJoinTeamName, ac_auto_join_team_name, 16, "", CFGFLAG_CLI
 
 
 
+// Freeze Kill
 
 
+MACRO_CONFIG_INT(ClFreezeKill, ac_freeze_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
+
+MACRO_CONFIG_INT(ClFreezeKillMultOnly, ac_freeze_kill_mult_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only Freeze Kills if Current Map is Multeasymap")
+
+
+MACRO_CONFIG_INT(ClFreezeKillOnlyFullFrozen, ac_freeze_kill_full_frozen, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only Starts Timer When Full Frozen")
+
+
+MACRO_CONFIG_INT(ClFreezeKillWaitMs, ac_freeze_kill_wait_ms, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Wait a Certain amount of time while frozen until you kill")
+MACRO_CONFIG_INT(ClFreezeKillMs, ac_freeze_kill_ms, 1000, 0, 10000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "time to wait before you kill")
+
+MACRO_CONFIG_INT(ClFreezeKillTeamClose, ac_freeze_kill_team_close, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Kill if a Teammate is Close enough")
+
+MACRO_CONFIG_INT(ClFreezeKillTeamDistance, ac_freeze_kill_team_dist, 12, 0, 25, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance a Teammate Can be Away")
+
+
+MACRO_CONFIG_INT(ClFreezeKillDebug, ac_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "debug")
 // Ui
 MACRO_CONFIG_INT(ClCornerRoundness, ac_corner_roundness, 50, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How round corners are in scrollable menus")
 
@@ -310,7 +328,7 @@ MACRO_CONFIG_INT(ClFpsSpoofer, ac_fps_spoofer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG
 MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fps Spoofer Percentage")
 
 MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "shows ping range 76-77 in black (ping of a weirdo)")
-
+/*
 MACRO_CONFIG_INT(ClShowChatSettings, ac_show_chat_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Chat Settings")
 MACRO_CONFIG_INT(ClShowOtherSettings, ac_show_other_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Other Settings")
 MACRO_CONFIG_INT(ClShowColorSettings, ac_show_color_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Color Settings")
@@ -321,6 +339,7 @@ MACRO_CONFIG_INT(ClShowPlayerIndSettings, ac_show_player_ind_settings, 1, 0, 1, 
 MACRO_CONFIG_INT(ClShowFrozenTeeHudSettings, ac_show_frozen_tee_hud_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Player Indicator Settings")
 MACRO_CONFIG_INT(ClShowScoreSettings, ac_show_score_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Scoreboard Settings")
 MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Menu Settings")
+*/
 
 // Might be Cheating
 
