@@ -324,17 +324,24 @@ MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLI
 
 // Might be Cheating
 
-MACRO_CONFIG_INT(ClGrenadePath, ac_grenade_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Grenade Path Prediction")
-MACRO_CONFIG_INT(ClLaserPath, ac_laser_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser Path Prediction")
+	// Prediction
+	MACRO_CONFIG_INT(ClGrenadePath, ac_grenade_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Grenade Path Prediction")
+	MACRO_CONFIG_INT(ClLaserPath, ac_laser_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser Path Prediction")
 
-MACRO_CONFIG_INT(ClAutoKill, ac_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
 
-MACRO_CONFIG_INT(ClAutoKillWarOnly, ac_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+	// auto kill if player is sitting ontop of you
+	MACRO_CONFIG_INT(ClAutoKill, ac_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+	MACRO_CONFIG_INT(ClAutoKillMultOnly, ac_autokill_mult_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+	MACRO_CONFIG_INT(ClAutoKillWarOnly, ac_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+	MACRO_CONFIG_INT(ClAutoKillRangeX, ac_autokill_range_x, 35, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "x coordinate range to autokill in ↔")
+	MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
 
-MACRO_CONFIG_INT(ClAutoKillRangeX, ac_autokill_range_x, 35, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "x coordinate range to autokill in ↔")
-MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
+	//Dummy Controls +
 
-// Tee
+	MACRO_CONFIG_INT(ClDummyHammerSpeed, ac_dummy_hammer_speed, 25, 0, 100, CFGFLAG_CLIENT, "Speed at which the dummy hammers")
+	MACRO_CONFIG_INT(ClIdToHammer, ac_id_to_hammer, -1, -1, MAX_CLIENTS, CFGFLAG_CLIENT, "Speed at which the dummy hammers")
+
+	// Tee
 
 MACRO_CONFIG_INT(ClOwnTeeSkin, cle_own_tee_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")
 MACRO_CONFIG_INT(ClOwnTeeSkinCustomColor, cle_own_tee_custom_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")

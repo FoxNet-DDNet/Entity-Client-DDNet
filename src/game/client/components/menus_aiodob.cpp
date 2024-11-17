@@ -1476,7 +1476,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			AutoKillOntopSettings.HSplitTop(Margin, nullptr, &AutoKillOntopSettings);
 			if(g_Config.m_ClAutoKill)
-				AutoKillOntopSettings.HSplitTop(180.0f, &AutoKillOntopSettings, 0);
+				AutoKillOntopSettings.HSplitTop(200.0f, &AutoKillOntopSettings, 0);
 			else
 				AutoKillOntopSettings.HSplitTop(80.0f, &AutoKillOntopSettings, 0);
 			if(s_ScrollRegion.AddRect(AutoKillOntopSettings))
@@ -1491,6 +1491,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				if(g_Config.m_ClAutoKill)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillWarOnly, ("Only Kill if The Player is an Enemy"), &g_Config.m_ClAutoKillWarOnly, &AutoKillOntopSettings, LineMargin);
+					
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillMultOnly, ("Only Activate When on Multeasymap"), &g_Config.m_ClAutoKillMultOnly, &AutoKillOntopSettings, LineMargin);
 
 
 					AutoKillOntopSettings.HSplitTop(2 * LineSize, &Button, &AutoKillOntopSettings);

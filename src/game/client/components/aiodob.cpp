@@ -35,12 +35,18 @@ void CAiodob::OnRender()
 	CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
 	CCollision *m_pCollision = GameClient()->Collision();
 
+
 	if(g_Config.m_ClAutoKill)
 	{
+		if(g_Config.m_ClAutoKillMultOnly)
+		{
+			if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
+				return;
+		}
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			
-
+			
 			
 		
 
@@ -133,5 +139,15 @@ void CAiodob::OnRender()
 				}
 			}
 		}
+	}
+	if (g_Config.m_ClTest)
+	{
+
+		if(GameClient()->m_Controls.m_aInputData->m_Fire == 0)
+		{
+			GameClient()->m_Controls.m_aInputData->m_Fire++;
+			return;
+		}
+		GameClient()->m_Controls.m_aInputData->m_Fire++;
 	}
 }
