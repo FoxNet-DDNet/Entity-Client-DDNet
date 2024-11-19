@@ -2333,6 +2333,8 @@ if(CLIENT)
     component.h
     components/aiodob/aiodob.cpp
     components/aiodob/aiodob.h
+    components/outlines.cpp
+    components/outlines.h
     components/background.cpp
     components/background.h
     components/binds.cpp

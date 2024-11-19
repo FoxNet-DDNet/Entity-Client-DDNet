@@ -31,8 +31,8 @@ class CMapLayers : public CComponent
 	CLayers *m_pLayers;
 	CMapImages *m_pImages;
 
+	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup, float Zoom = 1.0f);
 	int m_Type;
-	bool m_OnlineOnly;
 
 	struct STileLayerVisuals
 	{
@@ -90,7 +90,7 @@ class CMapLayers : public CComponent
 		STileVisual m_BorderBottomRight;
 		STileVisual m_BorderBottomLeft;
 
-		STileVisual m_BorderKillTile; //end of map kill tile -- game layer only
+		STileVisual m_BorderKillTile; // end of map kill tile -- game layer only
 
 		std::vector<STileVisual> m_vBorderTop;
 		std::vector<STileVisual> m_vBorderLeft;
@@ -133,6 +133,8 @@ protected:
 	virtual bool CanRenderMenuBackground() { return true; }
 
 public:
+	bool m_OnlineOnly;
+
 	enum
 	{
 		TYPE_BACKGROUND = 0,
@@ -149,13 +151,12 @@ public:
 	virtual void OnRender() override;
 	virtual void OnMapLoad() override;
 
-	static void EnvelopeEval(int TimeOffsetMillis, int Env, ColorRGBA &Result, size_t Channels, void *pUser);
+	void RenderTileLayer(int LayerIndex, const ColorRGBA &Color, CMapItemLayerTilemap *pTileLayer, CMapItemGroup *pGroup);
+	void RenderTileBorder(int LayerIndex, const ColorRGBA &Color, CMapItemLayerTilemap *pTileLayer, CMapItemGroup *pGroup, int BorderX0, int BorderY0, int BorderX1, int BorderY1);
+	void RenderKillTileBorder(int LayerIndex, const ColorRGBA &Color, CMapItemLayerTilemap *pTileLayer, CMapItemGroup *pGroup);
+	void RenderQuadLayer(int LayerIndex, CMapItemLayerQuads *pQuadLayer, CMapItemGroup *pGroup, bool ForceRender = false);
 
-private:
-	void RenderTileLayer(int LayerIndex, const ColorRGBA &Color);
-	void RenderTileBorder(int LayerIndex, const ColorRGBA &Color, int BorderX0, int BorderY0, int BorderX1, int BorderY1);
-	void RenderKillTileBorder(int LayerIndex, const ColorRGBA &Color);
-	void RenderQuadLayer(int LayerIndex, CMapItemLayerQuads *pQuadLayer, bool ForceRender = false);
+	static void EnvelopeEval(int TimeOffsetMillis, int Env, ColorRGBA &Result, size_t Channels, void *pUser);
 };
 
 #endif

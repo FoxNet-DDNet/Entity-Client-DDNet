@@ -83,6 +83,7 @@
 #include "components/aiodob/aiodob.h"
 
 // Tater
+#include "components/outlines.h"
 #include "components/player_indicator.h"
 #include "components/verify.h"
 
@@ -155,6 +156,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Particles.m_RenderExtra,
 					      &m_Particles.m_RenderGeneral,
 					      &m_FreezeBars,
+					      &m_Outlines,
 					      &m_Bindwheel,
 					      &m_PlayerIndicator,
 					      &m_Verify,
@@ -332,7 +334,7 @@ void CGameClient::OnInit()
 
 	// propagate pointers
 	m_UI.Init(Kernel());
-	m_RenderTools.Init(Graphics(), TextRender());
+	m_RenderTools.Init(Graphics(), TextRender(), this);
 
 	if(GIT_SHORTREV_HASH)
 	{

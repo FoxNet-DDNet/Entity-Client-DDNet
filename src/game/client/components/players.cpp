@@ -23,12 +23,6 @@
 #include <game/client/components/skins.h>
 #include <game/client/components/sounds.h>
 
-#include <game/client/prediction/entities/character.h>
-#include <game/client/prediction/entities/laser.h>
-#include <game/client/prediction/entities/projectile.h>
-#include <game/client/prediction/entity.h>
-#include <game/client/prediction/gameworld.h>
-
 #include "players.h"
 
 #include <base/color.h>
@@ -328,122 +322,7 @@ void CPlayers::RenderHookCollLine(
 				Graphics()->LinesDraw(&LineItem, 1);
 				Graphics()->LinesEnd();
 			}
-			// DClient Projectile prediction
-			if(g_Config.m_ClGrenadePath && Player.m_Weapon == WEAPON_GRENADE)
-			{
-				int projlifetime = (int)(GameClient()->m_PredictedWorld.GameTickSpeed() * GameClient()->m_PredictedWorld.Tuning()->m_GrenadeLifetime);
-				vec2 OldGPos = vec2(Position.x, Position.y) + ExDirection * CCharacterCore::PhysicalSize() * 0.75f;
-				CProjectile *proj = new CProjectile(&GameClient()->m_PredictedWorld, WEAPON_GRENADE, ClientId, OldGPos, ExDirection, projlifetime, false, false, 0, LAYER_GAME, -1);
-				Graphics()->TextureClear();
-				Graphics()->LinesBegin();
-				Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorNoColl)).WithAlpha(Alpha));
-				int InitialTick = proj->GameWorld()->m_GameTick;
-				vec2 FinalGPos = Position;
-				for(int i = 1; !proj->m_MarkedForDestroy; i++)
-				{
-					proj->GameWorld()->m_GameTick = InitialTick + i;
-					proj->Tick();
-					if(!proj->m_MarkedForDestroy)
-					{
-						vec2 NewGPos;
-						NewGPos = proj->GetPos((float)i / (float)GameClient()->m_GameWorld.GameTickSpeed());
-						IGraphics::CLineItem LineItem(OldGPos.x, OldGPos.y, NewGPos.x, NewGPos.y);
-						Graphics()->LinesDraw(&LineItem, 1);
-						OldGPos = NewGPos;
-						FinalGPos = NewGPos;
-					}
-					else
-					{
-						float Pt = (proj->GameWorld()->GameTick() - proj->m_StartTick - 1) / (float)proj->GameWorld()->GameTickSpeed();
-						float Ct = (proj->GameWorld()->GameTick() - proj->m_StartTick) / (float)proj->GameWorld()->GameTickSpeed();
-						vec2 projPrevPos = proj->GetPos(Pt);
-						vec2 projCurPos = proj->GetPos(Ct);
-						vec2 projColPos;
-						vec2 projNewPos;
-						int Collide = proj->Collision()->IntersectLine(projPrevPos, projCurPos, &projColPos, &projNewPos);
-						if(Collide)
-						{
-							FinalGPos = projColPos;
-						}
-						else
-						{
-							FinalGPos = projNewPos;
-						}
-						IGraphics::CLineItem LineItem(OldGPos.x, OldGPos.y, FinalGPos.x, FinalGPos.y);
-						Graphics()->LinesDraw(&LineItem, 1);
-						break;
-					}
-				}
-				proj->GameWorld()->m_GameTick = InitialTick;
-				delete proj;
-				Graphics()->LinesEnd();
-				Graphics()->QuadsBegin();
-				Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorNoColl)).WithAlpha(Alpha));
-				const float MarkerSize = 16.0f;
-				IGraphics::CQuadItem QuadItem(FinalGPos.x, FinalGPos.y, MarkerSize, MarkerSize);
-				Graphics()->QuadsDraw(&QuadItem, 1);
-				Graphics()->QuadsEnd();
-			}
-		}
-		// DClient FNG laser prediction
-		if(Local && g_Config.m_ClLaserPath && (Player.m_Weapon == WEAPON_LASER || Player.m_Weapon == WEAPON_SHOTGUN) && (GameClient()->m_GameWorld.m_WorldConfig.m_IsFNG || AlwaysRenderHookColl || RenderHookCollPlayer))
-		{
-			float LaserReach = GameClient()->m_PredictedWorld.Tuning()->m_LaserReach;
-			CLaser *Proj = new CLaser(&GameClient()->m_PredictedWorld, Position, Direction, LaserReach, ClientId, WEAPON_LASER);
-			int InitialTick = Proj->GameWorld()->m_GameTick;
-			vec2 PrevPos = Position;
-			std::vector<vec2> Lines;
-			Lines.push_back(Position);
-
-			for(int i = 1; !Proj->m_MarkedForDestroy; i++)
-			{
-				Proj->GameWorld()->m_GameTick = InitialTick + i;
-				Proj->Tick();
-				vec2 CurPos = Proj->GetPos();
-
-				if(CurPos != PrevPos)
-				{
-					PrevPos = CurPos;
-					Lines.push_back(CurPos);
-				}
-			}
-			bool Hit = (Proj->m_Energy == -2) && ((!GameClient()->m_GameWorld.m_WorldConfig.m_IsFNG) || (m_pClient->m_aClients[Proj->laser_last_hit->m_Id].m_Team != m_pClient->m_aClients[ClientId].m_Team));
-			if(Hit || AlwaysRenderHookColl || RenderHookCollPlayer)
-			{
-				Graphics()->TextureClear();
-				Graphics()->LinesBegin();
-				if(Hit)
-				{
-					Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorHookableColl)).WithAlpha(Alpha));
-				}
-				else
-				{
-					Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorNoColl)).WithAlpha(Alpha));
-				}
-				for(size_t i = 1; i < Lines.size(); i++)
-				{
-					IGraphics::CLineItem LineItem(Lines[i - 1].x, Lines[i - 1].y, Lines[i].x, Lines[i].y);
-					Graphics()->LinesDraw(&LineItem, 1);
-				}
-				Graphics()->LinesEnd();
-				Graphics()->QuadsBegin();
-				IGraphics::CQuadItem QuadItem;
-				if(Hit)
-				{
-					Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorHookableColl)).WithAlpha(Alpha));
-					QuadItem = IGraphics::CQuadItem(PrevPos.x, PrevPos.y, 24.0, 24.0);
-				}
-				else
-				{
-					Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorNoColl)).WithAlpha(Alpha));
-					QuadItem = IGraphics::CQuadItem(PrevPos.x, PrevPos.y, 8.0, 8.0);
-				}
-				Graphics()->QuadsDraw(&QuadItem, 1);
-				Graphics()->QuadsEnd();
-			}
-
-			Proj->GameWorld()->m_GameTick = InitialTick;
-			delete Proj;
+			
 		}
 	}
 }

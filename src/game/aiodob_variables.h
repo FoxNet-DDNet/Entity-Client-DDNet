@@ -71,13 +71,28 @@ MACRO_CONFIG_INT(ClRenderGhostAsCircle, ac_render_ghost_as_circle, 0, 0, 1, CFGF
 
 MACRO_CONFIG_INT(ClSendClientInfo, ac_send_client_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send Info to Server That You Are Using Aiodob Client")
 
+// Outline Variables
+MACRO_CONFIG_INT(ClOutline, ac_outline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outlines")
+MACRO_CONFIG_INT(ClOutlineEntities, ac_outline_in_entities, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show outlines in entities")
+MACRO_CONFIG_INT(ClOutlineFreeze, ac_outline_freeze, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around freeze and deep")
+MACRO_CONFIG_INT(ClOutlineUnFreeze, ac_outline_unfreeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around unfreeze and undeep")
+MACRO_CONFIG_INT(ClOutlineTele, ac_outline_tele, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around teleporters")
+MACRO_CONFIG_INT(ClOutlineSolid, ac_outline_solid, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around hook and unhook")
+MACRO_CONFIG_INT(ClOutlineWidth, ac_outline_width, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of freeze outline")
+MACRO_CONFIG_INT(ClOutlineAlpha, ac_outline_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(0-100) Outline alpha")
+MACRO_CONFIG_INT(ClOutlineAlphaSolid, ac_outline_alpha_solid, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(0-100) Outline solids alpha")
+MACRO_CONFIG_COL(ClOutlineColorSolid, ac_outline_color_solid, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Solid outline color") // 0 0 0
+MACRO_CONFIG_COL(ClOutlineColorFreeze, ac_outline_color_freeze, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Freeze outline color") // 0 0 0
+MACRO_CONFIG_COL(ClOutlineColorTele, ac_outline_color_tele, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tele outline color") // 0 0 0
+MACRO_CONFIG_COL(ClOutlineColorUnfreeze, ac_outline_color_unfreeze, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Unfreeze outline color") // 0 0 0
+
 // fast input
 
 MACRO_CONFIG_INT(ClFastInput, ac_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction up to 20ms faster")
 MACRO_CONFIG_INT(ClFastInputOthers, ac_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Do an extra 1 tick (20ms) for other tees with your fast inputs. (increases visual latency, makes dragging easier)")
 
 // used in fast input code
-	MACRO_CONFIG_INT(ClSmoothPredictionMargin, tc_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
+	MACRO_CONFIG_INT(ClSmoothPredictionMargin, ac_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
 	MACRO_CONFIG_INT(ClOldMouseZoom, ac_old_mouse_zoom, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Does not zoom mouse based on camera to prevent precision loss at low zoom levels")
 
 
@@ -344,7 +359,7 @@ MACRO_CONFIG_INT(ClFreezeKillMultOnly, ac_freeze_kill_mult_only, 1, 0, 1, CFGFLA
 MACRO_CONFIG_INT(ClFreezeKillOnlyFullFrozen, ac_freeze_kill_full_frozen, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only Starts Timer When Full Frozen")
 
 
-MACRO_CONFIG_INT(ClFreezeKillWaitMs, ac_freeze_kill_wait_ms, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Wait a Certain amount of time while frozen until you kill")
+MACRO_CONFIG_INT(ClFreezeKillWaitMs, ac_freeze_kill_wait_ms, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Wait a Certain amount of time while frozen until you kill")
 MACRO_CONFIG_INT(ClFreezeKillMs, ac_freeze_kill_ms, 1000, 0, 10000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "time to wait before you kill")
 
 MACRO_CONFIG_INT(ClFreezeKillTeamClose, ac_freeze_kill_team_close, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Kill if a Teammate is Close enough")
@@ -376,11 +391,6 @@ MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLI
 */
 
 // Might be Cheating
-
-	// Prediction
-	MACRO_CONFIG_INT(ClGrenadePath, ac_grenade_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Grenade Path Prediction")
-	MACRO_CONFIG_INT(ClLaserPath, ac_laser_path, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser Path Prediction")
-
 
 	// auto kill if player is sitting ontop of you
 	MACRO_CONFIG_INT(ClAutoKill, ac_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")

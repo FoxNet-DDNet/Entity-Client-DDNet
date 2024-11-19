@@ -53,10 +53,8 @@ void CAiodob::FreezeKill()
 	
 
 	if(g_Config.m_ClFreezeKillMultOnly)
-	{
 		if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
-		return;
-	}
+			return;
 
 	if(g_Config.m_ClFreezeKillDebug)
 	{
@@ -110,12 +108,14 @@ void CAiodob::FreezeKill()
 			if(m_LastFreeze <= time_get() && (pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
 			{
 				GameClient()->SendKill(Local);
+				m_pClient->m_Chat.SendChat(0, "/Kill");
 				return;
 			}
 		}
 		else if(pCharacter->m_IsInFreeze)
 		{
 			GameClient()->SendKill(Local);
+			m_pClient->m_Chat.SendChat(0, "/Kill");
 			return;
 		}
 	}
@@ -125,23 +125,23 @@ void CAiodob::AutoKill()
 {
 	const int Local = m_pClient->m_Snap.m_LocalClientId;
 	CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
+	
 	CCollision *m_pCollision = GameClient()->Collision();
 
 	if(g_Config.m_ClAutoKill)
 	{
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
+			CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
 			if(g_Config.m_ClAutoKillMultOnly)
 			{
 				if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 				{
 					if(g_Config.m_ClAutoKillDebug)
-					{
 						TextRender()->Text(100, 50, 15, "Not on Mult");
-						return;
-					}
 					else if(g_Config.m_ClAutoKillDebug)
 						TextRender()->Text(100, 50, 15, "On Mult");
+					return;
 				}
 			}
 
@@ -152,12 +152,14 @@ void CAiodob::AutoKill()
 			const CNetObj_Character *pCurCharO = &m_pClient->m_Snap.m_aCharacters[!Local].m_Cur;
 
 			auto IsWar = 0;
+			bool EnemyFrozen = 0;
 
 			if(i != Local)
 			{
 				pPrevCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Prev;
 				pCurCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Cur;
 				IsWar = m_pClient->m_aClients[i].m_IsWar || m_pClient->m_aClients[i].m_IsTempWar || m_pClient->m_aClients[i].m_IsWarClanmate;
+				EnemyFrozen = pCharacterOther->m_IsInFreeze;
 			}
 
 			const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
@@ -190,10 +192,22 @@ void CAiodob::AutoKill()
 					TextRender()->Text(300, 100, 15, "grounded");
 			}
 
+
 			if((pCharacter->m_IsInFreeze && !g_Config.m_ClAutoKillWarOnly) || (g_Config.m_ClAutoKillWarOnly && IsWar && pCharacter->m_IsInFreeze))
 			{
 				if((EnemyPos.y < SelfPos.y && EnemyPos.y > SelfPos.y - 1 - RangeY - EnemyVel.y) && ((EnemyPos.x <= SelfPos.x + RangeX) && (EnemyPos.x + RangeX >= SelfPos.x)))
 				{
+					if(EnemyFrozen)
+						return;
+					if(m_pClient->m_aClients[i].m_FreezeEnd > 0)
+					{
+						if(EnemyPos.x <= SelfPos.x + 0.04f && EnemyPos.x + +0.04f >= SelfPos.x)
+						{
+							GameClient()->SendKill(Local);
+							return;
+						}
+						return;
+					}
 					GameClient()->SendKill(Local);
 					return;
 				}

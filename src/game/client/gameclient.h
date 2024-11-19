@@ -66,6 +66,7 @@
 #include "components/aiodob/aiodob.h"
 
 // Tater
+#include "components/outlines.h"
 #include "components/player_indicator.h"
 #include "components/skinprofiles.h"
 #include "components/verify.h"
@@ -154,6 +155,7 @@ public:
 	CBindWheel m_Bindwheel;
 	CVerify m_Verify;
 	CPlayerIndicator m_PlayerIndicator;
+	COutlines m_Outlines;
 
 	// chillerbot-ux
 
