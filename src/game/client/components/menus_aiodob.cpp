@@ -237,7 +237,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		
 		{
 			FreezeKillSettings.HSplitTop(Margin, nullptr, &FreezeKillSettings);
-			FreezeKillSettings.HSplitTop(205.0f, &FreezeKillSettings, &ColorSettings);
+			if(g_Config.m_ClFreezeKill)
+				FreezeKillSettings.HSplitTop(220.0f, &FreezeKillSettings, &ColorSettings);
+			else
+				FreezeKillSettings.HSplitTop(75.0f, &FreezeKillSettings, &ColorSettings);
 			if(s_ScrollRegion.AddRect(FreezeKillSettings))
 			{
 				FreezeKillSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -248,26 +251,28 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKill, Localize("Kill on Freeze"), &g_Config.m_ClFreezeKill, &FreezeKillSettings, LineSize);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillMultOnly, Localize("Only Activate When on Multeasymap"), &g_Config.m_ClFreezeKillMultOnly, &FreezeKillSettings, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
-
-				
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKillSettings, LineSize);
-
-
-				if(g_Config.m_ClFreezeKillTeamClose)
+				if(g_Config.m_ClFreezeKill)
 				{
-					FreezeKillSettings.HSplitTop(20.f, &Button, &FreezeKillSettings);
-					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillTeamDistance, &g_Config.m_ClFreezeKillTeamDistance, &Button, Localize("Team Max Distance"), 1, 25, &CUi::ms_LinearScrollbarScale, 0u, "");
-					
-				}
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillMultOnly, Localize("Only Enable on Multeasymap"), &g_Config.m_ClFreezeKillMultOnly, &FreezeKillSettings, LineSize);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, Localize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &FreezeKillSettings, LineSize);
-				if(g_Config.m_ClFreezeKillWaitMs)
-				{
-					FreezeKillSettings.HSplitTop(2 * LineSize, &Button, &FreezeKillSettings);
-					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, Localize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if A,D or Space is Pressed"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKillSettings, LineSize);
+
+					if(g_Config.m_ClFreezeKillTeamClose)
+					{
+						FreezeKillSettings.HSplitTop(20.f, &Button, &FreezeKillSettings);
+						Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillTeamDistance, &g_Config.m_ClFreezeKillTeamDistance, &Button, Localize("Team Max Distance"), 1, 25, &CUi::ms_LinearScrollbarScale, 0u, "");
+					}
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, Localize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &FreezeKillSettings, LineSize);
+					if(g_Config.m_ClFreezeKillWaitMs)
+					{
+						FreezeKillSettings.HSplitTop(2 * LineSize, &Button, &FreezeKillSettings);
+						Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, Localize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
+					}
 				}
 			}
 		}
@@ -426,7 +431,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			if(g_Config.m_ClAutoKill)
 				AutoKillOntopSettings.HSplitTop(185.0f, &AutoKillOntopSettings, &ScoreboardSettings);
 			else
-				AutoKillOntopSettings.HSplitTop(80.0f, &AutoKillOntopSettings, &ScoreboardSettings);
+				AutoKillOntopSettings.HSplitTop(75.0f, &AutoKillOntopSettings, &ScoreboardSettings);
 			if(s_ScrollRegion.AddRect(AutoKillOntopSettings))
 			{
 				AutoKillOntopSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));

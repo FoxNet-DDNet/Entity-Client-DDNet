@@ -987,7 +987,7 @@ void CCharacter::DDRaceTick()
 	{
 		m_Input.m_Direction = 0;
 		m_Input.m_Jump = 0;
-		//Hook and weapons are possible in live freeze
+		// Hook and weapons are possible in live freeze
 	}
 	if(m_FreezeTime > 0)
 	{
@@ -1000,6 +1000,14 @@ void CCharacter::DDRaceTick()
 		}
 		if(m_FreezeTime == 1)
 			UnFreeze();
+
+		m_AliveAccumulation = std::min(m_AliveAccumulation - 1, 0);
+		m_AliveAccumulation = std::max(m_AliveAccumulation, -g_Config.m_ClUnfreezeLagDelayTicks);
+	}
+	else
+	{
+		m_AliveAccumulation = std::max(m_AliveAccumulation, 1);
+		m_AliveAccumulation = std::min(m_AliveAccumulation + 1, g_Config.m_ClUnfreezeLagDelayTicks);
 	}
 
 	HandleTuneLayer();
@@ -1018,6 +1026,14 @@ void CCharacter::DDRaceTick()
 			m_Core.m_IsInFreeze = true;
 			break;
 		}
+	}
+	if(m_Core.m_IsInFreeze && IsGrounded())
+	{
+		m_FreezeAccumulation = std::min(m_FreezeAccumulation + 1, g_Config.m_ClUnfreezeLagDelayTicks);
+	}
+	else
+	{
+		m_FreezeAccumulation = std::min(m_FreezeAccumulation, m_FreezeTime);
 	}
 }
 

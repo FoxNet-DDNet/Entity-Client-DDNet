@@ -1,3 +1,4 @@
+#include <engine/client.h>
 #include <engine/client/notifications.h>
 #include <engine/config.h>
 #include <engine/console.h>
@@ -19,8 +20,6 @@
 #include <game/client/render.h>
 #include <game/generated/protocol.h>
 #include <game/version.h>
-#include <game/client/gameclient.h>
-#include <engine/client.h>
 
 #include <game/collision.h>
 #include <game/generated/client_data.h>
@@ -28,10 +27,13 @@
 
 #include "aiodob.h"
 #include <game/client/prediction/entities/character.h>
+#include <libavutil/mathematics.h>
 
 void CAiodob::OnInit()
 {
-	JoinedTeam = 0;
+	AttempedJoinTeam = false;
+	JoinedTeam = false;
+	Mult = 0;
 	m_JoinTeam = 0;
 	m_LastFreeze = 0;
 
@@ -43,129 +45,69 @@ void CAiodob::FreezeKill()
 	if(!g_Config.m_ClFreezeKill)
 		return;
 
-	if(GameClient()->CurrentRaceTime() <= 1)
+	if(!GameClient()->CurrentRaceTime())
+	{
+		m_LastFreeze = time_get() + 3 + time_freq() * g_Config.m_ClFreezeKillMs / static_cast<float>(1000);
 		return;
+	}
+	
 
-	const int Local = m_pClient->m_Snap.m_LocalClientId;
-	CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
+	if(g_Config.m_ClFreezeKillMultOnly)
+	{
+		if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
+		return;
+	}
 
-	CCharacterCore *pCharacterOther = &m_pClient->m_aClients[!Local].m_Predicted;
+	if(g_Config.m_ClFreezeKillDebug)
+	{
+		float a = m_LastFreeze - time_get();
 
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "until kill: %f", a / 1000000000);
+		GameClient()->TextRender()->Text(50, 100, 10, aBuf);
+	}
+
+	float Time = g_Config.m_ClFreezeKillMs / static_cast<float>(1000);
+
+	float TimeReset = time_get() + time_freq() * Time;
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
+		int Local = m_pClient->m_Snap.m_LocalClientId;
+
+		CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
+
+		CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
+
 		vec2 Position = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_RenderPos;
 		CGameClient::CClientData OtherTee = m_pClient->m_aClients[i];
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
+		if(pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0 && i == Local && g_Config.m_ClFreezeDontKillMoving)
+		{
+			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
+				if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
+					m_LastFreeze = TimeReset;
+		}
 
-
+		if(!pCharacterOther->m_IsInFreeze)
+		{
+			if(g_Config.m_ClFreezeKillTeamClose && OtherTee.m_IsTeam && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Team && i != Local)
+				if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
+					m_LastFreeze = TimeReset;
+		}
 
 		if(g_Config.m_ClFreezeKillWaitMs)
 		{
-			if(g_Config.m_ClFreezeKillMultOnly)
+			if(!pCharacter->m_IsInFreeze)
 			{
-				if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
-				{
-					if(g_Config.m_ClFreezeKillDebug)
-					{
-						TextRender()->Text(50, 50, 15, "Not on Mult");
-						return;
-					}
-					else if(g_Config.m_ClFreezeKillDebug)
-						TextRender()->Text(50, 50, 15, "On Mult");
-				}
+				if(m_pClient->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen)
+					m_LastFreeze = TimeReset;
+				if(g_Config.m_ClFreezeKillOnlyFullFrozen)
+					m_LastFreeze = TimeReset;
 			}
 
-			float Time = g_Config.m_ClFreezeKillMs / static_cast<float>(1000);
-
-			if(!pCharacter->m_IsInFreeze && m_pClient->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen)
-			{
-			
-				m_LastFreeze = time_get() + time_freq() * Time;
-
-				if (g_Config.m_ClFreezeKillDebug)
-				{
-					GameClient()->TextRender()->Text(50, 75, 10, "not frozen");
-					GameClient()->TextRender()->Text(50, 100, 10, "until kill: -1.000000");
-
-				}
-
-			}
-			else if(!g_Config.m_ClFreezeKillOnlyFullFrozen)
-			{
-				if(g_Config.m_ClFreezeKillDebug)
-				{
-					GameClient()->TextRender()->Text(50, 75, 10, "frozen");
-					float a = m_LastFreeze - time_get();
-
-					char aBuf[512];
-					str_format(aBuf, sizeof(aBuf), "until kill: %f", a / 1000000000);
-					GameClient()->TextRender()->Text(50, 100, 10, aBuf);
-				}
-			}
-			if(!pCharacter->m_IsInFreeze && g_Config.m_ClFreezeKillOnlyFullFrozen)
-			{
-				m_LastFreeze = time_get() + time_freq() * Time;
-
-				if(g_Config.m_ClFreezeKillDebug)
-				{
-					GameClient()->TextRender()->Text(50, 75, 10, "not frozen");
-					GameClient()->TextRender()->Text(50, 100, 10, "until kill: -1.000000");
-				}
-
-			}
-			else if(g_Config.m_ClFreezeKillOnlyFullFrozen)
-			{
-				if(g_Config.m_ClFreezeKillDebug)
-				{
-					GameClient()->TextRender()->Text(50, 75, 10, "frozen");
-					float a = m_LastFreeze - time_get();
-
-					char aBuf[512];
-					str_format(aBuf, sizeof(aBuf), "until kill: %f", a / 1000000000);
-					GameClient()->TextRender()->Text(50, 100, 10, aBuf);
-				}
-			}
-
-
-
-			if(g_Config.m_ClFreezeKillTeamClose && OtherTee.m_IsTeam && i != Local)
-			{
-				if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
-				{
-					if(!pCharacterOther->m_IsInFreeze)
-					{
-						if(g_Config.m_ClFreezeKillDebug)
-							GameClient()->TextRender()->Text(50, 150, 10, "Teammates close");
-
-						m_LastFreeze = time_get() + time_freq() * Time;
-						return;
-					}
-				}
-			}
-
-
-			if(pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0)
-			{
-				if(GameClient()->Input()->KeyIsPressed(KEY_SPACE) || GameClient()->Input()->KeyIsPressed(KEY_A) || GameClient()->Input()->KeyIsPressed(KEY_D))
-				{
-					if(g_Config.m_ClFreezeKillDebug)
-						GameClient()->TextRender()->Text(50, 125, 10, "a,d or space is pressed");
-					return;
-				}
-			}
-
-
-			
-
-			if(pCharacter->m_IsInFreeze && (m_LastFreeze < time_get()))
-			{
-
-				GameClient()->SendKill(Local);
-				return;
-			}
-			if(m_pClient->m_aClients[Local].m_FreezeEnd > 0 && (m_LastFreeze < time_get()))
+			if(m_LastFreeze <= time_get() && (pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
 			{
 				GameClient()->SendKill(Local);
 				return;
@@ -177,7 +119,6 @@ void CAiodob::FreezeKill()
 			return;
 		}
 	}
-	
 }
 
 void CAiodob::AutoKill()
@@ -192,7 +133,7 @@ void CAiodob::AutoKill()
 		{
 			if(g_Config.m_ClAutoKillMultOnly)
 			{
-				if (str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
+				if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 				{
 					if(g_Config.m_ClAutoKillDebug)
 					{
@@ -202,7 +143,6 @@ void CAiodob::AutoKill()
 					else if(g_Config.m_ClAutoKillDebug)
 						TextRender()->Text(100, 50, 15, "On Mult");
 				}
-					
 			}
 
 			const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Prev;
@@ -270,7 +210,10 @@ void CAiodob::AutoJoinTeam()
 	if(!g_Config.m_ClAutoJoinTest)
 		return;
 
-	if(!GameClient()->m_Snap.m_pLocalCharacter)
+	if(m_pClient->m_Chat.IsActive())
+		return;
+
+	if(GameClient()->CurrentRaceTime())
 		return;
 
 	const int Local = m_pClient->m_Snap.m_LocalClientId;
@@ -281,28 +224,74 @@ void CAiodob::AutoJoinTeam()
 		{
 			if(str_comp(m_pClient->m_aClients[i].m_aName, g_Config.m_ClAutoJoinTeamName) == 0)
 			{
+				int LocalTeam;
+
+
 				if(i == Local)
 					return;
+
+				
 
 				int Team = GameClient()->m_Teams.Team(i);
 				char TeamChar[256];
 				str_format(TeamChar, sizeof(TeamChar), "%d", Team);
 
-				if((!m_pClient->m_Teams.SameTeam(Local, i) && (Team > 0)))
+				int PrevTeam;
+
+				if(!m_pClient->m_Teams.SameTeam(Local, i) && (Team > 0) && !JoinedTeam)
 				{
 					char aBuf[2048] = "/team ";
 					str_append(aBuf, TeamChar);
 					m_pClient->m_Chat.SendChat(0, aBuf);
 
-					JoinedTeam = 1;
-				}
-				if(JoinedTeam == 1)
-				{
-					char Joined[2048] = "Auto Joined ";
+					char Joined[2048] = "attempting to auto Join ";
 					str_append(Joined, m_pClient->m_aClients[i].m_aName);
 					m_pClient->m_Chat.AddLine(-3, 0, Joined);
-					JoinedTeam = 0;
+
+					JoinedTeam = true;
+					AttempedJoinTeam = true;
 				}
+				if(m_pClient->m_Teams.SameTeam(Local, i) && JoinedTeam)
+				{
+					char Joined[2048] = "Successfully Joined The Team of ";
+					str_append(Joined, m_pClient->m_aClients[i].m_aName);
+					m_pClient->m_Chat.AddLine(-3, 0, Joined);
+
+					LocalTeam = GameClient()->m_Teams.Team(Local);
+
+					PrevTeam = Team;
+
+					JoinedTeam = false;
+				}
+				if(!m_pClient->m_Teams.SameTeam(Local, i) && AttempedJoinTeam)
+				{
+					char Joined[2048] = "Couldn't Join The Team of ";
+					str_append(Joined, m_pClient->m_aClients[i].m_aName);
+					m_pClient->m_Chat.AddLine(-3, 0, Joined);
+
+					AttempedJoinTeam = false;
+				}
+				if(PrevTeam != Team && AttempedJoinTeam)
+				{
+					m_pClient->m_Chat.AddLine(-3, 0, "team has changed");
+					JoinedTeam = false;
+				}
+				if(LocalTeam > 0)
+				{
+					m_pClient->m_Chat.AddLine(-3, 0, "self team is bigger than 0");
+					JoinedTeam = false;
+					LocalTeam = GameClient()->m_Teams.Team(Local);
+				}
+				if(LocalTeam != Team)
+				{
+					PrevTeam = Team;
+					AttempedJoinTeam = false;
+					LocalTeam = GameClient()->m_Teams.Team(Local);
+				}
+
+					
+				return;
+
 			}
 		}
 		m_JoinTeam = time_get() + time_freq() * 0.25;
@@ -311,13 +300,15 @@ void CAiodob::AutoJoinTeam()
 
 void CAiodob::OnRender()
 {
+	int Local = m_pClient->m_Snap.m_LocalClientId;
+
+
 	AutoKill();
 	AutoJoinTeam();
 	FreezeKill();
 
-	if (g_Config.m_ClTest)
+	if(g_Config.m_ClTest)
 	{
-
 		if(GameClient()->m_Controls.m_aInputData->m_Fire == 0)
 		{
 			GameClient()->m_Controls.m_aInputData->m_Fire++;

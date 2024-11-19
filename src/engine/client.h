@@ -298,6 +298,7 @@ public:
 	virtual IFriends *Foes() = 0;
 
 	virtual void GetSmoothTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount) = 0;
+	virtual void GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount) = 0;
 
 	virtual void AddWarning(const SWarning &Warning) = 0;
 	virtual SWarning *GetCurWarning() = 0;
@@ -378,6 +379,7 @@ public:
 	virtual void OnDummyDisconnect() = 0;
 	virtual void DummyResetInput() = 0;
 	virtual void Echo(const char *pString) = 0;
+	virtual void aMessage(const char *pString) = 0;
 
 	virtual bool CanDisplayWarning() const = 0;
 	virtual void RenderShutdownMessage() = 0;
@@ -390,6 +392,8 @@ public:
 	virtual void ApplySkin7InfoFromSnapObj(const protocol7::CNetObj_De_ClientInfo *pObj, int ClientId) = 0;
 	virtual int OnDemoRecSnap7(class CSnapshot *pFrom, class CSnapshot *pTo, int Conn) = 0;
 	virtual int TranslateSnap(class CSnapshot *pSnapDstSix, class CSnapshot *pSnapSrcSeven, int Conn, bool Dummy) = 0;
+
+	virtual bool CheckNewInput() = 0;
 };
 
 void SnapshotRemoveExtraProjectileInfo(class CSnapshot *pSnap);

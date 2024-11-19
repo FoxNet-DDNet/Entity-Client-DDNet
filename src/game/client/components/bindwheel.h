@@ -10,7 +10,7 @@ class IConfigManager;
 
 class CBindWheel : public CComponent
 {
-    void DrawCircle(float x, float y, float r, int Segments);
+	void DrawCircle(float x, float y, float r, int Segments);
 
 	bool m_WasActive;
 	bool m_Active;
@@ -30,7 +30,6 @@ public:
 	};
 	SClientBindWheel m_BindWheelList[NUM_BINDWHEEL];
 
-
 	CBindWheel();
 	virtual int Sizeof() const override { return sizeof(*this); }
 
@@ -40,10 +39,9 @@ public:
 	virtual void OnRelease() override;
 	virtual bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
 	static void ConchainBindwheel(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
-	
+
 	void updateBinds(int Bindpos, char *Description, char *Command);
 	void Binwheel(int Bind);
-
 };
 
 #endif

@@ -135,6 +135,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	char m_aTimeoutCodes[NUM_DUMMIES][32] = {"", ""};
 	bool m_aCodeRunAfterJoin[NUM_DUMMIES] = {false, false};
 	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
+	bool m_aInfoDisplay[NUM_DUMMIES] = {false, false};
 	bool m_GenerateTimeoutSeed = true;
 
 	char m_aCmdConnect[256] = "";
@@ -286,6 +287,9 @@ public:
 	int SendMsg(int Conn, CMsgPacker *pMsg, int Flags) override;
 	// Send via the currently active client (main/dummy)
 	int SendMsgActive(CMsgPacker *pMsg, int Flags) override;
+
+	// send client info
+	void SendAiodobInfo(int Conn);
 
 	void SendInfo(int Conn);
 	void SendEnterGame(int Conn);
@@ -506,6 +510,7 @@ public:
 
 	IFriends *Foes() override { return &m_Foes; }
 
+    void GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount) override;
 	void GetSmoothTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount) override;
 
 	void AddWarning(const SWarning &Warning) override;

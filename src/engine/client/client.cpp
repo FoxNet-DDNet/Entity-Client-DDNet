@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
 #include <base/hash.h>
@@ -209,8 +209,18 @@ int CClient::SendMsgActive(CMsgPacker *pMsg, int Flags)
 	return SendMsg(g_Config.m_ClDummy, pMsg, Flags);
 }
 
+void CClient::SendAiodobInfo(int Conn)
+{
+	CMsgPacker Msg(NETMSG_IAMAIODOB, true);
+	Msg.AddString("Built on " __DATE__ ", " __TIME__);
+	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
+}
+
 void CClient::SendInfo(int Conn)
 {
+	if(g_Config.m_ClSendClientInfo)
+	SendAiodobInfo(CONN_MAIN);
+
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
 	MsgVer.AddInt(GameClient()->DDNetVersion());
@@ -316,7 +326,7 @@ void CClient::SendInput()
 	if(m_aPredTick[g_Config.m_ClDummy] <= 0)
 		return;
 
-	bool Force = false;
+	bool Force = true;
 	// fetch input
 	for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
 	{
@@ -338,9 +348,10 @@ void CClient::SendInput()
 			m_aInputs[i][m_aCurrentInput[i]].m_Tick = m_aPredTick[g_Config.m_ClDummy];
 			m_aInputs[i][m_aCurrentInput[i]].m_PredictedTime = m_PredictedTime.Get(Now);
 			m_aInputs[i][m_aCurrentInput[i]].m_PredictionMargin = PredictionMargin() * time_freq() / 1000;
+			if(g_Config.m_ClSmoothPredictionMargin)
+				m_aInputs[i][m_aCurrentInput[i]].m_PredictionMargin = m_PredictedTime.GetMargin(Now);
 			m_aInputs[i][m_aCurrentInput[i]].m_Time = Now;
 
-			// pack it
 			for(int k = 0; k < Size / 4; k++)
 			{
 				static const int FlagsOffset = offsetof(CNetObj_PlayerInput, m_PlayerFlags) / sizeof(int);
@@ -479,7 +490,8 @@ void CClient::EnterGame(int Conn)
 		return;
 
 	m_aCodeRunAfterJoin[Conn] = false;
-
+	m_aCodeRunAfterJoinConsole[Conn] = false;
+	m_aInfoDisplay[Conn] = false;
 	// now we will wait for two snapshots
 	// to finish the connection
 	SendEnterGame(Conn);
@@ -1385,7 +1397,7 @@ static CServerCapabilities GetServerCapabilities(int Version, int Flags, bool Si
 	Result.m_AnyPlayerFlag = !Sixup;
 	Result.m_PingEx = false;
 	Result.m_AllowDummy = true;
-	Result.m_SyncWeaponInput = false;
+	Result.m_SyncWeaponInput = true;
 	if(Version >= 1)
 	{
 		Result.m_ChatTimeoutCode = Flags & SERVERCAPFLAG_CHATTIMEOUTCODE;
@@ -1404,7 +1416,7 @@ static CServerCapabilities GetServerCapabilities(int Version, int Flags, bool Si
 	}
 	if(Version >= 5)
 	{
-		Result.m_SyncWeaponInput = Flags & SERVERCAPFLAG_SYNCWEAPONINPUT;
+		Result.m_SyncWeaponInput = true;
 	}
 	return Result;
 }
@@ -1818,7 +1830,10 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 				if(m_aInputs[Conn][k].m_Tick == InputPredTick)
 				{
 					Target = m_aInputs[Conn][k].m_PredictedTime + (Now - m_aInputs[Conn][k].m_Time);
-					Target = Target - (int64_t)((TimeLeft / 1000.0f) * time_freq());
+					if(g_Config.m_ClSmoothPredictionMargin)
+						Target = Target - (int64_t)((TimeLeft / 1000.0f) * time_freq()) + m_aInputs[Conn][k].m_PredictionMargin;
+					else
+						Target = Target - (int64_t)((TimeLeft / 1000.0f) * time_freq());
 					break;
 				}
 			}
@@ -2068,6 +2083,48 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					{
 						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoinMsg);
 						m_aCodeRunAfterJoinConsole[Conn] = true;
+					}
+					if(g_Config.m_ClEnabledInfo && m_aReceivedSnapshots[Conn] > 10 && !m_aInfoDisplay[Conn])
+					{
+						if(g_Config.m_ClDummy)
+							return;
+
+							GameClient()->aMessage("╭──                  Aiodob Info");
+							GameClient()->aMessage("│");
+						if(g_Config.m_ClAutoKill && (str_comp(GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || !g_Config.m_ClAutoKillMultOnly)
+						{
+							GameClient()->aMessage("│ Auto Kill Enabled!");
+							GameClient()->aMessage("│");
+						}
+						if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(GetCurrentMap(), "Multeasymap") != 0))
+						{
+							GameClient()->aMessage("│ Auto Kill Disabled, Not on Mult!");
+							GameClient()->aMessage("│");
+						}
+
+						if(g_Config.m_ClFreezeKill && (str_comp(GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || !g_Config.m_ClFreezeKillMultOnly)
+						{
+							GameClient()->aMessage("│ Freeze Kill Enabled!");
+							GameClient()->aMessage("│");
+						}
+						if(g_Config.m_ClFreezeKill && (g_Config.m_ClFreezeKillMultOnly && str_comp(GetCurrentMap(), "Multeasymap") != 0))
+						{
+							GameClient()->aMessage("│ Freeze Kill Disabled, Not on Mult!");
+							GameClient()->aMessage("│");
+						}
+
+						if(g_Config.m_ClChatBubble)
+						{
+							GameClient()->aMessage("│ Chat Bubble is Currently: ON");
+							GameClient()->aMessage("│");
+						}
+						else 
+						{
+							GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
+							GameClient()->aMessage("│");
+						}
+						GameClient()->aMessage("╰───────────────────────");
+						m_aInfoDisplay[Conn] = true;
 					}
 					if(m_aReceivedSnapshots[Conn] > GameTickSpeed() && !m_aCodeRunAfterJoin[Conn])
 					{
@@ -2726,6 +2783,11 @@ void CClient::Update()
 					// send input
 					SendInput();
 				}
+
+				if(g_Config.m_ClFastInput && GameClient()->CheckNewInput())
+				{
+					Repredict = true;
+				}
 			}
 
 			// only do sane predictions
@@ -3107,6 +3169,11 @@ void CClient::Run()
 		if(m_DummySendConnInfo && m_aNetClient[CONN_DUMMY].State() == NETSTATE_ONLINE)
 		{
 			m_DummySendConnInfo = false;
+
+			// send client info
+			if(g_Config.m_ClSendClientInfo)
+			SendAiodobInfo(CONN_DUMMY);
+
 			SendInfo(CONN_DUMMY);
 			m_aNetClient[CONN_DUMMY].Update();
 			SendReady(CONN_DUMMY);
@@ -3333,7 +3400,8 @@ bool CClient::InitNetworkClient(char *pError, size_t ErrorSize)
 	BindAddr.type = NETTYPE_ALL;
 	for(unsigned int i = 0; i < std::size(m_aNetClient); i++)
 	{
-		int &PortRef = i == CONN_MAIN ? g_Config.m_ClPort : i == CONN_DUMMY ? g_Config.m_ClDummyPort : g_Config.m_ClContactPort;
+		int &PortRef = i == CONN_MAIN ? g_Config.m_ClPort : i == CONN_DUMMY ? g_Config.m_ClDummyPort :
+										      g_Config.m_ClContactPort;
 		if(PortRef < 1024) // Reject users setting ports that we don't want to use
 		{
 			PortRef = 0;
@@ -4062,7 +4130,7 @@ void CClient::InitChecksum()
 {
 	CChecksumData *pData = &m_Checksum.m_Data;
 	pData->m_SizeofData = sizeof(*pData);
-	str_copy(pData->m_aVersionStr, GAME_NAME " " GAME_RELEASE_VERSION " (" CONF_PLATFORM_STRING "; " CONF_ARCH_STRING ")");
+	str_copy(pData->m_aVersionStr, CLIENT_NAME " " GAME_RELEASE_VERSION " (" CONF_PLATFORM_STRING "; " CONF_ARCH_STRING ")");
 	pData->m_Start = time_get();
 	os_version_str(pData->m_aOsVersion, sizeof(pData->m_aOsVersion));
 	secure_random_fill(&pData->m_Random, sizeof(pData->m_Random));
@@ -4106,7 +4174,7 @@ int CClient::HandleChecksum(int Conn, CUuid Uuid, CUnpacker *pUnpacker)
 	if(Start <= (int)sizeof(m_Checksum.m_aBytes))
 	{
 		mem_zero(&m_Checksum.m_Data.m_Config, sizeof(m_Checksum.m_Data.m_Config));
-#define CHECKSUM_RECORD(Flags) (((Flags)&CFGFLAG_CLIENT) == 0 || ((Flags)&CFGFLAG_INSENSITIVE) != 0)
+#define CHECKSUM_RECORD(Flags) (((Flags) & CFGFLAG_CLIENT) == 0 || ((Flags) & CFGFLAG_INSENSITIVE) != 0)
 #define MACRO_CONFIG_INT(Name, ScriptName, Def, Min, Max, Flags, Desc) \
 	if(CHECKSUM_RECORD(Flags)) \
 	{ \
@@ -4183,7 +4251,7 @@ int CClient::HandleChecksum(int Conn, CUuid Uuid, CUnpacker *pUnpacker)
 
 void CClient::SwitchWindowScreen(int Index)
 {
-	//Tested on windows 11 64 bit (gtx 1660 super, intel UHD 630 opengl 1.2.0, 3.3.0 and vulkan 1.1.0)
+	// Tested on windows 11 64 bit (gtx 1660 super, intel UHD 630 opengl 1.2.0, 3.3.0 and vulkan 1.1.0)
 	int IsFullscreen = g_Config.m_GfxFullscreen;
 	int IsBorderless = g_Config.m_GfxBorderless;
 
@@ -4308,7 +4376,7 @@ void CClient::ConchainPassword(IConsole::IResult *pResult, void *pUserData, ICon
 {
 	CClient *pSelf = (CClient *)pUserData;
 	pfnCallback(pResult, pCallbackUserData);
-	if(pResult->NumArguments() && pSelf->m_LocalStartTime) //won't set m_SendPassword before game has started
+	if(pResult->NumArguments() && pSelf->m_LocalStartTime) // won't set m_SendPassword before game has started
 		pSelf->m_SendPassword = true;
 }
 
@@ -4768,6 +4836,7 @@ int main(int argc, const char **argv)
 		io_close(File);
 		pConsole->ExecuteFile(AIODOBCONFIG_FILE);
 	}
+
 	// execute autoexec file
 	if(pStorage->FileExists(AUTOEXEC_CLIENT_FILE, IStorage::TYPE_ALL))
 	{
@@ -4989,12 +5058,24 @@ void CClient::GetSmoothTick(int *pSmoothTick, float *pSmoothIntraTick, float Mix
 {
 	int64_t GameTime = m_aGameTime[g_Config.m_ClDummy].Get(time_get());
 	int64_t PredTime = m_PredictedTime.Get(time_get());
+	GameTime = std::min(GameTime, PredTime);
 	int64_t SmoothTime = clamp(GameTime + (int64_t)(MixAmount * (PredTime - GameTime)), GameTime, PredTime);
 
-	*pSmoothTick = (int)(SmoothTime * GameTickSpeed() / time_freq()) + 1;
-	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1) * time_freq() / GameTickSpeed()) / (float)(time_freq() / GameTickSpeed());
+	*pSmoothTick = (int)(SmoothTime * GameTickSpeed() / time_freq()) + 1 + g_Config.m_ClFastInput;
+	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1 - g_Config.m_ClFastInput) * time_freq() / GameTickSpeed()) / (float)(time_freq() / GameTickSpeed());
 }
+void CClient::GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount)
+{
+	int64_t GameTime = m_aGameTime[g_Config.m_ClDummy].Get(time_get());
+	int64_t PredTime = m_PredictedTime.Get(time_get());
+	GameTime = std::min(GameTime, PredTime);
+	int64_t UpperPredTime = clamp(PredTime - (time_freq() / 50) * g_Config.m_ClUnfreezeLagTicks, GameTime, PredTime);
+	int64_t LowestPredTime = clamp(PredTime, GameTime, UpperPredTime);
+	int64_t SmoothTime = clamp(LowestPredTime + (int64_t)(MixAmount * (PredTime - LowestPredTime)), LowestPredTime, PredTime);
 
+	*pSmoothTick = (int)(SmoothTime * 50 / time_freq()) + 1 + g_Config.m_ClFastInput;
+	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1 - g_Config.m_ClFastInput) * time_freq() / 50) / (float)(time_freq() / 50);
+}
 void CClient::AddWarning(const SWarning &Warning)
 {
 	m_vWarnings.emplace_back(Warning);
@@ -5024,7 +5105,11 @@ int CClient::MaxLatencyTicks() const
 
 int CClient::PredictionMargin() const
 {
-	return m_ServerCapabilities.m_SyncWeaponInput ? g_Config.m_ClPredictionMargin : 10;
+	if(g_Config.m_ClPredMarginInFreeze && g_Config.m_ClAmIFrozen)
+	{
+		return g_Config.m_ClPredMarginInFreezeAmount;
+	}
+	return g_Config.m_ClPredictionMargin;
 }
 
 int CClient::UdpConnectivity(int NetType)

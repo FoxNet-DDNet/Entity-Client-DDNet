@@ -49,6 +49,7 @@
 #include "components/motd.h"
 #include "components/nameplates.h"
 #include "components/particles.h"
+#include "components/bindwheel.h"
 #include "components/players.h"
 #include "components/race_demo.h"
 #include "components/scoreboard.h"
@@ -62,11 +63,9 @@
 
 // Aiodob
 
-#include "components/aiodob.h"
+#include "components/aiodob/aiodob.h"
 
 // Tater
-
-#include "components/bindwheel.h"
 #include "components/player_indicator.h"
 #include "components/skinprofiles.h"
 #include "components/verify.h"
@@ -144,6 +143,25 @@ class CGameClient : public IGameClient
 {
 public:
 	// all components
+
+	// Aiodob
+
+	CAiodob m_Aiodob;
+
+	// Tater
+
+	CSkinProfiles m_SkinProfiles;
+	CBindWheel m_Bindwheel;
+	CVerify m_Verify;
+	CPlayerIndicator m_PlayerIndicator;
+
+	// chillerbot-ux
+
+	CChillerBotUX m_ChillerBotUX;
+	CChatHelper m_ChatHelper;
+	CUnix m_Unix;
+	CWarList m_WarList;
+	CChatCommand m_ChatCommand;
 	CInfoMessages m_InfoMessages;
 	CCamera m_Camera;
 	CChat m_Chat;
@@ -186,25 +204,6 @@ public:
 	CGhost m_Ghost;
 
 	CTooltips m_Tooltips;	
-
-	// Aiodob
-
-	CAiodob m_Aiodob;
-
-	// Tater	
-
-	CSkinProfiles m_SkinProfiles;
-	CBindWheel m_Bindwheel;
-	CVerify m_Verify;
-	CPlayerIndicator m_PlayerIndicator;
-
-	// chillerbot-ux
-
-	CChillerBotUX m_ChillerBotUX;
-	CChatHelper m_ChatHelper;
-	CUnix m_Unix;
-	CWarList m_WarList;
-	CChatCommand m_ChatCommand;
 
 private:
 	std::vector<class CComponent *> m_vpAll;
@@ -648,18 +647,22 @@ public:
 	CGameWorld m_GameWorld;
 	CGameWorld m_PredictedWorld;
 	CGameWorld m_PrevPredictedWorld;
+	CGameWorld m_ExtraPredictedWorld;
 
 	std::vector<SSwitchers> &Switchers() { return m_GameWorld.m_Core.m_vSwitchers; }
 	std::vector<SSwitchers> &PredSwitchers() { return m_PredictedWorld.m_Core.m_vSwitchers; }
 
 	void DummyResetInput() override;
 	void Echo(const char *pString) override;
+	void aMessage(const char *pString) override;
 	bool IsOtherTeam(int ClientId) const;
 	int SwitchStateTeam() const;
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
 	CNetObjHandler *GetNetObjHandler() override;
 	protocol7::CNetObjHandler *GetNetObjHandler7() override;
+
+	bool CheckNewInput() override;
 
 	void LoadGameSkin(const char *pPath, bool AsDir = false);
 	void LoadEmoticonsSkin(const char *pPath, bool AsDir = false);
@@ -830,6 +833,9 @@ public:
 
 	const std::vector<CSnapEntities> &SnapEntities() { return m_vSnapEntities; }
 
+	vec2 GetSmoothPos(int ClientId);
+	vec2 GetFreezePos(int ClientId);
+
 	int m_MultiViewTeam;
 	int m_MultiViewPersonalZoom;
 	bool m_MultiViewShowHud;
@@ -856,8 +862,6 @@ private:
 
 	int m_aLastUpdateTick[MAX_CLIENTS] = {0};
 	void DetectStrongHook();
-
-	vec2 GetSmoothPos(int ClientId);
 
 	int m_PredictedDummyId;
 	int m_IsDummySwapping;

@@ -51,6 +51,36 @@ MACRO_CONFIG_STR(ClSweatModeSkinName, ac_sweat_mode_skin_name, 24, "x_ninja", CF
 
 // from tater client (credits to tater)
 
+// Anti Latency Tools
+MACRO_CONFIG_INT(ClFreezeUpdateFix, ac_freeze_update_fix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Will change your skin faster when you enter freeze. ")
+MACRO_CONFIG_INT(ClRemoveAnti, ac_remove_anti, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Removes some amount of antiping & player prediction in freeze")
+MACRO_CONFIG_INT(ClUnfreezeLagTicks, ac_remove_anti_ticks, 5, 0, 20, CFGFLAG_CLIENT | CFGFLAG_SAVE, "The biggest amount of prediction ticks that are removed")
+MACRO_CONFIG_INT(ClUnfreezeLagDelayTicks, ac_remove_anti_delay_ticks, 25, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many ticks it takes to remove the maximum prediction after being frozen")
+
+MACRO_CONFIG_INT(ClUnpredOthersInFreeze, ac_unpred_others_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont predict other players if you are frozen")
+MACRO_CONFIG_INT(ClPredMarginInFreeze, ac_pred_margin_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "enable changing prediction margin while frozen")
+MACRO_CONFIG_INT(ClPredMarginInFreezeAmount, ac_pred_margin_in_freeze_amount, 15, 0, 2000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set what your prediction margin while frozen should be")
+
+MACRO_CONFIG_INT(ClShowOthersGhosts, ac_show_others_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ghosts for other players in their unpredicted position")
+MACRO_CONFIG_INT(ClSwapGhosts, ac_swap_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show predicted players as ghost and normal players as unpredicted")
+MACRO_CONFIG_INT(ClHideFrozenGhosts, ac_hide_frozen_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide Ghosts of other players if they are frozen")
+
+MACRO_CONFIG_INT(ClPredGhostsAlpha, ac_pred_ghosts_alpha, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of predicted ghosts (0-100)")
+MACRO_CONFIG_INT(ClUnpredGhostsAlpha, ac_unpred_ghosts_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of unpredicted ghosts (0-100)")
+MACRO_CONFIG_INT(ClRenderGhostAsCircle, ac_render_ghost_as_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render Ghosts as circles instead of tee")
+
+MACRO_CONFIG_INT(ClSendClientInfo, ac_send_client_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send Info to Server That You Are Using Aiodob Client")
+
+// fast input
+
+MACRO_CONFIG_INT(ClFastInput, ac_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction up to 20ms faster")
+MACRO_CONFIG_INT(ClFastInputOthers, ac_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Do an extra 1 tick (20ms) for other tees with your fast inputs. (increases visual latency, makes dragging easier)")
+
+// used in fast input code
+	MACRO_CONFIG_INT(ClSmoothPredictionMargin, tc_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
+	MACRO_CONFIG_INT(ClOldMouseZoom, ac_old_mouse_zoom, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Does not zoom mouse based on camera to prevent precision loss at low zoom levels")
+
+
 // Render Cursor in Spectate mode
 MACRO_CONFIG_INT(ClRunOnJoinConsole, ac_run_on_join_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use run on join in chat or console")
 MACRO_CONFIG_INT(ClRunOnJoinDelay, ac_run_on_join_delay, 2, 7, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
@@ -117,12 +147,12 @@ MACRO_CONFIG_INT(ClApplyProfileFlag, ac_profile_flag, 0, 0, 1, CFGFLAG_CLIENT | 
 MACRO_CONFIG_INT(ClApplyProfileColors, ac_profile_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply colors in profiles")
 MACRO_CONFIG_INT(ClApplyProfileEmote, ac_profile_emote, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply emote in profiles")
 
-
-
-MACRO_CONFIG_INT(ClAutoVoteOnKrxMessage, ac_autovote_krx_message, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically votes a person that send a krx message")
+// AAAAAAA
+MACRO_CONFIG_INT(ClAmIFrozen, EEEfrz, 0, 0, 1, CFGFLAG_CLIENT, "")
 
 
 // Aiodob Variables
+MACRO_CONFIG_INT(ClAutoVoteOnKrxMessage, ac_autovote_krx_message, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically votes a person that send a krx message")
 
 
 // Color Variables
@@ -299,6 +329,8 @@ MACRO_CONFIG_INT(ClAutoNotifySound, ac_auto_notify_sound, 1, 0, 1, CFGFLAG_CLIEN
 MACRO_CONFIG_INT(ClAutoJoinTeam, ac_auto_join_team, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Joins that players team if they join one")
 MACRO_CONFIG_STR(ClAutoJoinTeamName, ac_auto_join_team_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
 
+// Info
+MACRO_CONFIG_INT(ClEnabledInfo, ac_enabled_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
 
 
 // Freeze Kill
@@ -318,6 +350,8 @@ MACRO_CONFIG_INT(ClFreezeKillMs, ac_freeze_kill_ms, 1000, 0, 10000, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClFreezeKillTeamClose, ac_freeze_kill_team_close, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Kill if a Teammate is Close enough")
 
 MACRO_CONFIG_INT(ClFreezeKillTeamDistance, ac_freeze_kill_team_dist, 12, 0, 25, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance a Teammate Can be Away")
+
+MACRO_CONFIG_INT(ClFreezeDontKillMoving, ac_freeze_dont_kill_moving, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance a Teammate Can be Away")
 
 
 MACRO_CONFIG_INT(ClFreezeKillDebug, ac_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "debug")

@@ -140,6 +140,8 @@ public:
 	bool GrenadeHitDisabled() { return m_Core.m_GrenadeHitDisabled; }
 
 	bool IsSuper() { return m_Core.m_Super; }
+	int m_FreezeAccumulation;
+	int m_AliveAccumulation;
 
 private:
 	// weapon info
