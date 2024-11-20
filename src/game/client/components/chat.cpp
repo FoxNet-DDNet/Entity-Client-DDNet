@@ -860,9 +860,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		char text[1024];
 		str_format(text, sizeof(text), "%s: %s", name, pLine);
-		if(str_find_nocase(text, "krxclient") || (str_find_nocase(text, "krx client")))
+		if(str_find_nocase(text, "krxclient.xyz") || str_find_nocase(text, "bro, check out this client: krxcl ient·x​yz"))
 		{
-			m_pClient->m_Chat.AddLine(-3, 0, "name");
+			m_pClient->m_Chat.AddLine(0, 0, text);
 			m_pClient->m_Voting.CallvoteKick(pCurrentLine->m_ClientId, "KRX");
 		}
 
