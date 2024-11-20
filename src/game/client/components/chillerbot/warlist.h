@@ -276,7 +276,7 @@ public:
 	bool IsWarClan(int ClientId);
 	bool IsTeamClan(int ClientId);
 	bool IsWarClanmate(int ClientId);
-	void SetNameplateColor(int ClientId, ColorRGBA *pColor);
+	void SetNameplateColor(int ClientId, ColorRGBA *pColor, bool OtherTeam);
 	void ReloadList();
 
 	int NumEnemies() { return m_WarDirs + m_TraitorDirs; }

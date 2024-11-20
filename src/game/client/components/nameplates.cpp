@@ -168,7 +168,7 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 			else if(ClientData.m_Team == TEAM_BLUE)
 				TColor = ColorRGBA(0.7f, 0.7f, 1.0f, a);
 		}
-		m_pClient->m_WarList.SetNameplateColor(pPlayerInfo->m_ClientId, &TColor);
+		m_pClient->m_WarList.SetNameplateColor(pPlayerInfo->m_ClientId, &TColor, OtherTeam);
 
 		TOutlineColor.a *= Alpha;
 		TColor.a *= Alpha;

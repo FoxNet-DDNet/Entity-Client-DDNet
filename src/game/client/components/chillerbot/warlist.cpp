@@ -618,33 +618,69 @@ bool CWarList::IsTempWar(int ClientId)
 	return false;
 }
 
-void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor)
+void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor, bool OtherTeam)
 {
 	const auto &ClientData = m_pClient->m_aClients[ClientId];
 	if(!g_Config.m_ClWarList)
 		return;
 
-	if(IsWar(ClientId) && g_Config.m_ClDoEnemyNameColor)
-		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-	else if(IsTempWar(ClientId) && g_Config.m_ClDoEnemyNameColor)
-		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-	else if(IsTeam(ClientId) && g_Config.m_ClDoTeammateNameColor)
-		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
-	else if(IsHelper(ClientId) && g_Config.m_ClDoHelperNameColor)
-		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
-	else if(IsTraitor(ClientId))
-		*pColor = ColorRGBA(0.1f, 0.1f, 0.1f, 1.0f);
-	else if(IsWarClan(ClientId))
-		*pColor = ColorRGBA(7.0f, 0.2f, 0.2f, 1.0f);
-	else if(IsTeamClan(ClientId))
-		*pColor = ColorRGBA(0.0f, 0.9f, 0.2f, 1.0f);
-	else if(IsWarClanmate(ClientId) && g_Config.m_ClAutoClanWar)
-		*pColor = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
+	ColorRGBA Color;
+	float Alpha = 1.0f;
+	if(OtherTeam)
+	{
+		Alpha = 0.35f;
+	}
 
+	if(IsWar(ClientId) && g_Config.m_ClDoEnemyNameColor)
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+		*pColor = Color.WithAlpha(Alpha);
+	}
+	else if(IsTempWar(ClientId) && g_Config.m_ClDoEnemyNameColor)
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+		*pColor = Color.WithAlpha(Alpha);
+	}
+	else if(IsTeam(ClientId) && g_Config.m_ClDoTeammateNameColor)
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
+		*pColor = Color.WithAlpha(Alpha);
+	}
+	else if(IsHelper(ClientId) && g_Config.m_ClDoHelperNameColor)
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
+		*pColor = Color.WithAlpha(Alpha);
+	}
+	else if(IsTraitor(ClientId))
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
+		*pColor = ColorRGBA(0.1f, 0.1f, 0.1f);
+	}
+	else if(IsWarClan(ClientId))
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
+		*pColor = ColorRGBA(7.0f, 0.2f, 0.2);
+	}
+	else if(IsTeamClan(ClientId))
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
+		*pColor = ColorRGBA(0.0f, 0.9f, 0.2f);
+	}
+	else if(IsWarClanmate(ClientId) && g_Config.m_ClAutoClanWar)
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
+		*pColor = ColorRGBA(7.0f, 0.5f, 0.2f);
+	}
 	else if(g_Config.m_ClDoFriendNameColor && ClientData.m_Friend)
-		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+		*pColor = Color.WithAlpha(Alpha);
+	}
 	else if(g_Config.m_ClFoeNameColor && ClientData.m_Foe)
-		*pColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFoeColor));
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFoeColor));
+		*pColor = Color.WithAlpha(Alpha);
+	}
 }
 
 bool CWarList::RemoveMuteNameFromVector(const char *pDir, const char *pName)
