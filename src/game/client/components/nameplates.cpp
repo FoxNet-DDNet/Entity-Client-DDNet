@@ -173,15 +173,20 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 		TOutlineColor.a *= Alpha;
 		TColor.a *= Alpha;
 
+		float AlphaO = 1.0f;
+		if(OtherTeam)
+			AlphaO = 0.35f;
+
 		if(NamePlate.m_NameTextContainerIndex.Valid())
 		{
 			YOffset -= FontSize;
 			if((g_Config.m_ClPingNameCircle && !pPlayerInfo->m_Local) && !(Client()->State() == IClient::STATE_DEMOPLAYBACK))
 			{
+
 				Graphics()->TextureClear();
 				Graphics()->QuadsBegin();
 				rgb = color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(m_pClient->m_Snap.m_apPlayerInfos[pPlayerInfo->m_ClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f));
-				Graphics()->SetColor(rgb);
+				Graphics()->SetColor(rgb.WithAlpha(AlphaO));
 				float CircleSize = 7.0f;
 				Graphics()->DrawCircle(Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_NameTextContainerIndex).m_W / 2.0f - CircleSize, YOffset + FontSize / 2.0f + 1.4f, CircleSize, 24);
 				Graphics()->QuadsEnd();
@@ -190,7 +195,7 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 			{
 				const vec2 ShowDirectionPos = vec2(Position.x - 11.0f, YOffset);
 				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
-				Graphics()->SetColor(Color);
+				Graphics()->SetColor(Color.WithAlpha(AlphaO));
 				Graphics()->QuadsSetRotation(0);
 				Graphics()->RenderQuadContainerAsSprite(m_DirectionQuadContainerIndex, 0, Position.x + TextRender()->GetBoundingBoxTextContainer(NamePlate.m_NameTextContainerIndex).m_W / 2.0f + 2, YOffset + 3.0f);
 			}
