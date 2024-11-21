@@ -837,14 +837,27 @@ void CPlayers::RenderPlayer(
 	RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position, Alpha);
 
 	float TeeAnimScale, TeeBaseSize;
+	float Time = time_get() / 400000000.0f;
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
 	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN)
 	{
+		if(g_Config.m_ClFreezeParticleSpin)
+		{
+			GameClient()->m_Effects.FreezingFlakesCircle(vec2(BodyPos.x + 50 * cos(Time), BodyPos.y + 50 * sin(Time)), vec2(32, 32), Alpha);
+			GameClient()->m_Effects.FreezingFlakesCircle(vec2(BodyPos.x - 50 * cos(Time), BodyPos.y - 50 * sin(Time)), vec2(32, 32), Alpha);
+		}
+		else
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32), Alpha);
 	}
 	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_SPARKLE)
 	{
+		if(g_Config.m_ClFreezeParticleSpin)
+		{
+			GameClient()->m_Effects.FreezingFlakesCircle(vec2(BodyPos.x + 50 * cos(Time), BodyPos.y + 50 * sin(Time)), vec2(32, 32), Alpha);
+			GameClient()->m_Effects.FreezingFlakesCircle(vec2(BodyPos.x - 50 * cos(Time), BodyPos.y - 50 * sin(Time)), vec2(32, 32), Alpha);
+		}
+		else
 		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
 	}
 
@@ -859,6 +872,12 @@ void CPlayers::RenderPlayer(
 	if(g_Config.m_ClSparkleEffectOthers && !Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
 	{
 		GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
+	}
+	if(g_Config.m_ClEffectPlayer && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	{
+		GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)), Alpha);
+
+		GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)), Alpha);
 	}
 
 

@@ -35,6 +35,10 @@ public:
 
 	void SparklePlayer(vec2 Pos, float Alpha = 1.0f);
 
+	void FreezingFlakesCircle(vec2 Pos, vec2 Size, float Alpha = 1.0f);
+
+	void EffectPlayer(vec2 Pos, float Alpha = 1.0f);
+
 	void Update();
 };
 #endif

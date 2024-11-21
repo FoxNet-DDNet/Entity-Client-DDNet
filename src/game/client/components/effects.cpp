@@ -14,6 +14,7 @@
 #include <game/client/gameclient.h>
 
 #include "effects.h"
+#include <libavutil/mathematics.h>
 
 CEffects::CEffects()
 {
@@ -101,6 +102,31 @@ void CEffects::FreezingFlakes(vec2 Pos, vec2 Size, float Alpha)
 		p.m_Collides = true;
 	else
 		p.m_Collides = false;
+	p.m_Color.a = Alpha;
+	p.m_StartAlpha = Alpha;
+	m_pClient->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
+}
+
+void CEffects::FreezingFlakesCircle(vec2 Pos, vec2 Size, float Alpha)
+{
+	if(!m_Add50hz)
+		return;
+
+	CParticle p;
+	p.SetDefault();
+	p.m_Spr = SPRITE_PART_SNOWFLAKE;
+	p.m_Pos = Pos;
+	p.m_Vel = vec2(0, 0);
+	p.m_LifeSpan = 0.6f;
+	p.m_StartSize = 0.2f;
+	p.m_EndSize = 25.0f;
+	p.m_UseAlphaFading = true;
+	p.m_StartAlpha = 1.0f;
+	p.m_EndAlpha = 0.0f;
+	p.m_Rot = random_angle();
+	p.m_Rotspeed = pi;
+	p.m_Gravity = random_float(250.0f + g_Config.m_ClSnowflakeGravity);
+	p.m_Collides = false;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
 	m_pClient->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
@@ -413,7 +439,27 @@ void CEffects::SparklePlayer(vec2 Pos, float Alpha)
 }
 
 
+void CEffects::EffectPlayer(vec2 Pos, float Alpha)
+{
+	if(!m_Add100hz)
+		return;
 
+	CParticle p;
+	p.SetDefault();
+	p.m_Spr = SPRITE_PART_SPARKLE;
+	p.m_Pos = Pos;
+	p.m_Vel = vec2(0, 0);
+	p.m_LifeSpan = 0.8f;
+	p.m_StartSize = 0.0f;
+	p.m_Rot = random_angle();
+	p.m_Rotspeed = M_PI * 2;
+	p.m_EndSize = 25.0f;
+	p.m_UseAlphaFading = true;
+	p.m_StartAlpha = Alpha;
+	p.m_EndAlpha = std::min(0.2f, Alpha);
+	p.m_Collides = false;
+	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
+}
 
 void CEffects::OnRender()
 {

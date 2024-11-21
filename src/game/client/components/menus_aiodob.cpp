@@ -523,8 +523,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect PlayerSettings, ChatSettings, ResetButton, SoundSettings, WarVisual, UiSettings;
-		MainView.VSplitMid(&PlayerSettings, &ResetButton);
+		CUIRect PlayerSettings, ChatSettings, SoundSettings, WarVisual, UiSettings;
+		MainView.VSplitMid(&PlayerSettings, &UiSettings);
 
 		// Weapon Settings
 
@@ -576,6 +576,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					g_Config.m_ClRainbowHookOthers ^= 1;
 			}
 		}
+
 		// chat settings
 
 		{
@@ -1101,25 +1102,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// right side in settings menu
 
-		// defaults
+		
 		{
-			ResetButton.VMargin(5.0f, &ResetButton);
-			ResetButton.HSplitTop(40.0f, &ResetButton, &UiSettings);
-			if(s_ScrollRegion.AddRect(ResetButton))
-			{
-				ResetButton.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 7.5f));
-				ResetButton.Margin(10.0f, &ResetButton);
-				static CButtonContainer s_DefaultButton;
-				if(DoButton_Menu(&s_DefaultButton, Localize("Reset Sliders to Default"), 0, &ResetButton))
-				{
-					PopupConfirm(Localize("Reset Sliders"), Localize("Are You Sure You Want to Reset All Sliders to Default?"),
-						Localize("Reset"), Localize("Cancel"), &CMenus::ResetSettingsCustomization);
-				}
-			}
-		}
-
-		{
-			UiSettings.HSplitTop(Margin, nullptr, &UiSettings);
+			UiSettings.VMargin(5.0f, &UiSettings);
 			if(g_Config.m_ClFpsSpoofer)
 				UiSettings.HSplitTop(160.0f, &UiSettings, &SoundSettings);
 			else

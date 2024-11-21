@@ -410,8 +410,12 @@ MACRO_CONFIG_COL(ClOwnTeeColorFeet, cle_own_tee_color_feet, 65408, CFGFLAG_CLIEN
 MACRO_CONFIG_INT(ClSparkleEffect, cle_sparkle_effect, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
 MACRO_CONFIG_INT(ClSparkleEffectOthers, cle_sparkle_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
 
+MACRO_CONFIG_INT(ClEffectPlayer, cle_effect_player, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
+
 MACRO_CONFIG_INT(ClPlayerTrail, cle_player_trail, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
 
+
+MACRO_CONFIG_INT(ClFreezeParticleSpin, cle_freeze_particle_spin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make Freeze Particles Spin Around The Player")
 
 
 // Rainbow
