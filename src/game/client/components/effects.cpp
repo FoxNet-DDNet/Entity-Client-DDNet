@@ -450,10 +450,12 @@ void CEffects::EffectPlayer(vec2 Pos, float Alpha)
 	p.m_Pos = Pos;
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.8f;
-	p.m_StartSize = 0.0f;
+	p.m_StartSize = 1.0f;
 	p.m_Rot = random_angle();
 	p.m_Rotspeed = M_PI * 2;
 	p.m_EndSize = 25.0f;
+	p.m_FlowAffected = true;
+	p.m_Vel = vec2(random_float(10.0f, 100.0f), random_float(10.0f, 100.0f));
 	p.m_UseAlphaFading = true;
 	p.m_StartAlpha = Alpha;
 	p.m_EndAlpha = std::min(0.2f, Alpha);

@@ -1373,7 +1373,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				FastInputSettings.VMargin(Margin, &FastInputSettings);
 
 				FastInputSettings.HSplitTop(HeaderHeight, &Button, &FastInputSettings);
-				Ui()->DoLabel(&Button, Localize("Anti Latency Tools"), FontSize, TEXTALIGN_MC);
+				Ui()->DoLabel(&Button, Localize("Visaul Anti Latency Tools"), FontSize, TEXTALIGN_MC);
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFastInput, ("Fast Inputs (-20ms visual input delay)"), &g_Config.m_ClFastInput, &FastInputSettings, LineMargin);
 					if(g_Config.m_ClFastInput)
@@ -1484,7 +1484,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 	
 		{
 			LatencySettings.HSplitTop(Margin, nullptr, &LatencySettings);
-			LatencySettings.HSplitTop(290.0f, &LatencySettings, 0);
+			LatencySettings.HSplitTop(315.0f, &LatencySettings, 0);
 			if(s_ScrollRegion.AddRect(LatencySettings))
 			{
 				LatencySettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));

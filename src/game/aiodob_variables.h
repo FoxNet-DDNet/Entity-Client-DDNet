@@ -392,6 +392,8 @@ MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLI
 
 	//Dummy Controls +
 
+	MACRO_CONFIG_INT(ClDeepFly, ac_deep_fly, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
+
 	MACRO_CONFIG_INT(ClDummyHammerSpeed, ac_dummy_hammer_speed, 25, 0, 100, CFGFLAG_CLIENT, "Speed at which the dummy hammers")
 	MACRO_CONFIG_INT(ClIdToHammer, ac_id_to_hammer, -1, -1, MAX_CLIENTS, CFGFLAG_CLIENT, "Speed at which the dummy hammers")
 

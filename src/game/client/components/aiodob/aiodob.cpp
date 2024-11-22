@@ -178,6 +178,8 @@ void CAiodob::AutoKill()
 
 			CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(~Local);
 
+			
+
 			if(g_Config.m_ClAutoKillDebug)
 			{
 				char aBuf[100];
@@ -311,11 +313,52 @@ void CAiodob::AutoJoinTeam()
 		m_JoinTeam = time_get() + time_freq() * 0.25;
 	}
 }
+/*
+void CAiodob::ConDeepFly(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+	if(pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
+		pSelf->m_Active = pResult->GetInteger(0) != 0;
+}
+
+
+
+void CAiodob::DeepFly()
+{
+
+	if(m_Active)
+	{
+		GameClient()->m_DummyInput.m_Fire = 2;
+	}
+	else
+	{
+		GameClient()->m_DummyInput.m_Fire = 0;
+	}
+	
+
+
+	vec2 MainPos = m_pClient->m_aClients[g_Config.m_ClIdToHammer].m_Predicted.m_Pos;
+
+	vec2 DummyPos = m_pClient->m_aClients[m_pClient->m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
+	vec2 Dir = MainPos - DummyPos;
+	m_pClient->m_HammerInput.m_TargetX = (int)(Dir.x);
+	m_pClient->m_HammerInput.m_TargetY = (int)(Dir.y);
+}
+
+void CAiodob::OnConsoleInit()
+{
+	Console()->Register("+deepfly", "", CFGFLAG_CLIENT, ConDeepFly, this, "test");
+}
+
+void CAiodob::OnRelease()
+{
+	m_Active = false;
+}
+*/
 
 void CAiodob::OnRender()
 {
 	int Local = m_pClient->m_Snap.m_LocalClientId;
-
 
 	AutoKill();
 	AutoJoinTeam();

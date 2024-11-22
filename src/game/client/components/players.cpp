@@ -22,7 +22,7 @@
 #include <game/client/components/flow.h>
 #include <game/client/components/skins.h>
 #include <game/client/components/sounds.h>
-
+#include <game/client/prediction/entities/character.h>
 #include "players.h"
 
 #include <base/color.h>
@@ -860,9 +860,7 @@ void CPlayers::RenderPlayer(
 		else
 		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
 	}
-
-
-
+	CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(~Local);
 
 	if(g_Config.m_ClSparkleEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
 	{
@@ -873,8 +871,9 @@ void CPlayers::RenderPlayer(
 	{
 		GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
 	}
-	if(g_Config.m_ClEffectPlayer && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	if(g_Config.m_ClEffectPlayer && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN) && (abs(Vel.x) < 0.5f && abs(Vel.y) < 0.5f) )
 	{
+
 		GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)), Alpha);
 
 		GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)), Alpha);
