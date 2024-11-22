@@ -20,9 +20,11 @@ press on More Info and run anyway :p
 If on a different operating system you have to build the Client yourself.
 steps on how to do that are on the official [ddnet github](https://github.com/ddnet/ddnet/)
 
-![Usefull Settings](https://github.com/user-attachments/assets/831914d2-2305-4ab9-9aed-03c99bc664dc)
+# Features
+![Usefull Settings](https://github.com/user-attachments/assets/b6dab982-09e6-423d-8e5f-6ebb81b1f222)
+![other Settings](https://github.com/user-attachments/assets/b0ac7d00-f881-4b9a-ab66-37aa295714a8)
+![tclient](https://github.com/user-attachments/assets/a6ff1cc5-bdd8-4f12-a11f-b222d4f14d0e)
 ![Bindwheel](https://github.com/user-attachments/assets/ca857ca5-439a-414e-a5c2-935bc52f5845)
-![Visual Sound Settings](https://github.com/user-attachments/assets/d98a00bb-badf-4f03-811b-d669657492e3)
 
 
 
