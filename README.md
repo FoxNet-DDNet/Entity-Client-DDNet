@@ -20,67 +20,6 @@ press on More Info and run anyway :p
 If on a different operating system you have to build the Client yourself.
 steps on how to do that are on the official [ddnet github](https://github.com/ddnet/ddnet/)
 
-## Why This Change?
-
-### Images.
-
-I've looked into it for about 10 minutes and already figured that I wont be able to make this happen with just an exe. Sorry but not sorry :p 
-
-If anyones willing to help me with this, please feel free to
-
-### further explanation: 
-
-Basically the new images need to be loaded somehow and I cant just embed them into the .exe, cause I'm also too stupid for that
-I thought about autoupadtes and it downloading it from my servers but I have no clue how that would work.
-If anyone can help me with this Issue then please feel free to, I wont pay or anything, this Client will be finished soon, so there wont be as many updates anymore
-
-
-
-
-
-## ---Client will include---
-
-### -Parts of Tater Client-
-- Bind Wheel
-- Skin Profiles
-- AutoVerify
-- Player Indicator
-- Frozen Tee Hud
-- Ping Circle next to names
-- Nameplates in spec ig?
-- Render Cursor in Spec - with an opacity config
-- Run on Join in Console
-
-### -Parts of Chillerbot-
-- War List - its almost like the normal chillerbot except that the commands are also in the console
-- silent chat commands if turned on or when using "." as the prefix
-- ~~Skin Stealer~~ broke it and lazy
-- Camp - might be bannable I have no clue tbh
-- Finish Rename
-- Auto reply - When alt tabbed
-
-### -Aiodob Client-
-- disable chat bubble
-- customizeable in chat Prefixes (default: war = "♦ " , team = "♦ " , Friend = "♥ " , spec = "(s) "
-- Friend name color in chat and scorebaord
-- (s) next to names of people spectating in scoreboard and chat
-- show tee sitting in scoreboard if the player is spectating
-- darker names of people who are afk in scoreboard
-- Show when others are in a menu
-- nameplate colors
-- auto kill if someones sittin ontop of you while you are IN a freeze tile
-- strong/weak hook color for cl_nameplate_ids
-- In Spectate Menu Prefixes and Name Colors 
-- Custom Chat Commands - add your own command that the warlist recognizes (eg. !addteeeem qxdFox)
-- Fps spoofer ig?
-- Very pro looking menu trust
-- Prediction support for my servers explosion gun
-- Customization of alot of sprites - but like in the most useless way possible.
-- automatically adds people back to lists if they changed their name
-
-
-## Screenshots
-
 ![Usefull Settings](https://github.com/user-attachments/assets/831914d2-2305-4ab9-9aed-03c99bc664dc)
 ![Bindwheel](https://github.com/user-attachments/assets/ca857ca5-439a-414e-a5c2-935bc52f5845)
 ![Visual Sound Settings](https://github.com/user-attachments/assets/d98a00bb-badf-4f03-811b-d669657492e3)
