@@ -644,6 +644,7 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 			if(Ui()->DoButton_Menu(m_ConnectButton, &s_ConnectButton, ConnectLabelFunc, &ButtonConnect, Props) || WasListboxItemActivated || (!Ui()->IsPopupOpen() && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
 			{
 				Connect(g_Config.m_UiServerAddress);
+				GameClient()->m_Aiodob.m_LastMovement = time_get() + time_freq() * 60;
 			}
 		}
 	}

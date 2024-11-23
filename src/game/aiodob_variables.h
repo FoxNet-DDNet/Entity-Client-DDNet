@@ -345,8 +345,8 @@ MACRO_CONFIG_INT(ClAutoJoinTeam, ac_auto_join_team, 0, 0, 1, CFGFLAG_CLIENT | CF
 MACRO_CONFIG_STR(ClAutoJoinTeamName, ac_auto_join_team_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
 
 // Info
-MACRO_CONFIG_INT(ClEnabledInfo, ac_enabled_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
 
+MACRO_CONFIG_INT(ClEnabledInfo, ac_enabled_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
 
 // Freeze Kill
 
@@ -408,11 +408,13 @@ MACRO_CONFIG_COL(ClOwnTeeColorFeet, cle_own_tee_color_feet, 65408, CFGFLAG_CLIEN
 
 
 // Effects
+MACRO_CONFIG_COL(ClSparkleColor, cle_sparkle_color, 14155743, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Sparkle effect Color")
+
 
 MACRO_CONFIG_INT(ClSparkleEffect, cle_sparkle_effect, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
 MACRO_CONFIG_INT(ClSparkleEffectOthers, cle_sparkle_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
 
-MACRO_CONFIG_INT(ClEffectPlayer, cle_effect_player, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
+MACRO_CONFIG_INT(ClSpecialEffect, cle_special_effect, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
 
 MACRO_CONFIG_INT(ClPlayerTrail, cle_player_trail, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
 

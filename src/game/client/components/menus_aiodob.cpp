@@ -545,8 +545,16 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
 
 				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
+		
+
+
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffect, ("Sparkle Effect Self"), &g_Config.m_ClSparkleEffect, &PlayerSettings, LineMargin);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffectOthers, ("Sparkle Effect Others"), &g_Config.m_ClSparkleEffectOthers, &PlayerSettings, LineMargin);
+
+				static CButtonContainer SparkleR;
+				PlayerSettings.HSplitTop(-35.0f, &PlayerSettings, &PlayerSettings);
+				DoLine_ColorPicker(&SparkleR, 25.0f, 13.0f, 5.0f, &PlayerSettings, (""), &g_Config.m_ClSparkleColor, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false), g_Config.m_ClSparkleEffect;
+				PlayerSettings.HSplitTop(5.0f, &PlayerSettings, &PlayerSettings);
 
 				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
 				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
@@ -1317,7 +1325,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				{
 					// ***** FROZEN TEE HUD ***** //
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHud, ("Enalbe Frozen Tee Display"), &g_Config.m_ClShowFrozenHud, &FrozenTeeHudSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHud, ("Enable Frozen Tee Display"), &g_Config.m_ClShowFrozenHud, &FrozenTeeHudSettings, LineMargin);
 					FrozenTeeHudSettings.HSplitTop(5.0f, &Button, &FrozenTeeHudSettings);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHudSkins, ("Use Skins Instead of Ninja Tees"), &g_Config.m_ClShowFrozenHudSkins, &FrozenTeeHudSettings, LineMargin);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFrozenHudTeamOnly, ("Only Show After Joining a Team"), &g_Config.m_ClFrozenHudTeamOnly, &FrozenTeeHudSettings, LineMargin);

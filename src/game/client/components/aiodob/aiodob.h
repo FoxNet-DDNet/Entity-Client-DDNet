@@ -7,19 +7,13 @@ class CAiodob : public CComponent
 	bool AttempedJoinTeam;
 	bool JoinedTeam;
 	int Mult;
-
 	bool m_Active;
-	unsigned int m_DummyFire;
-
-	struct CInputState
-	{
-		CAiodob *m_pControls;
-		int *m_apVariables[NUM_DUMMIES];
-	};
+	bool m_SentKill;
 
 public:
 	int64_t m_JoinTeam;
 	int64_t m_LastFreeze;
+	int64_t m_LastMovement = 10.0f;
 
 private:
 	virtual void OnInit() override;

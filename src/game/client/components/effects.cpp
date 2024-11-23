@@ -141,6 +141,7 @@ void CEffects::SparkleTrail(vec2 Pos, float Alpha)
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SPARKLE;
 	p.m_Pos = Pos + random_direction() * random_float(40.0f);
+	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSparkleColor));
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 0.0f;
@@ -427,6 +428,7 @@ void CEffects::SparklePlayer(vec2 Pos, float Alpha)
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SPARKLE;
 	p.m_Pos = Pos + random_direction() * random_float(40.0f);
+	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSparkleColor));
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 0.0f;
@@ -446,7 +448,8 @@ void CEffects::EffectPlayer(vec2 Pos, float Alpha)
 
 	CParticle p;
 	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SPARKLE;
+	p.m_Spr = SPRITE_PART_SPARKLE; 
+	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSparkleColor));
 	p.m_Pos = Pos;
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.8f;

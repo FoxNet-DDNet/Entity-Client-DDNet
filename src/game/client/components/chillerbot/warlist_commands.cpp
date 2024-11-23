@@ -27,8 +27,9 @@ void CWarList::AddSimpleTempWar(const char *pName)
 		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp/tempwar folder");
 		return;
 	}
-
 	AddTempWar("tempwar", pName);
+	RemoveTeamNoMsg(pName);
+	RemoveHelperNoMsg(pName);
 }
 
 void CWarList::AddSimpleMute(const char *pName)
@@ -48,7 +49,6 @@ void CWarList::AddSimpleMute(const char *pName)
 		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create mutes/mutes folder");
 		return;
 	}
-
 	AddMute("mute", pName);
 }
 
@@ -73,7 +73,6 @@ void CWarList::AddSimpleHelper(const char *pName)
 	AddHelper("helper", pName);
 	RemoveTeamNoMsg(pName);
 	RemoveWarNoMsg(pName);
-	RemoveWarNoMsg(pName);
 }
 
 void CWarList::AddSimpleWar(const char *pName)
@@ -97,7 +96,6 @@ void CWarList::AddSimpleWar(const char *pName)
 	AddWar("war", pName);
 	RemoveTeamNoMsg(pName);
 	RemoveHelperNoMsg(pName);
-	RemoveTempWarNoMsg(pName);
 }
 
 void CWarList::AddSimpleTeam(const char *pName)
@@ -120,7 +118,6 @@ void CWarList::AddSimpleTeam(const char *pName)
 
 	AddTeam("team", pName);
 	RemoveWarNoMsg(pName);
-	RemoveTempWarNoMsg(pName);
 	RemoveHelperNoMsg(pName);
 }
 
@@ -176,6 +173,7 @@ void CWarList::RemoveSimpleWar(const char *pName)
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the war list", pName);
 	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	ReloadList();
+	RemoveTempWarNoMsg(pName);
 }
 
 void CWarList::RemoveSimpleMute(const char *pName)

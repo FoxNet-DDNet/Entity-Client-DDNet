@@ -1239,6 +1239,7 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 			pTitle = Client()->ErrorString();
 			pExtraText = aBuf;
 			pButtonText = Localize("Abort");
+			GameClient()->m_Aiodob.m_LastMovement = time_get() + time_freq() * 60;
 		}
 	}
 	else if(m_Popup == POPUP_RENAME_DEMO)

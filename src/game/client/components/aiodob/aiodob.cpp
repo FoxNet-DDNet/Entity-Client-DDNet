@@ -33,10 +33,11 @@ void CAiodob::OnInit()
 {
 	AttempedJoinTeam = false;
 	JoinedTeam = false;
+	m_SentKill = false;
 	Mult = 0;
 	m_JoinTeam = 0;
 	m_LastFreeze = 0;
-
+	m_LastMovement = 0;
 	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
 }
 
@@ -47,27 +48,40 @@ void CAiodob::FreezeKill()
 
 	if(!GameClient()->CurrentRaceTime())
 	{
-		m_LastFreeze = time_get() + 3 + time_freq() * g_Config.m_ClFreezeKillMs / static_cast<float>(1000);
+		m_SentKill = false;
+		m_LastFreeze = time_get() + 3 + time_freq() * g_Config.m_ClFreezeKillMs / 1000.0f;
 		return;
 	}
 	
-
 	if(g_Config.m_ClFreezeKillMultOnly)
 		if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 			return;
 
+
 	if(g_Config.m_ClFreezeKillDebug)
 	{
-		float a = m_LastFreeze - time_get();
+		float a = m_LastFreeze - time_get() / 1000000000.0f;
 
 		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "until kill: %f", a / 1000000000);
+		str_format(aBuf, sizeof(aBuf), "until kill: %f", a );
 		GameClient()->TextRender()->Text(50, 100, 10, aBuf);
 	}
 
-	float Time = g_Config.m_ClFreezeKillMs / static_cast<float>(1000);
+	
+	float Time = g_Config.m_ClFreezeKillMs / 1000.0f;
 
 	float TimeReset = time_get() + time_freq() * Time;
+
+	
+	if(m_SentKill == true && GameClient()->CurrentRaceTime())
+	{
+		m_pClient->m_Chat.SendChat(0, "/kill");
+		m_SentKill = false;
+		m_LastFreeze = time_get() + time_freq() * 5;
+		return;
+	}
+
+	
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -81,13 +95,16 @@ void CAiodob::FreezeKill()
 		CGameClient::CClientData OtherTee = m_pClient->m_aClients[i];
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
+
+		if(m_pClient->m_aClients[Local].m_Paused || m_pClient->m_aClients[Local].m_Spec)
+			m_LastFreeze = TimeReset;
+
 		if(pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0 && i == Local && g_Config.m_ClFreezeDontKillMoving)
 		{
 			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
 				if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
 					m_LastFreeze = TimeReset;
 		}
-
 		if(!pCharacterOther->m_IsInFreeze)
 		{
 			if(g_Config.m_ClFreezeKillTeamClose && OtherTee.m_IsTeam && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Team && i != Local)
@@ -108,14 +125,14 @@ void CAiodob::FreezeKill()
 			if(m_LastFreeze <= time_get() && (pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
 			{
 				GameClient()->SendKill(Local);
-				m_pClient->m_Chat.SendChat(0, "/Kill");
+				m_SentKill = true;
 				return;
 			}
 		}
 		else if(pCharacter->m_IsInFreeze)
 		{
 			GameClient()->SendKill(Local);
-			m_pClient->m_Chat.SendChat(0, "/Kill");
+			m_SentKill = true;
 			return;
 		}
 	}
@@ -364,13 +381,8 @@ void CAiodob::OnRender()
 	AutoJoinTeam();
 	FreezeKill();
 
-	if(g_Config.m_ClTest)
-	{
-		if(GameClient()->m_Controls.m_aInputData->m_Fire == 0)
-		{
-			GameClient()->m_Controls.m_aInputData->m_Fire++;
-			return;
-		}
-		GameClient()->m_Controls.m_aInputData->m_Fire++;
-	}
+	if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
+		m_LastMovement = time_get() + time_freq() * 30;
+		
+
 }
