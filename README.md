@@ -24,7 +24,7 @@ steps on how to do that are on the official [ddnet github](https://github.com/dd
 ![Usefull Settings](https://github.com/user-attachments/assets/b6dab982-09e6-423d-8e5f-6ebb81b1f222)
 ![other Settings](https://github.com/user-attachments/assets/b0ac7d00-f881-4b9a-ab66-37aa295714a8)
 ![tclient](https://github.com/user-attachments/assets/a6ff1cc5-bdd8-4f12-a11f-b222d4f14d0e)
-![Bindwheel](https://github.com/user-attachments/assets/ca857ca5-439a-414e-a5c2-935bc52f5845)
+![Bindwheel](https://github.com/user-attachments/assets/8362b047-b79f-40e0-ad19-56e4fa2a24e1)
 
 
 
