@@ -1,7 +1,5 @@
 Foxs turn on copying files from other clients and making a *semi* All In One client, which will be called... Aiodob.
 
-If anyones got a better name make an Issue please. I want something sick, nothing like.. idk.. THE Client or sum
-
 ## How to use the Client
 
 ### Steam
