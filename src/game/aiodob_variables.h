@@ -39,16 +39,6 @@ MACRO_CONFIG_INT(ClWarlistConsoleColors, ac_warlist_console_colors, 0, 0, 1, CFG
 
 MACRO_CONFIG_INT(ClMutedConsoleColor, ac_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
-
-// Sweat mode
-
-MACRO_CONFIG_INT(ClSweatMode, ac_sweat_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
-MACRO_CONFIG_INT(ClSweatModeSkin, ac_sweat_mode_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
-MACRO_CONFIG_INT(ClSweatModeOnlyOthers, ac_sweat_mode_only_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
-MACRO_CONFIG_STR(ClSweatModeSkinName, ac_sweat_mode_skin_name, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have")
-
-
-
 // from tater client (credits to tater)
 
 // Anti Latency Tools
@@ -96,7 +86,7 @@ MACRO_CONFIG_INT(ClFastInputOthers, ac_fast_input_others, 0, 0, 1, CFGFLAG_CLIEN
 	MACRO_CONFIG_INT(ClOldMouseZoom, ac_old_mouse_zoom, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Does not zoom mouse based on camera to prevent precision loss at low zoom levels")
 
 
-// Render Cursor in Spectate mode
+// Run on Join
 MACRO_CONFIG_INT(ClRunOnJoinConsole, ac_run_on_join_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use run on join in chat or console")
 MACRO_CONFIG_INT(ClRunOnJoinDelay, ac_run_on_join_delay, 2, 7, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 MACRO_CONFIG_STR(ClRunOnJoinMsg, ac_run_on_join_console_msg, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
@@ -106,7 +96,7 @@ MACRO_CONFIG_INT(ClLimitMouseToScreen, ac_limit_mouse_to_screen, 0, 0, 2, CFGFLA
 
 // Frozen Tee Display
 MACRO_CONFIG_INT(ClShowFrozenText, ac_frozen_tees_text, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show how many tees in your team are currently frozen. (0 - off, 1 - show alive, 2 - show frozen)")
-MACRO_CONFIG_INT(ClShowFrozenHud, ac_frozen_tees_hud, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show frozen tee HUD")
+MACRO_CONFIG_INT(ClShowFrozenHud, ac_frozen_tees_hud, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show frozen tee HUD")
 MACRO_CONFIG_INT(ClShowFrozenHudSkins, ac_frozen_tees_hud_skins, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use ninja skin, or darkened skin for frozen tees on hud")
 
 MACRO_CONFIG_INT(ClFrozenHudTeeSize, ac_frozen_tees_size, 15, 8, 20, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Size of tees in frozen tee hud. (Default : 15)")
@@ -405,6 +395,13 @@ MACRO_CONFIG_STR(ClOwnTeeSkinName, cle_own_tee_skin_name, 24, "default", CFGFLAG
 MACRO_CONFIG_COL(ClOwnTeeColorBody, cle_own_tee_color_body, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player body color")
 MACRO_CONFIG_COL(ClOwnTeeColorFeet, cle_own_tee_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player feet color")
 
+
+// Sweat mode
+
+MACRO_CONFIG_INT(ClSweatMode, ac_sweat_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
+MACRO_CONFIG_INT(ClSweatModeSkin, ac_sweat_mode_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
+MACRO_CONFIG_INT(ClSweatModeOnlyOthers, ac_sweat_mode_only_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
+MACRO_CONFIG_STR(ClSweatModeSkinName, ac_sweat_mode_skin_name, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have")
 
 
 // Effects

@@ -1963,7 +1963,7 @@ void CMenus::RenderPopupLoading(CUIRect Screen)
 	}
 	else
 	{
-		str_copy(aTitle, Localize("Connected"));
+		str_copy(aTitle, Localize("Loading A-Client - Connected"));
 		switch(Client()->LoadingStateDetail())
 		{
 		case IClient::LOADING_STATE_DETAIL_INITIAL:

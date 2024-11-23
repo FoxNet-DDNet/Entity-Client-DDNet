@@ -23,7 +23,7 @@ void CSoundLoading::Run()
 {
 	for(int s = 0; s < g_pData->m_NumSounds; s++)
 	{
-		const char *pLoadingCaption = Localize("AIODOB :D");
+		const char *pLoadingCaption = Localize("Loading A-Client");
 		const char *pLoadingContent = Localize("NEEEEOOOOWWW");
 
 		for(int i = 0; i < g_pData->m_aSounds[s].m_NumSounds; i++)
@@ -108,7 +108,7 @@ void CSounds::OnInit()
 		m_pSoundJob = std::make_shared<CSoundLoading>(m_pClient, false);
 		m_pClient->Engine()->AddJob(m_pSoundJob);
 		m_WaitForSoundJob = true;
-		m_pClient->m_Menus.RenderLoading(Localize("AIODOB :D"), Localize("MUHWEHWEHWHEHEHEEHEH"), 0);
+		m_pClient->m_Menus.RenderLoading(Localize("Loading A-Client"), Localize("MUHWEHWEHWHEHEHEEHEH"), 0);
 	}
 	else
 	{

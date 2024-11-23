@@ -296,17 +296,17 @@ void CSkins7::OnInit()
 		m_ScanningPart = Part;
 		Storage()->ListDirectory(IStorage::TYPE_ALL, aBuf, SkinPartScan, this);
 
-		GameClient()->m_Menus.RenderLoading(Localize("AIODOB :3"), Localize("Loading skin files"), 0);
+		GameClient()->m_Menus.RenderLoading(Localize("Loading A-Client"), Localize("Loading skin files"), 0);
 	}
 
 	// load skins
 	m_vSkins.clear();
 	Storage()->ListDirectory(IStorage::TYPE_ALL, SKINS_DIR, SkinScan, this);
-	GameClient()->m_Menus.RenderLoading(Localize("AIODOB :3"), Localize("Loading skin files"), 0);
+	GameClient()->m_Menus.RenderLoading(Localize("Loading A-Client"), Localize("Loading skin files"), 0);
 
 	LoadXmasHat();
 	LoadBotDecoration();
-	GameClient()->m_Menus.RenderLoading(Localize("AIODOB :3"), Localize("Loading skin files"), 0);
+	GameClient()->m_Menus.RenderLoading(Localize("Loading A-Client"), Localize("Loading skin files"), 0);
 }
 
 void CSkins7::InitPlaceholderSkinParts()

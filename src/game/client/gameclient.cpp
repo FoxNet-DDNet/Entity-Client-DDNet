@@ -310,7 +310,7 @@ void CGameClient::OnInit()
 		}
 		else
 		{
-			pTitle = Localize("Connected");
+			pTitle = Localize("Loading A-Client - Connected");
 		}
 
 		const char *pMessage;
@@ -369,8 +369,8 @@ void CGameClient::OnInit()
 	// update and swap after font loading, they are quite huge
 	Client()->UpdateAndSwap();
 
-	const char *pLoadingDDNetCaption = Localize("AIODOB :D");
-	const char *pLoadingMessageComponents = Localize("AIODOB :D");
+	const char *pLoadingDDNetCaption = Localize("Loading A-Client");
+	const char *pLoadingMessageComponents = Localize("Loading Something");
 	const char *pLoadingMessageComponentsSpecial = Localize("Madly in love with Sulie");
 	char aLoadingMessage[256];
 
@@ -566,7 +566,7 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 
 void CGameClient::OnConnected()
 {
-	const char *pConnectCaption = DemoPlayer()->IsPlaying() ? Localize("Preparing demo playback") : Localize("Connected");
+	const char *pConnectCaption = DemoPlayer()->IsPlaying() ? Localize("Preparing demo playback") : Localize("Loading A-Client - Connected");
 	const char *pLoadMapContent = Localize("Initializing boahhhhh");
 	// render loading before skip is calculated
 	m_Menus.RenderLoading(pConnectCaption, pLoadMapContent, 0, false);

@@ -294,7 +294,7 @@ void CSkins::OnInit()
 
 	// load skins
 	Refresh([this]() {
-		GameClient()->m_Menus.RenderLoading(Localize("AIODOB :D"), Localize("Boahhhhhh"), 0);
+		GameClient()->m_Menus.RenderLoading(Localize("Loading A-Client"), Localize("Boahhhhhh"), 0);
 	});
 }
 
