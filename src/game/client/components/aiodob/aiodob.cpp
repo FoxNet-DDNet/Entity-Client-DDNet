@@ -60,7 +60,7 @@ void CAiodob::FreezeKill()
 
 	if(g_Config.m_ClFreezeKillDebug)
 	{
-		float a = m_LastFreeze - time_get() / 1000000000.0f;
+		float a = (m_LastFreeze - time_get()) / 1000000000.0f;
 
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "until kill: %f", a );
@@ -71,18 +71,7 @@ void CAiodob::FreezeKill()
 	float Time = g_Config.m_ClFreezeKillMs / 1000.0f;
 
 	float TimeReset = time_get() + time_freq() * Time;
-
 	
-	if(m_SentKill == true && GameClient()->CurrentRaceTime())
-	{
-		m_pClient->m_Chat.SendChat(0, "/kill");
-		m_SentKill = false;
-		m_LastFreeze = time_get() + time_freq() * 5;
-		return;
-	}
-
-	
-
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		int Local = m_pClient->m_Snap.m_LocalClientId;
@@ -95,6 +84,8 @@ void CAiodob::FreezeKill()
 		CGameClient::CClientData OtherTee = m_pClient->m_aClients[i];
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
+		if(m_SentKill == true)
+			return;
 
 		if(m_pClient->m_aClients[Local].m_Paused || m_pClient->m_aClients[Local].m_Spec)
 			m_LastFreeze = TimeReset;
@@ -122,7 +113,14 @@ void CAiodob::FreezeKill()
 					m_LastFreeze = TimeReset;
 			}
 
-			if(m_LastFreeze <= time_get() && (pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
+			if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
+			{
+				m_pClient->m_Chat.SendChat(0, "/kill");
+				m_SentKill = true;
+				m_LastFreeze = time_get() + time_freq() * 5;
+				return;
+			}
+			else if(m_LastFreeze <= time_get() && (pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
 			{
 				GameClient()->SendKill(Local);
 				m_SentKill = true;
@@ -131,8 +129,17 @@ void CAiodob::FreezeKill()
 		}
 		else if(pCharacter->m_IsInFreeze)
 		{
-			GameClient()->SendKill(Local);
-			m_SentKill = true;
+			if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
+			{
+				m_pClient->m_Chat.SendChat(0, "/kill");
+				m_SentKill = true;
+				m_LastFreeze = time_get() + time_freq() * 5;
+			}
+			else
+			{
+				GameClient()->SendKill(Local);
+				m_SentKill = true;
+			}
 			return;
 		}
 	}
@@ -147,6 +154,9 @@ void CAiodob::AutoKill()
 
 	if(g_Config.m_ClAutoKill)
 	{
+		if(m_SentKill == true)
+			return;
+
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
@@ -212,6 +222,7 @@ void CAiodob::AutoKill()
 			}
 
 
+
 			if((pCharacter->m_IsInFreeze && !g_Config.m_ClAutoKillWarOnly) || (g_Config.m_ClAutoKillWarOnly && IsWar && pCharacter->m_IsInFreeze))
 			{
 				if((EnemyPos.y < SelfPos.y && EnemyPos.y > SelfPos.y - 1 - RangeY - EnemyVel.y) && ((EnemyPos.x <= SelfPos.x + RangeX) && (EnemyPos.x + RangeX >= SelfPos.x)))
@@ -222,13 +233,35 @@ void CAiodob::AutoKill()
 					{
 						if(EnemyPos.x <= SelfPos.x + 0.04f && EnemyPos.x + +0.04f >= SelfPos.x)
 						{
-							GameClient()->SendKill(Local);
-							return;
+							if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
+							{
+								m_pClient->m_Chat.SendChat(0, "/kill");
+								m_SentKill = true;
+								m_LastFreeze = time_get() + time_freq() * 5;
+								return;
+							}
+							else
+							{
+								GameClient()->SendKill(Local);
+								m_SentKill = true;
+								return;
+							}
 						}
 						return;
 					}
-					GameClient()->SendKill(Local);
-					return;
+					if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
+					{
+						m_pClient->m_Chat.SendChat(0, "/kill");
+						m_SentKill = true;
+						m_LastFreeze = time_get() + time_freq() * 5;
+						return;
+					}
+					else
+					{
+						GameClient()->SendKill(Local);
+						m_SentKill = true;
+						return;
+					}
 				}
 			}
 		}
@@ -380,6 +413,16 @@ void CAiodob::OnRender()
 	AutoKill();
 	AutoJoinTeam();
 	FreezeKill();
+
+	/*
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "%d", 60 * g_Config.m_SvKillProtection);
+		TextRender()->Text(100, 100, 10, aBuf);
+		float a = (m_LastFreeze - time_get()) / 1000000000.0f;
+		char bBuf[512];
+		str_format(bBuf, sizeof(bBuf), "%d", GameClient()->CurrentRaceTime());
+		TextRender()->Text(100, 125, 10, bBuf);
+	*/
 
 	if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
 		m_LastMovement = time_get() + time_freq() * 30;

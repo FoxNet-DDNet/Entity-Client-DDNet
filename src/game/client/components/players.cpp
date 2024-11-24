@@ -871,7 +871,7 @@ void CPlayers::RenderPlayer(
 	{
 		GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
 	}
-	if(g_Config.m_ClSpecialEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN) && (abs(Vel.x) < 0.5f && abs(Vel.y) < 0.5f))
+	if(g_Config.m_ClSpecialEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN) && (abs(Vel.x) < 6.5f && abs(Vel.y) < 6.5f))
 	{
 		if (GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients->m_Afk)
 		{

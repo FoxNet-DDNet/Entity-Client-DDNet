@@ -297,7 +297,7 @@ void CFreezeBars::OnRender()
 	}
 	if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
 	{
-		if(!g_Config.m_ClFreezeKill)
+		if(!g_Config.m_ClFreezeKill || (GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt))
 		{
 			RenderFreezeBar(LocalClientId);
 			return;

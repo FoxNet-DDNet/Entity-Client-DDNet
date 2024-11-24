@@ -1965,10 +1965,12 @@ void CMenus::RenderSettings(CUIRect MainView)
 	}
 	else if(g_Config.m_UiSettingsPage == SETTINGS_AIODOB)
 	{
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_AIODOB);
 		RenderSettingsAiodob(MainView);
 	}
 	else if(g_Config.m_UiSettingsPage == SETTINGS_SKINPROFILES)
 	{
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_SKINPROFILES);
 		RenderSettingsProfiles(MainView);
 	}
 	else

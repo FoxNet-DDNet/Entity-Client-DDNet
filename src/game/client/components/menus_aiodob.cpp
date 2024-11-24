@@ -239,7 +239,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			FreezeKillSettings.HSplitTop(Margin, nullptr, &FreezeKillSettings);
 			if(g_Config.m_ClFreezeKill)
-				FreezeKillSettings.HSplitTop(220.0f, &FreezeKillSettings, &ColorSettings);
+				FreezeKillSettings.HSplitTop(240.0f, &FreezeKillSettings, &ColorSettings);
 			else
 				FreezeKillSettings.HSplitTop(75.0f, &FreezeKillSettings, &ColorSettings);
 			if(s_ScrollRegion.AddRect(FreezeKillSettings))
@@ -255,6 +255,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				if(g_Config.m_ClFreezeKill)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillMultOnly, Localize("Only Enable on Multeasymap"), &g_Config.m_ClFreezeKillMultOnly, &FreezeKillSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, Localize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &FreezeKillSettings, LineSize);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
 
@@ -430,7 +432,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			{
 			AutoKillOntopSettings.HSplitTop(Margin, nullptr, &AutoKillOntopSettings);
 			if(g_Config.m_ClAutoKill)
-				AutoKillOntopSettings.HSplitTop(185.0f, &AutoKillOntopSettings, &ScoreboardSettings);
+				AutoKillOntopSettings.HSplitTop(205.0f, &AutoKillOntopSettings, &ScoreboardSettings);
 			else
 				AutoKillOntopSettings.HSplitTop(75.0f, &AutoKillOntopSettings, &ScoreboardSettings);
 			if(s_ScrollRegion.AddRect(AutoKillOntopSettings))
@@ -444,6 +446,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKill, ("Auto Kill if Frozen And You're Below a Player"), &g_Config.m_ClAutoKill, &AutoKillOntopSettings, LineMargin);
 				if(g_Config.m_ClAutoKill)
 				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillIgnoreKillProt, ("Ignore Kill Protection"), &g_Config.m_ClAutoKillIgnoreKillProt, &AutoKillOntopSettings, LineMargin);
+
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillWarOnly, ("Only Kill if The Player is an Enemy"), &g_Config.m_ClAutoKillWarOnly, &AutoKillOntopSettings, LineMargin);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillMultOnly, ("Only Activate When on Multeasymap"), &g_Config.m_ClAutoKillMultOnly, &AutoKillOntopSettings, LineMargin);
