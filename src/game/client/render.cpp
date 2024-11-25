@@ -15,8 +15,6 @@
 #include <game/generated/protocol.h>
 #include <game/generated/protocol7.h>
 
-#include "game/client/components/rainbow.h"
-
 #include <game/mapitems.h>
 
 static float gs_SpriteWScale;
