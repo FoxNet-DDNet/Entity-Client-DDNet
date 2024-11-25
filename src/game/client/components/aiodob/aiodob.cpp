@@ -195,9 +195,9 @@ void CAiodob::AutoKill()
 			const vec2 EnemyPos = vec2(pPrevCharO->m_X, pPrevCharO->m_Y) / 32.0f;
 			const vec2 EnemyVel = mix(vec2(pPrevCharO->m_VelX, pPrevCharO->m_VelY), vec2(pCurCharO->m_VelX, pCurCharO->m_VelY), IntraTick) / 1000 / 1.5;
 
-			const float RangeX = g_Config.m_ClAutoKillRangeX / static_cast<float>(100);
+			const float RangeX = g_Config.m_ClAutoKillRangeX / 100.0f;
 
-			float RangeY = g_Config.m_ClAutoKillRangeY / static_cast<float>(100);
+			float RangeY = g_Config.m_ClAutoKillRangeY / 100.0f;
 
 			const bool Grounded = m_pCollision->CheckPoint(SelfPos.x + CCharacterCore::PhysicalSize() / 2, SelfPos.y + CCharacterCore::PhysicalSize() / 2 + 5) || m_pCollision->CheckPoint(SelfPos.x - CCharacterCore::PhysicalSize() / 2, SelfPos.y + CCharacterCore::PhysicalSize() / 2 + 5);
 
