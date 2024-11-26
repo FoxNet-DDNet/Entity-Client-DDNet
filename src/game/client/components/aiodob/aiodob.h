@@ -10,6 +10,8 @@ class CAiodob : public CComponent
 	bool m_Active;
 	bool m_SentKill;
 
+	bool m_KogModeRebound;
+
 public:
 	int64_t m_JoinTeam;
 	int64_t m_LastFreeze;
@@ -18,6 +20,7 @@ public:
 private:
 	virtual void OnInit() override;
 
+	virtual void GoresMode();
 	virtual void FreezeKill();
 	virtual void AutoKill();
 	virtual void AutoJoinTeam();

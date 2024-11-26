@@ -1660,16 +1660,12 @@ void CChat::SendChat(int Team, const char *pLine)
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
 		return;
 
-	if(g_Config.m_ClSendDotsChat)
-	{
 		if(!m_pClient->m_ChillerBotUX.OnSendChat(Team, pLine))
 			return;
-	}
-	else
-	{
-		if(!m_pClient->m_ChillerBotUX.OnSendChat(Team, pLine) || (pLine[0] == '.'))
+
+	if(!g_Config.m_ClSendDotsChat)
+		if(pLine[0] == '.')
 			return;
-	}
 
 	m_LastChatSend = time();
 

@@ -14,7 +14,6 @@
 #include <game/client/components/camera.h>
 #include <game/client/components/chat.h>
 #include <game/client/components/chillerbot/chathelper.h>
-#include <game/client/components/chillerbot/version.h>
 #include <game/client/components/controls.h>
 #include <game/client/components/menus.h>
 #include <game/client/components/voting.h>
@@ -102,10 +101,7 @@ bool CChillerBotUX::OnSendChat(int Team, const char* pLine)
 
 	int ClientId = m_pClient->m_aLocalIds[g_Config.m_ClDummy];
 	if(m_pClient->m_ChatCommand.OnChatMsg(ClientId, Team, aTrimmedLine))
-	{
-		if(g_Config.m_ClSilentChatCommands)
-			return false;
-	}
+		return false;
 
 	return true;
 }

@@ -118,6 +118,7 @@ void CWarList::AddSimpleTeam(const char *pName)
 
 	AddTeam("team", pName);
 	RemoveWarNoMsg(pName);
+	RemoveTempWarNoMsg(pName);
 	RemoveHelperNoMsg(pName);
 }
 
@@ -173,7 +174,6 @@ void CWarList::RemoveSimpleWar(const char *pName)
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the war list", pName);
 	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	ReloadList();
-	RemoveTempWarNoMsg(pName);
 }
 
 void CWarList::RemoveSimpleMute(const char *pName)
@@ -205,14 +205,10 @@ void CWarList::DelClone()
 		str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
 		str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
 
-
 		g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
 		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 		g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
-
-
-
 
 		m_pClient->m_Chat.AddLine(-3, 0, "Deleted Main Clone");
 	}
@@ -255,14 +251,14 @@ void CWarList::Clone(const char *pName)
 
 					if(!g_Config.m_ClCopyingSkin)
 					{
-					str_copy(g_Config.m_ClSavedPlayerSkin, g_Config.m_ClPlayerSkin, sizeof(g_Config.m_ClSavedPlayerSkin));
-					str_copy(g_Config.m_ClSavedName, g_Config.m_PlayerName, sizeof(g_Config.m_ClSavedName));
-					str_copy(g_Config.m_ClSavedClan, g_Config.m_PlayerClan, sizeof(g_Config.m_ClSavedClan));
+						str_copy(g_Config.m_ClSavedPlayerSkin, g_Config.m_ClPlayerSkin, sizeof(g_Config.m_ClSavedPlayerSkin));
+						str_copy(g_Config.m_ClSavedName, g_Config.m_PlayerName, sizeof(g_Config.m_ClSavedName));
+						str_copy(g_Config.m_ClSavedClan, g_Config.m_PlayerClan, sizeof(g_Config.m_ClSavedClan));
 
-					g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
-					g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
-					g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
-					g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
+						g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
+						g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
+						g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
+						g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
 					}
 					else
 					{
@@ -515,8 +511,8 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		m_pClient->m_Chat.AddLine(-3, 0, "!delhelper <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!mute <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!delmute <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!tempwar <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!deltempwar <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!temp(war) <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!deltemp(war) <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!delclone <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!skin <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!clone <name>");

@@ -142,7 +142,11 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						{
 							g_Config.m_ClTabbedOutMsg ^= 1;
 						}
-						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
+
+						if(g_Config.m_ClTabbedOutMsg)
+							Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
+
+						
 					}
 
 					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
@@ -162,7 +166,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						{
 							g_Config.m_ClReplyMuted ^= 1;
 						}
-						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
+						if(g_Config.m_ClReplyMuted)
+							Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 					}
 
 					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
@@ -182,6 +187,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						{
 							g_Config.m_ClFinishRename ^= 1;
 						}
+						if(g_Config.m_ClFinishRename)
 						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 					}
 					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
@@ -201,6 +207,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						{
 							g_Config.m_ClNotifyOnJoin ^= 1;
 						}
+						if(g_Config.m_ClNotifyOnJoin)
 						Ui()->DoEditBox(&s_NotifyName, &Button, 14.0f);
 
 						static CLineInput s_NotifyMsg;
@@ -346,13 +353,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			MiscSettings.VMargin(5.0f, &MiscSettings);
 				if(g_Config.m_ClRenderCursorSpec)
 				{
-					if(g_Config.m_ClDoCursorSpecOpacity)
-						MiscSettings.HSplitTop(210.0f, &MiscSettings, &AutoKillOntopSettings);
-					else
-						MiscSettings.HSplitTop(170.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(175.0f, &MiscSettings, &AutoKillOntopSettings);
 				}
 				else
-					MiscSettings.HSplitTop(150.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(155.0f, &MiscSettings, &AutoKillOntopSettings);
 			if(s_ScrollRegion.AddRect(MiscSettings))
 			{
 				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -369,13 +373,21 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderCursorSpec, ("Show Cursor While Spectating"), &g_Config.m_ClRenderCursorSpec, &MiscSettings, LineSize);
 					if(g_Config.m_ClRenderCursorSpec)
 					{
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoCursorSpecOpacity, ("Change Cursor Opacity while Spectating?"), &g_Config.m_ClDoCursorSpecOpacity, &MiscSettings, LineSize);
-						if(g_Config.m_ClDoCursorSpecOpacity)
-						{
-							MiscSettings.HSplitTop(2 * LineSize, &Button, &MiscSettings);
-							Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpecOpacity, &g_Config.m_ClRenderCursorSpecOpacity, &Button, Localize("Cursor Opacity While Spectating"), 1, 100, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
-						}
+						if(!g_Config.m_ClDoCursorSpecOpacity)
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoCursorSpecOpacity, ("Change Cursor Opacity while Spectating"), &g_Config.m_ClDoCursorSpecOpacity, &MiscSettings, LineSize);
 					}
+					char aBuf[512];
+					str_format(aBuf, sizeof(aBuf), "      Cursor Opacity ", g_Config.m_ClRenderCursorSpecOpacity);
+
+					if(g_Config.m_ClDoCursorSpecOpacity)
+					{
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoCursorSpecOpacity, (""), &g_Config.m_ClDoCursorSpecOpacity, &MiscSettings, LineSize);
+						MiscSettings.HSplitTop(-20.f, &Button, &MiscSettings);
+						MiscSettings.HSplitTop(20.f, &Button, &MiscSettings);
+
+						Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpecOpacity, &g_Config.m_ClRenderCursorSpecOpacity, &Button, Localize("      Spec Cursor Opacity"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
+					}
+
 					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);
 					{
 						MiscSettings.HSplitTop(20.0f, &Button, &MainView);
@@ -1728,7 +1740,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		Button.VSplitLeft(120.0f, &KeyLabel, &Button);
 		Button.VSplitLeft(100, &Button, 0);
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), "%s: \n\n\n(credits: Tater)", Localize((const char *)Key.m_pName));
+		str_format(aBuf, sizeof(aBuf), "%s: \n\n\n© Tater", Localize((const char *)Key.m_pName));
 		// Credits to Tater ^^^^^^^^^^^^
 
 		Ui()->DoLabel(&KeyLabel, aBuf, 13.0f, TEXTALIGN_LEFT);

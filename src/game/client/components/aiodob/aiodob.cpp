@@ -34,11 +34,19 @@ void CAiodob::OnInit()
 	AttempedJoinTeam = false;
 	JoinedTeam = false;
 	m_SentKill = false;
+	m_KogModeRebound = false;
 	Mult = 0;
 	m_JoinTeam = 0;
 	m_LastFreeze = 0;
 	m_LastMovement = 0;
 	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
+
+	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
+	*g_Config.m_ClKogModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+	
+	char aBuf[1024];
+	str_format(aBuf, sizeof(aBuf), "KoG Mode Saved Bind Currently is: %s", g_Config.m_ClKogModeSaved);
+	dbg_msg("Aiodob", aBuf);
 }
 
 void CAiodob::FreezeKill()
@@ -363,66 +371,43 @@ void CAiodob::AutoJoinTeam()
 		m_JoinTeam = time_get() + time_freq() * 0.25;
 	}
 }
-/*
-void CAiodob::ConDeepFly(IConsole::IResult *pResult, void *pUserData)
+
+void CAiodob::GoresMode()
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
-	if(pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
-		pSelf->m_Active = pResult->GetInteger(0) != 0;
-}
-
-
-
-void CAiodob::DeepFly()
-{
-
-	if(m_Active)
+	if(!g_Config.m_ClKogMode)
 	{
-		GameClient()->m_DummyInput.m_Fire = 2;
+		if(m_KogModeRebound == true)
+		{
+			GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClKogModeSaved);
+			m_KogModeRebound = false;
+		}
+		return;
 	}
-	else
+
+	if(m_KogModeRebound == false)
 	{
-		GameClient()->m_DummyInput.m_Fire = 0;
+		GameClient()->m_Binds.Bind(KEY_MOUSE_1, "+fire;+prevweapon");
+		m_KogModeRebound = true;
+		return;
 	}
-	
 
+	if(!m_pClient->m_Snap.m_pLocalCharacter)
+		return;
 
-	vec2 MainPos = m_pClient->m_aClients[g_Config.m_ClIdToHammer].m_Predicted.m_Pos;
-
-	vec2 DummyPos = m_pClient->m_aClients[m_pClient->m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
-	vec2 Dir = MainPos - DummyPos;
-	m_pClient->m_HammerInput.m_TargetX = (int)(Dir.x);
-	m_pClient->m_HammerInput.m_TargetY = (int)(Dir.y);
+	if(m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == 0)
+	{
+		GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
+	}
 }
-
-void CAiodob::OnConsoleInit()
-{
-	Console()->Register("+deepfly", "", CFGFLAG_CLIENT, ConDeepFly, this, "test");
-}
-
-void CAiodob::OnRelease()
-{
-	m_Active = false;
-}
-*/
 
 void CAiodob::OnRender()
 {
-	int Local = m_pClient->m_Snap.m_LocalClientId;
 
+	GoresMode();
 	AutoKill();
 	AutoJoinTeam();
 	FreezeKill();
 
-	/*
-		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "%d", 60 * g_Config.m_SvKillProtection);
-		TextRender()->Text(100, 100, 10, aBuf);
-		float a = (m_LastFreeze - time_get()) / 1000000000.0f;
-		char bBuf[512];
-		str_format(bBuf, sizeof(bBuf), "%d", GameClient()->CurrentRaceTime());
-		TextRender()->Text(100, 125, 10, bBuf);
-	*/
 
 	if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
 		m_LastMovement = time_get() + time_freq() * 30;

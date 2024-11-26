@@ -270,7 +270,7 @@ MACRO_CONFIG_STR(ClRemoveWarString, ac_delwar_string, 12, "del_war", CFGFLAG_CLI
 MACRO_CONFIG_STR(ClRemoveTeamString, ac_delteam_string, 12, "del_team", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
 
 
-MACRO_CONFIG_INT(ClSendDotsChat, ac_send_dots_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt send a message if it start with a '.'")
+MACRO_CONFIG_INT(ClSendDotsChat, ac_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt send a message if it start with a '.'")
 MACRO_CONFIG_INT(ClAutoAddOnNameChange, ac_auto_add_on_name_change, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds a player back to a list if their name changed")
 
 MACRO_CONFIG_STR(ClAutoReplyMutedMsg, ac_auto_reply_muted_msg, 255, "I can't see your messages, you're muted", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply with then a muted player pings you")
@@ -373,6 +373,13 @@ MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLI
 */
 
 // Might be Cheating
+	MACRO_CONFIG_INT(DbgStress, dbg_stress, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "a")
+
+
+	// KoG Mode
+	MACRO_CONFIG_INT(ClKogMode, ac_KoG_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
+	MACRO_CONFIG_STR(ClKogModeSaved, ac_KoG_mode_saved, 128, "+fire", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Edit This")
+
 
 	// auto kill if player is sitting ontop of you
 	MACRO_CONFIG_INT(ClAutoKill, ac_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")

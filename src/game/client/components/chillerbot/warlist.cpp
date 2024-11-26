@@ -27,14 +27,11 @@ void CWarList::ReloadList()
 {
 	m_WarDirs = 0;
 	m_TeamDirs = 0;
-	m_TraitorDirs = 0;
 	m_vTempWarlist.clear();
 	m_vHelperlist.clear();
 	m_vMutelist.clear();
 	m_vWarlist.clear();
 	m_vTeamlist.clear();
-	m_vTraitorlist.clear();
-	m_vNeutrallist.clear();
 	m_vWarClanlist.clear();
 	m_vTeamClanlist.clear();
 
@@ -49,7 +46,7 @@ void CWarList::ReloadList()
 	for(auto &WarPlayer : m_aWarPlayers)
 		WarPlayer.m_aName[0] = '\0';
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "team: %d war: %d", m_vHelperlist, (m_WarDirs + m_TraitorDirs));
+	str_format(aBuf, sizeof(aBuf), "team: %d war: %d", m_vHelperlist, (m_WarDirs));
 	// TODO: fix on initial load
 	// 		 maybe https://github.com/chillerbot/chillerbot-ux/issues/22 is needed
 	m_pClient->m_ChillerBotUX.SetComponentNoteLong("war list", aBuf);
@@ -82,7 +79,7 @@ void CWarList::GetMutelistPathByNeedle(const char *pSearch, int Size, char *pPat
 void CWarList::GetWarlistPathByNeedle(const char *pSearch, int Size, char *pPath)
 {
 	pPath[0] = '\0';
-	for(auto &Entry : m_vTeamlist)
+	for(auto &Entry : m_vWarlist)
 		if(str_find(Entry.first.c_str(), pSearch))
 			str_copy(pPath, Entry.second.c_str(), Size);
 }
@@ -90,26 +87,11 @@ void CWarList::GetWarlistPathByNeedle(const char *pSearch, int Size, char *pPath
 void CWarList::GetTeamlistPathByNeedle(const char *pSearch, int Size, char *pPath)
 {
 	pPath[0] = '\0';
-	for(auto &Entry : m_vTraitorlist)
+	for(auto &Entry : m_vTeamlist)
 		if(str_find(Entry.first.c_str(), pSearch))
 			str_copy(pPath, Entry.second.c_str(), Size);
 }
 
-void CWarList::GetTraitorlistPathByNeedle(const char *pSearch, int Size, char *pPath)
-{
-	pPath[0] = '\0';
-	for(auto &Entry : m_vTraitorlist)
-		if(str_find(Entry.first.c_str(), pSearch))
-			str_copy(pPath, Entry.second.c_str(), Size);
-}
-
-void CWarList::GetNeutrallistPathByNeedle(const char *pSearch, int Size, char *pPath)
-{
-	pPath[0] = '\0';
-	for(auto &Entry : m_vNeutrallist)
-		if(str_find(Entry.first.c_str(), pSearch))
-			str_copy(pPath, Entry.second.c_str(), Size);
-}
 
 void CWarList::GetMutelistPathByName(const char *pName, int Size, char *pPath)
 {
@@ -147,22 +129,6 @@ void CWarList::GetTeamlistPathByName(const char *pName, int Size, char *pPath)
 {
 	pPath[0] = '\0';
 	for(auto &Entry : m_vTeamlist)
-		if(std::string(pName) == Entry.first)
-			str_copy(pPath, Entry.second.c_str(), Size);
-}
-
-void CWarList::GetTraitorlistPathByName(const char *pName, int Size, char *pPath)
-{
-	pPath[0] = '\0';
-	for(auto &Entry : m_vTraitorlist)
-		if(std::string(pName) == Entry.first)
-			str_copy(pPath, Entry.second.c_str(), Size);
-}
-
-void CWarList::GetNeutrallistPathByName(const char *pName, int Size, char *pPath)
-{
-	pPath[0] = '\0';
-	for(auto &Entry : m_vNeutrallist)
 		if(std::string(pName) == Entry.first)
 			str_copy(pPath, Entry.second.c_str(), Size);
 }
@@ -217,26 +183,6 @@ int CWarList::LoadTeamDir(const char *pDirname, int IsDir, int DirType, void *pU
 	return pSelf->LoadTeamNames(aFilename);
 }
 
-int CWarList::LoadTraitorDir(const char *pDirname, int IsDir, int DirType, void *pUser)
-{
-	CWarList *pSelf = (CWarList *)pUser;
-	if(!IsDir || !str_comp(".", pDirname) || !str_comp("..", pDirname))
-		return 0;
-	char aFilename[1024];
-	str_format(aFilename, sizeof(aFilename), "chillerbot/warlist/traitor/%s", pDirname);
-	return pSelf->LoadTraitorNames(aFilename);
-}
-
-int CWarList::LoadNeutralDir(const char *pDirname, int IsDir, int DirType, void *pUser)
-{
-	CWarList *pSelf = (CWarList *)pUser;
-	if(!IsDir || !str_comp(".", pDirname) || !str_comp("..", pDirname))
-		return 0;
-	char aFilename[1024];
-	str_format(aFilename, sizeof(aFilename), "chillerbot/warlist/neutral/%s", pDirname);
-	return pSelf->LoadNeutralNames(aFilename);
-}
-
 void CWarList::LoadTempList()
 {
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "chillerbot/templist/temp", LoadHelperDir, this);
@@ -260,31 +206,6 @@ void CWarList::LoadWarList()
 void CWarList::LoadTeamList()
 {
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "chillerbot/warlist/team", LoadTeamDir, this);
-}
-
-void CWarList::LoadTraitorList()
-{
-	Storage()->ListDirectory(IStorage::TYPE_ALL, "chillerbot/warlist/traitor", LoadTraitorDir, this);
-}
-
-void CWarList::LoadNeutralList()
-{
-	Storage()->ListDirectory(IStorage::TYPE_ALL, "chillerbot/warlist/neutral", LoadNeutralDir, this);
-}
-
-void CWarList::LoadWarClanList()
-{
-	LoadWarClanNames("chillerbot/warlist/warlist_clans.txt");
-}
-
-void CWarList::LoadTeamClanList()
-{
-	LoadTeamClanNames("chillerbot/warlist/teamlist_clans.txt");
-}
-
-void CWarList::LoadWarClanPrefixList()
-{
-	LoadWarClanPrefixNames("chillerbot/warlist/warlist_clans_prefix.txt");
 }
 
 bool CWarList::IsMutelist(const char *pName)
@@ -315,11 +236,6 @@ bool CWarList::IsTeamlist(const char *pName)
 	return std::any_of(std::begin(m_vTeamlist), std::end(m_vTeamlist), [&pName](const std::pair<std::string, std::string> &Entry) { return std::string(pName) == Entry.first; });
 }
 
-bool CWarList::IsTraitorlist(const char *pName)
-{
-	return std::any_of(std::begin(m_vTraitorlist), std::end(m_vTraitorlist), [&pName](const std::pair<std::string, std::string> &Entry) { return std::string(pName) == Entry.first; });
-}
-
 bool CWarList::IsWarClanlist(const char *pClan)
 {
 	return (std::find(m_vWarClanlist.begin(), m_vWarClanlist.end(), std::string(pClan)) != m_vWarClanlist.end());
@@ -336,60 +252,13 @@ bool CWarList::IsWarClanmate(const char *pClan)
 	{
 		if(WarPlayer.m_aClan[0] == '\0')
 			continue;
-		if(!WarPlayer.m_IsWar && !WarPlayer.m_IsTraitor)
+		if(!WarPlayer.m_IsWar && !WarPlayer.m_IsTempWar)
 			continue;
 
 		if(!str_comp(pClan, WarPlayer.m_aClan))
 			return true;
 	}
 	return false;
-}
-
-void CWarList::GetWarReason(const char *pName, char *pReason, int ReasonSize)
-{
-	if(!pReason)
-		return;
-	pReason[0] = '\0';
-	if(!Storage())
-		return;
-
-	char aFilenames[2][128];
-	char aBuf[182];
-	GetWarlistPathByName(pName, sizeof(aBuf), aBuf);
-	if(aBuf[0])
-		str_format(aFilenames[0], sizeof(aFilenames[0]), "%s/reason.txt", aBuf);
-	else
-		aFilenames[0][0] = '\0';
-	GetTraitorlistPathByName(pName, sizeof(aBuf), aBuf);
-	if(aBuf[0])
-		str_format(aFilenames[1], sizeof(aFilenames[1]), "%s/reason.txt", aBuf);
-	else
-		aFilenames[1][0] = '\0';
-
-	for(auto &pFilename : aFilenames)
-	{
-		if(!pFilename[0])
-			continue;
-
-		IOHANDLE File = Storage()->OpenFile(pFilename, IOFLAG_READ, IStorage::TYPE_ALL);
-		CLineReader Reader;
-		if(!File)
-			continue;
-		if(!Reader.OpenFile(File))
-		{
-			str_format(aBuf, sizeof(aBuf), "failed to open '%s'", pFilename);
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "warlist", aBuf);
-			continue;
-		}
-
-		const char *pLine;
-		// read one line only
-		pLine = Reader.Get();
-		if(pLine)
-			str_copy(pReason, pLine, ReasonSize);
-
-		break;
-	}
 }
 
 void CWarList::GetWarClansStr(char *pBuf, int Size)
@@ -412,7 +281,7 @@ void CWarList::GetWarClansStr(char *pBuf, int Size)
 
 bool CWarList::IsWar(const char *pName, const char *pClan)
 {
-	return IsWarlist(pName) || IsTraitorlist(pName) || IsWarClanlist(pClan);
+	return IsWarlist(pName) || IsTempWarlist(pName) || IsWarClanlist(pClan);
 }
 
 bool CWarList::IsMute(int ClientId)
@@ -429,9 +298,6 @@ bool CWarList::IsMute(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -451,9 +317,6 @@ bool CWarList::IsHelper(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -473,9 +336,6 @@ bool CWarList::IsWar(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -495,79 +355,6 @@ bool CWarList::IsTeam(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
-	return false;
-}
-
-bool CWarList::IsTraitor(int ClientId)
-{
-	const char *pName = m_pClient->m_aClients[ClientId].m_aName;
-	const char *pClan = m_pClient->m_aClients[ClientId].m_aClan;
-	if(!str_comp(pName, m_aWarPlayers[ClientId].m_aName))
-	{
-		return m_aWarPlayers[ClientId].m_IsTraitor;
-	}
-	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
-	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
-	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
-	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
-	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
-	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
-	return false;
-}
-
-bool CWarList::IsWarClan(int ClientId)
-{
-	const char *pName = m_pClient->m_aClients[ClientId].m_aName;
-	const char *pClan = m_pClient->m_aClients[ClientId].m_aClan;
-	if(!pClan[0])
-		return false;
-	if(!str_comp(pClan, m_aWarPlayers[ClientId].m_aClan))
-	{
-		return m_aWarPlayers[ClientId].m_IsWarClan;
-	}
-	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
-	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
-	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
-	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
-	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
-	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
-	return false;
-}
-
-bool CWarList::IsTeamClan(int ClientId)
-{
-	const char *pName = m_pClient->m_aClients[ClientId].m_aName;
-	const char *pClan = m_pClient->m_aClients[ClientId].m_aClan;
-	if(!pClan[0])
-		return false;
-	if(!str_comp(pClan, m_aWarPlayers[ClientId].m_aClan))
-	{
-		return m_aWarPlayers[ClientId].m_IsTeamClan;
-	}
-	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
-	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
-	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
-	m_aWarPlayers[ClientId].m_IsHelper = IsHelperlist(pName);
-	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
-	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
-	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -589,9 +376,6 @@ bool CWarList::IsWarClanmate(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -611,9 +395,6 @@ bool CWarList::IsTempWar(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTraitor = IsTraitorlist(pName);
-	m_aWarPlayers[ClientId].m_IsWarClan = IsWarClanlist(pClan);
-	m_aWarPlayers[ClientId].m_IsTeamClan = IsTeamClanlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -650,21 +431,6 @@ void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor, bool OtherTeam
 	{
 		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
 		*pColor = Color.WithAlpha(Alpha);
-	}
-	else if(IsTraitor(ClientId))
-	{
-		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
-		*pColor = ColorRGBA(0.1f, 0.1f, 0.1f);
-	}
-	else if(IsWarClan(ClientId))
-	{
-		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
-		*pColor = ColorRGBA(7.0f, 0.2f, 0.2);
-	}
-	else if(IsTeamClan(ClientId))
-	{
-		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
-		*pColor = ColorRGBA(0.0f, 0.9f, 0.2f);
 	}
 	else if(IsWarClanmate(ClientId) && g_Config.m_ClAutoClanWar)
 	{
@@ -1153,205 +919,6 @@ int CWarList::LoadTeamNames(const char *pDir)
 		Entry.first = std::string(pLine);
 		Entry.second = std::string(pDir);
 		m_vTeamlist.emplace_back(Entry);
-	}
-
-	return 0;
-}
-
-int CWarList::LoadTraitorNames(const char *pDir)
-{
-	if(!Storage())
-		return 1;
-
-	char aFilename[IO_MAX_PATH_LENGTH];
-	str_format(aFilename, sizeof(aFilename), "%s/names.txt", pDir);
-	IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_READ, IStorage::TYPE_ALL);
-
-	char aBuf[128];
-	if(!File)
-	{
-		// str_format(aBuf, sizeof(aBuf), "failed to open war list file '%s'", aFilename);
-		// Print(aBuf);
-		return 0;
-	}
-	m_TraitorDirs++;
-	const char *pLine;
-	CLineReader Reader;
-
-	str_format(aBuf, sizeof(aBuf), "loading traitor list file '%s'", aFilename);
-	Print(aBuf);
-
-	if(!Reader.OpenFile(File))
-	{
-		str_format(aBuf, sizeof(aBuf), "failed to open '%s'", aFilename);
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "warlist", aBuf);
-		return 0;
-	}
-
-	while((pLine = Reader.Get()))
-	{
-		if(!str_skip_whitespaces_const(pLine)[0])
-			continue;
-		std::pair<std::string, std::string> Entry;
-		Entry.first = std::string(pLine);
-		Entry.second = std::string(pDir);
-		m_vTraitorlist.emplace_back(Entry);
-	}
-
-	return 0;
-}
-
-int CWarList::LoadNeutralNames(const char *pDir)
-{
-	if(!Storage())
-		return 1;
-
-	char aFilename[IO_MAX_PATH_LENGTH];
-	str_format(aFilename, sizeof(aFilename), "%s/names.txt", pDir);
-	IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_READ, IStorage::TYPE_ALL);
-
-	char aBuf[128];
-	if(!File)
-	{
-		// str_format(aBuf, sizeof(aBuf), "failed to open war list file '%s'", aFilename);
-		// Print(aBuf);
-		return 0;
-	}
-	const char *pLine;
-	CLineReader Reader;
-
-	str_format(aBuf, sizeof(aBuf), "loading neutral list file '%s'", aFilename);
-	Print(aBuf);
-
-	if(!Reader.OpenFile(File))
-	{
-		str_format(aBuf, sizeof(aBuf), "failed to open '%s'", aFilename);
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "warlist", aBuf);
-		return 0;
-	}
-
-	while((pLine = Reader.Get()))
-	{
-		if(!str_skip_whitespaces_const(pLine)[0])
-			continue;
-		std::pair<std::string, std::string> Entry;
-		Entry.first = std::string(pLine);
-		Entry.second = std::string(pDir);
-		m_vNeutrallist.emplace_back(Entry);
-	}
-
-	return 0;
-}
-
-int CWarList::LoadWarClanNames(const char *pFilename)
-{
-	if(!Storage())
-		return 1;
-
-	// exec the file
-	IOHANDLE File = Storage()->OpenFile(pFilename, IOFLAG_READ, IStorage::TYPE_ALL);
-
-	char aBuf[128];
-	if(!File)
-	{
-		// str_format(aBuf, sizeof(aBuf), "failed to open war clans list file '%s'", pFilename);
-		// Print(aBuf);
-		return 0;
-	}
-	const char *pLine;
-	CLineReader Reader;
-
-	str_format(aBuf, sizeof(aBuf), "loading war clans list file '%s'", pFilename);
-	Print(aBuf);
-
-	if(!Reader.OpenFile(File))
-	{
-		str_format(aBuf, sizeof(aBuf), "failed to open '%s'", pFilename);
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "warlist", aBuf);
-		return 0;
-	}
-
-	while((pLine = Reader.Get()))
-	{
-		if(!str_skip_whitespaces_const(pLine)[0])
-			continue;
-		m_vWarClanlist.emplace_back(pLine);
-	}
-
-	return 0;
-}
-
-int CWarList::LoadTeamClanNames(const char *pFilename)
-{
-	if(!Storage())
-		return 1;
-
-	// exec the file
-	IOHANDLE File = Storage()->OpenFile(pFilename, IOFLAG_READ, IStorage::TYPE_ALL);
-
-	char aBuf[128];
-	if(!File)
-	{
-		// str_format(aBuf, sizeof(aBuf), "failed to open team clans list file '%s'", pFilename);
-		// Print(aBuf);
-		return 0;
-	}
-	const char *pLine;
-	CLineReader Reader;
-
-	str_format(aBuf, sizeof(aBuf), "loading team clans list file '%s'", pFilename);
-	Print(aBuf);
-
-	if(!Reader.OpenFile(File))
-	{
-		str_format(aBuf, sizeof(aBuf), "failed to open '%s'", pFilename);
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "warlist", aBuf);
-		return 0;
-	}
-
-	while((pLine = Reader.Get()))
-	{
-		if(!str_skip_whitespaces_const(pLine)[0])
-			continue;
-		m_vTeamClanlist.emplace_back(pLine);
-	}
-
-	return 0;
-}
-
-int CWarList::LoadWarClanPrefixNames(const char *pFilename)
-{
-	if(!Storage())
-		return 1;
-
-	// exec the file
-	IOHANDLE File = Storage()->OpenFile(pFilename, IOFLAG_READ, IStorage::TYPE_ALL);
-
-	char aBuf[128];
-	if(!File)
-	{
-		// str_format(aBuf, sizeof(aBuf), "failed to open war clan prefix list file '%s'", pFilename);
-		// Print(aBuf);
-		return 0;
-	}
-	const char *pLine;
-	CLineReader Reader;
-
-	str_format(aBuf, sizeof(aBuf), "loading war clan prefix list file '%s'", pFilename);
-	Print(aBuf);
-
-	if(!Reader.OpenFile(File))
-	{
-		str_format(aBuf, sizeof(aBuf), "failed to open '%s'", pFilename);
-		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "warlist", aBuf);
-		return 0;
-	}
-
-	while((pLine = Reader.Get()))
-	{
-		if(!str_skip_whitespaces_const(pLine)[0])
-			continue;
-		m_vWarClanPrefixlist.emplace_back(pLine);
 	}
 
 	return 0;
