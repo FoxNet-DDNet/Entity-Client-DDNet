@@ -249,7 +249,7 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 					YOffset -= FontSize;
 					char aBuf[12];
 					str_format(aBuf, sizeof(aBuf), "%d", pPlayerInfo->m_ClientId);
-					TextRender()->TextColor(StrongWeakIdColor);
+					TextRender()->TextColor(StrongWeakIdColor.WithAlpha(AlphaO));
 					TextRender()->Text(Position.x - TextRender()->TextWidth(FontSize, aBuf) / 2.0f, YOffset, FontSize, aBuf);
 				}
 				else
@@ -257,7 +257,7 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 					YOffset -= FontSize;
 					char aBuf[12];
 					str_format(aBuf, sizeof(aBuf), "%d", pPlayerInfo->m_ClientId);
-					TextRender()->TextColor(rgb);
+					TextRender()->TextColor(rgb.WithAlpha(AlphaO));
 					TextRender()->Text(Position.x - TextRender()->TextWidth(FontSize, aBuf) / 2.0f, YOffset, FontSize, aBuf);
 				}
 			}
