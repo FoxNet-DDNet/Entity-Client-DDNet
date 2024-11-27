@@ -51,13 +51,20 @@ void CAiodob::OnInit()
 
 void CAiodob::FreezeKill()
 {
+	float Time = g_Config.m_ClFreezeKillMs / 1000.0f;
+
+	float TimeReset = time_get() + time_freq() * Time;
+
 	if(!g_Config.m_ClFreezeKill)
+	{
+		m_LastFreeze = TimeReset;
 		return;
+	}
 
 	if(!GameClient()->CurrentRaceTime())
 	{
 		m_SentKill = false;
-		m_LastFreeze = time_get() + 3 + time_freq() * g_Config.m_ClFreezeKillMs / 1000.0f;
+		m_LastFreeze = TimeReset + 3;
 		return;
 	}
 	
@@ -74,11 +81,6 @@ void CAiodob::FreezeKill()
 		str_format(aBuf, sizeof(aBuf), "until kill: %f", a );
 		GameClient()->TextRender()->Text(50, 100, 10, aBuf);
 	}
-
-	
-	float Time = g_Config.m_ClFreezeKillMs / 1000.0f;
-
-	float TimeReset = time_get() + time_freq() * Time;
 	
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
@@ -402,15 +404,11 @@ void CAiodob::GoresMode()
 
 void CAiodob::OnRender()
 {
-
 	GoresMode();
 	AutoKill();
 	AutoJoinTeam();
 	FreezeKill();
 
-
 	if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
 		m_LastMovement = time_get() + time_freq() * 30;
-		
-
 }

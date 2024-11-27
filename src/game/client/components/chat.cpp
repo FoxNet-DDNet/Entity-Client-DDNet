@@ -672,8 +672,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		else if(Team == 0)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
 	}
-
-	if(g_Config.m_ClHideEnemyChat && (m_pClient->m_aClients[ClientId].m_IsWar || m_pClient->m_aClients[ClientId].m_IsTempWar) && !(GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName)))
+	else if(g_Config.m_ClHideEnemyChat && (m_pClient->m_aClients[ClientId].m_IsWar || m_pClient->m_aClients[ClientId].m_IsTempWar))
 	{
 		char War[2048] = "[Enemy] ";
 		char WarWhisper[2048] = "[Enemy] ← ";

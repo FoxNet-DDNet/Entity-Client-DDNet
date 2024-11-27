@@ -8,11 +8,12 @@ class CAiodob : public CComponent
 	bool JoinedTeam;
 	int Mult;
 	bool m_Active;
-	bool m_SentKill;
+	
 
 	bool m_KogModeRebound;
 
 public:
+	bool m_SentKill;
 	int64_t m_JoinTeam;
 	int64_t m_LastFreeze;
 	int64_t m_LastMovement = 10.0f;

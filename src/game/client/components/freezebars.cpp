@@ -37,6 +37,7 @@ void CFreezeBars::RenderKillBar()
 	float FreezeProgress = clamp(Time / 1000000000.0f, 0.0f, Max) / Max;
 	if(FreezeProgress <= 0.0f)
 	{
+		m_KillBarRendered = false;
 		return;
 	}
 
@@ -45,13 +46,13 @@ void CFreezeBars::RenderKillBar()
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += (g_Config.m_ClFreezeBarY + 32);
 
-
 	RenderFreezeBarPos(Position.x, Position.y, FreezeBarWidth, FreezeBarHight, FreezeProgress, R, G, B, 100.0f);
+
+	m_KillBarRendered = true;
 }
 
 void CFreezeBars::RenderFreezeBar(const int ClientId)
 {
-
 	float R = 1.0f;
 	float G = 1.0f;
 	float B = 1.0f;
@@ -297,24 +298,11 @@ void CFreezeBars::OnRender()
 	}
 	if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
 	{
-		if(!g_Config.m_ClFreezeKill || (GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt))
-		{
+		if(!GameClient()->CurrentRaceTime() || !g_Config.m_ClFreezeKill)
+			m_KillBarRendered = false;
+
+
+		if(m_KillBarRendered == false)
 			RenderFreezeBar(LocalClientId);
-			return;
-		}
-
-		if(!g_Config.m_ClFreezeKillMultOnly)
-			if(g_Config.m_ClFreezeKill && g_Config.ms_ClFreezeKillWaitMs)
-				if(GameClient()->m_Aiodob.m_LastFreeze <= time_get())
-					return;
-
-		if(g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKill && g_Config.ms_ClFreezeKillWaitMs)
-		{
-			if(FreezeProgress > 0.95f)
-				RenderFreezeBar(LocalClientId);
-		}
-		else
-			RenderFreezeBar(LocalClientId);
-
 	}
 }
