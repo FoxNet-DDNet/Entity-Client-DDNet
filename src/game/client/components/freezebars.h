@@ -4,8 +4,6 @@
 
 class CFreezeBars : public CComponent
 {
-	bool m_KillBarRendered;
-
 	void RenderKillBar();
 	void RenderFreezeBar(const int ClientId);
 	void RenderFreezeBarPos(float x, const float y, const float Width, const float Height, float Progress, float R = 1.0f, float G = 1.0f, float B = 1.0f, float Alpha = 1.0f);

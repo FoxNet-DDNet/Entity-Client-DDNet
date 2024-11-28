@@ -535,22 +535,22 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		AddSimpleTempWar(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "helper") || !str_comp(pCmd, "addhelper") || !str_comp(pCmd, g_Config.m_ClAddHelperString)) // "team <name>"
+	else if(!str_comp(pCmd, "helper") || (!str_comp(pCmd, "hepler")|| (!str_comp(pCmd, "ehlper") || !str_comp(pCmd, "addhelper") || !str_comp(pCmd, g_Config.m_ClAddHelperString)))) // "team <name>"
 	{
 		AddSimpleHelper(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "mute") || !str_comp(pCmd, "addmute") || !str_comp(pCmd, g_Config.m_ClAddMuteString)) // "team <name>"
+	else if(!str_comp(pCmd, "mute") || (!str_comp(pCmd, "mtue") || !str_comp(pCmd, "addmute") || !str_comp(pCmd, g_Config.m_ClAddMuteString))) // "team <name>"
 	{
 		AddSimpleMute(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "war") || !str_comp(pCmd, "addwar") || !str_comp(pCmd, g_Config.m_ClAddWarString)) // "war <name>"
+	else if(!str_comp(pCmd, "war") || (!str_comp(pCmd, "awr") || (!str_comp(pCmd, "wra") || !str_comp(pCmd, "addwar") || !str_comp(pCmd, g_Config.m_ClAddWarString)))) // "war <name>"
 	{
 		AddSimpleWar(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "team") || !str_comp(pCmd, "addteam") || !str_comp(pCmd, g_Config.m_ClAddTeamString)) // "team <name>"
+	else if(!str_comp(pCmd, "team")|| (!str_comp(pCmd, "tema")|| (!str_comp(pCmd, "tmea") || !str_comp(pCmd, "addteam") || !str_comp(pCmd, g_Config.m_ClAddTeamString)))) // "team <name>"
 	{
 		AddSimpleTeam(pRawArgLine);
 		return true;
@@ -570,12 +570,12 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		RemoveSimpleTempWar(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "delwar") || !str_comp(pCmd, "unwar") || !str_comp(pCmd, "peace") || !str_comp(pCmd, g_Config.m_ClRemoveWarString)) // "delwar <name>"
+	else if(!str_comp(pCmd, "delwar")|| (!str_comp(pCmd, "unwra") || !str_comp(pCmd, "unwar") || !str_comp(pCmd, "peace") || !str_comp(pCmd, g_Config.m_ClRemoveWarString))) // "delwar <name>"
 	{
 		RemoveSimpleWar(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "delteam") || !str_comp(pCmd, "unteam") || !str_comp(pCmd, "unfriend") || !str_comp(pCmd, g_Config.m_ClRemoveTeamString)) // "delteam <name>"
+	else if(!str_comp(pCmd, "delteam")|| (!str_comp(pCmd, "untema") || !str_comp(pCmd, "unteam") || !str_comp(pCmd, "unfriend") || !str_comp(pCmd, g_Config.m_ClRemoveTeamString))) // "delteam <name>"
 	{
 		RemoveSimpleTeam(pRawArgLine);
 		return true;

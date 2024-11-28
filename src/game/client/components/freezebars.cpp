@@ -37,7 +37,6 @@ void CFreezeBars::RenderKillBar()
 	float FreezeProgress = clamp(Time / 1000000000.0f, 0.0f, Max) / Max;
 	if(FreezeProgress <= 0.0f)
 	{
-		m_KillBarRendered = false;
 		return;
 	}
 
@@ -47,8 +46,6 @@ void CFreezeBars::RenderKillBar()
 	Position.y += (g_Config.m_ClFreezeBarY + 32);
 
 	RenderFreezeBarPos(Position.x, Position.y, FreezeBarWidth, FreezeBarHight, FreezeProgress, R, G, B, 100.0f);
-
-	m_KillBarRendered = true;
 }
 
 void CFreezeBars::RenderFreezeBar(const int ClientId)
@@ -254,8 +251,12 @@ void CFreezeBars::OnRender()
 	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
 	float FreezeProgress = clamp(Time / 1000000000.0f, 0.0f, Max) / Max;
 
+	int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
+
 	if(FreezeProgress < 0.95f)
 		RenderKillBar();
+	else if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
+		RenderFreezeBar(LocalClientId);
 
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
@@ -277,8 +278,6 @@ void CFreezeBars::OnRender()
 	ScreenY0 -= BorderBuffer;
 	ScreenY1 += BorderBuffer;
 
-	int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
-
 	// render everyone else's freeze bar, then our own
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
@@ -293,16 +292,6 @@ void CFreezeBars::OnRender()
 		{
 			continue;
 		}
-		
 		RenderFreezeBar(ClientId);
-	}
-	if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
-	{
-		if(!GameClient()->CurrentRaceTime() || !g_Config.m_ClFreezeKill)
-			m_KillBarRendered = false;
-
-
-		if(m_KillBarRendered == false)
-			RenderFreezeBar(LocalClientId);
 	}
 }
