@@ -669,7 +669,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		str_append(MutedWhisper, Name);
 		if(Team == 3)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
-		else if(Team == 0)
+		else if(Team < 3)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
 	}
 	else if(g_Config.m_ClHideEnemyChat && (m_pClient->m_aClients[ClientId].m_IsWar || m_pClient->m_aClients[ClientId].m_IsTempWar))
@@ -686,7 +686,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		str_append(WarWhisper, Name);
 		if(Team == 3)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, WarWhisper, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
-		else if(Team == 0)
+		else if(Team < 3)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, War, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
 	}
 
