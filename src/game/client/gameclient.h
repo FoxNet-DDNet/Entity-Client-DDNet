@@ -838,7 +838,7 @@ public:
 	vec2 GetFreezePos(int ClientId);
 
 	int m_MultiViewTeam;
-	int m_MultiViewPersonalZoom;
+	float m_MultiViewPersonalZoom;
 	bool m_MultiViewShowHud;
 	bool m_MultiViewActivated;
 	bool m_aMultiViewId[MAX_CLIENTS];
