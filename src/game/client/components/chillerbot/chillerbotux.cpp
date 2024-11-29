@@ -452,26 +452,22 @@ void CChillerBotUX::ConchainCampHack(IConsole::IResult *pResult, void *pUserData
 
 void CChillerBotUX::ConchainAutoReply(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
-	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
 	pfnCallback(pResult, pCallbackUserData);
 }
 
 void CChillerBotUX::ConchainFinishRename(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
-	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
 	pfnCallback(pResult, pCallbackUserData);
 
 }
 
 void CChillerBotUX::ConchainShowLastKiller(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
-	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
 	pfnCallback(pResult, pCallbackUserData);
 }
 
 void CChillerBotUX::ConchainShowLastPing(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
-	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
 	pfnCallback(pResult, pCallbackUserData);
 }
 
