@@ -2132,9 +2132,9 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 							GameClient()->aMessage("│");
 						}
 
-						// says its enabled even tho its not
-
-						if(g_Config.m_ClFreezeKill && (str_comp(GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || !g_Config.m_ClFreezeKillMultOnly)
+						// Freeze Kill
+						
+						if((g_Config.m_ClFreezeKill && str_comp(GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
 						{
 							GameClient()->aMessage("│ Freeze Kill Enabled!");
 							GameClient()->aMessage("│");
