@@ -30,7 +30,6 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_NO_FIRST_CHARACTER_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_LAST_CHARACTER_ADVANCE);
 	float YOffset = Position.y - 30;
 	ColorRGBA rgb = ColorRGBA(1.0f, 1.0f, 1.0f);
-	ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 
 	// render players' key presses
 	int ShowDirection = g_Config.m_ClShowDirection;
@@ -193,7 +192,8 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 			}
 			if(IsMute && g_Config.m_ClMutedIconNameplate)
 			{
-				const vec2 ShowDirectionPos = vec2(Position.x - 11.0f, YOffset);
+				ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
+
 				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
 				Graphics()->SetColor(Color.WithAlpha(AlphaO));
 				Graphics()->QuadsSetRotation(0);
