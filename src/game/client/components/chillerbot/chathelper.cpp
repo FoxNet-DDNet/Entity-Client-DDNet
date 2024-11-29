@@ -195,7 +195,7 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(ClientId < 0 || ClientId > MAX_CLIENTS)
 		return;
 
-	bool Highlighted = false;
+	bool Highlighted;
 
 	if(Team == 3) // whisper recv
 		Highlighted = true;
