@@ -269,10 +269,8 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	float FontSize;
 	float IconSize;
 	float IconRowY;
-	float SpecDiff;
 	if(NumPlayers <= 8)
 	{
-		SpecDiff = 36.0f;
 		IconRowY = 13.0f;
 		IconSize = 34.0f;
 		LineHeight = 60.0f;
@@ -283,7 +281,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(NumPlayers <= 12)
 	{
-		SpecDiff = 36.0f;
 		IconRowY = 9.0f;
 		IconSize = 32.0f;
 		LineHeight = 50.0f;
@@ -294,7 +291,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(NumPlayers <= 16)
 	{
-		SpecDiff = 36.0f;
 		IconRowY = 6.0f;
 		IconSize = 30.0f;
 		LineHeight = 40.0f;
@@ -305,7 +301,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(NumPlayers <= 24)
 	{
-		SpecDiff = 36.0f;
 		IconRowY = 2.0f;
 		IconSize = 26.0f;
 		LineHeight = 27.0f;
@@ -316,7 +311,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(NumPlayers <= 32)
 	{
-		SpecDiff = 22.5f;
 		IconRowY = 1.0f;
 		IconSize = 19.0f;
 		LineHeight = 20.0f;
@@ -327,7 +321,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else if(LowScoreboardWidth)
 	{
-		SpecDiff = 36.0f;
 		IconRowY = 8.0f;
 		IconSize = 25.0f;
 		LineHeight = 15.0f;
@@ -338,7 +331,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	}
 	else
 	{
-		SpecDiff = 36.0f;
 		IconRowY = 7.0f;
 		IconSize = 25.0f;
 		LineHeight = 7.0f;
@@ -545,6 +537,8 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			auto IsMuted = GameClient()->m_WarList.IsMutelist(ClientData.m_aName);
 			auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(ClientData.m_aClan);
 
+			bool paused = ClientData.m_Paused || ClientData.m_Spec;
+
 			// skin
 			if(RenderDead)
 			{
@@ -569,7 +563,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				vec2 OffsetToMid;
 				CRenderTools::GetRenderTeeOffsetToRenderedTee(CAnimState::GetIdle(), &TeeInfo, OffsetToMid);
 				const vec2 TeeRenderPos = vec2(TeeOffset + TeeLength / 2, Row.y + Row.h / 2.0f + OffsetToMid.y);
-				if(g_Config.m_ClScoreSpecPlayer && ClientData.m_Paused || ClientData.m_Spec)
+				if(g_Config.m_ClScoreSpecPlayer && paused)
 				{
 					RenderTools()->RenderTee(CAnimState::GetSpec(), &TeeInfo, EMOTE_BLINK, vec2(1.0f, 0.0f), TeeRenderPos);
 				}
@@ -624,7 +618,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					GameClient()->FormatClientId(pInfo->m_ClientId, aClientId, EClientIdFormat::INDENT_AUTO);
 					TextRender()->TextEx(&Cursor, aClientId);
 				}
-				if(g_Config.m_ClScoreSpecPrefix && ClientData.m_Paused || ClientData.m_Spec)
+				if(g_Config.m_ClScoreSpecPrefix && paused)
 				{
 					const char *pSpecMark = g_Config.m_ClSpecPrefix;
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
