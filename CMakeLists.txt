@@ -2332,20 +2332,12 @@ if(CLIENT)
     component.h
     components/aiodob/aiodob.cpp
     components/aiodob/aiodob.h
-    components/outlines.cpp
-    components/outlines.h
     components/background.cpp
     components/background.h
     components/binds.cpp
     components/binds.h
     components/bindwheel.cpp
     components/bindwheel.h
-    components/skinprofiles.cpp
-    components/skinprofiles.h
-    components/player_indicator.cpp
-    components/player_indicator.h
-    components/verify.cpp
-    components/verify.h
     components/broadcast.cpp
     components/broadcast.h
     components/camera.cpp
@@ -2412,14 +2404,20 @@ if(CLIENT)
     components/motd.h
     components/nameplates.cpp
     components/nameplates.h
+    components/outlines.cpp
+    components/outlines.h
     components/particles.cpp
     components/particles.h
+    components/player_indicator.cpp
+    components/player_indicator.h
     components/players.cpp
     components/players.h
     components/race_demo.cpp
     components/race_demo.h
     components/scoreboard.cpp
     components/scoreboard.h
+    components/skinprofiles.cpp
+    components/skinprofiles.h
     components/skins.cpp
     components/skins.h
     components/skins7.cpp
@@ -2432,6 +2430,8 @@ if(CLIENT)
     components/statboard.h
     components/tooltips.cpp
     components/tooltips.h
+    components/verify.cpp
+    components/verify.h
     components/voting.cpp
     components/voting.h
     gameclient.cpp

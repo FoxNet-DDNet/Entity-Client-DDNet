@@ -373,8 +373,6 @@ MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLI
 */
 
 // Might be Cheating
-	MACRO_CONFIG_INT(DbgStress, dbg_stress, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "a")
-
 
 	// KoG Mode
 	MACRO_CONFIG_INT(ClKogMode, ac_KoG_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
