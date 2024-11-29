@@ -99,7 +99,7 @@ void CAiodob::FreezeKill()
 		if(m_pClient->m_aClients[Local].m_Paused || m_pClient->m_aClients[Local].m_Spec)
 			m_LastFreeze = TimeReset;
 
-		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0 && i == Local) && g_Config.m_ClFreezeDontKillMoving)
+		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0) && i == Local && g_Config.m_ClFreezeDontKillMoving)
 		{
 			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
 				if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
@@ -158,8 +158,6 @@ void CAiodob::AutoKill()
 {
 	const int Local = m_pClient->m_Snap.m_LocalClientId;
 	CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
-	
-	CCollision *m_pCollision = GameClient()->Collision();
 
 	if(g_Config.m_ClAutoKill)
 	{
