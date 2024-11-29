@@ -36,7 +36,6 @@ void CChatHelper::OnInit()
 	m_aGreetName[0] = '\0';
 	m_NextGreetClear = 0;
 	m_NextMessageSend = 0;
-	m_aLastAfkPing[0] = '\0';
 	mem_zero(m_aaaSendBuffer, sizeof(m_aaaSendBuffer));
 }
 

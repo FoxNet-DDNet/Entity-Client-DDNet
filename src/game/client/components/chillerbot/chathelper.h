@@ -141,7 +141,6 @@ class CChatHelper : public CComponent
 	}
 
 	char m_aGreetName[32];
-	char m_aLastAfkPing[2048];
 
 public:
 	enum
@@ -179,8 +178,6 @@ public:
 	void RegisterCommand(const char *pName, const char *pParams, int Flags, const char *pHelp);
 	int Get128Name(const char *pMsg, char *pName);
 	const char *GetGreetName() { return m_aGreetName; }
-	const char *LastAfkPingMessage() { return m_aLastAfkPing; }
-	void ClearLastAfkPingMessage() { m_aLastAfkPing[0] = '\0'; }
 	CLangParser &LangParser() { return m_LangParser; }
 
 	/*

@@ -60,7 +60,6 @@ class CChillerBotUX : public CComponent
 		int m_FlagCarrierBlue;
 	};
 
-	bool m_MouseModeAbs;
 	int m_AfkActivity;
 	int m_CampHackX1;
 	int m_CampHackY1;
