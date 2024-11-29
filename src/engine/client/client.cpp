@@ -2116,7 +2116,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 
 						GameClient()->aMessage("╭──                  Aiodob Info");
 						GameClient()->aMessage("│");
-						if(g_Config.m_ClAutoKill && (str_comp(GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || !g_Config.m_ClAutoKillMultOnly)
+						if((g_Config.m_ClAutoKill && str_comp(GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
 						{
 							GameClient()->aMessage("│ Auto Kill Enabled!");
 							GameClient()->aMessage("│");
