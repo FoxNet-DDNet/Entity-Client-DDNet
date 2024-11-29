@@ -52,7 +52,6 @@ jobs:
         # mount: /var/lib/grub/esp: special device /dev/disk/by-id/scsi-... does not exist.
         # sudo apt-get upgrade -y
         sudo apt-get install pkg-config cmake ninja-build libfreetype6-dev libnotify-dev libsdl2-dev libsqlite3-dev libvulkan-dev glslang-tools spirv-tools libavcodec-dev libavformat-dev libavutil-dev libswresample-dev libswscale-dev libx264-dev libpng-dev valgrind gcovr libglew-dev -y
-
     - name: Prepare Linux (non-fancy)
       if: ${{ contains(matrix.os, 'ubuntu') && !matrix.fancy }}
       run: |
@@ -70,7 +69,6 @@ jobs:
         GRANT ALL PRIVILEGES ON ddnet.* TO 'ddnet'@'localhost';
         FLUSH PRIVILEGES;
         EOF
-
     - name: Prepare Linux (fancy)
       if: contains(matrix.os, 'ubuntu') && matrix.fancy
       run: |
@@ -86,7 +84,6 @@ jobs:
         GRANT ALL PRIVILEGES ON ddnet.* TO 'ddnet'@'localhost';
         FLUSH PRIVILEGES;
         EOF
-
     - name: Prepare macOS
       if: contains(matrix.os, 'macOS')
       run: |
@@ -96,7 +93,6 @@ jobs:
         pip3 install --break-system-packages dmgbuild
         echo /Library/Frameworks/Python.framework/Versions/3.12/bin >> $GITHUB_PATH
         sudo rm -rf /Library/Developer/CommandLineTools
-
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2
 
@@ -106,34 +102,28 @@ jobs:
         cd debug
         ${{ matrix.cmake-path }}cmake -E env ${{ matrix.cmake-init-env }} ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=Debug -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=. ..
         ${{ matrix.cmake-path }}cmake --build . --config Debug --target everything ${{ matrix.build-args }}
-
     - name: Test debug
       run: |
         cd debug
         ${{ matrix.cmake-path }}cmake -E env ${{ matrix.gtest-env }} ${{ matrix.cmake-path }}cmake --build . --config Debug --target run_tests ${{ matrix.build-args }}
-
     - name: Run debug server
       run: |
         cd debug
         ./DDNet-Server shutdown
-
     - name: Build in release mode
       run: |
         mkdir release
         cd release
         ${{ matrix.cmake-path }}cmake -E env ${{ matrix.cmake-init-env }} ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=Release -Werror=dev -DDOWNLOAD_GTEST=ON -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=. ..
         ${{ matrix.cmake-path }}cmake --build . --config Release --target everything ${{ matrix.build-args }}
-
     - name: Test release
       run: |
         cd release
         ${{ matrix.cmake-path }}cmake -E env ${{ matrix.gtest-env }} ${{ matrix.cmake-path }}cmake --build . --config Release --target run_tests ${{ matrix.build-args }}
-
     - name: Run release server
       run: |
         cd release
         ./DDNet-Server shutdown
-
     - name: Build headless client
       if: contains(matrix.os, 'ubuntu-latest')
       run: |
@@ -142,13 +132,12 @@ jobs:
         ${{ matrix.cmake-path }}cmake --version
         ${{ matrix.cmake-path }}cmake -E env CXXFLAGS="--coverage -Werror" ${{ matrix.cmake-path }}cmake -E env LDFLAGS="--coverage -Werror" ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DHEADLESS_CLIENT=ON -DCMAKE_BUILD_TYPE=Debug -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_DEBUG=. ..
         ${{ matrix.cmake-path }}cmake -E env RUSTFLAGS="-Clink-arg=--coverage" ${{ matrix.cmake-path }}cmake --build . --config Debug  ${{ matrix.build-args }}
-
+        mv chillerbot-ux DDNet || true
     - name: Test headless client (unit tests)
       if: contains(matrix.os, 'ubuntu-latest')
       run: |
         cd headless
         ${{ matrix.cmake-path }}cmake -E env RUSTFLAGS="-Clink-arg=--coverage" RUSTDOCFLAGS="-Clink-arg=--coverage" ${{ matrix.cmake-path }}cmake --build . --config Debug --target run_tests ${{ matrix.build-args }}
-
     - name: Upload Codecov report (unit tests)
       if: contains(matrix.os, 'ubuntu-latest')
       uses: codecov/codecov-action@v4
@@ -163,7 +152,6 @@ jobs:
         find . -name '*.gcno' -o -name '*.gcda' -delete
         ./DDNet-Server &
         ./DDNet "cl_download_skins 0;connect localhost:8303;quit"
-
     - name: Upload Codecov report (start & connect)
       if: contains(matrix.os, 'ubuntu-latest')
       uses: codecov/codecov-action@v4
@@ -177,19 +165,16 @@ jobs:
         cd fancy
         ${{ matrix.cmake-path }}cmake -E env ${{ matrix.cmake-init-env }} ${{ matrix.cmake-path }}cmake ${{ matrix.cmake-args }} -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDOWNLOAD_GTEST=ON -DCMAKE_RUNTIME_OUTPUT_DIRECTORY_RELEASE=. -DANTIBOT=ON -DWEBSOCKETS=ON ..
         ${{ matrix.cmake-path }}cmake --build . --config RelWithDebInfo --target everything ${{ matrix.build-args }}
-
     - name: Test fancy
       if: matrix.fancy
       run: |
         cd fancy
         ${{ matrix.cmake-path }}cmake -E env ${{ matrix.gtest-env }} ${{ matrix.cmake-path }}cmake --build . --config RelWithDebInfo --target run_tests ${{ matrix.build-args }}
-
     - name: Run fancy server
       if: matrix.fancy
       run: |
         cd fancy
         ./DDNet-Server shutdown
-
     - name: Run integration tests with Valgrind's Memcheck
       if: contains(matrix.os, 'ubuntu-latest')
       run: |
@@ -197,7 +182,6 @@ jobs:
         # Remove old coverage data:
         find . -name '*.gcno' -o -name '*.gcda' -delete
         ./integration_test.sh --valgrind-memcheck
-
     - name: Upload Codecov report (integration tests)
       if: contains(matrix.os, 'ubuntu-latest')
       uses: codecov/codecov-action@v4
@@ -210,9 +194,8 @@ jobs:
         ${{ matrix.cmake-path }}cmake --build . --config Release --target package_default ${{ matrix.build-args }}
         mkdir artifacts
         mv ${{ matrix.package-file }} artifacts
-
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: ddnet-${{ matrix.os }}
+        name: chillerbot-ux-${{ matrix.os }}
         path: release/artifacts
