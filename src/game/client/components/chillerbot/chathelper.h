@@ -162,7 +162,6 @@ private:
 		SPAM_OTHER,
 		SPAM_INSULT
 	};
-	int IsSpam(int ClientId, int Team, const char *pMsg);
 
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
 
