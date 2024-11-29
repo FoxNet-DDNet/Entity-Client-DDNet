@@ -13,7 +13,6 @@
 #include <game/client/components/camera.h>
 #include <game/client/components/chat.h>
 #include <game/client/components/controls.h>
-#include <game/client/components/menus.h>
 #include <game/client/components/voting.h>
 #include <game/client/gameclient.h>
 #include <game/client/race.h>
@@ -100,7 +99,7 @@ void CAiodob::FreezeKill()
 		if(m_pClient->m_aClients[Local].m_Paused || m_pClient->m_aClients[Local].m_Spec)
 			m_LastFreeze = TimeReset;
 
-		if(pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0 && i == Local && g_Config.m_ClFreezeDontKillMoving)
+		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0 && i == Local) && g_Config.m_ClFreezeDontKillMoving)
 		{
 			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
 				if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
@@ -176,10 +175,10 @@ void CAiodob::AutoKill()
 				{
 					if(g_Config.m_ClAutoKillDebug)
 						TextRender()->Text(100, 50, 15, "Not on Mult");
-					else if(g_Config.m_ClAutoKillDebug)
-						TextRender()->Text(100, 50, 15, "On Mult");
 					return;
 				}
+				else if(g_Config.m_ClAutoKillDebug)
+					TextRender()->Text(100, 50, 15, "On Mult");
 			}
 
 			const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Prev;
@@ -208,10 +207,6 @@ void CAiodob::AutoKill()
 			const float RangeX = g_Config.m_ClAutoKillRangeX / 100.0f;
 
 			float RangeY = g_Config.m_ClAutoKillRangeY / 100.0f;
-
-			const bool Grounded = m_pCollision->CheckPoint(SelfPos.x + CCharacterCore::PhysicalSize() / 2, SelfPos.y + CCharacterCore::PhysicalSize() / 2 + 5) || m_pCollision->CheckPoint(SelfPos.x - CCharacterCore::PhysicalSize() / 2, SelfPos.y + CCharacterCore::PhysicalSize() / 2 + 5);
-
-			int ClientId = !Local;
 
 			CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(~Local);
 
