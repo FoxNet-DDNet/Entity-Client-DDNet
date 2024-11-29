@@ -860,7 +860,6 @@ void CPlayers::RenderPlayer(
 		else
 		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
 	}
-	CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(~Local);
 
 	if(g_Config.m_ClSparkleEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
 	{
@@ -1450,14 +1449,15 @@ void CPlayers::OnRender()
 			{
 				aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
 				if(g_Config.m_ClSweatModeSkin)
+				{
 					if(i == Local)
 					{
 						if(!g_Config.m_ClSweatModeOnlyOthers)
 							aRenderInfo[i].Apply(pSkin);
-		
 					}
 					else
 						aRenderInfo[i].Apply(pSkin);
+				}
 
 
 				if(i == Local)
