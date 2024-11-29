@@ -197,9 +197,18 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 
 	bool Highlighted = false;
 
+	if(Team == 3) // whisper recv
+		Highlighted = true;
+
+
 	// check for highlighted name
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
+		if(m_pClient->m_aLocalIds[0] == -1)
+			return;
+		if(m_pClient->Client()->DummyConnected() && m_pClient->m_aLocalIds[1] == -1)
+			return;
+
 		if(ClientId >= 0 && ClientId != m_pClient->m_aLocalIds[0] && (!m_pClient->Client()->DummyConnected() || ClientId != m_pClient->m_aLocalIds[1]))
 		{
 			// main character
@@ -210,13 +219,12 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	}
 	else
 	{
+		if(m_pClient->m_Snap.m_LocalClientId == -1)
+			return;
 		// on demo playback use local id from snap directly,
 		// since m_aLocalIds isn't valid there
 		Highlighted |= m_pClient->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_aName);
 	}
-
-	if(Team == 3) // whisper recv
-		Highlighted = true;
 
 	if(!Highlighted)
 		return;
