@@ -28,7 +28,6 @@ class CChillerBotUX : public CComponent
 	bool m_IsNearFinish;
 
 	char m_aAfkMessage[32];
-	char m_aLastAfkPing[2048];
 	char m_aLastKiller[2][32];
 	char m_aLastKillerTime[2][32];
 
