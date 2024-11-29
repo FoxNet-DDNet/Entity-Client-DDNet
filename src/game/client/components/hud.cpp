@@ -533,7 +533,6 @@ void CHud::RenderTextInfo()
 		static float s_TextWidth000 = TextRender()->TextWidth(12.f, "000", -1, -1.0f);
 		static float s_TextWidth0000 = TextRender()->TextWidth(12.f, "0000", -1, -1.0f);
 		static float s_TextWidth00000 = TextRender()->TextWidth(12.f, "00000", -1, -1.0f);
-		static float s_TextWidth000000 = TextRender()->TextWidth(12.f, "000000", -1, -1.0f);
 		static const float s_aTextWidth[5] = {s_TextWidth0, s_TextWidth00, s_TextWidth000, s_TextWidth0000, s_TextWidth00000};
 
 		int DigitIndex = GetDigitsIndex(FrameTime, 4);
