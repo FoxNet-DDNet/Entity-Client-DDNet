@@ -100,34 +100,8 @@ void CChatHelper::SayBuffer(const char *pMsg, int Team, bool StayAfk)
 
 void CChatHelper::OnConsoleInit()
 {
-	Console()->Register("reply_to_last_ping", "", CFGFLAG_CLIENT, ConReplyToLastPing, this, "Respond to the last ping in chat");
 	Console()->Register("say_hi", "", CFGFLAG_CLIENT, ConSayHi, this, "Respond to the last greeting in chat");
 	Console()->Register("say_format", "s[message]", CFGFLAG_CLIENT, ConSayFormat, this, "send message replacing %n with last ping name");
-}
-
-void CChatHelper::ConReplyToLastPing(IConsole::IResult *pResult, void *pUserData)
-{
-	CChatHelper *pSelf = (CChatHelper *)pUserData;
-	char aResponse[1024];
-	char aName[32];
-	char aClan[32];
-	char aMessage[2048];
-	aMessage[0] = 'x'; // poor mans "do while" loop xd
-	int Team = 0;
-	// pop message stack until reached the end
-	// abort as soon as a response is found
-	// this makes sure we always respond to something
-	// given there is any respondable message is still in the stack
-	while(aMessage[0])
-	{
-	
-			if(aResponse[0])
-			{
-				pSelf->m_pClient->m_Chat.SendChat(Team == 1 ? BUFFER_CHAT_TEAM : BUFFER_CHAT_ALL, aResponse);
-				// pSelf->SayBuffer(aResponse, Team == 1 ? BUFFER_CHAT_TEAM : BUFFER_CHAT_ALL);
-				break;
-			}
-	}
 }
 
 void CChatHelper::ConSayHi(IConsole::IResult *pResult, void *pUserData)
@@ -272,14 +246,12 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	// ignore duplicated messages
 	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
 		return;
-	char aBuf[2048];
 	PushPing(aName, m_pClient->m_aClients[ClientId].m_aClan, pMsg, Team);
+
 	if((g_Config.m_ClReplyMuted && GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName) || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat)))
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
-
-		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 
 		if(Team == 3) // whisper recv
 		{
@@ -301,7 +273,7 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 			return;
 
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
-		if (pGraphics && !pGraphics->WindowActive() && Graphics())
+		if(pGraphics && !pGraphics->WindowActive() && Graphics())
 		{
 
 		

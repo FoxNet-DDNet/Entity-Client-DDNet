@@ -728,8 +728,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(*pLine == 0)
 		return;
 
-	bool Highlighted = false;
-
 	auto &&FChatMsgCheckAndPrint = [this](CLine *pLine_) {
 		if(pLine_->m_ClientId < 0) // server or client message
 		{
@@ -753,8 +751,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
 			else if(pLine_->m_IsHelper && g_Config.m_ClWarlistConsoleColors)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
-			else if(pLine_->m_ClientId == CLIENT_MSG)
-				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor));
 			else if(pLine_->m_ClientId == SERVER_MSG)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageSystemColor));
 			else if(pLine_->m_ClientId == CLIENT_MSG)
@@ -776,7 +772,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			pFrom = "server";
 		else if(pLine_->m_ClientId == CLIENT_MSG)
 			pFrom = "client";
-		else if(!g_Config.m_ClHideEnemyChat && pLine_->m_IsWar || pLine_->m_IsWarClan || pLine_->m_IsTempWar)
+		else if(!g_Config.m_ClHideEnemyChat && (pLine_->m_IsWar || pLine_->m_IsWarClan || pLine_->m_IsTempWar))
 			pFrom = "[Enemy]";
 		else
 			pFrom = "chat";
@@ -827,6 +823,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 	TextRender()->DeleteTextContainer(pCurrentLine->m_TextContainerIndex);
 	Graphics()->DeleteQuadContainer(pCurrentLine->m_QuadContainerIndex);
+
+	bool Highlighted = false;
 
 	// check for highlighted name
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
@@ -967,12 +965,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						char name[16];
 						strcpy(name, s.c_str());
 
-						int a = str_length(NameLength);
-						int b = str_length(OldName);
-
-						int Length = b - a;
+						int nLength = str_length(OldName) - str_length(NameLength);
 						string oName(OldName);
-						oName.erase(Length);
+						oName.erase(nLength);
 						oName.erase(oName.begin());
 
 						char CharOname[16];
@@ -1002,21 +997,16 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 					if(str_find_nocase(pLine, g_Config.m_ClAutoJoinTeamName))
 					{
 		
-						int n = str_length(FindTeam);
 						string s(FindTeam);
 						s.erase(s.begin());
 						s.erase(s.begin());
 
-						char Team[16];
-						strcpy(Team, s.c_str());
+						char p_Team[16];
+						strcpy(p_Team, s.c_str());
 
-						
-						int a = str_length(NameLength);
-						int b = str_length(PName);
-
-						int Length = b - a;
+						int nLength = str_length(PName) - str_length(NameLength);
 						string Name(PName);
-						Name.erase(Length);
+						Name.erase(nLength);
 						Name.erase(Name.begin());
 
 						char PlayerName[16];
@@ -1032,11 +1022,11 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						// , 0, PlayerName);
 
 						int NameToJoin = str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName);
-						int Team0 = str_comp(Team, "0");
+						int Team0 = str_comp(p_Team, "0");
 						if(Team0 > 0 && NameToJoin == 0)
 						{
 							char aBuf[2048] = "/team ";
-							str_append(aBuf, Team);
+							str_append(aBuf, p_Team);
 							m_pClient->m_Chat.SendChat(0, aBuf);
 							char Joined[2048] = "Auto Joined ";
 							str_append(Joined, PlayerName);
@@ -1645,8 +1635,8 @@ void CChat::SendChat(int Team, const char *pLine)
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
 		return;
 
-		if(!m_pClient->m_ChillerBotUX.OnSendChat(Team, pLine))
-			return;
+	if(!m_pClient->m_ChillerBotUX.OnSendChat(Team, pLine))
+		return;
 
 	if(!g_Config.m_ClSendDotsChat)
 		if(pLine[0] == '.')

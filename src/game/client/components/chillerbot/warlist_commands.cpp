@@ -232,7 +232,7 @@ void CWarList::DelClone()
 
 void CWarList::Clone(const char *pName)
 {
-	for(int i = 0, Count = 0; i < MAX_CLIENTS; ++i)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(!m_pClient->m_Snap.m_apInfoByName[i])
 			continue;
@@ -350,7 +350,7 @@ void CWarList::Clone(const char *pName)
 
 void CWarList::Skin(const char *pName)
 {
-	for(int i = 0, Count = 0; i < MAX_CLIENTS; ++i)
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(!m_pClient->m_Snap.m_apInfoByName[i])
 			continue;
@@ -605,16 +605,6 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 			m_pClient->SendInfo(false);
 		else if(g_Config.m_ClDummy)
 			m_pClient->SendDummyInfo(false);
-		return true;
-	}
-	else if(
-		!str_comp(pCmd, "addreason") ||
-		!str_comp(pCmd, "create") ||
-		!str_comp(pCmd, "addtraitor"))
-	{
-		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "Error: %s only works in advanced warlist mode", pCmd);
-		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return true;
 	}
 	else

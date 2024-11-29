@@ -171,7 +171,6 @@ private:
 	void OnConsoleInit() override;
 	void OnInit() override;
 
-	static void ConReplyToLastPing(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayHi(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayFormat(IConsole::IResult *pResult, void *pUserData);
 

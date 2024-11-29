@@ -447,7 +447,6 @@ void CChillerBotUX::ConDumpPlayers(IConsole::IResult *pResult, void *pUserData)
 
 void CChillerBotUX::ConchainCampHack(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
-	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
 	pfnCallback(pResult, pCallbackUserData);
 }
 
