@@ -144,9 +144,6 @@ class CChat : public CComponent
 	std::vector<CCommand> m_vCommands;
 	bool m_CommandsNeedSorting;
 
-	std::vector<CCommand> m_bCommands;
-	bool m_bCommandsNeedSorting;
-
 	struct CHistoryEntry
 	{
 		int m_Team;
