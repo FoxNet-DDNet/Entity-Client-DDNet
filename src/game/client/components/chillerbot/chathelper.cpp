@@ -194,11 +194,7 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(ClientId < 0 || ClientId > MAX_CLIENTS)
 		return;
 
-	bool Highlighted;
-
-	if(Team == 3) // whisper recv
-		Highlighted = true;
-
+	bool Highlighted = false;
 
 	// check for highlighted name
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
@@ -207,7 +203,6 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 			return;
 		if(m_pClient->Client()->DummyConnected() && m_pClient->m_aLocalIds[1] == -1)
 			return;
-
 		if(ClientId >= 0 && ClientId != m_pClient->m_aLocalIds[0] && (!m_pClient->Client()->DummyConnected() || ClientId != m_pClient->m_aLocalIds[1]))
 		{
 			// main character
@@ -225,9 +220,11 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		Highlighted |= m_pClient->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_aName);
 	}
 
+	if(Team == 3) // whisper recv
+		Highlighted = true;
+
 	if(!Highlighted)
 		return;
-
 	char aName[64];
 	str_copy(aName, m_pClient->m_aClients[ClientId].m_aName, sizeof(aName));
 	if(ClientId == 63 && !str_comp_num(m_pClient->m_aClients[ClientId].m_aName, " ", 2))
@@ -240,7 +237,11 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		return;
 	if(Client()->DummyConnected() && !str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName))
 		return;
-
+	if(m_LangParser.IsGreeting(pMsg))
+	{
+		str_copy(m_aGreetName, aName, sizeof(m_aGreetName));
+		m_NextGreetClear = time_get() + time_freq() * 10;
+	}
 	// could iterate over ping history and also ignore older duplicates
 	// ignore duplicated messages
 	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
@@ -249,6 +250,9 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 
 	if((g_Config.m_ClReplyMuted && GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName)) || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
 	{
+		if(!GameClient()->m_Snap.m_pLocalCharacter)
+			return;
+
 		if(Team == 3) // whisper recv
 		{
 			char bBuf[2048] = "/w %n ";
@@ -264,16 +268,21 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	}
 	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName))
 	{
+	
+		if(!GameClient()->m_Snap.m_pLocalCharacter)
+			return;
+
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 		if(pGraphics && !pGraphics->WindowActive() && Graphics())
 		{
 
+		
 			if(Team == 3) // whisper recv
-			{
+				{
 				char bBuf[2048] = "/w %n ";
-				str_append(bBuf, g_Config.m_ClAutoReplyMsg);
-				SayFormat(bBuf);
-			}
+					str_append(bBuf, g_Config.m_ClAutoReplyMsg);
+						SayFormat(bBuf);
+				}
 			else
 			{
 				char bBuf[2048] = "%n: ";

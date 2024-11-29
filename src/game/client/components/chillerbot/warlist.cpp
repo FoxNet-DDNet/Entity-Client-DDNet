@@ -42,6 +42,14 @@ void CWarList::ReloadList()
 		LoadTeamNames("chillerbot/warlist/team/team");
 		LoadTempWarNames("chillerbot/templist/temp/tempwar");
 	}
+
+	for(auto &WarPlayer : m_aWarPlayers)
+		WarPlayer.m_aName[0] = '\0';
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "team: %d war: %d", m_TeamDirs, m_WarDirs);
+	// TODO: fix on initial load
+	// 		 maybe https://github.com/chillerbot/chillerbot-ux/issues/22 is needed
+	m_pClient->m_ChillerBotUX.SetComponentNoteLong("war list", aBuf);
 }
 
 void CWarList::GetTemplistPathByNeedle(const char *pSearch, int Size, char *pPath)
