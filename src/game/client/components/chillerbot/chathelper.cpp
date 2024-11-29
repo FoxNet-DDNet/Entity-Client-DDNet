@@ -241,11 +241,7 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		return;
 	if(Client()->DummyConnected() && !str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName))
 		return;
-	if(m_LangParser.IsGreeting(pMsg))
-	{
-		str_copy(m_aGreetName, aName, sizeof(m_aGreetName));
-		m_NextGreetClear = time_get() + time_freq() * 10;
-	}
+
 	// could iterate over ping history and also ignore older duplicates
 	// ignore duplicated messages
 	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
@@ -254,9 +250,6 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 
 	if((g_Config.m_ClReplyMuted && GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName)) || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
 	{
-		if(!GameClient()->m_Snap.m_pLocalCharacter)
-			return;
-
 		if(Team == 3) // whisper recv
 		{
 			char bBuf[2048] = "/w %n ";
@@ -272,21 +265,16 @@ void CChatHelper::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	}
 	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName))
 	{
-	
-		if(!GameClient()->m_Snap.m_pLocalCharacter)
-			return;
-
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 		if(pGraphics && !pGraphics->WindowActive() && Graphics())
 		{
 
-		
 			if(Team == 3) // whisper recv
-				{
+			{
 				char bBuf[2048] = "/w %n ";
-					str_append(bBuf, g_Config.m_ClAutoReplyMsg);
-						SayFormat(bBuf);
-				}
+				str_append(bBuf, g_Config.m_ClAutoReplyMsg);
+				SayFormat(bBuf);
+			}
 			else
 			{
 				char bBuf[2048] = "%n: ";
