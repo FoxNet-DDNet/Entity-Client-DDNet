@@ -293,7 +293,7 @@ void CAiodob::AutoJoinTeam()
 		{
 			if(str_comp(m_pClient->m_aClients[i].m_aName, g_Config.m_ClAutoJoinTeamName) == 0)
 			{
-				int LocalTeam;
+				int LocalTeam = -1;
 
 
 				if(i == Local)
@@ -305,7 +305,7 @@ void CAiodob::AutoJoinTeam()
 				char TeamChar[256];
 				str_format(TeamChar, sizeof(TeamChar), "%d", Team);
 
-				int PrevTeam;
+				int PrevTeam = -1;
 
 				if(!m_pClient->m_Teams.SameTeam(Local, i) && (Team > 0) && !JoinedTeam)
 				{
@@ -402,6 +402,7 @@ void CAiodob::OnRender()
 	AutoJoinTeam();
 	FreezeKill();
 
-	if(GameClient()->m_Controls.m_aInputData[2].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
+	if(GameClient()->m_Controls.m_aInputData[0].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
 		m_LastMovement = time_get() + time_freq() * 30;
+
 }

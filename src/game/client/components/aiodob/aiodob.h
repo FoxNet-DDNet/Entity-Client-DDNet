@@ -7,9 +7,7 @@ class CAiodob : public CComponent
 	bool AttempedJoinTeam;
 	bool JoinedTeam;
 	int Mult;
-	bool m_Active;
 	
-
 	bool m_KogModeRebound;
 
 public:
