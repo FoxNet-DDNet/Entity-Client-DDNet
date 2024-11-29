@@ -1046,12 +1046,10 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 					using namespace std;
 					if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
 					{
-						int a = str_length(NameLength);
-						int b = str_length(PName);
 
-						int Length = b - a;
+						int nLength = str_length(PName) - str_length(NameLength);
 						string Name(PName);
-						Name.erase(Length);
+						Name.erase(nLength);
 						Name.erase(Name.begin());
 
 						char PlayerName[16];
