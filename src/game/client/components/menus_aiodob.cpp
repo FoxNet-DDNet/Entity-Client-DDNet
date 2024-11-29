@@ -114,7 +114,6 @@ static CKeyInfo gs_aKeys[] =
 
 void CMenus::RenderSettingsAiodob(CUIRect MainView)
 {
-	char aBuf[128];
 	static int s_CurTab = 0;
 
 	CUIRect TabBar, Button, Label;
@@ -171,7 +170,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect OtherSettings, MiscSettings, ColorSettings, FreezeKillSettings, ScoreboardSettings, NameplateSettings, MenuSettings, FrozenTeeHudSettings, AutoKillOntopSettings;
+		CUIRect OtherSettings, MiscSettings, ColorSettings, FreezeKillSettings, ScoreboardSettings, NameplateSettings, MenuSettings, AutoKillOntopSettings;
 		MainView.VSplitMid(&OtherSettings, &MiscSettings);
 
 		{
@@ -437,8 +436,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						if(!g_Config.m_ClDoCursorSpecOpacity)
 						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoCursorSpecOpacity, ("Change Cursor Opacity while Spectating"), &g_Config.m_ClDoCursorSpecOpacity, &MiscSettings, LineSize);
 					}
-					char aBuf[512];
-					str_format(aBuf, sizeof(aBuf), "      Cursor Opacity ", g_Config.m_ClRenderCursorSpecOpacity);
+					char Opacity[512];
+					str_format(Opacity, sizeof(Opacity), "      Cursor Opacity ", g_Config.m_ClRenderCursorSpecOpacity);
 
 					if(g_Config.m_ClDoCursorSpecOpacity)
 					{
@@ -630,7 +629,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				static CButtonContainer SparkleR;
 				PlayerSettings.HSplitTop(-35.0f, &PlayerSettings, &PlayerSettings);
-				DoLine_ColorPicker(&SparkleR, 25.0f, 13.0f, 5.0f, &PlayerSettings, (""), &g_Config.m_ClSparkleColor, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false), g_Config.m_ClSparkleEffect;
+				DoLine_ColorPicker(&SparkleR, 25.0f, 13.0f, 5.0f, &PlayerSettings, (""), &g_Config.m_ClSparkleColor, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
 				PlayerSettings.HSplitTop(5.0f, &PlayerSettings, &PlayerSettings);
 
 				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
@@ -852,6 +851,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						const float X = RealMsgPaddingX / 2.0f + ChatSettings.x;
 						float Y = ChatSettings.y;
 						float LineWidth = g_Config.m_ClChatWidth * 2 - (RealMsgPaddingX * 1.5f) - RealMsgPaddingTee;
+						char aBuf[128];
 
 						str_copy(aBuf, Client()->PlayerName());
 
@@ -1339,7 +1339,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineUnFreeze, ("Outline unfreeze & undeep"), &g_Config.m_ClOutlineUnFreeze, &OutlineSettings, LineMargin);
 
 					{
-						CUIRect Button, Label;
 						OutlineSettings.HSplitTop(5.0f, &Button, &OutlineSettings);
 						OutlineSettings.HSplitTop(20.0f, &Button, &OutlineSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
@@ -1349,7 +1348,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						g_Config.m_ClOutlineWidth = (int)(Ui()->DoScrollbarH(&g_Config.m_ClOutlineWidth, &Button, (g_Config.m_ClOutlineWidth - 1) / 15.0f) * 15.0f) + 1;
 					}
 					{
-						CUIRect Button, Label;
 						OutlineSettings.HSplitTop(5.0f, &Button, &OutlineSettings);
 						OutlineSettings.HSplitTop(20.0f, &Button, &OutlineSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
@@ -1359,7 +1357,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						g_Config.m_ClOutlineAlpha = (int)(Ui()->DoScrollbarH(&g_Config.m_ClOutlineAlpha, &Button, (g_Config.m_ClOutlineAlpha) / 100.0f) * 100.0f);
 					}
 					{
-						CUIRect Button, Label;
 						OutlineSettings.HSplitTop(5.0f, &Button, &OutlineSettings);
 						OutlineSettings.HSplitTop(20.0f, &Button, &OutlineSettings);
 						Button.VSplitLeft(185.0f, &Label, &Button);
@@ -1407,7 +1404,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHudSkins, ("Use Skins Instead of Ninja Tees"), &g_Config.m_ClShowFrozenHudSkins, &FrozenTeeHudSettings, LineMargin);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFrozenHudTeamOnly, ("Only Show After Joining a Team"), &g_Config.m_ClFrozenHudTeamOnly, &FrozenTeeHudSettings, LineMargin);
 					{
-						CUIRect Button, Label;
 						FrozenTeeHudSettings.HSplitTop(20.0f, &Button, &FrozenTeeHudSettings);
 						Button.VSplitLeft(140.0f, &Label, &Button);
 						char aBuf[64];
@@ -1416,7 +1412,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						g_Config.m_ClFrozenMaxRows = (int)(Ui()->DoScrollbarH(&g_Config.m_ClFrozenMaxRows, &Button, (g_Config.m_ClFrozenMaxRows - 1) / 5.0f) * 5.0f) + 1;
 					}
 					{
-						CUIRect Button, Label;
 						FrozenTeeHudSettings.HSplitTop(20.0f, &Button, &FrozenTeeHudSettings);
 						Button.VSplitLeft(140.0f, &Label, &Button);
 						char aBuf[64];
@@ -1506,7 +1501,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoLine_ColorPicker(&IndicatorSavedColorID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerIndicatorSettings, ("Indicator save color"), &g_Config.m_ClIndicatorSaved, ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f), true);
 
 					{
-						CUIRect Button, Label;
 						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
 						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
@@ -1516,7 +1510,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						g_Config.m_ClIndicatorRadius = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorRadius, &Button, (g_Config.m_ClIndicatorRadius - 1) / 15.0f) * 15.0f) + 1;
 					}
 					{
-						CUIRect Button, Label;
 						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
 						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
@@ -1526,7 +1519,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						g_Config.m_ClIndicatorOpacity = (int)(Ui()->DoScrollbarH(&g_Config.m_ClIndicatorOpacity, &Button, (g_Config.m_ClIndicatorOpacity) / 100.0f) * 100.0f);
 					}
 					{
-						CUIRect Button, Label;
 						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
 						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
@@ -1539,7 +1531,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 					if(g_Config.m_ClIndicatorVariableDistance)
 					{
-						CUIRect Button, Label;
 						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
 						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
@@ -1550,7 +1541,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 					if(g_Config.m_ClIndicatorVariableDistance)
 					{
-						CUIRect Button, Label;
 						PlayerIndicatorSettings.HSplitTop(5.0f, &Button, &PlayerIndicatorSettings);
 						PlayerIndicatorSettings.HSplitTop(20.0f, &Button, &PlayerIndicatorSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
