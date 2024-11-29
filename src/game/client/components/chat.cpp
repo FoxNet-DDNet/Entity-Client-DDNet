@@ -853,21 +853,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	const auto IsMute = m_pClient->m_aClients[ClientId].m_IsMuted;
 	const auto IsWarClan = m_pClient->m_aClients[ClientId].m_IsWarClanmate;
 
-	if(pCurrentLine->m_ClientId == MODE_ALL && ClientId != m_pClient->m_aLocalIds[0] && !(Team == TEAM_WHISPER_SEND) && g_Config.m_ClAutoVoteOnKrxMessage)
-	{
-		auto &LineAuthor = m_pClient->m_aClients[pCurrentLine->m_ClientId];
-
-		const char *name = LineAuthor.m_aName;
-
-		char text[1024];
-		str_format(text, sizeof(text), "%s: %s", name, pLine);
-		if(str_find_nocase(text, "krxclient.xyz") || str_find_nocase(text, "bro, check out this client: krxcl ient·x​yz"))
-		{
-			m_pClient->m_Chat.AddLine(0, 0, text);
-			m_pClient->m_Voting.CallvoteKick(pCurrentLine->m_ClientId, "KRX");
-		}
-
-	}
 	if(pCurrentLine->m_ClientId == SERVER_MSG)
 	{
 		if(g_Config.m_ClChatServerPrefix)
@@ -970,14 +955,14 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 					const char *aName = str_find_nocase(pLine, " '");
 					const char *OldName = str_find_nocase(pLine, "'");
 					const char *NameLength = str_find_nocase(pLine, "' ");
-					using namespace std;
-
 					{
+						using namespace std;
+
 						int n = str_length(aName);
 						string s(aName);
+						s.erase(s.begin() + n - 1);
 						s.erase(s.begin());
 						s.erase(s.begin());
-						s.erase(s.begin() + n - 3);
 
 						char name[16];
 						strcpy(name, s.c_str());
@@ -992,7 +977,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 						char CharOname[16];
 						strcpy(CharOname, oName.c_str());
-						if (!GameClient()->m_WarList.IsTeamlist(name))
+
+						if(!GameClient()->m_WarList.IsTeamlist(name))
 						{
 							if(GameClient()->m_WarList.IsMutelist(CharOname))
 								GameClient()->m_WarList.AddSimpleMute(name);

@@ -255,8 +255,6 @@ void CFreezeBars::OnRender()
 
 	if(FreezeProgress < 0.95f)
 		RenderKillBar();
-	else if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
-		RenderFreezeBar(LocalClientId);
 
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
@@ -293,5 +291,12 @@ void CFreezeBars::OnRender()
 			continue;
 		}
 		RenderFreezeBar(ClientId);
+	}
+	if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
+	{
+		if(FreezeProgress > 0.95f || !g_Config.m_ClFreezeKill)
+			RenderFreezeBar(LocalClientId);
+		else if(g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
+			RenderFreezeBar(LocalClientId);
 	}
 }
