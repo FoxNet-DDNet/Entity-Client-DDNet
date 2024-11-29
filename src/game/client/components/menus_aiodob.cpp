@@ -59,58 +59,6 @@ typedef struct
 	int m_ModifierCombination;
 } CKeyInfo;
 
-static CKeyInfo gs_aKeys[] =
-	{
-		{Localizable("Move left"), "+left", 0, 0},
-		{Localizable("Move right"), "+right", 0, 0},
-		{Localizable("Jump"), "+jump", 0, 0},
-		{Localizable("Fire"), "+fire", 0, 0},
-		{Localizable("Hook"), "+hook", 0, 0},
-		{Localizable("Hook collisions"), "+showhookcoll", 0, 0},
-		{Localizable("Pause"), "say /pause", 0, 0},
-		{Localizable("Kill"), "kill", 0, 0},
-		{Localizable("Zoom in"), "zoom+", 0, 0},
-		{Localizable("Zoom out"), "zoom-", 0, 0},
-		{Localizable("Default zoom"), "zoom", 0, 0},
-		{Localizable("Show others"), "say /showothers", 0, 0},
-		{Localizable("Show all"), "say /showall", 0, 0},
-		{Localizable("Toggle dyncam"), "toggle cl_dyncam 0 1", 0, 0},
-		{Localizable("Toggle ghost"), "toggle cl_race_show_ghost 0 1", 0, 0},
-
-		{Localizable("Hammer"), "+weapon1", 0, 0},
-		{Localizable("Pistol"), "+weapon2", 0, 0},
-		{Localizable("Shotgun"), "+weapon3", 0, 0},
-		{Localizable("Grenade"), "+weapon4", 0, 0},
-		{Localizable("Laser"), "+weapon5", 0, 0},
-		{Localizable("Next weapon"), "+nextweapon", 0, 0},
-		{Localizable("Prev. weapon"), "+prevweapon", 0, 0},
-
-		{Localizable("Vote yes"), "vote yes", 0, 0},
-		{Localizable("Vote no"), "vote no", 0, 0},
-
-		{Localizable("Chat"), "+show_chat; chat all", 0, 0},
-		{Localizable("Team chat"), "+show_chat; chat team", 0, 0},
-		{Localizable("Converse"), "+show_chat; chat all /c ", 0, 0},
-		{Localizable("Chat command"), "+show_chat; chat all /", 0, 0},
-		{Localizable("Show chat"), "+show_chat", 0, 0},
-
-		{Localizable("Toggle dummy"), "toggle cl_dummy 0 1", 0, 0},
-		{Localizable("Dummy copy"), "toggle cl_dummy_copy_moves 0 1", 0, 0},
-		{Localizable("Hammerfly dummy"), "toggle cl_dummy_hammer 0 1", 0, 0},
-
-		{Localizable("Emoticon"), "+emote", 0, 0},
-		{Localizable("Spectator mode"), "+spectate", 0, 0},
-		{Localizable("Spectate next"), "spectate_next", 0, 0},
-		{Localizable("Spectate previous"), "spectate_previous", 0, 0},
-		{Localizable("Console"), "toggle_local_console", 0, 0},
-		{Localizable("Remote console"), "toggle_remote_console", 0, 0},
-		{Localizable("Screenshot"), "screenshot", 0, 0},
-		{Localizable("Scoreboard"), "+scoreboard", 0, 0},
-		{Localizable("Statboard"), "+statboard", 0, 0},
-		{Localizable("Lock team"), "say /lock", 0, 0},
-		{Localizable("Show entities"), "toggle cl_overlay_entities 0 100", 0, 0},
-		{Localizable("Show HUD"), "toggle cl_showhud 0 1", 0, 0},
-};
 
 void CMenus::RenderSettingsAiodob(CUIRect MainView)
 {
@@ -145,10 +93,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 	const float LineSize = 20.0f;
 	const float ColorPickerLineSize = 25.0f;
-	const float HeadlineFontSize = 20.0f;
-	const float HeadlineHeight = 30.0f;
-	const float MarginSmall = 6.0f;
-	const float MarginBetweenViews = 20.0f;
 
 	const float ColorPickerLabelSize = 13.0f;
 	const float ColorPickerLineSpacing = 5.0f;
@@ -1569,7 +1513,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Anti Latency Tools"), FontSize, TEXTALIGN_MC);
 				{
 					{
-						CUIRect Button, Label;
 						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
 						Button.VSplitLeft(165.0f, &Label, &Button);
 						char aBuf[64];
@@ -1584,7 +1527,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRemoveAnti, ("Remove prediction & antiping in freeze"), &g_Config.m_ClRemoveAnti, &LatencySettings, LineMargin);
 					if(g_Config.m_ClRemoveAnti)
 					{
-						CUIRect Button, Label;
 						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
 						Button.VSplitLeft(115.0f, &Label, &Button);
 						char aBuf[64];
@@ -1595,7 +1537,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 					if(g_Config.m_ClRemoveAnti)
 					{
-						CUIRect Button, Label;
 						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
 						Button.VSplitLeft(200.0f, &Label, &Button);
 						char aBuf[64];
@@ -1608,7 +1549,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPredMarginInFreeze, ("Adjust your prediction margin while frozen"), &g_Config.m_ClPredMarginInFreeze, &LatencySettings, LineMargin);
 					if(g_Config.m_ClPredMarginInFreeze)
 					{
-						CUIRect Button, Label;
 						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
 						Button.VSplitLeft(125.0f, &Label, &Button);
 						char aBuf[64];
@@ -1626,7 +1566,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersGhosts, ("Show unpredicted ghosts for other players"), &g_Config.m_ClShowOthersGhosts, &LatencySettings, LineMargin);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSwapGhosts, ("Swap ghosts and normal players"), &g_Config.m_ClSwapGhosts, &LatencySettings, LineMargin);
 					{
-						CUIRect Button, Label;
 						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
 						Button.VSplitLeft(200.0f, &Label, &Button);
 						char aBuf[64];
@@ -1635,7 +1574,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						g_Config.m_ClPredGhostsAlpha = (int)(Ui()->DoScrollbarH(&g_Config.m_ClPredGhostsAlpha, &Button, (g_Config.m_ClPredGhostsAlpha) / 100.0f) * 100.0f);
 					}
 					{
-						CUIRect Button, Label;
 						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
 						Button.VSplitLeft(200.0f, &Label, &Button);
 						char aBuf[64];

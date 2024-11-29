@@ -245,15 +245,11 @@ void CMenus::RenderPlayers(CUIRect MainView)
 	ButtonBar.VSplitRight(231.0f, &Player, &ButtonBar);
 	Ui()->DoLabel(&Player, Localize("Player"), 24.0f, TEXTALIGN_ML);
 
-	const char Name = *g_Config.m_PlayerName;
-	const char Clan = *g_Config.m_PlayerClan;
-
 	Player.HSplitTop(20.0f, &Player, &RestoreName);
 	Player.HSplitTop(0.0f, &Player, &RestoreName);
 	RestoreName.VSplitRight(20.0f, &RestoreName, &RestoreName);
 	RestoreName.VSplitRight(100.0f, &RestoreName, &RestoreName);
 	static CButtonContainer s_Restore[MAX_CLIENTS];
-	static CButtonContainer s_Save[MAX_CLIENTS];
 
 	if(DoButton_Menu(s_Restore, Localize("Restore Everything"), 0, &RestoreName, nullptr, 15, 5, 0, ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f)))
 	{
