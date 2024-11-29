@@ -907,10 +907,5 @@ static CKeyInfo gs_aKeys[] =
 		{Localizable("Lock team"), "say /lock", 0, 0},
 		{Localizable("Show entities"), "toggle cl_overlay_entities 0 100", 0, 0},
 		{Localizable("Show HUD"), "toggle cl_showhud 0 1", 0, 0},
-
-		{Localizable("BindWheel"), "+bind_wheel", 0, 0},
-		{Localizable("45° AIM"), "+toggle cl_mouse_max_distance 2 400; +toggle inp_mousesens 1; +showhookcoll",0,0,},
-		
-
 };
 #endif
