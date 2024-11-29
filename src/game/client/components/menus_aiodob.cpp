@@ -1620,7 +1620,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		CUIRect buttons[NUM_BINDWHEEL];
 		char pD[NUM_BINDWHEEL][MAX_BINDWHEEL_DESC];
 		char pC[NUM_BINDWHEEL][MAX_BINDWHEEL_CMD];
-		CUIRect Label;
 
 		// Draw Circle
 		Graphics()->TextureClear();
@@ -1723,7 +1722,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			}
 		}
 
-		CUIRect Button, KeyLabel;
+		CUIRect KeyLabel;
 		LeftColumn.HSplitBottom(20.0f, &LeftColumn, 0);
 		LeftColumn.HSplitBottom(20.0f, &LeftColumn, &Button);
 		Button.VSplitLeft(120.0f, &KeyLabel, &Button);
