@@ -988,6 +988,9 @@ void CWarList::OnConsoleInit()
 	Console()->Register("removetempwar", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConRemoveTempWar, this, "Removes an Enemy From The Warlist");
 
 	Console()->Register("wars", "", CFGFLAG_CLIENT, ConWars, this, "wars");
+	Console()->Register("teams", "", CFGFLAG_CLIENT, ConTeams, this, "teams");
+	Console()->Register("helpers", "", CFGFLAG_CLIENT, ConHelpers, this, "wars");
+	Console()->Register("mutes", "", CFGFLAG_CLIENT, ConMutes, this, "teams");
 }
 
 void CWarList::Wars()
@@ -995,35 +998,146 @@ void CWarList::Wars()
 	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
 	if(pConsole)
 	{
-		char aEnemyList[256]; // 255 max msg len
-		aEnemyList[0] = '\0';
-		int NumEnemies = 0;
-		for(auto &Client : GameClient()->m_aClients)
-		{
-			if(!Client.m_Active)
-				continue;
-			if(!GameClient()->m_WarList.IsWarlist(Client.m_aName) &&
-				!GameClient()->m_WarList.IsWarClanlist(Client.m_aClan))
-				continue;
+		char List[6000];
+		char Num[327680];
+		str_format(Num, sizeof(Num), "[%d Enemies]", m_vWarlist.size());
 
-			NumEnemies++;
-			if(aEnemyList[0])
-			{
-				str_append(aEnemyList, ", ", sizeof(aEnemyList));
-			}
-			str_append(aEnemyList, Client.m_aName, sizeof(aEnemyList));
+		for(int i = 0; i < m_vWarlist.size(); ++i)
+		{
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s, ", m_vWarlist.begin() + i);
+
+			str_append(List, Name, sizeof(List));
+			i++;
 		}
-		char aBuf[1024];
-		if(NumEnemies)
-			str_format(aBuf, sizeof(aBuf), "[%d Enemies]: %s", NumEnemies, aEnemyList);
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, Num, List, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+
+
+		char List2[6000];
+		for(int i = 0; i < m_vWarlist.size(); ++i)
+		{
+			i++;
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s, ", m_vWarlist.begin() + i);
+
+			str_append(List2, Name, sizeof(List2));
+		}
+
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", List2, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+		
+		
+		// str_format(ListTeam, sizeof(ListTeam), "[%d Enemies] %s", m_vWarlist.size(), m_vWarlist.begin() + 1);
+		// dbg_msg("Aiodob", ListTeam);
+	}
+}
+
+void CWarList::Teams()
+{
+	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
+	if(pConsole)
+	{
+		char aTeamList[163840]; // 255 max msg len
+		aTeamList[0] = '\0';
+		int NumTeams = 0;
+		for(auto &Entry : m_vTeamlist)
+		{
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s", Entry.first);
+
+			if(aTeamList[0])
+			{
+				str_append(aTeamList, ", ", sizeof(aTeamList));
+			}
+			str_append(aTeamList, Name, sizeof(aTeamList));
+
+			NumTeams++;
+		}
+		char aBuf[163840];
+		if(NumTeams)
+			str_format(aBuf, sizeof(aBuf), "[%d Teammates]: %s", NumTeams, aTeamList);
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", aBuf, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+
+	}
+}
+
+void CWarList::Helpers()
+{
+	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
+	if(pConsole)
+	{
+		char aHelperList[163840]; // 255 max msg len
+		aHelperList[0] = '\0';
+		int aNumHelpers = 0;
+		for(auto &Entry : m_vHelperlist)
+		{
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s", Entry.first);
+
+			if(aHelperList[0])
+			{
+				str_append(aHelperList, ", ", sizeof(aHelperList));
+			}
+			str_append(aHelperList, Name, sizeof(aHelperList));
+
+			aNumHelpers++;
+		}
+		char aBuf[163840];
+		if(aNumHelpers)
+			str_format(aBuf, sizeof(aBuf), "[%d Helpers]: %s", aNumHelpers, aHelperList);
 		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", aBuf, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
 	}
+}
+
+void CWarList::ConHelpers(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	pSelf->Helpers();
+}
+
+void CWarList::Mutes()
+{
+	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
+	if(pConsole)
+	{
+		char aMuteList[163840]; // 255 max msg len
+		aMuteList[0] = '\0';
+		int aNumMutes = 0;
+		for(auto &Entry : m_vMutelist)
+		{
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s", Entry.first);
+
+			if(aMuteList[0])
+			{
+				str_append(aMuteList, ", ", sizeof(aMuteList));
+			}
+			str_append(aMuteList, Name, sizeof(aMuteList));
+
+			aNumMutes++;
+		}
+		char aBuf[163840];
+		if(aNumMutes)
+			str_format(aBuf, sizeof(aBuf), "[%d Mutes]: %s", aNumMutes, aMuteList);
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", aBuf, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+	}
+}
+
+void CWarList::ConMutes(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	pSelf->Mutes();
 }
 
 void CWarList::ConWars(IConsole::IResult *pResult, void *pUserData)
 {
 	CWarList *pSelf = (CWarList *)pUserData;
 	pSelf->Wars();
+}
+
+void CWarList::ConTeams(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	pSelf->Teams();
 }
 
 void CWarList::ConAddTempWar(IConsole::IResult *pResult, void *pUserData)
