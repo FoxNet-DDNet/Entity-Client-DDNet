@@ -33,8 +33,7 @@ void CWarList::ReloadList()
 	m_vWarlist.clear();
 	m_vTeamlist.clear();
 	m_vClanWarlist.clear();
-	m_vWarClanlist.clear();
-	m_vTeamClanlist.clear();
+	m_vClanTeamlist.clear();
 
 	{
 		LoadMuteNames("chillerbot/warlist/mutes/mutes");
@@ -273,15 +272,6 @@ bool CWarList::IsTeamlist(const char *pName)
 	return std::any_of(std::begin(m_vTeamlist), std::end(m_vTeamlist), [&pName](const std::pair<std::string, std::string> &Entry) { return std::string(pName) == Entry.first; });
 }
 
-bool CWarList::IsWarClanlist(const char *pClan)
-{
-	return (std::find(m_vWarClanlist.begin(), m_vWarClanlist.end(), std::string(pClan)) != m_vWarClanlist.end());
-}
-
-bool CWarList::IsTeamClanlist(const char *pClan)
-{
-	return (std::find(m_vTeamClanlist.begin(), m_vTeamClanlist.end(), std::string(pClan)) != m_vTeamClanlist.end());
-}
 
 bool CWarList::IsWarClanmate(const char *pClan)
 {
@@ -298,27 +288,9 @@ bool CWarList::IsWarClanmate(const char *pClan)
 	return false;
 }
 
-void CWarList::GetWarClansStr(char *pBuf, int Size)
-{
-	if(!pBuf)
-		return;
-	char aBuf[256];
-	aBuf[0] = '\0';
-	for(auto &War : m_vWarClanlist)
-	{
-		const char *pWar = War.c_str();
-		if(str_startswith(pWar, "# "))
-			continue;
-		if(aBuf[0])
-			str_append(aBuf, ", ", sizeof(aBuf));
-		str_append(aBuf, pWar, sizeof(aBuf));
-	}
-	str_copy(pBuf, aBuf, Size);
-}
-
 bool CWarList::IsWar(const char *pName, const char *pClan)
 {
-	return IsWarlist(pName) || IsTempWarlist(pName) || IsWarClanlist(pClan);
+	return IsWarlist(pName) || IsTempWarlist(pName) || IsClanWarlist(pClan);
 }
 
 bool CWarList::IsClanWar(int ClientId)

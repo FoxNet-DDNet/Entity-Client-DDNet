@@ -372,6 +372,11 @@ MACRO_CONFIG_INT(ClShowScoreSettings, ac_show_score_settings, 1, 0, 1, CFGFLAG_C
 MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Menu Settings")
 */
 
+// Discord
+
+	MACRO_CONFIG_INT(ClDiscord, ac_discord, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Discord")
+
+
 // Might be Cheating
 
 	// KoG Mode

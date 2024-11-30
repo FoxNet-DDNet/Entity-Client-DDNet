@@ -1766,7 +1766,7 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_IsTeam = m_WarList.IsTeam(Item.m_Id);
 					pClient->m_IsMuted = m_WarList.IsMute(Item.m_Id);
 					pClient->m_IsWarClanmate = m_WarList.IsWarClanmate(Item.m_Id);
-					//pClient->m_IsClanWar = m_WarList.IsWarClan(Item.m_Id);
+					pClient->m_IsClanWar = m_WarList.IsClanWar(Item.m_Id);
 					//pClient->m_IsClanTeam = m_WarList.IsTeamClan(Item.m_Id);
 
 					pClient->m_IsTempWar = m_WarList.IsTempWar(Item.m_Id);

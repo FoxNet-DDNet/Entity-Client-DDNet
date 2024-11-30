@@ -298,5 +298,7 @@ void CFreezeBars::OnRender()
 			RenderFreezeBar(LocalClientId);
 		else if(g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 			RenderFreezeBar(LocalClientId);
+		if(GameClient()->m_Aiodob.m_SentKill == true)
+			RenderFreezeBar(LocalClientId);
 	}
 }

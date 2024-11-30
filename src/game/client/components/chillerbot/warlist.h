@@ -70,9 +70,7 @@ class CWarList : public CComponent
 		pair<PlayerName, FilePath>
 	*/
 	std::vector<std::pair<std::string, std::string>> m_vClanWarlist;
-
-	std::vector<std::string> m_vWarClanlist;
-	std::vector<std::string> m_vTeamClanlist;
+	std::vector<std::pair<std::string, std::string>> m_vClanTeamlist;
 	std::vector<std::string> m_vWarClanPrefixlist;
 	void GetWarlistPathByNeedle(const char *pSearch, int Size, char *pPath);
 	void GetTeamlistPathByNeedle(const char *pSearch, int Size, char *pPath);
@@ -273,8 +271,6 @@ public:
 	bool IsWar(const char *pName, const char *pClan);
 	bool IsWarlist(const char *pName);
 	bool IsTeamlist(const char *pName);
-	bool IsWarClanlist(const char *pClan);
-	bool IsTeamClanlist(const char *pClan);
 	bool IsWarClanmate(const char *pClan);
 
 	// cached use during render

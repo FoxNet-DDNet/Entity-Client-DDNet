@@ -1474,7 +1474,7 @@ void CPlayers::OnRender()
 						}
 				
 				}
-				if(m_pClient->m_aClients[i].m_IsWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				if((m_pClient->m_aClients[i].m_IsWar || m_pClient->m_aClients[i].m_IsTempWar || m_pClient->m_aClients[i].m_IsClanWar) && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
 						aRenderInfo[i].m_CustomColoredSkin = 1;

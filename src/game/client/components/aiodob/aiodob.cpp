@@ -256,7 +256,6 @@ void CAiodob::AutoKill()
 					{
 						m_pClient->m_Chat.SendChat(0, "/kill");
 						m_SentKill = true;
-						m_LastFreeze = time_get() + time_freq() * 5;
 						return;
 					}
 					else
@@ -402,7 +401,7 @@ void CAiodob::OnRender()
 	AutoJoinTeam();
 	FreezeKill();
 
-	if(GameClient()->m_Controls.m_aInputData[0].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
+	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 		m_LastMovement = time_get() + time_freq() * 30;
 
 }
