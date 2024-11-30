@@ -21,7 +21,7 @@ void CWarList::OnInit()
 	ReloadList();
 	m_Verbose = false;
 	m_NextReload = time_get() + time_freq();
-}
+}	
 
 void CWarList::ReloadList()
 {
@@ -32,6 +32,7 @@ void CWarList::ReloadList()
 	m_vMutelist.clear();
 	m_vWarlist.clear();
 	m_vTeamlist.clear();
+	m_vClanWarlist.clear();
 	m_vWarClanlist.clear();
 	m_vTeamClanlist.clear();
 
@@ -41,6 +42,7 @@ void CWarList::ReloadList()
 		LoadWarNames("chillerbot/warlist/war/war");
 		LoadTeamNames("chillerbot/warlist/team/team");
 		LoadTempWarNames("chillerbot/templist/temp/tempwar");
+		LoadClanWarNames("chillerbot/warlist/war/war");
 	}
 
 	for(auto &WarPlayer : m_aWarPlayers)
@@ -76,6 +78,14 @@ void CWarList::GetMutelistPathByNeedle(const char *pSearch, int Size, char *pPat
 			str_copy(pPath, Entry.second.c_str(), Size);
 }
 
+void CWarList::GetClanWarPathByNeedle(const char *pSearch, int Size, char *pPath)
+{
+	pPath[0] = '\0';
+	for(auto &Entry : m_vClanWarlist)
+		if(str_find(Entry.first.c_str(), pSearch))
+			str_copy(pPath, Entry.second.c_str(), Size);
+}
+
 void CWarList::GetWarlistPathByNeedle(const char *pSearch, int Size, char *pPath)
 {
 	pPath[0] = '\0';
@@ -92,6 +102,13 @@ void CWarList::GetTeamlistPathByNeedle(const char *pSearch, int Size, char *pPat
 			str_copy(pPath, Entry.second.c_str(), Size);
 }
 
+void CWarList::GetClanWarPathByName(const char *pClan, int Size, char *pPath)
+{
+	pPath[0] = '\0';
+	for(auto &Entry : m_vClanWarlist)
+		if(std::string(pClan) == Entry.first)
+			str_copy(pPath, Entry.second.c_str(), Size);
+}
 
 void CWarList::GetMutelistPathByName(const char *pName, int Size, char *pPath)
 {
@@ -163,6 +180,16 @@ int CWarList::LoadMuteDir(const char *pDirname, int IsDir, int DirType, void *pU
 	return pSelf->LoadMuteNames(aFilename);
 }
 
+int CWarList::LoadClanWarDir(const char *pDirname, int IsDir, int DirType, void *pUser)
+{
+	CWarList *pSelf = (CWarList *)pUser;
+	if(!IsDir || !str_comp(".", pDirname) || !str_comp("..", pDirname))
+		return 0;
+	char aFilename[1024];
+	str_format(aFilename, sizeof(aFilename), "chillerbot/warlist/war/war", pDirname);
+	return pSelf->LoadClanWarNames(aFilename);
+}
+
 int CWarList::LoadWarDir(const char *pDirname, int IsDir, int DirType, void *pUser)
 {
 	CWarList *pSelf = (CWarList *)pUser;
@@ -208,6 +235,11 @@ void CWarList::LoadTeamList()
 	Storage()->ListDirectory(IStorage::TYPE_ALL, "chillerbot/warlist/team", LoadTeamDir, this);
 }
 
+void CWarList::LoadClanWarList()
+{
+	LoadClanWarNames("chillerbot/warlist/war/war/clans.txt");
+}
+
 bool CWarList::IsMutelist(const char *pName)
 {
 	return std::any_of(std::begin(m_vMutelist), std::end(m_vMutelist), [&pName](const std::pair<std::string, std::string> &Entry) { return std::string(pName) == Entry.first; });
@@ -221,6 +253,11 @@ bool CWarList::IsHelperlist(const char *pName)
 bool CWarList::IsTempWarlist(const char *pName)
 {
 	return std::any_of(std::begin(m_vTempWarlist), std::end(m_vTempWarlist), [&pName](const std::pair<std::string, std::string> &Entry) { return std::string(pName) == Entry.first; });
+}
+
+bool CWarList::IsClanWarlist(const char *pClan)
+{
+	return std::any_of(std::begin(m_vClanWarlist), std::end(m_vClanWarlist), [&pClan](const std::pair<std::string, std::string> &Entry) { return std::string(pClan) == Entry.first; });
 }
 
 bool CWarList::IsWarlist(const char *pName)
@@ -284,6 +321,25 @@ bool CWarList::IsWar(const char *pName, const char *pClan)
 	return IsWarlist(pName) || IsTempWarlist(pName) || IsWarClanlist(pClan);
 }
 
+bool CWarList::IsClanWar(int ClientId)
+{
+	const char *pName = m_pClient->m_aClients[ClientId].m_aName;
+	const char *pClan = m_pClient->m_aClients[ClientId].m_aClan;
+	if(!str_comp(pName, m_aWarPlayers[ClientId].m_aName))
+	{
+		return m_aWarPlayers[ClientId].m_IsClanWar;
+	}
+	str_copy(m_aWarPlayers[ClientId].m_aName, pName, sizeof(m_aWarPlayers[ClientId].m_aName));
+	str_copy(m_aWarPlayers[ClientId].m_aClan, pClan, sizeof(m_aWarPlayers[ClientId].m_aClan));
+	m_aWarPlayers[ClientId].m_IsTempWar = IsTempWarlist(pName);
+	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
+	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
+	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
+	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
+	return false;
+}
+
 bool CWarList::IsMute(int ClientId)
 {
 	const char *pName = m_pClient->m_aClients[ClientId].m_aName;
@@ -298,6 +354,7 @@ bool CWarList::IsMute(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -317,6 +374,7 @@ bool CWarList::IsHelper(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -336,6 +394,7 @@ bool CWarList::IsWar(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -355,6 +414,7 @@ bool CWarList::IsTeam(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -376,6 +436,7 @@ bool CWarList::IsWarClanmate(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -395,6 +456,7 @@ bool CWarList::IsTempWar(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
+	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -418,6 +480,11 @@ void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor, bool OtherTeam
 		*pColor = Color.WithAlpha(Alpha);
 	}
 	else if(IsTempWar(ClientId) && g_Config.m_ClDoEnemyNameColor)
+	{
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+		*pColor = Color.WithAlpha(Alpha);
+	}
+	else if(IsClanWar(ClientId))
 	{
 		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
 		*pColor = Color.WithAlpha(Alpha);
@@ -467,6 +534,27 @@ bool CWarList::RemoveMuteNameFromVector(const char *pDir, const char *pName)
 				return false;
 			}),
 		m_vMutelist.end());
+	return Hits > 0;
+}
+
+bool CWarList::RemoveClanWarNameFromVector(const char *pDir, const char *pClan)
+{
+	int Hits = 0;
+	m_vClanWarlist.erase(
+		std::remove_if(m_vClanWarlist.begin(), m_vClanWarlist.end(),
+			[pClan, pDir, &Hits](const std::pair<std::string, std::string> &Entry) {
+				// keep the same name in other directories
+				if(str_comp(pDir, Entry.second.c_str()))
+					return false;
+
+				if(!str_comp(pClan, Entry.first.c_str()))
+				{
+					Hits++;
+					return true;
+				}
+				return false;
+			}),
+		m_vClanWarlist.end());
 	return Hits > 0;
 }
 
@@ -606,6 +694,80 @@ bool CWarList::WriteTeamNames(const char *pDir)
 
 	io_close(File);
 	return true;
+}
+
+bool CWarList::WriteClanWarNames(const char *pDir)
+{
+	if(!Storage())
+		return false;
+
+	char aFilename[IO_MAX_PATH_LENGTH];
+	str_format(aFilename, sizeof(aFilename), "%s/clans.txt", pDir);
+	IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_WRITE, IStorage::TYPE_SAVE);
+	if(!File)
+	{
+		return false;
+	}
+
+	for(auto &Entry : m_vClanWarlist)
+	{
+		// only write names from that directory
+		if(str_comp(Entry.second.c_str(), pDir))
+			continue;
+
+		io_write(File, Entry.first.c_str(), str_length(Entry.first.c_str()));
+		io_write(File, "\n", 1);
+	}
+
+	io_close(File);
+	return true;
+}
+
+int CWarList::LoadClanWarNames(const char *pDir)
+{
+	if(!Storage())
+	{
+		// str_format(aBuf, sizeof(aBuf), "failed to open '%s' storage is nullptr", pDir);
+		// Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "warlist", aBuf);
+		return 1;
+	}
+
+	char aFilename[IO_MAX_PATH_LENGTH];
+	str_format(aFilename, sizeof(aFilename), "%s/clans.txt", pDir);
+	IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_READ, IStorage::TYPE_ALL);
+
+	char aBuf[128];
+	if(!File)
+	{
+		// str_format(aBuf, sizeof(aBuf), "failed to open war list file '%s'", aFilename);
+		// Print(aBuf);
+		return 0;
+	}
+	m_ClanWarDirs++;
+	const char *pLine;
+	CLineReader Reader;
+
+	str_format(aBuf, sizeof(aBuf), "loading clan war list file '%s'", aFilename);
+	Print(aBuf);
+
+	if(!Reader.OpenFile(File))
+	{
+		str_format(aBuf, sizeof(aBuf), "failed to open '%s'", aFilename);
+		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "warlist", aBuf);
+		return 0;
+	}
+
+	while((pLine = Reader.Get()))
+	{
+		if(!str_skip_whitespaces_const(pLine)[0])
+			continue;
+		std::pair<std::string, std::string> Entry;
+		Entry.first = std::string(pLine);
+		Entry.second = std::string(pDir);
+		m_vClanWarlist.emplace_back(Entry);
+	}
+
+	return 0;
 }
 
 // MuteStuff
@@ -971,6 +1133,9 @@ void CWarList::OnConsoleInit()
 	Console()->Register("add_war", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddWar, this, "Adds an Enemy to The Warlist");
 	Console()->Register("war", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddWar, this, "Adds an Enemy to The Warlist");
 
+	Console()->Register("addclanwar", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConAddClanWar, this, "Adds an Enemy to The Warlist");
+
+
 	// Remove War
 	Console()->Register("unwar", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConRemoveWar, this, "Removes an Enemy From The Warlist");
 	Console()->Register("delwar", "s[name] ?s[clan]", CFGFLAG_CLIENT, ConRemoveWar, this, "Removes an Enemy From The Warlist");
@@ -1036,27 +1201,33 @@ void CWarList::Teams()
 	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
 	if(pConsole)
 	{
-		char aTeamList[163840]; // 255 max msg len
-		aTeamList[0] = '\0';
-		int NumTeams = 0;
-		for(auto &Entry : m_vTeamlist)
+		char List[6000];
+		char Num[327680];
+		str_format(Num, sizeof(Num), "[%d Teams]", m_vTeamlist.size());
+
+		for(int i = 0; i < m_vTeamlist.size(); ++i)
 		{
 			char Name[32];
-			str_format(Name, sizeof(Name), "%s", Entry.first);
+			str_format(Name, sizeof(Name), "%s, ", m_vTeamlist.begin() + i);
 
-			if(aTeamList[0])
-			{
-				str_append(aTeamList, ", ", sizeof(aTeamList));
-			}
-			str_append(aTeamList, Name, sizeof(aTeamList));
-
-			NumTeams++;
+			str_append(List, Name, sizeof(List));
+			i++;
 		}
-		char aBuf[163840];
-		if(NumTeams)
-			str_format(aBuf, sizeof(aBuf), "[%d Teammates]: %s", NumTeams, aTeamList);
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", aBuf, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, Num, List, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
 
+		char List2[6000];
+		for(int i = 0; i < m_vTeamlist.size(); ++i)
+		{
+			i++;
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s, ", m_vTeamlist.begin() + i);
+
+			str_append(List2, Name, sizeof(List2));
+		}
+
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", List2, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+		
+		
 	}
 }
 
@@ -1065,33 +1236,32 @@ void CWarList::Helpers()
 	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
 	if(pConsole)
 	{
-		char aHelperList[163840]; // 255 max msg len
-		aHelperList[0] = '\0';
-		int aNumHelpers = 0;
-		for(auto &Entry : m_vHelperlist)
+		char List[6000];
+		char Num[327680];
+		str_format(Num, sizeof(Num), "[%d Helpers]", m_vHelperlist.size());
+
+		for(int i = 0; i < m_vHelperlist.size(); ++i)
 		{
 			char Name[32];
-			str_format(Name, sizeof(Name), "%s", Entry.first);
+			str_format(Name, sizeof(Name), "%s, ", m_vHelperlist.begin() + i);
 
-			if(aHelperList[0])
-			{
-				str_append(aHelperList, ", ", sizeof(aHelperList));
-			}
-			str_append(aHelperList, Name, sizeof(aHelperList));
-
-			aNumHelpers++;
+			str_append(List, Name, sizeof(List));
+			i++;
 		}
-		char aBuf[163840];
-		if(aNumHelpers)
-			str_format(aBuf, sizeof(aBuf), "[%d Helpers]: %s", aNumHelpers, aHelperList);
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", aBuf, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
-	}
-}
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, Num, List, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
 
-void CWarList::ConHelpers(IConsole::IResult *pResult, void *pUserData)
-{
-	CWarList *pSelf = (CWarList *)pUserData;
-	pSelf->Helpers();
+		char List2[6000];
+		for(int i = 0; i < m_vHelperlist.size(); ++i)
+		{
+			i++;
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s, ", m_vHelperlist.begin() + i);
+
+			str_append(List2, Name, sizeof(List2));
+		}
+
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", List2, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+	}
 }
 
 void CWarList::Mutes()
@@ -1099,27 +1269,77 @@ void CWarList::Mutes()
 	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
 	if(pConsole)
 	{
-		char aMuteList[163840]; // 255 max msg len
-		aMuteList[0] = '\0';
-		int aNumMutes = 0;
-		for(auto &Entry : m_vMutelist)
+		char List[6000];
+		char Num[327680];
+		str_format(Num, sizeof(Num), "[%d Mutes]", m_vMutelist.size());
+
+		for(int i = 0; i < m_vMutelist.size(); ++i)
 		{
 			char Name[32];
-			str_format(Name, sizeof(Name), "%s", Entry.first);
+			str_format(Name, sizeof(Name), "%s, ", m_vMutelist.begin() + i);
 
-			if(aMuteList[0])
-			{
-				str_append(aMuteList, ", ", sizeof(aMuteList));
-			}
-			str_append(aMuteList, Name, sizeof(aMuteList));
-
-			aNumMutes++;
+			str_append(List, Name, sizeof(List));
+			i++;
 		}
-		char aBuf[163840];
-		if(aNumMutes)
-			str_format(aBuf, sizeof(aBuf), "[%d Mutes]: %s", aNumMutes, aMuteList);
-		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", aBuf, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, Num, List, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+
+		char List2[6000];
+		for(int i = 0; i < m_vMutelist.size(); ++i)
+		{
+			i++;
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s, ", m_vMutelist.begin() + i);
+
+			str_append(List2, Name, sizeof(List2));
+		}
+
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", List2, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
 	}
+}
+
+void CWarList::ClanWars()
+{
+	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
+	if(pConsole)
+	{
+		char List[6000];
+		char Num[327680];
+		str_format(Num, sizeof(Num), "[%d Mutes]", m_vClanWarlist.size());
+
+		for(int i = 0; i < m_vClanWarlist.size(); ++i)
+		{
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s, ", m_vClanWarlist.begin() + i);
+
+			str_append(List, Name, sizeof(List));
+			i++;
+		}
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, Num, List, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+
+		char List2[6000];
+		for(int i = 0; i < m_vClanWarlist.size(); ++i)
+		{
+			i++;
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s, ", m_vClanWarlist.begin() + i);
+
+			str_append(List2, Name, sizeof(List2));
+		}
+
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "", List2, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+	}
+}
+
+void CWarList::ConClanWars(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	pSelf->ClanWars();
+}
+
+void CWarList::ConHelpers(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	pSelf->Helpers();
 }
 
 void CWarList::ConMutes(IConsole::IResult *pResult, void *pUserData)
@@ -1138,6 +1358,18 @@ void CWarList::ConTeams(IConsole::IResult *pResult, void *pUserData)
 {
 	CWarList *pSelf = (CWarList *)pUserData;
 	pSelf->Teams();
+}
+
+void CWarList::ConAddClanWar(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	pSelf->AddSimpleClanWar(pResult->GetString(0));
+}
+
+void CWarList::ConRemoveClanWar(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	//pSelf->RemoveSimpleClanWar(pResult->GetString(0));
 }
 
 void CWarList::ConAddTempWar(IConsole::IResult *pResult, void *pUserData)
@@ -1323,6 +1555,29 @@ bool CWarList::AddTempWar(const char *pFolder, const char *pName)
 	RemoveWarNoMsg(pName);
 	RemoveHelperNoMsg(pName);
 	RemoveTeamNoMsg(pName);
+}
+
+bool CWarList::AddClanWar(const char *pFolder, const char *pClan)
+{
+	char aBuf[512];
+	char aFilename[1024];
+	str_format(aFilename, sizeof(aFilename), "chillerbot/warlist/war/war/clans.txt", pFolder);
+	IOHANDLE File = Storage()->OpenFile(aFilename, IOFLAG_APPEND, IStorage::TYPE_SAVE);
+	if(!File)
+	{
+		str_format(aBuf, sizeof(aBuf), "failed to open clan war list file '%s'", aFilename);
+		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+		return false;
+	}
+
+	io_write(File, pClan, str_length(pClan));
+	io_write_newline(File);
+	io_close(File);
+
+	str_format(aBuf, sizeof(aBuf), "Added '%s' to the folder %s", pClan, pFolder);
+	ReloadList();
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+	return true;
 }
 
 bool CWarList::AddHelper(const char *pFolder, const char *pName)

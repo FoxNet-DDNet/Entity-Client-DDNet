@@ -10,6 +10,42 @@
 #include "warlist.h"
 #include <engine/client.h>
 
+void CWarList::AddSimpleClanWar(const char *pName)
+{
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(!m_pClient->m_Snap.m_apInfoByName[i])
+			continue;
+
+		int Index = m_pClient->m_Snap.m_apInfoByName[i]->m_ClientId;
+		if(Index == m_pClient->m_Snap.m_LocalClientId)
+			continue;
+
+		char *pClan = m_pClient->m_aClients[Index].m_aClan;
+
+			if(str_comp(m_pClient->m_aClients[Index].m_aName, pName) == 0)
+			{
+
+				if(!pClan || pClan[0] == '\0')
+				{
+					m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
+					return;
+				}
+				if(!Storage()->CreateFolder("chillerbot/warlist/war/war", IStorage::TYPE_SAVE))
+				{
+					m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp folder");
+					return;
+				}
+				if(!Storage()->CreateFolder("chillerbot/warlist/war/war", IStorage::TYPE_SAVE))
+				{
+					m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp/tempwar folder");
+					return;
+				}
+				AddClanWar("clanwar", pClan);
+			}
+	}
+}
+
 void CWarList::AddSimpleTempWar(const char *pName)
 {
 	if(!pName || pName[0] == '\0')
@@ -30,6 +66,39 @@ void CWarList::AddSimpleTempWar(const char *pName)
 	AddTempWar("tempwar", pName);
 	RemoveTeamNoMsg(pName);
 	RemoveHelperNoMsg(pName);
+}
+
+void CWarList::RemoveSimpleClanWar(const char *pName)
+{
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(!m_pClient->m_Snap.m_apInfoByName[i])
+			continue;
+
+		int Index = m_pClient->m_Snap.m_apInfoByName[i]->m_ClientId;
+		if(Index == m_pClient->m_Snap.m_LocalClientId)
+			continue;
+
+		char *pClan = m_pClient->m_aClients[Index].m_aClan;
+
+		if(str_comp(m_pClient->m_aClients[Index].m_aName, pName) == 0)
+		{
+			char aBuf[512];
+			if(!RemoveClanWarNameFromVector("chillerbot/warlist/war/war", pClan))
+			{
+				str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the war list", pClan);
+				m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+				return;
+			}
+			if(!WriteClanWarNames("chillerbot/warlist/war/war"))
+			{
+				m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write war names");
+			}
+			str_format(aBuf, sizeof(aBuf), "Removed '%s' from the war list", pClan);
+			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+			ReloadList();
+		}
+	}
 }
 
 void CWarList::AddSimpleMute(const char *pName)
@@ -419,13 +488,13 @@ void CWarList::RemoveSimpleTeam(const char *pName)
 	char aBuf[512];
 	if(!RemoveTeamNameFromVector("chillerbot/warlist/team/team", pName))
 	{
-		str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the war list", pName);
+		str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the team list", pName);
 		m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 		return;
 	}
 	if(!WriteTeamNames("chillerbot/warlist/team/team"))
 	{
-		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write war names");
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write team names");
 	}
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the team list", pName);
 	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
@@ -529,6 +598,16 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	else if(!str_comp(pCmd, "kill"))
 	{
 		m_pClient->m_Chat.SendChat(0, "/kill");
+	}
+	else if(!str_comp(pCmd, "clanwar") || !str_comp(pCmd, "addclanwar")) // "team <name>"
+	{
+		AddSimpleClanWar(pRawArgLine);
+		return true;
+	}
+	else if(!str_comp(pCmd, "delclanwar") || !str_comp(pCmd, "unclanwar")) // "team <name>"
+	{
+		RemoveSimpleClanWar(pRawArgLine);
+		return true;
 	}
 	else if(!str_comp(pCmd, "tempwar") || !str_comp(pCmd, "addtempwar") || (!str_comp(pCmd, "temp") || !str_comp(pCmd, g_Config.m_ClAddTempWarString))) // "team <name>"
 	{

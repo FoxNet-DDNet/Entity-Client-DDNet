@@ -16,6 +16,7 @@ class CWarList : public CComponent
 			m_IsMute = false;
 			m_IsWar = false;
 			m_IsTeam = false;
+			m_IsClanWar = false;
 			m_IsWarClanmate = false;
 			m_aName[0] = '\0';
 			m_aClan[0] = '\0';
@@ -25,6 +26,7 @@ class CWarList : public CComponent
 		bool m_IsMute;
 		bool m_IsWar;
 		bool m_IsTeam;
+		bool m_IsClanWar;
 		bool m_IsWarClanmate;
 		char m_aName[MAX_NAME_LENGTH];
 		char m_aClan[MAX_CLAN_LENGTH];
@@ -67,6 +69,8 @@ class CWarList : public CComponent
 
 		pair<PlayerName, FilePath>
 	*/
+	std::vector<std::pair<std::string, std::string>> m_vClanWarlist;
+
 	std::vector<std::string> m_vWarClanlist;
 	std::vector<std::string> m_vTeamClanlist;
 	std::vector<std::string> m_vWarClanPrefixlist;
@@ -76,6 +80,16 @@ class CWarList : public CComponent
 	void GetTeamlistPathByName(const char *pName, int Size, char *pPath);
 	int m_WarDirs;
 	int m_TeamDirs;
+
+
+	void GetClanWarPathByNeedle(const char *pSearch, int Size, char *pPath);
+	void GetClanWarPathByName(const char *pClan, int Size, char *pPath);
+	bool RemoveClanWarNameFromVector(const char *pDir, const char *pClan);
+	bool WriteClanWarNames(const char *pDir);
+	int LoadClanWarNames(const char *pDir);
+	int m_ClanWarDirs;
+	static int LoadClanWarDir(const char *pDirname, int IsDir, int DirType, void *pUser);
+	void LoadClanWarList();
 
 	void GetMutelistPathByNeedle(const char *pSearch, int Size, char *pPath);
 	void GetMutelistPathByName(const char *pName, int Size, char *pPath);
@@ -104,8 +118,10 @@ class CWarList : public CComponent
 	int m_TempDirs;
 	static int LoadTempDir(const char *pDirname, int IsDir, int DirType, void *pUser);
 
+
 	static int LoadWarDir(const char *pDirname, int IsDir, int DirType, void *pUser);
 	static int LoadTeamDir(const char *pDirname, int IsDir, int DirType, void *pUser);
+
 	void LoadWarList();
 	void LoadTeamList();
 	/*
@@ -132,6 +148,9 @@ class CWarList : public CComponent
 
 	virtual void OnInit() override;
 
+	static void ConClanWars(IConsole::IResult *pResult, void *pUserData);
+	void ClanWars();
+
 	static void ConWars(IConsole::IResult *pResult, void *pUserData);
 	void Wars();
 
@@ -143,6 +162,9 @@ class CWarList : public CComponent
 
 	static void ConMutes(IConsole::IResult *pResult, void *pUserData);
 	void Mutes();
+
+	static void ConRemoveClanWar(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddClanWar(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConRemoveTempWar(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddTempWar(IConsole::IResult *pResult, void *pUserData);
@@ -162,6 +184,8 @@ class CWarList : public CComponent
 	static void ConchainWarList(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
 	bool AddTempWar(const char *pFolder, const char *pName);
+
+	bool AddClanWar(const char *pFolder, const char *pClan);
 
 	bool AddMute(const char *pFolder, const char *pName);
 	bool AddHelper(const char *pFolder, const char *pName);
@@ -213,11 +237,15 @@ public:
 
 	void AddSimpleHelper(const char *pName);
 	void AddSimpleMute(const char *pName);
+
 	void AddSimpleTempWar(const char *pName);
+	void RemoveSimpleTempWar(const char *pName);
+
+	void AddSimpleClanWar(const char *pName);
+	void RemoveSimpleClanWar(const char *pName);
 
 	void RemoveSimpleHelper(const char *pName);
 	void RemoveSimpleMute(const char *pName);
-	void RemoveSimpleTempWar(const char *pName);
 
 	void DelClone();
 
@@ -232,6 +260,9 @@ public:
 	// non cached used when its about the name and there is no up to date id
 	bool IsMute(int ClientId);
 	bool IsMutelist(const char *pName);
+
+	bool IsClanWar(int ClientId);
+	bool IsClanWarlist(const char *pClan);
 
 	bool IsHelper(int ClientId);
 	bool IsHelperlist(const char *pName);

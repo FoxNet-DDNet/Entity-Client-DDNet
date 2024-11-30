@@ -537,6 +537,8 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			auto IsMuted = GameClient()->m_WarList.IsMutelist(ClientData.m_aName);
 			auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(ClientData.m_aClan);
 
+			auto IsClanWar = GameClient()->m_WarList.IsClanWarlist(ClientData.m_aClan);
+
 			bool paused = ClientData.m_Paused || ClientData.m_Spec;
 
 			// skin
@@ -651,7 +653,17 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				}
 				if(g_Config.m_ClDoWarListColorScore)
 				{
-					if (IsTeam)
+					if(IsClanWar)
+					{
+						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
+						{
+							TextRender()->TextColor(rgb.WithAlpha(0.4f));
+						}
+						else
+							TextRender()->TextColor(rgb.WithAlpha(1.0f));
+					}
+					else if (IsTeam)
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
@@ -662,8 +674,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 							TextRender()->TextColor(rgb.WithAlpha(1.0f));
 
 					}
-						
-					if (IsWar)
+					else if(IsWar)
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
@@ -673,8 +684,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 						else
 							TextRender()->TextColor(rgb.WithAlpha(1.0f));
 					}
-
-					if(IsHelper)
+					else if(IsHelper)
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
@@ -684,8 +694,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 						else
 							TextRender()->TextColor(rgb.WithAlpha(1.0f));
 					}
-
-					if(IsWarClan && g_Config.m_ClAutoClanWar && !IsWar && !IsHelper && !IsTeam)
+					else if(IsWarClan && g_Config.m_ClAutoClanWar && !IsWar && !IsHelper && !IsTeam)
 					{
 						ColorRGBA rgb = (ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
@@ -715,6 +724,10 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				if(str_comp(ClientData.m_aClan, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan) == 0)
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
+				}
+				else if(IsClanWar)
+				{
+					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor)));
 				}
 				else
 				{
