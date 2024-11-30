@@ -335,7 +335,7 @@ bool CWarList::IsClanWar(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
+	m_aWarPlayers[ClientId].m_IsClanWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -354,7 +354,7 @@ bool CWarList::IsMute(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
+	m_aWarPlayers[ClientId].m_IsClanWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -374,7 +374,7 @@ bool CWarList::IsHelper(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
+	m_aWarPlayers[ClientId].m_IsClanWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -394,7 +394,7 @@ bool CWarList::IsWar(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
+	m_aWarPlayers[ClientId].m_IsClanWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -414,7 +414,7 @@ bool CWarList::IsTeam(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
+	m_aWarPlayers[ClientId].m_IsClanWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -436,7 +436,7 @@ bool CWarList::IsWarClanmate(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
+	m_aWarPlayers[ClientId].m_IsClanWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -456,7 +456,7 @@ bool CWarList::IsTempWar(int ClientId)
 	m_aWarPlayers[ClientId].m_IsMute = IsMutelist(pName);
 	m_aWarPlayers[ClientId].m_IsWar = IsWarlist(pName);
 	m_aWarPlayers[ClientId].m_IsTeam = IsTeamlist(pName);
-	m_aWarPlayers[ClientId].m_IsTempWar = IsClanWarlist(pClan);
+	m_aWarPlayers[ClientId].m_IsClanWar = IsClanWarlist(pClan);
 	m_aWarPlayers[ClientId].m_IsWarClanmate = IsWarClanmate(pClan);
 	return false;
 }
@@ -1365,6 +1365,7 @@ void CWarList::ConAddClanWar(IConsole::IResult *pResult, void *pUserData)
 	CWarList *pSelf = (CWarList *)pUserData;
 	pSelf->AddSimpleClanWar(pResult->GetString(0));
 }
+
 
 void CWarList::ConRemoveClanWar(IConsole::IResult *pResult, void *pUserData)
 {
