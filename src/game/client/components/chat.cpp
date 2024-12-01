@@ -845,7 +845,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	}
 
 	pCurrentLine->m_Highlighted = Highlighted;
-	const auto IsWar = m_pClient->m_aClients[ClientId].m_IsWar || m_pClient->m_aClients[ClientId].m_IsTempWar;
+	const auto IsWar = m_pClient->m_aClients[ClientId].m_IsWar || m_pClient->m_aClients[ClientId].m_IsTempWar || m_pClient->m_aClients[ClientId].m_IsClanWar;
 	const auto IsHelper = m_pClient->m_aClients[ClientId].m_IsHelper;
 	const auto IsTeam = m_pClient->m_aClients[ClientId].m_IsTeam;
 	const auto IsMute = m_pClient->m_aClients[ClientId].m_IsMuted;
@@ -973,13 +973,15 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						char CharOname[16];
 						strcpy(CharOname, oName.c_str());
 
-						if(!GameClient()->m_WarList.IsTeamlist(name))
+						if(!GameClient()->m_WarList.IsTeamlist(name) && !GameClient()->m_WarList.IsTeamlist(CharOname))
 						{
-							if(GameClient()->m_WarList.IsMutelist(CharOname))
+							if(GameClient()->m_WarList.IsMutelist(CharOname) && !GameClient()->m_WarList.IsMutelist(name))
 								GameClient()->m_WarList.AddSimpleMute(name);
-							if(GameClient()->m_WarList.IsWarlist(CharOname) || (GameClient()->m_WarList.IsTempWarlist(CharOname)))
+
+							if((GameClient()->m_WarList.IsWarlist(CharOname) || (GameClient()->m_WarList.IsTempWarlist(CharOname))) && (!GameClient()->m_WarList.IsWarlist(name) || (!GameClient()->m_WarList.IsTempWarlist(name))))
 								GameClient()->m_WarList.AddSimpleTempWar(name);
-							if(GameClient()->m_WarList.IsHelperlist(CharOname))
+
+							if(GameClient()->m_WarList.IsHelperlist(CharOname) && !GameClient()->m_WarList.IsHelperlist(name))
 								GameClient()->m_WarList.AddSimpleHelper(name);
 						}
 					}

@@ -653,17 +653,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				}
 				if(g_Config.m_ClDoWarListColorScore)
 				{
-					if(IsClanWar)
-					{
-						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-						{
-							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						}
-						else
-							TextRender()->TextColor(rgb.WithAlpha(1.0f));
-					}
-					else if (IsTeam)
+					if (IsTeam)
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
@@ -687,6 +677,16 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					else if(IsHelper)
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
+						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
+						{
+							TextRender()->TextColor(rgb.WithAlpha(0.4f));
+						}
+						else
+							TextRender()->TextColor(rgb.WithAlpha(1.0f));
+					}
+					else if(IsClanWar)
+					{
+						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
 						{
 							TextRender()->TextColor(rgb.WithAlpha(0.4f));

@@ -24,6 +24,8 @@ private:
 	virtual void AutoKill();
 	virtual void AutoJoinTeam();
 
+	virtual void OnConnect();
+
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;
 };

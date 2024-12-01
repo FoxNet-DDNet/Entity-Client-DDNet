@@ -17,6 +17,7 @@ class CWarList : public CComponent
 			m_IsWar = false;
 			m_IsTeam = false;
 			m_IsClanWar = false;
+			m_IsClanTeam = false;
 			m_IsWarClanmate = false;
 			m_aName[0] = '\0';
 			m_aClan[0] = '\0';
@@ -27,6 +28,7 @@ class CWarList : public CComponent
 		bool m_IsWar;
 		bool m_IsTeam;
 		bool m_IsClanWar;
+		bool m_IsClanTeam;
 		bool m_IsWarClanmate;
 		char m_aName[MAX_NAME_LENGTH];
 		char m_aClan[MAX_CLAN_LENGTH];
@@ -71,6 +73,7 @@ class CWarList : public CComponent
 	*/
 	std::vector<std::pair<std::string, std::string>> m_vClanWarlist;
 	std::vector<std::pair<std::string, std::string>> m_vClanTeamlist;
+
 	std::vector<std::string> m_vWarClanPrefixlist;
 	void GetWarlistPathByNeedle(const char *pSearch, int Size, char *pPath);
 	void GetTeamlistPathByNeedle(const char *pSearch, int Size, char *pPath);
@@ -79,6 +82,14 @@ class CWarList : public CComponent
 	int m_WarDirs;
 	int m_TeamDirs;
 
+	void GetClanTeamPathByNeedle(const char *pSearch, int Size, char *pPath);
+	void GetClanTeamPathByName(const char *pClan, int Size, char *pPath);
+	bool RemoveClanTeamNameFromVector(const char *pDir, const char *pClan);
+	bool WriteClanTeamNames(const char *pDir);
+	int LoadClanTeamNames(const char *pDir);
+	int m_ClanTeamDirs;
+	static int LoadClanTeamDir(const char *pDirname, int IsDir, int DirType, void *pUser);
+	void LoadClanTeamList();
 
 	void GetClanWarPathByNeedle(const char *pSearch, int Size, char *pPath);
 	void GetClanWarPathByName(const char *pClan, int Size, char *pPath);
@@ -184,6 +195,8 @@ class CWarList : public CComponent
 	bool AddTempWar(const char *pFolder, const char *pName);
 
 	bool AddClanWar(const char *pFolder, const char *pClan);
+	bool AddClanTeam(const char *pFolder, const char *pClan);
+
 
 	bool AddMute(const char *pFolder, const char *pName);
 	bool AddHelper(const char *pFolder, const char *pName);
@@ -230,6 +243,9 @@ public:
 	void RemoveTeamNoMsg(const char *pName);
 	void RemoveTempWarNoMsg(const char *pName);
 
+	void RemoveClanWarNoMsg(const char *pClan);
+	void RemoveClanTeamNoMsg(const char *pClan);
+
 	void AddSimpleWar(const char *pName);
 	void AddSimpleTeam(const char *pName);
 
@@ -242,6 +258,9 @@ public:
 	void AddSimpleClanWar(const char *pName);
 	void RemoveSimpleClanWar(const char *pName);
 
+	void AddSimpleClanTeam(const char *pName);
+	void RemoveSimpleClanTeam(const char *pName);
+
 	void RemoveSimpleHelper(const char *pName);
 	void RemoveSimpleMute(const char *pName);
 
@@ -249,6 +268,8 @@ public:
 
 	void Clone(const char *pName);
 	void Skin(const char *pName);
+
+	void OnlineInfo();
 
 	void RemoveSimpleTeam(const char *pName);
 	void RemoveSimpleWar(const char *pName);
@@ -258,6 +279,9 @@ public:
 	// non cached used when its about the name and there is no up to date id
 	bool IsMute(int ClientId);
 	bool IsMutelist(const char *pName);
+
+	bool IsClanTeam(int ClientId);
+	bool IsClanTeamlist(const char *pClan);
 
 	bool IsClanWar(int ClientId);
 	bool IsClanWarlist(const char *pClan);

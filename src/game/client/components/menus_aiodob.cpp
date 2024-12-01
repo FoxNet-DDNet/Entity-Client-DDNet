@@ -250,7 +250,30 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			FreezeKillSettings.HSplitTop(Margin, nullptr, &FreezeKillSettings);
 			if(g_Config.m_ClFreezeKill)
-				FreezeKillSettings.HSplitTop(240.0f, &FreezeKillSettings, &ColorSettings);
+			{
+				if(g_Config.m_ClFreezeKillOnlyFullFrozen)
+				{
+					if(g_Config.m_ClFreezeKillWaitMs)
+					{
+						FreezeKillSettings.HSplitTop(260.0f, &FreezeKillSettings, &ColorSettings);
+					}
+					else
+					{
+						FreezeKillSettings.HSplitTop(220.0f, &FreezeKillSettings, &ColorSettings);
+					}
+				}
+				else
+				{
+					if(g_Config.m_ClFreezeKillWaitMs)
+					{
+						FreezeKillSettings.HSplitTop(240.0f, &FreezeKillSettings, &ColorSettings);
+					}
+					else
+					{
+						FreezeKillSettings.HSplitTop(200.0f, &FreezeKillSettings, &ColorSettings);
+					}
+				}
+			}
 			else
 				FreezeKillSettings.HSplitTop(75.0f, &FreezeKillSettings, &ColorSettings);
 			if(s_ScrollRegion.AddRect(FreezeKillSettings))
@@ -271,7 +294,11 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Don't Kill if in The Air"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
+
+					if(g_Config.m_ClFreezeKillOnlyFullFrozen)
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillGrounded, Localize("Only Kill if Touching The Ground"), &g_Config.m_ClFreezeKillGrounded, &FreezeKillSettings, LineSize);
+
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKillSettings, LineSize);
 
@@ -357,10 +384,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			MiscSettings.VMargin(5.0f, &MiscSettings);
 				if(g_Config.m_ClRenderCursorSpec)
 				{
-					MiscSettings.HSplitTop(175.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(195.0f, &MiscSettings, &AutoKillOntopSettings);
 				}
 				else
-					MiscSettings.HSplitTop(155.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(175.0f, &MiscSettings, &AutoKillOntopSettings);
 			if(s_ScrollRegion.AddRect(MiscSettings))
 			{
 				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -371,6 +398,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoVerify, ("Auto Verify"), &g_Config.m_ClAutoVerify, &MiscSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &MiscSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClKogMode, ("'advanced' Kog Mode"), &g_Config.m_ClKogMode, &MiscSettings, LineSize);
 
 					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);
 
@@ -462,11 +490,11 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKill, ("Auto Kill if Frozen And You're Below a Player"), &g_Config.m_ClAutoKill, &AutoKillOntopSettings, LineMargin);
 				if(g_Config.m_ClAutoKill)
 				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillMultOnly, ("Only Enable on Multeasymap"), &g_Config.m_ClAutoKillMultOnly, &AutoKillOntopSettings, LineMargin);
+
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillIgnoreKillProt, ("Ignore Kill Protection"), &g_Config.m_ClAutoKillIgnoreKillProt, &AutoKillOntopSettings, LineMargin);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillWarOnly, ("Only Kill if The Player is an Enemy"), &g_Config.m_ClAutoKillWarOnly, &AutoKillOntopSettings, LineMargin);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillMultOnly, ("Only Activate When on Multeasymap"), &g_Config.m_ClAutoKillMultOnly, &AutoKillOntopSettings, LineMargin);
 
 					AutoKillOntopSettings.HSplitTop(2 * LineSize, &Button, &AutoKillOntopSettings);
 					Ui()->DoScrollbarOption(&g_Config.m_ClAutoKillRangeX, &g_Config.m_ClAutoKillRangeX, &Button, Localize("x Axis ↔ Auto Kill Range"), 1, 100, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
@@ -543,7 +571,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect PlayerSettings, ChatSettings, SoundSettings, WarVisual, UiSettings;
+		CUIRect PlayerSettings, ChatSettings, SoundSettings, WarVisual, UiSettings, AiodobSettings;
 		MainView.VSplitMid(&PlayerSettings, &UiSettings);
 
 		// Weapon Settings
@@ -551,9 +579,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
 			if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
-				PlayerSettings.HSplitTop(165.0f, &PlayerSettings, &ChatSettings);
+				PlayerSettings.HSplitTop(195.0f, &PlayerSettings, &ChatSettings);
 			else
-				PlayerSettings.HSplitTop(150.0f, &PlayerSettings, &ChatSettings);
+				PlayerSettings.HSplitTop(175.0f, &PlayerSettings, &ChatSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -566,8 +594,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
 		
-
-
+	
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecialEffect, ("Secret Effect"), &g_Config.m_ClSpecialEffect, &PlayerSettings, LineMargin);
+				
+				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffect, ("Sparkle Effect Self"), &g_Config.m_ClSparkleEffect, &PlayerSettings, LineMargin);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffectOthers, ("Sparkle Effect Others"), &g_Config.m_ClSparkleEffectOthers, &PlayerSettings, LineMargin);
 
@@ -1165,7 +1195,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			SoundSettings.HSplitTop(Margin, nullptr, &SoundSettings);
-			SoundSettings.HSplitTop(100.0f, &SoundSettings, &WarVisual);
+			SoundSettings.HSplitTop(90.0f, &SoundSettings, &WarVisual);
 			if(s_ScrollRegion.AddRect(SoundSettings))
 			{
 				SoundSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1189,11 +1219,11 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
 			if(g_Config.m_ClSweatMode)
 				if(g_Config.m_ClSweatModeSkin)
-					WarVisual.HSplitTop(185.0f, &WarVisual, 0);
+					WarVisual.HSplitTop(185.0f, &WarVisual, &AiodobSettings);
 				else
-					WarVisual.HSplitTop(145.0f, &WarVisual, 0);
+					WarVisual.HSplitTop(145.0f, &WarVisual, &AiodobSettings);
 			else
-				WarVisual.HSplitTop(125.0f, &WarVisual, 0);
+				WarVisual.HSplitTop(125.0f, &WarVisual, &AiodobSettings);
 			if(s_ScrollRegion.AddRect(WarVisual))
 			{
 				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1239,6 +1269,24 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					else
 						g_Config.m_ClSweatModeOnlyOthers = 0;
 				}
+			}
+		}
+
+		{
+			AiodobSettings.HSplitTop(Margin, nullptr, &AiodobSettings);
+			AiodobSettings.HSplitTop(90.0f, &AiodobSettings, 0);
+			if(s_ScrollRegion.AddRect(AiodobSettings))
+			{
+				AiodobSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				AiodobSettings.VMargin(Margin, &AiodobSettings);
+
+				AiodobSettings.HSplitTop(HeaderHeight, &Button, &AiodobSettings);
+				Ui()->DoLabel(&Button, Localize("Aiodob Info"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEnabledInfo, ("Display What Features Are On/Off on Join"), &g_Config.m_ClEnabledInfo, &AiodobSettings, LineMargin);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClListsInfo, ("Show How Many Players of Lists Are on The Current Server"), &g_Config.m_ClListsInfo, &AiodobSettings, LineMargin);
+
 			}
 		}
 		s_ScrollRegion.End();

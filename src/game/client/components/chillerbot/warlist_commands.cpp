@@ -1,4 +1,4 @@
-// ChillerDragon 2021 - chillerbot ux
+﻿// ChillerDragon 2021 - chillerbot ux
 
 #include <engine/config.h>
 #include <engine/shared/linereader.h>
@@ -38,34 +38,86 @@ void CWarList::AddSimpleClanWar(const char *pName)
 				}
 				if(!Storage()->CreateFolder("chillerbot/warlist/war/war", IStorage::TYPE_SAVE))
 				{
-					m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp/tempwar folder");
+					m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create war/war folder");
 					return;
 				}
 				AddClanWar("clanwar", pClan);
+
+				RemoveClanTeamNoMsg(pClan);
 			}
 	}
 }
 
-void CWarList::AddSimpleTempWar(const char *pName)
+void CWarList::AddSimpleClanTeam(const char *pName)
 {
-	if(!pName || pName[0] == '\0')
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
-		return;
+		if(!m_pClient->m_Snap.m_apInfoByName[i])
+			continue;
+
+		int Index = m_pClient->m_Snap.m_apInfoByName[i]->m_ClientId;
+		if(Index == m_pClient->m_Snap.m_LocalClientId)
+			continue;
+
+		char *pClan = m_pClient->m_aClients[Index].m_aClan;
+
+		if(str_comp(m_pClient->m_aClients[Index].m_aName, pName) == 0)
+		{
+			if(!pClan || pClan[0] == '\0')
+			{
+				m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
+				return;
+			}
+			if(!Storage()->CreateFolder("chillerbot/warlist/team/team", IStorage::TYPE_SAVE))
+			{
+				m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp folder");
+				return;
+			}
+			if(!Storage()->CreateFolder("chillerbot/warlist/team/team", IStorage::TYPE_SAVE))
+			{
+				m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create team/team folder");
+				return;
+			}
+			AddClanTeam("clanteam", pClan);
+
+			RemoveClanWarNoMsg(pClan);
+
+			ReloadList();
+		}
 	}
-	if(!Storage()->CreateFolder("chillerbot/templist/temp", IStorage::TYPE_SAVE))
+}
+
+void CWarList::RemoveSimpleClanTeam(const char *pName)
+{
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp folder");
-		return;
+		if(!m_pClient->m_Snap.m_apInfoByName[i])
+			continue;
+
+		int Index = m_pClient->m_Snap.m_apInfoByName[i]->m_ClientId;
+		if(Index == m_pClient->m_Snap.m_LocalClientId)
+			continue;
+
+		char *pClan = m_pClient->m_aClients[Index].m_aClan;
+
+		if(str_comp(m_pClient->m_aClients[Index].m_aName, pName) == 0)
+		{
+			char aBuf[512];
+			if(!RemoveClanTeamNameFromVector("chillerbot/warlist/team/team", pClan))
+			{
+				str_format(aBuf, sizeof(aBuf), "Name '%s' not found in the team list", pClan);
+				m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+				return;
+			}
+			if(!WriteClanTeamNames("chillerbot/warlist/team/team"))
+			{
+				m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to write team names");
+			}
+			str_format(aBuf, sizeof(aBuf), "Removed '%s' from the team list", pClan);
+			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+			ReloadList();
+		}
 	}
-	if(!Storage()->CreateFolder("chillerbot/templist/temp/tempwar", IStorage::TYPE_SAVE))
-	{
-		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp/tempwar folder");
-		return;
-	}
-	AddTempWar("tempwar", pName);
-	RemoveTeamNoMsg(pName);
-	RemoveHelperNoMsg(pName);
 }
 
 void CWarList::RemoveSimpleClanWar(const char *pName)
@@ -96,6 +148,9 @@ void CWarList::RemoveSimpleClanWar(const char *pName)
 			}
 			str_format(aBuf, sizeof(aBuf), "Removed '%s' from the war list", pClan);
 			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+
+			RemoveClanTeamNameFromVector("chillerbot/warlist/team/team", pClan);
+	
 			ReloadList();
 		}
 	}
@@ -191,6 +246,28 @@ void CWarList::AddSimpleTeam(const char *pName)
 	RemoveHelperNoMsg(pName);
 }
 
+void CWarList::AddSimpleTempWar(const char *pName)
+{
+	if(!pName || pName[0] == '\0')
+	{
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: missing argument <name>");
+		return;
+	}
+	if(!Storage()->CreateFolder("chillerbot/templist/temp", IStorage::TYPE_SAVE))
+	{
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp folder");
+		return;
+	}
+	if(!Storage()->CreateFolder("chillerbot/templist/temp/tempwar", IStorage::TYPE_SAVE))
+	{
+		m_pClient->m_Chat.AddLine(-3, 0, "Error: failed to create temp/tempwar folder");
+		return;
+	}
+	AddTempWar("tempwar", pName);
+	RemoveTeamNoMsg(pName);
+	RemoveHelperNoMsg(pName);
+}
+
 void CWarList::RemoveSimpleTempWar(const char *pName)
 {
 	char aBuf[512];
@@ -261,6 +338,78 @@ void CWarList::RemoveSimpleMute(const char *pName)
 	str_format(aBuf, sizeof(aBuf), "Removed '%s' from the mutes list", pName);
 	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
 	ReloadList();
+}
+
+void CWarList::OnlineInfo()
+{
+	char aBuf[512];
+
+	char active[512];
+
+	int NumberWars = 0;
+	int NumberWarsAfk = 0;
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		if(!Client.m_Active)
+			continue;
+		if(!GameClient()->m_WarList.IsWarlist(Client.m_aName))
+			continue;
+
+		NumberWars++;
+
+		if(Client.m_Afk)
+			NumberWarsAfk++;
+	}
+
+	int NumberTeams = 0;
+	int NumberTeamsAfk = 0;
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		if(!Client.m_Active)
+			continue;
+		if(!GameClient()->m_WarList.IsTeamlist(Client.m_aName))
+			continue;
+		NumberTeams++;
+
+		if(Client.m_Afk)
+			NumberTeamsAfk++;
+	}
+
+	int NumberHelpers = 0;
+	int NumberHelpersAfk = 0;
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		if(!Client.m_Active)
+			continue;
+		if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName))
+			continue;
+
+		NumberHelpers++;
+
+		if(Client.m_Afk)
+			NumberHelpersAfk++;
+	}
+
+	int NumberMutes = 0;
+	int NumberMutesAfk = 0;
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		if(!Client.m_Active)
+			continue;
+		if(!GameClient()->m_WarList.IsMutelist(Client.m_aName))
+			continue;
+
+		NumberMutes++;
+
+		if(Client.m_Afk)
+			NumberMutes++;
+	}
+	str_format(aBuf, sizeof(aBuf), "[online] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);
+
+	str_format(active, sizeof(active), "[active] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams - NumberTeamsAfk, NumberWars - NumberWarsAfk, NumberHelpers - NumberHelpersAfk, NumberMutes - NumberMutesAfk);
+
+	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+	m_pClient->m_Chat.AddLine(-3, 0, active);
 }
 
 void CWarList::DelClone()
@@ -503,6 +652,30 @@ void CWarList::RemoveSimpleTeam(const char *pName)
 
 // Send no message if removing a name from the list
 
+void CWarList::RemoveClanTeamNoMsg(const char *pClan)
+{
+	if(!RemoveClanTeamNameFromVector("chillerbot/warlist/team/team", pClan))
+	{
+		return;
+	}
+	if(!WriteClanTeamNames("chillerbot/warlist/team/team"))
+	{
+	}
+	ReloadList();
+}
+
+void CWarList::RemoveClanWarNoMsg(const char *pClan)
+{
+	if(!RemoveClanWarNameFromVector("chillerbot/warlist/war/war", pClan))
+	{
+		return;
+	}
+	if(!WriteClanWarNames("chillerbot/warlist/war/war"))
+	{
+	}
+	ReloadList();
+}
+
 void CWarList::RemoveTeamNoMsg(const char *pName)
 {
 	if(!RemoveTeamNameFromVector("chillerbot/warlist/team/team", pName))
@@ -572,17 +745,15 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	else if(!str_comp(pCmd, "help"))
 	{
 		m_pClient->m_Chat.AddLine(-3, 0, "=== Aiodob warlist ===");
-		m_pClient->m_Chat.AddLine(-3, 0, "!war <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!delwar <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!team <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!delteam <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!helper <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!delhelper <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!mute <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!delmute <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!temp(war) <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!deltemp(war) <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!delclone <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!(del)war <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!(del)team <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!(del)helper <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!(del)mute <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!(del)clanwar <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!(del)clanteam <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!(del)tempwar <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!info");
+		m_pClient->m_Chat.AddLine(-3, 0, "!delclone");
 		m_pClient->m_Chat.AddLine(-3, 0, "!skin <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!clone <name>");
 		// m_pClient->m_Chat.AddLine(-3, 0, "!search <name>");
@@ -607,6 +778,16 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	else if(!str_comp(pCmd, "delclanwar") || !str_comp(pCmd, "unclanwar")) // "team <name>"
 	{
 		RemoveSimpleClanWar(pRawArgLine);
+		return true;
+	}
+	else if(!str_comp(pCmd, "clanteam") || !str_comp(pCmd, "addclanteam")) // "team <name>"
+	{
+		AddSimpleClanTeam(pRawArgLine);
+		return true;
+	}
+	else if(!str_comp(pCmd, "delclanteam") || !str_comp(pCmd, "unclanteam")) // "team <name>"
+	{
+		RemoveSimpleClanTeam(pRawArgLine);
 		return true;
 	}
 	else if(!str_comp(pCmd, "tempwar") || !str_comp(pCmd, "addtempwar") || (!str_comp(pCmd, "temp") || !str_comp(pCmd, g_Config.m_ClAddTempWarString))) // "team <name>"
@@ -644,7 +825,7 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		RemoveSimpleMute(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "deltempwar") || !str_comp(pCmd, "untempwar") || !str_comp(pCmd, "untemp") ||!str_comp(pCmd, g_Config.m_ClRemoveTempWarString)) // "delwar <name>"
+	else if(!str_comp(pCmd, "deltempwar") || !str_comp(pCmd, "deltemp") || !str_comp(pCmd, "untempwar") || !str_comp(pCmd, "untemp") || !str_comp(pCmd, g_Config.m_ClRemoveTempWarString)) // "delwar <name>"
 	{
 		RemoveSimpleTempWar(pRawArgLine);
 		return true;
@@ -657,6 +838,11 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	else if(!str_comp(pCmd, "delteam")|| (!str_comp(pCmd, "untema") || !str_comp(pCmd, "unteam") || !str_comp(pCmd, "unfriend") || !str_comp(pCmd, g_Config.m_ClRemoveTeamString))) // "delteam <name>"
 	{
 		RemoveSimpleTeam(pRawArgLine);
+		return true;
+	}
+	else if(!str_comp(pCmd, "info"))
+	{
+		OnlineInfo();
 		return true;
 	}
 	else if(!str_comp(pCmd, "delclone") || !str_comp(pCmd, "unclone") || !str_comp(pCmd, "unskin") || !str_comp(pCmd, "delskin"))

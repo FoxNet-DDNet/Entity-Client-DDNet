@@ -2109,58 +2109,9 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoinMsg);
 						m_aCodeRunAfterJoinConsole[Conn] = true;
 					}
-					if(g_Config.m_ClEnabledInfo && m_aReceivedSnapshots[Conn] > 10 && !m_aInfoDisplay[Conn])
+					if(m_aReceivedSnapshots[Conn] > 10 && !m_aInfoDisplay[Conn])
 					{
-						if(g_Config.m_ClDummy)
-							return;
-
-						GameClient()->aMessage("╭──                  Aiodob Info");
-						GameClient()->aMessage("│");
-						if((g_Config.m_ClAutoKill && str_comp(GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
-						{
-							GameClient()->aMessage("│ Auto Kill Enabled!");
-							GameClient()->aMessage("│");
-						}
-						if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(GetCurrentMap(), "Multeasymap") != 0))
-						{
-							GameClient()->aMessage("│ Auto Kill Disabled, Not on Mult!");
-							GameClient()->aMessage("│");
-						}
-						if(!g_Config.m_ClAutoKill)
-						{
-							GameClient()->aMessage("│ Auto Kill Disabled!");
-							GameClient()->aMessage("│");
-						}
-
-						// Freeze Kill
-						
-						if((g_Config.m_ClFreezeKill && str_comp(GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
-						{
-							GameClient()->aMessage("│ Freeze Kill Enabled!");
-							GameClient()->aMessage("│");
-						}
-						if(g_Config.m_ClFreezeKill && (g_Config.m_ClFreezeKillMultOnly && str_comp(GetCurrentMap(), "Multeasymap") != 0))
-						{
-							GameClient()->aMessage("│ Freeze Kill Disabled, Not on Mult!");
-							GameClient()->aMessage("│");
-						}
-						if(!g_Config.m_ClFreezeKill)
-						{
-							GameClient()->aMessage("│ Freeze Kill Disabled!");
-							GameClient()->aMessage("│");
-						}
-
-						if(g_Config.m_ClChatBubble)
-						{
-							GameClient()->aMessage("│ Chat Bubble is Currently: ON");
-							GameClient()->aMessage("│");
-						}
-						else 
-						{
-							GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
-							GameClient()->aMessage("│");
-						}
-						GameClient()->aMessage("╰───────────────────────");
+						m_Connected = true;
 						m_aInfoDisplay[Conn] = true;
 					}
 					if(m_aReceivedSnapshots[Conn] > GameTickSpeed() && !m_aCodeRunAfterJoin[Conn])

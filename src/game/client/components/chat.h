@@ -43,6 +43,7 @@ class CChat : public CComponent
 		bool m_Paused;
 
 		bool m_IsWar;
+		bool m_IsClanWar;
 		bool m_IsTempWar;
 		bool m_IsHelper;
 		bool m_IsWarClan;

@@ -336,12 +336,14 @@ MACRO_CONFIG_STR(ClAutoJoinTeamName, ac_auto_join_team_name, 16, "", CFGFLAG_CLI
 
 // Info
 
+MACRO_CONFIG_INT(ClListsInfo, ac_lists_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed How many wars, teams, helpers and mutes are online on the current server")
 MACRO_CONFIG_INT(ClEnabledInfo, ac_enabled_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
 
 // Freeze Kill
 
 
 MACRO_CONFIG_INT(ClFreezeKill, ac_freeze_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
+MACRO_CONFIG_INT(ClFreezeKillGrounded, ac_freeze_kill_grounded, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
 MACRO_CONFIG_INT(ClFreezeKillIgnoreKillProt, ac_freeze_kill_ignore_kill_prot, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
 MACRO_CONFIG_INT(ClFreezeKillMultOnly, ac_freeze_kill_mult_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only Freeze Kills if Current Map is Multeasymap")
 MACRO_CONFIG_INT(ClFreezeKillOnlyFullFrozen, ac_freeze_kill_full_frozen, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only Starts Timer When Full Frozen")
@@ -351,31 +353,13 @@ MACRO_CONFIG_INT(ClFreezeKillTeamClose, ac_freeze_kill_team_close, 1, 0, 1, CFGF
 MACRO_CONFIG_INT(ClFreezeKillTeamDistance, ac_freeze_kill_team_dist, 12, 0, 25, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance a Teammate Can be Away")
 MACRO_CONFIG_INT(ClFreezeDontKillMoving, ac_freeze_dont_kill_moving, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Distance a Teammate Can be Away")
 
-
 MACRO_CONFIG_INT(ClFreezeKillDebug, ac_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "debug")
+
 // Ui
 MACRO_CONFIG_INT(ClCornerRoundness, ac_corner_roundness, 50, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How round corners are in scrollable menus")
 MACRO_CONFIG_INT(ClFpsSpoofer, ac_fps_spoofer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spoof Da Fps counter")
 MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fps Spoofer Percentage")
 MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "shows ping range 76-77 in black (ping of a weirdo)")
-
-/*
-MACRO_CONFIG_INT(ClShowChatSettings, ac_show_chat_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Chat Settings")
-MACRO_CONFIG_INT(ClShowOtherSettings, ac_show_other_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Other Settings")
-MACRO_CONFIG_INT(ClShowColorSettings, ac_show_color_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Color Settings")
-MACRO_CONFIG_INT(ClShowNameplateSettings, ac_show_nameplate_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Nameplate Settings")
-MACRO_CONFIG_INT(ClShowUiHudSettings, ac_show_ui_hud_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Ui/Hud Settings")
-MACRO_CONFIG_INT(ClShowMiscSettings, ac_show_misc_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Misc Settings")
-MACRO_CONFIG_INT(ClShowPlayerIndSettings, ac_show_player_ind_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Player Indicator Settings")
-MACRO_CONFIG_INT(ClShowFrozenTeeHudSettings, ac_show_frozen_tee_hud_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Player Indicator Settings")
-MACRO_CONFIG_INT(ClShowScoreSettings, ac_show_score_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Scoreboard Settings")
-MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Menu Settings")
-*/
-
-// Discord
-
-	MACRO_CONFIG_INT(ClDiscord, ac_discord, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Discord")
-
 
 // Might be Cheating
 
@@ -392,8 +376,6 @@ MACRO_CONFIG_INT(ClShowMenuSettings, ac_show_menu_settings, 1, 0, 1, CFGFLAG_CLI
 	MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
 
 	//Dummy Controls +
-
-	MACRO_CONFIG_INT(ClDeepFly, ac_deep_fly, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 
 	MACRO_CONFIG_INT(ClDummyHammerSpeed, ac_dummy_hammer_speed, 25, 0, 100, CFGFLAG_CLIENT, "Speed at which the dummy hammers")
 	MACRO_CONFIG_INT(ClIdToHammer, ac_id_to_hammer, -1, -1, MAX_CLIENTS, CFGFLAG_CLIENT, "Speed at which the dummy hammers")
@@ -424,9 +406,6 @@ MACRO_CONFIG_INT(ClSparkleEffectOthers, cle_sparkle_effect_others, 0, 0, 1, CFGF
 
 MACRO_CONFIG_INT(ClSpecialEffect, cle_special_effect, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
 
-MACRO_CONFIG_INT(ClPlayerTrail, cle_player_trail, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
-
-
 MACRO_CONFIG_INT(ClFreezeParticleSpin, cle_freeze_particle_spin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make Freeze Particles Spin Around The Player")
 
 
@@ -437,13 +416,10 @@ MACRO_CONFIG_INT(ClRainbowSpeed, ac_rainbow_speed, 20, 1, 100, CFGFLAG_CLIENT | 
 MACRO_CONFIG_INT(ClRainbowHookOthers, ac_rainbow_hook_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook for others client side")
 
 MACRO_CONFIG_INT(ClRainbowHook, ac_rainbow_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
-MACRO_CONFIG_INT(ClRainbowModeHook, ac_rainbow_mode_hook, 1, 1, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: off, 2: rainbow, 3: pulse, 4: darkness)")
 
 MACRO_CONFIG_INT(ClRainbowOthers, ac_rainbow_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow client side for others")
-MACRO_CONFIG_INT(ClRainbowMode, ac_rainbow_mode, 1, 1, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: off, 2: rainbow, 3: pulse, 4: darkness)")
 
 MACRO_CONFIG_INT(ClRainbow, ac_rainbow, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow mode (1: off, 2: rainbow, 3: pulse, 4: darkness)")
-
 
 MACRO_CONFIG_INT(ClSmallSkins, cle_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
 

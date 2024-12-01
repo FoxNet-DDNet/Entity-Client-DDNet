@@ -141,6 +141,8 @@ public:
 
 	void SetLoadingCallback(TLoadingCallback &&Func) { m_LoadingCallback = std::move(Func); }
 
+	bool m_Connected;
+
 	// tick time access
 	inline int PrevGameTick(int Conn) const { return m_aPrevGameTick[Conn]; }
 	inline int GameTick(int Conn) const { return m_aCurGameTick[Conn]; }
