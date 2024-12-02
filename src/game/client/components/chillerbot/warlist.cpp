@@ -544,7 +544,7 @@ void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor, bool OtherTeam
 	else if(IsWarClanmate(ClientId) && g_Config.m_ClAutoClanWar)
 	{
 		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
-		*pColor = ColorRGBA(7.0f, 0.5f, 0.2f);
+		*pColor = ColorRGBA(7.0f, 0.5f, 0.2f, Alpha);
 	}
 	else if(g_Config.m_ClDoFriendNameColor && ClientData.m_Friend)
 	{

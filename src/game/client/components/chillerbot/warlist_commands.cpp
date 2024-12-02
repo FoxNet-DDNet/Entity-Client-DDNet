@@ -350,14 +350,19 @@ void CWarList::OnlineInfo()
 	int NumberWarsAfk = 0;
 	for(auto &Client : GameClient()->m_aClients)
 	{
+		bool War = GameClient()->m_WarList.IsWarlist(Client.m_aName);
+		bool TempWar = GameClient()->m_WarList.IsTempWarlist(Client.m_aName);
+		bool ClanWar = GameClient()->m_WarList.IsClanWarlist(Client.m_aClan);
+
 		if(!Client.m_Active)
 			continue;
-		if(!GameClient()->m_WarList.IsWarlist(Client.m_aName))
-			continue;
 
-		NumberWars++;
+		if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName) && !GameClient()->m_WarList.IsTeamlist(Client.m_aName) && !GameClient()->m_WarList.IsClanTeamlist(Client.m_aClan))
+			if((War && !TempWar && !ClanWar) || (!War && TempWar && !ClanWar) || (!War && !TempWar && ClanWar))
+				NumberWars++;
 
-		if(Client.m_Afk)
+
+		if(Client.m_Afk && ((War && !TempWar && !ClanWar) || (!War && TempWar && !ClanWar) || (!War && !TempWar && ClanWar)))
 			NumberWarsAfk++;
 	}
 
@@ -365,13 +370,17 @@ void CWarList::OnlineInfo()
 	int NumberTeamsAfk = 0;
 	for(auto &Client : GameClient()->m_aClients)
 	{
+		bool Team = GameClient()->m_WarList.IsTeamlist(Client.m_aName);
+		bool ClanTeam = GameClient()->m_WarList.IsClanTeamlist(Client.m_aClan);
+
 		if(!Client.m_Active)
 			continue;
-		if(!GameClient()->m_WarList.IsTeamlist(Client.m_aName))
-			continue;
-		NumberTeams++;
 
-		if(Client.m_Afk)
+		if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName) && !GameClient()->m_WarList.IsWarlist(Client.m_aName) && !GameClient()->m_WarList.IsTempWarlist(Client.m_aName) && !GameClient()->m_WarList.IsClanWarlist(Client.m_aClan))
+			if((Team && !ClanTeam) || (!Team && ClanTeam))
+				NumberTeams++;
+
+		if(Client.m_Afk && (Team && !ClanTeam) || (!Team && ClanTeam))
 			NumberTeamsAfk++;
 	}
 
@@ -726,11 +735,18 @@ void CWarList::RemoveHelperNoMsg(const char *pName)
 
 void CWarList::JoinTeamName(const char *pName)
 {
+	if (GameClient()->CurrentRaceTime())
+	{
+		m_pClient->m_Chat.AddLine(-3, 0, "Can't Join Team When Race is Started");
+		return;
+	}
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(!m_pClient->m_Snap.m_apInfoByName[i])
 			continue;
 
+		int Number = -1;
 
 			if(str_comp(m_pClient->m_aClients[i].m_aName, pName) == 0)
 			{		
@@ -745,11 +761,11 @@ void CWarList::JoinTeamName(const char *pName)
 					str_append(aBuf, TeamChar);
 					m_pClient->m_Chat.SendChat(0, aBuf);
 
-					
-
-					m_pClient->m_Chat.AddLine(-3, 0, "Joined Team");
+					Number++;
 					return;
 				}
+				else
+					return m_pClient->m_Chat.AddLine(-3, 0, "Player isn't in a Team");
 			}
 	}
 }
@@ -791,9 +807,9 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		m_pClient->m_Chat.AddLine(-3, 0, "!delclone");
 		m_pClient->m_Chat.AddLine(-3, 0, "!skin <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!clone <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!team <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!join <name>");
 	}
-	else if(!str_comp(pCmd, "team"))
+	else if(!str_comp(pCmd, "join"))
 	{
 		JoinTeamName(pRawArgLine);
 	}

@@ -2111,6 +2111,9 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					}
 					if(m_aReceivedSnapshots[Conn] > 10 && !m_aInfoDisplay[Conn])
 					{
+						if(g_Config.m_ClDummy)
+							return;
+
 						m_Connected = true;
 						m_aInfoDisplay[Conn] = true;
 					}

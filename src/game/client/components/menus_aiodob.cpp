@@ -251,8 +251,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			FreezeKillSettings.HSplitTop(Margin, nullptr, &FreezeKillSettings);
 			if(g_Config.m_ClFreezeKill)
 			{
-				if(g_Config.m_ClFreezeKillOnlyFullFrozen)
-				{
+			//	if(g_Config.m_ClFreezeKillOnlyFullFrozen)
+			//	{
 					if(g_Config.m_ClFreezeKillWaitMs)
 					{
 						FreezeKillSettings.HSplitTop(260.0f, &FreezeKillSettings, &ColorSettings);
@@ -261,9 +261,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					{
 						FreezeKillSettings.HSplitTop(220.0f, &FreezeKillSettings, &ColorSettings);
 					}
-				}
-				else
-				{
+			//	}
+				//else
+			//	{
 					if(g_Config.m_ClFreezeKillWaitMs)
 					{
 						FreezeKillSettings.HSplitTop(240.0f, &FreezeKillSettings, &ColorSettings);
@@ -272,7 +272,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					{
 						FreezeKillSettings.HSplitTop(200.0f, &FreezeKillSettings, &ColorSettings);
 					}
-				}
+				//}
 			}
 			else
 				FreezeKillSettings.HSplitTop(75.0f, &FreezeKillSettings, &ColorSettings);
@@ -295,10 +295,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
-
-					if(g_Config.m_ClFreezeKillOnlyFullFrozen)
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillGrounded, Localize("Don't Kill if in The Air"), &g_Config.m_ClFreezeKillGrounded, &FreezeKillSettings, LineSize);
-
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKillSettings, LineSize);
 

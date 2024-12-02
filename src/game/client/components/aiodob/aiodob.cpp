@@ -101,8 +101,6 @@ void CAiodob::FreezeKill()
 
 		CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
 
-		CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(Local);
-
 		vec2 Position = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_RenderPos;
 		CGameClient::CClientData OtherTee = m_pClient->m_aClients[i];
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
@@ -158,10 +156,10 @@ void CAiodob::FreezeKill()
 
 				// dont kill if not touching the ground (might crash not sure yet)
 
-				if(pCharacter->m_IsInFreeze && !pChar->IsGrounded() && g_Config.m_ClFreezeKillGrounded)
-				{
-					m_LastFreeze = TimeReset;
-				}
+				//if(pCharacter->m_IsInFreeze && !pChar->IsGrounded() && g_Config.m_ClFreezeKillGrounded)
+				//{
+				//	m_LastFreeze = TimeReset;
+				//}
 			}
 
 			// default kill protection timer
@@ -437,22 +435,6 @@ void CAiodob::AutoJoinTeam()
 
 void CAiodob::GoresMode()
 {
-
-	// server info
-
-	CServerInfo CurrentServerInfo;
-	Client()->GetServerInfo(&CurrentServerInfo);
-
-	// if current server is type "Gores", turn the config on, else turn it off, and only do it once at connection = m_Connected == true
-
-	if(g_Config.m_ClAutoEnableGoresMode && Client()->m_Connected == true)
-	{
-		if(str_comp(CurrentServerInfo.m_aGameType, "Gores") == 0)
-			g_Config.m_ClGoresMode = 1;
-		else
-			g_Config.m_ClGoresMode = 0;
-	}
-
 	// if turning off kog mode and it was on before, rebind to previous bind
 
 	if(!g_Config.m_ClGoresMode && m_KogModeRebound == true)
@@ -480,11 +462,14 @@ void CAiodob::GoresMode()
 	// actual code lmfao
 
 	if(g_Config.m_ClGoresMode)
+	{
 		if(m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == 0)
 		{
 			GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
 		}
+	}
 }
+
 void CAiodob::OnConnect()
 {
 	// connection equals false after joining, so it only does it once, before joining its true
@@ -593,6 +578,16 @@ void CAiodob::OnConnect()
 			GameClient()->aMessage("│ Freeze Kill Disabled!");
 			GameClient()->aMessage("│");
 		}
+		if(g_Config.m_ClGoresMode)
+		{
+			GameClient()->aMessage("│ Gores Mode: ON");
+			GameClient()->aMessage("│");
+		}
+		else
+		{
+			GameClient()->aMessage("│ Gores Mode: OFF");
+			GameClient()->aMessage("│");
+		}
 		if(g_Config.m_ClChatBubble)
 		{
 			GameClient()->aMessage("│ Chat Bubble is Currently: ON");
@@ -603,12 +598,21 @@ void CAiodob::OnConnect()
 			GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
 			GameClient()->aMessage("│");
 		}
-		if (g_Config.m_ClGoresMode)
-		{
-			GameClient()->aMessage("│ Gores Mode: OFF");
-			GameClient()->aMessage("│");
-		}
 		GameClient()->aMessage("╰───────────────────────");
+	}
+
+
+	// if current server is type "Gores", turn the config on, else turn it off, and only do it once at connection = m_Connected == true
+
+	CServerInfo CurrentServerInfo;
+	Client()->GetServerInfo(&CurrentServerInfo);
+
+	if(g_Config.m_ClAutoEnableGoresMode)
+	{
+		if(str_comp(CurrentServerInfo.m_aGameType, "Gores") == 0)
+			g_Config.m_ClGoresMode = 1;
+		else
+			g_Config.m_ClGoresMode = 0;
 	}
 
 	// disables connected so it only does it once on join
@@ -619,10 +623,12 @@ void CAiodob::OnConnect()
 
 void CAiodob::OnRender()
 {
+	const int Local = m_pClient->m_Snap.m_LocalClientId;
+
 	OnConnect();
 	GoresMode();
-	AutoKill();
 	AutoJoinTeam();
+	AutoKill();
 	FreezeKill();
 
 	// "secret" effect, makes a circle go around the player

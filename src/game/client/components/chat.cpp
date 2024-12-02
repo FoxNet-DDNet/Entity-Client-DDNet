@@ -747,6 +747,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		{
 			if(pLine_->m_Friend && g_Config.m_ClMessageFriend)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor));
+			else if(pLine_->m_Team)
+				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 			else if(pLine_->m_IsTeam && g_Config.m_ClWarlistConsoleColors)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
 			else if(pLine_->m_IsHelper && g_Config.m_ClWarlistConsoleColors)
