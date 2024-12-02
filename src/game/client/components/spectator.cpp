@@ -720,5 +720,39 @@ void CSpectator::Spectate(int SpectatorId)
 
 void CSpectator::SpectateClosest()
 {
-	ConSpectateClosest(NULL, this);
+	if(CanChangeSpectatorId())
+		return;
+
+	const CGameClient::CSnapState &Snap = m_pClient->m_Snap;
+	int SpectatorId = Snap.m_SpecInfo.m_SpectatorId;
+
+	int NewSpectatorId = -1;
+
+	vec2 CurPosition(m_pClient->m_Camera.m_Center);
+	if(SpectatorId != SPEC_FREEVIEW)
+	{
+		const CNetObj_Character &CurCharacter = Snap.m_aCharacters[SpectatorId].m_Cur;
+		CurPosition.x = CurCharacter.m_X;
+		CurPosition.y = CurCharacter.m_Y;
+	}
+
+	int ClosestDistance = std::numeric_limits<int>::max();
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(i == SpectatorId || !Snap.m_aCharacters[i].m_Active || !Snap.m_apPlayerInfos[i] || Snap.m_apPlayerInfos[i]->m_Team == TEAM_SPECTATORS)
+			continue;
+
+		if(!AllowSelf && i == Snap.m_LocalClientId)
+			continue;
+
+		const CNetObj_Character &MaybeClosestCharacter = Snap.m_aCharacters[i].m_Cur;
+		int Distance = distance(CurPosition, vec2(MaybeClosestCharacter.m_X, MaybeClosestCharacter.m_Y));
+		if(NewSpectatorId == -1 || Distance < ClosestDistance)
+		{
+			NewSpectatorId = i;
+			ClosestDistance = Distance;
+		}
+	}
+	if(NewSpectatorId > -1)
+		Spectate(NewSpectatorId);
 }
