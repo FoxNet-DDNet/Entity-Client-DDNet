@@ -18,17 +18,10 @@
 
 #include <game/client/gameclient.h>
 
-bool CSpectator::CanChangeSpectatorId()
+bool CSpectator::CanChangeSpectator()
 {
-	// don't change SpectatorId when not spectating
-	if(!m_pClient->m_Snap.m_SpecInfo.m_Active)
-		return false;
-
-	// stop follow mode from changing SpectatorId
-	if(Client()->State() == IClient::STATE_DEMOPLAYBACK && m_pClient->m_DemoSpecId == SPEC_FOLLOW)
-		return false;
-
-	return true;
+	// Don't change SpectatorId when not spectating
+	return m_pClient->m_Snap.m_SpecInfo.m_Active;
 }
 
 void CSpectator::SpectateNext(bool Reverse)
@@ -96,7 +89,7 @@ void CSpectator::ConKeySpectator(IConsole::IResult *pResult, void *pUserData)
 void CSpectator::ConSpectate(IConsole::IResult *pResult, void *pUserData)
 {
 	CSpectator *pSelf = (CSpectator *)pUserData;
-	if(!pSelf->CanChangeSpectatorId())
+	if(!pSelf->CanChangeSpectator())
 		return;
 
 	pSelf->Spectate(pResult->GetInteger(0));
@@ -105,7 +98,7 @@ void CSpectator::ConSpectate(IConsole::IResult *pResult, void *pUserData)
 void CSpectator::ConSpectateNext(IConsole::IResult *pResult, void *pUserData)
 {
 	CSpectator *pSelf = (CSpectator *)pUserData;
-	if(!pSelf->CanChangeSpectatorId())
+	if(!pSelf->CanChangeSpectator())
 		return;
 
 	pSelf->SpectateNext(false);
@@ -114,7 +107,7 @@ void CSpectator::ConSpectateNext(IConsole::IResult *pResult, void *pUserData)
 void CSpectator::ConSpectatePrevious(IConsole::IResult *pResult, void *pUserData)
 {
 	CSpectator *pSelf = (CSpectator *)pUserData;
-	if(!pSelf->CanChangeSpectatorId())
+	if(!pSelf->CanChangeSpectator())
 		return;
 
 	pSelf->SpectateNext(true);
@@ -123,7 +116,33 @@ void CSpectator::ConSpectatePrevious(IConsole::IResult *pResult, void *pUserData
 void CSpectator::ConSpectateClosest(IConsole::IResult *pResult, void *pUserData)
 {
 	CSpectator *pSelf = (CSpectator *)pUserData;
-	pSelf->SpectateClosest(true);
+	if(!pSelf->CanChangeSpectator())
+		return;
+	const CGameClient::CSnapState &Snap = pSelf->m_pClient->m_Snap;
+	int SpectatorId = Snap.m_SpecInfo.m_SpectatorId;
+	int NewSpectatorId = -1;
+	vec2 CurPosition(pSelf->m_pClient->m_Camera.m_Center);
+	if(SpectatorId != SPEC_FREEVIEW)
+	{
+		const CNetObj_Character &CurCharacter = Snap.m_aCharacters[SpectatorId].m_Cur;
+		CurPosition.x = CurCharacter.m_X;
+		CurPosition.y = CurCharacter.m_Y;
+	}
+	int ClosestDistance = std::numeric_limits<int>::max();
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(i == SpectatorId || !Snap.m_aCharacters[i].m_Active || !Snap.m_apPlayerInfos[i] || Snap.m_apPlayerInfos[i]->m_Team == TEAM_SPECTATORS || (SpectatorId == SPEC_FREEVIEW && i == Snap.m_LocalClientId))
+			continue;
+		const CNetObj_Character &MaybeClosestCharacter = Snap.m_aCharacters[i].m_Cur;
+		int Distance = distance(CurPosition, vec2(MaybeClosestCharacter.m_X, MaybeClosestCharacter.m_Y));
+		if(NewSpectatorId == -1 || Distance < ClosestDistance)
+		{
+			NewSpectatorId = i;
+			ClosestDistance = Distance;
+		}
+	}
+	if(NewSpectatorId > -1)
+		pSelf->Spectate(NewSpectatorId);
 }
 
 void CSpectator::ConMultiView(IConsole::IResult *pResult, void *pUserData)
@@ -181,7 +200,7 @@ bool CSpectator::OnInput(const IInput::CEvent &Event)
 				if(m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW)
 					Spectate(SPEC_FREEVIEW);
 				else
-					SpectateClosest(Client()->State() == IClient::STATE_DEMOPLAYBACK);
+					SpectateClosest();
 				return true;
 			}
 		}
@@ -360,7 +379,7 @@ void CSpectator::OnRender()
 			Spectate(m_SelectedSpectatorId);
 		}
 	}
-	// Free-View Text Color 
+	// Free-View Text Color
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, FreeViewSelected ? 1.0f : 0.5f);
 	TextRender()->Text(Width / 2.0f - (ObjWidth - 40.0f), Height / 2.0f - 280.f + (60.f - BigFontSize) / 2.f, BigFontSize, Localize("Free-View"), -1.0f);
 
@@ -403,9 +422,6 @@ void CSpectator::OnRender()
 	for(int i = 0, Count = 0; i < MAX_CLIENTS; ++i)
 	{
 		if(!m_pClient->m_Snap.m_apInfoByDDTeamName[i] || m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_Team == TEAM_SPECTATORS)
-			continue;
-
-		if(Client()->State() != IClient::STATE_DEMOPLAYBACK && m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
 		++Count;
@@ -624,37 +640,35 @@ void CSpectator::OnRender()
 			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClFriendPrefix, 220.0f);
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}
-			else if(IsWar || IsTeam || IsHelper || IsWarClan)
+		else if(IsWar || IsTeam || IsHelper || IsWarClan)
+		{
+			if(IsHelper && g_Config.m_ClSpecMenuPrefixes)
 			{
-				if(IsHelper && g_Config.m_ClSpecMenuPrefixes)
-				{
-					ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
-					TextRender()->TextColor(rgb.WithAlpha(1.f));
-					TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClHelperPrefix, 220.0f);
-				}
-				else if(IsWar && g_Config.m_ClSpecMenuPrefixes)
-				{
-					ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-					TextRender()->TextColor(rgb.WithAlpha(1.f));
-					TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClEnemyPrefix, 220.0f);
-
-				}
-				else if(IsTeam && g_Config.m_ClSpecMenuPrefixes)
-				{
-					ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
-					TextRender()->TextColor(rgb.WithAlpha(1.f));
-					TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClTeammatePrefix, 220.0f);
-
-				}
-				else if(IsWarClan && g_Config.m_ClSpecMenuPrefixes && g_Config.m_ClAutoClanWar && !IsWar && !IsHelper && !IsTeam)
-				{
-					ColorRGBA rgb = (ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f));
-					TextRender()->TextColor(rgb.WithAlpha(1.f));
-					TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClTeammatePrefix, 220.0f);
-				}
-				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
+				TextRender()->TextColor(rgb.WithAlpha(1.f));
+				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClHelperPrefix, 220.0f);
 			}
-	
+			else if(IsWar && g_Config.m_ClSpecMenuPrefixes)
+			{
+				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+				TextRender()->TextColor(rgb.WithAlpha(1.f));
+				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClEnemyPrefix, 220.0f);
+			}
+			else if(IsTeam && g_Config.m_ClSpecMenuPrefixes)
+			{
+				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
+				TextRender()->TextColor(rgb.WithAlpha(1.f));
+				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClTeammatePrefix, 220.0f);
+			}
+			else if(IsWarClan && g_Config.m_ClSpecMenuPrefixes && g_Config.m_ClAutoClanWar && !IsWar && !IsHelper && !IsTeam)
+			{
+				ColorRGBA rgb = (ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f));
+				TextRender()->TextColor(rgb.WithAlpha(1.f));
+				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClTeammatePrefix, 220.0f);
+			}
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+
 		y += LineHeight;
 	}
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -704,41 +718,7 @@ void CSpectator::Spectate(int SpectatorId)
 	Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
 }
 
-void CSpectator::SpectateClosest(bool AllowSelf)
+void CSpectator::SpectateClosest()
 {
-	if(CanChangeSpectatorId())
-		return;
-
-	const CGameClient::CSnapState &Snap = m_pClient->m_Snap;
-	int SpectatorId = Snap.m_SpecInfo.m_SpectatorId;
-
-	int NewSpectatorId = -1;
-
-	vec2 CurPosition(m_pClient->m_Camera.m_Center);
-	if(SpectatorId != SPEC_FREEVIEW)
-	{
-		const CNetObj_Character &CurCharacter = Snap.m_aCharacters[SpectatorId].m_Cur;
-		CurPosition.x = CurCharacter.m_X;
-		CurPosition.y = CurCharacter.m_Y;
-	}
-
-	int ClosestDistance = std::numeric_limits<int>::max();
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(i == SpectatorId || !Snap.m_aCharacters[i].m_Active || !Snap.m_apPlayerInfos[i] || Snap.m_apPlayerInfos[i]->m_Team == TEAM_SPECTATORS)
-			continue;
-
-		if(!AllowSelf && i == Snap.m_LocalClientId)
-			continue;
-
-		const CNetObj_Character &MaybeClosestCharacter = Snap.m_aCharacters[i].m_Cur;
-		int Distance = distance(CurPosition, vec2(MaybeClosestCharacter.m_X, MaybeClosestCharacter.m_Y));
-		if(NewSpectatorId == -1 || Distance < ClosestDistance)
-		{
-			NewSpectatorId = i;
-			ClosestDistance = Distance;
-		}
-	}
-	if(NewSpectatorId > -1)
-		Spectate(NewSpectatorId);
+	ConSpectateClosest(NULL, this);
 }

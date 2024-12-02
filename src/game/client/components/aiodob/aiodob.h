@@ -12,6 +12,7 @@ class CAiodob : public CComponent
 
 public:
 	bool m_SentKill;
+	bool m_SentAutoKill;
 	int64_t m_JoinTeam;
 	int64_t m_LastFreeze;
 	int64_t m_LastMovement = 10.0f;

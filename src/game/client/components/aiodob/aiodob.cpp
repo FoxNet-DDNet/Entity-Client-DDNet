@@ -33,6 +33,7 @@ void CAiodob::OnInit()
 	AttempedJoinTeam = false;
 	JoinedTeam = false;
 	m_SentKill = false;
+	m_SentAutoKill = false;
 	m_KogModeRebound = false;
 	Mult = 0;
 	m_JoinTeam = 0;
@@ -41,10 +42,10 @@ void CAiodob::OnInit()
 	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
 
 	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
-	*g_Config.m_ClKogModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
 	
 	char aBuf[1024];
-	str_format(aBuf, sizeof(aBuf), "KoG Mode Saved Bind Currently is: %s", g_Config.m_ClKogModeSaved);
+	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
 	dbg_msg("Aiodob", aBuf);
 }
 
@@ -89,8 +90,6 @@ void CAiodob::FreezeKill()
 
 		CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
 
-		CCharacter *pCharOther = m_pClient->m_PredictedWorld.GetCharacterById(i);
-
 		CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(Local);
 
 		vec2 Position = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_RenderPos;
@@ -106,7 +105,7 @@ void CAiodob::FreezeKill()
 		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0) && i == Local && g_Config.m_ClFreezeDontKillMoving)
 		{
 			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
-				if(GameClient()->m_Controls.m_aInputData[0].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[0] || GameClient()->m_Controls.m_aInputDirectionRight[0]))
+				if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 					m_LastFreeze = TimeReset;
 		}
 			if(g_Config.m_ClFreezeKillTeamClose && (OtherTee.m_IsTeam || OtherTee.m_IsClanTeam) && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Team && i != Local)
@@ -114,10 +113,6 @@ void CAiodob::FreezeKill()
 				if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
 				{
 					if(!pCharacterOther->m_IsInFreeze)
-					{
-						m_LastFreeze = TimeReset;
-					}
-					if(pCharacterOther->m_IsInFreeze && !pCharOther->IsGrounded() && g_Config.m_ClFreezeKillGrounded)
 					{
 						m_LastFreeze = TimeReset;
 					}
@@ -179,7 +174,7 @@ void CAiodob::AutoKill()
 
 	if(g_Config.m_ClAutoKill)
 	{
-		if(m_SentKill == true)
+		if(m_SentAutoKill == true)
 			return;
 
 		for(int i = 0; i < MAX_CLIENTS; i++)
@@ -221,12 +216,7 @@ void CAiodob::AutoKill()
 			const vec2 EnemyVel = mix(vec2(pPrevCharO->m_VelX, pPrevCharO->m_VelY), vec2(pCurCharO->m_VelX, pCurCharO->m_VelY), IntraTick) / 1000 / 1.5;
 
 			const float RangeX = g_Config.m_ClAutoKillRangeX / 100.0f;
-
-			float RangeY = g_Config.m_ClAutoKillRangeY / 100.0f;
-
-			CCharacter *pChar = m_pClient->m_PredictedWorld.GetCharacterById(i);
-
-			
+			const float RangeY = g_Config.m_ClAutoKillRangeY / 100.0f;
 
 			if(g_Config.m_ClAutoKillDebug)
 			{
@@ -237,9 +227,6 @@ void CAiodob::AutoKill()
 				char bBuf[100];
 				str_format(bBuf, sizeof(bBuf), "%d", round_to_int(EnemyPos.x));
 				TextRender()->Text(200, 100, 15, bBuf);
-
-				if(pChar && pChar->IsGrounded())
-					TextRender()->Text(300, 100, 15, "grounded");
 			}
 
 
@@ -257,14 +244,14 @@ void CAiodob::AutoKill()
 							if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
 							{
 								m_pClient->m_Chat.SendChat(0, "/kill");
-								m_SentKill = true;
+								m_SentAutoKill = true;
 								m_LastFreeze = time_get() + time_freq() * 5;
 								return;
 							}
 							else
 							{
 								GameClient()->SendKill(Local);
-								m_SentKill = true;
+								m_SentAutoKill = true;
 								return;
 							}
 						}
@@ -273,13 +260,13 @@ void CAiodob::AutoKill()
 					if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
 					{
 						m_pClient->m_Chat.SendChat(0, "/kill");
-						m_SentKill = true;
+						m_SentAutoKill = true;
 						return;
 					}
 					else
 					{
 						GameClient()->SendKill(Local);
-						m_SentKill = true;
+						m_SentAutoKill = true;
 						return;
 					}
 				}
@@ -386,17 +373,27 @@ void CAiodob::AutoJoinTeam()
 
 void CAiodob::GoresMode()
 {
-	if(!g_Config.m_ClKogMode)
+
+	CServerInfo CurrentServerInfo;
+	Client()->GetServerInfo(&CurrentServerInfo);
+
+	if(g_Config.m_ClAutoEnableGoresMode && Client()->m_Connected == true)
 	{
-		if(m_KogModeRebound == true)
-		{
-			GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClKogModeSaved);
-			m_KogModeRebound = false;
-		}
+		if(str_comp(CurrentServerInfo.m_aGameType, "Gores") == 0)
+			g_Config.m_ClGoresMode = 1;
+		else
+			g_Config.m_ClGoresMode = 0;
+	}
+
+	if(!g_Config.m_ClGoresMode && m_KogModeRebound == true)
+	{
+	
+		GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
+		m_KogModeRebound = false;
 		return;
 	}
 
-	if(m_KogModeRebound == false)
+	if(m_KogModeRebound == false && g_Config.m_ClGoresMode)
 	{
 		GameClient()->m_Binds.Bind(KEY_MOUSE_1, "+fire;+prevweapon");
 		m_KogModeRebound = true;
@@ -406,6 +403,8 @@ void CAiodob::GoresMode()
 	if(!m_pClient->m_Snap.m_pLocalCharacter)
 		return;
 
+
+	if(g_Config.m_ClGoresMode)
 	if(m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == 0)
 	{
 		GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
@@ -521,7 +520,11 @@ void CAiodob::OnConnect()
 			GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
 			GameClient()->aMessage("│");
 		}
-
+		if (g_Config.m_ClGoresMode)
+		{
+			GameClient()->aMessage("│ Gores Mode: OFF");
+			GameClient()->aMessage("│");
+		}
 		GameClient()->aMessage("╰───────────────────────");
 	}
 

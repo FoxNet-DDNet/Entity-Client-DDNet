@@ -294,10 +294,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Don't Kill if in The Air"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
 
 					if(g_Config.m_ClFreezeKillOnlyFullFrozen)
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillGrounded, Localize("Only Kill if Touching The Ground"), &g_Config.m_ClFreezeKillGrounded, &FreezeKillSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillGrounded, Localize("Don't Kill if in The Air"), &g_Config.m_ClFreezeKillGrounded, &FreezeKillSettings, LineSize);
 
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKillSettings, LineSize);
@@ -384,10 +384,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			MiscSettings.VMargin(5.0f, &MiscSettings);
 				if(g_Config.m_ClRenderCursorSpec)
 				{
-					MiscSettings.HSplitTop(195.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(175.0f, &MiscSettings, &AutoKillOntopSettings);
 				}
 				else
-					MiscSettings.HSplitTop(175.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(155.0f, &MiscSettings, &AutoKillOntopSettings);
 			if(s_ScrollRegion.AddRect(MiscSettings))
 			{
 				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -398,7 +398,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoVerify, ("Auto Verify"), &g_Config.m_ClAutoVerify, &MiscSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &MiscSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClKogMode, ("'advanced' Kog Mode"), &g_Config.m_ClKogMode, &MiscSettings, LineSize);
 
 					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);
 
@@ -571,7 +570,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect PlayerSettings, ChatSettings, SoundSettings, WarVisual, UiSettings, AiodobSettings;
+		CUIRect PlayerSettings, ChatSettings, SoundSettings, WarVisual, UiSettings, AiodobSettings, GoresModeSettings;
 		MainView.VSplitMid(&PlayerSettings, &UiSettings);
 
 		// Weapon Settings
@@ -1274,7 +1273,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			AiodobSettings.HSplitTop(Margin, nullptr, &AiodobSettings);
-			AiodobSettings.HSplitTop(90.0f, &AiodobSettings, 0);
+			AiodobSettings.HSplitTop(90.0f, &AiodobSettings, &GoresModeSettings);
 			if(s_ScrollRegion.AddRect(AiodobSettings))
 			{
 				AiodobSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1287,6 +1286,25 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClListsInfo, ("Show How Many Players of Lists Are on The Current Server"), &g_Config.m_ClListsInfo, &AiodobSettings, LineMargin);
 
+			}
+		}
+
+		{
+			GoresModeSettings.HSplitTop(Margin, nullptr, &GoresModeSettings);
+			GoresModeSettings.HSplitTop(120.0f, &GoresModeSettings, 0);
+			if(s_ScrollRegion.AddRect(GoresModeSettings))
+			{
+				GoresModeSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				GoresModeSettings.VMargin(Margin, &GoresModeSettings);
+
+				GoresModeSettings.HSplitTop(HeaderHeight, &Button, &GoresModeSettings);
+				Ui()->DoLabel(&Button, Localize("Gores Mode"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("'advanced' Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
+				
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is 'Gores'"), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresModeSettings, LineSize);
 			}
 		}
 		s_ScrollRegion.End();
