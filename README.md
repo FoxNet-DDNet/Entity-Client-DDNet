@@ -4,7 +4,6 @@ Foxs turn on copying files from other clients and making a *semi* All In One cli
 
 ### Steam
 go to manage > browse local files and find the ddnet folder, then replace it with mine, if you dont want to replace the whole folder you can only add the .exe and in the data directory you have to add my aiodob folder, it conains images that are important
-And as a side note you might wanna turn off auto updates
 ### Windows
 download the Game.zip and extract it to somewhere. Create a *Shortcut* and place *the shortcut* on your desktop and you're done!
 
