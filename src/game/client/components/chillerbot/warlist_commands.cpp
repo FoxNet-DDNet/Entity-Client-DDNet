@@ -724,6 +724,36 @@ void CWarList::RemoveHelperNoMsg(const char *pName)
 	ReloadList();
 }
 
+void CWarList::JoinTeamName(const char *pName)
+{
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(!m_pClient->m_Snap.m_apInfoByName[i])
+			continue;
+
+
+			if(str_comp(m_pClient->m_aClients[i].m_aName, pName) == 0)
+			{		
+
+				if(m_pClient->m_Teams.Team(i))
+				{
+					int Team = GameClient()->m_Teams.Team(i);
+					char TeamChar[256];
+					str_format(TeamChar, sizeof(TeamChar), "%d", Team);
+
+					char aBuf[2048] = "/team ";
+					str_append(aBuf, TeamChar);
+					m_pClient->m_Chat.SendChat(0, aBuf);
+
+					
+
+					m_pClient->m_Chat.AddLine(-3, 0, "Joined Team");
+					return;
+				}
+			}
+	}
+}
+
 bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *pCmd, int NumArgs, const char **ppArgs, const char *pRawArgLine)
 {
 	char aBuf[512];
@@ -744,7 +774,7 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	}
 	else if(!str_comp(pCmd, "help"))
 	{
-		m_pClient->m_Chat.AddLine(-3, 0, "=== Aiodob warlist ===");
+		m_pClient->m_Chat.AddLine(-3, 0, "=== Aiodob Warlist ===");
 		m_pClient->m_Chat.AddLine(-3, 0, "!(del)war <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!(del)team <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!(del)helper <name>");
@@ -752,11 +782,20 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		m_pClient->m_Chat.AddLine(-3, 0, "!(del)clanwar <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!(del)clanteam <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!(del)tempwar <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!extra");
+	}
+	else if(!str_comp(pCmd, "extra"))
+	{
+		m_pClient->m_Chat.AddLine(-3, 0, "=== Aiodob Extra ===");
 		m_pClient->m_Chat.AddLine(-3, 0, "!info");
 		m_pClient->m_Chat.AddLine(-3, 0, "!delclone");
 		m_pClient->m_Chat.AddLine(-3, 0, "!skin <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!clone <name>");
-		// m_pClient->m_Chat.AddLine(-3, 0, "!search <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!team <name>");
+	}
+	else if(!str_comp(pCmd, "team"))
+	{
+		JoinTeamName(pRawArgLine);
 	}
 	else if(!str_comp(pCmd, "discord"))
 	{

@@ -269,6 +269,8 @@ public:
 	void Clone(const char *pName);
 	void Skin(const char *pName);
 
+	void JoinTeamName(const char *pName);
+
 	void OnlineInfo();
 
 	void RemoveSimpleTeam(const char *pName);

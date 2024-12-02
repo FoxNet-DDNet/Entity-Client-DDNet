@@ -1437,28 +1437,39 @@ void CPlayers::OnRender()
 		}
 		const int Local = m_pClient->m_Snap.m_LocalClientId;
 
+		// sweat mode code
+
 		if(g_Config.m_ClSweatMode)
 		{
-			
+			// if player used dj
 
 			const auto UsedDj = aRenderInfo[i].m_GotAirJump = 0;
 
 			// change the skin for the player to the ninja
+
+			// find skin in database
 			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClSweatModeSkinName);
+
+			// if found apply
 			if(pSkin != nullptr)
 			{
 				aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
 				if(g_Config.m_ClSweatModeSkin)
 				{
+					// if setting is on to only change other skin
+
 					if(i == Local)
 					{
 						if(!g_Config.m_ClSweatModeOnlyOthers)
 							aRenderInfo[i].Apply(pSkin);
 					}
+					// if that setting is not on
+
 					else
 						aRenderInfo[i].Apply(pSkin);
 				}
 
+				// if local and setting is on to only change other skins, so the colors dont change on own player
 
 				if(i == Local)
 				{
@@ -1471,9 +1482,11 @@ void CPlayers::OnRender()
 							aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 0, 0);
 						else
 							aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 0, 0);
-						}
+					}
 				
 				}
+				// if Player is in x List, change color accordingly
+
 				if((m_pClient->m_aClients[i].m_IsWar || m_pClient->m_aClients[i].m_IsTempWar || m_pClient->m_aClients[i].m_IsClanWar) && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
@@ -1529,7 +1542,7 @@ void CPlayers::OnRender()
 
 
 
-
+		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
 
 		if(g_Config.m_ClOwnTeeSkin &&  i == Local && !(m_pClient->m_aClients[Local].m_FreezeEnd > 0))
 		{

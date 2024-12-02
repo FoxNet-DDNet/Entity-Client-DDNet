@@ -30,6 +30,8 @@
 
 void CAiodob::OnInit()
 {
+	// on client load
+
 	AttempedJoinTeam = false;
 	JoinedTeam = false;
 	m_SentKill = false;
@@ -55,11 +57,15 @@ void CAiodob::FreezeKill()
 
 	float TimeReset = time_get() + time_freq() * Time;
 
+	// if freeze kill isnt turned on, stop
+
 	if(!g_Config.m_ClFreezeKill)
 	{
 		m_LastFreeze = TimeReset;
 		return;
 	}
+
+	// if player hasnt started the race, stop
 
 	if(!GameClient()->CurrentRaceTime())
 	{
@@ -68,10 +74,13 @@ void CAiodob::FreezeKill()
 		return;
 	}
 	
+	// if map name isnt "Multeasymap", stop
+
 	if(g_Config.m_ClFreezeKillMultOnly)
 		if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 			return;
 
+	// debug
 
 	if(g_Config.m_ClFreezeKillDebug)
 	{
@@ -84,6 +93,8 @@ void CAiodob::FreezeKill()
 	
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
+		// stuff
+
 		int Local = m_pClient->m_Snap.m_LocalClientId;
 
 		CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
@@ -96,11 +107,17 @@ void CAiodob::FreezeKill()
 		CGameClient::CClientData OtherTee = m_pClient->m_aClients[i];
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
+		// if tried to kill, stop
+
 		if(m_SentKill == true)
 			return;
 
+		// stop when spectating
+
 		if(m_pClient->m_aClients[Local].m_Paused || m_pClient->m_aClients[Local].m_Spec)
 			m_LastFreeze = TimeReset;
+
+		// dont kill if moving
 
 		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0) && i == Local && g_Config.m_ClFreezeDontKillMoving)
 		{
@@ -108,32 +125,46 @@ void CAiodob::FreezeKill()
 				if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 					m_LastFreeze = TimeReset;
 		}
-			if(g_Config.m_ClFreezeKillTeamClose && (OtherTee.m_IsTeam || OtherTee.m_IsClanTeam) && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Team && i != Local)
+
+		// dont kill if teamate is in x * 2 blocks range
+
+		if(g_Config.m_ClFreezeKillTeamClose && (OtherTee.m_IsTeam || OtherTee.m_IsClanTeam) && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Team && i != Local)
+		{
+			if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
 			{
-				if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
+				if(!pCharacterOther->m_IsInFreeze)
 				{
-					if(!pCharacterOther->m_IsInFreeze)
-					{
-						m_LastFreeze = TimeReset;
-					}
+					m_LastFreeze = TimeReset;
 				}
 			}
+		}
+
+		// wait x amount of seconds before killing
 
 		if(g_Config.m_ClFreezeKillWaitMs)
 		{
 
-				if(m_pClient->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
-					m_LastFreeze = TimeReset;
-				if(g_Config.m_ClFreezeKillOnlyFullFrozen )
-				{
-					if(!pCharacter->m_IsInFreeze)
-						m_LastFreeze = TimeReset;
+			// kill if frozen (without deep and live freeze)
 
-					if(pCharacter->m_IsInFreeze && !pChar->IsGrounded() && g_Config.m_ClFreezeKillGrounded)
-					{
-						m_LastFreeze = TimeReset;
-					}
+			if(m_pClient->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
+				m_LastFreeze = TimeReset;
+
+			// only kill if player is in a freeze tile
+
+			if(g_Config.m_ClFreezeKillOnlyFullFrozen )
+			{
+				if(!pCharacter->m_IsInFreeze)
+					m_LastFreeze = TimeReset;
+
+				// dont kill if not touching the ground (might crash not sure yet)
+
+				if(pCharacter->m_IsInFreeze && !pChar->IsGrounded() && g_Config.m_ClFreezeKillGrounded)
+				{
+					m_LastFreeze = TimeReset;
 				}
+			}
+
+			// default kill protection timer
 
 			if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
 			{
@@ -149,6 +180,9 @@ void CAiodob::FreezeKill()
 				return;
 			}
 		}
+
+		// if not wating for x amount of seconds
+
 		else if(pCharacter->m_IsInFreeze)
 		{
 			if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
@@ -174,12 +208,18 @@ void CAiodob::AutoKill()
 
 	if(g_Config.m_ClAutoKill)
 	{
+
+		// if sent kill, stop
+
 		if(m_SentAutoKill == true)
 			return;
 
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
+			
+			// if not on "Multeasymap", stop
+
 			if(g_Config.m_ClAutoKillMultOnly)
 			{
 				if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
@@ -192,6 +232,8 @@ void CAiodob::AutoKill()
 					TextRender()->Text(100, 50, 15, "On Mult");
 			}
 
+			// stuff
+			
 			const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Prev;
 			const CNetObj_Character *pCurChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Cur;
 
@@ -201,6 +243,8 @@ void CAiodob::AutoKill()
 			auto IsWar = 0;
 			bool EnemyFrozen = 0;
 
+			// so it only takes info from other players and not self (could probably be made smarter :p)
+
 			if(i != Local)
 			{
 				pPrevCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Prev;
@@ -208,6 +252,8 @@ void CAiodob::AutoKill()
 				IsWar = m_pClient->m_aClients[i].m_IsWar || m_pClient->m_aClients[i].m_IsTempWar || m_pClient->m_aClients[i].m_IsWarClanmate;
 				EnemyFrozen = pCharacterOther->m_IsInFreeze;
 			}
+
+			// position and vel
 
 			const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
 			const vec2 SelfPos = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pCurChar->m_X, pCurChar->m_Y), IntraTick) / 32.0f;
@@ -217,6 +263,8 @@ void CAiodob::AutoKill()
 
 			const float RangeX = g_Config.m_ClAutoKillRangeX / 100.0f;
 			const float RangeY = g_Config.m_ClAutoKillRangeY / 100.0f;
+
+			// debug
 
 			if(g_Config.m_ClAutoKillDebug)
 			{
@@ -229,18 +277,31 @@ void CAiodob::AutoKill()
 				TextRender()->Text(200, 100, 15, bBuf);
 			}
 
-
+			// if in freeze tile
 
 			if((pCharacter->m_IsInFreeze && !g_Config.m_ClAutoKillWarOnly) || (g_Config.m_ClAutoKillWarOnly && IsWar && pCharacter->m_IsInFreeze))
 			{
+
+				// check where other player is
+
 				if((EnemyPos.y < SelfPos.y && EnemyPos.y > SelfPos.y - 1 - RangeY - EnemyVel.y) && ((EnemyPos.x <= SelfPos.x + RangeX) && (EnemyPos.x + RangeX >= SelfPos.x)))
 				{
+					// if other player is frozen, stop, why? idk
+
 					if(EnemyFrozen)
 						return;
+
+					// if other player is unfrozen
+
 					if(m_pClient->m_aClients[i].m_FreezeEnd > 0)
 					{
+
+						// if player is ontop of you and their x coordinate is close to own players
+
 						if(EnemyPos.x <= SelfPos.x + 0.04f && EnemyPos.x + +0.04f >= SelfPos.x)
 						{
+							// kill
+
 							if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
 							{
 								m_pClient->m_Chat.SendChat(0, "/kill");
@@ -257,6 +318,9 @@ void CAiodob::AutoKill()
 						}
 						return;
 					}
+
+					// kill
+
 					if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
 					{
 						m_pClient->m_Chat.SendChat(0, "/kill");
@@ -374,8 +438,12 @@ void CAiodob::AutoJoinTeam()
 void CAiodob::GoresMode()
 {
 
+	// server info
+
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
+
+	// if current server is type "Gores", turn the config on, else turn it off, and only do it once at connection = m_Connected == true
 
 	if(g_Config.m_ClAutoEnableGoresMode && Client()->m_Connected == true)
 	{
@@ -385,6 +453,8 @@ void CAiodob::GoresMode()
 			g_Config.m_ClGoresMode = 0;
 	}
 
+	// if turning off kog mode and it was on before, rebind to previous bind
+
 	if(!g_Config.m_ClGoresMode && m_KogModeRebound == true)
 	{
 	
@@ -393,6 +463,8 @@ void CAiodob::GoresMode()
 		return;
 	}
 
+	// if hasnt rebound yet and turning on kog mode, rebind to kog mode
+
 	if(m_KogModeRebound == false && g_Config.m_ClGoresMode)
 	{
 		GameClient()->m_Binds.Bind(KEY_MOUSE_1, "+fire;+prevweapon");
@@ -400,25 +472,34 @@ void CAiodob::GoresMode()
 		return;
 	}
 
+	// if not local return
+
 	if(!m_pClient->m_Snap.m_pLocalCharacter)
 		return;
 
+	// actual code lmfao
 
 	if(g_Config.m_ClGoresMode)
-	if(m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == 0)
-	{
-		GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
-	}
+		if(m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == 0)
+		{
+			GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
+		}
 }
 void CAiodob::OnConnect()
 {
+	// connection equals false after joining, so it only does it once, before joining its true
+
 	if(Client()->m_Connected == false)
 		return;
+
+	// if dummy, return, so it doesnt display the info when joining with dummy
 
 	if(g_Config.m_ClDummy)
 		return;
 
 	char aBuf[1024];
+
+	// Displays Info of Lists
 
 	if(g_Config.m_ClListsInfo)
 	{
@@ -467,6 +548,8 @@ void CAiodob::OnConnect()
 		}
 		str_format(aBuf, sizeof(aBuf), "│ %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);
 	}
+
+	// info when joining a server of enabled components
 
 	if(g_Config.m_ClEnabledInfo)
 	{
@@ -528,6 +611,8 @@ void CAiodob::OnConnect()
 		GameClient()->aMessage("╰───────────────────────");
 	}
 
+	// disables connected so it only does it once on join
+
 	if(Client()->m_Connected == true)
 		Client()->m_Connected = false;
 }
@@ -540,8 +625,8 @@ void CAiodob::OnRender()
 	AutoJoinTeam();
 	FreezeKill();
 
+	// "secret" effect, makes a circle go around the player
+
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 		m_LastMovement = time_get() + time_freq() * 30;
-
-
 }
