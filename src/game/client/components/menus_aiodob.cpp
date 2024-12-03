@@ -1856,7 +1856,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		LeftView.HSplitBottom(LineSize, &LeftView, &Button);
 
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetBindWheelMouse, Localize("Reset position of mouse when opening bindwheel"), &g_Config.m_ClResetBindWheelMouse, &Button, LineSize);
-	}
+		
+		CUIRect CopyRight;
+		MainView.HSplitBottom(20.0f, 0, &CopyRight);
+		CopyRight.VSplitLeft(225.0f, &CopyRight, &CopyRight);
+		Ui()->DoLabel(&CopyRight, "© Tater", 14.0f, TEXTALIGN_ML);
+
+}
 }
 
 void CMenus::ResetSettingsCustomization()
@@ -2323,4 +2329,8 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 			dbg_msg("menus", "couldn't open file");
 		}
 	}
+	CUIRect CopyRight;
+	MainView.HSplitTop(-641.0f, 0, &CopyRight);
+	CopyRight.VSplitLeft(820.0f, &CopyRight, &CopyRight);
+	Ui()->DoLabel(&CopyRight, "© Tater", 14.0f, TEXTALIGN_ML);
 }

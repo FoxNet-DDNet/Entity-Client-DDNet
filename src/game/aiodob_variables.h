@@ -553,3 +553,18 @@ MACRO_CONFIG_INT(SvDisableFreeze, sv_disable_freeze, 0, 0, 1, CFGFLAG_SERVER | C
 MACRO_CONFIG_INT(ClDisableFreeze, cl_disable_freeze, 0, 0, 1, CFGFLAG_CLIENT, "fake freeze?")
 MACRO_CONFIG_INT(ClFakeGrenade, cl_fake_grenade, 0, 0, 1, CFGFLAG_CLIENT, "Grenade doesnt explode")
 
+
+
+// Testing Variables For Menus
+
+MACRO_CONFIG_INT(XPos1, x_pos1, 0, -5000, 50000, CFGFLAG_CLIENT, "")
+MACRO_CONFIG_INT(XPos2, x_pos2, 0, -5000, 50000, CFGFLAG_CLIENT, "")
+MACRO_CONFIG_INT(XPos3, x_pos3, 0, -5000, 50000, CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_INT(YPos1, y_pos1, 0, -5000, 50000, CFGFLAG_CLIENT, "")
+MACRO_CONFIG_INT(YPos2, y_pos2, 0, -5000, 50000, CFGFLAG_CLIENT, "")
+MACRO_CONFIG_INT(YPos3, y_pos3, 0, -5000, 50000, CFGFLAG_CLIENT, "")
+
+MACRO_CONFIG_STR(Text1, text1, 100, "Lorem ipsum", CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(Text2, text2, 100, "Lorem ipsum", CFGFLAG_CLIENT, "")
+MACRO_CONFIG_STR(Text3, text3, 100, "Lorem ipsum", CFGFLAG_CLIENT, "")
