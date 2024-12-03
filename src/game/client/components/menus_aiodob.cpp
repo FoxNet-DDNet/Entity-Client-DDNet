@@ -1862,7 +1862,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		CopyRight.VSplitLeft(225.0f, &CopyRight, &CopyRight);
 		Ui()->DoLabel(&CopyRight, "© Tater", 14.0f, TEXTALIGN_ML);
 
-}
+	}
 }
 
 void CMenus::ResetSettingsCustomization()

@@ -482,32 +482,35 @@ void CAiodob::OnConnect()
 	if(g_Config.m_ClDummy)
 		return;
 
-	char aBuf[1024];
-
-	// Displays Info of Lists
+	char aBuf[512];
 
 	if(g_Config.m_ClListsInfo)
 	{
+
 		int NumberWars = 0;
 		for(auto &Client : GameClient()->m_aClients)
 		{
+			bool War = GameClient()->m_WarList.IsAnyWar(Client.m_aName, Client.m_aClan);
+
 			if(!Client.m_Active)
 				continue;
-			if(!GameClient()->m_WarList.IsWarlist(Client.m_aName))
-				continue;
 
-			NumberWars++;
+			if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName) && !GameClient()->m_WarList.IsTeamlist(Client.m_aName) && !GameClient()->m_WarList.IsClanTeamlist(Client.m_aClan))
+				if(War)
+					NumberWars++;
 		}
 
 		int NumberTeams = 0;
 		for(auto &Client : GameClient()->m_aClients)
 		{
+			bool Team = GameClient()->m_WarList.IsAnyTeam(Client.m_aName, Client.m_aClan);
+
 			if(!Client.m_Active)
 				continue;
-			if(!GameClient()->m_WarList.IsTeamlist(Client.m_aName))
-				continue;
 
-			NumberTeams++;
+			if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName) && !GameClient()->m_WarList.IsWarlist(Client.m_aName) && !GameClient()->m_WarList.IsTempWarlist(Client.m_aName) && !GameClient()->m_WarList.IsClanWarlist(Client.m_aClan))
+				if(Team)
+					NumberTeams++;
 		}
 
 		int NumberHelpers = 0;
@@ -532,7 +535,7 @@ void CAiodob::OnConnect()
 			NumberMutes++;
 		}
 		str_format(aBuf, sizeof(aBuf), "│ %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);
-	}
+}
 
 	// info when joining a server of enabled components
 
@@ -544,6 +547,7 @@ void CAiodob::OnConnect()
 		{
 			GameClient()->m_Chat.AddLine(-3, 0, aBuf);
 			GameClient()->aMessage("│");
+
 		}
 		if((g_Config.m_ClAutoKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
 		{

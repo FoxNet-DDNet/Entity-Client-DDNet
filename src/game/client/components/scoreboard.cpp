@@ -710,20 +710,24 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 			// clan
 			{
-				if(g_Config.m_ClDoWarListColorScore)
-				{
-					if(GameClient()->m_WarList.IsClanWarlist(ClientData.m_aClan))
-						TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor)));
-					if(GameClient()->m_WarList.IsClanTeamlist(ClientData.m_aClan))
-						TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor)));
-				}
-				else if(str_comp(ClientData.m_aClan, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan) == 0)
+
+
+
+				if(str_comp(ClientData.m_aClan, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan) == 0)
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
 				}
 				else
 				{
 					TextRender()->TextColor(TextColor);
+				}
+
+				if(g_Config.m_ClDoWarListColorScore)
+				{
+					if(GameClient()->m_WarList.IsClanWarlist(ClientData.m_aClan))
+						TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor)));
+					if(GameClient()->m_WarList.IsClanTeamlist(ClientData.m_aClan))
+						TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor)));
 				}
 				CTextCursor Cursor;
 				TextRender()->SetCursor(&Cursor, ClanOffset + (ClanLength - minimum(TextRender()->TextWidth(FontSize, ClientData.m_aClan), ClanLength)) / 2.0f, Row.y + (Row.h - FontSize) / 2.0f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
