@@ -458,6 +458,9 @@ public:
 		bool m_Foe;
 
 		// warlist
+		bool m_IsAnyWar;
+		bool m_IsAnyTeam;
+
 		bool m_IsWar;
 		bool m_IsHelper;
 		bool m_IsTeam;

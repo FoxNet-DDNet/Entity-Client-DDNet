@@ -1785,15 +1785,18 @@ void CGameClient::OnNewSnapshot()
 					m_Teams.SetSolo(Item.m_Id, pClient->m_Solo);
 
 					// Warlist
-					pClient->m_IsWar = m_WarList.IsWar(Item.m_Id);
-					pClient->m_IsHelper = m_WarList.IsHelper(Item.m_Id);
-					pClient->m_IsTeam = m_WarList.IsTeam(Item.m_Id);
-					pClient->m_IsMuted = m_WarList.IsMute(Item.m_Id);
-					pClient->m_IsWarClanmate = m_WarList.IsWarClanmate(Item.m_Id);
-					pClient->m_IsClanWar = m_WarList.IsClanWar(Item.m_Id);
-					//pClient->m_IsClanTeam = m_WarList.IsTeamClan(Item.m_Id);
+					pClient->m_IsAnyWar = m_WarList.IsAnyWar(pClient->m_aName, pClient->m_aClan);
+					pClient->m_IsAnyTeam = m_WarList.IsAnyTeam(pClient->m_aName, pClient->m_aClan);
 
-					pClient->m_IsTempWar = m_WarList.IsTempWar(Item.m_Id);
+					pClient->m_IsWar = m_WarList.IsWarlist(pClient->m_aName) || m_WarList.IsWar(Item.m_Id);
+					pClient->m_IsHelper = m_WarList.IsHelperlist(pClient->m_aName) || m_WarList.IsHelper(Item.m_Id);
+					pClient->m_IsTeam = m_WarList.IsTeamlist(pClient->m_aName) || m_WarList.IsTeam(Item.m_Id);
+					pClient->m_IsMuted = m_WarList.IsMutelist(pClient->m_aName) || m_WarList.IsMute(Item.m_Id);
+					pClient->m_IsWarClanmate = m_WarList.IsWarClanmate(Item.m_Id);
+					pClient->m_IsClanWar = m_WarList.IsClanWarlist(pClient->m_aClan) || m_WarList.IsClanWar(Item.m_Id);
+					pClient->m_IsClanTeam = m_WarList.IsClanTeamlist(pClient->m_aClan) || m_WarList.IsClanWar(Item.m_Id);
+
+					pClient->m_IsTempWar = m_WarList.IsTempWarlist(pClient->m_aName);
 
 				}
 			}
