@@ -193,14 +193,13 @@ To Do:
 - ~~add Client/Server Msg Prefix functionality~~
 - ~~add Helper List~~
 - ~~show mutes in console~~
-- work on the visuals tab in settings more
+- ~~work on the visuals tab in settings more~~
 - ~~add !skin command (clone wont come I dont think I dont like it~~
 - ~~add auto reply to muted players~~
 - ~~when friend joines ping you or make name be in a color~~ - makes a sound and sends an echo
 - ~~toggle to turn off sending a message that starts with "." (currently does that so you cant misspell commands)~~
 
 Maybe:
+- add ability to load settings from other clients
 - ~~do chat message only when a friended tee says something~~
-- multiple replies for tabbed out reply and muted reply
-- show in scoreboard when someones in a menu
-- show when someones looking at the scoreboard
+
