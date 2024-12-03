@@ -197,6 +197,7 @@ void CWarList::AddSimpleHelper(const char *pName)
 	AddHelper("helper", pName);
 	RemoveTeamNoMsg(pName);
 	RemoveWarNoMsg(pName);
+	RemoveTempWarNoMsg(pName);
 }
 
 void CWarList::AddSimpleWar(const char *pName)
@@ -220,6 +221,7 @@ void CWarList::AddSimpleWar(const char *pName)
 	AddWar("war", pName);
 	RemoveTeamNoMsg(pName);
 	RemoveHelperNoMsg(pName);
+	RemoveTempWarNoMsg(pName);
 }
 
 void CWarList::AddSimpleTeam(const char *pName)
@@ -350,19 +352,17 @@ void CWarList::OnlineInfo()
 	int NumberWarsAfk = 0;
 	for(auto &Client : GameClient()->m_aClients)
 	{
-		bool War = GameClient()->m_WarList.IsWarlist(Client.m_aName);
-		bool TempWar = GameClient()->m_WarList.IsTempWarlist(Client.m_aName);
-		bool ClanWar = GameClient()->m_WarList.IsClanWarlist(Client.m_aClan);
+		bool War = GameClient()->m_WarList.IsAnyWar(Client.m_aName, Client.m_aClan);
 
 		if(!Client.m_Active)
 			continue;
 
 		if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName) && !GameClient()->m_WarList.IsTeamlist(Client.m_aName) && !GameClient()->m_WarList.IsClanTeamlist(Client.m_aClan))
-			if((War && !TempWar && !ClanWar) || (!War && TempWar && !ClanWar) || (!War && !TempWar && ClanWar))
+			if(War)
 				NumberWars++;
 
 
-		if(Client.m_Afk && ((War && !TempWar && !ClanWar) || (!War && TempWar && !ClanWar) || (!War && !TempWar && ClanWar)))
+		if(Client.m_Afk && War)
 			NumberWarsAfk++;
 	}
 
@@ -370,17 +370,16 @@ void CWarList::OnlineInfo()
 	int NumberTeamsAfk = 0;
 	for(auto &Client : GameClient()->m_aClients)
 	{
-		bool Team = GameClient()->m_WarList.IsTeamlist(Client.m_aName);
-		bool ClanTeam = GameClient()->m_WarList.IsClanTeamlist(Client.m_aClan);
+		bool Team = GameClient()->m_WarList.IsAnyTeam(Client.m_aName, Client.m_aClan);
 
 		if(!Client.m_Active)
 			continue;
 
 		if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName) && !GameClient()->m_WarList.IsWarlist(Client.m_aName) && !GameClient()->m_WarList.IsTempWarlist(Client.m_aName) && !GameClient()->m_WarList.IsClanWarlist(Client.m_aClan))
-			if((Team && !ClanTeam) || (!Team && ClanTeam))
+			if(Team)
 				NumberTeams++;
 
-		if(Client.m_Afk && (Team && !ClanTeam) || (!Team && ClanTeam))
+		if(Client.m_Afk && Team)
 			NumberTeamsAfk++;
 	}
 

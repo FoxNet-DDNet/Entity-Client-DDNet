@@ -83,9 +83,9 @@
 #include "components/aiodob/aiodob.h"
 
 // Tater
-#include "components/outlines.h"
-#include "components/player_indicator.h"
-#include "components/verify.h"
+#include "components/tclient/outlines.h"
+#include "components/tclient/player_indicator.h"
+#include "components/tclient/verify.h"
 
 // Chillerbot
 #include "components/chillerbot/chathelper.h"

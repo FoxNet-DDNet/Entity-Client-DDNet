@@ -531,13 +531,12 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 			const CGameClient::CClientData &ClientData = GameClient()->m_aClients[pInfo->m_ClientId];
 
-			auto IsWar = GameClient()->m_WarList.IsWarlist(ClientData.m_aName) || GameClient()->m_WarList.IsTempWarlist(ClientData.m_aName);
-			auto IsTeam = GameClient()->m_WarList.IsTeamlist(ClientData.m_aName);
+			auto IsWar = GameClient()->m_WarList.IsAnyWar(ClientData.m_aName, ClientData.m_aClan);
+			auto IsTeam = GameClient()->m_WarList.IsAnyTeam(ClientData.m_aName, ClientData.m_aClan);
+
 			auto IsHelper = GameClient()->m_WarList.IsHelperlist(ClientData.m_aName);
 			auto IsMuted = GameClient()->m_WarList.IsMutelist(ClientData.m_aName);
 			auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(ClientData.m_aClan);
-
-			auto IsClanWar = GameClient()->m_WarList.IsClanWarlist(ClientData.m_aClan);
 
 			bool paused = ClientData.m_Paused || ClientData.m_Spec;
 
@@ -653,7 +652,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				}
 				if(g_Config.m_ClDoWarListColorScore)
 				{
-					if (IsTeam)
+					if(IsTeam)
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
@@ -677,16 +676,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					else if(IsHelper)
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
-						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-						{
-							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						}
-						else
-							TextRender()->TextColor(rgb.WithAlpha(1.0f));
-					}
-					else if(IsClanWar)
-					{
-						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
 						{
 							TextRender()->TextColor(rgb.WithAlpha(0.4f));
@@ -725,7 +714,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
 				}
-				else if(IsClanWar)
+				else if(GameClient()->m_WarList.IsClanWarlist(ClientData.m_aClan))
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor)));
 				}

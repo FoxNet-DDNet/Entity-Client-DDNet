@@ -2336,8 +2336,6 @@ if(CLIENT)
     components/background.h
     components/binds.cpp
     components/binds.h
-    components/bindwheel.cpp
-    components/bindwheel.h
     components/broadcast.cpp
     components/broadcast.h
     components/camera.cpp
@@ -2404,20 +2402,14 @@ if(CLIENT)
     components/motd.h
     components/nameplates.cpp
     components/nameplates.h
-    components/outlines.cpp
-    components/outlines.h
     components/particles.cpp
     components/particles.h
-    components/player_indicator.cpp
-    components/player_indicator.h
     components/players.cpp
     components/players.h
     components/race_demo.cpp
     components/race_demo.h
     components/scoreboard.cpp
     components/scoreboard.h
-    components/skinprofiles.cpp
-    components/skinprofiles.h
     components/skins.cpp
     components/skins.h
     components/skins7.cpp
@@ -2428,12 +2420,20 @@ if(CLIENT)
     components/spectator.h
     components/statboard.cpp
     components/statboard.h
+    components/tclient/bindwheel.cpp
+    components/tclient/bindwheel.h
+    components/tclient/outlines.cpp
+    components/tclient/outlines.h
+    components/tclient/player_indicator.cpp
+    components/tclient/player_indicator.h
+    components/tclient/skinprofiles.cpp
+    components/tclient/skinprofiles.h
+    components/tclient/verify.cpp
+    components/tclient/verify.h
     components/tooltips.cpp
     components/tooltips.h
     components/touch_controls.cpp
     components/touch_controls.h
-    components/verify.cpp
-    components/verify.h
     components/voting.cpp
     components/voting.h
     gameclient.cpp

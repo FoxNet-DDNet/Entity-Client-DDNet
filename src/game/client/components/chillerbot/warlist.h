@@ -294,6 +294,9 @@ public:
 	bool IsTempWar(int ClientId);
 	bool IsTempWarlist(const char *pName);
 
+	bool IsAnyWar(const char *pName, const char *pClan);
+	bool IsAnyTeam(const char *pName, const char *pClan);
+
 	bool IsWar(const char *pName, const char *pClan);
 	bool IsWarlist(const char *pName);
 	bool IsTeamlist(const char *pName);

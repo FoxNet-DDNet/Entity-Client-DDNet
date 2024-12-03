@@ -326,6 +326,16 @@ bool CWarList::IsWarClanmate(const char *pClan)
 	return false;
 }
 
+bool CWarList::IsAnyWar(const char *pName, const char *pClan)
+{
+	return IsWarlist(pName) || IsTempWarlist(pName) || IsClanWarlist(pClan);
+}
+
+bool CWarList::IsAnyTeam(const char *pName, const char *pClan)
+{
+	return IsTeamlist(pName) || IsClanTeamlist(pClan);
+}
+
 bool CWarList::IsWar(const char *pName, const char *pClan)
 {
 	return IsWarlist(pName) || IsTempWarlist(pName);

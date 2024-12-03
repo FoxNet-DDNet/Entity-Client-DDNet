@@ -49,7 +49,6 @@
 #include "components/motd.h"
 #include "components/nameplates.h"
 #include "components/particles.h"
-#include "components/bindwheel.h"
 #include "components/players.h"
 #include "components/race_demo.h"
 #include "components/scoreboard.h"
@@ -67,10 +66,11 @@
 #include "components/aiodob/aiodob.h"
 
 // Tater
-#include "components/outlines.h"
-#include "components/player_indicator.h"
-#include "components/skinprofiles.h"
-#include "components/verify.h"
+#include "components/tclient/outlines.h"
+#include "components/tclient/player_indicator.h"
+#include "components/tclient/skinprofiles.h"
+#include "components/tclient/verify.h"
+#include "components/tclient/bindwheel.h"
 
 // Chillerbot
 
