@@ -456,6 +456,50 @@ void CWarList::DelClone()
 	}
 }
 
+void CWarList::AddFriend(const char *pName)
+{
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(str_comp(m_pClient->m_aClients[i].m_aName, pName) == 0)
+		{
+			GameClient()->Friends()->AddFriend(pName, m_pClient->m_aClients[i].m_aClan);
+			char aBuf[128];
+
+			if(GameClient()->Friends()->IsFriend(pName, "", true))
+				str_format(aBuf, sizeof(aBuf), "added \"%s\" to the Friendlist", pName);
+			else
+				str_format(aBuf, sizeof(aBuf), "Couldn't add \"%s\" to the Friendlist", pName);
+
+			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+			return;
+		}
+	}
+}
+
+void CWarList::RemoveFriend(const char *pName)
+{
+	int Clients = -1;
+
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if(str_comp(m_pClient->m_aClients[i].m_aName, pName) == 0)
+		{
+			char aBuf[128];
+	
+			if(GameClient()->Friends()->IsFriend(pName, "", true))
+			{
+				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Friendlist", pName);
+				GameClient()->Friends()->RemoveFriend(pName, m_pClient->m_aClients[i].m_aClan);
+			}
+			else
+				str_format(aBuf, sizeof(aBuf), "\"%s\" wasn't on the Friendlist", pName);
+
+			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+			return;
+		}
+	}
+}
+
 void CWarList::Clone(const char *pName)
 {
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -576,6 +620,8 @@ void CWarList::Clone(const char *pName)
 
 void CWarList::Skin(const char *pName)
 {
+	int Clients = -1;
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(!m_pClient->m_Snap.m_apInfoByName[i])
@@ -637,6 +683,9 @@ void CWarList::Skin(const char *pName)
 				g_Config.m_ClDummyColorFeet = m_pClient->m_aClients[Index].m_ColorFeet;
 			}
 		}
+		Clients++;
+		if(Clients >= 63)
+			m_pClient->m_Chat.AddLine(-3, 0, "aBuf");
 	}
 }
 
@@ -772,22 +821,8 @@ void CWarList::JoinTeamName(const char *pName)
 bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *pCmd, int NumArgs, const char **ppArgs, const char *pRawArgLine)
 {
 	char aBuf[512];
-	if(!str_comp(pCmd, "search")) // "search <name can contain spaces>"
-	{
-		if(NumArgs != 1)
-		{
-			str_format(aBuf, sizeof(aBuf), "Error: expected 1 argument but got %d", NumArgs);
-			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
-			return true;
-		}
-		m_pClient->m_Chat.AddLine(-3, 0, "[search] fullmatch:");
-		if(!SearchName(ppArgs[0], false))
-		{
-			m_pClient->m_Chat.AddLine(-3, 0, "[search] partial:");
-			SearchName(ppArgs[0], true);
-		}
-	}
-	else if(!str_comp(pCmd, "help"))
+
+	if(!str_comp(pCmd, "help"))
 	{
 		m_pClient->m_Chat.AddLine(-3, 0, "=== Aiodob Warlist ===");
 		m_pClient->m_Chat.AddLine(-3, 0, "!(del)war <name>");
@@ -807,6 +842,15 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		m_pClient->m_Chat.AddLine(-3, 0, "!skin <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!clone <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!join <name>");
+		m_pClient->m_Chat.AddLine(-3, 0, "!(un)friend <name>");
+	}
+	else if(!str_comp(pCmd, "addfriend") || (!str_comp(pCmd, "friend")))
+	{
+		AddFriend(pRawArgLine);
+	}
+	else if(!str_comp(pCmd, "unfriend") || (!str_comp(pCmd, "delfriend")))
+	{
+		RemoveFriend(pRawArgLine);
 	}
 	else if(!str_comp(pCmd, "join"))
 	{
@@ -925,6 +969,21 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		else if(g_Config.m_ClDummy)
 			m_pClient->SendDummyInfo(false);
 		return true;
+	}
+	else if(!str_comp(pCmd, "search")) // "search <name can contain spaces>"
+	{
+		if(NumArgs != 1)
+		{
+			str_format(aBuf, sizeof(aBuf), "Error: expected 1 argument but got %d", NumArgs);
+			m_pClient->m_Chat.AddLine(-3, 0, aBuf);
+			return true;
+		}
+		m_pClient->m_Chat.AddLine(-3, 0, "[search] fullmatch:");
+		if(!SearchName(ppArgs[0], false))
+		{
+			m_pClient->m_Chat.AddLine(-3, 0, "[search] partial:");
+			SearchName(ppArgs[0], true);
+		}
 	}
 	else
 	{

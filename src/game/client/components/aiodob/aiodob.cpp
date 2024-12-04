@@ -3,30 +3,16 @@
 #include <engine/config.h>
 #include <engine/console.h>
 #include <engine/engine.h>
-#include <engine/graphics.h>
-#include <engine/keys.h>
 #include <engine/shared/config.h>
-#include <engine/shared/json.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
-#include <game/client/animstate.h>
-#include <game/client/components/camera.h>
 #include <game/client/components/chat.h>
 #include <game/client/components/controls.h>
-#include <game/client/components/voting.h>
 #include <game/client/gameclient.h>
-#include <game/client/race.h>
-#include <game/client/render.h>
 #include <game/generated/protocol.h>
-#include <game/version.h>
-
-#include <game/collision.h>
 #include <game/generated/client_data.h>
-#include <game/mapitems.h>
-
-#include "aiodob.h"
 #include <game/client/prediction/entities/character.h>
-#include <libavutil/mathematics.h>
+#include "aiodob.h"
 
 void CAiodob::OnInit()
 {
@@ -163,19 +149,21 @@ void CAiodob::FreezeKill()
 			}
 
 			// default kill protection timer
-
-			if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
+			if(m_LastFreeze <= time_get())
 			{
-				m_pClient->m_Chat.SendChat(0, "/kill");
-				m_SentKill = true;
-				m_LastFreeze = time_get() + time_freq() * 5;
-				return;
-			}
-			else if(m_LastFreeze <= time_get() && (pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
-			{
-				GameClient()->SendKill(Local);
-				m_SentKill = true;
-				return;
+				if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
+				{
+					m_pClient->m_Chat.SendChat(0, "/kill");
+					m_SentKill = true;
+					m_LastFreeze = time_get() + time_freq() * 5;
+					return;
+				}
+				else if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
+				{
+					GameClient()->SendKill(Local);
+					m_SentKill = true;
+					return;
+				}
 			}
 		}
 

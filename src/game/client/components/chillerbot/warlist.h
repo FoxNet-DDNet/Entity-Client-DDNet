@@ -271,6 +271,9 @@ public:
 
 	void JoinTeamName(const char *pName);
 
+	void AddFriend(const char *pName);
+	void RemoveFriend(const char *pName);
+
 	void OnlineInfo();
 
 	void RemoveSimpleTeam(const char *pName);

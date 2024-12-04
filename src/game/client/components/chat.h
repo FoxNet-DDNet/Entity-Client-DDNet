@@ -43,12 +43,16 @@ class CChat : public CComponent
 		bool m_Paused;
 
 		bool m_IsWar;
-		bool m_IsClanWar;
-		bool m_IsTempWar;
 		bool m_IsHelper;
-		bool m_IsWarClan;
 		bool m_IsTeam;
 		bool m_IsMute;
+
+		bool m_IsClanWar;
+		bool m_IsClanTeam;
+
+		bool m_IsTempWar;
+		bool m_IsWarClan;
+
 		bool m_Highlighted;
 		std::optional<ColorRGBA> m_CustomColor;
 
@@ -115,12 +119,13 @@ class CChat : public CComponent
 	int m_PlaceholderOffset;
 	int m_PlaceholderLength;
 	static char ms_aDisplayText[MAX_LINE_LENGTH];
-	struct CRateablePlayer
+	struct CCompletablePlayer
 	{
 		int ClientId;
 		int Score;
+		bool IsFriend;
 	};
-	CRateablePlayer m_aPlayerCompletionList[MAX_CLIENTS];
+	CCompletablePlayer m_aPlayerCompletionList[MAX_CLIENTS];
 	int m_PlayerCompletionListLength;
 
 	struct CCommand
