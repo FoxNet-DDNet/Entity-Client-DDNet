@@ -1079,6 +1079,15 @@ void CHud::RenderPlayerState(const int ClientId)
 		Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_JetpackOffset, x, y);
 		x += 12;
 	}
+	if(pCharacter->m_ExplosionGun)
+	{
+		HasCapabilities = true;
+		Graphics()->TextureSet(m_pClient->m_HudSkin.m_SpriteHudJetpack);
+		Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_JetpackOffset, x, y);
+		Graphics()->TextureSet(m_pClient->m_HudSkin.m_SpriteHudGrenadeHitDisabled);
+		Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_GrenadeHitDisabledOffset, x, y);
+		x += 12;
+	}
 	if(pCharacter->m_HasTelegunGun && pCharacter->m_aWeapons[WEAPON_GUN].m_Got)
 	{
 		HasCapabilities = true;

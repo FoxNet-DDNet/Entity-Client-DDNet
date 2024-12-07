@@ -336,6 +336,10 @@ void CChillerBotUX::FinishRenameTick()
 	if(!g_Config.m_ClFinishRename)
 		return;
 	vec2 Pos = m_pClient->m_PredictedChar.m_Pos;
+
+	if(!GameClient()->CurrentRaceTime())
+		return;
+
 	if(m_pClient->RaceHelper()->IsNearFinish(Pos))
 	{
 		if(Client()->State() == IClient::STATE_ONLINE && !m_pClient->m_Menus.IsActive() && g_Config.m_ClEditor == 0)

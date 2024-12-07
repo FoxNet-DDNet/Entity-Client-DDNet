@@ -235,7 +235,7 @@ void CAiodob::AutoKill()
 			{
 				pPrevCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Prev;
 				pCurCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Cur;
-				IsWar = m_pClient->m_aClients[i].m_IsWar || m_pClient->m_aClients[i].m_IsTempWar || m_pClient->m_aClients[i].m_IsWarClanmate;
+				IsWar = m_pClient->m_aClients[i].m_IsAnyWar || m_pClient->m_aClients[i].m_IsWarClanmate;
 				EnemyFrozen = pCharacterOther->m_IsInFreeze;
 			}
 
@@ -470,7 +470,25 @@ void CAiodob::OnConnect()
 	if(g_Config.m_ClDummy)
 		return;
 
+	// if current server is type "Gores", turn the config on, else turn it off, and only do it once at connection = m_Connected == true
+
+	CServerInfo CurrentServerInfo;
+	Client()->GetServerInfo(&CurrentServerInfo);
+
+	if(g_Config.m_ClAutoEnableGoresMode)
+	{
+		if(str_comp(CurrentServerInfo.m_aGameType, "Gores") == 0)
+			g_Config.m_ClGoresMode = 1;
+		else
+			g_Config.m_ClGoresMode = 0;
+	}
+
 	char aBuf[512];
+	if(g_Config.m_ClTest)
+	{
+		c_X = m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_LocalClientId].m_Cur.m_X;
+		c_Y = m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_LocalClientId].m_Cur.m_Y;
+	}
 
 	if(g_Config.m_ClListsInfo)
 	{
@@ -593,30 +611,47 @@ void CAiodob::OnConnect()
 		GameClient()->aMessage("╰───────────────────────");
 	}
 
-
-	// if current server is type "Gores", turn the config on, else turn it off, and only do it once at connection = m_Connected == true
-
-	CServerInfo CurrentServerInfo;
-	Client()->GetServerInfo(&CurrentServerInfo);
-
-	if(g_Config.m_ClAutoEnableGoresMode)
-	{
-		if(str_comp(CurrentServerInfo.m_aGameType, "Gores") == 0)
-			g_Config.m_ClGoresMode = 1;
-		else
-			g_Config.m_ClGoresMode = 0;
-	}
-
 	// disables connected so it only does it once on join
 
 	if(Client()->m_Connected == true)
 		Client()->m_Connected = false;
 }
 
+void CAiodob::Test()
+{
+	if(g_Config.m_ClTest)
+	{
+		if(m_pClient->m_Snap.m_LocalClientId)
+			return;
+
+		ColorRGBA rgb = ColorRGBA(1.0f, 1.0f, 1.0f);
+
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "%d\n", c_X / 32);
+		TextRender()->Text(50, 100, 10, aBuf);
+
+		if(Input()->KeyPress(KEY_D))
+			c_X = c_X + 2;
+
+		int AlphaO = 1.0f;
+		float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
+		Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+		RenderTools()->MapScreenToGroup(m_pClient->m_Camera.m_Center.x, m_pClient->m_Camera.m_Center.y, Layers()->GameGroup(), m_pClient->m_Camera.m_Zoom);
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(rgb.WithAlpha(AlphaO));
+		float CircleSize = 7.0f;
+		Graphics()->DrawCircle(c_X, c_Y, 10, 25);
+		Graphics()->QuadsEnd();
+		Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+	}
+}
+
 void CAiodob::OnRender()
 {
 	const int Local = m_pClient->m_Snap.m_LocalClientId;
 
+	Test();
 	OnConnect();
 	GoresMode();
 	AutoJoinTeam();

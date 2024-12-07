@@ -1757,6 +1757,7 @@ void CGameClient::OnNewSnapshot()
 					// Collision
 					pClient->m_Solo = pCharacterData->m_Flags & CHARACTERFLAG_SOLO;
 					pClient->m_Jetpack = pCharacterData->m_Flags & CHARACTERFLAG_JETPACK;
+					pClient->m_ExplosionGun = pCharacterData->m_Flags & CHARACTERFLAG_EXPLOSIONGUN;
 					pClient->m_CollisionDisabled = pCharacterData->m_Flags & CHARACTERFLAG_COLLISION_DISABLED;
 					pClient->m_HammerHitDisabled = pCharacterData->m_Flags & CHARACTERFLAG_HAMMER_HIT_DISABLED;
 					pClient->m_GrenadeHitDisabled = pCharacterData->m_Flags & CHARACTERFLAG_GRENADE_HIT_DISABLED;

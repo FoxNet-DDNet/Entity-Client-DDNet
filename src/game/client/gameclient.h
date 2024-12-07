@@ -425,6 +425,8 @@ public:
 		float m_EmoticonStartFraction;
 		int m_EmoticonStartTick;
 
+		bool m_ExplosionGun;
+
 		bool m_Solo;
 		bool m_Jetpack;
 		bool m_CollisionDisabled;

@@ -1,5 +1,3 @@
-// from Chillerbot-ux (credits to chillerbot)
-
 // This file can be included several times.
 
 #ifndef MACRO_CONFIG_INT
@@ -22,10 +20,6 @@ MACRO_CONFIG_INT(ClChangeTileNotification, ac_change_tile_notification, 1, 0, 1,
 MACRO_CONFIG_INT(ClAlwaysReconnect, ac_always_reconnect, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reconnect to last server after some time no matter what")
 MACRO_CONFIG_INT(ClReconnectWhenEmpty, ac_reconnect_when_empty, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reconnect to the current server when the last player leaves")
 
-#if defined(CONF_CURSES_CLIENT)
-MACRO_CONFIG_INT(ClTermHistory, ac_term_history, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Persist input history in filesystem for curses client")
-MACRO_CONFIG_INT(ClTermBrowserSearchTop, ac_term_browser_search_top, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "When opening the search (/) in server browser show it on the top")
-#endif
 
 // warlist
 MACRO_CONFIG_INT(ClWarList, ac_enable_warlist, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Display nameplate color based on chillerbot/warlist directory")
@@ -258,16 +252,16 @@ MACRO_CONFIG_STR(ClHelperPrefix, ac_helper_prefix, 8, "♦ ", CFGFLAG_CLIENT | C
 // Warlist
 
 
-MACRO_CONFIG_STR(ClAddHelperString, ac_addhelper_string, 12, "add_helper", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClAddMuteString, ac_addmute_string, 12, "add_mute", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClAddWarString, ac_addwar_string, 12, "add_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClAddTeamString, ac_addteam_string, 12, "add_team", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClAddTempWarString, ac_addtempWar_string, 12, "add_temp_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClRemoveTempWarString, ac_deltempwar_string, 12, "del_temp_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClRemoveHelperString, ac_delhelper_string, 12, "del_helper", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClRemoveMuteString, ac_delmute_string, 12, "del_mute", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClRemoveWarString, ac_delwar_string, 12, "del_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClRemoveTeamString, ac_delteam_string, 12, "del_team", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClAddHelperString, ac_addhelper_string, 20, "add_helper", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClAddMuteString, ac_addmute_string, 20, "add_mute", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClAddWarString, ac_addwar_string, 20, "add_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClAddTeamString, ac_addteam_string, 20, "add_team", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClAddTempWarString, ac_addtempwar_string, 20, "add_temp_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClRemoveTempWarString, ac_deltempwar_string, 20, "del_temp_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClRemoveHelperString, ac_delhelper_string, 20, "del_helper", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClRemoveMuteString, ac_delmute_string, 20, "del_mute", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClRemoveWarString, ac_delwar_string, 20, "del_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClRemoveTeamString, ac_delteam_string, 20, "del_team", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
 
 
 MACRO_CONFIG_INT(ClSendDotsChat, ac_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt send a message if it start with a '.'")
@@ -530,7 +524,7 @@ MACRO_CONFIG_INT(ClNoSpriteGunFire, cle_sprite_no_gun_fire, 0, 0, 1, CFGFLAG_CLI
 MACRO_CONFIG_INT(ClHookChainSprite, cle_sprite_hook_chain, 0, -50, 88, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite The Gun Fire Uses")
 MACRO_CONFIG_INT(ClHookHeadSprite, cle_sprite_hook_head, 0, -51, 87, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite The Gun Fire Uses")
 
-MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something")
+MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something")
 
 
 // Custom Vairiables from My Server for the editor

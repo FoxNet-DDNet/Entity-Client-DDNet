@@ -1406,6 +1406,7 @@ void CPlayers::OnRender()
 		IsTeamplay = (m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS) != 0;
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
+		const int Local = m_pClient->m_Snap.m_LocalClientId;
 		aRenderInfo[i] = m_pClient->m_aClients[i].m_RenderInfo;
 		aRenderInfo[i].m_TeeRenderFlags = 0;
 		if(m_pClient->m_aClients[i].m_FreezeEnd != 0)
@@ -1435,7 +1436,39 @@ void CPlayers::OnRender()
 				}
 			}
 		}
-		const int Local = m_pClient->m_Snap.m_LocalClientId;
+
+		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
+
+		if(g_Config.m_ClOwnTeeSkin && i == Local)
+		{
+			// change the skin for the player to the ninja
+
+			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClOwnTeeSkinName);
+
+			if((CharacterInfo.m_Cur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja)
+				pSkin = m_pClient->m_Skins.FindOrNullptr("x_ninja");
+
+			if(pSkin != nullptr)
+			{
+				aRenderInfo[Local].m_aSixup[g_Config.m_ClDummy].Reset();
+
+				aRenderInfo[Local].Apply(pSkin);
+
+				if(g_Config.m_ClOwnTeeSkinCustomColor)
+				{
+					aRenderInfo[Local].m_CustomColoredSkin = 1;
+					aRenderInfo[Local].m_ColorBody = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorBody)));
+					aRenderInfo[Local].m_ColorFeet = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorFeet)));
+				}
+
+				else
+				{
+					aRenderInfo[Local].m_CustomColoredSkin = 0;
+					aRenderInfo[Local].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[Local].m_ColorFeet = ColorRGBA(1, 1, 1);
+				}
+			}
+		}
 
 		// sweat mode code
 
@@ -1540,36 +1573,6 @@ void CPlayers::OnRender()
 			}
 		}
 
-
-
-		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
-
-		if(g_Config.m_ClOwnTeeSkin &&  i == Local && !(m_pClient->m_aClients[Local].m_FreezeEnd > 0))
-		{
-			// change the skin for the player to the ninja
-			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClOwnTeeSkinName);
-			if(pSkin != nullptr)
-			{
-				aRenderInfo[Local].m_aSixup[g_Config.m_ClDummy].Reset();
-
-				aRenderInfo[Local].Apply(pSkin);
-
-
-				if(g_Config.m_ClOwnTeeSkinCustomColor)
-				{
-					aRenderInfo[Local].m_CustomColoredSkin = 1;
-					aRenderInfo[Local].m_ColorBody = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorBody)));
-					aRenderInfo[Local].m_ColorFeet = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorFeet)));
-				}
-					
-				else
-				{
-					aRenderInfo[Local].m_CustomColoredSkin = 0;
-					aRenderInfo[Local].m_ColorBody = ColorRGBA(1, 1, 1);
-					aRenderInfo[Local].m_ColorFeet = ColorRGBA(1, 1, 1);
-				}
-			}
-		}
 	}
 
 	CTeeRenderInfo RenderInfoSpec;
