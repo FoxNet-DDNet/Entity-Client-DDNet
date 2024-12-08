@@ -425,6 +425,9 @@ void CAiodob::GoresMode()
 {
 	// if turning off kog mode and it was on before, rebind to previous bind
 
+	if(GameClient()->m_PredictedPrevChar.m_ExplosionGun)
+		g_Config.m_ClGoresMode = 0;
+
 	if(!g_Config.m_ClGoresMode && m_KogModeRebound == true)
 	{
 	
@@ -475,7 +478,7 @@ void CAiodob::OnConnect()
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
 
-	if(g_Config.m_ClAutoEnableGoresMode)
+	if(g_Config.m_ClAutoEnableGoresMode && !(GameClient()->m_PredictedPrevChar.m_ExplosionGun))
 	{
 		if(str_comp(CurrentServerInfo.m_aGameType, "Gores") == 0)
 			g_Config.m_ClGoresMode = 1;
