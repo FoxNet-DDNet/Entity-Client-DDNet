@@ -411,10 +411,7 @@ void CAiodob::AutoJoinTeam()
 					AttempedJoinTeam = false;
 					LocalTeam = GameClient()->m_Teams.Team(Local);
 				}
-
-					
 				return;
-
 			}
 		}
 		m_JoinTeam = time_get() + time_freq() * 0.25;
@@ -425,8 +422,15 @@ void CAiodob::GoresMode()
 {
 	// if turning off kog mode and it was on before, rebind to previous bind
 
-	if(GameClient()->m_PredictedPrevChar.m_ExplosionGun)
+	CCharacterCore Core = GameClient()->m_PredictedPrevChar;
+	if(!GameClient()->CurrentRaceTime())
+		
+	if(Core.m_ExplosionGun)
 		g_Config.m_ClGoresMode = 0;
+
+	if(g_Config.m_ClGoresModeDisableIfWeapons && g_Config.m_ClGoresMode)
+		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got)
+			g_Config.m_ClGoresMode = 0;
 
 	if(!g_Config.m_ClGoresMode && m_KogModeRebound == true)
 	{

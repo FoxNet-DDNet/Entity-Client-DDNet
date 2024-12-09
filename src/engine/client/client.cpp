@@ -219,7 +219,7 @@ void CClient::SendAiodobInfo(int Conn)
 void CClient::SendInfo(int Conn)
 {
 	if(g_Config.m_ClSendClientInfo)
-	SendAiodobInfo(CONN_MAIN);
+		SendAiodobInfo(CONN_MAIN);
 
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
@@ -491,7 +491,7 @@ void CClient::EnterGame(int Conn)
 
 	m_aCodeRunAfterJoin[Conn] = false;
 	m_aCodeRunAfterJoinConsole[Conn] = false;
-	m_aInfoDisplay[Conn] = false;
+
 	// now we will wait for two snapshots
 	// to finish the connection
 	SendEnterGame(Conn);
@@ -1002,7 +1002,7 @@ const char *CClient::PlayerName() const
 	{
 		return g_Config.m_SteamName;
 	}
-	return "Aiodob";
+	return "nameless tee";
 }
 
 const char *CClient::DummyName()
@@ -1022,10 +1022,10 @@ const char *CClient::DummyName()
 	}
 	if(pBase)
 	{
-		str_format(m_aAutomaticDummyName, sizeof(m_aAutomaticDummyName), "[A] %s", pBase);
+		str_format(m_aAutomaticDummyName, sizeof(m_aAutomaticDummyName), "[D] %s", pBase);
 		return m_aAutomaticDummyName;
 	}
-	return "Aiobod";
+	return "brainless tee";
 }
 
 const char *CClient::ErrorString() const
@@ -2106,32 +2106,36 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					}
 					if(g_Config.m_ClRunOnJoinConsole && m_aReceivedSnapshots[Conn] > g_Config.m_ClRunOnJoinDelay && !m_aCodeRunAfterJoinConsole[Conn])
 					{
-						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoinMsg);
+						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoin);
 						m_aCodeRunAfterJoinConsole[Conn] = true;
 					}
-					if(m_aReceivedSnapshots[Conn] > 10 && !m_aInfoDisplay[Conn])
-					{
-						if(g_Config.m_ClDummy)
-							return;
 
-						m_Connected = true;
-						m_aInfoDisplay[Conn] = true;
-					}
 					if(m_aReceivedSnapshots[Conn] > GameTickSpeed() && !m_aCodeRunAfterJoin[Conn])
 					{
 						if(m_ServerCapabilities.m_ChatTimeoutCode)
 						{
+							CNetMsg_Cl_Say TOMsgp;
+							TOMsgp.m_Team = 0;
+							char aBufTO[256];
+							str_format(aBufTO, sizeof(aBufTO), "/timeout %s", m_aTimeoutCodes[Conn]);
+							TOMsgp.m_pMessage = aBufTO;
+							CMsgPacker PackerTO(CNetMsg_Cl_Say::ms_MsgId, false);
+							TOMsgp.Pack(&PackerTO);
+							SendMsg(Conn, &PackerTO, MSGFLAG_VITAL);
+
 							char aBuf[128];
 							char aBufMsg[256];
-							if(!g_Config.m_ClRunOnJoin[0] && !g_Config.m_ClDummyDefaultEyes && !g_Config.m_ClPlayerDefaultEyes)
-								str_format(aBufMsg, sizeof(aBufMsg), "/timeout %s", m_aTimeoutCodes[Conn]);
-							else
-								str_format(aBufMsg, sizeof(aBufMsg), "/mc;timeout %s", m_aTimeoutCodes[Conn]);
-
-							if(g_Config.m_ClRunOnJoin[0])
+							// if(!g_Config.m_ClRunOnJoin[0] && !g_Config.m_ClDummyDefaultEyes && !g_Config.m_ClPlayerDefaultEyes)
+							//	str_format(aBufMsg, sizeof(aBufMsg), "/timeout %s", m_aTimeoutCodes[Conn]);
+							// else
+							//	str_format(aBufMsg, sizeof(aBufMsg), "/mc;timeout %s", m_aTimeoutCodes[Conn]);
+							str_copy(aBufMsg, "/mc");
+							bool HasMsg = false;
+							if(g_Config.m_ClRunOnJoin[0] && !g_Config.m_ClRunOnJoinConsole)
 							{
 								str_format(aBuf, sizeof(aBuf), ";%s", g_Config.m_ClRunOnJoin);
 								str_append(aBufMsg, aBuf);
+								HasMsg = true;
 							}
 							if(g_Config.m_ClDummyDefaultEyes || g_Config.m_ClPlayerDefaultEyes)
 							{
@@ -2162,6 +2166,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 								{
 									str_format(aBuf, sizeof(aBuf), ";%s", aBufEmote);
 									str_append(aBufMsg, aBuf);
+									HasMsg = true;
 								}
 							}
 							if(IsSixup())
@@ -2170,7 +2175,8 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 								Msg7.m_Mode = protocol7::CHAT_ALL;
 								Msg7.m_Target = -1;
 								Msg7.m_pMessage = aBufMsg;
-								SendPackMsg(Conn, &Msg7, MSGFLAG_VITAL, true);
+								if(HasMsg)
+									SendPackMsg(Conn, &Msg7, MSGFLAG_VITAL, true);
 							}
 							else
 							{
@@ -2179,7 +2185,8 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 								MsgP.m_pMessage = aBufMsg;
 								CMsgPacker PackerTimeout(&MsgP);
 								MsgP.Pack(&PackerTimeout);
-								SendMsg(Conn, &PackerTimeout, MSGFLAG_VITAL);
+								if(HasMsg)
+									SendMsg(Conn, &PackerTimeout, MSGFLAG_VITAL);
 							}
 						}
 						m_aCodeRunAfterJoin[Conn] = true;
@@ -3166,7 +3173,7 @@ void CClient::Run()
 
 			// send client info
 			if(g_Config.m_ClSendClientInfo)
-			SendAiodobInfo(CONN_DUMMY);
+				SendAiodobInfo(CONN_DUMMY);
 
 			SendInfo(CONN_DUMMY);
 			m_aNetClient[CONN_DUMMY].Update();
@@ -5055,20 +5062,21 @@ void CClient::GetSmoothTick(int *pSmoothTick, float *pSmoothIntraTick, float Mix
 	GameTime = std::min(GameTime, PredTime);
 	int64_t SmoothTime = clamp(GameTime + (int64_t)(MixAmount * (PredTime - GameTime)), GameTime, PredTime);
 
-	*pSmoothTick = (int)(SmoothTime * GameTickSpeed() / time_freq()) + 1 + g_Config.m_ClFastInput;
-	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1 - g_Config.m_ClFastInput) * time_freq() / GameTickSpeed()) / (float)(time_freq() / GameTickSpeed());
+	*pSmoothTick = (int)(SmoothTime * GameTickSpeed() / time_freq()) + 1;
+	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1) * time_freq() / GameTickSpeed()) / (float)(time_freq() / GameTickSpeed());
 }
 void CClient::GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount)
 {
 	int64_t GameTime = m_aGameTime[g_Config.m_ClDummy].Get(time_get());
 	int64_t PredTime = m_PredictedTime.Get(time_get());
 	GameTime = std::min(GameTime, PredTime);
+
 	int64_t UpperPredTime = clamp(PredTime - (time_freq() / 50) * g_Config.m_ClUnfreezeLagTicks, GameTime, PredTime);
 	int64_t LowestPredTime = clamp(PredTime, GameTime, UpperPredTime);
 	int64_t SmoothTime = clamp(LowestPredTime + (int64_t)(MixAmount * (PredTime - LowestPredTime)), LowestPredTime, PredTime);
 
-	*pSmoothTick = (int)(SmoothTime * 50 / time_freq()) + 1 + g_Config.m_ClFastInput;
-	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1 - g_Config.m_ClFastInput) * time_freq() / 50) / (float)(time_freq() / 50);
+	*pSmoothTick = (int)(SmoothTime * 50 / time_freq()) + 1;
+	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1) * time_freq() / 50) / (float)(time_freq() / 50);
 }
 void CClient::AddWarning(const SWarning &Warning)
 {

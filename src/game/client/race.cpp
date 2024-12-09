@@ -134,14 +134,14 @@ bool CRaceHelper::IsFinish(vec2 Pos1, vec2 Pos2) const
 		{
 			if(pCollision->GetTileIndex(Indice) == TILE_FINISH)
 				return true;
-			if(pCollision->GetFTileIndex(Indice) == TILE_FINISH)
+			if(pCollision->GetFrontTileIndex(Indice) == TILE_FINISH)
 				return true;
 		}
 	else
 	{
 		if(pCollision->GetTileIndex(pCollision->GetPureMapIndex(Pos1)) == TILE_FINISH)
 			return true;
-		if(pCollision->GetFTileIndex(pCollision->GetPureMapIndex(Pos1)) == TILE_FINISH)
+		if(pCollision->GetFrontTileIndex(pCollision->GetPureMapIndex(Pos1)) == TILE_FINISH)
 			return true;
 	}
 	return false;

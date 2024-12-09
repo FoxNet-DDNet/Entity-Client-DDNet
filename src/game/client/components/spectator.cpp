@@ -18,10 +18,17 @@
 
 #include <game/client/gameclient.h>
 
-bool CSpectator::CanChangeSpectator()
+bool CSpectator::CanChangeSpectatorId()
 {
-	// Don't change SpectatorId when not spectating
-	return m_pClient->m_Snap.m_SpecInfo.m_Active;
+	// don't change SpectatorId when not spectating
+	if(!m_pClient->m_Snap.m_SpecInfo.m_Active)
+		return false;
+
+	// stop follow mode from changing SpectatorId
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK && m_pClient->m_DemoSpecId == SPEC_FOLLOW)
+		return false;
+
+	return true;
 }
 
 void CSpectator::SpectateNext(bool Reverse)
@@ -89,7 +96,7 @@ void CSpectator::ConKeySpectator(IConsole::IResult *pResult, void *pUserData)
 void CSpectator::ConSpectate(IConsole::IResult *pResult, void *pUserData)
 {
 	CSpectator *pSelf = (CSpectator *)pUserData;
-	if(!pSelf->CanChangeSpectator())
+	if(!pSelf->CanChangeSpectatorId())
 		return;
 
 	pSelf->Spectate(pResult->GetInteger(0));
@@ -98,7 +105,7 @@ void CSpectator::ConSpectate(IConsole::IResult *pResult, void *pUserData)
 void CSpectator::ConSpectateNext(IConsole::IResult *pResult, void *pUserData)
 {
 	CSpectator *pSelf = (CSpectator *)pUserData;
-	if(!pSelf->CanChangeSpectator())
+	if(!pSelf->CanChangeSpectatorId())
 		return;
 
 	pSelf->SpectateNext(false);
@@ -107,7 +114,7 @@ void CSpectator::ConSpectateNext(IConsole::IResult *pResult, void *pUserData)
 void CSpectator::ConSpectatePrevious(IConsole::IResult *pResult, void *pUserData)
 {
 	CSpectator *pSelf = (CSpectator *)pUserData;
-	if(!pSelf->CanChangeSpectator())
+	if(!pSelf->CanChangeSpectatorId())
 		return;
 
 	pSelf->SpectateNext(true);
@@ -353,7 +360,6 @@ void CSpectator::OnRender()
 			Spectate(m_SelectedSpectatorId);
 		}
 	}
-	// Free-View Text Color
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, FreeViewSelected ? 1.0f : 0.5f);
 	TextRender()->Text(Width / 2.0f - (ObjWidth - 40.0f), Height / 2.0f - 280.f + (60.f - BigFontSize) / 2.f, BigFontSize, Localize("Free-View"), -1.0f);
 
@@ -367,7 +373,6 @@ void CSpectator::OnRender()
 			GameClient()->m_MultiViewActivated = true;
 		}
 	}
-	// Multi-View Text Color
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, MultiViewSelected ? 1.0f : 0.5f);
 	TextRender()->Text(Width / 2.0f - (ObjWidth - 40.0f) + (ObjWidth * 2.0f / 3.0f), Height / 2.0f - 280.f + (60.f - BigFontSize) / 2.f, BigFontSize, Localize("Multi-View"), -1.0f);
 
@@ -533,7 +538,7 @@ void CSpectator::OnRender()
 					TextRender()->TextColor(rgb.WithAlpha(0.5f));
 			}
 			else if(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend && g_Config.m_ClSpecMenuColors)
-			{
+		{
 				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 				if(PlayerSelected)
 					TextRender()->TextColor(rgb.WithAlpha(1.0f));
@@ -549,10 +554,9 @@ void CSpectator::OnRender()
 					TextRender()->TextColor(rgb.WithAlpha(0.5f));
 			}
 			else
-				TextRender()->TextColor(1.0f, 1.0f, 1.0f, PlayerSelected ? 1.0f : 0.5f);
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, PlayerSelected ? 1.0f : 0.5f);
 			TeeAlpha = 1.0f;
 		}
-
 		CTextCursor NameCursor;
 		TextRender()->SetCursor(&NameCursor, Width / 2.0f + x + 50.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
 		NameCursor.m_LineWidth = 180.0f;
@@ -607,39 +611,11 @@ void CSpectator::OnRender()
 
 		RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos, TeeAlpha);
 
-		if(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend && g_Config.m_ClSpecMenuFriendPrefix)
+		if(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend)
 		{
 			ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor));
 			TextRender()->TextColor(rgb.WithAlpha(1.f));
-			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClFriendPrefix, 220.0f);
-			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-		}
-		else if(IsWar || IsTeam || IsHelper || IsWarClan)
-		{
-			if(IsHelper && g_Config.m_ClSpecMenuPrefixes)
-			{
-				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
-				TextRender()->TextColor(rgb.WithAlpha(1.f));
-				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClHelperPrefix, 220.0f);
-			}
-			else if(IsWar && g_Config.m_ClSpecMenuPrefixes)
-			{
-				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-				TextRender()->TextColor(rgb.WithAlpha(1.f));
-				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClEnemyPrefix, 220.0f);
-			}
-			else if(IsTeam && g_Config.m_ClSpecMenuPrefixes)
-			{
-				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
-				TextRender()->TextColor(rgb.WithAlpha(1.f));
-				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClTeammatePrefix, 220.0f);
-			}
-			else if(IsWarClan && g_Config.m_ClSpecMenuPrefixes && g_Config.m_ClAutoClanWar && !IsWar && !IsHelper && !IsTeam)
-			{
-				ColorRGBA rgb = (ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f));
-				TextRender()->TextColor(rgb.WithAlpha(1.f));
-				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClTeammatePrefix, 220.0f);
-			}
+			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, "♥", 220.0f);
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 

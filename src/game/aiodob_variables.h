@@ -359,6 +359,7 @@ MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_C
 
 	// KoG Mode
 	MACRO_CONFIG_INT(ClGoresMode, ac_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
+	MACRO_CONFIG_INT(ClGoresModeDisableIfWeapons, ac_gores_mode_disable_weapons, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable Gores Mode When The Player Has Another Weapon")
 	MACRO_CONFIG_INT(ClAutoEnableGoresMode, ac_auto_enable_gores_mode, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "enables it on Gores gametype and disables on others")
 	MACRO_CONFIG_INT(ClDisableGoresOnShutdown, ac_disable_gores_on_shutdown, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "disables it on shutdown")
 	MACRO_CONFIG_STR(ClGoresModeSaved, ac_gores_mode_saved, 128, "+fire", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Edit This")

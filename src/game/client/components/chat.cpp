@@ -872,6 +872,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		str_copy(pCurrentLine->m_aText, pLine);
 		// Set custom color
 		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageClientColor));
+		//bro, check out this client: kr​xclient ·xyz
 	}
 	else if(pCurrentLine->m_ClientId == -3)
 	{
@@ -919,12 +920,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		pCurrentLine->m_Friend = LineAuthor.m_Friend;
 		pCurrentLine->m_Paused = LineAuthor.m_Paused || LineAuthor.m_Spec;
-
-
-	
-		
-		
-		
 
 		pCurrentLine->m_IsClanWar = GameClient()->m_WarList.IsClanWarlist(LineAuthor.m_aClan);
 	

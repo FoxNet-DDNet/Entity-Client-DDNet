@@ -207,7 +207,7 @@ public:
 	CRaceDemo m_RaceDemo;
 	CGhost m_Ghost;
 
-	CTooltips m_Tooltips;	
+	CTooltips m_Tooltips;
 
 private:
 	std::vector<class CComponent *> m_vpAll;
@@ -863,8 +863,6 @@ private:
 
 	bool m_aDDRaceMsgSent[NUM_DUMMIES];
 	int m_aShowOthers[NUM_DUMMIES];
-
-	int m_ReceivePoints[NUM_DUMMIES];
 
 	void UpdatePrediction();
 	void UpdateRenderedCharacters();
