@@ -163,6 +163,9 @@ class CWarList : public CComponent
 	static void ConWars(IConsole::IResult *pResult, void *pUserData);
 	void Wars();
 
+	static void ConClanTeams(IConsole::IResult *pResult, void *pUserData);
+	void ClanTeams();
+
 	static void ConTeams(IConsole::IResult *pResult, void *pUserData);
 	void Teams();
 
@@ -171,9 +174,6 @@ class CWarList : public CComponent
 
 	static void ConMutes(IConsole::IResult *pResult, void *pUserData);
 	void Mutes();
-
-	static void ConRemoveClanWar(IConsole::IResult *pResult, void *pUserData);
-	static void ConAddClanWar(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConRemoveTempWar(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddTempWar(IConsole::IResult *pResult, void *pUserData);
@@ -278,8 +278,6 @@ public:
 
 	void RemoveSimpleTeam(const char *pName);
 	void RemoveSimpleWar(const char *pName);
-
-	void GetWarClansStr(char *pBuf, int Size);
 
 	// non cached used when its about the name and there is no up to date id
 	bool IsMute(int ClientId);

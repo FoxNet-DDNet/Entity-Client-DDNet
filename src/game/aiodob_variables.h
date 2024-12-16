@@ -11,7 +11,6 @@
 
 MACRO_CONFIG_INT(ClFinishRename, ac_finish_rename, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Change name to ac_finish_name if finish is near.")
 MACRO_CONFIG_STR(ClFinishName, ac_finish_name, 16, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Change to this name if ac_finish_rename is active.")
-MACRO_CONFIG_INT(ClCampHack, ac_camp_hack, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "0=off 1=mark with gun 2=auto walk")
 MACRO_CONFIG_STR(ClAutoReplyMsg, ac_auto_reply_msg, 255, "I'm currently tabbed out", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply when pinged in chat and ac_auto_reply is set to 1")
 MACRO_CONFIG_INT(ClTabbedOutMsg, ac_tabbed_out_msg, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let others know when pinged in chat that you are tabbed out")
 
@@ -253,15 +252,25 @@ MACRO_CONFIG_STR(ClHelperPrefix, ac_helper_prefix, 8, "♦ ", CFGFLAG_CLIENT | C
 
 
 MACRO_CONFIG_STR(ClAddHelperString, ac_addhelper_string, 20, "add_helper", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClAddMuteString, ac_addmute_string, 20, "add_mute", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClAddWarString, ac_addwar_string, 20, "add_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClAddTeamString, ac_addteam_string, 20, "add_team", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClRemoveHelperString, ac_delhelper_string, 20, "del_helper", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+
 MACRO_CONFIG_STR(ClAddTempWarString, ac_addtempwar_string, 20, "add_temp_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
 MACRO_CONFIG_STR(ClRemoveTempWarString, ac_deltempwar_string, 20, "del_temp_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
-MACRO_CONFIG_STR(ClRemoveHelperString, ac_delhelper_string, 20, "del_helper", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+
+MACRO_CONFIG_STR(ClAddMuteString, ac_addmute_string, 20, "add_mute", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
 MACRO_CONFIG_STR(ClRemoveMuteString, ac_delmute_string, 20, "del_mute", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+
+MACRO_CONFIG_STR(ClAddWarString, ac_addwar_string, 20, "add_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
 MACRO_CONFIG_STR(ClRemoveWarString, ac_delwar_string, 20, "del_war", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+
+MACRO_CONFIG_STR(ClAddTeamString, ac_addteam_string, 20, "add_team", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
 MACRO_CONFIG_STR(ClRemoveTeamString, ac_delteam_string, 20, "del_team", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+
+MACRO_CONFIG_STR(ClAddClanWarString, ac_addclanwar_string, 20, "add_clanwar", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClDelClanWarString, ac_delclanwar_string, 20, "del_clanwar", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+
+MACRO_CONFIG_STR(ClAddClanTeamString, ac_addclanteam_string, 20, "add_clanteam", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
+MACRO_CONFIG_STR(ClDelClanTeamString, ac_delclanteam_string, 20, "del_clanteam", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom War Command String")
 
 
 MACRO_CONFIG_INT(ClSendDotsChat, ac_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt send a message if it start with a '.'")
@@ -406,7 +415,9 @@ MACRO_CONFIG_INT(ClSpecialEffect, cle_special_effect, 1, 0, 1, CFGFLAG_CLIENT | 
 MACRO_CONFIG_INT(ClFreezeParticleSpin, cle_freeze_particle_spin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make Freeze Particles Spin Around The Player")
 
 
-// Rainbow
+// 
+
+
 
 MACRO_CONFIG_INT(ClRainbowSpeed, ac_rainbow_speed, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
 

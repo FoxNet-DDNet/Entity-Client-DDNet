@@ -235,7 +235,7 @@ void CAiodob::AutoKill()
 			{
 				pPrevCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Prev;
 				pCurCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Cur;
-				IsWar = m_pClient->m_aClients[i].m_IsAnyWar || m_pClient->m_aClients[i].m_IsWarClanmate;
+				IsWar = (m_pClient->m_aClients[i].m_IsAnyWar || m_pClient->m_aClients[i].m_IsWarClanmate) && (!m_pClient->m_aClients[i].m_IsAnyTeam || !m_pClient->m_aClients[i].m_IsHelper);
 				EnemyFrozen = pCharacterOther->m_IsInFreeze;
 			}
 
@@ -423,14 +423,23 @@ void CAiodob::GoresMode()
 	// if turning off kog mode and it was on before, rebind to previous bind
 
 	CCharacterCore Core = GameClient()->m_PredictedPrevChar;
-	if(!GameClient()->CurrentRaceTime())
-		
-	if(Core.m_ExplosionGun)
+
+	if(Core.m_ExplosionGun || Core.m_ShortExplosionGun)
 		g_Config.m_ClGoresMode = 0;
 
-	if(g_Config.m_ClGoresModeDisableIfWeapons && g_Config.m_ClGoresMode)
-		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got)
+	if(g_Config.m_ClGoresModeDisableIfWeapons && m_GoresServer)
+	{
+		if(!GameClient()->CurrentRaceTime())
+			m_WeaponsGot = false;
+
+		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got && g_Config.m_ClGoresMode)
+		{
 			g_Config.m_ClGoresMode = 0;
+			m_WeaponsGot = true;
+		}
+		if(m_WeaponsGot == false)
+			g_Config.m_ClGoresMode = 1;
+	}
 
 	if(!g_Config.m_ClGoresMode && m_KogModeRebound == true)
 	{
@@ -482,12 +491,18 @@ void CAiodob::OnConnect()
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
 
-	if(g_Config.m_ClAutoEnableGoresMode && !(GameClient()->m_PredictedPrevChar.m_ExplosionGun))
+	if(g_Config.m_ClAutoEnableGoresMode)
 	{
-		if(str_comp(CurrentServerInfo.m_aGameType, "Gores") == 0)
+		if(!str_comp(CurrentServerInfo.m_aGameType, "Gores"))
+		{
+			m_GoresServer = true;
 			g_Config.m_ClGoresMode = 1;
+		}
 		else
+		{
+			m_GoresServer = false;
 			g_Config.m_ClGoresMode = 0;
+		}
 	}
 
 	char aBuf[512];

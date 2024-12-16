@@ -32,15 +32,6 @@ void CChillerBotUX::OnRender()
 	RenderEnabledComponents();
 	FinishRenameTick();
 	ChangeTileNotifyTick();
-	m_ForceDir = 0;
-	CampHackTick();
-	if(!m_ForceDir && m_LastForceDir)
-	{
-		m_pClient->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy] = 0;
-		m_pClient->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] = 0;
-		
-	}
-	m_LastForceDir = m_ForceDir;
 }
 
 void CChillerBotUX::OnStateChange(int NewState, int OldState)
@@ -228,107 +219,6 @@ bool CChillerBotUX::SetComponentNoteLong(const char *pComponent, const char *pNo
 	return false;
 }
 
-
-void CChillerBotUX::CampHackTick()
-{
-	if(!GameClient()->m_Snap.m_pLocalCharacter)
-		return;
-	if(!g_Config.m_ClCampHack)
-		return;
-	if(Layers()->GameGroup())
-	{
-		float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-		Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-		RenderTools()->MapScreenToGroup(m_pClient->m_Camera.m_Center.x, m_pClient->m_Camera.m_Center.y, Layers()->GameGroup(), m_pClient->m_Camera.m_Zoom);
-		Graphics()->DrawRect(m_CampHackX1, m_CampHackY1, 20.0f, 20.0f, ColorRGBA(0, 0, 0, 0.4f), IGraphics::CORNER_ALL, 3.0f);
-		Graphics()->DrawRect(m_CampHackX2, m_CampHackY2, 20.0f, 20.0f, ColorRGBA(0, 0, 0, 0.4f), IGraphics::CORNER_ALL, 3.0f);
-		if(m_CampHackX1 && m_CampHackX2 && m_CampHackY1 && m_CampHackY2)
-		{
-			if(m_CampHackX1 < m_CampHackX2)
-				Graphics()->DrawRect(m_CampHackX1, m_CampHackY1, m_CampHackX2 - m_CampHackX1, m_CampHackY2 - m_CampHackY1, ColorRGBA(0, 1, 0, 0.2f), IGraphics::CORNER_ALL, 3.0f);
-			else
-				Graphics()->DrawRect(m_CampHackX1, m_CampHackY1, m_CampHackX2 - m_CampHackX1, m_CampHackY2 - m_CampHackY1, ColorRGBA(1, 0, 0, 0.2f), IGraphics::CORNER_ALL, 3.0f);
-		}
-		TextRender()->Text(m_CampHackX1, m_CampHackY1, 10.0f, "1", -1);
-		TextRender()->Text(m_CampHackX2, m_CampHackY2, 10.0f, "2", -1);
-		Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
-	}
-	if(!m_CampHackX1 || !m_CampHackX2 || !m_CampHackY1 || !m_CampHackY2)
-		return;
-	if(g_Config.m_ClCampHack < 2 || GameClient()->m_Snap.m_pLocalCharacter->m_Weapon != WEAPON_HAMMER)
-		return;
-	if(m_CampHackX1 > GameClient()->m_Snap.m_pLocalCharacter->m_X)
-	{
-		m_pClient->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy] = 1;
-		m_pClient->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] = 0;
-		m_ForceDir = 1;
-		m_pClient->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Direction = 1;
-	}
-	else if(m_CampHackX2 < GameClient()->m_Snap.m_pLocalCharacter->m_X)
-	{
-		m_pClient->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy] = 0;
-		m_pClient->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] = 1;
-		m_ForceDir = -1;
-	
-			m_pClient->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Direction = -1;
-	}
-}
-
-void CChillerBotUX::SelectCampArea(int Key)
-{
-	if(!GameClient()->m_Snap.m_pLocalCharacter)
-		return;
-	if(g_Config.m_ClCampHack != 1)
-		return;
-	if(Key != KEY_MOUSE_1)
-		return;
-	if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon != WEAPON_GUN)
-		return;
-	m_CampClick++;
-	if(m_CampClick % 2 == 0)
-	{
-		// UNSET IF CLOSE
-		vec2 Current = vec2(GameClient()->m_Snap.m_pLocalCharacter->m_X, GameClient()->m_Snap.m_pLocalCharacter->m_Y);
-		vec2 CrackPos1 = vec2(m_CampHackX1, m_CampHackY1);
-		float dist = distance(CrackPos1, Current);
-		if(dist < 100.0f)
-		{
-			m_CampHackX1 = 0;
-			m_CampHackY1 = 0;
-			GameClient()->m_Chat.AddLine(-2, 0, "Unset camp[1]");
-			return;
-		}
-		vec2 CrackPos2 = vec2(m_CampHackX2, m_CampHackY2);
-		dist = distance(CrackPos2, Current);
-		if(dist < 100.0f)
-		{
-			m_CampHackX2 = 0;
-			m_CampHackY2 = 0;
-			GameClient()->m_Chat.AddLine(-2, 0, "Unset camp[2]");
-			return;
-		}
-		// SET OTHERWISE
-		if(m_CampClick == 2)
-		{
-			m_CampHackX1 = GameClient()->m_Snap.m_pLocalCharacter->m_X;
-			m_CampHackY1 = GameClient()->m_Snap.m_pLocalCharacter->m_Y;
-		}
-		else
-		{
-			m_CampHackX2 = GameClient()->m_Snap.m_pLocalCharacter->m_X;
-			m_CampHackY2 = GameClient()->m_Snap.m_pLocalCharacter->m_Y;
-		}
-		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf),
-			"Set camp[%d] %d",
-			m_CampClick == 2 ? 1 : 2,
-			GameClient()->m_Snap.m_pLocalCharacter->m_X / 32);
-		GameClient()->m_Chat.AddLine(-2, 0, aBuf);
-	}
-	if(m_CampClick > 3)
-		m_CampClick = 0;
-}
-
 void CChillerBotUX::FinishRenameTick()
 {
 	if(!m_pClient->m_Snap.m_pLocalCharacter)
@@ -406,10 +296,6 @@ void CChillerBotUX::UpdateComponents()
 		EnableComponent("chillerbot hud");
 	else
 		DisableComponent("chillerbot hud");
-	if(g_Config.m_ClCampHack)
-		EnableComponent("camp hack");
-	else
-		DisableComponent("camp hack");
 	if(g_Config.m_ClFinishRename)
 		EnableComponent("finish rename");
 	else
@@ -422,9 +308,6 @@ void CChillerBotUX::UpdateComponents()
 
 void CChillerBotUX::OnConsoleInit()
 {
-		Console()->Register("camp", "?i[left]i[right]?s[tile|raw]", CFGFLAG_CLIENT, ConCampHack, this, "Activate camp mode relative to tee");
-	Console()->Register("camp_abs", "i[x1]i[y1]i[x2]i[y2]?s[tile|raw]", CFGFLAG_CLIENT, ConCampHackAbs, this, "Activate camp mode absolute in the map");
-	Console()->Register("uncamp", "", CFGFLAG_CLIENT, ConUnCampHack, this, "Same as cl_camp_hack 0 but resets walk input");
 	Console()->Register("dump_players", "?s[search]", CFGFLAG_CLIENT, ConDumpPlayers, this, "Prints players to console");
 	Console()->Register("force_quit", "", CFGFLAG_CLIENT, ConForceQuit, this, "Forces a dirty client quit all data will be lost");
 
@@ -473,28 +356,6 @@ void CChillerBotUX::ConchainShowLastKiller(IConsole::IResult *pResult, void *pUs
 void CChillerBotUX::ConchainShowLastPing(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
 {
 	pfnCallback(pResult, pCallbackUserData);
-}
-
-void CChillerBotUX::ConCampHackAbs(IConsole::IResult *pResult, void *pUserData)
-{
-	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
-	int Tile = 32;
-	if(!str_comp(pResult->GetString(0), "raw"))
-		Tile = 1;
-	g_Config.m_ClCampHack = 2;
-	pSelf->EnableComponent("camp hack");
-	// absolute all coords
-	if(pResult->NumArguments() > 1)
-	{
-		if(pSelf->GameClient()->m_Snap.m_pLocalCharacter)
-		{
-			pSelf->m_CampHackX1 = Tile * pResult->GetInteger(0);
-			pSelf->m_CampHackY1 = Tile * pResult->GetInteger(1);
-			pSelf->m_CampHackX2 = Tile * pResult->GetInteger(2);
-			pSelf->m_CampHackY2 = Tile * pResult->GetInteger(3);
-		}
-		return;
-	}
 }
 
 void CChillerBotUX::DumpPlayers(const char *pSearch)
@@ -600,47 +461,6 @@ void CChillerBotUX::DumpPlayers(const char *pSearch)
 	}
 	dbg_msg("dump_players", "+----------+--+----------------+----------------+---+-------+");
 }
-
-void CChillerBotUX::ConCampHack(IConsole::IResult *pResult, void *pUserData)
-{
-	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
-	int Tile = 32;
-	if(!str_comp(pResult->GetString(0), "raw"))
-		Tile = 1;
-	g_Config.m_ClCampHack = 2;
-	if(!pResult->NumArguments())
-	{
-		if(pSelf->GameClient()->m_Snap.m_pLocalCharacter)
-		{
-			pSelf->m_CampHackX1 = pSelf->GameClient()->m_Snap.m_pLocalCharacter->m_X - 32 * 3;
-			pSelf->m_CampHackY1 = pSelf->GameClient()->m_Snap.m_pLocalCharacter->m_Y;
-			pSelf->m_CampHackX2 = pSelf->GameClient()->m_Snap.m_pLocalCharacter->m_X + 32 * 3;
-			pSelf->m_CampHackY2 = pSelf->GameClient()->m_Snap.m_pLocalCharacter->m_Y;
-		}
-		return;
-	}
-	// relative left and right
-	if(pResult->NumArguments() > 1)
-	{
-		if(pSelf->GameClient()->m_Snap.m_pLocalCharacter)
-		{
-			pSelf->m_CampHackX1 = pSelf->GameClient()->m_Snap.m_pLocalCharacter->m_X - Tile * pResult->GetInteger(0);
-			pSelf->m_CampHackY1 = pSelf->GameClient()->m_Snap.m_pLocalCharacter->m_Y;
-			pSelf->m_CampHackX2 = pSelf->GameClient()->m_Snap.m_pLocalCharacter->m_X + Tile * pResult->GetInteger(1);
-			pSelf->m_CampHackY2 = pSelf->GameClient()->m_Snap.m_pLocalCharacter->m_Y;
-		}
-		return;
-	}
-}
-
-void CChillerBotUX::ConUnCampHack(IConsole::IResult *pResult, void *pUserData)
-{
-	CChillerBotUX *pSelf = (CChillerBotUX *)pUserData;
-	g_Config.m_ClCampHack = 0;
-	pSelf->m_pClient->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy] = 0;
-	pSelf->m_pClient->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] = 0;
-}
-
 
 void CChillerBotUX::OnMessage(int MsgType, void *pRawMsg)
 {

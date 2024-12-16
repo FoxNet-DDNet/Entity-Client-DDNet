@@ -58,7 +58,7 @@ void CCharacter::HandleJetpack()
 	bool FullAuto = false;
 	if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
 		FullAuto = true;
-	if(m_Core.m_Jetpack || m_Core.m_ExplosionGun && m_Core.m_ActiveWeapon == WEAPON_GUN)
+	if((m_Core.m_Jetpack || m_Core.m_ExplosionGun || m_Core.m_ShortExplosionGun) && m_Core.m_ActiveWeapon == WEAPON_GUN)
 		FullAuto = true;
 
 	// check if we gonna fire
@@ -265,7 +265,7 @@ void CCharacter::FireWeapon()
 	bool FullAuto = false;
 	if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
 		FullAuto = true;
-	if(m_Core.m_Jetpack || m_Core.m_ExplosionGun && m_Core.m_ActiveWeapon == WEAPON_GUN)
+	if((m_Core.m_Jetpack || m_Core.m_ExplosionGun || m_Core.m_ShortExplosionGun) && m_Core.m_ActiveWeapon == WEAPON_GUN)
 		FullAuto = true;
 	if(m_FrozenLastTick)
 		FullAuto = true;
@@ -378,6 +378,13 @@ void CCharacter::FireWeapon()
 				Sound = SOUND_GRENADE_FIRE;
 			}
 
+			if(m_Core.m_ShortExplosionGun)
+			{
+				Explosive = true;
+				Sound = SOUND_GRENADE_FIRE;
+				Lifetime = (int)(GameWorld()->GameTickSpeed() * 0.015f);
+			}
+
 			new CProjectile(
 				GameWorld(),
 				WEAPON_GUN, // Type
@@ -387,9 +394,9 @@ void CCharacter::FireWeapon()
 				Lifetime, // Span
 				false, // Freeze
 				Explosive, // Explosive
-				0, // Force
 				Sound // SoundImpact
-			);
+			); // SoundImpact
+
 		}
 	}
 	break;
@@ -1220,7 +1227,10 @@ void CCharacter::ResetPrediction()
 	m_Core.m_LaserHitDisabled = false;
 	m_Core.m_EndlessJump = false;
 	m_Core.m_Jetpack = false;
+
 	m_Core.m_ExplosionGun = false;
+	m_Core.m_ShortExplosionGun = false;
+
 	m_NinjaJetpack = false;
 	m_Core.m_Jumps = 2;
 	m_Core.m_HookHitDisabled = false;

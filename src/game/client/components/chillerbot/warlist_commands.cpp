@@ -868,22 +868,22 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 	{
 		m_pClient->m_Chat.SendChat(0, "/kill");
 	}
-	else if(!str_comp(pCmd, "clanwar") || !str_comp(pCmd, "addclanwar")) // "team <name>"
+	else if(!str_comp(pCmd, "clanwar") || !str_comp(pCmd, "addclanwar") || !str_comp(pCmd, g_Config.m_ClAddClanWarString)) // "team <name>"
 	{
 		AddSimpleClanWar(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "delclanwar") || !str_comp(pCmd, "unclanwar")) // "team <name>"
+	else if(!str_comp(pCmd, "delclanwar") || !str_comp(pCmd, "unclanwar") || !str_comp(pCmd, g_Config.m_ClDelClanWarString)) // "team <name>"
 	{
 		RemoveSimpleClanWar(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "clanteam") || !str_comp(pCmd, "addclanteam")) // "team <name>"
+	else if(!str_comp(pCmd, "clanteam") || !str_comp(pCmd, "addclanteam") || !str_comp(pCmd, g_Config.m_ClAddClanTeamString)) // "team <name>"
 	{
 		AddSimpleClanTeam(pRawArgLine);
 		return true;
 	}
-	else if(!str_comp(pCmd, "delclanteam") || !str_comp(pCmd, "unclanteam")) // "team <name>"
+	else if(!str_comp(pCmd, "delclanteam") || !str_comp(pCmd, "unclanteam") || !str_comp(pCmd, g_Config.m_ClDelClanTeamString)) // "team <name>"
 	{
 		RemoveSimpleClanTeam(pRawArgLine);
 		return true;

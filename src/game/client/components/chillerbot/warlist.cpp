@@ -551,7 +551,7 @@ void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor, bool OtherTeam
 		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
 		*pColor = Color.WithAlpha(Alpha);
 	}
-	else if(IsWarClanmate(ClientId) && g_Config.m_ClAutoClanWar)
+	else if(IsWarClanmate(ClientId) && g_Config.m_ClAutoClanWar && g_Config.m_ClDoEnemyNameColor)
 	{
 		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
 		*pColor = ColorRGBA(7.0f, 0.5f, 0.2f, Alpha);
@@ -894,7 +894,7 @@ int CWarList::LoadClanTeamNames(const char *pDir)
 	const char *pLine;
 	CLineReader Reader;
 
-	str_format(aBuf, sizeof(aBuf), "loading clan war list file '%s'", aFilename);
+	str_format(aBuf, sizeof(aBuf), "loading clan team list file '%s'", aFilename);
 	Print(aBuf);
 
 	if(!Reader.OpenFile(File))
@@ -1301,7 +1301,8 @@ void CWarList::OnConsoleInit()
 	Console()->Register("helpers", "", CFGFLAG_CLIENT, ConHelpers, this, "wars");
 	Console()->Register("mutes", "", CFGFLAG_CLIENT, ConMutes, this, "teams");
 
-	Console()->Register("mutes", "", CFGFLAG_CLIENT, ConClanWars, this, "teams");
+	Console()->Register("clanwars", "", CFGFLAG_CLIENT, ConClanWars, this, "clanwars");
+	Console()->Register("clanteams", "", CFGFLAG_CLIENT, ConClanTeams, this, "cleanteams");
 }
 
 void CWarList::Wars()
@@ -1437,6 +1438,28 @@ void CWarList::Mutes()
 	}
 }
 
+void CWarList::ClanTeams()
+{
+	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
+	if(pConsole)
+	{
+		char List[6000];
+		char Num[327680];
+		str_format(Num, sizeof(Num), "[%d ClanTeams]", m_vClanTeamlist.size());
+
+		for(int i = 0; i < m_vClanTeamlist.size(); ++i)
+		{
+			char Name[32];
+			str_format(Name, sizeof(Name), "%s, ", m_vClanTeamlist.begin() + i);
+
+			str_append(List, Name, sizeof(List));
+			i++;
+		}
+		pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, Num, List, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor)));
+
+	}
+}
+
 void CWarList::ClanWars()
 {
 	IConsole *pConsole = Kernel()->RequestInterface<IConsole>();
@@ -1476,6 +1499,12 @@ void CWarList::ConClanWars(IConsole::IResult *pResult, void *pUserData)
 	pSelf->ClanWars();
 }
 
+void CWarList::ConClanTeams(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = (CWarList *)pUserData;
+	pSelf->ClanTeams();
+}
+
 void CWarList::ConHelpers(IConsole::IResult *pResult, void *pUserData)
 {
 	CWarList *pSelf = (CWarList *)pUserData;
@@ -1498,20 +1527,8 @@ void CWarList::ConTeams(IConsole::IResult *pResult, void *pUserData)
 {
 	CWarList *pSelf = (CWarList *)pUserData;
 	pSelf->Teams();
-}
+} 
 
-void CWarList::ConAddClanWar(IConsole::IResult *pResult, void *pUserData)
-{
-	CWarList *pSelf = (CWarList *)pUserData;
-	pSelf->AddSimpleClanWar(pResult->GetString(0));
-}
-
-
-void CWarList::ConRemoveClanWar(IConsole::IResult *pResult, void *pUserData)
-{
-	CWarList *pSelf = (CWarList *)pUserData;
-	//pSelf->RemoveSimpleClanWar(pResult->GetString(0));
-}
 
 void CWarList::ConAddTempWar(IConsole::IResult *pResult, void *pUserData)
 {

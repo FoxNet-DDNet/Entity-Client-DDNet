@@ -60,13 +60,6 @@ class CChillerBotUX : public CComponent
 	};
 
 	int m_AfkActivity;
-	int m_CampHackX1;
-	int m_CampHackY1;
-	int m_CampHackX2;
-	int m_CampHackY2;
-	int m_CampClick;
-	int m_ForceDir;
-	int m_LastForceDir;
 	// used for notifications when
 	// out
 	int64_t m_LastNotification;
@@ -81,9 +74,7 @@ class CChillerBotUX : public CComponent
 
 	void ChangeTileNotifyTick();
 	void FinishRenameTick();
-	void CampHackTick();
 	void CheckEmptyTick();
-	void SelectCampArea(int Key);
 	void RenderEnabledComponents();
 	void DumpPlayers(const char *pSearch = 0);
 
@@ -97,9 +88,6 @@ class CChillerBotUX : public CComponent
 	virtual void OnShutdown() override;
 	virtual void OnStateChange(int NewState, int OldState) override;
 
-	static void ConCampHack(IConsole::IResult *pResult, void *pUserData);
-	static void ConCampHackAbs(IConsole::IResult *pResult, void *pUserData);
-	static void ConUnCampHack(IConsole::IResult *pResult, void *pUserData);
 	static void ConDumpPlayers(IConsole::IResult *pResult, void *pUserData);
 	static void ConForceQuit(IConsole::IResult *pResult, void *pUserData);
 

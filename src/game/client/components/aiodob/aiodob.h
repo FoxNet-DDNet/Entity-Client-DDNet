@@ -9,6 +9,8 @@ class CAiodob : public CComponent
 	int Mult;
 	
 	bool m_KogModeRebound;
+	bool m_WeaponsGot;
+	bool m_GoresServer;
 
 public:
 	bool m_SentKill;

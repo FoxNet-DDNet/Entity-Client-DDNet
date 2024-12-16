@@ -426,6 +426,7 @@ public:
 		int m_EmoticonStartTick;
 
 		bool m_ExplosionGun;
+		bool m_ShortExplosionGun;
 
 		bool m_Solo;
 		bool m_Jetpack;
