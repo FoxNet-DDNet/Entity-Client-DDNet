@@ -424,24 +424,19 @@ void CAiodob::GoresMode()
 
 	CCharacterCore Core = GameClient()->m_PredictedPrevChar;
 
-	if(Core.m_ExplosionGun || Core.m_ShortExplosionGun)
-		g_Config.m_ClGoresMode = 0;
-
 	if(g_Config.m_ClGoresModeDisableIfWeapons)
 	{
 
-		if(!GameClient()->CurrentRaceTime() && m_WeaponsGot)
-			m_WeaponsGot = false;
-
-		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got && g_Config.m_ClGoresMode)
+		if((Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_ExplosionGun || Core.m_ShortExplosionGun || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) && g_Config.m_ClGoresMode)
 		{
 			g_Config.m_ClGoresMode = 0;
 			m_WeaponsGot = true;
 			m_GoresModeWasOn = true;
 		}
-		if(m_WeaponsGot == false && m_GoresModeWasOn)
+		if((!Core.m_aWeapons[WEAPON_GRENADE].m_Got && !Core.m_aWeapons[WEAPON_LASER].m_Got && !Core.m_ExplosionGun && !Core.m_ShortExplosionGun && !Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) && m_WeaponsGot)
 		{
 			g_Config.m_ClGoresMode = 1;
+			m_WeaponsGot = false;
 		}
 	}
 
@@ -468,14 +463,21 @@ void CAiodob::GoresMode()
 		return;
 
 	// actual code lmfao
+	bool GoresBind;
+	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
+	if(!str_comp(GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key], "+fire;+prevweapon"))
+		GoresBind = true;
+	else
+		GoresBind = false;
 
-	if(g_Config.m_ClGoresMode)
+	if(g_Config.m_ClGoresMode && GoresBind)
 	{
 		if(m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == 0)
 		{
 			GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
 		}
 	}
+
 }
 
 void CAiodob::OnConnect()
