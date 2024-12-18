@@ -427,18 +427,22 @@ void CAiodob::GoresMode()
 	if(Core.m_ExplosionGun || Core.m_ShortExplosionGun)
 		g_Config.m_ClGoresMode = 0;
 
-	if(g_Config.m_ClGoresModeDisableIfWeapons && m_GoresServer)
+	if(g_Config.m_ClGoresModeDisableIfWeapons)
 	{
-		if(!GameClient()->CurrentRaceTime())
+
+		if(!GameClient()->CurrentRaceTime() && m_WeaponsGot)
 			m_WeaponsGot = false;
 
 		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got && g_Config.m_ClGoresMode)
 		{
 			g_Config.m_ClGoresMode = 0;
 			m_WeaponsGot = true;
+			m_GoresModeWasOn = true;
 		}
-		if(m_WeaponsGot == false)
+		if(m_WeaponsGot == false && m_GoresModeWasOn)
+		{
 			g_Config.m_ClGoresMode = 1;
+		}
 	}
 
 	if(!g_Config.m_ClGoresMode && m_KogModeRebound == true)

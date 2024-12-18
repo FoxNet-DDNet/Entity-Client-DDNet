@@ -10,6 +10,7 @@ class CAiodob : public CComponent
 	
 	bool m_KogModeRebound;
 	bool m_WeaponsGot;
+	bool m_GoresModeWasOn;
 	bool m_GoresServer;
 
 public:

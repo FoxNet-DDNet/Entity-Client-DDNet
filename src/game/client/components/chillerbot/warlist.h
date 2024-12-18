@@ -274,6 +274,8 @@ public:
 	void AddFriend(const char *pName);
 	void RemoveFriend(const char *pName);
 
+	void VoteKick(const char *pName, const char *pReason);
+
 	void OnlineInfo();
 
 	void RemoveSimpleTeam(const char *pName);
