@@ -68,6 +68,7 @@ CMenuBackground::CMenuBackground() :
 	m_MoveTime = 0.0f;
 
 	m_IsInit = false;
+	m_Loading = false;
 }
 
 CBackgroundEngineMap *CMenuBackground::CreateBGMap()
@@ -185,6 +186,8 @@ void CMenuBackground::LoadMenuBackground(bool HasDayHint, bool HasNightHint)
 
 	if(g_Config.m_ClMenuMap[0] != '\0')
 	{
+		m_Loading = true;
+
 		const char *pMenuMap = g_Config.m_ClMenuMap;
 		if(str_comp(pMenuMap, "auto") == 0)
 		{
@@ -289,6 +292,7 @@ void CMenuBackground::LoadMenuBackground(bool HasDayHint, bool HasNightHint)
 				}
 			}
 		}
+		m_Loading = false;
 	}
 }
 
@@ -358,6 +362,11 @@ bool CMenuBackground::Render()
 CCamera *CMenuBackground::GetCurCamera()
 {
 	return &m_Camera;
+}
+
+const char *CMenuBackground::LoadingTitle() const
+{
+	return Localize("Loading background map");
 }
 
 void CMenuBackground::ChangePosition(int PositionNumber)

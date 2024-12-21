@@ -429,6 +429,7 @@ container.sprites.Add(Sprite("muted_icon", set_muted_icon, 0,0,1,1))
 
 container.sprites.Add(Sprite("hook_strong", set_strongweak, 0,0,1,1))
 container.sprites.Add(Sprite("hook_weak", set_strongweak, 1,0,1,1))
+container.sprites.Add(Sprite("hook_icon", set_strongweak, 2,0,1,1))
 
 container.sprites.Add(Sprite("hud_airjump", set_hud, 0,0,2,2))
 container.sprites.Add(Sprite("hud_airjump_empty", set_hud, 2,0,2,2))
