@@ -137,10 +137,9 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 				Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 			}
 		}
-
+		const int Team = m_pClient->m_Teams.Team(pPlayerInfo->m_ClientId);
 		if(g_Config.m_ClNameplatesTeamcolors)
 		{
-			const int Team = m_pClient->m_Teams.Team(pPlayerInfo->m_ClientId);
 			if(Team)
 			{
 				rgb = m_pClient->GetDDTeamColor(Team, 0.75f);
@@ -167,7 +166,8 @@ void CNamePlates::RenderNameplate(vec2 Position, const CNetObj_PlayerInfo *pPlay
 			else if(ClientData.m_Team == TEAM_BLUE)
 				TColor = ColorRGBA(0.7f, 0.7f, 1.0f, a);
 		}
-		m_pClient->m_WarList.SetNameplateColor(pPlayerInfo->m_ClientId, &TColor, OtherTeam);
+		if(!Team)
+			m_pClient->m_WarList.SetNameplateColor(pPlayerInfo->m_ClientId, &TColor, OtherTeam);
 
 		TOutlineColor.a *= Alpha;
 		TColor.a *= Alpha;
