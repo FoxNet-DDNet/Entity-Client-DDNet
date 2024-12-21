@@ -162,7 +162,7 @@ int CMenuBackground::ThemeScan(const char *pName, int IsDir, int DirType, void *
 
 	if(time_get_nanoseconds() - pSelf->m_ThemeScanStartTime > 500ms)
 	{
-		pSelf->GameClient()->m_Menus.RenderLoading(Localize("Loading A-Client"), "Mhm oh yeah", 0, false);
+		pSelf->GameClient()->m_Menus.RenderLoading(Localize("Loading A-Client"), "Mhm oh yeah", 0);
 	}
 	return 0;
 }

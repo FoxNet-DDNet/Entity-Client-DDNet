@@ -253,7 +253,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 			if(ClientData.m_Team == TEAM_RED)
 				Data.m_Color = ColorRGBA(1.0f, 0.5f, 0.5f);
 			else if(ClientData.m_Team == TEAM_BLUE)
-				TColor = ColorRGBA(0.7f, 0.7f, 1.0f, a);
+				Data.m_Color = ColorRGBA(0.7f, 0.7f, 1.0f);
 		}
 		else
 		{
@@ -415,11 +415,9 @@ void CNamePlates::OnRender()
 			// don't render offscreen
 			if(in_range(RenderPos.x, ScreenX0, ScreenX1) && in_range(RenderPos.y, ScreenY0, ScreenY1))
 			{
-				RenderNamePlateGame(RenderPos, pInfo, 0.4f, true);
-			{
 				if(!g_Config.m_ClRenderNameplateSpec)
 				{
-					RenderNameplate(RenderPos, pInfo, 0.4f, true);
+					RenderNamePlateGame(RenderPos, pInfo, 0.4f, true);
 				}
 			}
 		}
