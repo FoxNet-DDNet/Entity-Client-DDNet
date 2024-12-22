@@ -52,7 +52,7 @@ public:
 			m_aClan[0] = '\0';
 			m_FontSize = -INFINITY;
 		}
-		void Update(CNamePlates &This, const char *pClan, float FontSize);
+		void Update(CNamePlates &This, const char *pClientId, float FontSize);
 		STextContainerIndex m_TextContainerIndex;
 		char m_aClan[MAX_CLAN_LENGTH];
 		float m_FontSize;
@@ -61,6 +61,24 @@ public:
 	{
 	public:
 		CNamePlateHookWeakStrongId()
+		{
+			Reset();
+		}
+		void Reset()
+		{
+			m_TextContainerIndex.Reset();
+			m_Id = -1;
+			m_FontSize = -INFINITY;
+		}
+		void Update(CNamePlates &This, int Id, float FontSize);
+		STextContainerIndex m_TextContainerIndex;
+		int m_Id;
+		float m_FontSize;
+	};
+	class CNamePlateOldWeakStrong
+	{
+	public:
+		CNamePlateOldWeakStrong()
 		{
 			Reset();
 		}
@@ -93,6 +111,7 @@ public:
 	}
 	CNamePlateName m_Name;
 	CNamePlateClan m_Clan;
+	CNamePlateOldWeakStrong m_OldWeakStrongId;
 	CNamePlateHookWeakStrongId m_WeakStrongId;
 };
 
@@ -100,6 +119,7 @@ class CNamePlates : public CComponent
 {
 	friend class CNamePlate::CNamePlateName;
 	friend class CNamePlate::CNamePlateClan;
+	friend class CNamePlate::CNamePlateOldWeakStrong;
 	friend class CNamePlate::CNamePlateHookWeakStrongId;
 
 	CNamePlate m_aNamePlates[MAX_CLIENTS];
@@ -129,7 +149,14 @@ class CNamePlates : public CComponent
 		TRISTATE m_HookWeakStrong;
 		bool m_ShowHookWeakStrongId;
 		int m_HookWeakStrongId;
-		float m_FontSizeHookWeakStrong;
+		float m_FontSizeHookWeakStrong; 
+
+		int m_OldNameplateId;
+
+		// TClient
+		int m_RealClientId;
+		bool m_IsGame = false;
+		bool m_IsLocal = false;
 	};
 	void RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateData &Data);
 

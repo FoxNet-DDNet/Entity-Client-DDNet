@@ -2332,6 +2332,7 @@ if(CLIENT)
     component.h
     components/aiodob/aiodob.cpp
     components/aiodob/aiodob.h
+    components/aiodob/menus_aiodob.cpp
     components/background.cpp
     components/background.h
     components/binds.cpp
@@ -2390,7 +2391,6 @@ if(CLIENT)
     components/menu_background.h
     components/menus.cpp
     components/menus.h
-    components/menus_aiodob.cpp
     components/menus_browser.cpp
     components/menus_demo.cpp
     components/menus_ingame.cpp

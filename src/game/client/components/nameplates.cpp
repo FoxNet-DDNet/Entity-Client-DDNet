@@ -58,6 +58,28 @@ void CNamePlate::CNamePlateName::Update(CNamePlates &This, int Id, const char *p
 	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
+void CNamePlate::CNamePlateOldWeakStrong::Update(CNamePlates &This, int Id, float FontSize)
+{
+	if(Id == m_Id && m_FontSize == FontSize)
+		return;
+	m_Id = Id;
+	m_FontSize = FontSize;
+
+	// create namePlates at standard zoom
+	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
+	This.Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	This.RenderTools()->MapScreenToInterface(This.m_pClient->m_Camera.m_Center.x, This.m_pClient->m_Camera.m_Center.y);
+
+	char aBuf[8];
+	str_format(aBuf, sizeof(aBuf), "%d", m_Id);
+
+	CTextCursor Cursor;
+	This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	This.TextRender()->RecreateTextContainer(m_TextContainerIndex, &Cursor, aBuf);
+
+	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+}
+
 void CNamePlate::CNamePlateClan::Update(CNamePlates &This, const char *pClan, float FontSize)
 {
 	if(str_comp(m_aClan, pClan) == 0 &&
@@ -136,22 +158,44 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		Graphics()->QuadsSetRotation(0.0f);
 	}
 
+
 	if((Data.m_pName && Data.m_pName[0] != '\0') || Data.m_ClientId >= 0 || Data.m_ShowFriendMark)
 	{
 		YOffset -= Data.m_FontSize;
 		NamePlate.m_Name.Update(*this, Data.m_ClientId, Data.m_pName, Data.m_ShowFriendMark, Data.m_FontSize);
+
+		// TClient
+		if(Data.m_IsGame && Data.m_RealClientId >= 0)
+			if((g_Config.m_ClPingNameCircle || (m_pClient->m_Scoreboard.Active() && !m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Local)) && !(Client()->State() == IClient::STATE_DEMOPLAYBACK))
+			{
+				Graphics()->TextureClear();
+				Graphics()->QuadsBegin();
+				Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f)).WithAlpha(Data.m_Alpha));
+				float CircleSize = 7.0f;
+				Graphics()->DrawCircle(Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f - CircleSize, YOffset + Data.m_FontSize / 2.0f + 1.4f, CircleSize, 24);
+				Graphics()->QuadsEnd();
+			}
+		ColorRGBA WarColor = Color;
+		if(Data.m_IsGame && Data.m_RealClientId >= 0 && g_Config.m_ClWarList)
+			GameClient()->m_WarList.SetNameplateColor(Data.m_RealClientId, &WarColor, Data.m_Alpha);
+
 		if(NamePlate.m_Name.m_TextContainerIndex.Valid())
-			TextRender()->RenderTextContainer(NamePlate.m_Name.m_TextContainerIndex, Color, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f, YOffset);
+			TextRender()->RenderTextContainer(NamePlate.m_Name.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f, YOffset);
 	}
 	if(Data.m_pClan && Data.m_pClan[0] != '\0')
 	{
 		YOffset -= Data.m_FontSizeClan;
 		NamePlate.m_Clan.Update(*this, Data.m_pClan, Data.m_FontSizeClan);
+
+		ColorRGBA WarColor = Color;
+		if(Data.m_IsGame && Data.m_RealClientId >= 0 && g_Config.m_ClWarList)
+			GameClient()->m_WarList.SetNameplateColor(Data.m_RealClientId, &WarColor, Data.m_Alpha);
+
 		if(NamePlate.m_Clan.m_TextContainerIndex.Valid())
-			TextRender()->RenderTextContainer(NamePlate.m_Clan.m_TextContainerIndex, Color, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Clan.m_TextContainerIndex).m_W / 2.0f, YOffset);
+			TextRender()->RenderTextContainer(NamePlate.m_Clan.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Clan.m_TextContainerIndex).m_W / 2.0f, YOffset);
 	}
 
-	if(Data.m_ShowHookWeakStrongId || (Data.m_ShowHookWeakStrong && Data.m_HookWeakStrong != TRISTATE::SOME)) // Don't show hook icon if there's no ID or hook strength to show
+	if(Data.m_OldNameplateId || Data.m_ShowHookWeakStrongId || (Data.m_ShowHookWeakStrong && Data.m_HookWeakStrong != TRISTATE::SOME)) // Don't show hook icon if there's no ID or hook strength to show
 	{
 		ColorRGBA HookWeakStrongColor;
 		int StrongWeakSpriteId;
@@ -174,6 +218,19 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 			dbg_break();
 		}
 		HookWeakStrongColor.a = Data.m_Alpha;
+
+		// A-Client Nameplates_ClientId
+		if(Data.m_IsGame && !Data.m_IsLocal && Data.m_RealClientId >= 0 && g_Config.m_ClStrongWeakColorId)
+		{
+			if(g_Config.m_ClStrongWeakColorId)
+			{
+				YOffset -= Data.m_FontSize;
+				NamePlate.m_OldWeakStrongId.Update(*this, Data.m_OldNameplateId, Data.m_FontSize);
+
+				if(NamePlate.m_OldWeakStrongId.m_TextContainerIndex.Valid())
+					TextRender()->RenderTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex, HookWeakStrongColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex).m_W / 2.0f, YOffset);
+			}
+		}
 
 		YOffset -= Data.m_FontSizeHookWeakStrong;
 		float ShowHookWeakStrongIdSize = 0.0f;
@@ -222,8 +279,13 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 
 	bool ShowNamePlate = pPlayerInfo->m_Local ? g_Config.m_ClNamePlatesOwn : g_Config.m_ClNamePlates;
 
+	Data.m_RealClientId = pPlayerInfo->m_ClientId;
+	Data.m_IsGame = true;
+	Data.m_IsLocal = pPlayerInfo->m_Local;
+
 	Data.m_Position = Position;
 	Data.m_ClientId = ShowNamePlate && g_Config.m_ClNamePlatesIds ? pPlayerInfo->m_ClientId : -1;
+	Data.m_OldNameplateId = ShowNamePlate && g_Config.m_ClOldNameplateIds ? pPlayerInfo->m_ClientId : -1;
 	Data.m_pName = ShowNamePlate ? m_pClient->m_aClients[pPlayerInfo->m_ClientId].m_aName : nullptr;
 	Data.m_ShowFriendMark = ShowNamePlate && g_Config.m_ClNamePlatesFriendMark && m_pClient->m_aClients[pPlayerInfo->m_ClientId].m_Friend;
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
@@ -261,44 +323,6 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 			if(Team)
 				Data.m_Color = m_pClient->GetDDTeamColor(Team, 0.75f);
 		}
-	}
-
-	if(g_Config.m_ClWarList)
-	{
-
-			if((ClientData.m_IsWar || ClientData.m_IsTempWar) && g_Config.m_ClDoEnemyNameColor)
-			{
-				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-			}
-			else if(ClientData.m_IsTeam && g_Config.m_ClDoTeammateNameColor)
-			{
-				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
-			}
-			else if(ClientData.m_IsHelper && g_Config.m_ClDoHelperNameColor)
-			{
-				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
-			}
-			else if(ClientData.m_IsClanWar && g_Config.m_ClDoEnemyNameColor)
-			{
-				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-			}
-			else if(ClientData.m_IsClanTeam && g_Config.m_ClDoTeammateNameColor)
-			{
-				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-			}
-			else if(ClientData.m_IsWarClanmate && g_Config.m_ClAutoClanWar && g_Config.m_ClDoEnemyNameColor)
-			{
-				// Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
-				Data.m_Color = ColorRGBA(7.0f, 0.5f, 0.2f);
-			}
-			else if(ClientData.m_Friend && g_Config.m_ClDoEnemyNameColor)
-			{
-				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-			}
-			else if(ClientData.m_Foe && g_Config.m_ClDoEnemyNameColor)
-			{
-				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFoeColor));
-			}
 	}
 
 	int ShowDirectionConfig = g_Config.m_ClShowDirection;
@@ -355,8 +379,8 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_HookWeakStrong = TRISTATE::SOME;
 	Data.m_ShowHookWeakStrongId = false;
 	Data.m_HookWeakStrongId = false;
-	if(Data.m_ShowHookWeakStrong)
-	{
+
+
 		const bool Following = (m_pClient->m_Snap.m_SpecInfo.m_Active && !GameClient()->m_MultiViewActivated && m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW);
 		if(m_pClient->m_Snap.m_LocalClientId != -1 || Following)
 		{
@@ -372,7 +396,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 					Data.m_HookWeakStrongId = Other.m_ExtendedData.m_StrongWeakId;
 			}
 		}
-	}
+
 
 	GameClient()->m_NamePlates.RenderNamePlate(m_aNamePlates[pPlayerInfo->m_ClientId], Data);
 }
@@ -393,6 +417,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position)
 	Data.m_Alpha = 1.0f;
 	Data.m_pName = g_Config.m_ClNamePlates ? g_Config.m_PlayerName : nullptr;
 	Data.m_ShowFriendMark = g_Config.m_ClNamePlates && g_Config.m_ClNamePlatesFriendMark;
+	Data.m_OldNameplateId = g_Config.m_ClNamePlates && g_Config.m_ClOldNameplateIds ? 1 : -1;
 	Data.m_ClientId = g_Config.m_ClNamePlates && g_Config.m_ClNamePlatesIds ? 1 : -1;
 	Data.m_FontSize = FontSize;
 	Data.m_pClan = g_Config.m_ClNamePlates && g_Config.m_ClNamePlatesClan ? g_Config.m_PlayerClan : nullptr;

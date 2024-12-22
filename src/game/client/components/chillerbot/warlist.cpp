@@ -508,18 +508,13 @@ bool CWarList::IsTempWar(int ClientId)
 	return false;
 }
 
-void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor, bool OtherTeam)
+void CWarList::SetNameplateColor(int ClientId, ColorRGBA *pColor, float Alpha)
 {
 	const auto &ClientData = m_pClient->m_aClients[ClientId];
 	if(!g_Config.m_ClWarList)
 		return;
 
 	ColorRGBA Color;
-	float Alpha = 1.0f;
-	if(OtherTeam)
-	{
-		Alpha = 0.35f;
-	}
 
 	if(IsWar(ClientId) && g_Config.m_ClDoEnemyNameColor)
 	{

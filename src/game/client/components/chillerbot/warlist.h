@@ -310,7 +310,7 @@ public:
 	bool IsWar(int ClientId);
 	bool IsTeam(int ClientId);
 	bool IsWarClanmate(int ClientId);
-	void SetNameplateColor(int ClientId, ColorRGBA *pColor, bool OtherTeam);
+	void SetNameplateColor(int ClientId, ColorRGBA *pColor, float Alpha);
 	void ReloadList();
 
 	int NumEnemies() { return m_WarDirs; }
