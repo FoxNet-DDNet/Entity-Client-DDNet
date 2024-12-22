@@ -243,8 +243,8 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 			Data.m_Alpha *= (float)g_Config.m_ClShowOthersAlpha / 100.0f;
 	}
 
-	Data.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 	Data.m_OutlineColor = ColorRGBA(0.0f, 0.0f, 0.0f);
+	Data.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 
 	if(g_Config.m_ClNamePlatesTeamcolors)
 	{
@@ -261,6 +261,44 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 			if(Team)
 				Data.m_Color = m_pClient->GetDDTeamColor(Team, 0.75f);
 		}
+	}
+
+	if(g_Config.m_ClWarList)
+	{
+
+			if((ClientData.m_IsWar || ClientData.m_IsTempWar) && g_Config.m_ClDoEnemyNameColor)
+			{
+				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+			}
+			else if(ClientData.m_IsTeam && g_Config.m_ClDoTeammateNameColor)
+			{
+				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
+			}
+			else if(ClientData.m_IsHelper && g_Config.m_ClDoHelperNameColor)
+			{
+				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
+			}
+			else if(ClientData.m_IsClanWar && g_Config.m_ClDoEnemyNameColor)
+			{
+				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+			}
+			else if(ClientData.m_IsClanTeam && g_Config.m_ClDoTeammateNameColor)
+			{
+				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
+			}
+			else if(ClientData.m_IsWarClanmate && g_Config.m_ClAutoClanWar && g_Config.m_ClDoEnemyNameColor)
+			{
+				// Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoEnemyNameColor));
+				Data.m_Color = ColorRGBA(7.0f, 0.5f, 0.2f);
+			}
+			else if(ClientData.m_Friend && g_Config.m_ClDoEnemyNameColor)
+			{
+				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+			}
+			else if(ClientData.m_Foe && g_Config.m_ClDoEnemyNameColor)
+			{
+				Data.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFoeColor));
+			}
 	}
 
 	int ShowDirectionConfig = g_Config.m_ClShowDirection;
