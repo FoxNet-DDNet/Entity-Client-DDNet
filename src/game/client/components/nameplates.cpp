@@ -220,12 +220,12 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		HookWeakStrongColor.a = Data.m_Alpha;
 
 		// A-Client Nameplates_ClientId
-		if(Data.m_IsGame && !Data.m_IsLocal && Data.m_RealClientId >= 0 && g_Config.m_ClStrongWeakColorId)
+		if(Data.m_IsGame && !Data.m_IsLocal && g_Config.m_ClStrongWeakColorId)
 		{
 			if(g_Config.m_ClStrongWeakColorId)
 			{
 				YOffset -= Data.m_FontSize;
-				NamePlate.m_OldWeakStrongId.Update(*this, Data.m_OldNameplateId, Data.m_FontSize);
+				NamePlate.m_OldWeakStrongId.Update(*this, Data.m_RealClientId, Data.m_FontSize);
 
 				if(NamePlate.m_OldWeakStrongId.m_TextContainerIndex.Valid())
 					TextRender()->RenderTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex, HookWeakStrongColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex).m_W / 2.0f, YOffset);
@@ -285,7 +285,6 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 
 	Data.m_Position = Position;
 	Data.m_ClientId = ShowNamePlate && g_Config.m_ClNamePlatesIds ? pPlayerInfo->m_ClientId : -1;
-	Data.m_OldNameplateId = ShowNamePlate && g_Config.m_ClOldNameplateIds ? pPlayerInfo->m_ClientId : -1;
 	Data.m_pName = ShowNamePlate ? m_pClient->m_aClients[pPlayerInfo->m_ClientId].m_aName : nullptr;
 	Data.m_ShowFriendMark = ShowNamePlate && g_Config.m_ClNamePlatesFriendMark && m_pClient->m_aClients[pPlayerInfo->m_ClientId].m_Friend;
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
