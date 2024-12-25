@@ -380,10 +380,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			MiscSettings.VMargin(5.0f, &MiscSettings);
 				if(g_Config.m_ClRenderCursorSpec)
 				{
-					MiscSettings.HSplitTop(175.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(200.0f, &MiscSettings, &AutoKillOntopSettings);
 				}
 				else
-					MiscSettings.HSplitTop(155.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(180.0f, &MiscSettings, &AutoKillOntopSettings);
 			if(s_ScrollRegion.AddRect(MiscSettings))
 			{
 				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -392,6 +392,46 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				MiscSettings.HSplitTop(HeaderHeight, &Button, &MiscSettings);
 				Ui()->DoLabel(&Button, Localize("Miscellaneous"), FontSize, TEXTALIGN_MC);
 				{
+					{
+						static std::vector<const char *> s_FontDropDownNames = {};
+						static CUi::SDropDownState s_FontDropDownState;
+						static CScrollRegion s_FontDropDownScrollRegion;
+						s_FontDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_FontDropDownScrollRegion;
+						s_FontDropDownState.m_SelectionPopupContext.m_SpecialFontRenderMode = true;
+						int FontSelectedOld = -1;
+						for(size_t i = 0; i < TextRender()->GetCustomFaces()->size(); ++i)
+						{
+							if(s_FontDropDownNames.size() != TextRender()->GetCustomFaces()->size())
+								s_FontDropDownNames.push_back(TextRender()->GetCustomFaces()->at(i).c_str());
+
+							if(str_find_nocase(g_Config.m_ClCustomFont, TextRender()->GetCustomFaces()->at(i).c_str()))
+								FontSelectedOld = i;
+						}
+						CUIRect FontDropDownRect, FontDirectory;
+						MiscSettings.HSplitTop(LineSize, &FontDropDownRect, &MiscSettings);
+						FontDropDownRect.VSplitLeft(100.0f, &Label, &FontDropDownRect);
+						FontDropDownRect.VSplitRight(20.0f, &FontDropDownRect, &FontDirectory);
+						FontDropDownRect.VSplitRight(MarginSmall, &FontDropDownRect, nullptr);
+
+						Ui()->DoLabel(&Label, Localize("Custom Font: "), FontSize, TEXTALIGN_ML);
+						const int FontSelectedNew = Ui()->DoDropDown(&FontDropDownRect, FontSelectedOld, s_FontDropDownNames.data(), s_FontDropDownNames.size(), s_FontDropDownState);
+						if(FontSelectedOld != FontSelectedNew)
+						{
+							str_copy(g_Config.m_ClCustomFont, s_FontDropDownNames[FontSelectedNew]);
+							FontSelectedOld = FontSelectedNew;
+							TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
+						}
+
+						CUIRect DirectoryButton;
+						static CButtonContainer s_FontDirectoryId;
+						if(DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, IGraphics::CORNER_ALL))
+						{
+							char aBuf[IO_MAX_PATH_LENGTH];
+							Storage()->CreateFolder("data/aiodob", IStorage::TYPE_ABSOLUTE);
+							Storage()->CreateFolder("data/aiodob/fonts", IStorage::TYPE_ABSOLUTE);
+							Client()->ViewFile("data/aiodob/fonts");
+						}
+					}
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoVerify, ("Auto Verify"), &g_Config.m_ClAutoVerify, &MiscSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &MiscSettings, LineSize);
 
@@ -400,19 +440,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderCursorSpec, ("Show Cursor While Spectating"), &g_Config.m_ClRenderCursorSpec, &MiscSettings, LineSize);
 					if(g_Config.m_ClRenderCursorSpec)
 					{
-						if(!g_Config.m_ClDoCursorSpecOpacity)
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoCursorSpecOpacity, ("Change Cursor Opacity while Spectating"), &g_Config.m_ClDoCursorSpecOpacity, &MiscSettings, LineSize);
-					}
-					char Opacity[512];
-					str_format(Opacity, sizeof(Opacity), "      Cursor Opacity ", g_Config.m_ClRenderCursorSpecOpacity);
-
-					if(g_Config.m_ClDoCursorSpecOpacity)
-					{
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoCursorSpecOpacity, (""), &g_Config.m_ClDoCursorSpecOpacity, &MiscSettings, LineSize);
-						MiscSettings.HSplitTop(-20.f, &Button, &MiscSettings);
 						MiscSettings.HSplitTop(20.f, &Button, &MiscSettings);
-
-						Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpecOpacity, &g_Config.m_ClRenderCursorSpecOpacity, &Button, Localize("      Spec Cursor Opacity"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
+						Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpecOpacity, &g_Config.m_ClRenderCursorSpecOpacity, &Button, Localize("Cursor Opacity"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
 					}
 
 					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);

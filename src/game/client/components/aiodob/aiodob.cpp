@@ -17,13 +17,14 @@
 void CAiodob::OnInit()
 {
 	// on client load
+	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 
 	AttempedJoinTeam = false;
 	JoinedTeam = false;
 	m_SentKill = false;
 	m_SentAutoKill = false;
 	m_KogModeRebound = false;
-	Mult = 0;
+	m_Mult = 0;
 	m_JoinTeam = 0;
 	m_LastFreeze = 0;
 	m_LastMovement = 0;

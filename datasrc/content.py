@@ -226,8 +226,8 @@ container.sounds.Add(SoundSet("ctf_capture", ["audio/sfx_ctf_cap_pl.wv"]))
 
 container.sounds.Add(SoundSet("menu", ["audio/music_menu.wv"]))
 
-image_settings_icon = Image("settings_icon", "aiodob/settings_icon.png")
-image_muted_icon = Image("muted_icon", "aiodob/muted_icon.png")
+image_settings_icon = Image("settings_icon", "aiodob/icons/settings_icon.png")
+image_muted_icon = Image("muted_icon", "aiodob/icons/muted_icon.png")
 
 image_null = Image("null", "")
 image_particles = Image("particles", "particles.png")

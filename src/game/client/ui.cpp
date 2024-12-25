@@ -1355,7 +1355,7 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 		pRect->HMargin(5.0f, &Rail);
 
 	CUIRect Handle;
-	Rail.VSplitLeft(pColorInner ? 8.0f : clamp(33.0f, Rail.h, Rail.w / 3.0f), &Handle, 0);
+	Rail.VSplitLeft(pColorInner ? 8.0f : clamp(33.0f, Rail.h, Rail.w / 3.5f), &Handle, 0);
 	Handle.x += (Rail.w - Handle.w) * Current;
 
 	CUIRect HandleArea = Handle;
@@ -1456,6 +1456,19 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 		Max += 1;
 		if(Value == 0)
 			Value = Max;
+	}
+
+	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidently adjusting the value)
+	int Increment = std::max(1, (Max - Min) / 35);
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && MouseInside(pRect))
+	{
+		Value += Increment;
+		Value = clamp(Value, Min, Max);
+	}
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && MouseInside(pRect))
+	{
+		Value -= Increment;
+		Value = clamp(Value, Min, Max);
 	}
 
 	char aBuf[256];
@@ -1809,6 +1822,10 @@ CUi::EPopupMenuFunctionResult CUi::PopupSelection(void *pContext, CUIRect View, 
 	size_t Index = 0;
 	for(const auto &Entry : pSelectionPopup->m_vEntries)
 	{
+		// TClient
+		if(pSelectionPopup->m_SpecialFontRenderMode)
+			pUI->TextRender()->SetCustomFace(Entry.c_str());
+
 		if(pSelectionPopup->m_aMessage[0] != '\0' || Index != 0)
 			View.HSplitTop(pSelectionPopup->m_EntrySpacing, nullptr, &View);
 		View.HSplitTop(pSelectionPopup->m_EntryHeight, &Slot, &View);
@@ -1822,6 +1839,9 @@ CUi::EPopupMenuFunctionResult CUi::PopupSelection(void *pContext, CUIRect View, 
 		}
 		++Index;
 	}
+	// TClient
+	if(pSelectionPopup->m_SpecialFontRenderMode)
+		pUI->TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 
 	pScrollRegion->End();
 

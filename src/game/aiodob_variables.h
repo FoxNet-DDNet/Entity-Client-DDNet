@@ -104,7 +104,6 @@ MACRO_CONFIG_COL(ClNotifyWhenLastColor, ac_last_notify_color, 29057, CFGFLAG_CLI
 
 
 MACRO_CONFIG_INT(ClRenderCursorSpec, ac_cursor_in_spec, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render your gun cursor when spectating in freeview")
-MACRO_CONFIG_INT(ClDoCursorSpecOpacity, ac_do_cursor_opacity, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allow Cursor Opacity Change While Spectating?")
 MACRO_CONFIG_INT(ClRenderCursorSpecOpacity, ac_cursor_opacity_in_spec, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes Opacity of Curser when Spectating")
 
 // Nameplate in Spec
@@ -148,10 +147,8 @@ MACRO_CONFIG_INT(ClApplyProfileEmote, ac_profile_emote, 1, 0, 1, CFGFLAG_CLIENT 
 // AAAAAAA
 MACRO_CONFIG_INT(ClAmIFrozen, EEEfrz, 0, 0, 1, CFGFLAG_CLIENT, "")
 
-
-// Aiodob Variables
-MACRO_CONFIG_INT(ClAutoVoteOnKrxMessage, ac_autovote_krx_message, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically votes a person that send a krx message")
-
+// Font
+MACRO_CONFIG_STR(ClCustomFont, ac_custom_font, 255, "DejaVu Sans", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom font face")
 
 // Color Variables
 
