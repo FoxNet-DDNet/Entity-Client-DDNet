@@ -866,7 +866,7 @@ bool CWarList::OnChatCmdSimple(char Prefix, int ClientId, int Team, const char *
 		m_pClient->m_Chat.AddLine(-3, 0, "!skin <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!clone <name>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!join <name>");
-		m_pClient->m_Chat.AddLine(-3, 0, "!kick <name> <reason>");
+	//	m_pClient->m_Chat.AddLine(-3, 0, "!kick <name> <reason>");
 		m_pClient->m_Chat.AddLine(-3, 0, "!(un)friend <name>");
 	}
 	/*

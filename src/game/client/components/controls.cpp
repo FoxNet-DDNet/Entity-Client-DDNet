@@ -180,27 +180,16 @@ void CControls::OnMessage(int Msg, void *pRawMsg)
 
 int CControls::SnapInput(int *pData)
 {
-	bool skip_next = false;
-	// Check if the chat bubble should be shown
-	if(g_Config.m_ClChatBubble == 1)
-		// update player state
-		if(m_pClient->m_Chat.IsActive())
-		{
-			m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_CHATTING;
-			skip_next = true;
-		}
+	// update player state
+	if(m_pClient->m_Chat.IsActive() && g_Config.m_ClChatBubble)
+		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_CHATTING;
 
-	if(!skip_next)
-	{
-		// update player state
+	else if(m_pClient->m_Menus.IsActive() && g_Config.m_ClShowOwnMenuToOthers)
+		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_IN_MENU;
+	else
+		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_PLAYING;
 
-		if(m_pClient->m_Menus.IsActive() && g_Config.m_ClShowOwnMenuToOthers)
-			m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_IN_MENU;
-		else
-			m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_PLAYING;
-	}
-
-	if(m_pClient->m_Scoreboard.Active())
+	if(m_pClient->m_Scoreboard.Active() || g_Config.m_ClPingNameCircle)
 		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags |= PLAYERFLAG_SCOREBOARD;
 
 	if(Client()->ServerCapAnyPlayerFlag() && m_pClient->m_Controls.m_aShowHookColl[g_Config.m_ClDummy])
@@ -223,29 +212,44 @@ int CControls::SnapInput(int *pData)
 
 		// set the target anyway though so that we can keep seeing our surroundings,
 		// even if chat or menu are activated
-		m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePos[g_Config.m_ClDummy].x;
-		m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePos[g_Config.m_ClDummy].y;
+		vec2 Pos = m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+		const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
+		if(!m_pClient->m_Snap.m_SpecInfo.m_Active && MaxDistance > 5) // Only multiply mouse coords if not angle bind
+		{
+			if(g_Config.m_ClImproveMousePrecision && MaxDistance < 1000) // Don't scale if it would reduce precision
+				Pos *= length(Pos) * 1000.0f / (float)MaxDistance;
+		}
+		m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)Pos.x;
+		m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)Pos.y;
+
+		if(!m_aInputData[g_Config.m_ClDummy].m_TargetX && !m_aInputData[g_Config.m_ClDummy].m_TargetY)
+			m_aInputData[g_Config.m_ClDummy].m_TargetX = 1;
 
 		// send once a second just to be sure
 		Send = Send || time_get() > m_LastSendTime + time_freq();
 	}
-
+	else
 	{
-		m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePos[g_Config.m_ClDummy].x;
-		m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePos[g_Config.m_ClDummy].y;
-
+		vec2 Pos;
 		if(g_Config.m_ClSubTickAiming && m_aMousePosOnAction[g_Config.m_ClDummy] != vec2(0.0f, 0.0f))
 		{
-			m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePosOnAction[g_Config.m_ClDummy].x;
-			m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePosOnAction[g_Config.m_ClDummy].y;
+			Pos = m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy];
 			m_aMousePosOnAction[g_Config.m_ClDummy] = vec2(0.0f, 0.0f);
 		}
+		else
+
+			Pos = m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+		const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
+		if(!m_pClient->m_Snap.m_SpecInfo.m_Active && MaxDistance > 5) // Only multiply mouse coords if not angle bind
+		{
+			if(g_Config.m_ClImproveMousePrecision && MaxDistance < 1000) // Don't scale if it would reduce precision
+				Pos *= length(Pos) * 1000.0f / (float)(g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance);
+		}
+		m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)Pos.x;
+		m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)Pos.y;
 
 		if(!m_aInputData[g_Config.m_ClDummy].m_TargetX && !m_aInputData[g_Config.m_ClDummy].m_TargetY)
-		{
 			m_aInputData[g_Config.m_ClDummy].m_TargetX = 1;
-			m_aMousePos[g_Config.m_ClDummy].x = 1;
-		}
 
 		// set direction
 		m_aInputData[g_Config.m_ClDummy].m_Direction = 0;
@@ -486,11 +490,6 @@ bool CControls::CheckNewInput()
 	{
 		TestInput.m_TargetX = (int)m_aMousePos[g_Config.m_ClDummy].x;
 		TestInput.m_TargetY = (int)m_aMousePos[g_Config.m_ClDummy].y;
-		if(!g_Config.m_ClOldMouseZoom)
-		{
-			TestInput.m_TargetX *= m_pClient->m_Camera.m_Zoom;
-			TestInput.m_TargetY *= m_pClient->m_Camera.m_Zoom;
-		}
 	}
 
 	m_FastInput = TestInput;

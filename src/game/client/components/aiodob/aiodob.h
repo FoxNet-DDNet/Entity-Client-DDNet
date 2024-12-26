@@ -30,15 +30,6 @@ private:
 
 	virtual void OnConnect();
 
-	int c_X;
-	int c_Y;
-	int c_VelX;
-	int c_VelY;
-
-	virtual void Test();
-
-
-
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;
 };

@@ -76,7 +76,7 @@ MACRO_CONFIG_INT(ClFastInputOthers, ac_fast_input_others, 0, 0, 1, CFGFLAG_CLIEN
 
 // used in fast input code
 	MACRO_CONFIG_INT(ClSmoothPredictionMargin, ac_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
-	MACRO_CONFIG_INT(ClOldMouseZoom, ac_old_mouse_zoom, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Does not zoom mouse based on camera to prevent precision loss at low zoom levels")
+MACRO_CONFIG_INT(ClImproveMousePrecision, tc_improve_mouse_precision, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Improve mouse precision by scaling max distance to 1000")
 
 
 // Run on Join

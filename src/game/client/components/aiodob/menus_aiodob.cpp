@@ -59,6 +59,55 @@ typedef struct
 	int m_ModifierCombination;
 } CKeyInfo;
 
+bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
+{
+	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
+
+	int Value = *pOption;
+	Min /= Scale;
+	Max /= Scale;
+	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidently adjusting the value)
+	int Increment = std::max(1, (Max - Min) / 35);
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && Ui()->MouseInside(pRect))
+	{
+		Value += Increment;
+		Value = clamp(Value, Min, Max);
+	}
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && Ui()->MouseInside(pRect))
+	{
+		Value -= Increment;
+		Value = clamp(Value, Min, Max);
+	}
+
+	char aBuf[256];
+	str_format(aBuf, sizeof(aBuf), "%s: %i%s", pStr, Value * Scale, pSuffix);
+
+	if(NoClampValue)
+	{
+		// clamp the value internally for the scrollbar
+		Value = clamp(Value, Min, Max);
+	}
+
+	CUIRect Label, ScrollBar;
+	pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
+
+	const float LabelFontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
+	Ui()->DoLabel(&Label, aBuf, LabelFontSize, TEXTALIGN_ML);
+
+	Value = pScale->ToAbsolute(Ui()->DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max)), Min, Max);
+	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
+	{
+		Value = *pOption;
+	}
+
+	if(*pOption != Value)
+	{
+		*pOption = Value;
+		return true;
+	}
+	return false;
+}
+
 
 void CMenus::RenderSettingsAiodob(CUIRect MainView)
 {
@@ -70,10 +119,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 	const float TabWidth = TabBar.w / NUMBER_OF_AIODOB_TABS;
 	static CButtonContainer s_aPageTabs[NUMBER_OF_AIODOB_TABS] = {};
 	const char *apTabNames[NUMBER_OF_AIODOB_TABS] = {
-		Localize("Usefull Settings"),
+		Localize("A-Client Settings"),
 		Localize("Other Settings"),
-		Localize("T-Client Stuff"),
-		Localize("Bind Wheel"),
+		Localize("T-Client Settings"),
+		Localize("Bindwheel"),
 	};
 
 	for(int Tab = AIODOB_TAB_PAGE1; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
@@ -421,17 +470,18 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							str_copy(g_Config.m_ClCustomFont, s_FontDropDownNames[FontSelectedNew]);
 							FontSelectedOld = FontSelectedNew;
 							TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
-							// C-Client
-							GameClient()->m_NamePlates.ResetNamePlates();
-							GameClient()->m_Hud.ResetHudContainers();
-							GameClient()->m_Chat.RebuildChat();
+
+							// Reload *hopefully* all Fonts
+							TextRender()->OnPreWindowResize();
+							GameClient()->OnWindowResize();
+							GameClient()->Editor()->OnWindowResize();
+							GameClient()->m_MapImages.SetTextureScale(101);
+							GameClient()->m_MapImages.SetTextureScale(g_Config.m_ClTextEntitiesSize);
 						}
 
-						CUIRect DirectoryButton;
 						static CButtonContainer s_FontDirectoryId;
 						if(DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, IGraphics::CORNER_ALL))
 						{
-							char aBuf[IO_MAX_PATH_LENGTH];
 							Storage()->CreateFolder("data/aiodob", IStorage::TYPE_ABSOLUTE);
 							Storage()->CreateFolder("data/aiodob/fonts", IStorage::TYPE_ABSOLUTE);
 							Client()->ViewFile("data/aiodob/fonts");
@@ -1355,7 +1405,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect OutlineSettings, PlayerIndicatorSettings, FrozenTeeHudSettings, LatencySettings, FastInputSettings;
+		CUIRect OutlineSettings, PlayerIndicatorSettings, FrozenTeeHudSettings, LatencySettings, GhostSettings, FastInputSettings;
 		MainView.VSplitMid(&OutlineSettings, &PlayerIndicatorSettings);
 
 		// Weapon Settings
@@ -1493,7 +1543,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				FastInputSettings.VMargin(Margin, &FastInputSettings);
 
 				FastInputSettings.HSplitTop(HeaderHeight, &Button, &FastInputSettings);
-				Ui()->DoLabel(&Button, Localize("Visaul Anti Latency Tools"), FontSize, TEXTALIGN_MC);
+				Ui()->DoLabel(&Button, Localize("Input"), FontSize, TEXTALIGN_MC);
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFastInput, ("Fast Inputs (-20ms visual input delay)"), &g_Config.m_ClFastInput, &FastInputSettings, LineMargin);
 					if(g_Config.m_ClFastInput)
@@ -1504,7 +1554,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 					
 					FastInputSettings.HSplitTop(10.0f, 0x0, &FastInputSettings);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOldMouseZoom, ("Old Mouse Precision (fixes precision at low zoom levels, \nbreaks /tc, /telecursor while zoomed)"), &g_Config.m_ClOldMouseZoom, &FastInputSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClImproveMousePrecision, Localize("Improve mouse precision by scaling sent max distance to 1000"), &g_Config.m_ClImproveMousePrecision, &FastInputSettings, LineMargin);
 				}
 			}
 		}
@@ -1599,7 +1649,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 	
 		{
 			LatencySettings.HSplitTop(Margin, nullptr, &LatencySettings);
-			LatencySettings.HSplitTop(315.0f, &LatencySettings, 0);
+			LatencySettings.HSplitTop(190.0f, &LatencySettings, &GhostSettings);
 			if(s_ScrollRegion.AddRect(LatencySettings))
 			{
 				LatencySettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1608,99 +1658,56 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				LatencySettings.HSplitTop(HeaderHeight, &Button, &LatencySettings);
 				Ui()->DoLabel(&Button, Localize("Anti Latency Tools"), FontSize, TEXTALIGN_MC);
 				{
-					{
-						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
-						Button.VSplitLeft(165.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %ims", "Prediction Margin", g_Config.m_ClPredictionMargin);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						int PredictionMargin = (int)(Ui()->DoScrollbarH(&g_Config.m_ClPredictionMargin, &Button, (g_Config.m_ClPredictionMargin - 10) / 15.0f) * 15.0f) + 10;
-						if((PredictionMargin < 25 || g_Config.m_ClPredictionMargin <= 25) && g_Config.m_ClPredictionMargin >= 10)
-						{
-							g_Config.m_ClPredictionMargin = PredictionMargin;
-						}
-					}
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRemoveAnti, ("Remove prediction & antiping in freeze"), &g_Config.m_ClRemoveAnti, &LatencySettings, LineMargin);
+					LatencySettings.HSplitTop(20.f, &Button, &LatencySettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClPredictionMargin, &g_Config.m_ClPredictionMargin, &Button, Localize("Prediction Margin"), 10, 25, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRemoveAnti, Localize("Remove prediction & antiping in freeze"), &g_Config.m_ClRemoveAnti, &LatencySettings, LineMargin);
 					if(g_Config.m_ClRemoveAnti)
 					{
-						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
-						Button.VSplitLeft(115.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %ims", "Delay", g_Config.m_ClUnfreezeLagDelayTicks * 20);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClUnfreezeLagDelayTicks = (int)(Ui()->DoScrollbarH(&g_Config.m_ClUnfreezeLagDelayTicks, &Button, (g_Config.m_ClUnfreezeLagDelayTicks) / 150.0f) * 150.0f);
-						g_Config.m_ClUnfreezeLagDelayTicks = std::max(g_Config.m_ClUnfreezeLagDelayTicks, g_Config.m_ClUnfreezeLagTicks);
+						if(g_Config.m_ClUnfreezeLagDelayTicks < g_Config.m_ClUnfreezeLagTicks)
+							g_Config.m_ClUnfreezeLagDelayTicks = g_Config.m_ClUnfreezeLagTicks;
+						LatencySettings.HSplitTop(LineMargin, &Button, &LatencySettings);
+						DoSliderWithScaledValue(&g_Config.m_ClUnfreezeLagTicks, &g_Config.m_ClUnfreezeLagTicks, &Button, Localize("Amount"), 100, 300, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+						LatencySettings.HSplitTop(LineMargin, &Button, &LatencySettings);
+						DoSliderWithScaledValue(&g_Config.m_ClUnfreezeLagDelayTicks, &g_Config.m_ClUnfreezeLagDelayTicks, &Button, Localize("Delay"), 100, 3000, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
 					}
-					if(g_Config.m_ClRemoveAnti)
-					{
-						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
-						Button.VSplitLeft(200.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %ims", "Amount", g_Config.m_ClUnfreezeLagTicks * 20);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClUnfreezeLagTicks = (int)(Ui()->DoScrollbarH(&g_Config.m_ClUnfreezeLagTicks, &Button, (g_Config.m_ClUnfreezeLagTicks) / 15.0f) * 15.0f);
-					}
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClUnpredOthersInFreeze, ("Dont predict other players if you are frozen"), &g_Config.m_ClUnpredOthersInFreeze, &LatencySettings, LineMargin);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPredMarginInFreeze, ("Adjust your prediction margin while frozen"), &g_Config.m_ClPredMarginInFreeze, &LatencySettings, LineMargin);
+					else
+						LatencySettings.HSplitTop(LineMargin * 2, nullptr, &LatencySettings);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClUnpredOthersInFreeze, Localize("Dont predict other players if you are frozen"), &g_Config.m_ClUnpredOthersInFreeze, &LatencySettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPredMarginInFreeze, Localize("Adjust your prediction margin while frozen"), &g_Config.m_ClPredMarginInFreeze, &LatencySettings, LineMargin);
+					LatencySettings.HSplitTop(LineMargin, &Button, &LatencySettings);
 					if(g_Config.m_ClPredMarginInFreeze)
+						Ui()->DoScrollbarOption(&g_Config.m_ClPredMarginInFreezeAmount, &g_Config.m_ClPredMarginInFreezeAmount, &Button, Localize("Frozen Margin"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "ms");
+		
+				}
+			}
+		}
+
+		{
+			GhostSettings.HSplitTop(Margin, nullptr, &GhostSettings);
+			GhostSettings.HSplitTop(160.0f, &GhostSettings, 0);
+			if(s_ScrollRegion.AddRect(GhostSettings))
+			{
+				GhostSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				GhostSettings.VMargin(Margin, &GhostSettings);
+
+				GhostSettings.HSplitTop(HeaderHeight, &Button, &GhostSettings);
+				Ui()->DoLabel(&Button, Localize("Ghost Tools"), FontSize, TEXTALIGN_MC);
+				{
 					{
-						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
-						Button.VSplitLeft(125.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %ims", "Frozen Margin", g_Config.m_ClPredMarginInFreezeAmount);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClPredMarginInFreezeAmount = (int)(Ui()->DoScrollbarH(&g_Config.m_ClPredMarginInFreezeAmount, &Button, (g_Config.m_ClPredMarginInFreezeAmount) / 100.0f) * 100.0f);
-					}
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersGhosts, Localize("Show unpredicted ghosts for other players"), &g_Config.m_ClShowOthersGhosts, &GhostSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSwapGhosts, Localize("Swap ghosts and normal players"), &g_Config.m_ClSwapGhosts, &GhostSettings, LineSize);
+						GhostSettings.HSplitTop(LineSize, &Button, &GhostSettings);
+						Ui()->DoScrollbarOption(&g_Config.m_ClPredGhostsAlpha, &g_Config.m_ClPredGhostsAlpha, &Button, Localize("Predicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
+						GhostSettings.HSplitTop(LineSize, &Button, &GhostSettings);
+						Ui()->DoScrollbarOption(&g_Config.m_ClUnpredGhostsAlpha, &g_Config.m_ClUnpredGhostsAlpha, &Button, Localize("Unpredicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideFrozenGhosts, Localize("Hide ghosts of frozen players"), &g_Config.m_ClHideFrozenGhosts, &GhostSettings, LineSize);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderGhostAsCircle, Localize("Render ghosts as circles"), &g_Config.m_ClRenderGhostAsCircle, &GhostSettings, LineSize);
 
-					// LatencySettings.HSplitTop(10.0f, 0, &LatencySettings);
-					LatencySettings.HSplitTop(30.0f, &LatencySettings, &LatencySettings);
-					Ui()->DoLabel(&LatencySettings, ("Ghost Tools"), 18, TEXTALIGN_LEFT);
-
-					LatencySettings.HSplitTop(22.0f, &LatencySettings, &LatencySettings);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersGhosts, ("Show unpredicted ghosts for other players"), &g_Config.m_ClShowOthersGhosts, &LatencySettings, LineMargin);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSwapGhosts, ("Swap ghosts and normal players"), &g_Config.m_ClSwapGhosts, &LatencySettings, LineMargin);
-					{
-						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
-						Button.VSplitLeft(200.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %i%%", "Predicted Alpha", g_Config.m_ClPredGhostsAlpha);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClPredGhostsAlpha = (int)(Ui()->DoScrollbarH(&g_Config.m_ClPredGhostsAlpha, &Button, (g_Config.m_ClPredGhostsAlpha) / 100.0f) * 100.0f);
-					}
-					{
-						LatencySettings.HSplitTop(20.0f, &Button, &LatencySettings);
-						Button.VSplitLeft(200.0f, &Label, &Button);
-						char aBuf[64];
-						str_format(aBuf, sizeof(aBuf), "%s: %i%%", "Unpredicted Alpha", g_Config.m_ClUnpredGhostsAlpha);
-						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
-						g_Config.m_ClUnpredGhostsAlpha = (int)(Ui()->DoScrollbarH(&g_Config.m_ClUnpredGhostsAlpha, &Button, (g_Config.m_ClUnpredGhostsAlpha) / 100.0f) * 100.0f);
-					}
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideFrozenGhosts, ("Hide ghosts of frozen players"), &g_Config.m_ClHideFrozenGhosts, &LatencySettings, LineMargin);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderGhostAsCircle, ("Render ghosts as circles"), &g_Config.m_ClRenderGhostAsCircle, &LatencySettings, LineMargin);
-
-					CKeyInfo Key = CKeyInfo{"Toggle Ghosts Key", "toggle tc_show_others_ghosts 0 1", 0, 0};
-					for(int Mod = 0; Mod < CBinds::MODIFIER_COMBINATION_COUNT; Mod++)
-					{
-						for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
-						{
-							const char *pBind = m_pClient->m_Binds.Get(KeyId, Mod);
-							if(!pBind[0])
-								continue;
-
-							if(str_comp(pBind, Key.m_pCommand) == 0)
-							{
-								Key.m_KeyId = KeyId;
-								Key.m_ModifierCombination = Mod;
-								break;
-							}
-						}
 					}
 				}
 			}
 		}
-		
+
 		s_ScrollRegion.End();
 	}
 

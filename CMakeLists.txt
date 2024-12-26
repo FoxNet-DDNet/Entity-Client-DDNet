@@ -996,14 +996,17 @@ endif()
 ########################################################################
 
 set(EXPECTED_DATA
-  aiodob/icons/muted_icon.png
-  aiodob/icons/settings_icon.png
   aiodob/fonts/Cabin-Regular.ttf
+  aiodob/fonts/ComicSansMS.ttf
   aiodob/fonts/GoogleSans-Regular.ttf
-  aiodob/fonts/minecraft_font.ttf
+  aiodob/fonts/Inter_24pt-Regular.ttf
+  aiodob/fonts/Inter_24pt-SemiBold.ttf
+  aiodob/fonts/Minecraft_font.ttf
   aiodob/fonts/Montserrat-Regular.ttf
   aiodob/fonts/Nunito-Black.ttf
   aiodob/fonts/Rubik-Regular.ttf
+  aiodob/icons/muted_icon.png
+  aiodob/icons/settings_icon.png
   announcement.txt
   arrow.png
   assets/entities/comfort/ddnet.png
