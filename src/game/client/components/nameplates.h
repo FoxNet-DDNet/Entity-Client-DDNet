@@ -102,6 +102,7 @@ public:
 		m_Name.Reset();
 		m_Clan.Reset();
 		m_WeakStrongId.Reset();
+		m_OldWeakStrongId.Reset();
 	}
 	void DeleteTextContainers(ITextRender &TextRender)
 	{
@@ -124,7 +125,10 @@ class CNamePlates : public CComponent
 
 	CNamePlate m_aNamePlates[MAX_CLIENTS];
 
+	// C-Client
+public:
 	void ResetNamePlates();
+private:
 
 	int m_DirectionQuadContainerIndex;
 	class CRenderNamePlateData

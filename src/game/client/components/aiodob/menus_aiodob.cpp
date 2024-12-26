@@ -392,6 +392,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				MiscSettings.HSplitTop(HeaderHeight, &Button, &MiscSettings);
 				Ui()->DoLabel(&Button, Localize("Miscellaneous"), FontSize, TEXTALIGN_MC);
 				{
+					// T-Client
 					{
 						static std::vector<const char *> s_FontDropDownNames = {};
 						static CUi::SDropDownState s_FontDropDownState;
@@ -420,6 +421,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							str_copy(g_Config.m_ClCustomFont, s_FontDropDownNames[FontSelectedNew]);
 							FontSelectedOld = FontSelectedNew;
 							TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
+							// C-Client
+							GameClient()->m_NamePlates.ResetNamePlates();
+							GameClient()->m_Hud.ResetHudContainers();
+							GameClient()->m_Chat.RebuildChat();
 						}
 
 						CUIRect DirectoryButton;
