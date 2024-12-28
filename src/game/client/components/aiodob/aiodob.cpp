@@ -263,7 +263,7 @@ void CAiodob::AutoKill()
 				str_format(bBuf, sizeof(bBuf), "%d", round_to_int(EnemyPos.x));
 				TextRender()->Text(200, 100, 15, bBuf);
 			}
-
+ 
 			// if in freeze tile
 
 			if((pCharacter->m_IsInFreeze && !g_Config.m_ClAutoKillWarOnly) || (g_Config.m_ClAutoKillWarOnly && IsWar && pCharacter->m_IsInFreeze))
