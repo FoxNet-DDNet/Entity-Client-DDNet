@@ -234,16 +234,18 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		HookWeakStrongColor.a = Data.m_Alpha;
 
 		// A-Client Nameplates_ClientId
-		if(Data.m_IsGame && !Data.m_IsLocal && g_Config.m_ClStrongWeakColorId)
+		if(Data.m_IsGame && !Data.m_IsLocal && g_Config.m_ClOldNameplateIds && g_Config.m_ClNamePlates)
 		{
-			if(g_Config.m_ClStrongWeakColorId)
-			{
 				YOffset -= Data.m_FontSize;
 				NamePlate.m_OldWeakStrongId.Update(*this, Data.m_RealClientId, Data.m_FontSize);
 
 				if(NamePlate.m_OldWeakStrongId.m_TextContainerIndex.Valid())
-					TextRender()->RenderTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex, HookWeakStrongColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex).m_W / 2.0f, YOffset);
-			}
+				{
+					if(g_Config.m_ClStrongWeakColorId)
+						TextRender()->RenderTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex, HookWeakStrongColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex).m_W / 2.0f, YOffset);
+					else
+						TextRender()->RenderTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex, ColorRGBA(1.0f, 1.0f, 1.0f).WithAlpha(Data.m_Alpha), OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex).m_W / 2.0f, YOffset);
+				}
 		}
 
 		YOffset -= Data.m_FontSizeHookWeakStrong;

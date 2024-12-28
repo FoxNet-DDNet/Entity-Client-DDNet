@@ -181,7 +181,7 @@ bool CRaceHelper::IsNearStart(vec2 Pos, int RadiusInTiles) const
 bool CRaceHelper::IsNearFinish(vec2 Pos, int RadiusInTiles) const
 {
 	const CCollision *pCollision = m_pGameClient->Collision();
-	float d = RadiusInTiles * g_Config.m_ClFinishRenameDistance;
+	float d = RadiusInTiles * 32;
 	vec2 TL = Pos;
 	vec2 TR = Pos;
 	vec2 BL = Pos;

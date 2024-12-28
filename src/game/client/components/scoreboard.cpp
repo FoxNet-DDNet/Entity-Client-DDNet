@@ -590,24 +590,23 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					{
 						if(pInfo->m_ClientId <= 9)
 						{
-							TextRender()->TextEx(&Cursor, "  ");
-		
+							TextRender()->TextEx(&Cursor, "   ");
 						}
-						TextRender()->TextEx(&Cursor, "    ");
+						TextRender()->TextEx(&Cursor, "     ");
 
 					}
 					else if(pInfo->m_ClientId <= 9)
 					{ 
 						if(NumPlayers >= 10)
-						TextRender()->TextEx(&Cursor, "  ");
+						TextRender()->TextEx(&Cursor, "   ");
 						else
-							TextRender()->TextEx(&Cursor, "    ");
+							TextRender()->TextEx(&Cursor, "     ");
 					}
 					Graphics()->BlendNormal();
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
 					Graphics()->QuadsBegin();
 					Graphics()->SetColor(Color);
-					IGraphics::CQuadItem QuadItem(NameOffset, Row.y + IconRowY , IconSize, IconSize);
+					IGraphics::CQuadItem QuadItem(NameOffset + 5, Row.y + IconRowY , IconSize, IconSize);
 					Graphics()->QuadsDrawTL(&QuadItem, 2);
 					Graphics()->QuadsEnd();
 
@@ -643,9 +642,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				{
 					ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 					if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-					{
 						TextRender()->TextColor(rgb.WithAlpha(0.4f));
-					}
 					else
 						TextRender()->TextColor(rgb.WithAlpha(1.0f));
 
@@ -656,9 +653,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-						{
 							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						}
 						else
 							TextRender()->TextColor(rgb.WithAlpha(1.0f));
 
@@ -667,9 +662,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-						{
 							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						}
 						else
 							TextRender()->TextColor(rgb.WithAlpha(1.0f));
 					}
@@ -677,9 +670,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					{
 						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-						{
 							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						}
 						else
 							TextRender()->TextColor(rgb.WithAlpha(1.0f));
 					}
@@ -687,9 +678,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					{
 						ColorRGBA rgb = (ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f));
 						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-						{
 							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						}
 						else
 							TextRender()->TextColor(rgb.WithAlpha(1.0f));
 					}
@@ -713,14 +702,10 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 
 
-				if(str_comp(ClientData.m_aClan, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan) == 0)
-				{
+				if(!str_comp(ClientData.m_aClan, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan))
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
-				}
 				else
-				{
 					TextRender()->TextColor(TextColor);
-				}
 
 				if(g_Config.m_ClDoWarListColorScore)
 				{

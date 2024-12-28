@@ -1380,7 +1380,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				GoresModeSettings.HSplitTop(HeaderHeight, &Button, &GoresModeSettings);
 				Ui()->DoLabel(&Button, Localize("Gores Mode"), FontSize, TEXTALIGN_MC);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("'advanced' Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
 				
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is 'Gores'"), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
 

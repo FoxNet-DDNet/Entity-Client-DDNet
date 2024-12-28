@@ -191,42 +191,26 @@ MACRO_CONFIG_INT(ClShowOwnMenuToOthers, ac_show_self_in_menu, 1, 0, 1, CFGFLAG_C
 MACRO_CONFIG_INT(ClShowIdsChat, ac_show_ids_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to Show Client IDs in Chat")
 
 MACRO_CONFIG_INT(ClOldNameplateIds, ac_old_nameplate_ids, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render the old version of nameplate ids")
-
 MACRO_CONFIG_INT(ClStrongWeakColorId, ac_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
-
-
-MACRO_CONFIG_INT(ClShowAiodobPreview, ac_show_preview, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Chat Preview in Aiodob Settings Menu")
 
 MACRO_CONFIG_INT(ClDoTeammateNameColor, ac_team_name_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Teammate Nameplate Color")
 MACRO_CONFIG_INT(ClDoHelperNameColor, ac_helper_name_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Helper Nameplate Color")
 MACRO_CONFIG_INT(ClDoEnemyNameColor, ac_war_name_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enemy Nameplate Color")
 MACRO_CONFIG_INT(ClDoAfkColors, ac_do_afk_colors, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Makes Names Darker in Scoreboard if Player is afk")
-
 MACRO_CONFIG_INT(ClAutoClanWar, ac_auto_clan_war, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Automatically displays a name in a color if you have a player as an enemy in the same clan")
-
-
 MACRO_CONFIG_INT(ClScoreSpecPlayer, ac_do_score_spec_tee, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes The Tee in The Scoreboard to a Spectating Tee if The Player is Spectating")
-
-
 MACRO_CONFIG_INT(ClDoWarListColorScore, ac_do_warlist_color_score, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors")
 
 
 // friend name settings
 
-
 MACRO_CONFIG_INT(ClDoFriendNameColor, ac_do_friend_name_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors")
 MACRO_CONFIG_INT(ClDoFriendColorScore, ac_do_friend_color_score, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors in scoreboard")
 MACRO_CONFIG_INT(ClDoFriendColorInchat, ac_do_friend_color_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on friend color in chat")
 
-// unused or shouldnt be used
-
 // foe name color (pretty much useless after I got the warlist to work)
 
 MACRO_CONFIG_INT(ClFoeNameColor, ac_foe_name_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Foe name colors")
-
-MACRO_CONFIG_INT(ClShowSpecials, ac_specials, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Autocrashes the game if someone with cheats is detected")
-MACRO_CONFIG_INT(ClFinishRenameDistance, ac_finish_rename_distance, 32, 32, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, " (dont change buggy) distance to where the game detects the finish line")
-
 
 MACRO_CONFIG_INT(ClScoreSpecPrefix, ac_do_score_spec_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Spectator Prefix Next to Names in Scoreboard")
 MACRO_CONFIG_INT(ClChatSpecPrefix, ac_do_chat_spec_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Spectator Prefix Next to Names in Chat")
@@ -287,28 +271,20 @@ MACRO_CONFIG_INT(ClMutedIconScore, ac_muted_icon_Scoreboard, 1, 0, 1, CFGFLAG_CL
 // Cloning People with chatcommands
 
 MACRO_CONFIG_INT(ClCloningPerson, cloning_person, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-
 MACRO_CONFIG_INT(ClCloningPersonDummy, cloning_person_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-
 MACRO_CONFIG_INT(ClCopyingSkin, copying_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-
 MACRO_CONFIG_INT(ClCopyingSkinDummy, copying_skin_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-
 MACRO_CONFIG_INT(ClSavedCountry, saved_country, -1, -1, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
-
-MACRO_CONFIG_INT(ClSavedDummyCountry, saved_dummy_country, -1, -1, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
-
 MACRO_CONFIG_STR(ClSavedName, saved_name, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_STR(ClSavedClan, saved_clan, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
-
-MACRO_CONFIG_STR(ClSavedDummyName, saved_dummy_name, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
-MACRO_CONFIG_STR(ClSavedDummyClan, saved_dummy_clan, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
-
 MACRO_CONFIG_INT(ClSavedPlayerUseCustomColor, saved_player_use_custom_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_COL(ClSavedPlayerColorBody, saved_player_color_body, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_COL(ClSavedPlayerColorFeet, saved_player_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_STR(ClSavedPlayerSkin, saved_player_skin, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 
+MACRO_CONFIG_INT(ClSavedDummyCountry, saved_dummy_country, -1, -1, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
+MACRO_CONFIG_STR(ClSavedDummyName, saved_dummy_name, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
+MACRO_CONFIG_STR(ClSavedDummyClan, saved_dummy_clan, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_INT(ClSavedDummyUseCustomColor, saved_dummy_use_custom_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_COL(ClSavedDummyColorBody, saved_dummy_color_body, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_COL(ClSavedDummyColorFeet, saved_dummy_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
@@ -318,8 +294,6 @@ MACRO_CONFIG_INT(ClAutoJoinTest, ac_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CF
 
 MACRO_CONFIG_INT(ClTest, ac_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 
-
-MACRO_CONFIG_INT(ClAutoKillDebug, ac_auto_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 
 
 // In Spec Menu Prefixes
@@ -344,7 +318,6 @@ MACRO_CONFIG_INT(ClListsInfo, ac_lists_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_S
 MACRO_CONFIG_INT(ClEnabledInfo, ac_enabled_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
 
 // Freeze Kill
-
 
 MACRO_CONFIG_INT(ClFreezeKill, ac_freeze_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
 MACRO_CONFIG_INT(ClFreezeKillGrounded, ac_freeze_kill_grounded, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
@@ -381,6 +354,7 @@ MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_C
 	MACRO_CONFIG_INT(ClAutoKillWarOnly, ac_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
 	MACRO_CONFIG_INT(ClAutoKillRangeX, ac_autokill_range_x, 35, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "x coordinate range to autokill in ↔")
 	MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
+	MACRO_CONFIG_INT(ClAutoKillDebug, ac_auto_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 
 	//Dummy Controls +
 
@@ -416,7 +390,7 @@ MACRO_CONFIG_INT(ClSpecialEffect, cle_special_effect, 1, 0, 1, CFGFLAG_CLIENT | 
 MACRO_CONFIG_INT(ClFreezeParticleSpin, cle_freeze_particle_spin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make Freeze Particles Spin Around The Player")
 
 
-// 
+// Rainbow
 
 
 
@@ -544,34 +518,15 @@ MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG
 // ignore these you cant do anything with them except if you make ur own version on a server
 
 
-MACRO_CONFIG_INT(SvAutoHammer, sv_auto_hammer, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Test | auto enables guns")
-MACRO_CONFIG_INT(SvAutoGun, sv_auto_gun, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Test | auto enables guns")
-MACRO_CONFIG_INT(SvAutoGrenade, sv_auto_grenade, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Test | auto enables guns")
-MACRO_CONFIG_INT(SvAutoLaser, sv_auto_laser, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Test | auto enables guns")
-MACRO_CONFIG_INT(SvAutoShotgun, sv_auto_shotgun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Test | auto enables guns")
-MACRO_CONFIG_INT(SvAutoExplGun, sv_auto_explgun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Test | auto enables guns")
-MACRO_CONFIG_INT(SvAutoFreezeGun, sv_auto_Freezegun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Test | auto enables guns")
+MACRO_CONFIG_INT(SvAutoHammer, sv_auto_hammer, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
+MACRO_CONFIG_INT(SvAutoGun, sv_auto_gun, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
+MACRO_CONFIG_INT(SvAutoGrenade, sv_auto_grenade, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
+MACRO_CONFIG_INT(SvAutoLaser, sv_auto_laser, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
+MACRO_CONFIG_INT(SvAutoShotgun, sv_auto_shotgun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
+MACRO_CONFIG_INT(SvAutoExplGun, sv_auto_explgun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
+MACRO_CONFIG_INT(SvAutoFreezeGun, sv_auto_Freezegun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
 
-MACRO_CONFIG_INT(SvExplGun, sv_explgun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "enables the ''better version'' of the explosion gun")
+MACRO_CONFIG_INT(SvExplGun, sv_explgun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "enables the \"better version\" of the explosion gun")
 
 MACRO_CONFIG_INT(SvFakeGrenade, sv_fake_grenade, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Grenade doesnt explode")
 MACRO_CONFIG_INT(SvDisableFreeze, sv_disable_freeze, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "fake freeze?")
-
-MACRO_CONFIG_INT(ClDisableFreeze, cl_disable_freeze, 0, 0, 1, CFGFLAG_CLIENT, "fake freeze?")
-MACRO_CONFIG_INT(ClFakeGrenade, cl_fake_grenade, 0, 0, 1, CFGFLAG_CLIENT, "Grenade doesnt explode")
-
-
-
-// Testing Variables For Menus
-
-MACRO_CONFIG_INT(XPos1, x_pos1, 0, -5000, 50000, CFGFLAG_CLIENT, "")
-MACRO_CONFIG_INT(XPos2, x_pos2, 0, -5000, 50000, CFGFLAG_CLIENT, "")
-MACRO_CONFIG_INT(XPos3, x_pos3, 0, -5000, 50000, CFGFLAG_CLIENT, "")
-
-MACRO_CONFIG_INT(YPos1, y_pos1, 0, -5000, 50000, CFGFLAG_CLIENT, "")
-MACRO_CONFIG_INT(YPos2, y_pos2, 0, -5000, 50000, CFGFLAG_CLIENT, "")
-MACRO_CONFIG_INT(YPos3, y_pos3, 0, -5000, 50000, CFGFLAG_CLIENT, "")
-
-MACRO_CONFIG_STR(Text1, text1, 100, "Lorem ipsum", CFGFLAG_CLIENT, "")
-MACRO_CONFIG_STR(Text2, text2, 100, "Lorem ipsum", CFGFLAG_CLIENT, "")
-MACRO_CONFIG_STR(Text3, text3, 100, "Lorem ipsum", CFGFLAG_CLIENT, "")

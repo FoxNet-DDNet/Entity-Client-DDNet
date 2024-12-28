@@ -484,11 +484,6 @@ void CAiodob::GoresMode()
 
 void CAiodob::OnConnect()
 {
-	// connection equals false after joining, so it only does it once, before joining its true
-
-	if(Client()->m_Connected == false)
-		return;
-
 	// if dummy, return, so it doesnt display the info when joining with dummy
 
 	if(g_Config.m_ClDummy)
@@ -644,9 +639,12 @@ void CAiodob::OnConnect()
 
 void CAiodob::OnRender()
 {
-	//const int Local = m_pClient->m_Snap.m_LocalClientId;
+	// const int Local = m_pClient->m_Snap.m_LocalClientId;
+	
+	// on join connction = true, after joining its false
+	if(Client()->m_Connected == true)
+		OnConnect();
 
-	OnConnect();
 	GoresMode();
 	AutoJoinTeam();
 	AutoKill();
