@@ -995,7 +995,9 @@ endif()
 # DATA
 ########################################################################
 
-set(EXPECTED_DATA
+set(EXPECTED_DATA 
+  aiodob/binds/.help.cfg
+  aiodob/binds/.extra.cfg
   aiodob/fonts/Cabin-Regular.ttf
   aiodob/fonts/ComicSansMS.ttf
   aiodob/fonts/GoogleSans-Regular.ttf
@@ -2352,18 +2354,6 @@ if(CLIENT)
     components/camera.h
     components/chat.cpp
     components/chat.h
-    components/chillerbot/chatcommand.cpp
-    components/chillerbot/chatcommand.h
-    components/chillerbot/chatcommands.h
-    components/chillerbot/chathelper.cpp
-    components/chillerbot/chathelper.h
-    components/chillerbot/chillerbotux.cpp
-    components/chillerbot/chillerbotux.h
-    components/chillerbot/unix.cpp
-    components/chillerbot/unix.h
-    components/chillerbot/warlist.cpp
-    components/chillerbot/warlist.h
-    components/chillerbot/warlist_commands.cpp
     components/console.cpp
     components/console.h
     components/controls.cpp
@@ -2429,6 +2419,8 @@ if(CLIENT)
     components/spectator.h
     components/statboard.cpp
     components/statboard.h
+    components/tclient/bindchat.cpp
+    components/tclient/bindchat.h
     components/tclient/bindwheel.cpp
     components/tclient/bindwheel.h
     components/tclient/outlines.cpp
@@ -2439,6 +2431,8 @@ if(CLIENT)
     components/tclient/skinprofiles.h
     components/tclient/verify.cpp
     components/tclient/verify.h
+    components/tclient/warlist.cpp
+    components/tclient/warlist.h
     components/tooltips.cpp
     components/tooltips.h
     components/touch_controls.cpp

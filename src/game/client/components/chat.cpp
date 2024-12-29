@@ -21,8 +21,7 @@
 #include <game/localization.h>
 
 #include "chat.h"
-#include <game/client/components/chillerbot/chathelper.h>
-#include <game/client/components/chillerbot/chillerbotux.h>
+#include "tclient/warlist.h"
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = {'\0'};
 
@@ -196,6 +195,11 @@ void CChat::ConShowChat(IConsole::IResult *pResult, void *pUserData)
 	((CChat *)pUserData)->m_Show = pResult->GetInteger(0) != 0;
 }
 
+void CChat::ConaMessage(IConsole::IResult *pResult, void *pUserData)
+{
+	((CChat *)pUserData)->AddLine(-3,0,pResult->GetString(0));
+}
+
 void CChat::ConEcho(IConsole::IResult *pResult, void *pUserData)
 {
 	((CChat *)pUserData)->Echo(pResult->GetString(0));
@@ -240,6 +244,7 @@ void CChat::OnConsoleInit()
 	Console()->Register("chat", "s['team'|'all'] ?r[message]", CFGFLAG_CLIENT, ConChat, this, "Enable chat with all/team mode");
 	Console()->Register("+show_chat", "", CFGFLAG_CLIENT, ConShowChat, this, "Show chat");
 	Console()->Register("echo", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConEcho, this, "Echo the text in chat window");
+	Console()->Register("message", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConaMessage, this, "Echo the text in chat window");
 	Console()->Register("clear_chat", "", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClearChat, this, "Clear chat messages");
 }
 
@@ -253,7 +258,6 @@ void CChat::OnInit()
 
 bool CChat::OnInput(const IInput::CEvent &Event)
 {
-
 	if(m_Mode == MODE_NONE)
 		return false;
 
@@ -275,7 +279,9 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			m_CommandsNeedSorting = false;
 		}
 
-		SendChatQueued(m_Input.GetString());
+		if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString())); // Do nothing as bindchat was executed
+		else
+			SendChatQueued(m_Input.GetString());
 		m_pHistoryEntry = nullptr;
 		DisableMode();
 		m_pClient->OnRelease();
@@ -326,7 +332,10 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				});
 		}
 
-		if(m_aCompletionBuffer[0] == '/' && !m_vCommands.empty())
+		if(m_pClient->m_Bindchat.ChatDoAutocomplete(ShiftPressed))
+		{
+		}
+		else if(m_aCompletionBuffer[0] == '/' && !m_vCommands.empty())
 		{
 			CCommand *pCompletionCommand = 0;
 
@@ -437,7 +446,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 				// quote the name
 				char aQuoted[128];
-				if(m_Input.GetString()[0] == '/' && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"")))
+				if((m_Input.GetString()[0] == '/' || m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString())) && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"")))
 				{
 					// escape the name
 					str_copy(aQuoted, "\"");
@@ -658,7 +667,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
 	ColorRGBA Colors = g_Config.m_ClMessageColor;
 
-
+	/*
 	if(GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClShowMutedInConsole)
 	{
 		char Muted[2048] = "[Muted] ";
@@ -694,11 +703,11 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		else if(Team < 3)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, War, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
 	}
-
+	*/
 	if(*pLine == 0 ||
 		(ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
-					  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName) || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat) ||
+					  m_pClient->m_aClients[ClientId].m_ChatIgnore ||// GameClient()->m_WarList.IsMutelist(m_pClient->m_aClients[ClientId].m_aName) || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))
@@ -754,10 +763,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor));
 			else if(pLine_->m_Team)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
-			else if(pLine_->m_IsTeam && g_Config.m_ClWarlistConsoleColors)
-				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
-			else if(pLine_->m_IsHelper && g_Config.m_ClWarlistConsoleColors)
-				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
 			else if(pLine_->m_ClientId == SERVER_MSG)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageSystemColor));
 			else if(pLine_->m_ClientId == CLIENT_MSG)
@@ -926,19 +931,18 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		pCurrentLine->m_Friend = LineAuthor.m_Friend;
 		pCurrentLine->m_Paused = LineAuthor.m_Paused || LineAuthor.m_Spec;
 
+		
+		pCurrentLine->m_IsOnList = LineAuthor.m_IsOnAnyList;
+		/*
 		pCurrentLine->m_IsClanWar = GameClient()->m_WarList.IsClanWarlist(LineAuthor.m_aClan);
-	
 		pCurrentLine->m_IsClanTeam = GameClient()->m_WarList.IsClanTeamlist(LineAuthor.m_aClan);
-
 		pCurrentLine->m_IsTempWar = GameClient()->m_WarList.IsTempWarlist(LineAuthor.m_aName);
-
 		pCurrentLine->m_IsWar = GameClient()->m_WarList.IsAnyWar(LineAuthor.m_aName, LineAuthor.m_aClan);
 		pCurrentLine->m_IsTeam = GameClient()->m_WarList.IsAnyTeam(LineAuthor.m_aName, LineAuthor.m_aClan);
 		pCurrentLine->m_IsHelper = GameClient()->m_WarList.IsHelperlist(LineAuthor.m_aName);
-
 		pCurrentLine->m_IsMute = GameClient()->m_WarList.IsMutelist(LineAuthor.m_aName);
 		pCurrentLine->m_IsWarClan = GameClient()->m_WarList.IsWarClanmate(LineAuthor.m_aClan);
-
+		*/
 
 
 		if(pCurrentLine->m_aName[0] != '\0')
@@ -994,6 +998,15 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						char CharOname[16];
 						strcpy(CharOname, oName.c_str());
 
+						/*
+						for(CWarEntry &Entry : GameClient()->m_WarList.m_WarEntries)
+						{
+							if(str_comp(CharOname, Entry.m_aName))
+							{
+								str_copy(GameClient()->m_aClients[ClientId].m_IsTempWar, name);
+							}
+						}
+
 						if(!GameClient()->m_WarList.IsTeamlist(name) && !GameClient()->m_WarList.IsTeamlist(CharOname))
 						{
 							if(GameClient()->m_WarList.IsMutelist(CharOname) && !GameClient()->m_WarList.IsMutelist(name))
@@ -1005,6 +1018,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 							if(GameClient()->m_WarList.IsHelperlist(CharOname) && !GameClient()->m_WarList.IsHelperlist(name))
 								GameClient()->m_WarList.AddSimpleHelper(name);
 						}
+						*/
 					}
 				}
 			}
@@ -1259,36 +1273,15 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
 
-				if(Line.m_IsTeam && g_Config.m_ClChatTeammatePrefix)
+				if(Line.m_IsOnList && g_Config.m_ClChatTeammatePrefix)
 				{
-					TextRender()->TextEx(&Cursor, g_Config.m_ClTeammatePrefix);
-				}
-				else if((Line.m_IsWar || Line.m_IsTempWar) && g_Config.m_ClChatEnemyPrefix)
-				{
-					TextRender()->TextEx(&Cursor, g_Config.m_ClEnemyPrefix);
-				}
-				else if(Line.m_IsHelper && g_Config.m_ClChatHelperPrefix)
-				{
-					TextRender()->TextEx(&Cursor, g_Config.m_ClHelperPrefix);
-				}
-				else if(Line.m_IsClanTeam && g_Config.m_ClChatTeammatePrefix)
-				{
-					TextRender()->TextEx(&Cursor, g_Config.m_ClHelperPrefix);
-				}
-				else if(Line.m_IsClanWar && g_Config.m_ClChatEnemyPrefix)
-				{
-					TextRender()->TextEx(&Cursor, g_Config.m_ClHelperPrefix);
-				}
-				else if(Line.m_IsWarClan && !Line.m_IsWar && !Line.m_IsTeam && !Line.m_IsHelper && g_Config.m_ClChatEnemyPrefix)
-				{
-					TextRender()->TextEx(&Cursor, g_Config.m_ClEnemyPrefix);
+					TextRender()->TextEx(&Cursor, "♦ ");
 				}
 				else if(Line.m_Friend && g_Config.m_ClMessageFriend)
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClFriendPrefix);
 				}
-
-		}
+			}
 
 			TextRender()->TextEx(&Cursor, aClientId);
 			TextRender()->TextEx(&Cursor, Line.m_aName);
@@ -1341,7 +1334,7 @@ void CChat::OnPrepareLines(float y)
 			}
 
 
-
+			/*
 			if(Line.m_IsTeam && g_Config.m_ClChatTeammatePrefix)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor)).WithAlpha(1.f));
@@ -1355,7 +1348,7 @@ void CChat::OnPrepareLines(float y)
 			else if(Line.m_IsHelper && g_Config.m_ClChatHelperPrefix)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor)).WithAlpha(1.f));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClHelperPrefix);
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, "♦ ");
 			}
 			else if(Line.m_IsClanTeam && g_Config.m_ClChatTeammatePrefix)
 			{
@@ -1371,6 +1364,19 @@ void CChat::OnPrepareLines(float y)
 			{
 				TextRender()->TextColor(ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f).WithAlpha(1.f));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClEnemyPrefix);
+			}
+			*/
+
+			
+			if(Line.m_IsOnList)
+			{
+
+				if(GameClient()->m_WarList.GetWarData(Line.m_ClientId).IsWarName)
+					TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(Line.m_ClientId));
+				else if(GameClient()->m_WarList.GetWarData(Line.m_ClientId).IsWarClan)
+					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(Line.m_ClientId));
+
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, "♦ ");
 			}
 			else if(Line.m_Friend && g_Config.m_ClMessageFriend)
 			{
@@ -1669,9 +1675,6 @@ void CChat::SendChat(int Team, const char *pLine)
 {
 	// don't send empty messages
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
-		return;
-
-	if(!m_pClient->m_ChillerBotUX.OnSendChat(Team, pLine))
 		return;
 
 	if(!g_Config.m_ClSendDotsChat)

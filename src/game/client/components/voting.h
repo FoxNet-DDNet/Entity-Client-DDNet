@@ -28,8 +28,11 @@ class CVoting : public CComponent
 
 	void RemoveOption(const char *pDescription);
 	void ClearOptions();
+
+public:
 	void Callvote(const char *pType, const char *pValue, const char *pReason);
 
+private:
 	void RenderBars(CUIRect Bars) const;
 
 public:

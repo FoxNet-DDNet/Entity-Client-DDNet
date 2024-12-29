@@ -504,63 +504,42 @@ void CSpectator::OnRender()
 				}
 			}
 		}
-
+		/*
 		auto IsWar = GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName) || GameClient()->m_WarList.IsTempWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName) || GameClient()->m_WarList.IsClanWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aClan);
-
 		auto IsTeam = GameClient()->m_WarList.IsTeamlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName);
-
 		auto IsHelper = GameClient()->m_WarList.IsHelperlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName);
-
 		auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aClan);
-
+		*/
+		int ClientId = m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
 		float TeeAlpha;
+		float Alpha = 0.5f;
+		if(PlayerSelected)
+			Alpha = 1.0f;
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK &&
 			!m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Active)
 		{
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.25f);
 			TeeAlpha = 0.5f;
-		}
+		} 
 		else
 		{
-			if(IsHelper && g_Config.m_ClSpecMenuColors)
+			if(g_Config.m_ClSpecMenuColors)
 			{
-				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
-				if(PlayerSelected)
-					TextRender()->TextColor(rgb.WithAlpha(1.0f));
+				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
+					TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(ClientId).WithAlpha(Alpha));
+				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
+					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(ClientId).WithAlpha(Alpha));
+				else if(m_pClient->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuColors)
+				{
+					ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+					if(PlayerSelected)
+						TextRender()->TextColor(rgb.WithAlpha(1.0f));
+					else
+						TextRender()->TextColor(rgb.WithAlpha(0.5f));
+				}
 				else
-					TextRender()->TextColor(rgb.WithAlpha(0.5f));
-			}
-			else if(IsWar && g_Config.m_ClSpecMenuColors)
-			{
-				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-				if(PlayerSelected)
-					TextRender()->TextColor(rgb.WithAlpha(1.0f));
-				else
-					TextRender()->TextColor(rgb.WithAlpha(0.5f));
-			}
-			else if(IsTeam && g_Config.m_ClSpecMenuColors)
-			{
-				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
-				if(PlayerSelected)
-					TextRender()->TextColor(rgb.WithAlpha(1.0f));
-				else
-					TextRender()->TextColor(rgb.WithAlpha(0.5f));
-			}
-			else if(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend && g_Config.m_ClSpecMenuColors)
-		{
-				ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-				if(PlayerSelected)
-					TextRender()->TextColor(rgb.WithAlpha(1.0f));
-				else
-					TextRender()->TextColor(rgb.WithAlpha(0.5f));
-			}
-			else if(IsWarClan && g_Config.m_ClSpecMenuColors && g_Config.m_ClAutoClanWar && !IsWar && !IsHelper && !IsTeam)
-			{
-				ColorRGBA rgb = (ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f));
-				if(PlayerSelected)
-					TextRender()->TextColor(rgb.WithAlpha(1.0f));
-				else
-					TextRender()->TextColor(rgb.WithAlpha(0.5f));
+				TextRender()->TextColor(1.0f, 1.0f, 1.0f, PlayerSelected ? 1.0f : 0.5f);
+				TeeAlpha = 1.0f;
 			}
 			else
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, PlayerSelected ? 1.0f : 0.5f);

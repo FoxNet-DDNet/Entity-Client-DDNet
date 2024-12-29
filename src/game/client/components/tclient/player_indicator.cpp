@@ -51,8 +51,13 @@ void CPlayerIndicator::OnRender()
 				!OtherTee.m_Spec &&
 				m_pClient->m_Snap.m_aCharacters[i].m_Active)
 			{
-				float Zoom = Client()->ChecksumData()->m_Zoom;
 				if(g_Config.m_ClPlayerIndicatorFreeze && !(OtherTee.m_FreezeEnd > 0 || OtherTee.m_DeepFrozen))
+					continue;
+
+				// Hide tees on our screen if the config is set to do so
+				float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
+				Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+				if(g_Config.m_ClIndicatorHideOnScreen && in_range(m_pClient->m_aClients[i].m_RenderPos.x, ScreenX0, ScreenX1) && in_range(m_pClient->m_aClients[i].m_RenderPos.y, ScreenY0, ScreenY1))
 					continue;
 
 				vec2 Norm = NormalizedDirection(m_pClient->m_aClients[i].m_RenderPos, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_RenderPos) * (-1);
@@ -95,42 +100,53 @@ void CPlayerIndicator::OnRender()
 				{
 					Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClIndicatorAlive));
 				}
-				Col.a = Alpha;
-
-				TeeInfo.m_Size = g_Config.m_ClIndicatorRadius * 4.0f;
-				if(g_Config.m_ClIndicatorOnlyTeammates && !OtherTee.m_IsTeam)
-					return;
-
-				if(g_Config.m_ClIndicatorHideOnScreen)
+				bool HideIfNotWar = false;
+				if(g_Config.m_ClWarListIndicator)
 				{
-					if((OtherTee.m_RenderPos.x < Position.x - Zoom * 720) || (OtherTee.m_RenderPos.x > Position.x + Zoom * 720) || (OtherTee.m_RenderPos.y > Position.y + Zoom * 400) || (OtherTee.m_RenderPos.y < Position.y - Zoom * 400))
+					HideIfNotWar = true;
+					if(g_Config.m_ClWarListIndicatorAll)
 					{
-						if(g_Config.m_ClIndicatorTees)
+						if(GameClient()->m_WarList.GetAnyWar(i))
 						{
-							RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, OtherTee.m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, Col.a);
+							Col = GameClient()->m_WarList.GetPriorityColor(i);
+							HideIfNotWar = false;
 						}
-						else
+					}
+					if(g_Config.m_ClWarListIndicatorTeam)
+					{
+						if(GameClient()->m_WarList.GetWarData(i).m_WarGroupMatches[2])
 						{
-							Graphics()->QuadsBegin();
-							Graphics()->SetColor(Col);
-							Graphics()->DrawCircle(IndicatorPos.x, IndicatorPos.y, g_Config.m_ClIndicatorRadius, 16);
-							Graphics()->QuadsEnd();
+							Col = GameClient()->m_WarList.m_WarTypes[2]->m_Color;
+							HideIfNotWar = false;
+						}
+					}
+					if(g_Config.m_ClWarListIndicatorEnemy)
+					{
+						if(GameClient()->m_WarList.GetWarData(i).m_WarGroupMatches[1])
+						{
+							Col = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
+							HideIfNotWar = false;
 						}
 					}
 				}
+
+				if(HideIfNotWar)
+					continue;
+
+				Col.a = Alpha;
+
+				TeeInfo.m_Size = g_Config.m_ClIndicatorRadius * 4.0f;
+
+				if(g_Config.m_ClIndicatorTees)
+				{
+					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, OtherTee.m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, Col.a);
+				}
 				else
 				{
-					if(g_Config.m_ClIndicatorTees)
-					{
-						RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, OtherTee.m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, Col.a);
-					}
-					else
-					{
-						Graphics()->QuadsBegin();
-						Graphics()->SetColor(Col);
-						Graphics()->DrawCircle(IndicatorPos.x, IndicatorPos.y, g_Config.m_ClIndicatorRadius, 16);
-						Graphics()->QuadsEnd();
-					}
+					Graphics()->QuadsBegin();
+					Graphics()->SetColor(Col);
+					Graphics()->DrawCircle(IndicatorPos.x, IndicatorPos.y, g_Config.m_ClIndicatorRadius, 16);
+					Graphics()->QuadsEnd();
 				}
 			}
 		}

@@ -19,8 +19,6 @@
 #include <game/generated/client_data7.h>
 #include <game/localization.h>
 
-#include <game/client/components/chillerbot/chathelper.h>
-#include <game/client/components/chillerbot/chillerbotux.h>
 
 CScoreboard::CScoreboard()
 {
@@ -531,12 +529,14 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 			const CGameClient::CClientData &ClientData = GameClient()->m_aClients[pInfo->m_ClientId];
 
+			/*
 			auto IsWar = GameClient()->m_WarList.IsAnyWar(ClientData.m_aName, ClientData.m_aClan);
 			auto IsTeam = GameClient()->m_WarList.IsAnyTeam(ClientData.m_aName, ClientData.m_aClan);
 
 			auto IsHelper = GameClient()->m_WarList.IsHelperlist(ClientData.m_aName);
 			auto IsMuted = GameClient()->m_WarList.IsMutelist(ClientData.m_aName);
 			auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(ClientData.m_aClan);
+			*/
 
 			bool paused = ClientData.m_Paused || ClientData.m_Spec;
 
@@ -582,8 +582,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClAuthedPlayerColor)));
 				}
-
-				if(IsMuted && g_Config.m_ClMutedIconScore)
+				if(GameClient()->m_WarList.GetWarData(pInfo->m_ClientId).m_WarGroupMatches[4] && g_Config.m_ClMutedIconScore)
 				{
 					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 					if(pInfo->m_ClientId >= 10)
@@ -611,7 +610,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					Graphics()->QuadsEnd();
 
 				}
-
 				if(g_Config.m_ClShowIds)
 				{
 					char aClientId[16];
@@ -646,44 +644,12 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					else
 						TextRender()->TextColor(rgb.WithAlpha(1.0f));
 
-				}
-				if(g_Config.m_ClDoWarListColorScore)
-				{
-					if(IsTeam)
-					{
-						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor));
-						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						else
-							TextRender()->TextColor(rgb.WithAlpha(1.0f));
-
-					}
-					else if(IsWar)
-					{
-						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor));
-						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						else
-							TextRender()->TextColor(rgb.WithAlpha(1.0f));
-					}
-					else if(IsHelper)
-					{
-						ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHelperColor));
-						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						else
-							TextRender()->TextColor(rgb.WithAlpha(1.0f));
-					}
-					else if(IsWarClan && g_Config.m_ClAutoClanWar && !IsWar && !IsHelper && !IsTeam)
-					{
-						ColorRGBA rgb = (ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f));
-						if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-							TextRender()->TextColor(rgb.WithAlpha(0.4f));
-						else
-							TextRender()->TextColor(rgb.WithAlpha(1.0f));
-					}
-				
-				}
+				} 
+				float Alpha = 1.0f;
+				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
+					Alpha = 0.4f;
+				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard && GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
+					TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId).WithAlpha(Alpha));
 				
 
 
@@ -707,13 +673,10 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				else
 					TextRender()->TextColor(TextColor);
 
-				if(g_Config.m_ClDoWarListColorScore)
-				{
-					if(GameClient()->m_WarList.IsClanWarlist(ClientData.m_aClan))
-						TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarColor)));
-					if(GameClient()->m_WarList.IsClanTeamlist(ClientData.m_aClan))
-						TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClTeamColor)));
-				}
+				// TClient
+				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard && GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
+					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(pInfo->m_ClientId));
+
 				CTextCursor Cursor;
 				TextRender()->SetCursor(&Cursor, ClanOffset + (ClanLength - minimum(TextRender()->TextWidth(FontSize, ClientData.m_aClan), ClanLength)) / 2.0f, Row.y + (Row.h - FontSize) / 2.0f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
 				Cursor.m_LineWidth = ClanLength;

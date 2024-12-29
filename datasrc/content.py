@@ -280,7 +280,7 @@ set_guiicons = SpriteSet("guiicons", image_guiicons, 12, 2)
 set_audio_source = SpriteSet("audio_source", image_audio_source, 1, 1)
 set_settings_icon = SpriteSet("settings_icon", image_settings_icon, 1, 1)
 set_muted_icon = SpriteSet("muted_icon", image_muted_icon, 1, 1)
-set_strongweak = SpriteSet("strongweak", image_strongweak, 2, 1)
+set_strongweak = SpriteSet("strongweak", image_strongweak, 3, 1)
 set_hud = SpriteSet("hud", image_hud, 16, 16)
 set_extras = SpriteSet("extras", image_extras, 16, 16)
 

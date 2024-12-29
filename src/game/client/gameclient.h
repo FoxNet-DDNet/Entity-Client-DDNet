@@ -66,20 +66,13 @@
 #include "components/aiodob/aiodob.h"
 
 // Tater
+#include "components/tclient/bindchat.h"
 #include "components/tclient/outlines.h"
 #include "components/tclient/player_indicator.h"
 #include "components/tclient/skinprofiles.h"
 #include "components/tclient/verify.h"
 #include "components/tclient/bindwheel.h"
-
-// Chillerbot
-
-#include "components/chillerbot/chathelper.h"
-// #include "components/chillerbot/chillconsole.h"
-#include "components/chillerbot/chatcommand.h"
-#include "components/chillerbot/chillerbotux.h"
-#include "components/chillerbot/unix.h"
-#include "components/chillerbot/warlist.h"
+#include "components/tclient/warlist.h"
 
 class CGameInfo
 {
@@ -145,26 +138,6 @@ class CGameClient : public IGameClient
 {
 public:
 	// all components
-
-	// Aiodob
-
-	CAiodob m_Aiodob;
-
-	// Tater
-
-	CSkinProfiles m_SkinProfiles;
-	CBindWheel m_Bindwheel;
-	CVerify m_Verify;
-	CPlayerIndicator m_PlayerIndicator;
-	COutlines m_Outlines;
-
-	// chillerbot-ux
-
-	CChillerBotUX m_ChillerBotUX;
-	CChatHelper m_ChatHelper;
-	CUnix m_Unix;
-	CWarList m_WarList;
-	CChatCommand m_ChatCommand;
 	CInfoMessages m_InfoMessages;
 	CCamera m_Camera;
 	CChat m_Chat;
@@ -208,6 +181,20 @@ public:
 	CGhost m_Ghost;
 
 	CTooltips m_Tooltips;
+
+	// Aiodob
+
+	CAiodob m_Aiodob;
+
+	// T-Client
+
+	CSkinProfiles m_SkinProfiles;
+	CBindchat m_Bindchat;
+	CBindWheel m_Bindwheel;
+	CVerify m_Verify;
+	CPlayerIndicator m_PlayerIndicator;
+	COutlines m_Outlines;
+	CWarList m_WarList;
 
 private:
 	std::vector<class CComponent *> m_vpAll;
@@ -496,6 +483,9 @@ public:
 		bool m_Foe;
 
 		// warlist
+		bool m_IsOnAnyList;
+
+
 		bool m_IsAnyWar;
 		bool m_IsAnyTeam;
 
@@ -503,10 +493,7 @@ public:
 		bool m_IsHelper;
 		bool m_IsTeam;
 		bool m_IsMuted;
-		bool m_IsWarClanmate;
-		bool m_IsClanWar;
-		bool m_IsClanTeam;
-		bool m_IsTempWar;
+		char m_IsTempWar[MAX_NAME_LENGTH];
 
 		int m_AuthLevel;
 		bool m_Afk;

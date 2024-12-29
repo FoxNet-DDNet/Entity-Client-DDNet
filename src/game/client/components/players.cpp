@@ -1550,13 +1550,13 @@ void CPlayers::OnRender()
 					else
 						aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 1, 0);
 				}
-				else if(m_pClient->m_aClients[i].m_IsWarClanmate && g_Config.m_ClAutoClanWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				/* else if(m_pClient->m_aClients[i].m_IsWarClanmate && g_Config.m_ClAutoClanWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
 						aRenderInfo[i].m_CustomColoredSkin = 1;
 					aRenderInfo[i].m_ColorBody = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
 						aRenderInfo[i].m_ColorFeet = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
-				}
+				}*/
 				else if(!(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 					{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))

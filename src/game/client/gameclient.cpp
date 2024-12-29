@@ -78,23 +78,6 @@
 #include "prediction/entities/character.h"
 #include "prediction/entities/projectile.h"
 
-// Aiodob
-
-#include "components/aiodob/aiodob.h"
-
-// Tater
-#include "components/tclient/outlines.h"
-#include "components/tclient/player_indicator.h"
-#include "components/tclient/verify.h"
-
-// Chillerbot
-#include "components/chillerbot/chathelper.h"
-// #include "components/chillerbot/chillconsole.h"
-#include "components/chillerbot/chatcommand.h"
-#include "components/chillerbot/chillerbotux.h"
-#include "components/chillerbot/unix.h"
-#include "components/chillerbot/warlist.h"
-
 using namespace std::chrono_literals;
 
 const char *CGameClient::Version() const { return GAME_VERSION; }
@@ -163,7 +146,9 @@ void CGameClient::OnConsoleInit()
 					      &m_Hud,
 					      &m_Spectator,
 					      &m_Emoticon,
+					      &m_Bindchat,
 					      &m_Bindwheel,
+					      &m_WarList,
 					      &m_InfoMessages,
 					      &m_Chat,
 					      &m_Broadcast,
@@ -178,13 +163,6 @@ void CGameClient::OnConsoleInit()
 					      &m_GameConsole,
 						  // aiodob
 					      &m_Aiodob,
-					      /* <<< chillerbot-ux */
-					      &m_ChillerBotUX,
-					      &m_ChatHelper,
-					      &m_WarList,
-					      &m_ChatCommand,
-					      /* &m_ChillConsole, */
-					      &m_Unix,
 					      /* >>> chillerbot-ux */
 					      &m_MenuBackground});
 
@@ -1792,21 +1770,23 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_Predicted.ReadDDNet(pCharacterData);
 
 					m_Teams.SetSolo(Item.m_Id, pClient->m_Solo);
-
+					
 					// Warlist
-					pClient->m_IsAnyWar = m_WarList.IsAnyWar(pClient->m_aName, pClient->m_aClan);
-					pClient->m_IsAnyTeam = m_WarList.IsAnyTeam(pClient->m_aName, pClient->m_aClan);
+					pClient->m_IsAnyWar = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[1];
+					pClient->m_IsAnyTeam = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[2];
 
-					pClient->m_IsWar = m_WarList.IsWarlist(pClient->m_aName) || m_WarList.IsWar(Item.m_Id);
-					pClient->m_IsHelper = m_WarList.IsHelperlist(pClient->m_aName) || m_WarList.IsHelper(Item.m_Id);
-					pClient->m_IsTeam = m_WarList.IsTeamlist(pClient->m_aName) || m_WarList.IsTeam(Item.m_Id);
-					pClient->m_IsMuted = m_WarList.IsMutelist(pClient->m_aName) || m_WarList.IsMute(Item.m_Id);
-					pClient->m_IsWarClanmate = m_WarList.IsWarClanmate(Item.m_Id);
-					pClient->m_IsClanWar = m_WarList.IsClanWarlist(pClient->m_aClan) || m_WarList.IsClanWar(Item.m_Id);
-					pClient->m_IsClanTeam = m_WarList.IsClanTeamlist(pClient->m_aClan) || m_WarList.IsClanWar(Item.m_Id);
+					pClient->m_IsWar = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[1];
+					pClient->m_IsTeam = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[2];
+					pClient->m_IsHelper = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[3];
+					pClient->m_IsMuted = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[4];
 
-					pClient->m_IsTempWar = m_WarList.IsTempWarlist(pClient->m_aName);
+					for(int i = 0; i < sizeof(m_WarList.m_WarTypes); ++i)
+					{
+						pClient->m_IsOnAnyList = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[i];
+					}
 
+					//pClient->m_IsTempWar = m_WarList.IsTempWarlist(pClient->m_aName);
+					
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_SPECCHAR)
