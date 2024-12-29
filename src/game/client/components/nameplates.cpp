@@ -209,19 +209,19 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 				Graphics()->DrawCircle(Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f - CircleSize, YOffset + Data.m_FontSize / 2.0f + 1.4f, CircleSize, 24);
 				Graphics()->QuadsEnd();
 			}
-
-			if(GameClient()->m_WarList.GetWarData(Data.m_RealClientId).m_WarGroupMatches[4] && g_Config.m_ClMutedIconNameplate)
-			{
-				ColorRGBA IconColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
-				Graphics()->TextureClear();
-				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
-				Graphics()->SetColor(IconColor.WithAlpha(Data.m_Alpha));
-				Graphics()->QuadsSetRotation(0);
-				Graphics()->RenderQuadContainerAsSprite(m_DirectionQuadContainerIndex, 0, Data.m_Position.x + TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f + 2, YOffset + 1.5f, Data.m_FontSize, Data.m_FontSize);
-			}
+			for(int i = 0; i < MAX_CLIENTS; i++)
+				if((GameClient()->m_WarList.GetWarData(Data.m_RealClientId).m_WarGroupMatches[4] || (!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempMuteName))) && g_Config.m_ClMutedIconNameplate)
+				{
+					ColorRGBA IconColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
+					Graphics()->TextureClear();
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
+					Graphics()->SetColor(IconColor.WithAlpha(Data.m_Alpha));
+					Graphics()->QuadsSetRotation(0);
+					Graphics()->RenderQuadContainerAsSprite(m_DirectionQuadContainerIndex, 0, Data.m_Position.x + TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f + 2, YOffset + 1.5f, Data.m_FontSize, Data.m_FontSize);
+				}
 		}
 		ColorRGBA WarColor = Color;
-		
+
 		if(Data.m_IsGame && Data.m_RealClientId >= 0)
 		{
 			if(m_pClient->m_aClients[Data.m_RealClientId].m_Friend && g_Config.m_ClDoFriendNameColor)
@@ -236,63 +236,64 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
 				if(!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempWarName))
-					WarColor = GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Data.m_Alpha);
+						WarColor = GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Data.m_Alpha);
+				else if(!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempHelperName))
+						WarColor = GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Data.m_Alpha);
 			}
+
+			if(NamePlate.m_Name.m_TextContainerIndex.Valid())
+				TextRender()->RenderTextContainer(NamePlate.m_Name.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f, YOffset);
 		}
 
-		if(NamePlate.m_Name.m_TextContainerIndex.Valid())
-			TextRender()->RenderTextContainer(NamePlate.m_Name.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f, YOffset);
-	}
-
-	if(Data.m_pClan && Data.m_pClan[0] != '\0')
-	{
-		YOffset -= Data.m_FontSizeClan;
-		NamePlate.m_Clan.Update(*this, Data.m_pClan, Data.m_FontSizeClan);
-
-		ColorRGBA WarColor = Color;
-		if(Data.m_IsGame && Data.m_RealClientId >= 0 && GameClient()->m_WarList.GetWarData(Data.m_RealClientId).IsWarClan)
-			WarColor = GameClient()->m_WarList.GetClanColor(Data.m_RealClientId).WithAlpha(Data.m_Alpha);
-
-		if(NamePlate.m_Clan.m_TextContainerIndex.Valid())
-			TextRender()->RenderTextContainer(NamePlate.m_Clan.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Clan.m_TextContainerIndex).m_W / 2.0f, YOffset);
-	}
-
-	// TClient war reason
-	if(Data.m_IsGame && !Data.m_IsLocal && Data.m_RealClientId >= 0 && g_Config.ms_ClWarList && GameClient()->m_WarList.GetWarData(Data.m_RealClientId).m_aReason[0] != '\0')
-	{
-		YOffset -= Data.m_FontSizeClan;
-		NamePlate.m_Reason.Update(*this, GameClient()->m_WarList.GetWarData(Data.m_RealClientId).m_aReason, Data.m_FontSizeClan);
-		if(NamePlate.m_Reason.m_TextContainerIndex.Valid())
-			TextRender()->RenderTextContainer(NamePlate.m_Reason.m_TextContainerIndex, Data.m_Color.WithAlpha(Data.m_Alpha * 0.5f), Data.m_OutlineColor.WithAlpha(Data.m_Alpha / 4.0f), Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Reason.m_TextContainerIndex).m_W / 2.0f, YOffset);
-	}
-
-	if(Data.m_OldNameplateId || Data.m_ShowHookWeakStrongId || (Data.m_ShowHookWeakStrong && Data.m_HookWeakStrong != TRISTATE::SOME)) // Don't show hook icon if there's no ID or hook strength to show
-	{
-		ColorRGBA HookWeakStrongColor;
-		int StrongWeakSpriteId;
-		switch(Data.m_HookWeakStrong)
+		if(Data.m_pClan && Data.m_pClan[0] != '\0')
 		{
-		case TRISTATE::ALL:
-			HookWeakStrongColor = color_cast<ColorRGBA>(ColorHSLA(6401973));
-			StrongWeakSpriteId = SPRITE_HOOK_STRONG;
-			break;
-		case TRISTATE::SOME:
-			HookWeakStrongColor = ColorRGBA(1.0f, 1.0f, 1.0f);
-			StrongWeakSpriteId = SPRITE_HOOK_ICON;
-			break;
-		case TRISTATE::NONE:
-			HookWeakStrongColor = color_cast<ColorRGBA>(ColorHSLA(41131));
-			StrongWeakSpriteId = SPRITE_HOOK_WEAK;
-			break;
-		default:
-			dbg_assert(false, "Invalid hook weak/strong state");
-			dbg_break();
+			YOffset -= Data.m_FontSizeClan;
+			NamePlate.m_Clan.Update(*this, Data.m_pClan, Data.m_FontSizeClan);
+
+			ColorRGBA WarColor = Color;
+			if(Data.m_IsGame && Data.m_RealClientId >= 0 && GameClient()->m_WarList.GetWarData(Data.m_RealClientId).IsWarClan)
+				WarColor = GameClient()->m_WarList.GetClanColor(Data.m_RealClientId).WithAlpha(Data.m_Alpha);
+
+			if(NamePlate.m_Clan.m_TextContainerIndex.Valid())
+				TextRender()->RenderTextContainer(NamePlate.m_Clan.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Clan.m_TextContainerIndex).m_W / 2.0f, YOffset);
 		}
-		HookWeakStrongColor.a = Data.m_Alpha;
 
-		// A-Client Nameplates_ClientId
-		if(Data.m_IsGame && !Data.m_IsLocal && g_Config.m_ClOldNameplateIds && g_Config.m_ClNamePlates)
+		// TClient war reason
+		if(Data.m_IsGame && !Data.m_IsLocal && Data.m_RealClientId >= 0 && g_Config.ms_ClWarList && GameClient()->m_WarList.GetWarData(Data.m_RealClientId).m_aReason[0] != '\0')
 		{
+			YOffset -= Data.m_FontSizeClan;
+			NamePlate.m_Reason.Update(*this, GameClient()->m_WarList.GetWarData(Data.m_RealClientId).m_aReason, Data.m_FontSizeClan);
+			if(NamePlate.m_Reason.m_TextContainerIndex.Valid())
+				TextRender()->RenderTextContainer(NamePlate.m_Reason.m_TextContainerIndex, Data.m_Color.WithAlpha(Data.m_Alpha * 0.5f), Data.m_OutlineColor.WithAlpha(Data.m_Alpha / 4.0f), Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Reason.m_TextContainerIndex).m_W / 2.0f, YOffset);
+		}
+
+		if(Data.m_OldNameplateId || Data.m_ShowHookWeakStrongId || (Data.m_ShowHookWeakStrong && Data.m_HookWeakStrong != TRISTATE::SOME)) // Don't show hook icon if there's no ID or hook strength to show
+		{
+			ColorRGBA HookWeakStrongColor;
+			int StrongWeakSpriteId;
+			switch(Data.m_HookWeakStrong)
+			{
+			case TRISTATE::ALL:
+				HookWeakStrongColor = color_cast<ColorRGBA>(ColorHSLA(6401973));
+				StrongWeakSpriteId = SPRITE_HOOK_STRONG;
+				break;
+			case TRISTATE::SOME:
+				HookWeakStrongColor = ColorRGBA(1.0f, 1.0f, 1.0f);
+				StrongWeakSpriteId = SPRITE_HOOK_ICON;
+				break;
+			case TRISTATE::NONE:
+				HookWeakStrongColor = color_cast<ColorRGBA>(ColorHSLA(41131));
+				StrongWeakSpriteId = SPRITE_HOOK_WEAK;
+				break;
+			default:
+				dbg_assert(false, "Invalid hook weak/strong state");
+				dbg_break();
+			}
+			HookWeakStrongColor.a = Data.m_Alpha;
+
+			// A-Client Nameplates_ClientId
+			if(Data.m_IsGame && !Data.m_IsLocal && g_Config.m_ClOldNameplateIds && g_Config.m_ClNamePlates)
+			{
 				YOffset -= Data.m_FontSize;
 				NamePlate.m_OldWeakStrongId.Update(*this, Data.m_RealClientId, Data.m_FontSize);
 
@@ -303,37 +304,38 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 					else
 						TextRender()->RenderTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex, ColorRGBA(1.0f, 1.0f, 1.0f).WithAlpha(Data.m_Alpha), OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_OldWeakStrongId.m_TextContainerIndex).m_W / 2.0f, YOffset);
 				}
-		}
-
-		YOffset -= Data.m_FontSizeHookWeakStrong;
-		float ShowHookWeakStrongIdSize = 0.0f;
-		if(Data.m_ShowHookWeakStrongId)
-		{
-			NamePlate.m_WeakStrongId.Update(*this, Data.m_HookWeakStrongId, Data.m_FontSizeHookWeakStrong);
-			if(NamePlate.m_WeakStrongId.m_TextContainerIndex.Valid())
-			{
-				ShowHookWeakStrongIdSize = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_WeakStrongId.m_TextContainerIndex).m_W;
-				float X = Data.m_Position.x - ShowHookWeakStrongIdSize / 2.0f;
-				if(Data.m_ShowHookWeakStrong)
-					X += Data.m_FontSizeHookWeakStrong * 0.75f;
-				TextRender()->TextColor(HookWeakStrongColor);
-				TextRender()->RenderTextContainer(NamePlate.m_WeakStrongId.m_TextContainerIndex, HookWeakStrongColor, OutlineColor, X, YOffset);
 			}
-		}
-		if(Data.m_ShowHookWeakStrong)
-		{
-			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_STRONGWEAK].m_Id);
-			Graphics()->QuadsBegin();
 
-			Graphics()->SetColor(HookWeakStrongColor);
-			RenderTools()->SelectSprite(StrongWeakSpriteId);
-
-			const float StrongWeakImgSize = Data.m_FontSizeHookWeakStrong * 1.5f;
-			float X = Data.m_Position.x;
+			YOffset -= Data.m_FontSizeHookWeakStrong;
+			float ShowHookWeakStrongIdSize = 0.0f;
 			if(Data.m_ShowHookWeakStrongId)
-				X -= ShowHookWeakStrongIdSize / 2.0f;
-			RenderTools()->DrawSprite(X, YOffset + StrongWeakImgSize / 2.7f, StrongWeakImgSize);
-			Graphics()->QuadsEnd();
+			{
+				NamePlate.m_WeakStrongId.Update(*this, Data.m_HookWeakStrongId, Data.m_FontSizeHookWeakStrong);
+				if(NamePlate.m_WeakStrongId.m_TextContainerIndex.Valid())
+				{
+					ShowHookWeakStrongIdSize = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_WeakStrongId.m_TextContainerIndex).m_W;
+					float X = Data.m_Position.x - ShowHookWeakStrongIdSize / 2.0f;
+					if(Data.m_ShowHookWeakStrong)
+						X += Data.m_FontSizeHookWeakStrong * 0.75f;
+					TextRender()->TextColor(HookWeakStrongColor);
+					TextRender()->RenderTextContainer(NamePlate.m_WeakStrongId.m_TextContainerIndex, HookWeakStrongColor, OutlineColor, X, YOffset);
+				}
+			}
+			if(Data.m_ShowHookWeakStrong)
+			{
+				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_STRONGWEAK].m_Id);
+				Graphics()->QuadsBegin();
+
+				Graphics()->SetColor(HookWeakStrongColor);
+				RenderTools()->SelectSprite(StrongWeakSpriteId);
+
+				const float StrongWeakImgSize = Data.m_FontSizeHookWeakStrong * 1.5f;
+				float X = Data.m_Position.x;
+				if(Data.m_ShowHookWeakStrongId)
+					X -= ShowHookWeakStrongIdSize / 2.0f;
+				RenderTools()->DrawSprite(X, YOffset + StrongWeakImgSize / 2.7f, StrongWeakImgSize);
+				Graphics()->QuadsEnd();
+			}
 		}
 	}
 

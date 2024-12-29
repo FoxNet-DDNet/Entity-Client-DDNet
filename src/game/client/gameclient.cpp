@@ -1785,8 +1785,6 @@ void CGameClient::OnNewSnapshot()
 					{
 						pClient->m_IsOnAnyList = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[i];
 					}
-
-					//pClient->m_TempWarName = m_WarList.IsTempWarlist(pClient->m_aName);
 					
 				}
 			}

@@ -994,11 +994,23 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						strcpy(CharOname, oName.c_str());
 						char aBuf[512];
 
-						if(GameClient()->m_WarList.FindWarEntry(CharOname, "", "war") || (!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_TempWarName, CharOname)))
+						if(GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName) || (!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_TempWarName, CharOname)))
 						{
 							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" with client Id: %d to Temp War list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
 							GameClient()->aMessage(aBuf);
 							str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_TempWarName, name);
+						}
+						if(GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[3]->m_aWarName) || (!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_TempHelperName, CharOname)))
+						{
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" with client Id: %d to Temp Helper list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+							GameClient()->aMessage(aBuf);
+							str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_TempHelperName, name);
+						}
+						if(GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[4]->m_aWarName) || (!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_TempMuteName, CharOname)))
+						{
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" with client Id: %d to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+							GameClient()->aMessage(aBuf);
+							str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_TempMuteName, name);
 						}
 
 

@@ -200,6 +200,16 @@ void CBindchat::OnConsoleInit()
 	AddBindDefault(".untempwar", "deltempwar");
 	AddBindDefault(".deltempwar", "deltempwar");
 
+	AddBindDefault(".temphelper", "addtemphelper");
+	AddBindDefault(".addtemphelper", "addtemphelper");
+	AddBindDefault(".untemphelper", "deltemphelper");
+	AddBindDefault(".deltemphelper", "deltemphelper");
+
+	AddBindDefault(".tempmute", "addtempmute");
+	AddBindDefault(".addtempmute", "addtempmute");
+	AddBindDefault(".untempmute", "deltempmute");
+	AddBindDefault(".deltempmute", "deltempmute");
+
 	AddBindDefault(".war", "war_name_index 1");
 	AddBindDefault(".addwar", "war_name_index 1");
 	AddBindDefault(".delwar", "remove_war_name_index 1");

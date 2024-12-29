@@ -86,6 +86,18 @@ private:
 	static void ConUnTempWar(IConsole::IResult *pResult, void *pUserData);
 	void UnTempWar(const char *pName, char *pReason = "");
 
+	static void ConTempHelper(IConsole::IResult *pResult, void *pUserData);
+	void TempHelper(const char *pName, char *pReason = "");
+
+	static void ConUnTempHelper(IConsole::IResult *pResult, void *pUserData);
+	void UnTempHelper(const char *pName, char *pReason = "");
+
+	static void ConTempMute(IConsole::IResult *pResult, void *pUserData);
+	void TempMute(const char *pName, char *pReason = "");
+
+	static void ConUnTempMute(IConsole::IResult *pResult, void *pUserData);
+	void UnTempMute(const char *pName, char *pReason = "");
+
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnInit() override;
 	virtual void OnRender() override;
