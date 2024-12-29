@@ -52,7 +52,7 @@ class CChat : public CComponent
 		bool m_IsClanWar;
 		bool m_IsClanTeam;
 
-		bool m_IsTempWar;
+		bool m_IsWarName;
 		bool m_IsWarClan;
 
 		bool m_Highlighted;

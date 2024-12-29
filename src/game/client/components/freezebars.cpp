@@ -32,7 +32,7 @@ void CFreezeBars::RenderKillBar()
 		return;
 	}
 
-	float Time = (static_cast<float>(GameClient()->m_Aiodob.m_LastFreeze) - time_get());
+	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
 	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
 	float FreezeProgress = clamp(Time / 1000000000.0f, 0.0f, Max) / Max;
 	if(FreezeProgress <= 0.0f)
@@ -247,7 +247,7 @@ inline bool CFreezeBars::IsPlayerInfoAvailable(int ClientId) const
 
 void CFreezeBars::OnRender()
 {
-	float Time = (static_cast<float>(GameClient()->m_Aiodob.m_LastFreeze) - time_get());
+	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
 	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
 	float FreezeProgress = clamp(Time / 1000000000.0f, 0.0f, Max) / Max;
 
@@ -298,7 +298,7 @@ void CFreezeBars::OnRender()
 			RenderFreezeBar(LocalClientId);
 		else if(g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 			RenderFreezeBar(LocalClientId);
-		if(GameClient()->m_Aiodob.m_SentKill == true)
+		if(GameClient()->m_FreezeKill.m_SentFreezeKill == true)
 			RenderFreezeBar(LocalClientId);
 	}
 }

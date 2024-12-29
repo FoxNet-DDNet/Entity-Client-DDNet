@@ -858,6 +858,7 @@ private:
 	void RenderSettingsAiodob(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
+	void RenderSettingsBindwheel(CUIRect MainView);
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();

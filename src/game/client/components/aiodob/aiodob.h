@@ -2,12 +2,12 @@
 #define GAME_CLIENT_COMPONENTS_AIODOB_H
 #include <game/client/component.h>
 #include <engine/console.h>
+#include <cstdint>
 
 class CAiodob : public CComponent
 {
 	bool AttempedJoinTeam;
 	bool JoinedTeam;
-	int m_Mult;
 	
 	bool m_KogModeRebound;
 	bool m_WeaponsGot;
@@ -15,13 +15,13 @@ class CAiodob : public CComponent
 	bool m_GoresServer;
 
 public:
-	bool m_SentKill;
-	bool m_SentAutoKill;
+	int m_Local;
 	int64_t m_JoinTeam;
-	int64_t m_LastFreeze;
 	int64_t m_LastMovement = 10.0f;
 	int IdWithName(const char *pName);
 
+
+	// Reply to Ping
 private:
 	struct CLastPing
 	{
@@ -60,21 +60,23 @@ private:
 	*/
 	CLastPing m_aLastPings[PING_QUEUE_SIZE];
 
+	// Chat Message Stuff
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 	int Get128Name(const char *pMsg, char *pName);
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
+	virtual void OnMessage(int MsgType, void *pRawMsg) override;
 
 	int64_t m_LastNotification;
 	int m_LastTile = -1;
 	void ChangeTileNotifyTick();
 
 	virtual void GoresMode();
-	virtual void FreezeKill();
-	virtual void AutoKill();
 	virtual void AutoJoinTeam();
 	virtual void OnConnect();
 
-	
+	// Console Commands
+	virtual void OnConsoleInit() override;
+
 	static void ConVotekick(IConsole::IResult *pResult, void *pUserData);
 	void Votekick(const char *pName, char *pReason = "");
 
@@ -85,11 +87,8 @@ private:
 	void UnTempWar(const char *pName, char *pReason = "");
 
 	virtual int Sizeof() const override { return sizeof(*this); }
-
 	virtual void OnInit() override;
-	virtual void OnConsoleInit() override;
 	virtual void OnRender() override;
-	virtual void OnMessage(int MsgType, void *pRawMsg) override;
 };
 
 #endif

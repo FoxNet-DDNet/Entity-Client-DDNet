@@ -203,6 +203,8 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 				Graphics()->TextureClear();
 				Graphics()->QuadsBegin();
 				Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f)).WithAlpha(Data.m_Alpha));
+				if(m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency == 77 || m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency == 76 && g_Config.m_ClAidsPingDetection)
+					Graphics()->SetColor(0.f, 0.f, 0.f, 0.5f);
 				float CircleSize = 7.0f;
 				Graphics()->DrawCircle(Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f - CircleSize, YOffset + Data.m_FontSize / 2.0f + 1.4f, CircleSize, 24);
 				Graphics()->QuadsEnd();
@@ -233,7 +235,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 				WarColor = GameClient()->m_WarList.GetClanColor(Data.m_RealClientId).WithAlpha(Data.m_Alpha);
 			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
-				if(!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_IsTempWar))
+				if(!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempWarName))
 					WarColor = GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Data.m_Alpha);
 			}
 		}

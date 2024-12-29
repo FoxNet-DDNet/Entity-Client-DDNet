@@ -64,6 +64,8 @@
 // Aiodob
 
 #include "components/aiodob/aiodob.h"
+#include "components/aiodob/auto_kill.h"
+#include "components/aiodob/freeze_kill.h"
 
 // Tater
 #include "components/tclient/bindchat.h"
@@ -185,6 +187,8 @@ public:
 	// Aiodob
 
 	CAiodob m_Aiodob;
+	CFreezeKill m_FreezeKill;
+	CAutoKill m_AutoKill;
 
 	// T-Client
 
@@ -493,7 +497,7 @@ public:
 		bool m_IsHelper;
 		bool m_IsTeam;
 		bool m_IsMuted;
-		char m_IsTempWar[MAX_NAME_LENGTH];
+		char m_TempWarName[MAX_NAME_LENGTH];
 
 		int m_AuthLevel;
 		bool m_Afk;
@@ -636,7 +640,6 @@ public:
 
 	// actions
 	// TODO: move these
-	void SendFinishName();
 	void SendSwitchTeam(int Team) const;
 	void SendStartInfo7(bool Dummy);
 	void SendSkinChange7(bool Dummy);

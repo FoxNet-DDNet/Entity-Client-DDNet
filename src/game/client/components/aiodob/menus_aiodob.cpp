@@ -202,26 +202,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						OtherSettings.HSplitTop(19.9f, &Button, &MainView);
 
 						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
-						Button.VSplitLeft(170.0f, &Button, 0);
-
-						static CLineInput s_ReplyMsg;
-						s_ReplyMsg.SetBuffer(g_Config.m_ClFinishName, sizeof(g_Config.m_ClFinishName));
-						s_ReplyMsg.SetEmptyText("qxdFox");
-
-						if(DoButton_CheckBox(&g_Config.m_ClFinishRename, "Rename on Finish", g_Config.m_ClFinishRename, &OtherSettings))
-						{
-							g_Config.m_ClFinishRename ^= 1;
-						}
-						if(g_Config.m_ClFinishRename)
-						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
-					}
-					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
-
-					{
-						OtherSettings.HSplitTop(19.9f, &Button, &MainView);
-
-						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
 						Button.VSplitLeft(150.0f, &Label, &Button);
 						Button.VSplitLeft(170.0f, &Button, 0);
 
@@ -1009,7 +989,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 								{
 									if(Render)
 										TextRender()->TextColor(FriendColor);
-									TextRender()->TextEx(&LocalCursor, "♦ ", -1);
+									TextRender()->TextEx(&LocalCursor, g_Config.m_ClFriendPrefix, -1);
 								}
 								if(Line.m_Spec && g_Config.m_ClChatSpecPrefix)
 								{
@@ -1659,202 +1639,206 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 	if(s_CurTab == AIODOB_TAB_BINDWHEEL)
 	{
-		CUIRect LeftView, RightView;
-
-		const float MarginBetweenSections = 30.0f;
-
-		MainView.HSplitTop(MarginBetweenSections, nullptr, &MainView);
-		MainView.VSplitLeft(MainView.w / 2.1f, &LeftView, &RightView);
-
-		const float Radius = minimum(RightView.w, RightView.h) / 2.0f;
-		vec2 Pos{RightView.x + RightView.w / 2.0f, RightView.y + RightView.h / 2.0f};
-		// Draw Circle
-		Graphics()->TextureClear();
-		Graphics()->QuadsBegin();
-		Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.3f);
-		Graphics()->DrawCircle(Pos.x, Pos.y, Radius, 64);
-		Graphics()->QuadsEnd();
-
-		static char s_aBindName[BINDWHEEL_MAX_NAME];
-		static char s_aBindCommand[BINDWHEEL_MAX_CMD];
-
-		static int s_SelectedBindIndex = -1;
-		int HoveringIndex = -1;
-
-		float MouseDist = distance(Pos, Ui()->MousePos());
-		if(MouseDist < Radius && MouseDist > Radius * 0.25f)
-		{
-			int SegmentCount = GameClient()->m_Bindwheel.m_vBinds.size();
-			float SegmentAngle = 2 * pi / SegmentCount;
-
-			float HoveringAngle = angle(Ui()->MousePos() - Pos) + SegmentAngle / 2;
-			if(HoveringAngle < 0.0f)
-				HoveringAngle += 2.0f * pi;
-
-			HoveringIndex = (int)(HoveringAngle / (2 * pi) * SegmentCount);
-			if(Ui()->MouseButtonClicked(0))
-			{
-				s_SelectedBindIndex = HoveringIndex;
-				str_copy(s_aBindName, GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aName);
-				str_copy(s_aBindCommand, GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aCommand);
-			}
-			else if(Ui()->MouseButtonClicked(1) && s_SelectedBindIndex >= 0 && HoveringIndex >= 0 && HoveringIndex != s_SelectedBindIndex)
-			{
-				CBindWheel::SBind BindA = GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex];
-				CBindWheel::SBind BindB = GameClient()->m_Bindwheel.m_vBinds[HoveringIndex];
-				str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aName, BindB.m_aName);
-				str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aCommand, BindB.m_aCommand);
-				str_copy(GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aName, BindA.m_aName);
-				str_copy(GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aCommand, BindA.m_aCommand);
-			}
-			else if(Ui()->MouseButtonClicked(2))
-			{
-				s_SelectedBindIndex = HoveringIndex;
-			}
-		}
-		else if(MouseDist < Radius && Ui()->MouseButtonClicked(0))
-		{
-			s_SelectedBindIndex = -1;
-			str_copy(s_aBindName, "");
-			str_copy(s_aBindCommand, "");
-		}
-
-		const float Theta = pi * 2.0f / GameClient()->m_Bindwheel.m_vBinds.size();
-		for(int i = 0; i < static_cast<int>(GameClient()->m_Bindwheel.m_vBinds.size()); i++)
-		{
-			float FontSize = 12.0f;
-			if(i == s_SelectedBindIndex)
-			{
-				FontSize = 20.0f;
-				TextRender()->TextColor(ColorRGBA(0.5f, 1.0f, 0.75f, 1.0f));
-			}
-			else if(i == HoveringIndex)
-				FontSize = 14.0f;
-
-			const CBindWheel::SBind Bind = GameClient()->m_Bindwheel.m_vBinds[i];
-			const float Angle = Theta * i;
-			vec2 TextPos = direction(Angle);
-			TextPos *= Radius * 0.75f;
-
-			float Width = TextRender()->TextWidth(FontSize, Bind.m_aName);
-			TextPos += Pos;
-			TextPos.x -= Width / 2.0f;
-			TextRender()->Text(TextPos.x, TextPos.y, FontSize, Bind.m_aName);
-			TextRender()->TextColor(TextRender()->DefaultTextColor());
-		}
-
-		LeftView.HSplitTop(LineSize, &Button, &LeftView);
-		Button.VSplitLeft(100.0f, &Label, &Button);
-		Ui()->DoLabel(&Label, Localize("Name:"), 14.0f, TEXTALIGN_ML);
-		static CLineInput s_NameInput;
-		s_NameInput.SetBuffer(s_aBindName, sizeof(s_aBindName));
-		s_NameInput.SetEmptyText("Name");
-		Ui()->DoEditBox(&s_NameInput, &Button, 12.0f);
-
-		LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
-		LeftView.HSplitTop(LineSize, &Button, &LeftView);
-		Button.VSplitLeft(100.0f, &Label, &Button);
-		Ui()->DoLabel(&Label, Localize("Command:"), 14.0f, TEXTALIGN_ML);
-		static CLineInput s_BindInput;
-		s_BindInput.SetBuffer(s_aBindCommand, sizeof(s_aBindCommand));
-		s_BindInput.SetEmptyText(Localize("Command"));
-		Ui()->DoEditBox(&s_BindInput, &Button, 12.0f);
-
-		static CButtonContainer s_AddButton, s_RemoveButton, s_OverrideButton;
-
-		LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
-		LeftView.HSplitTop(LineSize, &Button, &LeftView);
-		if(DoButton_Menu(&s_OverrideButton, Localize("Override Selected"), 0, &Button) && s_SelectedBindIndex >= 0)
-		{
-			CBindWheel::SBind TempBind;
-			if(str_length(s_aBindName) == 0)
-				str_copy(TempBind.m_aName, "*");
-			else
-				str_copy(TempBind.m_aName, s_aBindName);
-
-			str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aName, TempBind.m_aName);
-			str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aCommand, s_aBindCommand);
-		}
-		LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
-		LeftView.HSplitTop(LineSize, &Button, &LeftView);
-		CUIRect ButtonAdd, ButtonRemove;
-		Button.VSplitMid(&ButtonRemove, &ButtonAdd, MarginSmall);
-		if(DoButton_Menu(&s_AddButton, Localize("Add Bind"), 0, &ButtonAdd))
-		{
-			CBindWheel::SBind TempBind;
-			if(str_length(s_aBindName) == 0)
-				str_copy(TempBind.m_aName, "*");
-			else
-				str_copy(TempBind.m_aName, s_aBindName);
-
-			GameClient()->m_Bindwheel.AddBind(TempBind.m_aName, s_aBindCommand);
-			s_SelectedBindIndex = static_cast<int>(GameClient()->m_Bindwheel.m_vBinds.size()) - 1;
-		}
-		if(DoButton_Menu(&s_RemoveButton, Localize("Remove Bind"), 0, &ButtonRemove) && s_SelectedBindIndex >= 0)
-		{
-			GameClient()->m_Bindwheel.RemoveBind(s_SelectedBindIndex);
-			s_SelectedBindIndex = -1;
-		}
-
-		LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
-		LeftView.HSplitTop(LineSize, &Label, &LeftView);
-		Ui()->DoLabel(&Label, Localize("Use left mouse to select"), 14.0f, TEXTALIGN_ML);
-		LeftView.HSplitTop(LineSize, &Label, &LeftView);
-		Ui()->DoLabel(&Label, Localize("Use right mouse to swap with selected"), 14.0f, TEXTALIGN_ML);
-		LeftView.HSplitTop(LineSize, &Label, &LeftView);
-		Ui()->DoLabel(&Label, Localize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
-
-		// Do Settings Key
-		CKeyInfo Key = CKeyInfo{"Bind Wheel Key", "+bindwheel", 0, 0};
-		for(int Mod = 0; Mod < CBinds::MODIFIER_COMBINATION_COUNT; Mod++)
-		{
-			for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
-			{
-				const char *pBind = m_pClient->m_Binds.Get(KeyId, Mod);
-				if(!pBind[0])
-					continue;
-
-				if(str_comp(pBind, Key.m_pCommand) == 0)
-				{
-					Key.m_KeyId = KeyId;
-					Key.m_ModifierCombination = Mod;
-					break;
-				}
-			}
-		}
-
-		CUIRect KeyLabel;
-		LeftView.HSplitBottom(LineSize, &LeftView, &Button);
-		Button.VSplitLeft(120.0f, &KeyLabel, &Button);
-		Button.VSplitLeft(100.0f, &Button, nullptr);
-		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), "%s:", Localize((const char *)Key.m_pName));
-
-		Ui()->DoLabel(&KeyLabel, aBuf, 14.0f, TEXTALIGN_ML);
-		int OldId = Key.m_KeyId, OldModifierCombination = Key.m_ModifierCombination, NewModifierCombination;
-		int NewId = DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
-		if(NewId != OldId || NewModifierCombination != OldModifierCombination)
-		{
-			if(OldId != 0 || NewId == 0)
-				m_pClient->m_Binds.Bind(OldId, "", false, OldModifierCombination);
-			if(NewId != 0)
-				m_pClient->m_Binds.Bind(NewId, Key.m_pCommand, false, NewModifierCombination);
-		}
-		LeftView.HSplitBottom(LineSize, &LeftView, &Button);
-
-		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetBindWheelMouse, Localize("Reset position of mouse when opening bindwheel"), &g_Config.m_ClResetBindWheelMouse, &Button, LineSize);
-		
-		CUIRect CopyRight;
-		MainView.HSplitBottom(20.0f, 0, &CopyRight);
-		CopyRight.VSplitLeft(225.0f, &CopyRight, &CopyRight);
-		Ui()->DoLabel(&CopyRight, "© Tater", 14.0f, TEXTALIGN_ML);
-
+		RenderSettingsBindwheel(MainView);
 	}
 
 	if(s_CurTab == AIODOB_TAB_WARLIST)
 	{
 		RenderSettingsWarList(MainView);
 	}
+}
+
+void CMenus::RenderSettingsBindwheel(CUIRect MainView)
+{
+	CUIRect LeftView, RightView, Button, Label;
+
+	const float MarginBetweenSections = 30.0f;
+
+	MainView.HSplitTop(MarginBetweenSections, nullptr, &MainView);
+	MainView.VSplitLeft(MainView.w / 2.1f, &LeftView, &RightView);
+
+	const float Radius = minimum(RightView.w, RightView.h) / 2.0f;
+	vec2 Pos{RightView.x + RightView.w / 2.0f, RightView.y + RightView.h / 2.0f};
+	// Draw Circle
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.3f);
+	Graphics()->DrawCircle(Pos.x, Pos.y, Radius, 64);
+	Graphics()->QuadsEnd();
+
+	static char s_aBindName[BINDWHEEL_MAX_NAME];
+	static char s_aBindCommand[BINDWHEEL_MAX_CMD];
+
+	static int s_SelectedBindIndex = -1;
+	int HoveringIndex = -1;
+
+	float MouseDist = distance(Pos, Ui()->MousePos());
+	if(MouseDist < Radius && MouseDist > Radius * 0.25f)
+	{
+		int SegmentCount = GameClient()->m_Bindwheel.m_vBinds.size();
+		float SegmentAngle = 2 * pi / SegmentCount;
+
+		float HoveringAngle = angle(Ui()->MousePos() - Pos) + SegmentAngle / 2;
+		if(HoveringAngle < 0.0f)
+			HoveringAngle += 2.0f * pi;
+
+		HoveringIndex = (int)(HoveringAngle / (2 * pi) * SegmentCount);
+		if(Ui()->MouseButtonClicked(0))
+		{
+			s_SelectedBindIndex = HoveringIndex;
+			str_copy(s_aBindName, GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aName);
+			str_copy(s_aBindCommand, GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aCommand);
+		}
+		else if(Ui()->MouseButtonClicked(1) && s_SelectedBindIndex >= 0 && HoveringIndex >= 0 && HoveringIndex != s_SelectedBindIndex)
+		{
+			CBindWheel::SBind BindA = GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex];
+			CBindWheel::SBind BindB = GameClient()->m_Bindwheel.m_vBinds[HoveringIndex];
+			str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aName, BindB.m_aName);
+			str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aCommand, BindB.m_aCommand);
+			str_copy(GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aName, BindA.m_aName);
+			str_copy(GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aCommand, BindA.m_aCommand);
+		}
+		else if(Ui()->MouseButtonClicked(2))
+		{
+			s_SelectedBindIndex = HoveringIndex;
+		}
+	}
+	else if(MouseDist < Radius && Ui()->MouseButtonClicked(0))
+	{
+		s_SelectedBindIndex = -1;
+		str_copy(s_aBindName, "");
+		str_copy(s_aBindCommand, "");
+	}
+
+	const float Theta = pi * 2.0f / GameClient()->m_Bindwheel.m_vBinds.size();
+	for(int i = 0; i < static_cast<int>(GameClient()->m_Bindwheel.m_vBinds.size()); i++)
+	{
+		float FontSize = 12.0f;
+		if(i == s_SelectedBindIndex)
+		{
+			FontSize = 20.0f;
+			TextRender()->TextColor(ColorRGBA(0.5f, 1.0f, 0.75f, 1.0f));
+		}
+		else if(i == HoveringIndex)
+			FontSize = 14.0f;
+
+		const CBindWheel::SBind Bind = GameClient()->m_Bindwheel.m_vBinds[i];
+		const float Angle = Theta * i;
+		vec2 TextPos = direction(Angle);
+		TextPos *= Radius * 0.75f;
+
+		float Width = TextRender()->TextWidth(FontSize, Bind.m_aName);
+		TextPos += Pos;
+		TextPos.x -= Width / 2.0f;
+		TextRender()->Text(TextPos.x, TextPos.y, FontSize, Bind.m_aName);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+	}
+
+	LeftView.HSplitTop(LineSize, &Button, &LeftView);
+	Button.VSplitLeft(100.0f, &Label, &Button);
+	Ui()->DoLabel(&Label, Localize("Name:"), 14.0f, TEXTALIGN_ML);
+	static CLineInput s_NameInput;
+	s_NameInput.SetBuffer(s_aBindName, sizeof(s_aBindName));
+	s_NameInput.SetEmptyText("Name");
+	Ui()->DoEditBox(&s_NameInput, &Button, 12.0f);
+
+	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+	LeftView.HSplitTop(LineSize, &Button, &LeftView);
+	Button.VSplitLeft(100.0f, &Label, &Button);
+	Ui()->DoLabel(&Label, Localize("Command:"), 14.0f, TEXTALIGN_ML);
+	static CLineInput s_BindInput;
+	s_BindInput.SetBuffer(s_aBindCommand, sizeof(s_aBindCommand));
+	s_BindInput.SetEmptyText(Localize("Command"));
+	Ui()->DoEditBox(&s_BindInput, &Button, 12.0f);
+
+	static CButtonContainer s_AddButton, s_RemoveButton, s_OverrideButton;
+
+	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+	LeftView.HSplitTop(LineSize, &Button, &LeftView);
+	if(DoButton_Menu(&s_OverrideButton, Localize("Override Selected"), 0, &Button) && s_SelectedBindIndex >= 0)
+	{
+		CBindWheel::SBind TempBind;
+		if(str_length(s_aBindName) == 0)
+			str_copy(TempBind.m_aName, "*");
+		else
+			str_copy(TempBind.m_aName, s_aBindName);
+
+		str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aName, TempBind.m_aName);
+		str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aCommand, s_aBindCommand);
+	}
+	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+	LeftView.HSplitTop(LineSize, &Button, &LeftView);
+	CUIRect ButtonAdd, ButtonRemove;
+	Button.VSplitMid(&ButtonRemove, &ButtonAdd, MarginSmall);
+	if(DoButton_Menu(&s_AddButton, Localize("Add Bind"), 0, &ButtonAdd))
+	{
+		CBindWheel::SBind TempBind;
+		if(str_length(s_aBindName) == 0)
+			str_copy(TempBind.m_aName, "*");
+		else
+			str_copy(TempBind.m_aName, s_aBindName);
+
+		GameClient()->m_Bindwheel.AddBind(TempBind.m_aName, s_aBindCommand);
+		s_SelectedBindIndex = static_cast<int>(GameClient()->m_Bindwheel.m_vBinds.size()) - 1;
+	}
+	if(DoButton_Menu(&s_RemoveButton, Localize("Remove Bind"), 0, &ButtonRemove) && s_SelectedBindIndex >= 0)
+	{
+		GameClient()->m_Bindwheel.RemoveBind(s_SelectedBindIndex);
+		s_SelectedBindIndex = -1;
+	}
+
+	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	Ui()->DoLabel(&Label, Localize("Use left mouse to select"), 14.0f, TEXTALIGN_ML);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	Ui()->DoLabel(&Label, Localize("Use right mouse to swap with selected"), 14.0f, TEXTALIGN_ML);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	Ui()->DoLabel(&Label, Localize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
+
+	// Do Settings Key
+	CKeyInfo Key = CKeyInfo{"Bind Wheel Key", "+bindwheel", 0, 0};
+	for(int Mod = 0; Mod < CBinds::MODIFIER_COMBINATION_COUNT; Mod++)
+	{
+		for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
+		{
+			const char *pBind = m_pClient->m_Binds.Get(KeyId, Mod);
+			if(!pBind[0])
+				continue;
+
+			if(str_comp(pBind, Key.m_pCommand) == 0)
+			{
+				Key.m_KeyId = KeyId;
+				Key.m_ModifierCombination = Mod;
+				break;
+			}
+		}
+	}
+
+	CUIRect KeyLabel;
+	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
+	Button.VSplitLeft(120.0f, &KeyLabel, &Button);
+	Button.VSplitLeft(100.0f, &Button, nullptr);
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "%s:", Localize((const char *)Key.m_pName));
+
+	Ui()->DoLabel(&KeyLabel, aBuf, 14.0f, TEXTALIGN_ML);
+	int OldId = Key.m_KeyId, OldModifierCombination = Key.m_ModifierCombination, NewModifierCombination;
+	int NewId = DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
+	if(NewId != OldId || NewModifierCombination != OldModifierCombination)
+	{
+		if(OldId != 0 || NewId == 0)
+			m_pClient->m_Binds.Bind(OldId, "", false, OldModifierCombination);
+		if(NewId != 0)
+			m_pClient->m_Binds.Bind(NewId, Key.m_pCommand, false, NewModifierCombination);
+	}
+	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
+
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetBindWheelMouse, Localize("Reset position of mouse when opening bindwheel"), &g_Config.m_ClResetBindWheelMouse, &Button, LineSize);
+
+	CUIRect CopyRight;
+	MainView.HSplitBottom(20.0f, 0, &CopyRight);
+	CopyRight.VSplitLeft(225.0f, &CopyRight, &CopyRight);
+	Ui()->DoLabel(&CopyRight, "© Tater", 14.0f, TEXTALIGN_ML);
 }
 
 void CMenus::RenderSettingsWarList(CUIRect MainView)

@@ -163,6 +163,8 @@ void CGameClient::OnConsoleInit()
 					      &m_GameConsole,
 						  // aiodob
 					      &m_Aiodob,
+						  &m_FreezeKill,
+						  &m_AutoKill,
 					      /* >>> chillerbot-ux */
 					      &m_MenuBackground});
 
@@ -1193,7 +1195,6 @@ void CGameClient::OnShutdown()
 {
 	for(auto &pComponent : m_vpAll)
 		pComponent->OnShutdown();
-	Storage()->RemoveFile("chillerbot/templist/temp/tempwar/names.txt", IStorage::TYPE_SAVE);
 	if(g_Config.m_ClDisableGoresOnShutdown)
 		g_Config.m_ClGoresMode = 0;
 }
@@ -1785,7 +1786,7 @@ void CGameClient::OnNewSnapshot()
 						pClient->m_IsOnAnyList = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[i];
 					}
 
-					//pClient->m_IsTempWar = m_WarList.IsTempWarlist(pClient->m_aName);
+					//pClient->m_TempWarName = m_WarList.IsTempWarlist(pClient->m_aName);
 					
 				}
 			}
@@ -2747,22 +2748,6 @@ void CGameClient::SendSwitchTeam(int Team) const
 	CNetMsg_Cl_SetTeam Msg;
 	Msg.m_Team = Team;
 	Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
-}
-
-void CGameClient::SendFinishName()
-{
-	CNetMsg_Cl_ChangeInfo Msg;
-	Msg.m_pName = g_Config.m_ClFinishName;
-	Msg.m_pClan = g_Config.m_PlayerClan;
-	Msg.m_Country = g_Config.m_PlayerCountry;
-	Msg.m_pSkin = g_Config.m_ClPlayerSkin;
-	Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
-	Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
-	Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
-	CMsgPacker Packer(&Msg);
-	Msg.Pack(&Packer);
-	Client()->SendMsg(0, &Packer, MSGFLAG_VITAL);
-	m_aCheckInfo[0] = Client()->GameTickSpeed();
 }
 
 void CGameClient::SendStartInfo7(bool Dummy)

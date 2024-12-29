@@ -88,13 +88,6 @@ void CBindchat::AddBindDefault(const char *pName, const char *pCommand)
 	if((pName[0] == '\0' && pCommand[0] == '\0') || m_vBinds.size() >= BINDCHAT_MAX_BINDS)
 		return;
 
-	// If a bind for this command is found then don't add this
-	for(auto It = m_vBinds.begin(); It != m_vBinds.end(); ++It)
-	{
-		if(str_comp(It->m_aCommand, pCommand) == 0)
-			return;
-	}
-
 	CBind Bind;
 	Bind.m_Default = true;
 	str_copy(Bind.m_aName, pName);
@@ -195,14 +188,47 @@ void CBindchat::OnConsoleInit()
 	}
 
 	// Default Binds
+	AddBindDefault(".help", "exec data/aiodob/binds/.help.cfg");
+	AddBindDefault(".extra", "exec data/aiodob/binds/.extra.cfg");
+	AddBindDefault(".kick", "votekick");
+
+	AddBindDefault(".friend", "add_friend");
+	AddBindDefault(".unfriend", "add_friend");
+
+	AddBindDefault(".tempwar", "addtempwar");
+	AddBindDefault(".addtempwar", "addtempwar");
+	AddBindDefault(".untempwar", "deltempwar");
+	AddBindDefault(".deltempwar", "deltempwar");
+
 	AddBindDefault(".war", "war_name_index 1");
-	AddBindDefault(".warclan", "war_clan_index 1");
-	AddBindDefault(".team", "war_name_index 2");
-	AddBindDefault(".teamclan", "war_clan_index 2");
+	AddBindDefault(".addwar", "war_name_index 1");
 	AddBindDefault(".delwar", "remove_war_name_index 1");
-	AddBindDefault(".delwarclan", "remove_war_clan_index 1");
+	AddBindDefault(".unwar", "remove_war_name_index 1");
+
+	AddBindDefault(".team", "war_name_index 2");
+	AddBindDefault(".addteam", "war_name_index 2");
 	AddBindDefault(".delteam", "remove_war_name_index 2");
-	AddBindDefault(".delteamclan", "remove_war_clan_index 2");
+	AddBindDefault(".unteam", "remove_war_name_index 2");
+
+	AddBindDefault(".helper", "war_name_index 3");
+	AddBindDefault(".addhelper", "war_name_index 3");
+	AddBindDefault(".delhelper", "remove_war_name_index 3");
+	AddBindDefault(".unhelper", "remove_war_name_index 3");
+
+	AddBindDefault(".mute", "war_name_index 4");
+	AddBindDefault(".addmute", "war_name_index 4");
+	AddBindDefault(".delmute", "remove_war_name_index 4");
+	AddBindDefault(".unmute", "remove_war_name_index 4");
+
+	AddBindDefault(".clanwar", "war_clan_index 1");
+	AddBindDefault(".addclanwar", "war_clan_index 1");
+	AddBindDefault(".delclanwar", "remove_war_clan_index 1");
+	AddBindDefault(".unclanwar", "remove_war_clan_index 1");
+
+	AddBindDefault(".clanteam", "war_clan_index 2");
+	AddBindDefault(".addclanteam", "war_clan_index 2");
+	AddBindDefault(".delclanteam", "remove_war_clan_index 2");
+	AddBindDefault(".unclanteam", "remove_war_clan_index 2");
 }
 
 void CBindchat::ExecuteBind(int Bind, const char *pArgs)

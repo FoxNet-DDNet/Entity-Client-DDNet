@@ -162,7 +162,6 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 					str_copy(Entry.m_aClan, GameClient()->m_aClients[i].m_aClan);
 					GameClient()->aMessage(aBuf);
 				}
-
 				else
 				{
 					char aBuf[128];
@@ -170,6 +169,7 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 					GameClient()->aMessage(aBuf);
 					break;
 				}
+
 			}
 		}
 	}
@@ -177,8 +177,12 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 	{
 		str_copy(Entry.m_aName, pName);
 		char aBuf[128];
-		str_format(aBuf, sizeof(aBuf), "added \"%s\" to the '%s' list ", pName, Entry.m_pWarType);
+		str_format(aBuf, sizeof(aBuf), "added \"%s\" to the '%s' list", pName, Entry.m_pWarType);
 		GameClient()->aMessage(aBuf);
+		if(!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, pName))
+		{
+			str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, "\0");
+		}
 	}
 	if(!g_Config.m_ClWarListAllowDuplicates)
 		RemoveWarEntryDuplicates(Entry.m_aName, Entry.m_aClan);
@@ -219,6 +223,14 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 	else
 	{
 		str_copy(Entry.m_aName, pName);
+		char aBuf[512];
+		str_format(aBuf, sizeof(aBuf), "%s", pName);
+		GameClient()->aMessage(aBuf);
+		if(!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, pName))
+		{
+			if(Entry.m_pWarType->m_Index == 1)
+				str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, "\0");
+		}
 	}
 	RemoveWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_pWarType->m_aWarName);
 }
