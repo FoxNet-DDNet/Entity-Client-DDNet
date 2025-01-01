@@ -2345,6 +2345,7 @@ if(CLIENT)
     components/aiodob/aiodob.h
     components/aiodob/auto_kill.cpp
     components/aiodob/auto_kill.h
+    components/aiodob/commands.cpp
     components/aiodob/freeze_kill.cpp
     components/aiodob/freeze_kill.h
     components/aiodob/menus_aiodob.cpp
