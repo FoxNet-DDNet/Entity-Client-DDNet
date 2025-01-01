@@ -10,26 +10,159 @@
 #include "aiodob.h"
 #include <base/system.h>
 
-void CAiodob::OnInit()
+int CAiodob::IdWithName(const char *pName)
 {
-	// on client load
-	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
+	int ClientId;
 
-	AttempedJoinTeam = false;
-	JoinedTeam = false;
-	m_KogModeRebound = false;
-	m_JoinTeam = 0;
-	m_LastTile = -1;
-	m_LastMovement = 0;
-	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
-
-	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
-	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
-	
-	char aBuf[1024];
-	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
-	dbg_msg("Aiodob", aBuf);
+	for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		if(str_comp(pName, GameClient()->m_aClients[ClientId].m_aName) == 0)
+		{
+			return ClientId;
+		}
+	}
+	return -1;
 }
+
+bool CAiodob::LineShouldHighlight(const char *pLine, const char *pName)
+{
+	const char *pHL = str_utf8_find_nocase(pLine, pName);
+
+	if(pHL)
+	{
+		int Length = str_length(pName);
+
+		if(Length > 0 && (pLine == pHL || pHL[-1] == ' ') && (pHL[Length] == 0 || pHL[Length] == ' ' || pHL[Length] == '.' || pHL[Length] == '!' || pHL[Length] == ',' || pHL[Length] == '?' || pHL[Length] == ':'))
+			return true;
+	}
+
+	return false;
+}
+
+int CAiodob::Get128Name(const char *pMsg, char *pName)
+{
+	int i = 0;
+	for(i = 0; pMsg[i] && i < 17; i++)
+	{
+		if(pMsg[i] == ':' && pMsg[i + 1] == ' ')
+		{
+			str_copy(pName, pMsg, i + 1);
+			return i;
+		}
+	}
+	str_copy(pName, " ", 2);
+	return -1;
+}
+
+void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
+{
+	if(ClientId < 0 || ClientId > MAX_CLIENTS)
+		return;
+
+	bool Highlighted = false;
+
+	// check for highlighted name
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	{
+		if(m_pClient->m_aLocalIds[0] == -1)
+			return;
+		if(m_pClient->Client()->DummyConnected() && m_pClient->m_aLocalIds[1] == -1)
+			return;
+		if(ClientId >= 0 && ClientId != m_pClient->m_aLocalIds[0] && (!m_pClient->Client()->DummyConnected() || ClientId != m_pClient->m_aLocalIds[1]))
+		{
+			// main character
+			Highlighted |= LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName);
+			// dummy
+			Highlighted |= m_pClient->Client()->DummyConnected() && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName);
+		}
+	}
+	else
+	{
+		if(m_pClient->m_Snap.m_LocalClientId == -1)
+			return;
+		// on demo playback use local id from snap directly,
+		// since m_aLocalIds isn't valid there
+		Highlighted |= m_pClient->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_aName);
+	}
+
+	if(Team == 3) // whisper recv
+		Highlighted = true;
+
+	if(!Highlighted)
+		return;
+	char aName[16];
+	str_copy(aName, m_pClient->m_aClients[ClientId].m_aName, sizeof(aName));
+	if(ClientId == 63 && !str_comp_num(m_pClient->m_aClients[ClientId].m_aName, " ", 2))
+	{
+		Get128Name(pMsg, aName);
+		// dbg_msg("chillerbot", "fixname 128 player '%s' -> '%s'", m_pClient->m_aClients[ClientId].m_aName, aName);
+	}
+	// ignore own and dummys messages
+	if(!str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName))
+		return;
+	if(Client()->DummyConnected() && !str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName))
+		return;
+
+	// could iterate over ping history and also ignore older duplicates
+	// ignore duplicated messages
+	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
+		return;
+
+	if((g_Config.m_ClReplyMuted && GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[4])) // || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
+	{
+		if(!GameClient()->m_Snap.m_pLocalCharacter)
+			return;
+
+		if(Team == 3) // whisper recv
+		{
+			char Text[2048];
+			str_format(Text, sizeof(Text), "/w %s ", aName);
+			str_append(Text, g_Config.m_ClAutoReplyMutedMsg);
+			GameClient()->m_Chat.SendChat(0, Text);
+		}
+		else
+		{
+			char Text[2048];
+			str_format(Text, sizeof(Text), "%s: ", aName);
+			str_append(Text, g_Config.m_ClAutoReplyMutedMsg);
+			GameClient()->m_Chat.SendChat(0, Text);
+		}
+	}
+	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[4])
+	{
+		if(!GameClient()->m_Snap.m_pLocalCharacter)
+			return;
+
+		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
+		if(pGraphics && !pGraphics->WindowActive() && Graphics())
+		{
+			if(Team == 3) // whisper recv
+			{
+				char Text[2048];
+				str_format(Text, sizeof(Text), "/w %s ", aName);
+				str_append(Text, g_Config.m_ClAutoReplyMsg);
+				GameClient()->m_Chat.SendChat(0, Text);
+			}
+			else
+			{
+				char Text[2048];
+				str_format(Text, sizeof(Text), "%s: ", aName);
+				str_append(Text, g_Config.m_ClAutoReplyMsg);
+				GameClient()->m_Chat.SendChat(0, Text);
+			}
+		}
+	}
+}
+
+void CAiodob::OnMessage(int MsgType, void *pRawMsg)
+{
+	if(MsgType == NETMSGTYPE_SV_CHAT)
+	{
+		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
+		OnChatMessage(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
+	}
+}
+
 
 void CAiodob::AutoJoinTeam()
 {
@@ -357,7 +490,7 @@ void CAiodob::ChangeTileNotifyTick()
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 		if(pGraphics && !pGraphics->WindowActive() && Graphics())
 		{
-			Client()->Notify("chillerbot-ux", "current tile changed");
+			Client()->Notify("aiodob", "current tile changed");
 			Graphics()->NotifyWindow();
 		}
 		m_LastNotification = time_get();
@@ -583,6 +716,27 @@ void CAiodob::OnConsoleInit()
 
 }
 
+void CAiodob::OnInit()
+{
+	// on client load
+	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
+
+	AttempedJoinTeam = false;
+	JoinedTeam = false;
+	m_KogModeRebound = false;
+	m_JoinTeam = 0;
+	m_LastTile = -1;
+	m_LastMovement = 0;
+	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
+
+	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
+	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+
+	char aBuf[1024];
+	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
+	dbg_msg("Aiodob", aBuf);
+}
+
 void CAiodob::OnRender()
 {
 	 m_Local = m_pClient->m_Snap.m_LocalClientId;
@@ -594,164 +748,11 @@ void CAiodob::OnRender()
 	ChangeTileNotifyTick();
 	GoresMode();
 	AutoJoinTeam();
-
+	
 	// "secret" effect, makes a circle go around the player
 
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 	{
 		m_LastMovement = time_get() + time_freq() * 30;
-	}
-}
-
-int CAiodob::IdWithName(const char *pName)
-{
-	int ClientId;
-
-	for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
-	{
-		if(str_comp(pName, GameClient()->m_aClients[ClientId].m_aName) == 0)
-		{
-			return ClientId;
-		}
-	}
-	return -1;
-}
-
-bool CAiodob::LineShouldHighlight(const char *pLine, const char *pName)
-{
-	const char *pHL = str_utf8_find_nocase(pLine, pName);
-
-	if(pHL)
-	{
-		int Length = str_length(pName);
-
-		if(Length > 0 && (pLine == pHL || pHL[-1] == ' ') && (pHL[Length] == 0 || pHL[Length] == ' ' || pHL[Length] == '.' || pHL[Length] == '!' || pHL[Length] == ',' || pHL[Length] == '?' || pHL[Length] == ':'))
-			return true;
-	}
-
-	return false;
-}
-
-int CAiodob::Get128Name(const char *pMsg, char *pName)
-{
-	int i = 0;
-	for(i = 0; pMsg[i] && i < 17; i++)
-	{
-		if(pMsg[i] == ':' && pMsg[i + 1] == ' ')
-		{
-			str_copy(pName, pMsg, i + 1);
-			return i;
-		}
-	}
-	str_copy(pName, " ", 2);
-	return -1;
-}
-
-void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
-{
-	if(ClientId < 0 || ClientId > MAX_CLIENTS)
-		return;
-
-	bool Highlighted = false;
-
-	// check for highlighted name
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		if(m_pClient->m_aLocalIds[0] == -1)
-			return;
-		if(m_pClient->Client()->DummyConnected() && m_pClient->m_aLocalIds[1] == -1)
-			return;
-		if(ClientId >= 0 && ClientId != m_pClient->m_aLocalIds[0] && (!m_pClient->Client()->DummyConnected() || ClientId != m_pClient->m_aLocalIds[1]))
-		{
-			// main character
-			Highlighted |= LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName);
-			// dummy
-			Highlighted |= m_pClient->Client()->DummyConnected() && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName);
-		}
-	}
-	else
-	{
-		if(m_pClient->m_Snap.m_LocalClientId == -1)
-			return;
-		// on demo playback use local id from snap directly,
-		// since m_aLocalIds isn't valid there
-		Highlighted |= m_pClient->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_aName);
-	}
-
-	if(Team == 3) // whisper recv
-		Highlighted = true;
-
-	if(!Highlighted)
-		return;
-	char aName[16];
-	str_copy(aName, m_pClient->m_aClients[ClientId].m_aName, sizeof(aName));
-	if(ClientId == 63 && !str_comp_num(m_pClient->m_aClients[ClientId].m_aName, " ", 2))
-	{
-		Get128Name(pMsg, aName);
-		// dbg_msg("chillerbot", "fixname 128 player '%s' -> '%s'", m_pClient->m_aClients[ClientId].m_aName, aName);
-	}
-	// ignore own and dummys messages
-	if(!str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName))
-		return;
-	if(Client()->DummyConnected() && !str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName))
-		return;
-
-	// could iterate over ping history and also ignore older duplicates
-	// ignore duplicated messages
-	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
-		return;
-
-	if((g_Config.m_ClReplyMuted && GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[4])) // || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
-	{
-		if(!GameClient()->m_Snap.m_pLocalCharacter)
-			return;
-
-		if(Team == 3) // whisper recv
-		{
-			char Text[2048];
-			str_format(Text, sizeof(Text), "/w %s ", aName);
-			str_append(Text, g_Config.m_ClAutoReplyMutedMsg);
-			GameClient()->m_Chat.SendChat(0, Text);
-		}
-		else
-		{
-			char Text[2048];
-			str_format(Text, sizeof(Text), "%s: ", aName);
-			str_append(Text, g_Config.m_ClAutoReplyMutedMsg);
-			GameClient()->m_Chat.SendChat(0, Text);
-		}
-	}
-	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[4])
-	{
-		if(!GameClient()->m_Snap.m_pLocalCharacter)
-			return;
-
-		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
-		if(pGraphics && !pGraphics->WindowActive() && Graphics())
-		{
-			if(Team == 3) // whisper recv
-			{
-				char Text[2048];
-				str_format(Text, sizeof(Text), "/w %s ", aName);
-				str_append(Text, g_Config.m_ClAutoReplyMsg);
-				GameClient()->m_Chat.SendChat(0, Text);
-			}
-			else
-			{
-				char Text[2048];
-				str_format(Text, sizeof(Text), "%s: ", aName);
-				str_append(Text, g_Config.m_ClAutoReplyMsg);
-				GameClient()->m_Chat.SendChat(0, Text);
-			}
-		}
-	}
-}
-
-void CAiodob::OnMessage(int MsgType, void *pRawMsg)
-{
-	if(MsgType == NETMSGTYPE_SV_CHAT)
-	{
-		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
-		OnChatMessage(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
 	}
 }

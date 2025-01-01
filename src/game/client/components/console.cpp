@@ -1001,7 +1001,7 @@ void CGameConsole::Prompt(char (&aPrompt)[32])
 				str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("Enter Password"));
 		}
 		else
-			str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("NOT CONNECTED"));
+			str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("Not Connected"));
 	}
 	else
 	{

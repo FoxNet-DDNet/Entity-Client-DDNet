@@ -1779,7 +1779,6 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_IsWar = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[1];
 					pClient->m_IsTeam = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[2];
 					pClient->m_IsHelper = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[3];
-					pClient->m_IsMuted = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[4];
 
 					for(int i = 0; i < sizeof(m_WarList.m_WarTypes); ++i)
 					{

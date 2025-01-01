@@ -870,13 +870,15 @@ void CPlayers::RenderPlayer(
 	{
 		GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
 	}
-	if(g_Config.m_ClSpecialEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN) && (abs(Vel.x) < 6.5f && abs(Vel.y) < 6.5f))
+	if(g_Config.m_ClSpecialEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
 	{
-		if (GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients->m_Afk)
+		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients->m_Afk)
 		{
-			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)), Alpha);
+			float a = Vel.x + Vel.y / 10;
 
-			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)), Alpha);
+			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)), a, Alpha);
+
+			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)), a, Alpha);
 		}
 	}
 

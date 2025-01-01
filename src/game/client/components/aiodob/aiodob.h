@@ -2,7 +2,6 @@
 #define GAME_CLIENT_COMPONENTS_AIODOB_H
 #include <game/client/component.h>
 #include <engine/console.h>
-#include <cstdint>
 
 class CAiodob : public CComponent
 {

@@ -225,10 +225,10 @@ void CBindchat::OnConsoleInit()
 	AddBindDefault(".delhelper", "remove_war_name_index 3");
 	AddBindDefault(".unhelper", "remove_war_name_index 3");
 
-	AddBindDefault(".mute", "war_name_index 4");
-	AddBindDefault(".addmute", "war_name_index 4");
-	AddBindDefault(".delmute", "remove_war_name_index 4");
-	AddBindDefault(".unmute", "remove_war_name_index 4");
+	AddBindDefault(".mute", "message Not working yet");
+	AddBindDefault(".addmute", "message Not working yet");
+	AddBindDefault(".delmute", "message Not working yet");
+	AddBindDefault(".unmute", "message Not working yet");
 
 	AddBindDefault(".clanwar", "war_clan_index 1");
 	AddBindDefault(".addclanwar", "war_clan_index 1");

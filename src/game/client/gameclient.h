@@ -496,7 +496,6 @@ public:
 		bool m_IsWar;
 		bool m_IsHelper;
 		bool m_IsTeam;
-		bool m_IsMuted;
 
 		char m_TempWarName[MAX_NAME_LENGTH];
 		char m_TempHelperName[MAX_NAME_LENGTH];

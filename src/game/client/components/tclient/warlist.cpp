@@ -141,6 +141,7 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 		return;
 	if(WarType >= (int)m_WarTypes.size())
 		return;
+	const CGameClient::CClientData &Clients = GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)];
 
 	CWarType *pWarType = m_WarTypes[WarType];
 	CWarEntry Entry(pWarType);
@@ -179,11 +180,11 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "added \"%s\" to '%s' list ", pName, Entry.m_pWarType);
 		GameClient()->aMessage(aBuf);
-		if(!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, pName))
+		if(!str_comp(Clients.m_TempWarName, pName) && GetWarData(GameClient()->m_Aiodob.IdWithName(pName)).m_WarGroupMatches[1])
 			str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, "\0");
-		else if(!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempHelperName, pName))
+		if(!str_comp(Clients.m_TempHelperName, pName) && GetWarData(GameClient()->m_Aiodob.IdWithName(pName)).m_WarGroupMatches[3])
 			str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempHelperName, "\0");
-		else if(!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempMuteName, pName))
+		if(!str_comp(Clients.m_TempMuteName, pName) && 1 == 2)
 			str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempMuteName, "\0");
 	}
 	if(!g_Config.m_ClWarListAllowDuplicates)
@@ -530,7 +531,6 @@ void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		// Imported entries don't get saved
 		if(Entry.m_Imported)
 			continue;
-
 		char aEscapeType[MAX_WARLIST_TYPE_LENGTH * 2];
 		char aEscapeName[MAX_NAME_LENGTH * 2];
 		char aEscapeClan[MAX_CLAN_LENGTH * 2];

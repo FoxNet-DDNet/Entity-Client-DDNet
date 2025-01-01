@@ -194,7 +194,6 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 	{
 		YOffset -= Data.m_FontSize;
 		NamePlate.m_Name.Update(*this, Data.m_ClientId, Data.m_pName, Data.m_ShowFriendMark, Data.m_FontSize);
-
 		// TClient
 		if(Data.m_IsGame && Data.m_RealClientId >= 0)
 		{
@@ -210,7 +209,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 				Graphics()->QuadsEnd();
 			}
 			for(int i = 0; i < MAX_CLIENTS; i++)
-				if((GameClient()->m_WarList.GetWarData(Data.m_RealClientId).m_WarGroupMatches[4] || (!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempMuteName))) && g_Config.m_ClMutedIconNameplate)
+				if((1 == 2 || (!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempMuteName))) && g_Config.m_ClMutedIconNameplate)
 				{
 					ColorRGBA IconColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 					Graphics()->TextureClear();
