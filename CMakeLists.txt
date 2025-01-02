@@ -1003,10 +1003,10 @@ set(EXPECTED_DATA
   aiodob/fonts/GoogleSans-Regular.ttf
   aiodob/fonts/Inter_24pt-Regular.ttf
   aiodob/fonts/Inter_24pt-SemiBold.ttf
-  aiodob/fonts/Minecraft_font.ttf
   aiodob/fonts/Montserrat-Regular.ttf
   aiodob/fonts/Nunito-Black.ttf
   aiodob/fonts/Rubik-Regular.ttf
+  aiodob/fonts/Minecraft_font.ttf
   aiodob/icons/muted_icon.png
   aiodob/icons/settings_icon.png
   announcement.txt
@@ -2434,8 +2434,6 @@ if(CLIENT)
     components/tclient/player_indicator.h
     components/tclient/skinprofiles.cpp
     components/tclient/skinprofiles.h
-    components/tclient/verify.cpp
-    components/tclient/verify.h
     components/tclient/warlist.cpp
     components/tclient/warlist.h
     components/tooltips.cpp

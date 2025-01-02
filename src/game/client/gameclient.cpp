@@ -142,7 +142,6 @@ void CGameClient::OnConsoleInit()
 					      &m_FreezeBars,
 					      &m_DamageInd,
 					      &m_PlayerIndicator,
-					      &m_Verify,
 					      &m_Hud,
 					      &m_Spectator,
 					      &m_Emoticon,

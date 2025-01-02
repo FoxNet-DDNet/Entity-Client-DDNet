@@ -107,7 +107,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
 		return;
 
-	if((g_Config.m_ClReplyMuted && GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[4])) // || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
+	if((g_Config.m_ClReplyMuted && GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempMute)) // || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
@@ -127,7 +127,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 			GameClient()->m_Chat.SendChat(0, Text);
 		}
 	}
-	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[4])
+	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempMute)
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
@@ -495,6 +495,53 @@ void CAiodob::ChangeTileNotifyTick()
 		m_LastNotification = time_get();
 	}
 	m_LastTile = CurrentTile;
+}
+
+void CAiodob::RemoveWarEntryDuplicates(const char *pName)
+{
+	if(!str_comp(pName, ""))
+		return;
+
+	for(auto it = m_TempEntries.begin(); it != m_TempEntries.end();)
+	{
+		bool IsDuplicate = !str_comp(it->m_aTempWar, pName) || !str_comp(it->m_aTempHelper, pName) || !str_comp(it->m_aTempMute, pName);
+
+		if(IsDuplicate)
+		{
+			it = m_TempEntries.erase(it);
+		}
+		else
+			++it;
+	}
+}
+
+
+void CAiodob::UpdateTempPlayers()
+{
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(!GameClient()->m_aClients[i].m_Active)
+			continue;
+
+		m_TempPlayers[i].IsTempWar = false;
+		m_TempPlayers[i].IsTempHelper = false;
+		m_TempPlayers[i].IsTempMute = false;
+
+		for(CTempEntry &Entry : m_TempEntries)
+		{
+			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempWar) == 0 && str_comp(Entry.m_aTempWar, "") != 0)
+				m_TempPlayers[i].IsTempWar = true;
+			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempHelper) == 0 && str_comp(Entry.m_aTempHelper, "") != 0)
+				m_TempPlayers[i].IsTempHelper = true;
+			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempMute) == 0 && str_comp(Entry.m_aTempMute, "") != 0)
+				m_TempPlayers[i].IsTempMute = true;
+		}
+	}
+}
+
+void CAiodob::OnNewSnapshot()
+{
+	UpdateTempPlayers();
 }
 
 void CAiodob::OnInit()

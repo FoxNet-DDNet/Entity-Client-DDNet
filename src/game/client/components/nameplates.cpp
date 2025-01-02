@@ -208,16 +208,15 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 				Graphics()->DrawCircle(Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f - CircleSize, YOffset + Data.m_FontSize / 2.0f + 1.4f, CircleSize, 24);
 				Graphics()->QuadsEnd();
 			}
-			for(int i = 0; i < MAX_CLIENTS; i++)
-				if((1 == 2 || (!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempMuteName))) && g_Config.m_ClMutedIconNameplate)
-				{
-					ColorRGBA IconColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
-					Graphics()->TextureClear();
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
-					Graphics()->SetColor(IconColor.WithAlpha(Data.m_Alpha));
-					Graphics()->QuadsSetRotation(0);
-					Graphics()->RenderQuadContainerAsSprite(m_DirectionQuadContainerIndex, 0, Data.m_Position.x + TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f + 2, YOffset + 1.5f, Data.m_FontSize, Data.m_FontSize);
-				}
+			if((1 == 2 || GameClient()->m_Aiodob.m_TempPlayers[Data.m_RealClientId].IsTempMute) && g_Config.m_ClMutedIconNameplate)
+			{
+				ColorRGBA IconColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
+				Graphics()->TextureClear();
+				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
+				Graphics()->SetColor(IconColor.WithAlpha(Data.m_Alpha));
+				Graphics()->QuadsSetRotation(0);
+				Graphics()->RenderQuadContainerAsSprite(m_DirectionQuadContainerIndex, 0, Data.m_Position.x + TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f + 2, YOffset + 1.5f, Data.m_FontSize, Data.m_FontSize);
+			}
 		}
 		ColorRGBA WarColor = Color;
 
@@ -232,13 +231,11 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 				WarColor = GameClient()->m_WarList.GetNameplateColor(Data.m_RealClientId).WithAlpha(Data.m_Alpha);
 			else if(Data.m_ShowClanWarInName && GameClient()->m_WarList.GetWarData(Data.m_RealClientId).IsWarClan)
 				WarColor = GameClient()->m_WarList.GetClanColor(Data.m_RealClientId).WithAlpha(Data.m_Alpha);
-			for(int i = 0; i < MAX_CLIENTS; i++)
-			{
-				if(!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempWarName))
-						WarColor = GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Data.m_Alpha);
-				else if(!str_comp(m_pClient->m_aClients[Data.m_RealClientId].m_aName, m_pClient->m_aClients[i].m_TempHelperName))
-						WarColor = GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Data.m_Alpha);
-			}
+
+			if(GameClient()->m_Aiodob.m_TempPlayers[Data.m_RealClientId].IsTempWar)
+				WarColor = GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Data.m_Alpha);
+			else if(GameClient()->m_Aiodob.m_TempPlayers[Data.m_RealClientId].IsTempHelper)
+				WarColor = GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Data.m_Alpha);
 
 			if(NamePlate.m_Name.m_TextContainerIndex.Valid())
 				TextRender()->RenderTextContainer(NamePlate.m_Name.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f, YOffset);

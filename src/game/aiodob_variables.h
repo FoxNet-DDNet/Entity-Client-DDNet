@@ -37,7 +37,7 @@ MACRO_CONFIG_INT(ClPredGhostsAlpha, ac_pred_ghosts_alpha, 100, 0, 100, CFGFLAG_C
 MACRO_CONFIG_INT(ClUnpredGhostsAlpha, ac_unpred_ghosts_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of unpredicted ghosts (0-100)")
 MACRO_CONFIG_INT(ClRenderGhostAsCircle, ac_render_ghost_as_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render Ghosts as circles instead of tee")
 
-MACRO_CONFIG_INT(ClSendClientInfo, ac_send_client_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send Info to Server That You Are Using Aiodob Client")
+MACRO_CONFIG_INT(ClSendClientInfo, ac_send_client_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send Info to Server That You Are Using Aiodob Client")
 
 // Outline Variables
 MACRO_CONFIG_INT(ClOutline, ac_outline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outlines")
@@ -239,10 +239,11 @@ MACRO_CONFIG_INT(ClMutedIconScore, ac_muted_icon_Scoreboard, 1, 0, 1, CFGFLAG_CL
 
 // Cloning People with chatcommands
 
-MACRO_CONFIG_INT(ClCloningPerson, cloning_person, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-MACRO_CONFIG_INT(ClCloningPersonDummy, cloning_person_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-MACRO_CONFIG_INT(ClCopyingSkin, copying_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-MACRO_CONFIG_INT(ClCopyingSkinDummy, copying_skin_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
+//MACRO_CONFIG_INT(ClCloningPerson, cloning_person, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
+//MACRO_CONFIG_INT(ClCloningPersonDummy, cloning_person_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
+//MACRO_CONFIG_INT(ClCopyingSkin, copying_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
+//MACRO_CONFIG_INT(ClCopyingSkinDummy, copying_skin_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
+
 MACRO_CONFIG_INT(ClSavedCountry, saved_country, -1, -1, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_STR(ClSavedName, saved_name, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")
 MACRO_CONFIG_STR(ClSavedClan, saved_clan, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !delclone")

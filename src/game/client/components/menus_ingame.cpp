@@ -262,18 +262,9 @@ void CMenus::RenderTouchControlsEditor(CUIRect MainView)
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_ALL, 10.0f);
 	MainView.Margin(10.0f, &MainView);
 
-	MainView.HSplitTop(25.0f, &Row, &MainView);
+	MainView.HSplitTop(25.0f, &Label, &MainView);
 	MainView.HSplitTop(5.0f, nullptr, &MainView);
-	Row.VSplitLeft(Row.h, nullptr, &Row);
-	Row.VSplitRight(Row.h, &Row, &Button);
-	Row.VMargin(5.0f, &Label);
 	Ui()->DoLabel(&Label, Localize("Edit touch controls"), 20.0f, TEXTALIGN_MC);
-
-	static CButtonContainer s_OpenHelpButton;
-	if(DoButton_FontIcon(&s_OpenHelpButton, FONT_ICON_QUESTION, 0, &Button))
-	{
-		Client()->ViewLink(Localize("https://wiki.ddnet.org/wiki/Touch_controls"));
-	}
 
 	MainView.HSplitTop(25.0f, &Row, &MainView);
 	MainView.HSplitTop(5.0f, nullptr, &MainView);
@@ -455,7 +446,7 @@ void CMenus::PopupConfirmImportTouchControlsClipboard()
 
 void CMenus::RenderPlayers(CUIRect MainView)
 {
-	CUIRect Button, Button2, ButtonBar, PlayerList, Player, RestoreName;
+	CUIRect Button, Button2, ButtonBar, PlayerList, Player;
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
 
 	// list background color
@@ -463,34 +454,10 @@ void CMenus::RenderPlayers(CUIRect MainView)
 	PlayerList.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 10.0f);
 	PlayerList.Margin(10.0f, &PlayerList);
 
-
-
-
 	// headline
 	PlayerList.HSplitTop(34.0f, &ButtonBar, &PlayerList);
 	ButtonBar.VSplitRight(231.0f, &Player, &ButtonBar);
 	Ui()->DoLabel(&Player, Localize("Player"), 24.0f, TEXTALIGN_ML);
-
-	Player.HSplitTop(20.0f, &Player, &RestoreName);
-	Player.HSplitTop(0.0f, &Player, &RestoreName);
-	RestoreName.VSplitRight(20.0f, &RestoreName, &RestoreName);
-	RestoreName.VSplitRight(100.0f, &RestoreName, &RestoreName);
-	static CButtonContainer s_Restore[MAX_CLIENTS];
-
-	if(DoButton_Menu(s_Restore, Localize("Restore Everything"), 0, &RestoreName, nullptr, 15, 5, 0, ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f)))
-	{
-		dbg_msg("chillerbot", "restored player skin '%s'", g_Config.m_ClSavedPlayerSkin);
-		str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
-		str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
-		str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
-		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
-		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
-		g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
-
-		g_Config.m_ClCopyingSkin = 0;
-
-		m_pClient->SendInfo(false);
-	}
 
 	ButtonBar.HMargin(1.0f, &ButtonBar);
 	float Width = ButtonBar.h * 2.0f;
@@ -524,9 +491,6 @@ void CMenus::RenderPlayers(CUIRect MainView)
 
 	// options
 	static char s_aPlayerIds[MAX_CLIENTS][4] = {{0}};
-	static CButtonContainer s_CopySkins[MAX_CLIENTS];
-	static CButtonContainer s_CopyNames[MAX_CLIENTS];
-	static CButtonContainer s_CopyClan[MAX_CLIENTS]; 
 
 	for(int i = 0, Count = 0; i < MAX_CLIENTS; ++i)
 	{
@@ -549,7 +513,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 		if(Count % 2 == 1)
 			Row.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 5.0f);
 		Row.VSplitRight(s_ListBox.ScrollbarWidthMax() - s_ListBox.ScrollbarWidth(), &Row, nullptr);
-		Row.VSplitRight(500.0f, &Player, &Row);
+		Row.VSplitRight(300.0f, &Player, &Row);
 
 		// player info
 		Player.VSplitLeft(28.0f, &Button, &Player);
@@ -570,58 +534,11 @@ void CMenus::RenderPlayers(CUIRect MainView)
 		Row.VSplitRight(210.0f, &Button2, &Row);
 
 		Ui()->DoLabel(&Player, CurrentClient.m_aName, 14.0f, TEXTALIGN_ML);
-	
 		Ui()->DoLabel(&Button, CurrentClient.m_aClan, 14.0f, TEXTALIGN_ML);
-		
+
 		m_pClient->m_CountryFlags.Render(CurrentClient.m_Country, ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f),
-			Button2.x + 250.0f, Button2.y + Button2.h / 2.0f - 0.75f * Button2.h / 2.0f, 1.5f * Button2.h, 0.75f * Button2.h);
+			Button2.x, Button2.y + Button2.h / 2.0f - 0.75f * Button2.h / 2.0f, 1.5f * Button2.h, 0.75f * Button2.h);
 
-		// copy name button
-
-		Row.VSplitLeft(-425.0f, &Player, &Row);
-		Row.VSplitLeft(100.0f, &Player, &Row);
-
-		if(DoButton_Menu(&s_CopyNames[Index], Localize("Name"), 0, &Player, nullptr, 15, 5, 0, ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f)))
-		{
-			char aBuf[2048] = ".";
-			
-			g_Config.m_ClCopyingSkin = 1;
-
-			str_append(aBuf, CurrentClient.m_aName);
-		}
-		
-		// copy clan button
-		Row.VSplitLeft(15.0f, &Button, &Row);
-		Row.VSplitLeft(100.0f, &Button, &Row);
-
-		Button.Draw(ColorRGBA(0.0f, 0.0f, 1.0f, 0.01f), IGraphics::CORNER_ALL, 5.0f);
-		if(DoButton_Menu(&s_CopyClan[Index], Localize("Clan"), 0, &Button, nullptr, 15, 5, 0, ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f)))
-		{
-			str_copy(g_Config.m_PlayerClan, CurrentClient.m_aClan, sizeof(g_Config.m_PlayerClan));
-
-			g_Config.m_ClCopyingSkin = 1;
-
-			m_pClient->SendInfo(false);
-		}
-		
-		//copy skin button
-		Row.VSplitLeft(15.0f, &Button2, &Row);
-		Row.VSplitLeft(100.0f, &Button2, &Row);
-		Button2.Draw(ColorRGBA(1.0f, 0.0f, 0.0f, 0.01f), IGraphics::CORNER_ALL, 5.0f);
-		if(DoButton_Menu(&s_CopySkins[Index], Localize("Skin"), 0, &Button2, nullptr, 15, 5, 0,ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f )))
-		{
-			g_Config.m_ClPlayerUseCustomColor = CurrentClient.m_UseCustomColor;
-			g_Config.m_ClPlayerColorBody = CurrentClient.m_ColorBody;
-			g_Config.m_ClPlayerColorFeet = CurrentClient.m_ColorFeet;
-			str_copy(g_Config.m_ClPlayerSkin, CurrentClient.m_aSkinName, sizeof(g_Config.m_ClPlayerSkin));
-
-			g_Config.m_ClCopyingSkin = 1;
-
-			m_pClient->SendInfo(false);
-		} 
-			
-		
-		Row.VSplitRight(207.0f, &Button2, &Row);
 		// ignore chat button
 		Row.HMargin(2.0f, &Row);
 		Row.VSplitLeft(Width, &Button, &Row);
@@ -656,9 +573,7 @@ void CMenus::RenderPlayers(CUIRect MainView)
 
 			m_pClient->Client()->ServerBrowserUpdate();
 		}
-
 	}
-
 
 	s_ListBox.DoEnd();
 }

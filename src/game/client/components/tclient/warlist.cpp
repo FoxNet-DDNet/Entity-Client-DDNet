@@ -180,12 +180,15 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "added \"%s\" to '%s' list ", pName, Entry.m_pWarType);
 		GameClient()->aMessage(aBuf);
-		if(!str_comp(Clients.m_TempWarName, pName) && GetWarData(GameClient()->m_Aiodob.IdWithName(pName)).m_WarGroupMatches[1])
-			str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, "\0");
-		if(!str_comp(Clients.m_TempHelperName, pName) && GetWarData(GameClient()->m_Aiodob.IdWithName(pName)).m_WarGroupMatches[3])
-			str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempHelperName, "\0");
-		if(!str_comp(Clients.m_TempMuteName, pName) && 1 == 2)
-			str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempMuteName, "\0");
+
+		CTempEntry Entry(pName, pName, "");
+
+		auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), Entry);
+		if(it != GameClient()->m_Aiodob.m_TempEntries.end())
+		{
+			if(GameClient()->m_Aiodob.m_TempPlayers->IsTempWar || GameClient()->m_Aiodob.m_TempPlayers->IsTempHelper)
+				GameClient()->m_Aiodob.m_TempEntries.erase(it);
+		}
 	}
 	if(!g_Config.m_ClWarListAllowDuplicates)
 		RemoveWarEntryDuplicates(Entry.m_aName, Entry.m_aClan);
@@ -229,17 +232,16 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 		char aBuf[512];
 		str_format(aBuf, sizeof(aBuf), "removed \"%s\" from '%s' list", pName, Entry.m_pWarType);
 		GameClient()->aMessage(aBuf);
-		if(!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, pName))
-			if(Entry.m_pWarType->m_Index == 1)
-				str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempWarName, "\0");
 
-		if(!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempHelperName, pName))
-			if(Entry.m_pWarType->m_Index == 3)
-				str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempHelperName, "\0");
-
-		if(!str_comp(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempMuteName, pName))
-			if(Entry.m_pWarType->m_Index == 4)
-				str_copy(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)].m_TempMuteName, "\0");
+		CTempEntry Entry(pName, pName, "");
+		auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), Entry);
+		if(it != GameClient()->m_Aiodob.m_TempEntries.end())
+		{
+			if(GameClient()->m_Aiodob.m_TempPlayers->IsTempWar || GameClient()->m_Aiodob.m_TempPlayers->IsTempHelper)
+			{
+				GameClient()->m_Aiodob.m_TempEntries.erase(it);
+			}
+		}
 
 	}
 	RemoveWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_pWarType->m_aWarName);

@@ -2,6 +2,40 @@
 #define GAME_CLIENT_COMPONENTS_AIODOB_H
 #include <game/client/component.h>
 #include <engine/console.h>
+#include <base/system.h>
+#include <vector>
+
+class CTempEntry
+{
+public:
+	// a war entry can have a name, or clan, but not both
+	// name matches the user with that name
+	// clan matches all users with that clan
+	char m_aTempWar[16] = "";
+	char m_aTempHelper[16] = "";
+	char m_aTempMute[16] = "";
+
+	CTempEntry(const char *pTempWar, const char *pTempHelper, const char *pTempMute)
+	{
+		str_copy(m_aTempWar, pTempWar);
+		str_copy(m_aTempHelper, pTempHelper);
+		str_copy(m_aTempMute, pTempMute);
+	}
+
+	bool operator==(const CTempEntry &Other) const
+	{
+		return !str_comp(m_aTempWar, Other.m_aTempWar) || !str_comp(m_aTempHelper, Other.m_aTempHelper) || !str_comp(m_aTempMute, Other.m_aTempMute);
+	}
+
+};
+
+class CTempData
+{
+public:
+	bool IsTempWar = false;
+	bool IsTempHelper = false;
+	bool IsTempMute = false;
+};
 
 class CAiodob : public CComponent
 {
@@ -13,15 +47,7 @@ class CAiodob : public CComponent
 	bool m_GoresModeWasOn;
 	bool m_GoresServer;
 
-public:
-	int m_Local;
-	int64_t m_JoinTeam;
-	int64_t m_LastMovement = 10.0f;
-	int IdWithName(const char *pName);
-
-
 	// Reply to Ping
-private:
 	struct CLastPing
 	{
 		void Reset()
@@ -65,14 +91,6 @@ private:
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
 	virtual void OnMessage(int MsgType, void *pRawMsg) override;
 
-	int64_t m_LastNotification;
-	int m_LastTile = -1;
-	void ChangeTileNotifyTick();
-
-	virtual void GoresMode();
-	virtual void AutoJoinTeam();
-	virtual void OnConnect();
-
 	// Console Commands
 	virtual void OnConsoleInit() override;
 
@@ -97,9 +115,42 @@ private:
 	static void ConUnTempMute(IConsole::IResult *pResult, void *pUserData);
 	void UnTempMute(const char *pName, char *pReason = "");
 
+	static void ConSaveSkin(IConsole::IResult *pResult, void *pUserData);
+	void SaveSkin();
+
+	static void ConRestoreSkin(IConsole::IResult *pResult, void *pUserData);
+	void RestoreSkin();
+
+public:
+
+	int m_Local;
+	int64_t m_JoinTeam;
+	int64_t m_LastMovement = 10.0f;
+
+	int IdWithName(const char *pName);
+	void RemoveWarEntryDuplicates(const char *pName);
+
+	std::vector<CTempEntry> m_TempEntries;
+
+	CTempData m_TempPlayers[MAX_CLIENTS];
+
+private:
+	void UpdateTempPlayers();
+
+
+	int64_t m_LastNotification;
+	int m_LastTile = -1;
+	void ChangeTileNotifyTick();
+
+	virtual void GoresMode();
+	virtual void AutoJoinTeam();
+	virtual void OnConnect();
+
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnInit() override;
 	virtual void OnRender() override;
+	virtual void OnNewSnapshot() override;
+
 };
 
 #endif

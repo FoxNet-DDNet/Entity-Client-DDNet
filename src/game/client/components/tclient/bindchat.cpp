@@ -195,6 +195,9 @@ void CBindchat::OnConsoleInit()
 	AddBindDefault(".friend", "add_friend");
 	AddBindDefault(".unfriend", "add_friend");
 
+	AddBindDefault(".restoreskin", "restorekin");
+	AddBindDefault(".saveskin", "saveskin");
+
 	AddBindDefault(".tempwar", "addtempwar");
 	AddBindDefault(".addtempwar", "addtempwar");
 	AddBindDefault(".untempwar", "deltempwar");

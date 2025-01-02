@@ -72,7 +72,6 @@
 #include "components/tclient/outlines.h"
 #include "components/tclient/player_indicator.h"
 #include "components/tclient/skinprofiles.h"
-#include "components/tclient/verify.h"
 #include "components/tclient/bindwheel.h"
 #include "components/tclient/warlist.h"
 
@@ -195,7 +194,6 @@ public:
 	CSkinProfiles m_SkinProfiles;
 	CBindchat m_Bindchat;
 	CBindWheel m_Bindwheel;
-	CVerify m_Verify;
 	CPlayerIndicator m_PlayerIndicator;
 	COutlines m_Outlines;
 	CWarList m_WarList;
@@ -496,10 +494,6 @@ public:
 		bool m_IsWar;
 		bool m_IsHelper;
 		bool m_IsTeam;
-
-		char m_TempWarName[MAX_NAME_LENGTH];
-		char m_TempHelperName[MAX_NAME_LENGTH];
-		char m_TempMuteName[MAX_NAME_LENGTH];
 
 		int m_AuthLevel;
 		bool m_Afk;
