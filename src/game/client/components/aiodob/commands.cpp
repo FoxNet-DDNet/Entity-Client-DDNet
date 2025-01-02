@@ -88,24 +88,36 @@ void CAiodob::TempWar(const char *pName, char *pReason)
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp War List", pName);
 	GameClient()->aMessage(aBuf);
 
-	RemoveWarEntryDuplicates(Entry.m_aTempWar);
-
 	m_TempEntries.push_back(Entry);
 
 }
 
 void CAiodob::UnTempWar(const char *pName, char *pReason)
 {
+	if(str_comp(pName, "") == 0)
+		return;
+
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the List", pName);
-	CTempEntry Entry(pName, "", "");
+	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp War List", pName);
+	CTempEntry Entry("", "", pName);
+
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
 	{
-		if(m_TempPlayers->IsTempWar)
+		for(CTempEntry &Entries : m_TempEntries)
 		{
-			m_TempEntries.erase(it);
-			str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp War List", pName);
+			for(auto it = m_TempEntries.begin(); it != m_TempEntries.end();)
+			{
+				bool IsDuplicate = !str_comp(it->m_aTempWar, pName);
+
+				if(IsDuplicate)
+					it = m_TempEntries.erase(it);
+				else
+					++it;
+
+				if(!str_comp(Entries.m_aTempWar, pName))
+					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp War List", pName);
+			}
 		}
 	}
 	GameClient()->aMessage(aBuf);
@@ -117,25 +129,39 @@ void CAiodob::TempHelper(const char *pName, char *pReason)
 	str_copy(Entry.m_aTempHelper, pName);
 
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp War List", pName);
+	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Helper List", pName);
 	GameClient()->aMessage(aBuf);
-
-	RemoveWarEntryDuplicates(pName);
 	m_TempEntries.push_back(Entry);
 }
 
 void CAiodob::UnTempHelper(const char *pName, char *pReason)
 {
+	if(str_comp(pName, "") == 0)
+		return;
+
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the List", pName);
-	CTempEntry Entry("", pName, "");
+	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Helper List", pName);
+	CTempEntry Entry("", "", pName);
+
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
 	{
-		m_TempEntries.erase(it);
-		str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
-	}
+		for(CTempEntry &Entries : m_TempEntries)
+		{
+			for(auto it = m_TempEntries.begin(); it != m_TempEntries.end();)
+			{
+				bool IsDuplicate = !str_comp(it->m_aTempHelper, pName);
 
+				if(IsDuplicate)
+					it = m_TempEntries.erase(it);
+				else
+					++it;
+
+				if(!str_comp(Entries.m_aTempHelper, pName))
+					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Helper List", pName);
+			}
+		}
+	}
 	GameClient()->aMessage(aBuf);
 }
 
@@ -145,25 +171,39 @@ void CAiodob::TempMute(const char *pName, char *pReason)
 	str_copy(Entry.m_aTempMute, pName);
 
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Helper List", pName);
+	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Mute List", pName);
 	GameClient()->aMessage(aBuf);
-
-	RemoveWarEntryDuplicates(pName);
 	m_TempEntries.push_back(Entry);
 }
 
 void CAiodob::UnTempMute(const char *pName, char *pReason)
 {
+	if(str_comp(pName, "") == 0)
+		return;
+
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the List", pName);
+	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Mute List", pName);
 	CTempEntry Entry("", "", pName);
+
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
 	{
-		m_TempEntries.erase(it);
-		str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
-	}
+		for(CTempEntry &Entries : m_TempEntries)
+		{
+			for(auto it = m_TempEntries.begin(); it != m_TempEntries.end();)
+			{
+				bool IsDuplicate = !str_comp(it->m_aTempMute, pName);
 
+				if(IsDuplicate)
+					it = m_TempEntries.erase(it);
+				else
+					++it;
+
+				if(!str_comp(Entries.m_aTempMute, pName))
+					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
+			}
+		}
+	}
 	GameClient()->aMessage(aBuf);
 }
 

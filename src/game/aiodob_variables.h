@@ -37,8 +37,6 @@ MACRO_CONFIG_INT(ClPredGhostsAlpha, ac_pred_ghosts_alpha, 100, 0, 100, CFGFLAG_C
 MACRO_CONFIG_INT(ClUnpredGhostsAlpha, ac_unpred_ghosts_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of unpredicted ghosts (0-100)")
 MACRO_CONFIG_INT(ClRenderGhostAsCircle, ac_render_ghost_as_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render Ghosts as circles instead of tee")
 
-MACRO_CONFIG_INT(ClSendClientInfo, ac_send_client_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send Info to Server That You Are Using Aiodob Client")
-
 // Outline Variables
 MACRO_CONFIG_INT(ClOutline, ac_outline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outlines")
 MACRO_CONFIG_INT(ClOutlineEntities, ac_outline_in_entities, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show outlines in entities")

@@ -234,12 +234,21 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 		GameClient()->aMessage(aBuf);
 
 		CTempEntry Entry(pName, pName, "");
+
 		auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), Entry);
 		if(it != GameClient()->m_Aiodob.m_TempEntries.end())
 		{
-			if(GameClient()->m_Aiodob.m_TempPlayers->IsTempWar || GameClient()->m_Aiodob.m_TempPlayers->IsTempHelper)
+			for(CTempEntry &Entries : GameClient()->m_Aiodob.m_TempEntries)
 			{
-				GameClient()->m_Aiodob.m_TempEntries.erase(it);
+				for(auto it = GameClient()->m_Aiodob.m_TempEntries.begin(); it != GameClient()->m_Aiodob.m_TempEntries.end();)
+				{
+					bool IsDuplicate = !str_comp(it->m_aTempWar, pName) || !str_comp(it->m_aTempHelper, pName);
+
+					if(IsDuplicate)
+						it = GameClient()->m_Aiodob.m_TempEntries.erase(it);
+					else
+						++it;
+				}
 			}
 		}
 

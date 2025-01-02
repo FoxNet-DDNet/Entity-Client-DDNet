@@ -8,18 +8,19 @@
 class CTempEntry
 {
 public:
-	// a war entry can have a name, or clan, but not both
 	// name matches the user with that name
-	// clan matches all users with that clan
 	char m_aTempWar[16] = "";
 	char m_aTempHelper[16] = "";
 	char m_aTempMute[16] = "";
 
 	CTempEntry(const char *pTempWar, const char *pTempHelper, const char *pTempMute)
 	{
-		str_copy(m_aTempWar, pTempWar);
-		str_copy(m_aTempHelper, pTempHelper);
-		str_copy(m_aTempMute, pTempMute);
+		if(!str_comp(pTempWar, ""))
+			str_copy(m_aTempWar, pTempWar);
+		if(!str_comp(pTempHelper, ""))
+			str_copy(m_aTempHelper, pTempHelper);
+		if(!str_comp(pTempMute, ""))
+			str_copy(m_aTempMute, pTempMute);
 	}
 
 	bool operator==(const CTempEntry &Other) const
@@ -129,9 +130,9 @@ public:
 
 	int IdWithName(const char *pName);
 	void RemoveWarEntryDuplicates(const char *pName);
+	void RemoveWarEntry(const char *pNameW, const char *pNameH, const char *pNameM);
 
 	std::vector<CTempEntry> m_TempEntries;
-
 	CTempData m_TempPlayers[MAX_CLIENTS];
 
 private:

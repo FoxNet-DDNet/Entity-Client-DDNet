@@ -927,17 +927,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		
 		pCurrentLine->m_IsOnList = LineAuthor.m_IsOnAnyList;
-		/*
-		pCurrentLine->m_IsClanWar = GameClient()->m_WarList.IsClanWarlist(LineAuthor.m_aClan);
-		pCurrentLine->m_IsClanTeam = GameClient()->m_WarList.IsClanTeamlist(LineAuthor.m_aClan);
-		pCurrentLine->m_TempWarName = GameClient()->m_WarList.IsTempWarlist(LineAuthor.m_aName);
-		pCurrentLine->m_IsWar = GameClient()->m_WarList.IsAnyWar(LineAuthor.m_aName, LineAuthor.m_aClan);
-		pCurrentLine->m_IsTeam = GameClient()->m_WarList.IsAnyTeam(LineAuthor.m_aName, LineAuthor.m_aClan);
-		pCurrentLine->m_IsHelper = GameClient()->m_WarList.IsHelperlist(LineAuthor.m_aName);
-		pCurrentLine->m_IsMute = GameClient()->m_WarList.IsMutelist(LineAuthor.m_aName);
-		pCurrentLine->m_IsWarClan = GameClient()->m_WarList.IsWarClanmate(LineAuthor.m_aClan);
-		*/
-
 
 		if(pCurrentLine->m_aName[0] != '\0')
 		{
@@ -993,24 +982,30 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						strcpy(CharOname, oName.c_str());
 						char aBuf[512];
 
+						int Id = GameClient()->m_Aiodob.IdWithName(CharOname);
 						
-
-						if(GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName) || GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempWar)
+						if((GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName) && !GameClient()->m_WarList.GetWarData(Id).IsWarClan) || GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempWar)
 						{
-							CTempEntry Entry(name, "", "");
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
-							str_copy(Entry.m_aTempWar, name);
-							GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempWar);
-							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+							if(!GameClient()->m_WarList.FindWarEntry(name, "", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName))
+							{
+								CTempEntry Entry(name, "", "");
+								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+								str_copy(Entry.m_aTempWar, name);
+								GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempWar);
+								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+							}
 						}
 						if(GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[3]->m_aWarName) || GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempHelper)
 						{
-							CTempEntry Entry("", name, "");
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
-							str_copy(Entry.m_aTempHelper, name);
+							if(!GameClient()->m_WarList.FindWarEntry(name, "", GameClient()->m_WarList.m_WarTypes[3]->m_aWarName))
+							{
+								CTempEntry Entry("", name, "");
+								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+								str_copy(Entry.m_aTempHelper, name);
+								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 
-							GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempHelper);
-							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+								GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempHelper);
+							}
 						}
 						if(GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempMute)
 						{

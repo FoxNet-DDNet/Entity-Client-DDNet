@@ -508,6 +508,7 @@ void CAiodob::RemoveWarEntryDuplicates(const char *pName)
 
 		if(IsDuplicate)
 		{
+			GameClient()->aMessage("a");
 			it = m_TempEntries.erase(it);
 		}
 		else
@@ -515,6 +516,13 @@ void CAiodob::RemoveWarEntryDuplicates(const char *pName)
 	}
 }
 
+void CAiodob::RemoveWarEntry(const char *pNameW, const char *pNameH, const char *pNameM)
+{
+	CTempEntry Entry(pNameW, pNameH, pNameM);
+	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
+	if(it != m_TempEntries.end())
+		m_TempEntries.erase(it);
+}
 
 void CAiodob::UpdateTempPlayers()
 {
@@ -570,7 +578,7 @@ void CAiodob::OnRender()
 	 m_Local = m_pClient->m_Snap.m_LocalClientId;
 	
 	// on join connction = true, after joining its false
-	if(Client()->m_Connected == true)
+	 if(Client()->m_Connected == true && !g_Config.m_ClDummy)
 		OnConnect();
 
 	ChangeTileNotifyTick();
