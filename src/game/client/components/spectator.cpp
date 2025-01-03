@@ -525,11 +525,7 @@ void CSpectator::OnRender()
 		{
 			if(g_Config.m_ClSpecMenuColors)
 			{
-				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
-					TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(ClientId).WithAlpha(Alpha));
-				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
-					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(ClientId).WithAlpha(Alpha));
-				else if(m_pClient->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuColors)
+				if(m_pClient->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuColors)
 				{
 					ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 					if(PlayerSelected)
@@ -537,6 +533,10 @@ void CSpectator::OnRender()
 					else
 						TextRender()->TextColor(rgb.WithAlpha(0.5f));
 				}
+				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
+					TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(ClientId).WithAlpha(Alpha));
+				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
+					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(ClientId).WithAlpha(Alpha));
 				else
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, PlayerSelected ? 1.0f : 0.5f);
 				TeeAlpha = 1.0f;
@@ -599,7 +599,14 @@ void CSpectator::OnRender()
 
 		RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos, TeeAlpha);
 
-		if(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend)
+		if(g_Config.m_ClWarlistPrefixes && g_Config.m_ClWarList && GameClient()->m_WarList.GetAnyWar(m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId)) // A-Client
+		{
+			TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId));
+			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClWarlistPrefix, 220.0f);
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+		}
+		else if(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend && g_Config.m_ClSpecMenuFriendPrefix) // A-Client
 		{
 			ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor));
 			TextRender()->TextColor(rgb.WithAlpha(1.f));

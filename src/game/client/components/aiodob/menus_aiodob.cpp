@@ -318,7 +318,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 	
 		{
 			ColorSettings.HSplitTop(Margin, nullptr, &ColorSettings);
-				ColorSettings.HSplitTop(215.0f, &ColorSettings, &NameplateSettings);
+				ColorSettings.HSplitTop(140.0f, &ColorSettings, &NameplateSettings);
 			if(s_ScrollRegion.AddRect(ColorSettings))
 			{
 				ColorSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -329,15 +329,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				{
 					static CButtonContainer s_MutedColor;
 					DoLine_ColorPicker(&s_MutedColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ColorSettings, Localize("Color of The Muted Icon"), &g_Config.m_ClMutedColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(5439743)), true);
-
-					static CButtonContainer s_TeamColor;
-					DoLine_ColorPicker(&s_TeamColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ColorSettings, Localize("Name Color of Teammates"), &g_Config.m_ClTeamColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(5504948)), true);
-
-					static CButtonContainer s_WarColor;
-					DoLine_ColorPicker(&s_WarColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ColorSettings, Localize("Name Color of Enemies"), &g_Config.m_ClWarColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(16777123)), true);
-
-					static CButtonContainer s_HelperColor;
-					DoLine_ColorPicker(&s_HelperColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ColorSettings, Localize("Name Color of Helpers"), &g_Config.m_ClHelperColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(2686902)), true);
 
 					static CButtonContainer s_FriendColor;
 					DoLine_ColorPicker(&s_FriendColor, ColorPickerLineSize + 0.25f, ColorPickerLabelSize + 0.25f, ColorPickerLineSpacing, &ColorSettings, Localize("Name Color of Friends"), &g_Config.m_ClFriendColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(14745554)), true);
@@ -350,7 +341,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			NameplateSettings.HSplitTop(Margin, nullptr, &NameplateSettings);
-				NameplateSettings.HSplitTop(140.0f, &NameplateSettings, 0);
+				NameplateSettings.HSplitTop(90.0f, &NameplateSettings, 0);
 			if(s_ScrollRegion.AddRect(NameplateSettings))
 			{
 				NameplateSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -363,11 +354,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoFriendNameColor, Localize("Do Friend Nameplate Color"), &g_Config.m_ClDoFriendNameColor, &NameplateSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoTeammateNameColor, Localize("Do Teammate Nameplate Color"), &g_Config.m_ClDoTeammateNameColor, &NameplateSettings, LineSize);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoHelperNameColor, Localize("Do Helper Nameplate Color"), &g_Config.m_ClDoHelperNameColor, &NameplateSettings, LineSize);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoEnemyNameColor, Localize("Do Enemy Nameplate Color"), &g_Config.m_ClDoEnemyNameColor, &NameplateSettings, LineSize);
 				}
 		
 			}
@@ -540,7 +526,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			ScoreboardSettings.HSplitTop(Margin, nullptr, &ScoreboardSettings);
-			ScoreboardSettings.HSplitTop(160.0f, &ScoreboardSettings, &MenuSettings);
+			ScoreboardSettings.HSplitTop(125.0f, &ScoreboardSettings, &MenuSettings);
 			if(s_ScrollRegion.AddRect(ScoreboardSettings))
 			{
 				ScoreboardSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -548,15 +534,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				ScoreboardSettings.HSplitTop(HeaderHeight, &Button, &ScoreboardSettings);
 				Ui()->DoLabel(&Button, Localize("Scoreboard Settings"), FontSize, TEXTALIGN_MC);
 				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMutedIconScore, Localize("Show an Indicator Next to Muted Players in Scoreboard"), &g_Config.m_ClMutedIconScore, &ScoreboardSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoFriendColorScore, Localize("Do Friend Name Colors"), &g_Config.m_ClDoFriendColorScore, &ScoreboardSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoFriendColorScore, Localize("Do Friend Name Colors in Scoreboard"), &g_Config.m_ClDoFriendColorScore, &ScoreboardSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoAfkColors, Localize("Afk Name Colors"), &g_Config.m_ClDoAfkColors, &ScoreboardSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoAfkColors, Localize("Afk Name Colors in Scoreboard"), &g_Config.m_ClDoAfkColors, &ScoreboardSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreSpecPrefix, Localize("Show Spec Prefix"), &g_Config.m_ClScoreSpecPrefix, &ScoreboardSettings, LineSize);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreSpecPlayer, Localize("Make Tees Sit in Scoreboard When Spectating"), &g_Config.m_ClScoreSpecPlayer, &ScoreboardSettings, LineSize);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreSpecPrefix, Localize("Show Spec Prefix in Scoreboard"), &g_Config.m_ClScoreSpecPrefix, &ScoreboardSettings, LineSize);
 				}
 			}
 		}
@@ -603,8 +587,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		CUIRect PlayerSettings, ChatSettings, SoundSettings, WarVisual, UiSettings, AiodobSettings, GoresModeSettings;
 		MainView.VSplitMid(&PlayerSettings, &UiSettings);
-
-		// Weapon Settings
 
 		{
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
@@ -828,6 +810,24 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
 					}
 
+					ChatSettings.HSplitTop(21.0f, &Button, &ChatSettings);
+					{
+						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
+
+						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
+						Button.VSplitLeft(140.0f, &Label, &Button);
+						Button.VSplitLeft(85.0f, &Button, 0);
+
+						static CLineInput s_PrefixMsg;
+						s_PrefixMsg.SetBuffer(g_Config.m_ClWarlistPrefix, sizeof(g_Config.m_ClWarlistPrefix));
+						s_PrefixMsg.SetEmptyText("alt4");
+						if(DoButton_CheckBox(&g_Config.m_ClWarlistPrefixes, "Warlist Prefix", g_Config.m_ClWarlistPrefixes, &ChatSettings))
+						{
+							g_Config.m_ClWarlistPrefixes ^= 1;
+						}
+						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
+					}
+
 					ChatSettings.HSplitTop(55.0f, &Button, &ChatSettings);
 					Ui()->DoLabel(&Button, Localize("Chat Preview"), FontSize + 3, TEXTALIGN_ML);
 					ChatSettings.HSplitTop(-15.0f, &Button, &ChatSettings);
@@ -840,9 +840,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						ColorRGBA TeamColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageTeamColor));
 						ColorRGBA FriendColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageFriendColor));
 						ColorRGBA SpecColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClSpecColor));
-						ColorRGBA EnemyColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClWarColor));
-						ColorRGBA HelperColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClHelperColor));
-						ColorRGBA TeammateColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClTeamColor));
+						ColorRGBA EnemyColor = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
+						ColorRGBA HelperColor = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
+						ColorRGBA TeammateColor = GameClient()->m_WarList.m_WarTypes[2]->m_Color;
 						ColorRGBA NormalColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageColor));
 						ColorRGBA ClientColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageClientColor));
 						ColorRGBA DefaultNameColor(0.8f, 0.8f, 0.8f, 1.0f);
@@ -967,19 +967,19 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							{
 								LocalCursor.m_X += RealMsgPaddingTee;
 
-								if(Line.m_Enemy && g_Config.m_ClChatEnemyPrefix)
+								if(Line.m_Enemy && g_Config.m_ClWarlistPrefixes)
 								{
 									if(Render)
 										TextRender()->TextColor(EnemyColor);
 									TextRender()->TextEx(&LocalCursor, "♦ ", -1);
 								}
-								if(Line.m_Helper && g_Config.m_ClChatHelperPrefix)
+								if(Line.m_Helper && g_Config.m_ClWarlistPrefixes)
 								{
 									if(Render)
 										TextRender()->TextColor(HelperColor);
 									TextRender()->TextEx(&LocalCursor, "♦ ", -1);
 								}
-								if(Line.m_Teammate && g_Config.m_ClChatTeammatePrefix)
+								if(Line.m_Teammate && g_Config.m_ClWarlistPrefixes)
 								{
 									if(Render)
 										TextRender()->TextColor(TeammateColor);
@@ -1250,11 +1250,11 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
 			if(g_Config.m_ClSweatMode)
 				if(g_Config.m_ClSweatModeSkin)
-					WarVisual.HSplitTop(185.0f, &WarVisual, &AiodobSettings);
+					WarVisual.HSplitTop(185.0f, &WarVisual, &GoresModeSettings);
 				else
-					WarVisual.HSplitTop(145.0f, &WarVisual, &AiodobSettings);
+					WarVisual.HSplitTop(145.0f, &WarVisual, &GoresModeSettings);
 			else
-				WarVisual.HSplitTop(125.0f, &WarVisual, &AiodobSettings);
+				WarVisual.HSplitTop(125.0f, &WarVisual, &GoresModeSettings);
 			if(s_ScrollRegion.AddRect(WarVisual))
 			{
 				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1304,8 +1304,29 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		}
 
 		{
+			GoresModeSettings.HSplitTop(Margin, nullptr, &GoresModeSettings);
+			GoresModeSettings.HSplitTop(140.0f, &GoresModeSettings, &AiodobSettings);
+			if(s_ScrollRegion.AddRect(GoresModeSettings))
+			{
+				GoresModeSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				GoresModeSettings.VMargin(Margin, &GoresModeSettings);
+
+				GoresModeSettings.HSplitTop(HeaderHeight, &Button, &GoresModeSettings);
+				Ui()->DoLabel(&Button, Localize("Gores Mode"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if Player Has Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresModeSettings, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is 'Gores'"), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresModeSettings, LineSize);
+			}
+		}
+
+		{
 			AiodobSettings.HSplitTop(Margin, nullptr, &AiodobSettings);
-			AiodobSettings.HSplitTop(90.0f, &AiodobSettings, &GoresModeSettings);
+			AiodobSettings.HSplitTop(90.0f, &AiodobSettings, 0);
 			if(s_ScrollRegion.AddRect(AiodobSettings))
 			{
 				AiodobSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1316,27 +1337,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEnabledInfo, ("Display What Features Are On/Off on Join"), &g_Config.m_ClEnabledInfo, &AiodobSettings, LineMargin);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClListsInfo, ("Show How Many Players of Lists Are on The Current Server"), &g_Config.m_ClListsInfo, &AiodobSettings, LineMargin);
-
-			}
-		}
-
-		{
-			GoresModeSettings.HSplitTop(Margin, nullptr, &GoresModeSettings);
-			GoresModeSettings.HSplitTop(120.0f, &GoresModeSettings, 0);
-			if(s_ScrollRegion.AddRect(GoresModeSettings))
-			{
-				GoresModeSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				GoresModeSettings.VMargin(Margin, &GoresModeSettings);
-
-				GoresModeSettings.HSplitTop(HeaderHeight, &Button, &GoresModeSettings);
-				Ui()->DoLabel(&Button, Localize("Gores Mode"), FontSize, TEXTALIGN_MC);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
-				
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is 'Gores'"), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresModeSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClListsInfo, ("Tells You How Many People of Default Lists Are Online"), &g_Config.m_ClListsInfo, &AiodobSettings, LineMargin);
 			}
 		}
 		s_ScrollRegion.End();
@@ -2110,6 +2111,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListAllowDuplicates, Localize("Allow Duplicate Entries"), &g_Config.m_ClWarListAllowDuplicates, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarList, Localize("Enable warlist"), &g_Config.m_ClWarList, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListChat, Localize("Colors in chat"), &g_Config.m_ClWarListChat, &Column2, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistPrefixes, Localize("Warlist Prefixes"), &g_Config.m_ClWarlistPrefixes, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListScoreboard, Localize("Colors in scoreboard"), &g_Config.m_ClWarListScoreboard, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListShowClan, Localize("Show clan if war"), &g_Config.m_ClWarListShowClan, &Column2, LineSize);
 

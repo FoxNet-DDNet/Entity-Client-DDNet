@@ -586,7 +586,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClAuthedPlayerColor)));
 				}
-				if((1 == 2 || GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempMute) && g_Config.m_ClMutedIconScore)
+				if((1 == 2 || GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempMute))
 				{
 					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 					if(pInfo->m_ClientId >= 10)

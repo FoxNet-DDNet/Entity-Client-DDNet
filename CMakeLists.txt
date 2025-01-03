@@ -996,17 +996,17 @@ endif()
 ########################################################################
 
 set(EXPECTED_DATA 
-  aiodob/binds/.help.cfg
   aiodob/binds/.extra.cfg
+  aiodob/binds/.help.cfg
   aiodob/fonts/Cabin-Regular.ttf
   aiodob/fonts/ComicSansMS.ttf
   aiodob/fonts/GoogleSans-Regular.ttf
   aiodob/fonts/Inter_24pt-Regular.ttf
   aiodob/fonts/Inter_24pt-SemiBold.ttf
+  aiodob/fonts/Minecraft_font.ttf
   aiodob/fonts/Montserrat-Regular.ttf
   aiodob/fonts/Nunito-Black.ttf
   aiodob/fonts/Rubik-Regular.ttf
-  aiodob/fonts/Minecraft_font.ttf
   aiodob/icons/muted_icon.png
   aiodob/icons/settings_icon.png
   announcement.txt
@@ -2069,8 +2069,6 @@ set_src(ENGINE_INTERFACE GLOB src/engine
 set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   assertion_logger.cpp
   assertion_logger.h
-  chillerbot/langparser.cpp
-  chillerbot/langparser.h
   compression.cpp
   compression.h
   config.cpp

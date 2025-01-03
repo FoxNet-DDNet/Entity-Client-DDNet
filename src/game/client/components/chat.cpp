@@ -688,7 +688,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		const char *Name = m_pClient->m_aClients[ClientId].m_aName;
 
 		if(g_Config.m_ClWarlistConsoleColors)
-			Colors = g_Config.m_ClWarColor;
+			Colors = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
 
 		str_append(War, Name);
 		str_append(WarWhisper, Name);
@@ -1048,15 +1048,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						char PlayerName[16];
 						strcpy(PlayerName, Name.c_str());
 
-						//	if player name is friend
-
-						//	if(GameClient()->Friends()->IsFriend(PlayerName, "\0", true))
-						//		
-						// 
-						// 
-						// 
-						// , 0, PlayerName);
-
 						int NameToJoin = str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName);
 						int Team0 = str_comp(p_Team, "0");
 						if(Team0 > 0 && NameToJoin == 0)
@@ -1272,9 +1263,9 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
 
-				if(Line.m_IsOnList && g_Config.m_ClChatTeammatePrefix)
+				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // A-Client
 				{
-					TextRender()->TextEx(&Cursor, "♦ ");
+					TextRender()->TextEx(&Cursor, g_Config.m_ClWarlistPrefix);
 				}
 				else if(Line.m_Friend && g_Config.m_ClMessageFriend)
 				{
@@ -1330,6 +1321,12 @@ void CChat::OnPrepareLines(float y)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor)).WithAlpha(1.f));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, "♥ ");
+			}
+
+			if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
+			{
+				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId));
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClWarlistPrefix);
 			}
 		}
 

@@ -356,11 +356,12 @@ void CAiodob::OnConnect()
 		for(auto &Client : GameClient()->m_aClients)
 		{
 			bool War = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[1];
+			bool TempWar = m_TempPlayers[IdWithName(Client.m_aName)].IsTempWar;
 
 			if(!Client.m_Active && !m_Local)
 				continue;
 
-				if(War)
+				if((War && !TempWar) || (!War && TempWar))
 					NumberWars++;
 		}
 
@@ -380,28 +381,30 @@ void CAiodob::OnConnect()
 		for(auto &Client : GameClient()->m_aClients)
 		{
 			bool Helper = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[3];
+			bool TempHelper = m_TempPlayers[IdWithName(Client.m_aName)].IsTempHelper;
 
 			if(!Client.m_Active && !m_Local)
 				continue;
 
-				if(Helper)
+				if((Helper && !TempHelper) || (!Helper && TempHelper))
 					NumberHelpers++;
 		}
 
 		int NumberMutes = 0;
 		for(auto &Client : GameClient()->m_aClients)
 		{
-			bool Mute = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[4];
+			bool Mute = -1;
+			bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute; // || GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[4];
 
 			if(!Client.m_Active && !m_Local)
 				continue;
 
-				if(Mute)
-					NumberMutes++;
+				//if((Mute && !TempMute) || (!Mute && TempMute))
+			if(TempMute)
+				NumberMutes++;
 		}
 		str_format(aBuf, sizeof(aBuf), "│ %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);
 	}
-	
 
 	// info when joining a server of enabled components
 
@@ -412,7 +415,7 @@ void CAiodob::OnConnect()
 		
 		if(g_Config.m_ClListsInfo)
 		{
-			GameClient()->m_Chat.AddLine(-3, 0, aBuf);
+			GameClient()->aMessage(aBuf);
 			GameClient()->aMessage("│");
 
 		}
@@ -559,7 +562,11 @@ void CAiodob::OnInit()
 {
 	// on client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
+	
+	const char *A = "Aiodob";
 
+	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A)&& str_comp(g_Config.m_ClSavedDummyClan, A))
+		SaveSkin();
 
 	m_RainbowSpeed = 25;
 	m_LastMovement = 0;
@@ -638,10 +645,10 @@ void CAiodob::Rainbow()
 
 void CAiodob::OnShutdown()
 {
+	RestoreSkin();
+
 	if(g_Config.m_ClDisableGoresOnShutdown)
 		g_Config.m_ClGoresMode = 0;
-
-	RestoreSkin();
 }
 
 void CAiodob::OnRender()

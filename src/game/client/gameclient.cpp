@@ -165,7 +165,6 @@ void CGameClient::OnConsoleInit()
 					      &m_Aiodob,
 						  &m_FreezeKill,
 						  &m_AutoKill,
-					      /* >>> chillerbot-ux */
 					      &m_MenuBackground});
 
 	// build the input stack
