@@ -76,6 +76,9 @@
 #include "components/statboard.h"
 #include "components/voting.h"
 
+#include "prediction/entities/character.h"
+#include "prediction/entities/projectile.h"
+
 using namespace std::chrono_literals;
 
 const char *CGameClient::Version() const { return GAME_VERSION; }

@@ -165,9 +165,9 @@ public:
 	void ChangeTileNotifyTick();
 
 	void Rainbow();
-	int m_RainbowSpeed = 25;
-	int m_Saturation = 200;
-	int m_Lightness = 30;
+	int m_RainbowSpeed;
+	int m_Saturation;
+	int m_Lightness;
 
 	bool m_RainbowWasOn;
 	int64_t m_RainbowDelay;

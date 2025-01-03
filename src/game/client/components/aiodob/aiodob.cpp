@@ -560,8 +560,11 @@ void CAiodob::OnInit()
 	// on client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 
-	m_RainbowSpeed = 10;
+
+	m_RainbowSpeed = 25;
 	m_LastMovement = 0;
+	m_Saturation = 200;
+	m_Lightness = 30;
 	m_LastTile = -1;
 	m_JoinTeam = 0;
 	m_JoinedTeam = false;
