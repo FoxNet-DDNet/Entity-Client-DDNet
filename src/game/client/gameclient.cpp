@@ -1194,8 +1194,6 @@ void CGameClient::OnShutdown()
 {
 	for(auto &pComponent : m_vpAll)
 		pComponent->OnShutdown();
-	if(g_Config.m_ClDisableGoresOnShutdown)
-		g_Config.m_ClGoresMode = 0;
 }
 
 void CGameClient::OnEnterGame()

@@ -441,7 +441,7 @@ void CEffects::SparklePlayer(vec2 Pos, float Alpha)
 }
 
 
-void CEffects::EffectPlayer(vec2 Pos, float Vel, float Alpha)
+void CEffects::EffectPlayer(vec2 Pos, float Alpha)
 {
 	if(!m_Add100hz)
 		return;
@@ -452,7 +452,7 @@ void CEffects::EffectPlayer(vec2 Pos, float Vel, float Alpha)
 	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSparkleColor));
 	p.m_Pos = Pos;
 	p.m_Vel = vec2(0, 0);
-	p.m_LifeSpan = 0.8f + Vel;
+	p.m_LifeSpan = 0.8f;
 	p.m_StartSize = 1.0f;
 	p.m_Rot = random_angle();
 	p.m_Rotspeed = M_PI * 2;

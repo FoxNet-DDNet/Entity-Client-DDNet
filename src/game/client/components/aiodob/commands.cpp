@@ -14,6 +14,45 @@ void CAiodob::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Votekick(pResult->GetString(0), pResult->NumArguments() > 1 ? pResult->GetString(1) : "");
 }
 
+void CAiodob::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+	
+	char aBuf[8];
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSpeed);
+
+	if(pResult->NumArguments() > 0)
+		pSelf->m_RainbowSpeed = pResult->GetInteger(0);
+	else
+		pSelf->GameClient()->aMessage(aBuf);
+}
+
+void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+
+	char aBuf[8];
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Saturation);
+
+	if(pResult->NumArguments() > 0)
+		pSelf->m_Saturation= pResult->GetInteger(0);
+	else
+		pSelf->GameClient()->aMessage(aBuf);
+}
+
+void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+
+	char aBuf[8];
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Lightness);
+
+	if(pResult->NumArguments() > 0)
+		pSelf->m_Lightness = pResult->GetInteger(0);
+	else
+		pSelf->GameClient()->aMessage(aBuf);
+}
+
 void CAiodob::Votekick(const char *pName, char *pReason)
 {
 	int ClientId;
@@ -209,58 +248,68 @@ void CAiodob::UnTempMute(const char *pName, char *pReason)
 
 void CAiodob::RestoreSkin()
 {
-	if(g_Config.m_ClDummy)
+	if(!g_Config.m_ClServerRainbow)
 	{
-		str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
-		str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
-		str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
-		g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
-		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
-		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
-		g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
-		GameClient()->aMessage("Restored Dummy Skin");
-		m_pClient->SendDummyInfo(false);
+		if(g_Config.m_ClDummy)
+		{
+			str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
+			str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
+			str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
+			g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
+			g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
+			g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
+			g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
+			GameClient()->aMessage("Restored Dummy Skin");
+			m_pClient->SendDummyInfo(false);
+		}
+		else
+		{
+			str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
+			str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
+			str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
+			g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
+			g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
+			g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
+			g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
+			GameClient()->aMessage("Restored Main Skin");
+			m_pClient->SendInfo(false);
+		}
 	}
 	else
-	{
-		str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
-		str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
-		str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
-		g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
-		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
-		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
-		g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
-		GameClient()->aMessage("Restored Main Skin");
-		m_pClient->SendInfo(false);
-	}
+		GameClient()->aMessage("Can't Restore! Rainbow mode is enabled.");
+	
 }
 
 void CAiodob::SaveSkin()
-{ 
-	if(g_Config.m_ClDummy)
+{
+	if(!g_Config.m_ClServerRainbow)
 	{
-		str_copy(g_Config.m_ClSavedDummySkin, g_Config.m_ClDummySkin, sizeof(g_Config.m_ClSavedDummySkin));
-		str_copy(g_Config.m_ClSavedDummyName, g_Config.m_ClDummyName, sizeof(g_Config.m_ClSavedDummyName));
-		str_copy(g_Config.m_ClSavedDummyClan, g_Config.m_ClDummyClan, sizeof(g_Config.m_ClSavedDummyClan));
-		g_Config.m_ClSavedDummyCountry = g_Config.m_ClDummyCountry;
-		g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
-		g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
-		g_Config.m_ClSavedDummyColorFeet = g_Config.m_ClDummyColorFeet;
-		GameClient()->aMessage("Saved Dummy Skin");
-		m_pClient->SendDummyInfo(false);
+		if(g_Config.m_ClDummy)
+		{
+			str_copy(g_Config.m_ClSavedDummySkin, g_Config.m_ClDummySkin, sizeof(g_Config.m_ClSavedDummySkin));
+			str_copy(g_Config.m_ClSavedDummyName, g_Config.m_ClDummyName, sizeof(g_Config.m_ClSavedDummyName));
+			str_copy(g_Config.m_ClSavedDummyClan, g_Config.m_ClDummyClan, sizeof(g_Config.m_ClSavedDummyClan));
+			g_Config.m_ClSavedDummyCountry = g_Config.m_ClDummyCountry;
+			g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
+			g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
+			g_Config.m_ClSavedDummyColorFeet = g_Config.m_ClDummyColorFeet;
+			GameClient()->aMessage("Saved Dummy Skin");
+			m_pClient->SendDummyInfo(false);
+		}
+		else
+		{
+			str_copy(g_Config.m_ClSavedPlayerSkin, g_Config.m_ClPlayerSkin, sizeof(g_Config.m_ClSavedPlayerSkin));
+			str_copy(g_Config.m_ClSavedName, g_Config.m_PlayerName, sizeof(g_Config.m_ClSavedName));
+			str_copy(g_Config.m_ClSavedClan, g_Config.m_PlayerClan, sizeof(g_Config.m_ClSavedClan));
+			g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
+			g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
+			g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
+			g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
+			GameClient()->aMessage("Saved Main Skin");
+			m_pClient->SendInfo(false);
+		}
 	}
-	else
-	{
-		str_copy(g_Config.m_ClSavedPlayerSkin, g_Config.m_ClPlayerSkin, sizeof(g_Config.m_ClSavedPlayerSkin));
-		str_copy(g_Config.m_ClSavedName, g_Config.m_PlayerName, sizeof(g_Config.m_ClSavedName));
-		str_copy(g_Config.m_ClSavedClan, g_Config.m_PlayerClan, sizeof(g_Config.m_ClSavedClan));
-		g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
-		g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
-		g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
-		g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
-		GameClient()->aMessage("Saved Main Skin");
-		m_pClient->SendInfo(false);
-	}
+	else GameClient()->aMessage("Can't Save! Rainbow mode is enabled.");
 }
 
 void CAiodob::OnConsoleInit()
@@ -278,6 +327,10 @@ void CAiodob::OnConsoleInit()
 
 	Console()->Register("restoreskin", "", CFGFLAG_CLIENT, ConRestoreSkin, this, "Save Your Current Info (Skin, name, etc.)");
 	Console()->Register("saveskin", "", CFGFLAG_CLIENT, ConSaveSkin, this, "Restore Your Saved Info");
+
+	Console()->Register("server_rainbow_speed", "?s[speed]", CFGFLAG_CLIENT, ConServerRainbowSpeed, this, "Rainbow Speed of Server side rainbow mode (default = 10)");
+	Console()->Register("server_rainbow_sat", "?s[Sat]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 10)");
+	Console()->Register("server_rainbow_lht", "?s[Lht]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 10)");
 }
 
 // Stuff to Fix Later

@@ -8,6 +8,10 @@
 #include <game/generated/protocol.h>
 #include "aiodob.h"
 #include <base/system.h>
+#include "../../render.h"
+#include <base/color.h>
+#include <base/math.h>
+#include <cmath>
 
 int CAiodob::IdWithName(const char *pName)
 {
@@ -197,7 +201,7 @@ void CAiodob::AutoJoinTeam()
 
 				int PrevTeam = -1;
 
-				if(!m_pClient->m_Teams.SameTeam(m_Local, i) && (Team > 0) && !JoinedTeam)
+				if(!m_pClient->m_Teams.SameTeam(m_Local, i) && (Team > 0) && !m_JoinedTeam)
 				{
 					char aBuf[2048] = "/team ";
 					str_append(aBuf, TeamChar);
@@ -207,10 +211,10 @@ void CAiodob::AutoJoinTeam()
 					str_append(Joined, m_pClient->m_aClients[i].m_aName);
 					m_pClient->m_Chat.AddLine(-3, 0, Joined);
 
-					JoinedTeam = true;
-					AttempedJoinTeam = true;
+					m_JoinedTeam = true;
+					m_AttempedJoinTeam = true;
 				}
-				if(m_pClient->m_Teams.SameTeam(m_Local, i) && JoinedTeam)
+				if(m_pClient->m_Teams.SameTeam(m_Local, i) && m_JoinedTeam)
 				{
 					char Joined[2048] = "Successfully Joined The Team of ";
 					str_append(Joined, m_pClient->m_aClients[i].m_aName);
@@ -220,31 +224,31 @@ void CAiodob::AutoJoinTeam()
 
 					PrevTeam = Team;
 
-					JoinedTeam = false;
+					m_JoinedTeam = false;
 				}
-				if(!m_pClient->m_Teams.SameTeam(m_Local, i) && AttempedJoinTeam)
+				if(!m_pClient->m_Teams.SameTeam(m_Local, i) && m_AttempedJoinTeam)
 				{
 					char Joined[2048] = "Couldn't Join The Team of ";
 					str_append(Joined, m_pClient->m_aClients[i].m_aName);
 					m_pClient->m_Chat.AddLine(-3, 0, Joined);
 
-					AttempedJoinTeam = false;
+					m_AttempedJoinTeam = false;
 				}
-				if(PrevTeam != Team && AttempedJoinTeam)
+				if(PrevTeam != Team && m_AttempedJoinTeam)
 				{
 					m_pClient->m_Chat.AddLine(-3, 0, "team has changed");
-					JoinedTeam = false;
+					m_JoinedTeam = false;
 				}
 				if(LocalTeam > 0)
 				{
 					m_pClient->m_Chat.AddLine(-3, 0, "self team is bigger than 0");
-					JoinedTeam = false;
+					m_JoinedTeam = false;
 					LocalTeam = GameClient()->m_Teams.Team(m_Local);
 				}
 				if(LocalTeam != Team)
 				{
 					PrevTeam = Team;
-					AttempedJoinTeam = false;
+					m_AttempedJoinTeam = false;
 					LocalTeam = GameClient()->m_Teams.Team(m_Local);
 				}
 				return;
@@ -508,7 +512,6 @@ void CAiodob::RemoveWarEntryDuplicates(const char *pName)
 
 		if(IsDuplicate)
 		{
-			GameClient()->aMessage("a");
 			it = m_TempEntries.erase(it);
 		}
 		else
@@ -557,12 +560,14 @@ void CAiodob::OnInit()
 	// on client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 
-	AttempedJoinTeam = false;
-	JoinedTeam = false;
-	m_KogModeRebound = false;
-	m_JoinTeam = 0;
-	m_LastTile = -1;
+	m_RainbowSpeed = 10;
 	m_LastMovement = 0;
+	m_LastTile = -1;
+	m_JoinTeam = 0;
+	m_JoinedTeam = false;
+	m_RainbowWasOn = false;
+	m_KogModeRebound = false;
+	m_AttempedJoinTeam = false;
 	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
 
 	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
@@ -573,6 +578,69 @@ void CAiodob::OnInit()
 	dbg_msg("Aiodob", aBuf);
 }
 
+void CAiodob::Rainbow()
+{
+	if(!Client()->GameTick(0))
+		return;
+
+	CTeeRenderInfo TeeInfo = m_pClient->m_aClients[m_Local].m_RenderInfo;
+
+	ColorRGBA SaveColor;
+	bool UseCustomColor;
+
+	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
+	{
+		g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
+		g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
+
+		g_Config.m_ClSavedDummyCountry = g_Config.m_ClDummyCountry;
+		g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
+		m_RainbowWasOn = true;
+	}
+
+	if(!g_Config.m_ClServerRainbow && m_RainbowWasOn)
+	{
+		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
+		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
+
+		g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
+		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
+		GameClient()->SendInfo(false);
+		m_RainbowWasOn = false;
+	}
+
+	if(g_Config.m_ClServerRainbow)
+	{
+		float h = (round_to_int(Client()->GameTick(0) * m_RainbowSpeed * 0.001) % 255 / 255.f);
+		float s = abs(m_Saturation - 255); 
+		float l = abs(m_Lightness - 255);
+		
+
+		g_Config.m_ClDummyUseCustomColor = true;
+		g_Config.m_ClDummyColorBody = getIntFromColor(h, s, l);
+
+		g_Config.m_ClPlayerUseCustomColor = true;
+		g_Config.m_ClPlayerColorBody = getIntFromColor(h, s, l);
+
+		if(m_RainbowDelay < time_get())
+		{
+			if(g_Config.m_ClDummy)
+				GameClient()->SendDummyInfo(false);
+			else
+				GameClient()->SendInfo(false);
+			m_RainbowDelay = time_get() + time_freq() * 5.10;
+		}
+	}
+}
+
+void CAiodob::OnShutdown()
+{
+	if(g_Config.m_ClDisableGoresOnShutdown)
+		g_Config.m_ClGoresMode = 0;
+
+	RestoreSkin();
+}
+
 void CAiodob::OnRender()
 {
 	 m_Local = m_pClient->m_Snap.m_LocalClientId;
@@ -581,6 +649,7 @@ void CAiodob::OnRender()
 	 if(Client()->m_Connected == true && !g_Config.m_ClDummy)
 		OnConnect();
 
+	Rainbow();
 	ChangeTileNotifyTick();
 	GoresMode();
 	AutoJoinTeam();

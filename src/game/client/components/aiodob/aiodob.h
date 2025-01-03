@@ -40,8 +40,8 @@ public:
 
 class CAiodob : public CComponent
 {
-	bool AttempedJoinTeam;
-	bool JoinedTeam;
+	bool m_AttempedJoinTeam;
+	bool m_JoinedTeam;
 	
 	bool m_KogModeRebound;
 	bool m_WeaponsGot;
@@ -95,34 +95,44 @@ class CAiodob : public CComponent
 	// Console Commands
 	virtual void OnConsoleInit() override;
 
+	static void ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData);
+	static void ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData);
+	static void ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConVotekick(IConsole::IResult *pResult, void *pUserData);
-	void Votekick(const char *pName, char *pReason = "");
+
 
 	static void ConTempWar(IConsole::IResult *pResult, void *pUserData);
-	void TempWar(const char *pName, char *pReason = "");
-
 	static void ConUnTempWar(IConsole::IResult *pResult, void *pUserData);
-	void UnTempWar(const char *pName, char *pReason = "");
 
 	static void ConTempHelper(IConsole::IResult *pResult, void *pUserData);
-	void TempHelper(const char *pName, char *pReason = "");
-
 	static void ConUnTempHelper(IConsole::IResult *pResult, void *pUserData);
-	void UnTempHelper(const char *pName, char *pReason = "");
 
 	static void ConTempMute(IConsole::IResult *pResult, void *pUserData);
-	void TempMute(const char *pName, char *pReason = "");
-
 	static void ConUnTempMute(IConsole::IResult *pResult, void *pUserData);
-	void UnTempMute(const char *pName, char *pReason = "");
 
 	static void ConSaveSkin(IConsole::IResult *pResult, void *pUserData);
-	void SaveSkin();
-
 	static void ConRestoreSkin(IConsole::IResult *pResult, void *pUserData);
-	void RestoreSkin();
+
+	virtual int Sizeof() const override { return sizeof(*this); }
+	virtual void OnInit() override;
+	virtual void OnRender() override;
+	virtual void OnNewSnapshot() override;
+	virtual void OnShutdown() override;
 
 public:
+	void TempWar(const char *pName, char *pReason = "");
+	void UnTempWar(const char *pName, char *pReason = "");
+
+	void TempHelper(const char *pName, char *pReason = "");
+	void UnTempHelper(const char *pName, char *pReason = "");
+
+	void TempMute(const char *pName, char *pReason = "");
+	void UnTempMute(const char *pName, char *pReason = "");
+
+	void SaveSkin();
+	void RestoreSkin();
+	void Votekick(const char *pName, char *pReason = "");
 
 	int m_Local;
 	int64_t m_JoinTeam;
@@ -133,9 +143,20 @@ public:
 	void RemoveWarEntry(const char *pNameW, const char *pNameH, const char *pNameM);
 
 	std::vector<CTempEntry> m_TempEntries;
+
 	CTempData m_TempPlayers[MAX_CLIENTS];
 
-private:
+	int getIntFromColor(float Hue, float Sat, float LhT)
+	{
+		int R = round(255 * Hue);
+		int G = round(255 * Sat);
+		int B = round(255 * LhT);
+		R = (R << 16) & 0x00FF0000;
+		G = (G << 8) & 0x0000FF00;
+		B = B & 0x000000FF;
+		return 0xFF000000 | R | G | B;
+	}
+
 	void UpdateTempPlayers();
 
 
@@ -143,15 +164,18 @@ private:
 	int m_LastTile = -1;
 	void ChangeTileNotifyTick();
 
-	virtual void GoresMode();
-	virtual void AutoJoinTeam();
-	virtual void OnConnect();
+	void Rainbow();
+	int m_RainbowSpeed = 25;
+	int m_Saturation = 200;
+	int m_Lightness = 30;
 
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnInit() override;
-	virtual void OnRender() override;
-	virtual void OnNewSnapshot() override;
+	bool m_RainbowWasOn;
+	int64_t m_RainbowDelay;
 
+
+	void GoresMode();
+	void AutoJoinTeam();
+	void OnConnect();
 };
 
 #endif

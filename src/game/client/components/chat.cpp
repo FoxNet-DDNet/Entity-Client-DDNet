@@ -984,7 +984,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 						int Id = GameClient()->m_Aiodob.IdWithName(CharOname);
 						
-						if((GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName) && !GameClient()->m_WarList.GetWarData(Id).IsWarClan) || GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempWar)
+						if((GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName) && !GameClient()->m_WarList.GetWarData(Id).IsWarClan) || GameClient()->m_Aiodob.m_TempPlayers[Id].IsTempWar)
 						{
 							if(!GameClient()->m_WarList.FindWarEntry(name, "", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName))
 							{
@@ -993,6 +993,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 								str_copy(Entry.m_aTempWar, name);
 								GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempWar);
 								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+								GameClient()->aMessage(aBuf);
 							}
 						}
 						if(GameClient()->m_WarList.FindWarEntry(CharOname, "", GameClient()->m_WarList.m_WarTypes[3]->m_aWarName) || GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempHelper)
@@ -1005,6 +1006,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 
 								GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempHelper);
+								GameClient()->aMessage(aBuf);
 							}
 						}
 						if(GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempMute)
@@ -1014,8 +1016,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 							str_copy(Entry.m_aTempMute, name);
 							GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempMute);
 							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+							GameClient()->aMessage(aBuf);
 						}
-						GameClient()->aMessage(aBuf);
 					}
 				}
 			}

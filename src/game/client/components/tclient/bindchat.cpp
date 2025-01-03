@@ -191,12 +191,16 @@ void CBindchat::OnConsoleInit()
 	AddBindDefault(".help", "exec data/aiodob/binds/.help.cfg");
 	AddBindDefault(".extra", "exec data/aiodob/binds/.extra.cfg");
 	AddBindDefault(".kick", "votekick");
+	AddBindDefault(".votekick", "votekick");
 
 	AddBindDefault(".friend", "add_friend");
 	AddBindDefault(".unfriend", "add_friend");
 
-	AddBindDefault(".restoreskin", "restorekin");
+	AddBindDefault(".restoreskin", "restoreskin");
 	AddBindDefault(".saveskin", "saveskin");
+
+	AddBindDefault(".restore", "restoreskin");
+	AddBindDefault(".save", "saveskin");
 
 	AddBindDefault(".tempwar", "addtempwar");
 	AddBindDefault(".addtempwar", "addtempwar");

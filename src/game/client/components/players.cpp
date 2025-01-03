@@ -876,9 +876,9 @@ void CPlayers::RenderPlayer(
 		{
 			float a = Vel.x + Vel.y / 100;
 
-			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)), a, Alpha);
+			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)),Alpha);
 
-			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)), a, Alpha);
+			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)),Alpha);
 		}
 	}
 
