@@ -235,12 +235,6 @@ int CConsole::ParseArgs(CResult *pResult, const char *pFormat, bool IsColor)
 					if(!IsColor)
 					{
 						int Value;
-						if(str_comp(pResult->GetString(pResult->NumArguments() - 1), "all") == 0 ||
-							str_comp(pResult->GetString(pResult->NumArguments() - 1), "me") == 0)
-						{
-							Error = PARSEARGS_OK;
-							break;
-						}
 						if(!str_toint(pResult->GetString(pResult->NumArguments() - 1), &Value) ||
 							Value == std::numeric_limits<int>::max() || Value == std::numeric_limits<int>::min())
 						{
@@ -637,11 +631,15 @@ void CConsole::ExecuteLineFlag(const char *pStr, int FlagMask, int ClientId, boo
 
 bool CConsole::ExecuteFile(const char *pFilename, int ClientId, bool LogFailure, int StorageType)
 {
-	// make sure that this isn't being executed already
+	int Count = 0;
+	// make sure that this isn't being executed already and that recursion limit isn't met
 	for(CExecFile *pCur = m_pFirstExec; pCur; pCur = pCur->m_pPrev)
-		if(str_comp(pFilename, pCur->m_pFilename) == 0)
-			return false;
+	{
+		Count++;
 
+		if(str_comp(pFilename, pCur->m_pFilename) == 0 || Count > FILE_RECURSION_LIMIT)
+			return false;
+	}
 	if(!m_pStorage)
 		return false;
 

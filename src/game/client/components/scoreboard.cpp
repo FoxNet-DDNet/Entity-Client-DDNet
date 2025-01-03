@@ -19,7 +19,6 @@
 #include <game/generated/client_data7.h>
 #include <game/localization.h>
 
-
 CScoreboard::CScoreboard()
 {
 	OnReset();
@@ -34,6 +33,11 @@ void CScoreboard::ConKeyScoreboard(IConsole::IResult *pResult, void *pUserData)
 void CScoreboard::OnConsoleInit()
 {
 	Console()->Register("+scoreboard", "", CFGFLAG_CLIENT, ConKeyScoreboard, this, "Show scoreboard");
+}
+
+void CScoreboard::OnInit()
+{
+	m_DeadTeeTexture = Graphics()->LoadTexture("deadtee.png", IStorage::TYPE_ALL);
 }
 
 void CScoreboard::OnReset()
@@ -544,7 +548,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			if(RenderDead)
 			{
 				Graphics()->BlendNormal();
-				Graphics()->TextureSet(client_data7::g_pData->m_aImages[client_data7::IMAGE_DEADTEE].m_Id);
+				Graphics()->TextureSet(m_DeadTeeTexture);
 				Graphics()->QuadsBegin();
 				if(m_pClient->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_TEAMS)
 				{

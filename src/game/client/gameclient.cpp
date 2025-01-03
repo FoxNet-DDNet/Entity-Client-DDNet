@@ -75,8 +75,6 @@
 #include "components/spectator.h"
 #include "components/statboard.h"
 #include "components/voting.h"
-#include "prediction/entities/character.h"
-#include "prediction/entities/projectile.h"
 
 using namespace std::chrono_literals;
 
@@ -403,14 +401,6 @@ void CGameClient::OnInit()
 		else
 			g_pData->m_aImages[i].m_Id = Graphics()->LoadTexture(g_pData->m_aImages[i].m_pFilename, IStorage::TYPE_ALL);
 		m_Menus.RenderLoading(pLoadingDDNetCaption, pLoadingMessageAssets, 1);
-	}
-	for(int i = 0; i < client_data7::g_pData->m_NumImages; i++)
-	{
-		if(client_data7::g_pData->m_aImages[i].m_pFilename[0] == '\0') // handle special null image without filename
-			client_data7::g_pData->m_aImages[i].m_Id = IGraphics::CTextureHandle();
-		else if(i == client_data7::IMAGE_DEADTEE)
-			client_data7::g_pData->m_aImages[i].m_Id = Graphics()->LoadTexture(client_data7::g_pData->m_aImages[i].m_pFilename, IStorage::TYPE_ALL, 0);
-		m_Menus.RenderLoading(pLoadingDDNetCaption, Localize("Initializing assets"), 1);
 	}
 
 	m_GameWorld.m_pCollision = Collision();
@@ -1810,7 +1800,7 @@ void CGameClient::OnNewSnapshot()
 			else if(Item.m_Type == NETOBJTYPE_DDNETSPECTATORINFO)
 			{
 				const CNetObj_DDNetSpectatorInfo *pDDNetSpecInfo = (const CNetObj_DDNetSpectatorInfo *)Item.m_pData;
-				m_Snap.m_SpecInfo.m_HasCameraInfo = true;
+				m_Snap.m_SpecInfo.m_HasCameraInfo = pDDNetSpecInfo->m_HasCameraInfo;
 				m_Snap.m_SpecInfo.m_Zoom = pDDNetSpecInfo->m_Zoom / 1000.0f;
 				m_Snap.m_SpecInfo.m_Deadzone = pDDNetSpecInfo->m_Deadzone;
 				m_Snap.m_SpecInfo.m_FollowFactor = pDDNetSpecInfo->m_FollowFactor;
@@ -3226,7 +3216,7 @@ void CGameClient::UpdatePrediction()
 void CGameClient::UpdateSpectatorCursor()
 {
 	int CursorOwnerId = m_Snap.m_LocalClientId;
-	if(m_Snap.m_SpecInfo.m_Active || Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	if(m_Snap.m_SpecInfo.m_Active)
 	{
 		CursorOwnerId = m_Snap.m_SpecInfo.m_SpectatorId;
 	}
