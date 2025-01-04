@@ -121,18 +121,18 @@ class CAiodob : public CComponent
 	virtual void OnShutdown() override;
 
 public:
-	void TempWar(const char *pName, char *pReason = "");
-	void UnTempWar(const char *pName, char *pReason = "");
+	void TempWar(const char *pName, char *pReason);
+	void UnTempWar(const char *pName, char *pReason);
 
-	void TempHelper(const char *pName, char *pReason = "");
-	void UnTempHelper(const char *pName, char *pReason = "");
+	void TempHelper(const char *pName, char *pReason);
+	void UnTempHelper(const char *pName, char *pReason);
 
-	void TempMute(const char *pName, char *pReason = "");
-	void UnTempMute(const char *pName, char *pReason = "");
+	void TempMute(const char *pName, char *pReason);
+	void UnTempMute(const char *pName, char *pReason);
 
 	void SaveSkin();
 	void RestoreSkin();
-	void Votekick(const char *pName, char *pReason = "");
+	void Votekick(const char *pName, char *pReason);
 
 	int m_Local;
 	int64_t m_JoinTeam;

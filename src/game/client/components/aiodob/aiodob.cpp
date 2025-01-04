@@ -2,6 +2,7 @@
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
+#include <game/gamecore.h>
 #include <game/client/components/chat.h>
 #include <game/client/components/controls.h>
 #include <game/client/gameclient.h>
@@ -593,11 +594,6 @@ void CAiodob::Rainbow()
 	if(!Client()->GameTick(0))
 		return;
 
-	CTeeRenderInfo TeeInfo = m_pClient->m_aClients[m_Local].m_RenderInfo;
-
-	ColorRGBA SaveColor;
-	bool UseCustomColor;
-
 	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
 	{
 		g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
@@ -615,30 +611,28 @@ void CAiodob::Rainbow()
 
 		g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
 		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
-		GameClient()->SendInfo(false);
 		m_RainbowWasOn = false;
 	}
 
-	if(g_Config.m_ClServerRainbow)
+	if(g_Config.m_ClServerRainbow && GameClient()->m_Aiodob.m_LastMovement > time_get() + time_freq() * 24.10 && !m_pClient->m_aClients->m_Afk)
 	{
 		float h = (round_to_int(Client()->GameTick(0) * m_RainbowSpeed * 0.001) % 255 / 255.f);
 		float s = abs(m_Saturation - 255); 
 		float l = abs(m_Lightness - 255);
 		
-
-		g_Config.m_ClDummyUseCustomColor = true;
-		g_Config.m_ClDummyColorBody = getIntFromColor(h, s, l);
-
-		g_Config.m_ClPlayerUseCustomColor = true;
-		g_Config.m_ClPlayerColorBody = getIntFromColor(h, s, l);
-
 		if(m_RainbowDelay < time_get())
 		{
-			if(g_Config.m_ClDummy)
-				GameClient()->SendDummyInfo(false);
-			else
-				GameClient()->SendInfo(false);
-			m_RainbowDelay = time_get() + time_freq() * 5.10;
+				g_Config.m_ClDummyUseCustomColor = true;
+				g_Config.m_ClDummyColorBody = getIntFromColor(h, s, l);
+
+				g_Config.m_ClPlayerUseCustomColor = true;
+				g_Config.m_ClPlayerColorBody = getIntFromColor(h, s, l);
+
+				if(g_Config.m_ClDummy)
+					GameClient()->SendDummyInfo(false);
+				else
+					GameClient()->SendInfo(false);
+				m_RainbowDelay = time_get() + time_freq() * 5.10;
 		}
 	}
 }

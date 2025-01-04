@@ -2,6 +2,7 @@
 #include <engine/client.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
+#include <game/gamecore.h>
 
 #include <game/client/components/chat.h>
 #include <game/client/gameclient.h>
@@ -13,9 +14,15 @@
 
 
 void CAutoKill::OnRender()
-{
+{ 
 	m_Local = m_pClient->m_Snap.m_LocalClientId;
-	
+
+	if(!GameClient()->CurrentRaceTime())
+	{
+		m_SentAutoKill = false;
+		return;
+	}
+
 	CCharacterCore *pCharacter = &m_pClient->m_aClients[m_Local].m_Predicted;
 
 	if(g_Config.m_ClAutoKill)
@@ -51,8 +58,8 @@ void CAutoKill::OnRender()
 			const CNetObj_Character *pPrevCharO = &m_pClient->m_Snap.m_aCharacters[!m_Local].m_Prev;
 			const CNetObj_Character *pCurCharO = &m_pClient->m_Snap.m_aCharacters[!m_Local].m_Cur;
 
-			auto IsWar = 0;
-			bool EnemyFrozen = 0;
+			auto IsWar = m_pClient->m_aClients[!m_Local].m_IsWar;
+			bool EnemyFrozen = pCharacterOther->m_IsInFreeze;
 
 			// so it only takes info from other players and not self (could probably be made smarter :p)
 
@@ -60,7 +67,7 @@ void CAutoKill::OnRender()
 			{
 				pPrevCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Prev;
 				pCurCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Cur;
-				IsWar = m_pClient->m_aClients[i].m_IsWar && (!m_pClient->m_aClients[i].m_IsAnyTeam || !m_pClient->m_aClients[i].m_IsHelper);
+				IsWar = m_pClient->m_aClients[i].m_IsWar ;
 				EnemyFrozen = pCharacterOther->m_IsInFreeze;
 			}
 
@@ -102,7 +109,6 @@ void CAutoKill::OnRender()
 						return;
 
 					// if other player is unfrozen
-
 					if(m_pClient->m_aClients[i].m_FreezeEnd > 0)
 					{
 						// if player is ontop of you and their x coordinate is close to own players
@@ -113,6 +119,7 @@ void CAutoKill::OnRender()
 
 							if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
 							{
+								GameClient()->aMessage("2");
 								m_pClient->m_Chat.SendChat(0, "/kill");
 								m_SentAutoKill = true;
 								m_LastFreeze = time_get() + time_freq() * 5;
@@ -120,26 +127,12 @@ void CAutoKill::OnRender()
 							}
 							else
 							{
+								GameClient()->aMessage("3");
 								GameClient()->SendKill(m_Local);
 								m_SentAutoKill = true;
 								return;
 							}
 						}
-						return;
-					}
-
-					// kill
-
-					if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
-					{
-						m_pClient->m_Chat.SendChat(0, "/kill");
-						m_SentAutoKill = true;
-						return;
-					}
-					else
-					{
-						GameClient()->SendKill(m_Local);
-						m_SentAutoKill = true;
 						return;
 					}
 				}

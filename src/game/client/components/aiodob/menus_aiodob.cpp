@@ -579,10 +579,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
 		MainView.y += ScrollOffset.y;
 
-		const float FontSize = 14.0f;
-		const float Margin = 10.0f;
-		const float HeaderHeight = FontSize + 5.0f + Margin;
-
 		// left side in settings menu
 
 		CUIRect PlayerSettings, ChatSettings, SoundSettings, WarVisual, UiSettings, AiodobSettings, GoresModeSettings;
@@ -1352,10 +1348,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
 		MainView.y += ScrollOffset.y;
 
-		const float FontSize = 14.0f;
-		const float Margin = 10.0f;
-		const float HeaderHeight = FontSize + 5.0f + Margin;
-
 		// left side in settings menu
 
 		CUIRect OutlineSettings, PlayerIndicatorSettings, FrozenTeeHudSettings, LatencySettings, GhostSettings, FastInputSettings;
@@ -1653,8 +1645,6 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 {
 	CUIRect LeftView, RightView, Button, Label;
 
-	const float MarginBetweenSections = 30.0f;
-
 	MainView.HSplitTop(MarginBetweenSections, nullptr, &MainView);
 	MainView.VSplitLeft(MainView.w / 2.1f, &LeftView, &RightView);
 
@@ -1714,24 +1704,24 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	const float Theta = pi * 2.0f / GameClient()->m_Bindwheel.m_vBinds.size();
 	for(int i = 0; i < static_cast<int>(GameClient()->m_Bindwheel.m_vBinds.size()); i++)
 	{
-		float FontSize = 12.0f;
+		float FontSizes = 12.0f;
 		if(i == s_SelectedBindIndex)
 		{
-			FontSize = 20.0f;
+			FontSizes = 20.0f;
 			TextRender()->TextColor(ColorRGBA(0.5f, 1.0f, 0.75f, 1.0f));
 		}
 		else if(i == HoveringIndex)
-			FontSize = 14.0f;
+			FontSizes = 14.0f;
 
 		const CBindWheel::SBind Bind = GameClient()->m_Bindwheel.m_vBinds[i];
 		const float Angle = Theta * i;
 		vec2 TextPos = direction(Angle);
 		TextPos *= Radius * 0.75f;
 
-		float Width = TextRender()->TextWidth(FontSize, Bind.m_aName);
+		float Width = TextRender()->TextWidth(FontSizes, Bind.m_aName);
 		TextPos += Pos;
 		TextPos.x -= Width / 2.0f;
-		TextRender()->Text(TextPos.x, TextPos.y, FontSize, Bind.m_aName);
+		TextRender()->Text(TextPos.x, TextPos.y, FontSizes, Bind.m_aName);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
@@ -2345,7 +2335,6 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 	CUIRect Label, LabelMid, Section, LabelRight;
 	static int SelectedProfile = -1;
 
-	const float LineMargin = 22.0f;
 	char *pSkinName = g_Config.m_ClPlayerSkin;
 	int *pUseCustomColor = &g_Config.m_ClPlayerUseCustomColor;
 	unsigned *pColorBody = &g_Config.m_ClPlayerColorBody;

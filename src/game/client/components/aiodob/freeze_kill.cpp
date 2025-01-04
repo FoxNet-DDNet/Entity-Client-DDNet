@@ -3,6 +3,7 @@
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
 
+#include <game/gamecore.h>
 #include <game/client/components/chat.h>
 #include <game/client/gameclient.h>
 

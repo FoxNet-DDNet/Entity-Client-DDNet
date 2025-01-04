@@ -1350,6 +1350,7 @@ public:
 		}
 		// TClient
 		LoadCustomFonts();
+		m_pGlyphMap->AddFallbackFaceByName("DejaVu Sans");
 
 		// extract language variant family names
 		const json_value &Variants = (*pJsonData)["language variants"];
