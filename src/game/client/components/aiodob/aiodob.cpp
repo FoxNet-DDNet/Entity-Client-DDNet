@@ -9,8 +9,6 @@
 #include <game/generated/protocol.h>
 #include "aiodob.h"
 #include <base/system.h>
-#include "../../render.h"
-#include <base/color.h>
 #include <base/math.h>
 #include <cmath>
 
@@ -394,7 +392,7 @@ void CAiodob::OnConnect()
 		int NumberMutes = 0;
 		for(auto &Client : GameClient()->m_aClients)
 		{
-			bool Mute = -1;
+			bool Mute = false;
 			bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute; // || GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[4];
 
 			if(!Client.m_Active && !m_Local)
@@ -596,25 +594,26 @@ void CAiodob::Rainbow()
 
 	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
 	{
-		g_Config.m_ClSavedCountry = g_Config.m_PlayerCountry;
 		g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
+		g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
 
-		g_Config.m_ClSavedDummyCountry = g_Config.m_ClDummyCountry;
 		g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
+		g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
 		m_RainbowWasOn = true;
+		GameClient()->aMessage("a");
 	}
-
-	if(!g_Config.m_ClServerRainbow && m_RainbowWasOn)
+	else if(!g_Config.m_ClServerRainbow && m_RainbowWasOn)
 	{
 		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 
-		g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
 		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
+		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
 		m_RainbowWasOn = false;
+		GameClient()->aMessage("b");
 	}
 
-	if(g_Config.m_ClServerRainbow && GameClient()->m_Aiodob.m_LastMovement > time_get() + time_freq() * 24.10 && !m_pClient->m_aClients->m_Afk)
+	if(g_Config.m_ClServerRainbow && m_LastMovement > time_get() + time_freq() * 24.10 && !m_pClient->m_aClients[m_Local].m_Afk)
 	{
 		float h = (round_to_int(Client()->GameTick(0) * m_RainbowSpeed * 0.001) % 255 / 255.f);
 		float s = abs(m_Saturation - 255); 
@@ -622,16 +621,16 @@ void CAiodob::Rainbow()
 		
 		if(m_RainbowDelay < time_get())
 		{
-				g_Config.m_ClDummyUseCustomColor = true;
-				g_Config.m_ClDummyColorBody = getIntFromColor(h, s, l);
+			g_Config.m_ClDummyUseCustomColor = true;
+			g_Config.m_ClDummyColorBody = getIntFromColor(h, s, l);
 
-				g_Config.m_ClPlayerUseCustomColor = true;
-				g_Config.m_ClPlayerColorBody = getIntFromColor(h, s, l);
+			g_Config.m_ClPlayerUseCustomColor = true;
+			g_Config.m_ClPlayerColorBody = getIntFromColor(h, s, l);
 
-				if(g_Config.m_ClDummy)
-					GameClient()->SendDummyInfo(false);
-				else
-					GameClient()->SendInfo(false);
+			if(g_Config.m_ClDummy)
+				GameClient()->SendDummyInfo(false);
+			else
+				GameClient()->SendInfo(false);
 				m_RainbowDelay = time_get() + time_freq() * 5.10;
 		}
 	}
@@ -639,7 +638,22 @@ void CAiodob::Rainbow()
 
 void CAiodob::OnShutdown()
 {
-	RestoreSkin();
+	str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
+	str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
+	str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
+	g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
+	g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
+	g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
+	g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
+
+	str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
+	str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
+	str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
+	g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
+	g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
+	g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
+	g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
+
 
 	if(g_Config.m_ClDisableGoresOnShutdown)
 		g_Config.m_ClGoresMode = 0;

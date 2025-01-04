@@ -53,7 +53,7 @@ void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserD
 		pSelf->GameClient()->aMessage(aBuf);
 }
 
-void CAiodob::Votekick(const char *pName, char *pReason)
+void CAiodob::Votekick(const char *pName, const char *pReason)
 {
 	int ClientId;
 	char Id[8];
@@ -77,34 +77,34 @@ void CAiodob::Votekick(const char *pName, char *pReason)
 void CAiodob::ConTempWar(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->TempWar(pResult->GetString(0), pResult->NumArguments() > 1 ? pResult->GetString(1) : "");
+	pSelf->TempWar(pResult->GetString(0));
 }
 void CAiodob::ConUnTempWar(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->UnTempWar(pResult->GetString(0), pResult->NumArguments() > 1 ? pResult->GetString(1) : "");
+	pSelf->UnTempWar(pResult->GetString(0));
 }
 
 void CAiodob::ConTempHelper(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->TempHelper(pResult->GetString(0), pResult->NumArguments() > 1 ? pResult->GetString(1) : "");
+	pSelf->TempHelper(pResult->GetString(0));
 }
 void CAiodob::ConUnTempHelper(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->UnTempHelper(pResult->GetString(0), pResult->NumArguments() > 1 ? pResult->GetString(1) : "");
+	pSelf->UnTempHelper(pResult->GetString(0) );
 }
 
 void CAiodob::ConTempMute(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->TempMute(pResult->GetString(0), pResult->NumArguments() > 1 ? pResult->GetString(1) : "");
+	pSelf->TempMute(pResult->GetString(0));
 }
 void CAiodob::ConUnTempMute(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->UnTempMute(pResult->GetString(0), pResult->NumArguments() > 1 ? pResult->GetString(1) : "");
+	pSelf->UnTempMute(pResult->GetString(0));
 }
 
 void CAiodob::ConSaveSkin(IConsole::IResult *pResult, void *pUserData)
@@ -118,7 +118,7 @@ void CAiodob::ConRestoreSkin(IConsole::IResult *pResult, void *pUserData)
 	pSelf->RestoreSkin();
 }
 
-void CAiodob::TempWar(const char *pName, char *pReason)
+void CAiodob::TempWar(const char *pName)
 {
 	CTempEntry Entry(pName, "", "");
 	str_copy(Entry.m_aTempWar, pName);
@@ -131,7 +131,7 @@ void CAiodob::TempWar(const char *pName, char *pReason)
 
 }
 
-void CAiodob::UnTempWar(const char *pName, char *pReason)
+void CAiodob::UnTempWar(const char *pName)
 {
 	if(str_comp(pName, "") == 0)
 		return;
@@ -145,14 +145,14 @@ void CAiodob::UnTempWar(const char *pName, char *pReason)
 	{
 		for(CTempEntry &Entries : m_TempEntries)
 		{
-			for(auto it = m_TempEntries.begin(); it != m_TempEntries.end();)
+			for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
 			{
-				bool IsDuplicate = !str_comp(it->m_aTempWar, pName);
+				bool IsDuplicate = !str_comp(it2->m_aTempWar, pName);
 
 				if(IsDuplicate)
-					it = m_TempEntries.erase(it);
+					it2 = m_TempEntries.erase(it2);
 				else
-					++it;
+					++it2;
 
 				if(!str_comp(Entries.m_aTempWar, pName))
 					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp War List", pName);
@@ -162,7 +162,7 @@ void CAiodob::UnTempWar(const char *pName, char *pReason)
 	GameClient()->aMessage(aBuf);
 }
 
-void CAiodob::TempHelper(const char *pName, char *pReason)
+void CAiodob::TempHelper(const char *pName)
 {
 	CTempEntry Entry("", pName, "");
 	str_copy(Entry.m_aTempHelper, pName);
@@ -173,7 +173,7 @@ void CAiodob::TempHelper(const char *pName, char *pReason)
 	m_TempEntries.push_back(Entry);
 }
 
-void CAiodob::UnTempHelper(const char *pName, char *pReason)
+void CAiodob::UnTempHelper(const char *pName)
 {
 	if(str_comp(pName, "") == 0)
 		return;
@@ -187,14 +187,14 @@ void CAiodob::UnTempHelper(const char *pName, char *pReason)
 	{
 		for(CTempEntry &Entries : m_TempEntries)
 		{
-			for(auto it = m_TempEntries.begin(); it != m_TempEntries.end();)
+			for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
 			{
-				bool IsDuplicate = !str_comp(it->m_aTempHelper, pName);
+				bool IsDuplicate = !str_comp(it2->m_aTempHelper, pName);
 
 				if(IsDuplicate)
-					it = m_TempEntries.erase(it);
+					it2 = m_TempEntries.erase(it2);
 				else
-					++it;
+					++it2;
 
 				if(!str_comp(Entries.m_aTempHelper, pName))
 					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Helper List", pName);
@@ -204,7 +204,7 @@ void CAiodob::UnTempHelper(const char *pName, char *pReason)
 	GameClient()->aMessage(aBuf);
 }
 
-void CAiodob::TempMute(const char *pName, char *pReason)
+void CAiodob::TempMute(const char *pName)
 {
 	CTempEntry Entry("", "", pName);
 	str_copy(Entry.m_aTempMute, pName);
@@ -215,7 +215,7 @@ void CAiodob::TempMute(const char *pName, char *pReason)
 	m_TempEntries.push_back(Entry);
 }
 
-void CAiodob::UnTempMute(const char *pName, char *pReason)
+void CAiodob::UnTempMute(const char *pName)
 {
 	if(str_comp(pName, "") == 0)
 		return;
@@ -229,14 +229,14 @@ void CAiodob::UnTempMute(const char *pName, char *pReason)
 	{
 		for(CTempEntry &Entries : m_TempEntries)
 		{
-			for(auto it = m_TempEntries.begin(); it != m_TempEntries.end();)
+			for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
 			{
-				bool IsDuplicate = !str_comp(it->m_aTempMute, pName);
+				bool IsDuplicate = !str_comp(it2->m_aTempMute, pName);
 
 				if(IsDuplicate)
-					it = m_TempEntries.erase(it);
+					it2 = m_TempEntries.erase(it2);
 				else
-					++it;
+					++it2;
 
 				if(!str_comp(Entries.m_aTempMute, pName))
 					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);

@@ -870,7 +870,7 @@ void CPlayers::RenderPlayer(
 	}
 	if(g_Config.m_ClSpecialEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
 	{
-		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients->m_Afk)
+		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
 		{
 			float a = Vel.x + Vel.y / 100;
 

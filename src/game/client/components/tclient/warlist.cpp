@@ -9,6 +9,7 @@
 #include <game/client/gameclient.h>
 
 #include "warlist.h"
+#include "../aiodob/aiodob.h"
 
 void CWarList::OnNewSnapshot()
 {
@@ -141,7 +142,6 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 		return;
 	if(WarType >= (int)m_WarTypes.size())
 		return;
-	const CGameClient::CClientData &Clients = GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(pName)];
 
 	CWarType *pWarType = m_WarTypes[WarType];
 	CWarEntry Entry(pWarType);
@@ -170,7 +170,6 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 					GameClient()->aMessage(aBuf);
 					break;
 				}
-
 			}
 		}
 	}
@@ -202,7 +201,10 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 	}
 	if(!g_Config.m_ClWarListAllowDuplicates)
 		RemoveWarEntryDuplicates(Entry.m_aName, Entry.m_aClan);
-	m_WarEntries.push_back(Entry);
+
+	AddWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_aReason, Entry.m_pWarType->m_aWarName);
+	// if(str_comp(Entry.m_aClan, "") != 0 || str_comp(Entry.m_aName, "") != 0)
+	//	m_WarEntries.push_back(Entry);
 }
 
 void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
@@ -437,7 +439,22 @@ ColorRGBA CWarList::GetClanColor(int ClientId)
 
 bool CWarList::GetAnyWar(int ClientId)
 {
+	if(ClientId < 0)
+		return false;
 	return m_WarPlayers[ClientId].IsWarClan || m_WarPlayers[ClientId].IsWarName;
+}
+
+bool CWarList::GetNameWar(int ClientId)
+{
+	if(ClientId < 0)
+		return false;
+	return m_WarPlayers[ClientId].IsWarName;
+}
+bool CWarList::GetClanWar(int ClientId)
+{
+	if(ClientId < 0)
+		return false;
+	return m_WarPlayers[ClientId].IsWarClan;
 }
 
 void CWarList::GetReason(char *pReason, int ClientId)
@@ -552,6 +569,7 @@ void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		// Imported entries don't get saved
 		if(Entry.m_Imported)
 			continue;
+
 		char aEscapeType[MAX_WARLIST_TYPE_LENGTH * 2];
 		char aEscapeName[MAX_NAME_LENGTH * 2];
 		char aEscapeClan[MAX_CLAN_LENGTH * 2];

@@ -3370,6 +3370,7 @@ void CClient::Run()
 
 	GameClient()->RenderShutdownMessage();
 	Disconnect();
+	GameClient()->OnShutdown();
 
 	if(!m_pConfigManager->Save())
 	{
@@ -3383,7 +3384,6 @@ void CClient::Run()
 	Engine()->ShutdownJobs();
 
 	GameClient()->RenderShutdownMessage();
-	GameClient()->OnShutdown();
 	delete m_pEditor;
 
 	// close sockets

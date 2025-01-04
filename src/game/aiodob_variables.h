@@ -347,7 +347,7 @@ MACRO_CONFIG_INT(ClFreezeParticleSpin, cle_freeze_particle_spin, 0, 0, 1, CFGFLA
 
 // Rainbow
 
-MACRO_CONFIG_INT(ClServerRainbow, ac_server_rainbow, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enables Rainbow Mode Server Side! (Way Slower though)")
+MACRO_CONFIG_INT(ClServerRainbow, ac_server_rainbow, 0, 0, 1, CFGFLAG_CLIENT, "Enables Rainbow Mode Server Side! (Way Slower though)")
 
 
 MACRO_CONFIG_INT(ClRainbowSpeed, ac_rainbow_speed, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
