@@ -121,11 +121,6 @@ public:
 			CreateFolder("editor", TYPE_SAVE);
 			CreateFolder("ghosts", TYPE_SAVE);
 			CreateFolder("teehistorian", TYPE_SAVE);
-
-			CreateFolder("chillerbot", TYPE_SAVE);
-			CreateFolder("chillerbot/warlist", TYPE_SAVE);
-			CreateFolder("chillerbot/term_hist", TYPE_SAVE);
-			CreateFolder("chillerbot/templist", TYPE_SAVE);
 		}
 
 		return m_NumPaths ? 0 : 1;

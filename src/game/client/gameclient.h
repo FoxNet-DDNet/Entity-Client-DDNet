@@ -487,13 +487,11 @@ public:
 		// warlist
 		bool m_IsOnAnyList;
 
-
-		bool m_IsAnyWar;
-		bool m_IsAnyTeam;
-
 		bool m_IsWar;
 		bool m_IsHelper;
 		bool m_IsTeam;
+
+		bool m_IsMute;
 
 		int m_AuthLevel;
 		bool m_Afk;

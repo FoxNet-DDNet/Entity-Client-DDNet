@@ -123,13 +123,13 @@ class CAiodob : public CComponent
 public:
 
 	void TempWar(const char *pName);
-	void UnTempWar(const char *pName);
+	void UnTempWar(const char *pName, bool Silent = false);
 
 	void TempHelper(const char *pName);
-	void UnTempHelper(const char *pName);
+	void UnTempHelper(const char *pName, bool Silent = false);
 
 	void TempMute(const char *pName);
-	void UnTempMute(const char *pName);
+	void UnTempMute(const char *pName, bool Silent = false);
 
 	void SaveSkin();
 	void RestoreSkin();

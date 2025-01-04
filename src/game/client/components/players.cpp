@@ -1520,17 +1520,7 @@ void CPlayers::OnRender()
 				}
 				// if Player is in x List, change color accordingly
 
-				if(m_pClient->m_aClients[i].m_IsHelper && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
-				{
-					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
-						aRenderInfo[i].m_CustomColoredSkin = 1;
-					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 0);
-					if(UsedDj)
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(0.7, 0.7, 0.3);
-					else
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 0);
-				}
-				else if(m_pClient->m_aClients[i].m_IsAnyWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				if(m_pClient->m_aClients[i].m_IsWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
 						aRenderInfo[i].m_CustomColoredSkin = 1;
@@ -1540,7 +1530,17 @@ void CPlayers::OnRender()
 					else
 						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 0, 0);
 				}
-				else if(m_pClient->m_aClients[i].m_IsAnyTeam && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				else if(m_pClient->m_aClients[i].m_IsHelper && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
+				{
+					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
+						aRenderInfo[i].m_CustomColoredSkin = 1;
+					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 0);
+					if(UsedDj)
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(0.7, 0.7, 0.3);
+					else
+						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 0);
+				}
+				else if(m_pClient->m_aClients[i].m_IsTeam && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
 						aRenderInfo[i].m_CustomColoredSkin = 1;

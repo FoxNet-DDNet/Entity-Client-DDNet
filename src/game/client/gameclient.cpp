@@ -1762,12 +1762,12 @@ void CGameClient::OnNewSnapshot()
 					m_Teams.SetSolo(Item.m_Id, pClient->m_Solo);
 					
 					// Warlist
-					pClient->m_IsAnyWar = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[1];
-					pClient->m_IsAnyTeam = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[2];
-
-					pClient->m_IsWar = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[1];
+					pClient->m_IsWar = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[1] || m_Aiodob.m_TempPlayers[Item.m_Id].IsTempWar;
 					pClient->m_IsTeam = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[2];
-					pClient->m_IsHelper = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[3];
+					pClient->m_IsHelper = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[3] || m_Aiodob.m_TempPlayers[Item.m_Id].IsTempHelper;
+
+					pClient->m_IsMute = m_Aiodob.m_TempPlayers[Item.m_Id].IsTempMute;
+
 
 					for(int i = 0; i < sizeof(m_WarList.m_WarTypes); ++i)
 					{

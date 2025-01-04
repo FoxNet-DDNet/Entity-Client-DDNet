@@ -11,6 +11,7 @@
 #include <base/system.h>
 #include <base/math.h>
 #include <cmath>
+#include <engine/serverbrowser.h>
 
 int CAiodob::IdWithName(const char *pName)
 {
@@ -97,7 +98,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(ClientId == 63 && !str_comp_num(m_pClient->m_aClients[ClientId].m_aName, " ", 2))
 	{
 		Get128Name(pMsg, aName);
-		// dbg_msg("chillerbot", "fixname 128 player '%s' -> '%s'", m_pClient->m_aClients[ClientId].m_aName, aName);
+		// dbg_msg("aiodob", "fixname 128 player '%s' -> '%s'", m_pClient->m_aClients[ClientId].m_aName, aName);
 	}
 	// ignore own and dummys messages
 	if(!str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName))
@@ -360,8 +361,8 @@ void CAiodob::OnConnect()
 			if(!Client.m_Active && !m_Local)
 				continue;
 
-				if((War && !TempWar) || (!War && TempWar))
-					NumberWars++;
+			if((War && !TempWar) || (!War && TempWar))
+				NumberWars++;
 		}
 
 		int NumberTeams = 0;
@@ -372,8 +373,8 @@ void CAiodob::OnConnect()
 			if(!Client.m_Active && !m_Local)
 				continue;
 
-				if(Team)
-					NumberTeams++;
+			if(Team)
+				NumberTeams++;
 		}
 
 		int NumberHelpers = 0;
@@ -385,14 +386,14 @@ void CAiodob::OnConnect()
 			if(!Client.m_Active && !m_Local)
 				continue;
 
-				if((Helper && !TempHelper) || (!Helper && TempHelper))
-					NumberHelpers++;
+			if((Helper && !TempHelper) || (!Helper && TempHelper))
+				NumberHelpers++;
 		}
 
 		int NumberMutes = 0;
 		for(auto &Client : GameClient()->m_aClients)
 		{
-			bool Mute = false;
+			//bool Mute = false;
 			bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute; // || GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[4];
 
 			if(!Client.m_Active && !m_Local)
@@ -631,7 +632,7 @@ void CAiodob::Rainbow()
 				GameClient()->SendDummyInfo(false);
 			else
 				GameClient()->SendInfo(false);
-				m_RainbowDelay = time_get() + time_freq() * 5.10;
+			m_RainbowDelay = time_get() + time_freq() * 5.10;
 		}
 	}
 }

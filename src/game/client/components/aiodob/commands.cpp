@@ -128,10 +128,10 @@ void CAiodob::TempWar(const char *pName)
 	GameClient()->aMessage(aBuf);
 
 	m_TempEntries.push_back(Entry);
-
+	UnTempHelper(pName, true);
 }
 
-void CAiodob::UnTempWar(const char *pName)
+void CAiodob::UnTempWar(const char *pName, bool Silent)
 {
 	if(str_comp(pName, "") == 0)
 		return;
@@ -159,7 +159,8 @@ void CAiodob::UnTempWar(const char *pName)
 			}
 		}
 	}
-	GameClient()->aMessage(aBuf);
+	if(!Silent)
+		GameClient()->aMessage(aBuf);
 }
 
 void CAiodob::TempHelper(const char *pName)
@@ -171,9 +172,10 @@ void CAiodob::TempHelper(const char *pName)
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Helper List", pName);
 	GameClient()->aMessage(aBuf);
 	m_TempEntries.push_back(Entry);
+	UnTempWar(pName, true);
 }
 
-void CAiodob::UnTempHelper(const char *pName)
+void CAiodob::UnTempHelper(const char *pName, bool Silent)
 {
 	if(str_comp(pName, "") == 0)
 		return;
@@ -201,7 +203,8 @@ void CAiodob::UnTempHelper(const char *pName)
 			}
 		}
 	}
-	GameClient()->aMessage(aBuf);
+	if(!Silent)
+		GameClient()->aMessage(aBuf);
 }
 
 void CAiodob::TempMute(const char *pName)
@@ -215,7 +218,7 @@ void CAiodob::TempMute(const char *pName)
 	m_TempEntries.push_back(Entry);
 }
 
-void CAiodob::UnTempMute(const char *pName)
+void CAiodob::UnTempMute(const char *pName, bool Silent)
 {
 	if(str_comp(pName, "") == 0)
 		return;
@@ -243,7 +246,8 @@ void CAiodob::UnTempMute(const char *pName)
 			}
 		}
 	}
-	GameClient()->aMessage(aBuf);
+	if(!Silent)
+		GameClient()->aMessage(aBuf);
 }
 
 void CAiodob::RestoreSkin()

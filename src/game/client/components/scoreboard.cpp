@@ -533,15 +533,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 			const CGameClient::CClientData &ClientData = GameClient()->m_aClients[pInfo->m_ClientId];
 
-			/*
-			auto IsWar = GameClient()->m_WarList.IsAnyWar(ClientData.m_aName, ClientData.m_aClan);
-			auto IsTeam = GameClient()->m_WarList.IsAnyTeam(ClientData.m_aName, ClientData.m_aClan);
-
-			auto IsHelper = GameClient()->m_WarList.IsHelperlist(ClientData.m_aName);
-			auto IsMuted = GameClient()->m_WarList.IsMutelist(ClientData.m_aName);
-			auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(ClientData.m_aClan);
-			*/
-
 			bool paused = ClientData.m_Paused || ClientData.m_Spec;
 
 			// skin
