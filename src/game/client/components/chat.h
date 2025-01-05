@@ -42,8 +42,6 @@ class CChat : public CComponent
 		bool m_Friend;
 		bool m_Paused;
 
-		bool m_IsOnList;
-
 		bool m_IsWar;
 		bool m_IsHelper;
 		bool m_IsTeam;

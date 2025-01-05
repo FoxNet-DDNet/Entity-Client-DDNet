@@ -114,7 +114,7 @@ void CFreezeKill::OnRender()
 				if(!pCharacter->m_IsInFreeze)
 					m_LastFreeze = TimeReset;
 
-				// dont kill if not touching the ground (might crash not sure yet)
+				// dont kill if not touching the ground (might crash not sure yet) - does crash
 
 				// if(pCharacter->m_IsInFreeze && !pChar->IsGrounded() && g_Config.m_ClFreezeKillGrounded)
 				//{

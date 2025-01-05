@@ -487,6 +487,18 @@ void CWarList::RemoveWarType(const char *pType)
 	}
 }
 
+int CWarList::FindWarTypeWithName(const char *pName)
+{
+	for(CWarEntry &Entry : m_WarEntries)
+	{
+		if(str_comp(pName, Entry.m_aName) == 0 && str_comp(Entry.m_aName, "") != 0)
+		{
+			return Entry.m_pWarType->m_Index;
+		}
+	}
+	return 0;
+}
+
 CWarType *CWarList::FindWarType(const char *pType)
 {
 	CWarType Type(pType);

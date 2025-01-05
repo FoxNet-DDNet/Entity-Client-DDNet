@@ -40,7 +40,7 @@ public:
 		DiscordCreateParams Params;
 		DiscordCreateParamsSetDefault(&Params);
 
-		Params.client_id = 752165779117441075; // DDNet
+		Params.client_id = 1325507236331524116; // A-Client
 		Params.flags = EDiscordCreateFlags::DiscordCreateFlags_NoRequireDiscord;
 		Params.event_data = this;
 		Params.activity_events = &m_ActivityEvents;
@@ -52,32 +52,33 @@ public:
 		}
 
 		m_pActivityManager = m_pCore->get_activity_manager(m_pCore);
-		ClearGameInfo();
+		ClearGameInfo("Started A-Client");
 		return false;
 	}
 	void Update() override
 	{
 		m_pCore->run_callbacks(m_pCore);
 	}
-	void ClearGameInfo() override
+	void ClearGameInfo(const char *pDetail) override
 	{
 		DiscordActivity Activity;
 		mem_zero(&Activity, sizeof(DiscordActivity));
-		str_copy(Activity.assets.large_image, "ddnet_logo", sizeof(Activity.assets.large_image));
-		str_copy(Activity.assets.large_text, "DDNet logo", sizeof(Activity.assets.large_text));
+		str_copy(Activity.assets.large_image, "ac_image_b_o", sizeof(Activity.assets.large_image));
+		str_copy(Activity.assets.large_text, "A-Client", sizeof(Activity.assets.large_text));
 		Activity.timestamps.start = time_timestamp();
-		str_copy(Activity.details, "Offline", sizeof(Activity.details));
+		str_copy(Activity.details, pDetail, sizeof(Activity.details));
 		m_pActivityManager->update_activity(m_pActivityManager, &Activity, 0, 0);
 	}
-	void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, bool AnnounceAddr) override
+	void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, const char *pDetail, bool ShowMap, bool AnnounceAddr) override
 	{
 		DiscordActivity Activity;
 		mem_zero(&Activity, sizeof(DiscordActivity));
-		str_copy(Activity.assets.large_image, "ddnet_logo", sizeof(Activity.assets.large_image));
-		str_copy(Activity.assets.large_text, "DDNet logo", sizeof(Activity.assets.large_text));
+		str_copy(Activity.assets.large_image, "ac_image_b", sizeof(Activity.assets.large_image));
+		str_copy(Activity.assets.large_text, "A-Client", sizeof(Activity.assets.large_text));
 		Activity.timestamps.start = time_timestamp();
-		str_copy(Activity.details, "Online", sizeof(Activity.details));
-		str_copy(Activity.state, pMapName, sizeof(Activity.state));
+		str_copy(Activity.details, pDetail, sizeof(Activity.details));
+		if(ShowMap)
+			str_copy(Activity.state, pMapName, sizeof(Activity.state));
 		m_pActivityManager->update_activity(m_pActivityManager, &Activity, 0, 0);
 	}
 };
@@ -107,8 +108,8 @@ IDiscord *CreateDiscordImpl()
 class CDiscordStub : public IDiscord
 {
 	void Update() override {}
-	void ClearGameInfo() override {}
-	void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, bool AnnounceAddr) override {}
+	void ClearGameInfo(const char *pDetail) override {}
+	void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, const char *pDetail, bool ShowMap, bool AnnounceAddr) override {}
 };
 
 IDiscord *CreateDiscord()

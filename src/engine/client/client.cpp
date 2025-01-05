@@ -431,12 +431,12 @@ void CClient::SetState(EClientState State)
 	if(State == IClient::STATE_ONLINE)
 	{
 		const bool AnnounceAddr = m_ServerBrowser.IsRegistered(ServerAddress());
-		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, AnnounceAddr);
+		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, AnnounceAddr);
 		Steam()->SetGameInfo(ServerAddress(), m_aCurrentMap, AnnounceAddr);
 	}
 	else if(OldState == IClient::STATE_ONLINE)
 	{
-		Discord()->ClearGameInfo();
+		Discord()->ClearGameInfo(g_Config.m_ClDiscordOnlineStatus);
 		Steam()->ClearGameInfo();
 	}
 }

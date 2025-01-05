@@ -1767,13 +1767,6 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_IsHelper = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[3] || m_Aiodob.m_TempPlayers[Item.m_Id].IsTempHelper;
 
 					pClient->m_IsMute = m_Aiodob.m_TempPlayers[Item.m_Id].IsTempMute || m_WarList.m_WarPlayers[Item.m_Id].IsMuted;
-
-
-					for(int i = 0; i < sizeof(m_WarList.m_WarTypes); ++i)
-					{
-						pClient->m_IsOnAnyList = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[i];
-					}
-					
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_SPECCHAR)

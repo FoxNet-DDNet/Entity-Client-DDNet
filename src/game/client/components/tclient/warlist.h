@@ -211,6 +211,7 @@ public:
 
 	void RemoveWarEntry(const char *pName, const char *pClan, const char *pType);
 	void RemoveWarType(const char *pType);
+	int FindWarTypeWithName(const char *pName);
 	void RemoveWarEntryDuplicates(const char *pName, const char *pClan);
 
 	void RemoveWarEntry(CWarEntry *Entry);
