@@ -652,69 +652,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowIdsChat, ("Client Ids in Chat"), &g_Config.m_ClShowIdsChat, &ChatSettings, LineSize);
 
-					/*
-					// enemy prefix
-
-					ChatSettings.HSplitTop(2.0f, &Button, &ChatSettings);
-					{
-						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
-
-						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
-						Button.VSplitLeft(85.0f, &Button, 0);
-
-						static CLineInput s_PrefixMsg;
-						s_PrefixMsg.SetBuffer(g_Config.m_ClEnemyPrefix, sizeof(g_Config.m_ClEnemyPrefix));
-						s_PrefixMsg.SetEmptyText("alt + num4");
-						if(DoButton_CheckBox(&g_Config.m_ClChatEnemyPrefix, "Enemy Prefix", g_Config.m_ClChatEnemyPrefix, &ChatSettings))
-						{
-							g_Config.m_ClChatEnemyPrefix ^= 1;
-						}
-						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
-					}
-
-					// helper prefix
-
-					ChatSettings.HSplitTop(21.0f, &Button, &ChatSettings);
-					{
-						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
-
-						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
-						Button.VSplitLeft(85.0f, &Button, 0);
-
-						static CLineInput s_PrefixMsg;
-						s_PrefixMsg.SetBuffer(g_Config.m_ClHelperPrefix, sizeof(g_Config.m_ClHelperPrefix));
-						s_PrefixMsg.SetEmptyText("alt + num4");
-						if(DoButton_CheckBox(&g_Config.m_ClChatHelperPrefix, "Helper Prefix", g_Config.m_ClChatHelperPrefix, &ChatSettings))
-						{
-							g_Config.m_ClChatHelperPrefix ^= 1;
-						}
-						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
-					}
-
-					// teammate prefix
-
-					ChatSettings.HSplitTop(21.0f, &Button, &ChatSettings);
-					{
-						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
-
-						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
-						Button.VSplitLeft(85.0f, &Button, 0);
-
-						static CLineInput s_PrefixMsg;
-						s_PrefixMsg.SetBuffer(g_Config.m_ClTeammatePrefix, sizeof(g_Config.m_ClTeammatePrefix));
-						s_PrefixMsg.SetEmptyText("alt + num4");
-						if(DoButton_CheckBox(&g_Config.m_ClChatTeammatePrefix, "Teammate Prefix", g_Config.m_ClChatTeammatePrefix, &ChatSettings))
-						{
-							g_Config.m_ClChatTeammatePrefix ^= 1;
-						}
-						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
-					}
-					*/
-					// friend prefix
-
 					ChatSettings.HSplitTop(21.0f, &Button, &ChatSettings);
 
 					{
