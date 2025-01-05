@@ -1829,6 +1829,13 @@ void CMenus::RenderSettingsSound(CUIRect MainView)
 		g_Config.m_SndChat ^= 1;
 
 	MainView.HSplitTop(20.0f, &Button, &MainView);
+	if(DoButton_CheckBox(&g_Config.m_SndFriendChat, ("Do Chat Sound For Friends Only"), g_Config.m_SndFriendChat, &Button))
+	{
+		g_Config.m_SndChat = 0;
+		g_Config.m_SndFriendChat ^= 0;
+	}
+
+	MainView.HSplitTop(20.0f, &Button, &MainView);
 	if(DoButton_CheckBox(&g_Config.m_SndTeamChat, Localize("Enable team chat sound"), g_Config.m_SndTeamChat, &Button))
 		g_Config.m_SndTeamChat ^= 1;
 

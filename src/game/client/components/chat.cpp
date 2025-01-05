@@ -972,8 +972,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						strcpy(CharOname, oName.c_str());
 						char aBuf[512];
 
-						int Id = GameClient()->m_Aiodob.IdWithName(CharOname);
-
 						if(GameClient()->m_WarList.FindWarTypeWithName(name) == 2)
 						{
 							str_format(aBuf, sizeof(aBuf), "%s changed their name to a Teammates [%s]", CharOname, name);
@@ -1078,10 +1076,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 							int NameToJoin = str_comp(g_Config.m_ClAutoNotifyName, PlayerName);
 							if(NameToJoin == 0)
 							{
-								m_pClient->m_Chat.AddLine(-3, 0, g_Config.m_ClAutoNotifyMsg);
+								GameClient()->aMessage(g_Config.m_ClAutoNotifyMsg);
 
-								if(g_Config.m_ClAutoNotifySound)
-									m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 1.0f);
+								m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 1.0f);
 							}
 						}
 					}

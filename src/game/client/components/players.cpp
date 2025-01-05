@@ -413,7 +413,7 @@ void CPlayers::RenderHook(
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_SpriteHookHead);
 		Graphics()->QuadsSetRotation(angle(Dir) + pi);
 		// render head
-		int QuadOffset = NUM_WEAPONS * (g_Config.m_ClHookSizeX + 2) + (g_Config.m_ClHookSizeY + 2);
+		int QuadOffset = NUM_WEAPONS * 2 + 2;
 		
 		if(g_Config.m_ClRainbowHook == 0 || g_Config.m_ClRainbowHookOthers == 0)
 		{
@@ -492,7 +492,7 @@ void CPlayers::RenderPlayer(
 		Alpha = g_Config.m_ClRaceGhostAlpha / 100.0f;
 
 	// set size
-	RenderInfo.m_Size = g_Config.m_ClTeeSize + 64;
+	RenderInfo.m_Size = 64;
 
 	float IntraTick = Intra;
 	if(ClientId >= 0)
@@ -549,8 +549,8 @@ void CPlayers::RenderPlayer(
 	bool Inactive = ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_Afk || m_pClient->m_aClients[ClientId].m_Paused);
 
 	// evaluate animation
-	float WalkTime = std::fmod(Position.x, (g_Config.m_ClTeeWalkRuntime + 100.0f)) / 100.0f;
-	float RunTime = std::fmod(Position.x, (g_Config.m_ClTeeWalkRuntime + 200.0f)) / 200.0f;
+	float WalkTime = std::fmod(Position.x,	100.0f) / 100.0f;
+	float RunTime = std::fmod(Position.x, 200.0f) / 200.0f;
 
 	// Don't do a moon walk outside the left border
 	if(WalkTime < 0)
@@ -562,12 +562,12 @@ void CPlayers::RenderPlayer(
 	State.Set(&g_pData->m_aAnimations[ANIM_BASE], 0);
 
 	if(InAir)
-		State.Add(&g_pData->m_aAnimations[ANIM_INAIR], 0, (g_Config.m_ClTeeFeetInAir + 1.0f)); // TODO: some sort of time here
+		State.Add(&g_pData->m_aAnimations[ANIM_INAIR], 0, 1.0f); // TODO: some sort of time here
 	else if(Stationary)
 	{
 		if(Inactive)
 		{
-			State.Add(Direction.x < 0 ? &g_pData->m_aAnimations[ANIM_SIT_LEFT] : &g_pData->m_aAnimations[ANIM_SIT_RIGHT], 0, (g_Config.m_ClTeeSitting + 1.0f)); // TODO: some sort of time here
+			State.Add(Direction.x < 0 ? &g_pData->m_aAnimations[ANIM_SIT_LEFT] : &g_pData->m_aAnimations[ANIM_SIT_RIGHT], 0, 1.0f); // TODO: some sort of time here
 			RenderInfo.m_FeetFlipped = true;
 		}
 		else
@@ -578,7 +578,7 @@ void CPlayers::RenderPlayer(
 		if(Running)
 			State.Add(Player.m_VelX < 0 ? &g_pData->m_aAnimations[ANIM_RUN_LEFT] : &g_pData->m_aAnimations[ANIM_RUN_RIGHT], RunTime, 1.0f);
 		else
-			State.Add(&g_pData->m_aAnimations[ANIM_WALK], WalkTime, (g_Config.m_ClTeeFeetWalking + 1.0f));
+			State.Add(&g_pData->m_aAnimations[ANIM_WALK], WalkTime, 1.0f);
 	}
 
 	if(Player.m_Weapon == WEAPON_HAMMER)
@@ -642,7 +642,7 @@ void CPlayers::RenderPlayer(
 			// normal weapons
 			int CurrentWeapon = clamp(Player.m_Weapon, 0, NUM_WEAPONS - 1);
 			Graphics()->TextureSet(GameClient()->m_GameSkin.m_aSpriteWeapons[CurrentWeapon]);
-			int QuadOffset = CurrentWeapon * (g_Config.m_ClWeaponSize + 2 + (g_Config.m_ClShowWeapons * 100)) + (Direction.x < g_Config.m_ClWeaponRot ? (g_Config.m_ClWeaponRotSize2 + 1 + (g_Config.m_ClShowWeapons * 100)) : g_Config.m_ClWeaponRotSize3 + (g_Config.m_ClShowWeapons * 100));
+			int QuadOffset = CurrentWeapon * 2 + (Direction.x < 0 ? 1 : 0);
 
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 
@@ -665,9 +665,9 @@ void CPlayers::RenderPlayer(
 				if(!Inactive || LastAttackTime < m_pClient->m_aTuning[g_Config.m_ClDummy].GetWeaponFireDelay(Player.m_Weapon))
 				{
 					if(Direction.x < 0)
-						Graphics()->QuadsSetRotation(-pi / (g_Config.m_ClHammerRot + 2) - State.GetAttach()->m_Angle * pi * (g_Config.m_ClHammerDir + 2));
+						Graphics()->QuadsSetRotation(-pi / 2 - State.GetAttach()->m_Angle * pi * 2);
 					else
-						Graphics()->QuadsSetRotation(-pi / (g_Config.m_ClHammerRot + 2) + State.GetAttach()->m_Angle * pi * (g_Config.m_ClHammerDir + 2));
+						Graphics()->QuadsSetRotation(-pi / 2 + State.GetAttach()->m_Angle * pi * 2);
 				}
 				else
 					Graphics()->QuadsSetRotation(Direction.x < 0 ? 100.0f : 500.0f);
@@ -745,15 +745,15 @@ void CPlayers::RenderPlayer(
 			{
 				// TODO: should be an animation
 				Recoil = 0;
-				float a = AttackTicksPassed / (g_Config.m_ClGunReload + 5.0f);
+				float a = AttackTicksPassed / 5.0f;
 				if(a < 1)
 					Recoil = std::sin(a * pi);
-				WeaponPosition = Position + Dir * g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsetx - Dir * Recoil * (g_Config.m_ClGunRecoil - 10.0f);
+				WeaponPosition = Position + Dir * g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsetx - Dir * Recoil * 10.0f;
 				WeaponPosition.y += g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsety;
 				if(IsSit)
-					WeaponPosition.y += (g_Config.m_ClGunPosSitting + 3.0f);
+					WeaponPosition.y += 3.0f;
 				if(Player.m_Weapon == WEAPON_GUN)
-					WeaponPosition.y -= (g_Config.m_ClGunPos + 4);
+					WeaponPosition.y -= 4;
 				Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, WeaponPosition.x, WeaponPosition.y);
 			}
 
@@ -1579,13 +1579,6 @@ void CPlayers::OnRender()
 					else
 						aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 1, 0);
 				}
-				/* else if(m_pClient->m_aClients[i].m_IsWarClanmate && g_Config.m_ClAutoClanWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
-				{
-					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
-						aRenderInfo[i].m_CustomColoredSkin = 1;
-					aRenderInfo[i].m_ColorBody = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(7.0f, 0.5f, 0.2f, 1.0f);
-				}*/
 				else if(!(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 					{
 					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))

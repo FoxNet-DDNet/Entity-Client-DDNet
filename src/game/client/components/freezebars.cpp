@@ -20,9 +20,9 @@ void CFreezeBars::RenderKillBar()
 
 	int ClientId = m_pClient->m_Snap.m_LocalClientId;
 
-	const float FreezeBarWidth = (g_Config.m_ClFreezeBarWidth + 64.0f);
-	const float FreezeBarHalfWidth = (g_Config.m_ClFreezeBarX + 32.0f);
-	const float FreezeBarHight = (g_Config.m_ClFreezeBarHeight + 16.0f);
+	const float FreezeBarWidth = 64.0f;
+	const float FreezeBarHalfWidth = 32.0f;
+	const float FreezeBarHight = 16.0f;
 
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
 	CCharacterCore *pCharacter = &m_pClient->m_aClients[ClientId].m_Predicted;
@@ -43,7 +43,7 @@ void CFreezeBars::RenderKillBar()
 
 	vec2 Position = m_pClient->m_aClients[ClientId].m_RenderPos;
 	Position.x -= FreezeBarHalfWidth;
-	Position.y += (g_Config.m_ClFreezeBarY + 32);
+	Position.y += 22;
 
 	RenderFreezeBarPos(Position.x, Position.y, FreezeBarWidth, FreezeBarHight, FreezeProgress, R, G, B, 100.0f);
 }
@@ -55,9 +55,9 @@ void CFreezeBars::RenderFreezeBar(const int ClientId)
 	float B = 1.0f;
 
 
-	const float FreezeBarWidth = (g_Config.m_ClFreezeBarWidth + 64.0f);
-	const float FreezeBarHalfWidth = (g_Config.m_ClFreezeBarX + 32.0f);
-	const float FreezeBarHight = (g_Config.m_ClFreezeBarHeight + 16.0f);
+	const float FreezeBarWidth = 64.0f;
+	const float FreezeBarHalfWidth = 32.0f;
+	const float FreezeBarHight = 16.0f;
 
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
 	CCharacterCore *pCharacter = &m_pClient->m_aClients[ClientId].m_Predicted;
@@ -76,7 +76,7 @@ void CFreezeBars::RenderFreezeBar(const int ClientId)
 
 	vec2 Position = m_pClient->m_aClients[ClientId].m_RenderPos;
 	Position.x -= FreezeBarHalfWidth;
-	Position.y += (g_Config.m_ClFreezeBarY + 32);
+	Position.y += 22;
 
 	float Alpha = m_pClient->IsOtherTeam(ClientId) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
 	if(pCharacter->m_IsInFreeze)

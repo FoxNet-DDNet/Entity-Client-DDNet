@@ -617,8 +617,6 @@ protected:
 	void RenderSettingsSound(CUIRect MainView);
 	void RenderSettings(CUIRect MainView);
 	void RenderSettingsCustom(CUIRect MainView);
-	void ResetSettingsCustomization();
-	void ResetSettingsSprites();
 
 	void RenderSettingsAppearanceFont(CUIRect MainView);
 

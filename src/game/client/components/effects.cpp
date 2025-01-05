@@ -14,7 +14,6 @@
 #include <game/client/gameclient.h>
 
 #include "effects.h"
-#include <libavutil/mathematics.h>
 
 CEffects::CEffects()
 {
@@ -27,22 +26,22 @@ void CEffects::AirJump(vec2 Pos, float Alpha)
 {
 	CParticle p;
 	p.SetDefault();
-	p.m_Spr = (8 + g_Config.m_ClDjSprite);
-	p.m_Pos = Pos + vec2(-6.0f + (g_Config.m_ClDjPosX * -1), 16.0f + g_Config.m_ClDjPosY);
+	p.m_Spr = SPRITE_PART_AIRJUMP;
+	p.m_Pos = Pos + vec2(-6.0f, 16.0f);
 	p.m_Vel = vec2(0, -200);
-	p.m_LifeSpan = 0.5f + g_Config.m_ClDjLifespan;
-	p.m_StartSize = 48.0f + g_Config.m_ClDjSize;
+	p.m_LifeSpan = 0.5f;
+	p.m_StartSize = 48.0f;
 	p.m_EndSize = 0;
 	p.m_Rot = random_angle();
-	p.m_Rotspeed = pi * 2 + g_Config.m_ClDjRotSpeed;
-	p.m_Gravity = -500 + g_Config.m_ClDjGravity;
+	p.m_Rotspeed = pi * 2;
+	p.m_Gravity = 500;
 	p.m_Friction = 0.7f;
 	p.m_FlowAffected = 0.0f;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
 	m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 
-	p.m_Pos = Pos + vec2(6.0f + g_Config.m_ClDjPosX, 16.0f + g_Config.m_ClDjPosY);
+	p.m_Pos = Pos + vec2(6.0f, 16.0f);
 	m_pClient->m_Particles.Add(CParticles::GROUP_GENERAL, &p);
 
 	if(g_Config.m_SndGame)
@@ -85,9 +84,9 @@ void CEffects::FreezingFlakes(vec2 Pos, vec2 Size, float Alpha)
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SNOWFLAKE;
-	p.m_Pos = Pos + vec2(random_float(-0.5f + (g_Config.m_ClSnowflakeX * -1), 0.5f + g_Config.m_ClSnowflakeX), random_float(-0.5f + (g_Config.m_ClSnowflakeY * -1), 0.5f + g_Config.m_ClSnowflakeY)) * Size;
+	p.m_Pos = Pos + vec2(random_float(-0.5f, 0.5f), random_float(-0.5f, 0.5f)) * Size;
 	p.m_Vel = vec2(0, 0);
-	p.m_LifeSpan = 1.5f + g_Config.m_ClSnowflakeLifeSpan;
+	p.m_LifeSpan = 1.5f;
 	p.m_StartSize = random_float(0.5f, 1.5f) * 16.0f;
 	p.m_EndSize = p.m_StartSize * 0.5f;
 	p.m_UseAlphaFading = true;
@@ -95,13 +94,10 @@ void CEffects::FreezingFlakes(vec2 Pos, vec2 Size, float Alpha)
 	p.m_EndAlpha = 0.0f;
 	p.m_Rot = random_angle();
 	p.m_Rotspeed = pi;
-	p.m_Gravity = random_float(250.0f + g_Config.m_ClSnowflakeGravity);
+	p.m_Gravity = random_float(250.0f);
 	p.m_Friction = 0.9f;
 	p.m_FlowAffected = 0.0f;
-	if(g_Config.m_ClSnowflakeCollision)
-		p.m_Collides = true;
-	else
-		p.m_Collides = false;
+	p.m_Collides = false;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
 	m_pClient->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
@@ -125,7 +121,7 @@ void CEffects::FreezingFlakesCircle(vec2 Pos, vec2 Size, float Alpha)
 	p.m_EndAlpha = 0.0f;
 	p.m_Rot = random_angle();
 	p.m_Rotspeed = pi;
-	p.m_Gravity = random_float(250.0f + g_Config.m_ClSnowflakeGravity);
+	p.m_Gravity = random_float(250.0f);
 	p.m_Collides = false;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
@@ -202,11 +198,8 @@ void CEffects::BulletTrail(vec2 Pos, float Alpha, float TimePassed)
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_BALL;
 	p.m_Pos = Pos;
-	if(g_Config.m_ClBulletLifetime == 0)
-		p.m_LifeSpan = random_float(0.25f, 0.5f);
-	else
-		p.m_LifeSpan = g_Config.m_ClBulletLifetime;
-	p.m_StartSize = 8.0f + g_Config.m_ClBulletSize;
+	p.m_LifeSpan = random_float(0.25f, 0.5f);
+	p.m_StartSize = 8.0f;
 	p.m_EndSize = 0;
 	p.m_Friction = 0.7f;
 	p.m_Color.a *= Alpha;
@@ -351,8 +344,8 @@ void CEffects::Explosion(vec2 Pos, float Alpha)
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_EXPL01;
 	p.m_Pos = Pos;
-	p.m_LifeSpan = 0.4f + g_Config.m_ClGrenadeLifetime;
-	p.m_StartSize = 150.0f + +g_Config.m_ClGrenadeSize;
+	p.m_LifeSpan = 0.4f;
+	p.m_StartSize = 150.0f;
 	p.m_EndSize = 0;
 	p.m_Rot = random_angle();
 	p.m_Color.a = Alpha;
@@ -455,7 +448,7 @@ void CEffects::EffectPlayer(vec2 Pos, float Alpha)
 	p.m_LifeSpan = 0.8f;
 	p.m_StartSize = 1.0f;
 	p.m_Rot = random_angle();
-	p.m_Rotspeed = M_PI * 2;
+	p.m_Rotspeed = 6;
 	p.m_EndSize = 25.0f;
 	p.m_FlowAffected = true;
 	p.m_Vel = vec2(random_float(10.0f, 100.0f), random_float(10.0f, 100.0f));

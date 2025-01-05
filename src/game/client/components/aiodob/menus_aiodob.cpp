@@ -1,22 +1,16 @@
-#include <base/log.h>
+
 #include <base/math.h>
 #include <base/system.h>
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
-#include <engine/shared/linereader.h>
-#include <engine/shared/localization.h>
-#include <engine/shared/protocol7.h>
 #include <engine/storage.h>
 #include <engine/textrender.h>
-#include <engine/updater.h>
 
 #include <game/generated/protocol.h>
 
 #include <game/client/animstate.h>
 #include <game/client/components/chat.h>
-#include <game/client/components/menu_background.h>
-#include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/skin.h>
@@ -30,10 +24,6 @@
 #include <game/client/components/menus.h>
 #include <game/client/components/skins.h>
 
-#include <array>
-#include <chrono>
-#include <memory>
-#include <numeric>
 #include <string>
 #include <vector>
 
@@ -1076,7 +1066,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						}
 
 						SetLineSkin(1, GameClient()->m_Skins.Find("pinky"));
-						SetLineSkin(2, GameClient()->m_Skins.Find("-Baby_Dou_KZ-"));
+						SetLineSkin(2, GameClient()->m_Skins.Find("default_flower"));
 						SetLineSkin(3, GameClient()->m_Skins.Find("cammostripes"));
 						SetLineSkin(4, GameClient()->m_Skins.Find("beast"));
 						SetLineSkin(5, GameClient()->m_Skins.Find("default"));
@@ -1190,9 +1180,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			UiSettings.VMargin(5.0f, &UiSettings);
 			if(g_Config.m_ClFpsSpoofer)
-				UiSettings.HSplitTop(160.0f, &UiSettings, &SoundSettings);
+				UiSettings.HSplitTop(160.0f, &UiSettings, &WarVisual);
 			else
-				UiSettings.HSplitTop(125.0f, &UiSettings, &SoundSettings);
+				UiSettings.HSplitTop(125.0f, &UiSettings, &WarVisual);
 			if(s_ScrollRegion.AddRect(UiSettings))
 			{
 				UiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1205,7 +1195,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoScrollbarOption(&g_Config.m_ClCornerRoundness, &g_Config.m_ClCornerRoundness, &Button, Localize("How round Corners should be"), 0, 150, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
 
 				static CButtonContainer s_UiColor;
-				// DoLine_ColorPicker(&s_UiColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &FriendSettings, Localize("Foe (war?) Name Color (old)"), &g_Config.m_AiodobColor, ColorRGBA(1.0f, 1.0f, 1.0f, 0.10f), true);
 
 				DoLine_ColorPicker(&s_UiColor, 25.0f, 13.0f, 2.0f, &UiSettings, Localize("Background Color"), &g_Config.m_AiodobColor, color_cast<ColorRGBA>(ColorHSLA(654311494, true)), false, nullptr, true);
 
@@ -1219,36 +1208,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		}
 
 		{
-			SoundSettings.HSplitTop(Margin, nullptr, &SoundSettings);
-			SoundSettings.HSplitTop(90.0f, &SoundSettings, &WarVisual);
-			if(s_ScrollRegion.AddRect(SoundSettings))
-			{
-				SoundSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				SoundSettings.VMargin(Margin, &SoundSettings);
-
-				SoundSettings.HSplitTop(HeaderHeight, &Button, &SoundSettings);
-				Ui()->DoLabel(&Button, Localize("Sound Settings"), FontSize, TEXTALIGN_MC);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_SndFriendChat, ("Do Chat Sound For Friends Only"), &g_Config.m_SndFriendChat, &SoundSettings, LineMargin);
-				if(g_Config.m_SndFriendChat)
-				{
-					g_Config.m_SndChat = 0;
-				}
-
-				if(g_Config.m_ClNotifyOnJoin)
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoNotifySound, ("Do 'Notify on Player Join' Sound Effect"), &g_Config.m_ClAutoNotifySound, &SoundSettings, LineMargin);
-			}
-		}
-
-		{
 			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
 			if(g_Config.m_ClSweatMode)
 				if(g_Config.m_ClSweatModeSkin)
-					WarVisual.HSplitTop(185.0f, &WarVisual, &GoresModeSettings);
+					WarVisual.HSplitTop(165.0f, &WarVisual, &GoresModeSettings);
 				else
-					WarVisual.HSplitTop(145.0f, &WarVisual, &GoresModeSettings);
+					WarVisual.HSplitTop(125.0f, &WarVisual, &GoresModeSettings);
 			else
-				WarVisual.HSplitTop(125.0f, &WarVisual, &GoresModeSettings);
+				WarVisual.HSplitTop(105.0f, &WarVisual, &GoresModeSettings);
 			if(s_ScrollRegion.AddRect(WarVisual))
 			{
 				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1258,8 +1225,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Extra Warlist Settings"), FontSize, TEXTALIGN_MC);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistConsoleColors, ("Show Colors in Console"), &g_Config.m_ClWarlistConsoleColors, &WarVisual, LineMargin);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoClanWar, ("Make Clanmates of Enemies Also Have a Red-Ish Color"), &g_Config.m_ClAutoClanWar, &WarVisual, LineMargin);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoAddOnNameChange, Localize("Auto Add to Lists on Name Change"), &g_Config.m_ClAutoAddOnNameChange, &WarVisual, LineSize);
 
@@ -1944,7 +1909,6 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		EntryRect.VSplitLeft(35.0f, &EntryTypeRect, &EntryRect);
 
 		if(IsClan)
-
 		{
 			RenderFontIcon(EntryTypeRect, FONT_ICON_USERS, 18.0f, TEXTALIGN_MC);
 		}
@@ -2273,59 +2237,6 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, 0, vec2(1.0f, 0.0f), TeeRect.Center() + vec2(-1.0f, 2.5f));
 	}
 	s_PlayerListBox.DoEnd();
-}
-
-
-void CMenus::ResetSettingsCustomization()
-{
-	g_Config.m_ClFreezeBarWidth = 0;
-	g_Config.m_ClFreezeBarHeight = 0;
-	g_Config.m_ClFreezeBarX = 0;
-	g_Config.m_ClFreezeBarY = 0;
-}
-
-void CMenus::ResetSettingsSprites()
-{
-	g_Config.m_ClSnowflakeGravity = 0;
-	g_Config.m_ClSnowflakeLifeSpan = 0;
-	g_Config.m_ClSnowflakeCollision = 0;
-	g_Config.m_ClSnowflakeX = 0;
-	g_Config.m_ClSnowflakeY = 0;
-
-	g_Config.m_ClDjSize = 0;
-	g_Config.m_ClDjGravity = 0;
-	g_Config.m_ClDjLifespan = 0;
-	g_Config.m_ClDjRotSpeed = 0;
-	g_Config.m_ClDjSprite = 0;
-	g_Config.m_ClDjPosX = 0;
-	g_Config.m_ClDjPosY = 0;
-
-	g_Config.m_ClFreezeBarWidth = 0;
-	g_Config.m_ClFreezeBarHeight = 0;
-	g_Config.m_ClFreezeBarX = 0;
-	g_Config.m_ClFreezeBarY = 0;
-
-	g_Config.m_ClGunSprite = 0;
-	g_Config.m_ClSpriteGunFire = 0;
-	g_Config.m_ClNoSpriteGunFire = 0;
-
-	g_Config.m_ClHammerSprite = 0;
-	g_Config.m_ClShotgunSprite = 0;
-	g_Config.m_ClLaserSprite = 0;
-	g_Config.m_ClGrenadeSprite = 0;
-	g_Config.m_ClNinjaSprite = 0;
-
-	g_Config.m_ClGunCursorSprite = 0;
-	g_Config.m_ClHammerCursorSprite = 0;
-	g_Config.m_ClShotgunCursorSprite = 0;
-	g_Config.m_ClLaserCursorSprite = 0;
-	g_Config.m_ClGrenadeCursorSprite = 0;
-	g_Config.m_ClNinjaCursorSprite = 0;
-
-	g_Config.m_ClHookChainSprite = 0;
-	g_Config.m_ClHookHeadSprite = 0;
-
-	GameClient()->LoadGameSkin(g_Config.m_ClAssetGame);
 }
 
 void CMenus::RenderSettingsProfiles(CUIRect MainView)

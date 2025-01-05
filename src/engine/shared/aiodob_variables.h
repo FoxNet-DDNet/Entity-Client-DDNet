@@ -180,7 +180,6 @@ MACRO_CONFIG_INT(ClOldNameplateIds, ac_old_nameplate_ids, 0, 0, 1, CFGFLAG_CLIEN
 MACRO_CONFIG_INT(ClStrongWeakColorId, ac_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
 
 MACRO_CONFIG_INT(ClDoAfkColors, ac_do_afk_colors, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Makes Names Darker in Scoreboard if Player is afk")
-MACRO_CONFIG_INT(ClAutoClanWar, ac_auto_clan_war, 1, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Automatically displays a name in a color if you have a player as an enemy in the same clan")
 MACRO_CONFIG_INT(ClScoreSpecPlayer, ac_do_score_spec_tee, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes The Tee in The Scoreboard to a Spectating Tee if The Player is Spectating")
 
 
@@ -238,9 +237,7 @@ MACRO_CONFIG_COL(ClSavedDummyColorBody, saved_dummy_color_body, 65408, CFGFLAG_C
 MACRO_CONFIG_COL(ClSavedDummyColorFeet, saved_dummy_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for !restore")
 MACRO_CONFIG_STR(ClSavedDummySkin, saved_dummy_skin, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !restore")
 
-MACRO_CONFIG_INT(ClAutoJoinTest, ac_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
-
-MACRO_CONFIG_INT(ClTest, ac_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
+MACRO_CONFIG_INT(ClAutoJoinTest, ac_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
 
 // Discord
 
@@ -261,7 +258,6 @@ MACRO_CONFIG_INT(ClSpecMenuPrefixes, ac_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClNotifyOnJoin, ac_auto_notify_on_join, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notifies you if a player joined")
 MACRO_CONFIG_STR(ClAutoNotifyName, ac_auto_notify_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
 MACRO_CONFIG_STR(ClAutoNotifyMsg, ac_auto_notify_msg, 256, "Your Fav Person Has Joined!", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What to Auto Whisper Them")
-MACRO_CONFIG_INT(ClAutoNotifySound, ac_auto_notify_sound, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Plays a Sound When The Player Joins")
 
 MACRO_CONFIG_INT(ClAutoJoinTeam, ac_auto_join_team, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Joins that players team if they join one")
 MACRO_CONFIG_STR(ClAutoJoinTeamName, ac_auto_join_team_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
@@ -287,6 +283,7 @@ MACRO_CONFIG_INT(ClFreezeDontKillMoving, ac_freeze_dont_kill_moving, 1, 0, 1, CF
 MACRO_CONFIG_INT(ClFreezeKillDebug, ac_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "debug")
 
 // Ui
+MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something")
 MACRO_CONFIG_INT(ClCornerRoundness, ac_corner_roundness, 50, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How round corners are in scrollable menus")
 MACRO_CONFIG_INT(ClFpsSpoofer, ac_fps_spoofer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spoof Da Fps counter")
 MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fps Spoofer Percentage")
@@ -360,114 +357,6 @@ MACRO_CONFIG_INT(ClRainbowOthers, ac_rainbow_others, 0, 0, 1, CFGFLAG_CLIENT | C
 MACRO_CONFIG_INT(ClRainbow, ac_rainbow, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Rainbow mode Client Side")
 
 MACRO_CONFIG_INT(ClSmallSkins, cle_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
-
-
-// Not in Settings Menu
-
-MACRO_CONFIG_INT(ClTeeSize, cle_tee_size, 0, -5640, 4360, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Size of tees")
-MACRO_CONFIG_INT(ClTeeWalkRuntime, cle_tee_walkruntime, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "weird animations?? walk/run -time")
-MACRO_CONFIG_INT(ClTeeFeetInAir, cle_tee_feet_inair, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How far the feet are apart in the air")
-MACRO_CONFIG_INT(ClTeeSitting, cle_tee_sitting, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What the tee looks like while sitting (spectating, afk)")
-MACRO_CONFIG_INT(ClTeeFeetWalking, cle_tee_feet_walking, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Feet while walking")
-
-// Hook
-
-MACRO_CONFIG_INT(ClHookSizeX, cle_hook_size_y, 0, -2, 4360, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hook size x")
-MACRO_CONFIG_INT(ClHookSizeY, cle_hook_size_x, 0, -2, 4360, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hook size y")
-
-// Weapons
-
-MACRO_CONFIG_INT(ClShowWeapons, cle_show_weapons, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Weapon Size")
-
-MACRO_CONFIG_INT(ClWeaponSize, cle_weapon_size, 0, -2, 200, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Weapon Size")
-MACRO_CONFIG_INT(ClWeaponRot, cle_weapon_rot, 0, 0, 200, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Weapon Rotation?")
-MACRO_CONFIG_INT(ClWeaponRotSize2, cle_weapon_rot_size2, 0, -1, 200, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Some size? i think when looking left")
-MACRO_CONFIG_INT(ClWeaponRotSize3, cle_weapon_rot_size3, 0, -1, 200, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Some size? i think when looking right")
-
-// Hammer
-
-MACRO_CONFIG_INT(ClHammerDir, cle_hammer_dir, 0, -4800, 5200, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hammer Direction")
-MACRO_CONFIG_INT(ClHammerRot, cle_hammer_rot, 0, -4800, 5200, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hammer Rotation")
-
-// Gun
-
-MACRO_CONFIG_INT(ClGunPosSitting, cle_gun_pos_sitting, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Gun Position while sitting")
-MACRO_CONFIG_INT(ClGunPos, cle_gun_pos, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Gun Position")
-MACRO_CONFIG_INT(ClGunReload, cle_gun_reload, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Gun Reload animation")
-MACRO_CONFIG_INT(ClGunRecoil, cle_gun_recoil, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "how far the gun recoil animation goes")
-	// Bullet
-	MACRO_CONFIG_INT(ClBulletLifetime, cle_bullet_lifetime, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bullet trail Lifetime")
-	MACRO_CONFIG_INT(ClBulletSize, cle_bullet_size, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bullet trail Size")
-
-// Grenade
-
-MACRO_CONFIG_INT(ClGrenadeLifetime, cle_grenade_lifetime, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Grenade Lifetime")
-MACRO_CONFIG_INT(ClGrenadeSize, cle_grenade_size, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Grenade  Size")
-
-// Freeze Bar
-
-MACRO_CONFIG_INT(ClFreezeBarWidth, cle_freezebar_width, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Freeze Bar Width")
-MACRO_CONFIG_INT(ClFreezeBarHeight, cle_freezebar_height, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Freeze Bar Height")
-
-MACRO_CONFIG_INT(ClFreezeBarX, cle_freezebar_x, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Freeze Bar X")
-MACRO_CONFIG_INT(ClFreezeBarY, cle_freezebar_y, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Freeze Bar Y")
-
-// unused
-
-MACRO_CONFIG_INT(ClSnowflakeRandomSize, cle_snowflake_random_size, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes Snowflakes random size")
-MACRO_CONFIG_INT(ClSnowflakeSize, cle_snowflake_size, 0, 5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes Snowflake Size")
-
-// Double Jump
-
-MACRO_CONFIG_INT(ClDjSprite, cle_dj_sprite, 0, -8, 130, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes Sprites")
-
-MACRO_CONFIG_INT(ClDjPosX, cle_dj_pos_x, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Where Dj Spawns on The x Axis <->")
-MACRO_CONFIG_INT(ClDjPosY, cle_dj_pos_y, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "where Dj Spawns on The y Axis")
-MACRO_CONFIG_INT(ClDjLifespan, cle_dj_lifespan, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dj Sprite Lifespan")
-MACRO_CONFIG_INT(ClDjSize, cle_dj_size, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dj Sprite Size")
-MACRO_CONFIG_INT(ClDjGravity, cle_dj_gravity, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dj Sprite Gravity")
-MACRO_CONFIG_INT(ClDjRotSpeed, cle_dj_rot_speed, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dj Sprite Gravity")
-
-// snowflake
-
-MACRO_CONFIG_INT(ClSnowflakeLifeSpan, cle_snowflake_lifespan, 0, -2, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Lifespan")
-MACRO_CONFIG_INT(ClSnowflakeGravity, cle_snowflake_gravity, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes Snowflake Gravity")
-MACRO_CONFIG_INT(ClSnowflakeCollision, cle_snowflake_collision, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let Snowflakes Collide With Floor?")
-
-MACRO_CONFIG_INT(ClSnowflakeX, cle_snowflake_x, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Where Snowflakes Spawn on The x Axis <->")
-MACRO_CONFIG_INT(ClSnowflakeY, cle_snowflake_y, 0, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "where Snowflakes Spawn on The y Axis")
-
-
-// auto reload sprites
-
-MACRO_CONFIG_INT(ClAutoReloadSprite, cle_sprite_auto_reload, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If Sprites Auto Reload")
-
-// Weapon Sprites
-MACRO_CONFIG_INT(ClGunSprite, cle_gun_sprite, 0, -26, 112, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Gun Uses")
-MACRO_CONFIG_INT(ClHammerSprite, cle_hammer_sprite, 0, -41, 97, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Hammer Uses")
-MACRO_CONFIG_INT(ClGrenadeSprite, cle_grenade_sprite, 0, -38, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Grenade Uses")
-MACRO_CONFIG_INT(ClShotgunSprite, cle_shotgun_sprite, 0, -32, 106, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Shotgun Uses")
-MACRO_CONFIG_INT(ClLaserSprite, cle_laser_sprite, 0, -47, 91, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Laser Uses")
-MACRO_CONFIG_INT(ClNinjaSprite, cle_ninja_sprite, 0, -44, 94, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Ninja Uses")
-
-// Cursor Sprites
-MACRO_CONFIG_INT(ClGunCursorSprite, cle_gun_cursor_sprite, 0, -27, 111, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Gun Cursor Uses")
-MACRO_CONFIG_INT(ClHammerCursorSprite, cle_hammer_cursor_sprite, 0, -42, 96, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Hammer Cursor Uses")
-MACRO_CONFIG_INT(ClGrenadeCursorSprite, cle_grenade_cursor_sprite, 0, -39, 99, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Grenade Cursor Uses")
-MACRO_CONFIG_INT(ClShotgunCursorSprite, cle_shotgun_cursor_sprite, 0, -33, 105, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Shotgun Uses")
-MACRO_CONFIG_INT(ClLaserCursorSprite, cle_laser_cursor_sprite, 0, -48, 90, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Laser Cursor Uses")
-MACRO_CONFIG_INT(ClNinjaCursorSprite, cle_ninja_cursor_sprite, 0, -45, 93, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite Ninja Cursor Uses")
-
-// gun fire sprite
-MACRO_CONFIG_INT(ClSpriteGunFire, cle_sprite_gun_fire, 0, -29, 106, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite The Gun Fire Uses")
-MACRO_CONFIG_INT(ClNoSpriteGunFire, cle_sprite_no_gun_fire, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn Off The Gun Fire Sprite")
-
-// hook sprites
-MACRO_CONFIG_INT(ClHookChainSprite, cle_sprite_hook_chain, 0, -50, 88, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite The Gun Fire Uses")
-MACRO_CONFIG_INT(ClHookHeadSprite, cle_sprite_hook_head, 0, -51, 87, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Sprite The Gun Fire Uses")
-
-MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something")
-
 
 // Custom Vairiables from My Server for the editor
 // ignore these you cant do anything with them except if you make ur own version on a server
