@@ -530,7 +530,7 @@ void CSpectator::OnRender()
 				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
 					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(ClientId).WithAlpha(Alpha));
 				else if(m_pClient->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuColors)
-					ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha));
+					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 				else
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, PlayerSelected ? 1.0f : 0.5f);
 				TeeAlpha = 1.0f;
