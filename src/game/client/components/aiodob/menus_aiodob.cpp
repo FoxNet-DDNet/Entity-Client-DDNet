@@ -64,7 +64,6 @@ static float s_Time = 0.0f;
 static bool s_StartedTime = false;
 
 const float FontSize = 14.0f;
-const float EditBoxFontSize = 12.0f;
 const float LineSize = 20.0f;
 const float HeadlineFontSize = 20.0f;
 const float StandardFontSize = 14.0f;
@@ -74,7 +73,6 @@ const float Margin = 10.0f;
 const float MarginSmall = 5.0f;
 const float MarginExtraSmall = 2.5f;
 const float MarginBetweenSections = 30.0f;
-const float MarginBetweenViews = 30.0f;
 
 const float HeadlineHeight = HeadlineFontSize + 0.0f;
 

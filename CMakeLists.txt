@@ -2067,6 +2067,7 @@ set_src(ENGINE_INTERFACE GLOB src/engine
   warning.h
 )
 set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
+  aiodob_variables.h
   assertion_logger.cpp
   assertion_logger.h
   compression.cpp
@@ -2161,7 +2162,6 @@ set_src(ENGINE_GFX GLOB src/engine/gfx
   image_manipulation.h
 )
 set_src(GAME_SHARED GLOB src/game
-  aiodob_variables.h
   alloc.h
   collision.cpp
   collision.h

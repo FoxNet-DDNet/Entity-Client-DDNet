@@ -111,7 +111,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
 		return;
 
-	if((g_Config.m_ClReplyMuted && GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempMute)) // || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
+	if(g_Config.m_ClReplyMuted && GameClient()->m_aClients[ClientId].m_IsMute) // || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
@@ -131,7 +131,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 			GameClient()->m_Chat.SendChat(0, Text);
 		}
 	}
-	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempMute)
+	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_aClients[ClientId].m_IsMute)
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
@@ -393,14 +393,13 @@ void CAiodob::OnConnect()
 		int NumberMutes = 0;
 		for(auto &Client : GameClient()->m_aClients)
 		{
-			//bool Mute = false;
-			bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute; // || GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[4];
+			bool Mute = GameClient()->m_aClients[IdWithName(Client.m_aName)].m_Foe;
+			bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute;
 
 			if(!Client.m_Active && !m_Local)
 				continue;
 
-				//if((Mute && !TempMute) || (!Mute && TempMute))
-			if(TempMute)
+			if((Mute && !TempMute) || (!Mute && TempMute))
 				NumberMutes++;
 		}
 		str_format(aBuf, sizeof(aBuf), "│ %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);

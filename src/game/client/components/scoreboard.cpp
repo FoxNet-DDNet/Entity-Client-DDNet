@@ -577,30 +577,40 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClAuthedPlayerColor)));
 				}
-				if((1 == 2 || GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempMute))
-				{
-					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
-					if(pInfo->m_ClientId >= 10)
-						TextRender()->TextEx(&Cursor, "     ");
-					else if(NumPlayers >= 10)
-						TextRender()->TextEx(&Cursor, "   ");
-					else
-						TextRender()->TextEx(&Cursor, "     ");
-					
-					Graphics()->BlendNormal();
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
-					Graphics()->QuadsBegin();
-					Graphics()->SetColor(Color);
-					IGraphics::CQuadItem QuadItem(NameOffset + 5, Row.y + IconRowY , IconSize, IconSize);
-					Graphics()->QuadsDrawTL(&QuadItem, 2);
-					Graphics()->QuadsEnd();
-
-				}
 				if(g_Config.m_ClShowIds)
 				{
 					char aClientId[16];
 					GameClient()->FormatClientId(pInfo->m_ClientId, aClientId, EClientIdFormat::INDENT_AUTO);
 					TextRender()->TextEx(&Cursor, aClientId);
+				}
+				if(GameClient()->m_aClients[pInfo->m_ClientId].m_IsMute)
+				{
+					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
+					int IdOffset = 5;
+					
+					if(g_Config.m_ClShowIds)
+					{
+						if(pInfo->m_ClientId >= 10)
+						{
+							IdOffset = 47;
+							TextRender()->TextEx(&Cursor, "     ");
+						}
+						else
+						{
+							IdOffset = 33;
+							TextRender()->TextEx(&Cursor, "     ");
+						}
+					}
+					else
+						TextRender()->TextEx(&Cursor, "     ");
+
+					Graphics()->BlendNormal();
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
+					Graphics()->QuadsBegin();
+					Graphics()->SetColor(Color);
+					IGraphics::CQuadItem QuadItem(NameOffset + IdOffset, Row.y + IconRowY, IconSize, IconSize);
+					Graphics()->QuadsDrawTL(&QuadItem, 2);
+					Graphics()->QuadsEnd();
 				}
 				if(g_Config.m_ClScoreSpecPrefix && paused)
 				{
@@ -609,46 +619,27 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					TextRender()->TextEx(&Cursor, pSpecMark);
 
 				}
-				/*
-				if(m_pClient->m_Menus.IsActive())
-				{
-					const char *pSpecMark = "≡ ";
-					TextRender()->TextColor(0.1f, 1.0f, 0.1f, TextColor.a);
-					TextRender()->TextEx(&Cursor, pSpecMark);
-				}
-				*/
 
-				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-				{
-					TextRender()->TextColor(1.f, 1.f, 1.f, 0.4f);
-				}
-				if(g_Config.m_ClDoFriendColorScore && ClientData.m_Friend)
-				{
-					ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-					if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-						TextRender()->TextColor(rgb.WithAlpha(0.4f));
-					else
-						TextRender()->TextColor(rgb.WithAlpha(1.0f));
-
-				} 
 				float Alpha = 1.0f;
 				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
 					Alpha = 0.4f;
 
-				
-				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard && GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
-					TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId).WithAlpha(Alpha));
-
-				for(int j = 0; j < MAX_CLIENTS; j++)
+				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)
 				{
-					if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)
-					{
-						if(GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempWar)
-							TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Alpha));
-						else if(GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempHelper)
-							TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Alpha));
-					}
+					if(GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempWar)
+						TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Alpha));
+					else if(GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempHelper)
+						TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Alpha));
+					else if(GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
+						TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId).WithAlpha(Alpha));
+					else if(g_Config.m_ClDoFriendColorScore && ClientData.m_Friend)
+						TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 				}
+				else if(g_Config.m_ClDoFriendColorScore && ClientData.m_Friend)
+					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
+				else
+					TextRender()->TextColor(1.f, 1.f, 1.f, Alpha);
+
 				
 
 
@@ -664,9 +655,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 			// clan
 			{
-
-
-
 				if(!str_comp(ClientData.m_aClan, GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_aClan))
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSameClanColor)));
 				else

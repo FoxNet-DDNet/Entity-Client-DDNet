@@ -49,12 +49,6 @@ class CChat : public CComponent
 		bool m_IsTeam;
 		bool m_IsMute;
 
-		bool m_IsClanWar;
-		bool m_IsClanTeam;
-
-		bool m_IsWarName;
-		bool m_IsWarClan;
-
 		bool m_Highlighted;
 		std::optional<ColorRGBA> m_CustomColor;
 

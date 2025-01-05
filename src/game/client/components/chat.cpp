@@ -113,10 +113,6 @@ void CChat::ClearLines()
 		Line.m_IsHelper = false;
 		Line.m_IsTeam = false;
 		Line.m_IsMute = false;
-		Line.m_IsClanWar = false;
-		Line.m_IsClanTeam = false;
-		Line.m_IsWarName = false;
-		Line.m_IsWarClan = false;
 		Line.m_TimesRepeated = 0;
 		Line.m_HasRenderTee = false;
 	}
@@ -663,7 +659,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
 	ColorRGBA Colors = g_Config.m_ClMessageColor;
 		
-	if(ClientId >= 0 && GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempMute && g_Config.m_ClShowMutedInConsole)
+	if(ClientId >= 0 && GameClient()->m_aClients[ClientId].m_IsMute && g_Config.m_ClShowMutedInConsole)
 	{
 		char Muted[2048] = "[Muted] ";
 		char MutedWhisper[2048] = "[Muted] ← ";
@@ -701,7 +697,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(*pLine == 0 ||
 		(ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
-			  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempMute || (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] && g_Config.m_ClHideEnemyChat) ||
+					  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_aClients[ClientId].m_IsMute || (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] && g_Config.m_ClHideEnemyChat) ||
 			  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
 			  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
 			  (m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))
@@ -780,7 +776,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			pFrom = "server";
 		else if(pLine_->m_ClientId == CLIENT_MSG)
 			pFrom = "client";
-		else if(!g_Config.m_ClHideEnemyChat && (pLine_->m_IsWar || pLine_->m_IsWarClan || pLine_->m_IsWarName))
+		else if(!g_Config.m_ClHideEnemyChat && pLine_->m_IsWar)
 			pFrom = "[Enemy]";
 		else
 			pFrom = "chat";
@@ -830,9 +826,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	pCurrentLine->m_IsHelper = false;
 	pCurrentLine->m_IsTeam = false;
 	pCurrentLine->m_IsMute = false;
-	pCurrentLine->m_IsClanWar = false;
-	pCurrentLine->m_IsClanTeam = false;
-	pCurrentLine->m_IsWarName = false;
 	pCurrentLine->m_HasRenderTee = false;
 	pCurrentLine->m_CustomColor = CustomColor;
 
@@ -1009,14 +1002,17 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 								GameClient()->aMessage(aBuf);
 							}
 						}
-						if(GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempMute)
+						if(GameClient()->m_Aiodob.m_TempPlayers[GameClient()->m_Aiodob.IdWithName(CharOname)].IsTempMute || GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_Foe)
 						{
-							CTempEntry Entry("", "", name);
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
-							str_copy(Entry.m_aTempMute, name);
-							GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempMute);
-							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
-							GameClient()->aMessage(aBuf);
+							if(!GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(name)].m_Foe)
+							{
+								CTempEntry Entry("", "", name);
+								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+								str_copy(Entry.m_aTempMute, name);
+								GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempMute);
+								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+								GameClient()->aMessage(aBuf);
+							}
 						}
 					}
 				}
@@ -1317,16 +1313,15 @@ void CChat::OnPrepareLines(float y)
 		{
 			Cursor.m_X += RealMsgPaddingTee;
 
-			if(Line.m_Friend && g_Config.m_ClMessageFriend)
-			{
-				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor)).WithAlpha(1.f));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, "♥ ");
-			}
-
 			if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
 			{
 				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClWarlistPrefix);
+			}
+			else if(Line.m_Friend && g_Config.m_ClMessageFriend)
+			{
+				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor)).WithAlpha(1.f));
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, "♥ ");
 			}
 		}
 

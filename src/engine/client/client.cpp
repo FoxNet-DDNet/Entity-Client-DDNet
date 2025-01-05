@@ -4838,12 +4838,12 @@ int main(int argc, const char **argv)
 		pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
 	}
 
-	// execute tclient config file
-	IOHANDLE File = pStorage->OpenFile(AIODOBCONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
+	// execute A-Client config file
+	IOHANDLE File = pStorage->OpenFile(ACONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
 	if(File)
 	{
 		io_close(File);
-		pConsole->ExecuteFile(AIODOBCONFIG_FILE);
+		pConsole->ExecuteFile(ACONFIG_FILE);
 	}
 
 	// execute autoexec file

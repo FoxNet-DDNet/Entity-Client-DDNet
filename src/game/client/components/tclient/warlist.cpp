@@ -10,6 +10,9 @@
 
 #include "warlist.h"
 #include "../aiodob/aiodob.h"
+#include <base/system.h>
+#include <base/types.h>
+#include <engine/storage.h>
 
 void CWarList::OnNewSnapshot()
 {
@@ -20,11 +23,12 @@ void CWarList::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	if(pConfigManager)
-		pConfigManager->RegisterAiodobCallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterACallback(ConfigSaveCallback, this);
 
 	Console()->Register("update_war_group", "i[group_index] s[name] i[color]", CFGFLAG_CLIENT, ConUpsertWarType, this, "Update or add a specific war group");
 	Console()->Register("add_war_entry", "s[group] s[name] s[clan] r[reason]", CFGFLAG_CLIENT, ConAddWarEntry, this, "Adds a specific war entry");
-
+	Console()->Register("add_mute", "s[name]", CFGFLAG_CLIENT, ConAddMuteEntry, this, "Remove a clan war entry"); // A-Client [Mutes]
+	
 	Console()->Register("war_name", "s[group] s[name] r[reason]", CFGFLAG_CLIENT, ConName, this, "Add a name war entry");
 	Console()->Register("war_clan", "s[group] s[clan] r[reason]", CFGFLAG_CLIENT, ConClan, this, "Add a clan war entry");
 	Console()->Register("remove_war_name", "s[group] s[name]", CFGFLAG_CLIENT, ConRemoveName, this, "Remove a name war entry");
@@ -35,6 +39,10 @@ void CWarList::OnConsoleInit()
 	Console()->Register("war_clan_index", "s[group_index] s[name] ?r[reason]", CFGFLAG_CLIENT, ConClanIndex, this, "Remove a clan war entry");
 	Console()->Register("remove_war_name_index", "i[group_index] s[name]", CFGFLAG_CLIENT, ConRemoveNameIndex, this, "Remove a clan war entry");
 	Console()->Register("remove_war_clan_index", "s[group_index] s[name]", CFGFLAG_CLIENT, ConRemoveClanIndex, this, "Remove a clan war entry");
+
+	// A-Client [Mutes]
+	Console()->Register("addmute", "s[name]", CFGFLAG_CLIENT, ConAddMute, this, "Remove a clan war entry");
+	Console()->Register("delmute", "s[name]", CFGFLAG_CLIENT, ConDelMute, this, "Removes a Muted Name");
 
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
 	IOHANDLE File = m_pStorage->OpenFile(WARLIST_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
@@ -134,6 +142,26 @@ void CWarList::ConUpsertWarType(IConsole::IResult *pResult, void *pUserData)
 	ColorRGBA Color = color_cast<ColorRGBA>(ColorHSLA(ColorInt));
 	CWarList *pThis = static_cast<CWarList *>(pUserData);
 	pThis->UpsertWarType(Index, pType, Color);
+}
+
+// A-Client [Mutes]
+void CWarList::ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData)
+{
+	const char *pName = pResult->GetString(0);
+	CWarList *pThis = static_cast<CWarList *>(pUserData);
+	pThis->AddMuteEntry(pName);
+}
+void CWarList::ConAddMute(IConsole::IResult *pResult, void *pUserData)
+{
+	const char *pName = pResult->GetString(0);
+	CWarList *pThis = static_cast<CWarList *>(pUserData);
+	pThis->AddMute(pName);
+}
+void CWarList::ConDelMute(IConsole::IResult *pResult, void *pUserData)
+{
+	const char *pName = pResult->GetString(0);
+	CWarList *pThis = static_cast<CWarList *>(pUserData);
+	pThis->DelMute(pName);
 }
 
 void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pReason, bool IsClan)
@@ -266,6 +294,69 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 
 	}
 	RemoveWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_pWarType->m_aWarName);
+}
+
+void CWarList::AddMuteEntry(const char *pName)
+{
+	if(!str_comp(pName, ""))
+		return;
+
+	CMuteEntry Entry(pName);
+	str_copy(Entry.m_aMutedName, pName);
+
+	m_MuteEntries.push_back(Entry);
+}
+
+void CWarList::AddMute(const char *pName)
+{
+	if(!str_comp(pName, ""))
+		return;
+
+	CMuteEntry Entry(pName);
+	str_copy(Entry.m_aMutedName, pName);
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Mute List", pName);
+	GameClient()->aMessage(aBuf);
+	DelMute(pName, true);
+
+	m_MuteEntries.push_back(Entry);
+
+	GameClient()->m_Aiodob.UnTempMute(pName, true);
+}
+
+void CWarList::DelMute(const char *pName, bool Silent)
+{
+	if(str_comp(pName, "") == 0)
+		return;
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" in the Mute List", pName);
+	CMuteEntry Entry(pName);
+
+	auto it = std::find(m_MuteEntries.begin(), m_MuteEntries.end(), Entry);
+	if(it != m_MuteEntries.end())
+	{
+		for(CMuteEntry &Entries : m_MuteEntries)
+		{
+			for(auto it2 = m_MuteEntries.begin(); it2 != m_MuteEntries.end();)
+			{
+				bool IsDuplicate = !str_comp(it2->m_aMutedName, pName);
+
+				if(IsDuplicate)
+					it2 = m_MuteEntries.erase(it2);
+				else
+					++it2;
+
+				if(!str_comp(Entries.m_aMutedName, pName))
+					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Mute List", pName);
+			}
+		}
+	}
+	GameClient()->m_Aiodob.UnTempMute(pName, true);
+
+	if(!Silent)
+		GameClient()->aMessage(aBuf);
 }
 
 void CWarList::UpdateWarEntry(int Index, const char *pName, const char *pClan, const char *pReason, CWarType *pType)
@@ -482,6 +573,8 @@ void CWarList::UpdateWarPlayers()
 		if(!GameClient()->m_aClients[i].m_Active)
 			continue;
 
+		m_WarPlayers[i].IsMuted = false; // A-Client [Mutes]
+
 		m_WarPlayers[i].IsWarName = false;
 		m_WarPlayers[i].IsWarClan = false;
 		m_WarPlayers[i].m_NameColor = ColorRGBA(1, 1, 1, 1);
@@ -507,6 +600,14 @@ void CWarList::UpdateWarPlayers()
 				m_WarPlayers[i].IsWarClan = true;
 				m_WarPlayers[i].m_ClanColor = Entry.m_pWarType->m_Color;
 				m_WarPlayers[i].m_WarGroupMatches[Entry.m_pWarType->m_Index] = true;
+			}
+		}
+
+		for(CMuteEntry &Entry : m_MuteEntries) // A-Client [Mutes]
+		{
+			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aMutedName) == 0 && str_comp(Entry.m_aMutedName, "") != 0)
+			{
+				m_WarPlayers[i].IsMuted = true;
 			}
 		}
 	}
@@ -580,6 +681,14 @@ void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		EscapeParam(aEscapeReason, Entry.m_aReason, sizeof(aEscapeReason));
 
 		str_format(aBuf, sizeof(aBuf), "add_war_entry \"%s\" \"%s\" \"%s\" \"%s\"", aEscapeType, aEscapeName, aEscapeClan, aEscapeReason);
+		pThis->WriteLine(aBuf);
+	}
+	for(CMuteEntry &Entry : pThis->m_MuteEntries)
+	{
+		char aEscapeName[MAX_NAME_LENGTH * 2];
+		EscapeParam(aEscapeName, Entry.m_aMutedName, sizeof(aEscapeName));
+
+		str_format(aBuf, sizeof(aBuf), "add_mute \"%s\"", aEscapeName);
 		pThis->WriteLine(aBuf);
 	}
 

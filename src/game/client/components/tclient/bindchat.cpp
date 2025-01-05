@@ -171,7 +171,7 @@ void CBindchat::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	if(pConfigManager)
-		pConfigManager->RegisterAiodobCallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterACallback(ConfigSaveCallback, this);
 
 	Console()->Register("bindchat", "s[name] r[command]", CFGFLAG_CLIENT, ConAddBindchat, this, "Add a chat bind");
 	Console()->Register("bindchats", "?s[name]", CFGFLAG_CLIENT, ConBindchats, this, "Print command executed by this name or all chat binds");
@@ -194,7 +194,7 @@ void CBindchat::OnConsoleInit()
 	AddBindDefault(".votekick", "votekick");
 
 	AddBindDefault(".friend", "add_friend");
-	AddBindDefault(".unfriend", "add_friend");
+	AddBindDefault(".unfriend", "remove_friend");
 
 	AddBindDefault(".restoreskin", "restoreskin");
 	AddBindDefault(".saveskin", "saveskin");
@@ -232,10 +232,10 @@ void CBindchat::OnConsoleInit()
 	AddBindDefault(".delhelper", "remove_war_name_index 3");
 	AddBindDefault(".unhelper", "remove_war_name_index 3");
 
-	AddBindDefault(".mute", "message Not working yet");
-	AddBindDefault(".addmute", "message Not working yet");
-	AddBindDefault(".delmute", "message Not working yet");
-	AddBindDefault(".unmute", "message Not working yet");
+	AddBindDefault(".mute", "addmute");
+	AddBindDefault(".addmute", "addmute");
+	AddBindDefault(".delmute", "delmute");
+	AddBindDefault(".unmute", "delmute");
 
 	AddBindDefault(".clanwar", "war_clan_index 1");
 	AddBindDefault(".addclanwar", "war_clan_index 1");

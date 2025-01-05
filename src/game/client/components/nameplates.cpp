@@ -197,18 +197,19 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		// TClient
 		if(Data.m_IsGame && Data.m_RealClientId >= 0)
 		{
-			if((g_Config.m_ClPingNameCircle || (m_pClient->m_Scoreboard.Active() && !m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Local)) && !(Client()->State() == IClient::STATE_DEMOPLAYBACK))
+			if((g_Config.m_ClPingNameCircle || (m_pClient->m_Scoreboard.Active() && !m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Local)) && (Client()->State() != IClient::STATE_DEMOPLAYBACK))
 			{
 				Graphics()->TextureClear();
 				Graphics()->QuadsBegin();
 				Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f)).WithAlpha(Data.m_Alpha));
-				if(m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency == 77 || m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency == 76 && g_Config.m_ClAidsPingDetection)
+				if((m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency == 77 || m_pClient->m_Snap.m_apPlayerInfos[Data.m_RealClientId]->m_Latency == 76) && g_Config.m_ClAidsPingDetection)
 					Graphics()->SetColor(0.f, 0.f, 0.f, 0.5f);
 				float CircleSize = 7.0f;
 				Graphics()->DrawCircle(Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f - CircleSize, YOffset + Data.m_FontSize / 2.0f + 1.4f, CircleSize, 24);
 				Graphics()->QuadsEnd();
 			}
-			if((1 == 2 || GameClient()->m_Aiodob.m_TempPlayers[Data.m_RealClientId].IsTempMute) && g_Config.m_ClMutedIconNameplate)
+			// A-Client
+			if((GameClient()->m_aClients[Data.m_RealClientId].m_IsMute && g_Config.m_ClMutedIconNameplate))
 			{
 				ColorRGBA IconColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 				Graphics()->TextureClear();
@@ -218,10 +219,11 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 				Graphics()->RenderQuadContainerAsSprite(m_DirectionQuadContainerIndex, 0, Data.m_Position.x + TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Name.m_TextContainerIndex).m_W / 2.0f + 2, YOffset + 1.5f, Data.m_FontSize, Data.m_FontSize);
 			}
 		}
-		ColorRGBA WarColor = Color;
 
 		if(Data.m_IsGame && Data.m_RealClientId >= 0)
 		{
+			ColorRGBA WarColor = Color;
+
 			if(m_pClient->m_aClients[Data.m_RealClientId].m_Friend && g_Config.m_ClDoFriendNameColor)
 				WarColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Data.m_Alpha));
 
@@ -247,6 +249,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 			NamePlate.m_Clan.Update(*this, Data.m_pClan, Data.m_FontSizeClan);
 
 			ColorRGBA WarColor = Color;
+
 			if(Data.m_IsGame && Data.m_RealClientId >= 0 && GameClient()->m_WarList.GetWarData(Data.m_RealClientId).IsWarClan)
 				WarColor = GameClient()->m_WarList.GetClanColor(Data.m_RealClientId).WithAlpha(Data.m_Alpha);
 

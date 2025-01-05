@@ -872,8 +872,6 @@ void CPlayers::RenderPlayer(
 	{
 		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
 		{
-			float a = Vel.x + Vel.y / 100;
-
 			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)),Alpha);
 
 			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)),Alpha);

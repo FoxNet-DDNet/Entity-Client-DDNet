@@ -71,6 +71,23 @@ public:
 	}
 };
 
+// A-Client [Mutes]
+class CMuteEntry 
+{
+public:
+	char m_aMutedName[MAX_NAME_LENGTH] = "";
+
+	CMuteEntry(const char *pName)
+	{
+		str_copy(m_aMutedName, pName);
+	}
+
+	bool operator==(const CMuteEntry &Other) const
+	{
+		return !str_comp(m_aMutedName, Other.m_aMutedName);
+	}
+};
+
 class CWarDataCache
 {
 public:
@@ -78,6 +95,8 @@ public:
 	ColorRGBA m_ClanColor = ColorRGBA(1, 1, 1, 1);
 	bool IsWarName = false;
 	bool IsWarClan = false;
+
+	bool IsMuted = false; // A-Client [Mutes]
 
 	std::vector<char> m_WarGroupMatches = {false, false, false};
 
@@ -127,9 +146,16 @@ class CWarList : public CComponent
 	static void ConRemoveName(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveClan(IConsole::IResult *pResult, void *pUserData);
 
+	// A-Client
+	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
+	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
+
 	// Backend Commands for config file
 	static void ConAddWarEntry(IConsole::IResult *pResult, void *pUserData);
 	static void ConUpsertWarType(IConsole::IResult *pResult, void *pUserData);
+
+	// A-Client
+	static void ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
@@ -148,6 +174,9 @@ public:
 		new CWarType("team", ColorRGBA(0.0f, 0.9f, 0.2f, 1.0f), false),
 		new CWarType("helper", ColorRGBA(0.9f, 0.87f, 0.2f, 1.0f), false)
 	};
+
+	// A-Client [Mutes]
+	std::vector<CMuteEntry> m_MuteEntries;
 
 	// None type war entries will float to the top of the list, so they can be assigned a type
 	CWarType *m_pWarTypeNone = m_WarTypes[0];
@@ -172,6 +201,10 @@ public:
 
 	void AddWarEntryInGame(int WarType, const char *pName, const char *pReason, bool IsClan);
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
+
+	void AddMuteEntry(const char *pName); // A-Client [Mutes]
+	void AddMute(const char *pName);
+	void DelMute(const char *pName, bool Silent = false);
 
 	void AddWarEntry(const char *pName, const char *pClan, const char *pReason, const char *pType);
 	void AddWarType(const char *pType, ColorRGBA Color);

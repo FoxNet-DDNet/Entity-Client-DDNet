@@ -432,18 +432,17 @@ bool CConfigManager::Save()
 		return false;
 	}
 
-	AiodobSave();
-	log_info("config", "saved to " CONFIG_FILE);
+	ASave();
 	return true;
 }
 
-bool CConfigManager::AiodobSave()
+bool CConfigManager::ASave()
 {
 	if(!m_pStorage || !g_Config.m_ClSaveSettings)
 		return true;
 
 	char aConfigFileTmp[IO_MAX_PATH_LENGTH];
-	m_ConfigFile = m_pStorage->OpenFile(IStorage::FormatTmpPath(aConfigFileTmp, sizeof(aConfigFileTmp), AIODOBCONFIG_FILE), IOFLAG_WRITE, IStorage::TYPE_SAVE);
+	m_ConfigFile = m_pStorage->OpenFile(IStorage::FormatTmpPath(aConfigFileTmp, sizeof(aConfigFileTmp), ACONFIG_FILE), IOFLAG_WRITE, IStorage::TYPE_SAVE);
 
 	if(!m_ConfigFile)
 	{
@@ -476,13 +475,13 @@ bool CConfigManager::AiodobSave()
 		WriteLine(aLineBuf); \
 	}
 
-#include "././game/aiodob_variables.h"
+#include "aiodob_variables.h"
 
 #undef MACRO_CONFIG_INT
 #undef MACRO_CONFIG_COL
 #undef MACRO_CONFIG_STR
 
-	for(const auto &Callback : m_vAiodobCallbacks)
+	for(const auto &Callback : m_vACallbacks)
 	{
 		Callback.m_pfnFunc(this, Callback.m_pUserData);
 	}
@@ -503,9 +502,9 @@ bool CConfigManager::AiodobSave()
 		return false;
 	}
 
-	if(!m_pStorage->RenameFile(aConfigFileTmp, AIODOBCONFIG_FILE, IStorage::TYPE_SAVE))
+	if(!m_pStorage->RenameFile(aConfigFileTmp, ACONFIG_FILE, IStorage::TYPE_SAVE))
 	{
-		dbg_msg("config", "ERROR: renaming %s to " AIODOBCONFIG_FILE " failed", aConfigFileTmp);
+		dbg_msg("config", "ERROR: renaming %s to " ACONFIG_FILE " failed", aConfigFileTmp);
 		return false;
 	}
 
@@ -518,9 +517,9 @@ void CConfigManager::RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
 	m_vCallbacks.emplace_back(pfnFunc, pUserData);
 }
 
-void CConfigManager::RegisterAiodobCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
+void CConfigManager::RegisterACallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
 {
-	m_vAiodobCallbacks.emplace_back(pfnFunc, pUserData);
+	m_vACallbacks.emplace_back(pfnFunc, pUserData);
 }
 
 void CConfigManager::WriteLine(const char *pLine)
