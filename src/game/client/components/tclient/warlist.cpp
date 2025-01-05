@@ -29,8 +29,8 @@ void CWarList::OnConsoleInit()
 	Console()->Register("add_war_entry", "s[group] s[name] s[clan] r[reason]", CFGFLAG_CLIENT, ConAddWarEntry, this, "Adds a specific war entry");
 	Console()->Register("add_mute", "s[name]", CFGFLAG_CLIENT, ConAddMuteEntry, this, "Remove a clan war entry"); // A-Client [Mutes]
 	
-	Console()->Register("war_name", "s[group] s[name] r[reason]", CFGFLAG_CLIENT, ConName, this, "Add a name war entry");
-	Console()->Register("war_clan", "s[group] s[clan] r[reason]", CFGFLAG_CLIENT, ConClan, this, "Add a clan war entry");
+	Console()->Register("war_name", "s[group] s[name] ?r[reason]", CFGFLAG_CLIENT, ConName, this, "Add a name war entry");
+	Console()->Register("war_clan", "s[group] s[clan] ?r[reason]", CFGFLAG_CLIENT, ConClan, this, "Add a clan war entry");
 	Console()->Register("remove_war_name", "s[group] s[name]", CFGFLAG_CLIENT, ConRemoveName, this, "Remove a name war entry");
 	Console()->Register("remove_war_clan", "s[group] s[clan]", CFGFLAG_CLIENT, ConRemoveClan, this, "Remove a clan war entry");
 
@@ -245,6 +245,9 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 	CWarType *pWarType = m_WarTypes[WarType];
 	CWarEntry Entry(pWarType);
 
+	char aBuf[512];
+	str_format(aBuf, sizeof(aBuf), "If you See this then %s", "something went really wrong");
+
 	if(IsClan)
 	{
 		for(int i = 0; i < MAX_CLIENTS; ++i)
@@ -255,12 +258,25 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 			if(str_comp(GameClient()->m_aClients[i].m_aName, pName) == 0)
 			{
 				if(str_comp(GameClient()->m_aClients[i].m_aClan, "") != 0)
+				{
 					str_copy(Entry.m_aClan, GameClient()->m_aClients[i].m_aClan);
+					{
+						CWarEntry Entry(pWarType, "", Entry.m_aClan, "");
+						str_format(aBuf, sizeof(aBuf), "[Error] \"%s's\" Clan not found in '%s' list", pName, pWarType->m_aWarName);
+
+						if(FindWarTypeWithClan(Entry.m_aClan) == WarType)
+						{
+							auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), Entry);
+							if(it != m_WarEntries.end())
+								m_WarEntries.erase(it);
+							str_format(aBuf, sizeof(aBuf), "Removed \"%s's\" clan from the '%s' list", pName, pWarType->m_aWarName);
+						}
+					}
+				}
 				else
 				{
 					char aBuf[128];
-					str_format(aBuf, sizeof(aBuf), "No clan found for user \"%s\"", pName);
-					GameClient()->aMessage(aBuf);
+					str_format(aBuf, sizeof(aBuf), "[Error] No clan for \"%s\" found", pName);
 					break;
 				}
 			}
@@ -269,31 +285,45 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 	else
 	{
 		str_copy(Entry.m_aName, pName);
-		char aBuf[512];
-		str_format(aBuf, sizeof(aBuf), "removed \"%s\" from '%s' list", pName, Entry.m_pWarType);
-		GameClient()->aMessage(aBuf);
-
-		CTempEntry Entry(pName, pName, "");
-
-		auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), Entry);
-		if(it != GameClient()->m_Aiodob.m_TempEntries.end())
+		
 		{
-			for(CTempEntry &Entries : GameClient()->m_Aiodob.m_TempEntries)
-			{
-				for(auto it = GameClient()->m_Aiodob.m_TempEntries.begin(); it != GameClient()->m_Aiodob.m_TempEntries.end();)
-				{
-					bool IsDuplicate = !str_comp(it->m_aTempWar, pName) || !str_comp(it->m_aTempHelper, pName);
+			CWarEntry Entry(pWarType, pName, "", "");
 
-					if(IsDuplicate)
-						it = GameClient()->m_Aiodob.m_TempEntries.erase(it);
-					else
-						++it;
+			str_format(aBuf, sizeof(aBuf), "[Error] \"%s\" not found in '%s' list", pName, Entry.m_pWarType);
+
+
+			if(FindWarTypeWithName(pName) == WarType)
+			{
+				auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), Entry);
+				if(it != m_WarEntries.end())
+					m_WarEntries.erase(it);
+				str_format(aBuf, sizeof(aBuf), "removed \"%s\" from '%s' list", pName, Entry.m_pWarType);
+			}
+		}
+
+		{
+			CTempEntry Entry(pName, pName, "");
+
+			auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), Entry);
+			if(it != GameClient()->m_Aiodob.m_TempEntries.end())
+			{
+				for(CTempEntry &Entries : GameClient()->m_Aiodob.m_TempEntries)
+				{
+					for(auto it = GameClient()->m_Aiodob.m_TempEntries.begin(); it != GameClient()->m_Aiodob.m_TempEntries.end();)
+					{
+						bool IsDuplicate = !str_comp(it->m_aTempWar, pName) || !str_comp(it->m_aTempHelper, pName);
+
+						if(IsDuplicate)
+							it = GameClient()->m_Aiodob.m_TempEntries.erase(it);
+						else
+							++it;
+					}
 				}
 			}
 		}
 
 	}
-	RemoveWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_pWarType->m_aWarName);
+	GameClient()->aMessage(aBuf);
 }
 
 void CWarList::AddMuteEntry(const char *pName)
@@ -492,6 +522,18 @@ int CWarList::FindWarTypeWithName(const char *pName)
 	for(CWarEntry &Entry : m_WarEntries)
 	{
 		if(str_comp(pName, Entry.m_aName) == 0 && str_comp(Entry.m_aName, "") != 0)
+		{
+			return Entry.m_pWarType->m_Index;
+		}
+	}
+	return 0;
+}
+
+int CWarList::FindWarTypeWithClan(const char *pClan)
+{
+	for(CWarEntry &Entry : m_WarEntries)
+	{
+		if(str_comp(pClan, Entry.m_aClan) == 0 && str_comp(Entry.m_aClan, "") != 0)
 		{
 			return Entry.m_pWarType->m_Index;
 		}
