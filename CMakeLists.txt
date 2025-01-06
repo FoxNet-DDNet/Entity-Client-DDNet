@@ -108,7 +108,7 @@ option(ANTIBOT "Enable support for a dynamic anticheat library (not provided, se
 option(HEADLESS_CLIENT "Build the client without graphics" OFF)
 option(CLIENT "Compile client" ON)
 option(SERVER "Compile server" ON)
-option(TOOLS "Compile tools" ON)
+option(TOOLS "Compile tools" OFF)
 option(DOWNLOAD_GTEST "Download and compile GTest" ${AUTO_DEPENDENCIES_DEFAULT})
 option(STEAM "Build the Steam release version" OFF)
 option(DISCORD "Enable Discord rich presence support" ON)
@@ -121,6 +121,14 @@ option(EXCEPTION_HANDLING "Enable exception handling (only works with Windows as
 option(IPO "Enable interprocedural optimizations" OFF)
 option(FUSE_LD "Linker to use" OFF)
 option(SECURITY_COMPILER_FLAGS "Whether to set security-relevant compiler flags like -D_FORTIFY_SOURCE=2 and -fstack-protector-strong" ON)
+
+if(TARGET_OS STREQUAL "mac")
+    set(TOOLS ON)
+endif()
+
+if(TARGET_OS STREQUAL "android")
+    set(DISCORD OFF)
+endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   include(${PROJECT_SOURCE_DIR}/cmake/toolchains/Emscripten.toolchain)

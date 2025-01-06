@@ -504,12 +504,7 @@ void CSpectator::OnRender()
 				}
 			}
 		}
-		/*
-		auto IsWar = GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName) || GameClient()->m_WarList.IsTempWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName) || GameClient()->m_WarList.IsClanWarlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aClan);
-		auto IsTeam = GameClient()->m_WarList.IsTeamlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName);
-		auto IsHelper = GameClient()->m_WarList.IsHelperlist(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aName);
-		auto IsWarClan = GameClient()->m_WarList.IsWarClanmate(m_pClient->m_aClients[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_aClan);
-		*/
+
 		int ClientId = m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
 		float TeeAlpha;
 		float Alpha = 0.5f;

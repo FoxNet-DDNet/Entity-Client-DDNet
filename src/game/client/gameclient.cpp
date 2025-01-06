@@ -1764,7 +1764,7 @@ void CGameClient::OnNewSnapshot()
 					// Warlist
 					pClient->m_IsWar = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[1] || m_Aiodob.m_TempPlayers[Item.m_Id].IsTempWar;
 					pClient->m_IsTeam = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[2];
-					pClient->m_IsHelper = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[3] || m_Aiodob.m_TempPlayers[Item.m_Id].IsTempHelper;
+					//pClient->m_IsHelper = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[3] || m_Aiodob.m_TempPlayers[Item.m_Id].IsTempHelper;
 
 					pClient->m_IsMute = m_Aiodob.m_TempPlayers[Item.m_Id].IsTempMute || m_WarList.m_WarPlayers[Item.m_Id].IsMuted;
 				}
@@ -2188,7 +2188,6 @@ void CGameClient::OnNewSnapshot()
 
 	// detect air jump for other players
 	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
 		if(m_Snap.m_aCharacters[i].m_Active && (m_Snap.m_aCharacters[i].m_Cur.m_Jumped & 2) && !(m_Snap.m_aCharacters[i].m_Prev.m_Jumped & 2))
 			if(!Predict() || (i != m_Snap.m_LocalClientId && (!AntiPingPlayers() || i != m_PredictedDummyId)))
 			{
@@ -2200,7 +2199,7 @@ void CGameClient::OnNewSnapshot()
 					Alpha = g_Config.m_ClShowOthersAlpha / 100.0f;
 				m_Effects.AirJump(Pos, Alpha);
 			}
-	}
+
 	if(g_Config.m_ClFreezeStars && !m_SuppressEvents)
 	{
 		for(auto &Character : m_Snap.m_aCharacters)

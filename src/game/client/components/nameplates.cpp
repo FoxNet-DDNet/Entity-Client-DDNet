@@ -457,23 +457,24 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_HookWeakStrong = TRISTATE::SOME;
 	Data.m_ShowHookWeakStrongId = false;
 	Data.m_HookWeakStrongId = false;
+	Data.m_OldNameplateId = false;
 
 
-		const bool Following = (m_pClient->m_Snap.m_SpecInfo.m_Active && !GameClient()->m_MultiViewActivated && m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW);
-		if(m_pClient->m_Snap.m_LocalClientId != -1 || Following)
+	const bool Following = (m_pClient->m_Snap.m_SpecInfo.m_Active && !GameClient()->m_MultiViewActivated && m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW);
+	if(m_pClient->m_Snap.m_LocalClientId != -1 || Following)
+	{
+		const int SelectedId = Following ? m_pClient->m_Snap.m_SpecInfo.m_SpectatorId : m_pClient->m_Snap.m_LocalClientId;
+		const CGameClient::CSnapState::CCharacterInfo &Selected = m_pClient->m_Snap.m_aCharacters[SelectedId];
+		const CGameClient::CSnapState::CCharacterInfo &Other = m_pClient->m_Snap.m_aCharacters[pPlayerInfo->m_ClientId];
+		if(Selected.m_HasExtendedData && Other.m_HasExtendedData)
 		{
-			const int SelectedId = Following ? m_pClient->m_Snap.m_SpecInfo.m_SpectatorId : m_pClient->m_Snap.m_LocalClientId;
-			const CGameClient::CSnapState::CCharacterInfo &Selected = m_pClient->m_Snap.m_aCharacters[SelectedId];
-			const CGameClient::CSnapState::CCharacterInfo &Other = m_pClient->m_Snap.m_aCharacters[pPlayerInfo->m_ClientId];
-			if(Selected.m_HasExtendedData && Other.m_HasExtendedData)
-			{
-				if(SelectedId != pPlayerInfo->m_ClientId)
-					Data.m_HookWeakStrong = Selected.m_ExtendedData.m_StrongWeakId > Other.m_ExtendedData.m_StrongWeakId ? TRISTATE::ALL : TRISTATE::NONE;
-				Data.m_ShowHookWeakStrongId = g_Config.m_Debug || g_Config.m_ClNamePlatesStrong == 2;
-				if(Data.m_ShowHookWeakStrongId)
-					Data.m_HookWeakStrongId = Other.m_ExtendedData.m_StrongWeakId;
-			}
+			if(SelectedId != pPlayerInfo->m_ClientId)
+				Data.m_HookWeakStrong = Selected.m_ExtendedData.m_StrongWeakId > Other.m_ExtendedData.m_StrongWeakId ? TRISTATE::ALL : TRISTATE::NONE;
+			Data.m_ShowHookWeakStrongId = g_Config.m_Debug || g_Config.m_ClNamePlatesStrong == 2;
+			if(Data.m_ShowHookWeakStrongId)
+				Data.m_HookWeakStrongId = Other.m_ExtendedData.m_StrongWeakId;
 		}
+	}
 
 	GameClient()->m_NamePlates.RenderNamePlate(m_aNamePlates[pPlayerInfo->m_ClientId], Data);
 }
