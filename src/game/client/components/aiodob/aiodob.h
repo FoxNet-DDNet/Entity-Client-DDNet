@@ -178,8 +178,9 @@ public:
 	*	+left
 	*	+right
 	*	+jump
+	*	Mouse Inputs such as aiming 
+	*   or shooting are excluded
 	*/
-
 	int64_t m_LastMovement = 10.0f;
 private:
 	virtual int Sizeof() const override { return sizeof(*this); }

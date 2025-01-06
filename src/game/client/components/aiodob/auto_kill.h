@@ -6,7 +6,6 @@
 class CAutoKill : public CComponent
 {
 public:
-	int m_Local;
 	bool m_SentAutoKill;
 	int64_t m_LastFreeze;
 

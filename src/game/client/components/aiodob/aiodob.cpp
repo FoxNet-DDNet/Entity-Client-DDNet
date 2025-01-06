@@ -330,6 +330,7 @@ void CAiodob::OnConnect()
 	if(g_Config.m_ClDummy)
 		return;
 
+	// on join connction = true, after joining its false
 	if(!Client()->m_Connected)
 		return;
 
@@ -680,10 +681,6 @@ void CAiodob::OnShutdown()
 
 void CAiodob::OnRender()
 {
-	int m_Local = m_pClient->m_Snap.m_LocalClientId;
-	
-	// on join connction = true, after joining its false
-
 	if(g_Config.m_ClServerRainbow)
 		Rainbow();
 

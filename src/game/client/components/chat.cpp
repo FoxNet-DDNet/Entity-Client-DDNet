@@ -984,7 +984,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 								CTempEntry Entry(name, "", "");
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
 								str_copy(Entry.m_aTempWar, name);
-								GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempWar);
 								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 								GameClient()->aMessage(aBuf);
 							}
@@ -994,8 +993,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
 								str_copy(Entry.m_aTempHelper, name);
 								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
-
-								GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempHelper);
 								GameClient()->aMessage(aBuf);
 							}
 							if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsMute)
@@ -1003,7 +1000,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 								CTempEntry Entry("", "", name);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
 								str_copy(Entry.m_aTempMute, name);
-								GameClient()->m_Aiodob.RemoveWarEntryDuplicates(Entry.m_aTempMute);
 								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 								GameClient()->aMessage(aBuf);
 							}

@@ -10,12 +10,12 @@
 #include <game/generated/protocol.h>
 void CAutoKill::OnRender()
 {
-	m_Local = m_pClient->m_Snap.m_LocalClientId;
+	int Local = m_pClient->m_Snap.m_LocalClientId;
 
 	if(!GameClient()->CurrentRaceTime())
 		m_SentAutoKill = false;
 
-	CCharacterCore *pCharacter = &m_pClient->m_aClients[m_Local].m_Predicted;
+	CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
 	if(g_Config.m_ClAutoKill)
 	{
 		// if sent kill, stop
@@ -42,15 +42,15 @@ void CAutoKill::OnRender()
 
 			// stuff
 
-			const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[m_Local].m_Prev;
-			const CNetObj_Character *pCurChar = &m_pClient->m_Snap.m_aCharacters[m_Local].m_Cur;
-			const CNetObj_Character *pPrevCharO = &m_pClient->m_Snap.m_aCharacters[!m_Local].m_Prev;
-			const CNetObj_Character *pCurCharO = &m_pClient->m_Snap.m_aCharacters[!m_Local].m_Cur;
+			const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Prev;
+			const CNetObj_Character *pCurChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Cur;
+			const CNetObj_Character *pPrevCharO = &m_pClient->m_Snap.m_aCharacters[!Local].m_Prev;
+			const CNetObj_Character *pCurCharO = &m_pClient->m_Snap.m_aCharacters[!Local].m_Cur;
 			bool IsWar = false;
 			bool EnemyFrozen = false;
 
 			// so it only takes info from other players and not self (could probably be made smarter :p)
-			if(i != m_Local)
+			if(i != Local)
 			{
 				pPrevCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Prev;
 				pCurCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Cur;
@@ -100,7 +100,7 @@ void CAutoKill::OnRender()
 						}
 						else
 						{
-							GameClient()->SendKill(m_Local);
+							GameClient()->SendKill(Local);
 							m_SentAutoKill = true;
 							return;
 						}
