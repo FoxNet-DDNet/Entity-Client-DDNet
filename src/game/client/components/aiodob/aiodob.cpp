@@ -589,6 +589,30 @@ void CAiodob::OnInit()
 
 void CAiodob::Rainbow()
 {
+	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
+	{
+		g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
+		g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
+
+		g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
+		g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
+		m_RainbowWasOn = true;
+		GameClient()->aMessage("a");
+	}
+	if(m_RainbowWasOn && !g_Config.m_ClServerRainbow)
+	{
+		GameClient()->aMessage("b");
+		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
+		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
+
+		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
+		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
+		GameClient()->SendDummyInfo(false);
+		GameClient()->SendInfo(false);
+		m_RainbowWasOn = false;
+
+	}
+
 	float h = (round_to_int(static_cast<float>(time_get()) / time_freq() * m_RainbowSpeed * 0.1f) % 255 / 255.f);
 	float s = abs(m_Saturation - 255);
 	float l = abs(m_Lightness - 255);
@@ -604,28 +628,6 @@ void CAiodob::Rainbow()
 	}
 	else
 		m_RainbowColor = getIntFromColor(h, s, l);
-
-	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
-	{
-		g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
-		g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
-
-		g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
-		g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
-		m_RainbowWasOn = true;
-	}
-	else if(!g_Config.m_ClServerRainbow && m_RainbowWasOn)
-	{
-		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
-		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
-
-		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
-		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
-		GameClient()->SendDummyInfo(false);
-		GameClient()->SendInfo(false);
-		m_RainbowWasOn = false;
-
-	}
 
 	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() + time_freq() && !m_pClient->m_aClients[m_Local].m_Afk)
 	{

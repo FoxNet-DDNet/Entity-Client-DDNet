@@ -1557,8 +1557,6 @@ bool CUi::DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *
 	else
 		pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
 
-	const float FontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
-
 	Value = pScale->ToAbsolute(DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max), nullptr, false), Min, Max);
 	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
 	{
