@@ -2069,7 +2069,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 	}
 }
 
-bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview)
+bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool ShowPreview)
 {
 	const unsigned PrevPackedColor = *pColor;
 	ColorHSLA Color(*pColor, Alpha);
@@ -2081,7 +2081,7 @@ bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alp
 	const float PreviewHeight = 40.0f + 2 * PreviewMargin;
 	const float OffY = (SizePerEntry + MarginPerEntry) * (3 + (Alpha ? 1 : 0)) - PreviewHeight;
 
-	if(Preview)
+	if(ShowPreview)
 	{
 		CUIRect Preview;
 		pRect->VSplitLeft(PreviewHeight, &Preview, pRect);
