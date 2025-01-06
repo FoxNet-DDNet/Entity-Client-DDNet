@@ -568,8 +568,10 @@ void CAiodob::OnInit()
 	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A)&& str_comp(g_Config.m_ClSavedDummyClan, A))
 		SaveSkin();
 
+	m_ServersideDelay = 0;
 	m_RainbowSpeed = 10;
 	m_LastMovement = 0;
+	m_RainbowDelay = 0;
 	m_Saturation = 200;
 	m_Lightness = 30;
 	m_LastTile = -1;
@@ -592,26 +594,13 @@ void CAiodob::Rainbow()
 {
 	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
 	{
-		g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
-		g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
-
-		g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
-		g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
-		m_RainbowWasOn = true;
-		GameClient()->aMessage("a");
+		m_RainbowWasOn = false;
 	}
 	if(m_RainbowWasOn && !g_Config.m_ClServerRainbow)
 	{
-		GameClient()->aMessage("b");
-		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
-		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
-
-		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
-		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
-		GameClient()->SendDummyInfo(false);
 		GameClient()->SendInfo(false);
+		GameClient()->SendDummyInfo(false);
 		m_RainbowWasOn = false;
-
 	}
 
 	float h = (round_to_int(static_cast<float>(time_get()) / time_freq() * m_RainbowSpeed * 0.1f) % 255 / 255.f);
@@ -620,11 +609,10 @@ void CAiodob::Rainbow()
 
 	if(m_ShowServerSide)
 	{
-		if(m_RainbowDelay < time_get())
+		if(m_ServersideDelay < time_get())
 		{
 			m_RainbowColor = getIntFromColor(h, s, l);
-			if(Client()->State() != IClient::STATE_ONLINE)
-				m_RainbowDelay = time_get() + time_freq() * 5.0f;
+			m_ServersideDelay = time_get() + time_freq() * 5.10;
 		}
 	}
 	else
@@ -632,12 +620,6 @@ void CAiodob::Rainbow()
 
 	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() + time_freq() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 	{
-		g_Config.m_ClDummyUseCustomColor = true;
-		g_Config.m_ClDummyColorBody = getIntFromColor(h, s, l);
-
-		g_Config.m_ClPlayerUseCustomColor = true;
-		g_Config.m_ClPlayerColorBody = getIntFromColor(h, s, l);
-
 		if(g_Config.m_ClDummy)
 			GameClient()->SendDummyInfo(false);
 		else

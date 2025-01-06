@@ -125,6 +125,7 @@ public:
 	void TempMute(const char *pName);
 	void UnTempMute(const char *pName, bool Silent = false);
 
+
 	void SaveSkin();
 	void RestoreSkin();
 	void Votekick(const char *pName, const char *pReason);
@@ -148,11 +149,16 @@ public:
 
 	// Rainbow
 	void Rainbow();
-	unsigned int m_RainbowColor;
-	int m_ShowServerSide;
+
 	int m_RainbowSpeed;
 	int m_Saturation;
 	int m_Lightness;
+
+	// Preview
+	unsigned int m_RainbowColor;
+	int m_ShowServerSide;
+	int64_t m_ServersideDelay;
+
 	int getIntFromColor(float Hue, float Sat, float LhT)
 	{
 		int R = round(255 * Hue);
