@@ -457,7 +457,10 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_HookWeakStrong = TRISTATE::SOME;
 	Data.m_ShowHookWeakStrongId = false;
 	Data.m_HookWeakStrongId = false;
+	Data.m_OldNameplateId = false;
 
+	if(g_Config.m_ClOldNameplateIds)
+		Data.m_OldNameplateId = true;
 
 	const bool Following = (m_pClient->m_Snap.m_SpecInfo.m_Active && !GameClient()->m_MultiViewActivated && m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW);
 	if(m_pClient->m_Snap.m_LocalClientId != -1 || Following)
