@@ -1051,22 +1051,22 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 	}
 	else if(MsgId == NETMSGTYPE_SV_SOUNDGLOBAL)
 	{
-		if(m_SuppressEvents)
-			return;
-
-		// don't enqueue pseudo-global sounds from demos (created by PlayAndRecord)
-		CNetMsg_Sv_SoundGlobal *pMsg = (CNetMsg_Sv_SoundGlobal *)pRawMsg;
-		if(pMsg->m_SoundId == SOUND_CTF_DROP || pMsg->m_SoundId == SOUND_CTF_RETURN ||
-			pMsg->m_SoundId == SOUND_CTF_CAPTURE || pMsg->m_SoundId == SOUND_CTF_GRAB_EN ||
-			pMsg->m_SoundId == SOUND_CTF_GRAB_PL)
+		if(!m_SuppressEvents)
 		{
-			if(g_Config.m_SndGame)
-				m_Sounds.Enqueue(CSounds::CHN_GLOBAL, pMsg->m_SoundId);
-		}
-		else
-		{
-			if(g_Config.m_SndGame)
-				m_Sounds.Play(CSounds::CHN_GLOBAL, pMsg->m_SoundId, 1.0f);
+			// don't enqueue pseudo-global sounds from demos (created by PlayAndRecord)
+			CNetMsg_Sv_SoundGlobal *pMsg = (CNetMsg_Sv_SoundGlobal *)pRawMsg;
+			if(pMsg->m_SoundId == SOUND_CTF_DROP || pMsg->m_SoundId == SOUND_CTF_RETURN ||
+				pMsg->m_SoundId == SOUND_CTF_CAPTURE || pMsg->m_SoundId == SOUND_CTF_GRAB_EN ||
+				pMsg->m_SoundId == SOUND_CTF_GRAB_PL)
+			{
+				if(g_Config.m_SndGame)
+					m_Sounds.Enqueue(CSounds::CHN_GLOBAL, pMsg->m_SoundId);
+			}
+			else
+			{
+				if(g_Config.m_SndGame)
+					m_Sounds.Play(CSounds::CHN_GLOBAL, pMsg->m_SoundId, 1.0f);
+			}
 		}
 	}
 	else if(MsgId == NETMSGTYPE_SV_TEAMSSTATE || MsgId == NETMSGTYPE_SV_TEAMSSTATELEGACY)

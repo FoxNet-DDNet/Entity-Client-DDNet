@@ -114,12 +114,6 @@ class CAiodob : public CComponent
 	static void ConSaveSkin(IConsole::IResult *pResult, void *pUserData);
 	static void ConRestoreSkin(IConsole::IResult *pResult, void *pUserData);
 
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnInit() override;
-	virtual void OnRender() override;
-	virtual void OnNewSnapshot() override;
-	virtual void OnShutdown() override;
-
 public:
 
 	void TempWar(const char *pName);
@@ -135,18 +129,30 @@ public:
 	void RestoreSkin();
 	void Votekick(const char *pName, const char *pReason);
 
-	int m_Local;
-	int64_t m_JoinTeam;
-	int64_t m_LastMovement = 10.0f;
-
+	// Get ClientId per name
 	int IdWithName(const char *pName);
+
+
+	// Temporary War Entries
+	std::vector<CTempEntry> m_TempEntries;
+	CTempData m_TempPlayers[MAX_CLIENTS];
+	void UpdateTempPlayers();
 	void RemoveWarEntryDuplicates(const char *pName);
 	void RemoveWarEntry(const char *pNameW, const char *pNameH, const char *pNameM);
 
-	std::vector<CTempEntry> m_TempEntries;
+	// Movement Notification if tabbed out
+	int64_t m_LastNotification;
+	int m_LastTile = -1;
+	void ChangeTileNotifyTick();
 
-	CTempData m_TempPlayers[MAX_CLIENTS];
 
+	// Rainbow
+	void Rainbow();
+	unsigned int m_RainbowColor;
+	int m_ShowServerSide;
+	int m_RainbowSpeed;
+	int m_Saturation;
+	int m_Lightness;
 	int getIntFromColor(float Hue, float Sat, float LhT)
 	{
 		int R = round(255 * Hue);
@@ -158,27 +164,29 @@ public:
 		return 0xFF000000 | R | G | B;
 	}
 
-	void UpdateTempPlayers();
-
-
-	int64_t m_LastNotification;
-	int m_LastTile = -1;
-	void ChangeTileNotifyTick();
-
-	void Rainbow();
-	unsigned int m_RainbowColor;
-	int m_ShowServerSide;
-	int m_RainbowSpeed;
-	int m_Saturation;
-	int m_Lightness;
-
 	bool m_RainbowWasOn;
 	int64_t m_RainbowDelay;
 
 
 	void GoresMode();
+	int64_t m_JoinTeam;
 	void AutoJoinTeam();
 	void OnConnect();
+
+	/* Last Movement 
+	*	Tracks
+	*	+left
+	*	+right
+	*	+jump
+	*/
+
+	int64_t m_LastMovement = 10.0f;
+private:
+	virtual int Sizeof() const override { return sizeof(*this); }
+	virtual void OnInit() override;
+	virtual void OnRender() override;
+	virtual void OnNewSnapshot() override;
+	virtual void OnShutdown() override;
 };
 
 #endif

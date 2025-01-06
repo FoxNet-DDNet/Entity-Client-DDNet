@@ -181,6 +181,8 @@ void CAiodob::AutoJoinTeam()
 	if(GameClient()->CurrentRaceTime())
 		return;
 
+	int Local = m_pClient->m_Snap.m_LocalClientId;
+
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		if(m_pClient->m_Teams.Team(i))
@@ -190,7 +192,7 @@ void CAiodob::AutoJoinTeam()
 				int LocalTeam = -1;
 
 
-				if(i == m_Local)
+				if(i == Local)
 					return;
 
 				
@@ -201,7 +203,7 @@ void CAiodob::AutoJoinTeam()
 
 				int PrevTeam = -1;
 
-				if(!m_pClient->m_Teams.SameTeam(m_Local, i) && (Team > 0) && !m_JoinedTeam)
+				if(!m_pClient->m_Teams.SameTeam(Local, i) && (Team > 0) && !m_JoinedTeam)
 				{
 					char aBuf[2048] = "/team ";
 					str_append(aBuf, TeamChar);
@@ -214,19 +216,19 @@ void CAiodob::AutoJoinTeam()
 					m_JoinedTeam = true;
 					m_AttempedJoinTeam = true;
 				}
-				if(m_pClient->m_Teams.SameTeam(m_Local, i) && m_JoinedTeam)
+				if(m_pClient->m_Teams.SameTeam(Local, i) && m_JoinedTeam)
 				{
 					char Joined[2048] = "Successfully Joined The Team of ";
 					str_append(Joined, m_pClient->m_aClients[i].m_aName);
 					m_pClient->m_Chat.AddLine(-3, 0, Joined);
 
-					LocalTeam = GameClient()->m_Teams.Team(m_Local);
+					LocalTeam = GameClient()->m_Teams.Team(Local);
 
 					PrevTeam = Team;
 
 					m_JoinedTeam = false;
 				}
-				if(!m_pClient->m_Teams.SameTeam(m_Local, i) && m_AttempedJoinTeam)
+				if(!m_pClient->m_Teams.SameTeam(Local, i) && m_AttempedJoinTeam)
 				{
 					char Joined[2048] = "Couldn't Join The Team of ";
 					str_append(Joined, m_pClient->m_aClients[i].m_aName);
@@ -243,13 +245,13 @@ void CAiodob::AutoJoinTeam()
 				{
 					m_pClient->m_Chat.AddLine(-3, 0, "self team is bigger than 0");
 					m_JoinedTeam = false;
-					LocalTeam = GameClient()->m_Teams.Team(m_Local);
+					LocalTeam = GameClient()->m_Teams.Team(Local);
 				}
 				if(LocalTeam != Team)
 				{
 					PrevTeam = Team;
 					m_AttempedJoinTeam = false;
-					LocalTeam = GameClient()->m_Teams.Team(m_Local);
+					LocalTeam = GameClient()->m_Teams.Team(Local);
 				}
 				return;
 			}
@@ -328,6 +330,9 @@ void CAiodob::OnConnect()
 	if(g_Config.m_ClDummy)
 		return;
 
+	if(!Client()->m_Connected)
+		return;
+
 	// if current server is type "Gores", turn the config on, else turn it off, and only do it once at connection = m_Connected == true
 
 	CServerInfo CurrentServerInfo;
@@ -346,7 +351,9 @@ void CAiodob::OnConnect()
 			g_Config.m_ClGoresMode = 0;
 		}
 	}
-	
+
+	int Local = m_pClient->m_Snap.m_LocalClientId;
+
 	char aBuf[512];
 
 	if(g_Config.m_ClListsInfo)
@@ -358,7 +365,7 @@ void CAiodob::OnConnect()
 			bool War = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[1];
 			bool TempWar = m_TempPlayers[IdWithName(Client.m_aName)].IsTempWar;
 
-			if(!Client.m_Active && !m_Local)
+			if(!Client.m_Active && !Local)
 				continue;
 
 			if((War && !TempWar) || (!War && TempWar))
@@ -370,7 +377,7 @@ void CAiodob::OnConnect()
 		{
 			bool Team = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[2];
 
-			if(!Client.m_Active && !m_Local)
+			if(!Client.m_Active && !Local)
 				continue;
 
 			if(Team)
@@ -383,7 +390,7 @@ void CAiodob::OnConnect()
 			bool Helper = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[3];
 			bool TempHelper = m_TempPlayers[IdWithName(Client.m_aName)].IsTempHelper;
 
-			if(!Client.m_Active && !m_Local)
+			if(!Client.m_Active && !Local)
 				continue;
 
 			if((Helper && !TempHelper) || (!Helper && TempHelper))
@@ -396,7 +403,7 @@ void CAiodob::OnConnect()
 			bool Mute = GameClient()->m_aClients[IdWithName(Client.m_aName)].m_Foe;
 			bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute;
 
-			if(!Client.m_Active && !m_Local)
+			if(!Client.m_Active && !Local)
 				continue;
 
 			if((Mute && !TempMute) || (!Mute && TempMute))
@@ -629,7 +636,7 @@ void CAiodob::Rainbow()
 	else
 		m_RainbowColor = getIntFromColor(h, s, l);
 
-	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() + time_freq() && !m_pClient->m_aClients[m_Local].m_Afk)
+	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() + time_freq() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 	{
 		g_Config.m_ClDummyUseCustomColor = true;
 		g_Config.m_ClDummyColorBody = getIntFromColor(h, s, l);
@@ -673,15 +680,14 @@ void CAiodob::OnShutdown()
 
 void CAiodob::OnRender()
 {
-	 m_Local = m_pClient->m_Snap.m_LocalClientId;
+	int m_Local = m_pClient->m_Snap.m_LocalClientId;
 	
 	// on join connction = true, after joining its false
-	 if(Client()->m_Connected == true && !g_Config.m_ClDummy)
-		OnConnect();
 
 	if(g_Config.m_ClServerRainbow)
 		Rainbow();
 
+	OnConnect();
 	ChangeTileNotifyTick();
 	GoresMode();
 	AutoJoinTeam();

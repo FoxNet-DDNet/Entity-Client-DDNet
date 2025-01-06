@@ -14,7 +14,7 @@
 
 void CFreezeKill::OnRender()
 {
-	m_Local = m_pClient->m_Snap.m_LocalClientId;
+	int Local = m_pClient->m_Snap.m_LocalClientId;
 	
 	float Time = g_Config.m_ClFreezeKillMs / 1000.0f;
 
@@ -60,9 +60,9 @@ void CFreezeKill::OnRender()
 
 		CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
 
-		CCharacterCore *pCharacter = &m_pClient->m_aClients[m_Local].m_Predicted;
+		CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
 
-		vec2 Position = m_pClient->m_aClients[m_Local].m_RenderPos;
+		vec2 Position = m_pClient->m_aClients[Local].m_RenderPos;
 		CGameClient::CClientData OtherTee = m_pClient->m_aClients[i];
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
@@ -73,12 +73,12 @@ void CFreezeKill::OnRender()
 
 		// stop when spectating
 
-		if(m_pClient->m_aClients[m_Local].m_Paused || m_pClient->m_aClients[m_Local].m_Spec)
+		if(m_pClient->m_aClients[Local].m_Paused || m_pClient->m_aClients[Local].m_Spec)
 			m_LastFreeze = TimeReset;
 
 		// dont kill if moving
 
-		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[m_Local].m_FreezeEnd > 0) && i == m_Local && g_Config.m_ClFreezeDontKillMoving)
+		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0) && i == Local && g_Config.m_ClFreezeDontKillMoving)
 		{
 			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
 				if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
@@ -87,7 +87,7 @@ void CFreezeKill::OnRender()
 
 		// dont kill if teamate is in x * 2 blocks range
 
-		if(g_Config.m_ClFreezeKillTeamClose && OtherTee.m_IsTeam && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[m_Local].m_Team && i != m_Local)
+		if(g_Config.m_ClFreezeKillTeamClose && OtherTee.m_IsTeam && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[Local].m_Team && i != Local)
 		{
 			if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
 			{
@@ -104,7 +104,7 @@ void CFreezeKill::OnRender()
 		{
 			// kill if frozen (without deep and live freeze)
 
-			if(m_pClient->m_aClients[m_Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
+			if(m_pClient->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
 				m_LastFreeze = TimeReset;
 
 			// only kill if player is in a freeze tile
@@ -132,9 +132,9 @@ void CFreezeKill::OnRender()
 					m_LastFreeze = time_get() + time_freq() * 5;
 					return;
 				}
-				else if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[m_Local].m_FreezeEnd > 0))
+				else if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
 				{
-					GameClient()->SendKill(m_Local);
+					GameClient()->SendKill(Local);
 					m_SentFreezeKill = true;
 					return;
 				}
@@ -153,7 +153,7 @@ void CFreezeKill::OnRender()
 			}
 			else
 			{
-				GameClient()->SendKill(m_Local);
+				GameClient()->SendKill(Local);
 				m_SentFreezeKill = true;
 			}
 			return;
