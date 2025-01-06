@@ -166,6 +166,8 @@ public:
 	void ChangeTileNotifyTick();
 
 	void Rainbow();
+	unsigned int m_RainbowColor;
+	int m_ShowServerSide;
 	int m_RainbowSpeed;
 	int m_Saturation;
 	int m_Lightness;

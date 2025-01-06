@@ -640,8 +640,9 @@ public:
 		SCROLLBAR_OPTION_MULTILINE = 1 << 2,
 	};
 	float DoScrollbarV(const void *pId, const CUIRect *pRect, float Current);
-	float DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner = nullptr);
+	float DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner = nullptr, bool Render = true);
 	bool DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale = &ms_LinearScrollbarScale, unsigned Flags = 0u, const char *pSuffix = "");
+	bool DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale = &ms_LinearScrollbarScale, unsigned Flags = 0u);
 
 	// progress bar
 	void RenderProgressBar(CUIRect ProgressBar, float Progress);

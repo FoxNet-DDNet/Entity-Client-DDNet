@@ -1343,7 +1343,7 @@ float CUi::DoScrollbarV(const void *pId, const CUIRect *pRect, float Current)
 	return ReturnValue;
 }
 
-float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner)
+float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner, bool Render)
 {
 	Current = clamp(Current, 0.0f, 1.0f);
 
@@ -1355,7 +1355,11 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 		pRect->HMargin(5.0f, &Rail);
 
 	CUIRect Handle;
-	Rail.VSplitLeft(pColorInner ? 8.0f : clamp(33.0f, Rail.h, Rail.w / 3.5f), &Handle, 0);
+	if(!Render)
+		Rail.VSplitLeft(1, &Handle, 0);
+	else
+		Rail.VSplitLeft(pColorInner ? 8.0f : clamp(33.0f, Rail.h, Rail.w / 3.5f), &Handle, 0);
+
 	Handle.x += (Rail.w - Handle.w) * Current;
 
 	CUIRect HandleArea = Handle;
@@ -1425,20 +1429,23 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 	}
 
 	// render
-	const ColorRGBA HandleColor = ms_ScrollBarColorFunction.GetColor(CheckActiveItem(pId), HotItem() == pId);
-	if(pColorInner)
+	if(Render)
 	{
-		CUIRect Slider;
-		Handle.VMargin(-2.0f, &Slider);
-		Slider.HMargin(-3.0f, &Slider);
-		Slider.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f).Multiply(HandleColor), IGraphics::CORNER_ALL, 5.0f);
-		Slider.Margin(2.0f, &Slider);
-		Slider.Draw(pColorInner->Multiply(HandleColor), IGraphics::CORNER_ALL, 3.0f);
-	}
-	else
-	{
-		Rail.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, Rail.h / 2.0f);
-		Handle.Draw(HandleColor, IGraphics::CORNER_ALL, Rail.h / 2.0f);
+		const ColorRGBA HandleColor = ms_ScrollBarColorFunction.GetColor(CheckActiveItem(pId), HotItem() == pId);
+		if(pColorInner)
+		{
+			CUIRect Slider;
+			Handle.VMargin(-2.0f, &Slider);
+			Slider.HMargin(-3.0f, &Slider);
+			Slider.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f).Multiply(HandleColor), IGraphics::CORNER_ALL, 5.0f);
+			Slider.Margin(2.0f, &Slider);
+			Slider.Draw(pColorInner->Multiply(HandleColor), IGraphics::CORNER_ALL, 3.0f);
+		}
+		else
+		{
+			Rail.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, Rail.h / 2.0f);
+			Handle.Draw(HandleColor, IGraphics::CORNER_ALL, Rail.h / 2.0f);
+		}
 	}
 
 	return ReturnValue;
@@ -1510,6 +1517,67 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 	}
 	return false;
 }
+
+bool CUi::DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale, unsigned Flags)
+{
+	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
+	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
+	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
+
+	int Value = *pOption;
+	if(Infinite)
+	{
+		Max += 1;
+		if(Value == 0)
+			Value = Max;
+	}
+
+	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidently adjusting the value)
+	int Increment = std::max(1, (Max - Min) / 35);
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && MouseInside(pRect))
+	{
+		Value += Increment;
+		Value = clamp(Value, Min, Max);
+	}
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && MouseInside(pRect))
+	{
+		Value -= Increment;
+		Value = clamp(Value, Min, Max);
+	}
+
+	if(NoClampValue)
+	{
+		// clamp the value internally for the scrollbar
+		Value = clamp(Value, Min, Max);
+	}
+
+	CUIRect Label, ScrollBar;
+	if(MultiLine)
+		pRect->HSplitMid(&Label, &ScrollBar);
+	else
+		pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
+
+	const float FontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
+
+	Value = pScale->ToAbsolute(DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max), nullptr, false), Min, Max);
+	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
+	{
+		Value = *pOption; // use previous out of range value instead if the scrollbar is at the edge
+	}
+	else if(Infinite)
+	{
+		if(Value == Max)
+			Value = 0;
+	}
+
+	if(*pOption != Value)
+	{
+		*pOption = Value;
+		return true;
+	}
+	return false;
+}
+
 
 void CUi::RenderProgressBar(CUIRect ProgressBar, float Progress)
 {

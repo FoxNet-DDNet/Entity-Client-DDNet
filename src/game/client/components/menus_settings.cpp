@@ -2069,7 +2069,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 	}
 }
 
-bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight)
+bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview)
 {
 	const unsigned PrevPackedColor = *pColor;
 	ColorHSLA Color(*pColor, Alpha);
@@ -2081,14 +2081,17 @@ bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alp
 	const float PreviewHeight = 40.0f + 2 * PreviewMargin;
 	const float OffY = (SizePerEntry + MarginPerEntry) * (3 + (Alpha ? 1 : 0)) - PreviewHeight;
 
-	CUIRect Preview;
-	pRect->VSplitLeft(PreviewHeight, &Preview, pRect);
-	Preview.HSplitTop(OffY / 2.0f, nullptr, &Preview);
-	Preview.HSplitTop(PreviewHeight, &Preview, nullptr);
+	if(Preview)
+	{
+		CUIRect Preview;
+		pRect->VSplitLeft(PreviewHeight, &Preview, pRect);
+		Preview.HSplitTop(OffY / 2.0f, nullptr, &Preview);
+		Preview.HSplitTop(PreviewHeight, &Preview, nullptr);
 
-	Preview.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
-	Preview.Margin(PreviewMargin, &Preview);
-	Preview.Draw(color_cast<ColorRGBA>(Color.UnclampLighting(DarkestLight)), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
+		Preview.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
+		Preview.Margin(PreviewMargin, &Preview);
+		Preview.Draw(color_cast<ColorRGBA>(Color.UnclampLighting(DarkestLight)), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
+	}
 
 	auto &&RenderHueRect = [&](CUIRect *pColorRect) {
 		float CurXOff = pColorRect->x;

@@ -569,7 +569,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect PlayerSettings, ChatSettings, SoundSettings, WarVisual, UiSettings, AiodobSettings, GoresModeSettings;
+		CUIRect PlayerSettings, ChatSettings, WarVisual, UiSettings, AiodobSettings, GoresModeSettings, RainbowSettings;
 		MainView.VSplitMid(&PlayerSettings, &UiSettings);
 
 		{
@@ -1117,9 +1117,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			UiSettings.VMargin(5.0f, &UiSettings);
 			if(g_Config.m_ClFpsSpoofer)
-				UiSettings.HSplitTop(160.0f, &UiSettings, &WarVisual);
+				UiSettings.HSplitTop(160.0f, &UiSettings, &RainbowSettings);
 			else
-				UiSettings.HSplitTop(125.0f, &UiSettings, &WarVisual);
+				UiSettings.HSplitTop(125.0f, &UiSettings, &RainbowSettings);
 			if(s_ScrollRegion.AddRect(UiSettings))
 			{
 				UiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1141,6 +1141,40 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					UiSettings.HSplitTop(2 * LineSize, &Button, &UiSettings);
 					Ui()->DoScrollbarOption(&g_Config.m_ClFpsSpoofPercentage, &g_Config.m_ClFpsSpoofPercentage, &Button, Localize("Fps Spoofer Margin"), 1, 500, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
 				}
+			}
+		}
+
+		{
+			RainbowSettings.HSplitTop(Margin, nullptr, &RainbowSettings);
+			RainbowSettings.HSplitTop(200.0f, &RainbowSettings, &WarVisual);
+			if(s_ScrollRegion.AddRect(RainbowSettings))
+			{
+				RainbowSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				RainbowSettings.VMargin(Margin, &RainbowSettings);
+
+				RainbowSettings.HSplitTop(HeaderHeight, &Button, &RainbowSettings);
+				Ui()->DoLabel(&Button, Localize("Server-Side Rainbow"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, "Enable Serverside Rainbow", &g_Config.m_ClServerRainbow, &RainbowSettings, LineSize);
+
+				RainbowSettings.HSplitTop(2 * LineSize, &Button, &RainbowSettings);
+				Ui()->DoScrollbarOption(&GameClient()->m_Aiodob.m_RainbowSpeed, &GameClient()->m_Aiodob.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 1000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
+
+				RainbowSettings.VSplitLeft(52, &Button, &RainbowSettings);
+				RenderHslaScrollbars(&RainbowSettings, &GameClient()->m_Aiodob.m_RainbowColor, false, ColorHSLA::DARKEST_LGT, false);
+				RainbowSettings.VSplitLeft(-140, &Button, &RainbowSettings);
+
+				RainbowSettings.HSplitTop(-54, &Button, &RainbowSettings);
+				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
+				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_Saturation, &GameClient()->m_Aiodob.m_Saturation, &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
+				RainbowSettings.HSplitTop(-3, &Button, &RainbowSettings);
+				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
+				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_Lightness, &GameClient()->m_Aiodob.m_Lightness, &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
+
+				RenderDevSkin(vec2(RainbowSettings.Center().x - 131, RainbowSettings.Center().y - 60), 75.0f, g_Config.m_ClDummy ? g_Config.m_ClDummySkin : g_Config.m_ClPlayerSkin, "default", g_Config.m_ClPlayerUseCustomColor, 0, g_Config.m_ClServerRainbow ? GameClient()->m_Aiodob.m_RainbowColor : g_Config.m_ClPlayerColorBody, 0, false);
+
+				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_ShowServerSide, "Show Server-side", &GameClient()->m_Aiodob.m_ShowServerSide, &RainbowSettings, LineSize);
 			}
 		}
 
@@ -1201,7 +1235,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			GoresModeSettings.HSplitTop(Margin, nullptr, &GoresModeSettings);
-			GoresModeSettings.HSplitTop(140.0f, &GoresModeSettings, &AiodobSettings);
+			GoresModeSettings.HSplitTop(120.0f, &GoresModeSettings, 0);
 			if(s_ScrollRegion.AddRect(GoresModeSettings))
 			{
 				GoresModeSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1222,7 +1256,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			AiodobSettings.HSplitTop(Margin, nullptr, &AiodobSettings);
-			AiodobSettings.HSplitTop(90.0f, &AiodobSettings, 0);
+			AiodobSettings.HSplitTop(90.0f, &AiodobSettings, &RainbowSettings);
 			if(s_ScrollRegion.AddRect(AiodobSettings))
 			{
 				AiodobSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1853,7 +1887,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		{
 			// TODO: stop misusing this function
 			// TODO: render the real skin with skin remembering component (to be added)
-			RenderDevSkin(EntryTypeRect.Center(), 35.0f, "defualt", "default", false, 0, 0, 0, false);
+			RenderDevSkin(EntryTypeRect.Center(), 35.0f, "default", "default", false, 0, 0, 0, false);
 		}
 
 		if(str_comp(pEntry->m_aReason, "") != 0)
