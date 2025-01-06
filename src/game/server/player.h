@@ -112,8 +112,6 @@ public:
 	int m_DieTick;
 	int m_PreviousDieTick;
 	std::optional<int> m_Score;
-	bool m_ReceivePoints;
-	int m_Points;
 	int m_JoinTick;
 	bool m_ForceBalanced;
 	int m_LastActionTick;

@@ -271,7 +271,7 @@ void CGameContext::FillAntibot(CAntibotRoundData *pData)
 void CGameContext::CreateDamageInd(vec2 Pos, float Angle, int Amount, CClientMask Mask)
 {
 	float a = 3 * pi / 2 + Angle;
-	// float a = get_angle(dir);
+	//float a = get_angle(dir);
 	float s = a - pi / 3;
 	float e = a + pi / 3;
 	for(int i = 0; i < Amount; i++)
@@ -1050,7 +1050,7 @@ void CGameContext::OnTick()
 
 	UpdatePlayerMaps();
 
-	// if(world.paused) // make sure that the game object always updates
+	//if(world.paused) // make sure that the game object always updates
 	m_pController->Tick();
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -1998,8 +1998,7 @@ void *CGameContext::PreProcessMsg(int *pMsgId, CUnpacker *pUnpacker, int ClientI
 			if(pMsg7->m_Force)
 			{
 				str_format(s_aRawMsg, sizeof(s_aRawMsg), "force_vote \"%s\" \"%s\" \"%s\"", pMsg7->m_pType, pMsg7->m_pValue, pMsg7->m_pReason);
-				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
-																	 IConsole::ACCESS_LEVEL_HELPER);
+				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : IConsole::ACCESS_LEVEL_HELPER);
 				Console()->ExecuteLine(s_aRawMsg, ClientId, false);
 				Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
 				return nullptr;
@@ -2206,8 +2205,7 @@ void CGameContext::OnSayNetMessage(const CNetMsg_Cl_Say *pMsg, int ClientId, con
 			Console()->SetFlagMask(CFGFLAG_CHAT);
 			int Authed = Server()->GetAuthedState(ClientId);
 			if(Authed)
-				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
-																	 IConsole::ACCESS_LEVEL_HELPER);
+				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD : IConsole::ACCESS_LEVEL_HELPER);
 			else
 				Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_USER);
 
@@ -4511,7 +4509,7 @@ void CGameContext::SendRecord(int ClientId)
 	CNetMsg_Sv_Record Msg;
 	CNetMsg_Sv_RecordLegacy MsgLegacy;
 	MsgLegacy.m_PlayerTimeBest = Msg.m_PlayerTimeBest = Score()->PlayerData(ClientId)->m_BestTime * 100.0f;
-	MsgLegacy.m_ServerTimeBest = Msg.m_ServerTimeBest = m_pController->m_CurrentRecord * 100.0f; // TODO: finish this
+	MsgLegacy.m_ServerTimeBest = Msg.m_ServerTimeBest = m_pController->m_CurrentRecord * 100.0f; //TODO: finish this
 	Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientId);
 	if(!Server()->IsSixup(ClientId) && GetClientVersion(ClientId) < VERSION_DDNET_MSG_LEGACY)
 	{
@@ -5015,8 +5013,7 @@ void CGameContext::OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int 
 	pJSonWriter->WriteAttribute("afk");
 	pJSonWriter->WriteBoolValue(m_apPlayers[Id]->IsAfk());
 
-	const int Team = m_pController->IsTeamPlay() ? m_apPlayers[Id]->GetTeam() : m_apPlayers[Id]->GetTeam() == TEAM_SPECTATORS ? -1 :
-																    GetDDRaceTeam(Id);
+	const int Team = m_pController->IsTeamPlay() ? m_apPlayers[Id]->GetTeam() : m_apPlayers[Id]->GetTeam() == TEAM_SPECTATORS ? -1 : GetDDRaceTeam(Id);
 
 	pJSonWriter->WriteAttribute("team");
 	pJSonWriter->WriteIntValue(Team);

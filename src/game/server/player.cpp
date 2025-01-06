@@ -121,8 +121,6 @@ void CPlayer::Reset()
 
 	m_LastPause = 0;
 	m_Score.reset();
-	m_ReceivePoints = false;
-	m_Points = 0;
 
 	// Variable initialized:
 	m_Last_Team = 0;
@@ -356,12 +354,6 @@ void CPlayer::Snap(int SnappingClient)
 	if(SnappingClient != m_ClientId && g_Config.m_SvHideScore)
 		Score = -9999;
 
-	CNetObj_DDNetPlayer *pDDNetPlayer = Server()->SnapNewItem<CNetObj_DDNetPlayer>(id);
-	if(pDDNetPlayer && GameServer()->m_apPlayers[SnappingClient]->m_ReceivePoints)
-	{
-		Score = GameServer()->m_apPlayers[m_ClientId]->m_Points;
-	}
-
 	if(!Server()->IsSixup(SnappingClient))
 	{
 		CNetObj_PlayerInfo *pPlayerInfo = Server()->SnapNewItem<CNetObj_PlayerInfo>(id);
@@ -440,25 +432,7 @@ void CPlayer::Snap(int SnappingClient)
 		}
 	}
 
-	if(m_ClientId == SnappingClient)
-	{
-		// send extended spectator info even when playing, this allows demo to record camera settings for local player
-		const int SpectatingClient = ((m_Team != TEAM_SPECTATORS && !m_Paused) || m_SpectatorId < 0 || m_SpectatorId >= MAX_CLIENTS) ? id : m_SpectatorId;
-		const CPlayer *pSpecPlayer = GameServer()->m_apPlayers[SpectatingClient];
-
-		if(pSpecPlayer)
-		{
-			CNetObj_DDNetSpectatorInfo *pDDNetSpectatorInfo = Server()->SnapNewItem<CNetObj_DDNetSpectatorInfo>(id);
-			if(!pDDNetSpectatorInfo)
-				return;
-
-			pDDNetSpectatorInfo->m_HasCameraInfo = pSpecPlayer->m_CameraInfo.m_HasCameraInfo;
-			pDDNetSpectatorInfo->m_Zoom = pSpecPlayer->m_CameraInfo.m_Zoom * 1000.0f;
-			pDDNetSpectatorInfo->m_Deadzone = pSpecPlayer->m_CameraInfo.m_Deadzone;
-			pDDNetSpectatorInfo->m_FollowFactor = pSpecPlayer->m_CameraInfo.m_FollowFactor;
-		}
-	}
-
+	CNetObj_DDNetPlayer *pDDNetPlayer = Server()->SnapNewItem<CNetObj_DDNetPlayer>(id);
 	if(!pDDNetPlayer)
 		return;
 
@@ -971,9 +945,6 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 				GameServer()->Score()->PlayerData(m_ClientId)->Set(Result.m_Data.m_Info.m_Time.value(), Result.m_Data.m_Info.m_aTimeCp);
 				m_Score = Result.m_Data.m_Info.m_Time;
 			}
-
-			m_Points = (Result.m_Data.m_Info.m_Points < 0) ? m_Points + Result.m_Data.m_Info.m_Points : Result.m_Data.m_Info.m_Points;
-
 			Server()->ExpireServerInfo();
 			int Birthday = Result.m_Data.m_Info.m_Birthday;
 			if(Birthday != 0 && !m_BirthdayAnnounced && GetCharacter())
