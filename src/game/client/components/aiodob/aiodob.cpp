@@ -330,11 +330,7 @@ void CAiodob::OnConnect()
 	if(g_Config.m_ClDummy)
 		return;
 
-	// on join connction = true, after joining its false
-	if(!Client()->m_Connected)
-		return;
-
-	// if current server is type "Gores", turn the config on, else turn it off, and only do it once at connection = m_Connected == true
+	// if current server is type "Gores", turn the config on, else turn it off
 
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
@@ -483,9 +479,6 @@ void CAiodob::OnConnect()
 	}
 
 	// disables connected so it only does it once on join
-
-	if(Client()->m_Connected == true)
-		Client()->m_Connected = false;
 }
 
 void CAiodob::ChangeTileNotifyTick()
@@ -684,7 +677,6 @@ void CAiodob::OnRender()
 	if(g_Config.m_ClServerRainbow)
 		Rainbow();
 
-	OnConnect();
 	ChangeTileNotifyTick();
 	GoresMode();
 	AutoJoinTeam();

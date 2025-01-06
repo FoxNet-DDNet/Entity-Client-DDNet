@@ -256,7 +256,6 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 				else
 				{
 					str_format(aBuf, sizeof(aBuf), "No clan found for user \"%s\"", pName);
-					GameClient()->Echo(aBuf);
 					break;
 				}
 			}
@@ -284,6 +283,7 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 			}
 		}
 	}
+	GameClient()->aMessage(aBuf);
 	RemoveWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_pWarType->m_aWarName);
 }
 

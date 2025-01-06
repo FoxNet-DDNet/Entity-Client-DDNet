@@ -135,9 +135,12 @@ class CClient : public IClient, public CDemoPlayer::IListener
 
 	char m_aTimeoutCodes[NUM_DUMMIES][32] = {"", ""};
 	bool m_aCodeRunAfterJoin[NUM_DUMMIES] = {false, false};
-	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
 	bool m_aInfoDisplay[NUM_DUMMIES] = {false, false};
 	bool m_GenerateTimeoutSeed = true;
+
+	// A-Client
+	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
+	bool m_aOnJoinInfo[NUM_DUMMIES] = {false, false};
 
 	char m_aCmdConnect[256] = "";
 	char m_aCmdPlayDemo[IO_MAX_PATH_LENGTH] = "";

@@ -2081,7 +2081,6 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 							m_PredictedTime.Init(GameTick * time_freq() / GameTickSpeed());
 							m_PredictedTime.SetAdjustSpeed(CSmoothTime::ADJUSTDIRECTION_UP, 1000.0f);
 							m_PredictedTime.UpdateMargin(PredictionMargin() * time_freq() / 1000);
-							m_Connected = true;
 						}
 						m_aGameTime[Conn].Init((GameTick - 1) * time_freq() / GameTickSpeed());
 						m_aapSnapshots[Conn][SNAP_PREV] = m_aSnapshotStorage[Conn].m_pFirst;
@@ -2118,6 +2117,11 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					{
 						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoin);
 						m_aCodeRunAfterJoinConsole[Conn] = true;
+					}
+					if(g_Config.m_ClEnabledInfo && m_aReceivedSnapshots[Conn] > 20 && !m_aOnJoinInfo[CONN_MAIN])
+					{
+						GameClient()->OnJoinInfo();
+						m_aOnJoinInfo[CONN_MAIN] = true;
 					}
 					if(m_aReceivedSnapshots[Conn] > GameTickSpeed() && !m_aCodeRunAfterJoin[Conn])
 					{

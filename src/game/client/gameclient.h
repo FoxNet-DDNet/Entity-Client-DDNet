@@ -681,11 +681,16 @@ public:
 
 	void DummyResetInput() override;
 	void Echo(const char *pString) override;
-	void aMessage(const char *pString) override;
 	bool IsOtherTeam(int ClientId) const;
 	int SwitchStateTeam() const;
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
+
+	// A-Client	
+	void aMessage(const char *pString) override;
+	void OnJoinInfo() override;
+
+
 	CNetObjHandler *GetNetObjHandler() override;
 	protocol7::CNetObjHandler *GetNetObjHandler7() override;
 

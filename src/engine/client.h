@@ -141,8 +141,6 @@ public:
 
 	void SetLoadingCallback(TLoadingCallback &&Func) { m_LoadingCallback = std::move(Func); }
 
-	bool m_Connected;
-
 	// tick time access
 	inline int PrevGameTick(int Conn) const { return m_aPrevGameTick[Conn]; }
 	inline int GameTick(int Conn) const { return m_aCurGameTick[Conn]; }
@@ -381,7 +379,10 @@ public:
 	virtual void OnDummyDisconnect() = 0;
 	virtual void DummyResetInput() = 0;
 	virtual void Echo(const char *pString) = 0;
+
+	// A-Client
 	virtual void aMessage(const char *pString) = 0;
+	virtual void OnJoinInfo() = 0;
 
 	virtual bool CanDisplayWarning() const = 0;
 	virtual void RenderShutdownMessage() = 0;

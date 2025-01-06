@@ -3589,6 +3589,11 @@ void CGameClient::aMessage(const char *pString)
 	m_Chat.AddLine(-3, 0, pString);
 }
 
+void CGameClient::OnJoinInfo()
+{
+	m_Aiodob.OnConnect();
+}
+
 bool CGameClient::IsOtherTeam(int ClientId) const
 {
 	bool Local = m_Snap.m_LocalClientId == ClientId;
