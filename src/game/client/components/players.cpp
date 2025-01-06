@@ -1547,7 +1547,7 @@ void CPlayers::OnRender()
 					}
 				
 				}
-				// if Player is in x List, change color accordingly
+				// if Player is in i List, change color accordingly
 
 				if(m_pClient->m_aClients[i].m_IsWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
 				{

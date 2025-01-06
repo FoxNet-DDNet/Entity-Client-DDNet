@@ -100,7 +100,7 @@ public:
 
 	bool IsMuted = false; // A-Client [Mutes]
 
-	std::vector<char> m_WarGroupMatches = {false, false, false};
+	std::vector<char> m_WarGroupMatches = {false, false, false, false};
 
 	char m_aReason[MAX_WARLIST_REASON_LENGTH] = "";
 };
