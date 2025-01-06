@@ -208,22 +208,19 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 		str_format(aBuf, sizeof(aBuf), "added \"%s\" to '%s' list ", pName, Entry.m_pWarType);
 		GameClient()->aMessage(aBuf);
 
-		CTempEntry Entry(pName, pName, "");
+		CTempEntry TempEntry(pName, pName, "");
 
-		auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), Entry);
+		auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), TempEntry);
 		if(it != GameClient()->m_Aiodob.m_TempEntries.end())
 		{
-			for(CTempEntry &Entries : GameClient()->m_Aiodob.m_TempEntries)
+			for(auto it2 = GameClient()->m_Aiodob.m_TempEntries.begin(); it2 != GameClient()->m_Aiodob.m_TempEntries.end();)
 			{
-				for(auto it = GameClient()->m_Aiodob.m_TempEntries.begin(); it != GameClient()->m_Aiodob.m_TempEntries.end();)
-				{
-					bool IsDuplicate = !str_comp(it->m_aTempWar, pName) || !str_comp(it->m_aTempHelper, pName);
+				bool IsDuplicate = !str_comp(it2->m_aTempWar, pName) || !str_comp(it2->m_aTempHelper, pName);
 
-					if(IsDuplicate)
-						it = GameClient()->m_Aiodob.m_TempEntries.erase(it);
-					else
-						++it;
-				}
+				if(IsDuplicate)
+					it2 = GameClient()->m_Aiodob.m_TempEntries.erase(it2);
+				else
+					++it2;
 			}
 		}
 	}
@@ -261,12 +258,12 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 				{
 					str_copy(Entry.m_aClan, GameClient()->m_aClients[i].m_aClan);
 					{
-						CWarEntry Entry(pWarType, "", Entry.m_aClan, "");
+						CWarEntry ClanEntry(pWarType, "", Entry.m_aClan, "");
 						str_format(aBuf, sizeof(aBuf), "[Error] \"%s's\" Clan not found in '%s' list", pName, pWarType->m_aWarName);
 
-						if(FindWarTypeWithClan(Entry.m_aClan) == WarType)
+						if(FindWarTypeWithClan(ClanEntry.m_aClan) == WarType)
 						{
-							auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), Entry);
+							auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), ClanEntry);
 							if(it != m_WarEntries.end())
 								m_WarEntries.erase(it);
 							str_format(aBuf, sizeof(aBuf), "Removed \"%s's\" clan from the '%s' list", pName, pWarType->m_aWarName);
@@ -275,7 +272,6 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 				}
 				else
 				{
-					char aBuf[128];
 					str_format(aBuf, sizeof(aBuf), "[Error] No clan for \"%s\" found", pName);
 					break;
 				}
@@ -287,37 +283,34 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 		str_copy(Entry.m_aName, pName);
 		
 		{
-			CWarEntry Entry(pWarType, pName, "", "");
+			CWarEntry NameEntry(pWarType, pName, "", "");
 
-			str_format(aBuf, sizeof(aBuf), "[Error] \"%s\" not found in '%s' list", pName, Entry.m_pWarType);
+			str_format(aBuf, sizeof(aBuf), "[Error] \"%s\" not found in '%s' list", pName, NameEntry.m_pWarType);
 
 
 			if(FindWarTypeWithName(pName) == WarType)
 			{
-				auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), Entry);
+				auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), NameEntry);
 				if(it != m_WarEntries.end())
 					m_WarEntries.erase(it);
-				str_format(aBuf, sizeof(aBuf), "removed \"%s\" from '%s' list", pName, Entry.m_pWarType);
+				str_format(aBuf, sizeof(aBuf), "removed \"%s\" from '%s' list", pName, NameEntry.m_pWarType);
 			}
 		}
 
 		{
-			CTempEntry Entry(pName, pName, "");
+			CTempEntry TempEntry(pName, pName, "");
 
-			auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), Entry);
+			auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), TempEntry);
 			if(it != GameClient()->m_Aiodob.m_TempEntries.end())
 			{
-				for(CTempEntry &Entries : GameClient()->m_Aiodob.m_TempEntries)
+				for(auto it2 = GameClient()->m_Aiodob.m_TempEntries.begin(); it2 != GameClient()->m_Aiodob.m_TempEntries.end();)
 				{
-					for(auto it = GameClient()->m_Aiodob.m_TempEntries.begin(); it != GameClient()->m_Aiodob.m_TempEntries.end();)
-					{
-						bool IsDuplicate = !str_comp(it->m_aTempWar, pName) || !str_comp(it->m_aTempHelper, pName);
+					bool IsDuplicate = !str_comp(it2->m_aTempWar, pName) || !str_comp(it2->m_aTempHelper, pName);
 
-						if(IsDuplicate)
-							it = GameClient()->m_Aiodob.m_TempEntries.erase(it);
-						else
-							++it;
-					}
+					if(IsDuplicate)
+						it2 = GameClient()->m_Aiodob.m_TempEntries.erase(it2);
+					else
+						++it2;
 				}
 			}
 		}

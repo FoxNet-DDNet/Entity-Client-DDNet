@@ -567,7 +567,7 @@ void CAiodob::OnInit()
 	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A)&& str_comp(g_Config.m_ClSavedDummyClan, A))
 		SaveSkin();
 
-	m_RainbowSpeed = 25;
+	m_RainbowSpeed = 10;
 	m_LastMovement = 0;
 	m_Saturation = 200;
 	m_Lightness = 30;
@@ -621,7 +621,10 @@ void CAiodob::Rainbow()
 
 		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
 		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
+		GameClient()->SendDummyInfo(false);
+		GameClient()->SendInfo(false);
 		m_RainbowWasOn = false;
+
 	}
 
 	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() + time_freq() && !m_pClient->m_aClients[m_Local].m_Afk)
