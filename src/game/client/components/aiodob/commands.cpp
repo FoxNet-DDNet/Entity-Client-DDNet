@@ -143,20 +143,17 @@ void CAiodob::UnTempWar(const char *pName, bool Silent)
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
 	{
-		for(CTempEntry &Entries : m_TempEntries)
+		for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
 		{
-			for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
-			{
-				bool IsDuplicate = !str_comp(it2->m_aTempWar, pName);
+			bool IsDuplicate = !str_comp(it2->m_aTempWar, pName);
 
-				if(IsDuplicate)
-					it2 = m_TempEntries.erase(it2);
-				else
-					++it2;
+			if(IsDuplicate)
+				it2 = m_TempEntries.erase(it2);
+			else
+				++it2;
 
-				if(!str_comp(Entries.m_aTempWar, pName))
-					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp War List", pName);
-			}
+			if(!str_comp(it2->m_aTempWar, pName))
+				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp War List", pName);
 		}
 	}
 	if(!Silent)
@@ -187,20 +184,17 @@ void CAiodob::UnTempHelper(const char *pName, bool Silent)
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
 	{
-		for(CTempEntry &Entries : m_TempEntries)
+		for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
 		{
-			for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
-			{
-				bool IsDuplicate = !str_comp(it2->m_aTempHelper, pName);
+			bool IsDuplicate = !str_comp(it2->m_aTempHelper, pName);
 
-				if(IsDuplicate)
-					it2 = m_TempEntries.erase(it2);
-				else
-					++it2;
+			if(IsDuplicate)
+				it2 = m_TempEntries.erase(it2);
+			else
+				++it2;
 
-				if(!str_comp(Entries.m_aTempHelper, pName))
-					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Helper List", pName);
-			}
+			if(!str_comp(it2->m_aTempHelper, pName))
+				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Helper List", pName);
 		}
 	}
 	if(!Silent)
@@ -230,20 +224,17 @@ void CAiodob::UnTempMute(const char *pName, bool Silent)
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
 	{
-		for(CTempEntry &Entries : m_TempEntries)
+		for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
 		{
-			for(auto it2 = m_TempEntries.begin(); it2 != m_TempEntries.end();)
-			{
-				bool IsDuplicate = !str_comp(it2->m_aTempMute, pName);
+			bool IsDuplicate = !str_comp(it2->m_aTempMute, pName);
 
-				if(IsDuplicate)
-					it2 = m_TempEntries.erase(it2);
-				else
-					++it2;
+			if(IsDuplicate)
+				it2 = m_TempEntries.erase(it2);
+			else
+				++it2;
 
-				if(!str_comp(it2->m_aTempMute, pName))
-					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
-			}
+			if(!str_comp(it2->m_aTempMute, pName))
+				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
 		}
 	}
 	if(!Silent)
