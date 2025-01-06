@@ -355,7 +355,6 @@ void CAiodob::OnConnect()
 
 	if(g_Config.m_ClListsInfo)
 	{
-
 		int NumberWars = 0;
 		for(auto &Client : GameClient()->m_aClients)
 		{

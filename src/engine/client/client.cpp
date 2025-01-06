@@ -490,6 +490,7 @@ void CClient::EnterGame(int Conn)
 
 	m_aCodeRunAfterJoin[Conn] = false;
 	m_aCodeRunAfterJoinConsole[Conn] = false;
+	m_aOnJoinInfo[CONN_MAIN] = false;
 
 	// now we will wait for two snapshots
 	// to finish the connection

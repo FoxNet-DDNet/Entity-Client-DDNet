@@ -484,7 +484,9 @@ public:
 		bool m_Friend;
 		bool m_Foe;
 
-		// warlist
+		// A-Client
+		int m_Id;
+
 		bool m_IsWar;
 		bool m_IsTeam;
 		bool m_IsHelper;

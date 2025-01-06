@@ -1,4 +1,4 @@
-
+﻿
 #include <engine/console.h>
 
 #include <game/client/gameclient.h>
@@ -116,6 +116,12 @@ void CAiodob::ConRestoreSkin(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
 	pSelf->RestoreSkin();
+}
+
+void CAiodob::ConOnlineInfo(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+	pSelf->OnlineInfo();
 }
 
 void CAiodob::TempWar(const char *pName)
@@ -307,9 +313,101 @@ void CAiodob::SaveSkin()
 	else GameClient()->aMessage("Can't Save! Rainbow mode is enabled.");
 }
 
+void CAiodob::OnlineInfo()
+{
+	char aBuf[512];
+	char active[512];
+
+	str_format(aBuf, sizeof(aBuf), "[Inactive] Couldn't be", "Loaded");
+	str_format(active, sizeof(active), "[active] Couldn't be", "Loaded");
+
+	int Local = m_pClient->m_Snap.m_LocalClientId;
+
+	int NumberWars = 0;
+	int NumberWarsAfk = 0;
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		bool War = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[1];
+		bool TempWar = m_TempPlayers[IdWithName(Client.m_aName)].IsTempWar;
+
+		if(!Client.m_Active && !Local)
+			continue;
+
+		if((War && !TempWar) || (!War && TempWar))
+		{
+			NumberWars++;
+			if(Client.m_Afk)
+				NumberWarsAfk++;
+		}
+	}
+
+	int NumberTeams = 0;
+	int NumberTeamsAfk = 0;
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		bool Team = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[2];
+
+		if(!Client.m_Active && !Local)
+			continue;
+
+		if(Team)
+		{
+			NumberTeams++;
+			if(Client.m_Afk)
+				NumberTeamsAfk++;
+		}
+	}
+
+	int NumberHelpers = 0;
+	int NumberHelpersAfk = 0;
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		bool Helper = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[3];
+		bool TempHelper = m_TempPlayers[IdWithName(Client.m_aName)].IsTempHelper;
+
+		if(!Client.m_Active && !Local)
+			continue;
+
+		if((Helper && !TempHelper) || (!Helper && TempHelper))
+		{
+			NumberHelpers++;
+			if(Client.m_Afk)
+				NumberHelpersAfk++;
+		}
+	}
+
+	int NumberMutes = 0;
+	int NumberMutesAfk = 0;
+	for(auto &Client : GameClient()->m_aClients)
+	{
+		bool Mute = GameClient()->m_aClients[IdWithName(Client.m_aName)].m_Foe;
+		bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute;
+
+		if(!Client.m_Active && !Local)
+			continue;
+
+		if((Mute && !TempMute) || (!Mute && TempMute))
+		{
+			NumberMutes++;
+			if(Client.m_Afk)
+				NumberMutesAfk++;
+		}
+	}
+
+	str_format(aBuf, sizeof(aBuf), "│ [online] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);
+	str_format(active, sizeof(active), "│ [active] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams - NumberTeamsAfk, NumberWars - NumberWarsAfk, NumberHelpers - NumberHelpersAfk, NumberMutes - NumberMutesAfk);
+	GameClient()->aMessage("╭──                  Aiodob Info");
+	GameClient()->aMessage("│");
+	GameClient()->aMessage(aBuf);
+	GameClient()->aMessage(active);
+	GameClient()->aMessage("│");
+	GameClient()->aMessage("╰───────────────────────");
+}
+
 void CAiodob::OnConsoleInit()
 {
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");
+	Console()->Register("onlineinfo", "", CFGFLAG_CLIENT, ConOnlineInfo, this, "Shows you how many people of default lists are on the current server");
 
 	Console()->Register("addtempwar", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempWar, this, "temporary War");
 	Console()->Register("deltempwar", "s[name]", CFGFLAG_CLIENT, ConUnTempWar, this, "remove temporary War");
@@ -327,65 +425,3 @@ void CAiodob::OnConsoleInit()
 	Console()->Register("server_rainbow_sat", "?s[Sat]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 10)");
 	Console()->Register("server_rainbow_lht", "?s[Lht]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 10)");
 }
-
-// Stuff to Fix Later
-/*
-void OnlineInfo()
-{
-	char aBuf[512];
-	char active[512];
-	int NumberWars = 0;
-	int NumberWarsAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		bool War = GameClient()->m_WarList.IsAnyWar(Client.m_aName, Client.m_aClan);
-		if(!Client.m_Active)
-			continue;
-		if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName) && !GameClient()->m_WarList.IsTeamlist(Client.m_aName) && !GameClient()->m_WarList.IsClanTeamlist(Client.m_aClan))
-			if(War)
-				NumberWars++;
-		if(Client.m_Afk && War)
-			NumberWarsAfk++;
-	}
-	int NumberTeams = 0;
-	int NumberTeamsAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		bool Team = GameClient()->m_WarList.IsAnyTeam(Client.m_aName, Client.m_aClan);
-		if(!Client.m_Active)
-			continue;
-		if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName) && !GameClient()->m_WarList.IsWarlist(Client.m_aName) && !GameClient()->m_WarList.IsTempWarlist(Client.m_aName) && !GameClient()->m_WarList.IsClanWarlist(Client.m_aClan))
-			if(Team)
-				NumberTeams++;
-		if(Client.m_Afk && Team)
-			NumberTeamsAfk++;
-	}
-	int NumberHelpers = 0;
-	int NumberHelpersAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		if(!Client.m_Active)
-			continue;
-		if(!GameClient()->m_WarList.IsHelperlist(Client.m_aName))
-			continue;
-		NumberHelpers++;
-		if(Client.m_Afk)
-			NumberHelpersAfk++;
-	}
-	int NumberMutes = 0;
-	int NumberMutesAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		if(!Client.m_Active)
-			continue;
-		if(!GameClient()->m_WarList.IsMutelist(Client.m_aName))
-			continue;
-		NumberMutes++;
-		if(Client.m_Afk)
-			NumberMutes++;
-	}
-	str_format(aBuf, sizeof(aBuf), "[online] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);
-	str_format(active, sizeof(active), "[active] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams - NumberTeamsAfk, NumberWars - NumberWarsAfk, NumberHelpers - NumberHelpersAfk, NumberMutes - NumberMutesAfk);
-	m_pClient->m_Chat.AddLine(-3, 0, aBuf);
-	m_pClient->m_Chat.AddLine(-3, 0, active);
-}*/

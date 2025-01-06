@@ -101,6 +101,7 @@ class CAiodob : public CComponent
 
 	static void ConVotekick(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConOnlineInfo(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConTempWar(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnTempWar(IConsole::IResult *pResult, void *pUserData);
@@ -125,10 +126,12 @@ public:
 	void TempMute(const char *pName);
 	void UnTempMute(const char *pName, bool Silent = false);
 
+	void Votekick(const char *pName, const char *pReason);
 
 	void SaveSkin();
 	void RestoreSkin();
-	void Votekick(const char *pName, const char *pReason);
+	void OnlineInfo();
+
 
 	// Get ClientId per name
 	int IdWithName(const char *pName);

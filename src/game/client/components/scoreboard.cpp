@@ -598,7 +598,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					int IdOffest = IconRowX * -1 + 2;
 					if(g_Config.m_ClShowIds)
 					{
-						GameClient()->m_Snap.m_HighestClientId;
 						if(GameClient()->m_Snap.m_HighestClientId >= 10)
 						{
 							IdOffest = 3;
