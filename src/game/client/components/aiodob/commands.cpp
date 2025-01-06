@@ -241,7 +241,7 @@ void CAiodob::UnTempMute(const char *pName, bool Silent)
 				else
 					++it2;
 
-				if(!str_comp(Entries.m_aTempMute, pName))
+				if(!str_comp(it2->m_aTempMute, pName))
 					str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
 			}
 		}

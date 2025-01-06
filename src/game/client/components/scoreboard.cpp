@@ -270,10 +270,13 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	float RoundRadius;
 	float FontSize;
 	float IconSize;
+	float IconRowX;
 	float IconRowY;
+
 	if(NumPlayers <= 8)
 	{
 		IconRowY = 13.0f;
+		IconRowX = 46.0f;
 		IconSize = 34.0f;
 		LineHeight = 60.0f;
 		TeeSizeMod = 1.0f;
@@ -284,6 +287,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	else if(NumPlayers <= 12)
 	{
 		IconRowY = 9.0f;
+		IconRowX = 47.0f;
 		IconSize = 32.0f;
 		LineHeight = 50.0f;
 		TeeSizeMod = 0.9f;
@@ -295,6 +299,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	{
 		IconRowY = 6.0f;
 		IconSize = 30.0f;
+		IconRowX = 48.0f;
 		LineHeight = 40.0f;
 		TeeSizeMod = 0.8f;
 		Spacing = 0.0f;
@@ -305,6 +310,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	{
 		IconRowY = 2.0f;
 		IconSize = 26.0f;
+		IconRowX = 42.0f;
 		LineHeight = 27.0f;
 		TeeSizeMod = 0.6f;
 		Spacing = 0.0f;
@@ -315,6 +321,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	{
 		IconRowY = 1.0f;
 		IconSize = 19.0f;
+		IconRowX = 33.0f;
 		LineHeight = 20.0f;
 		TeeSizeMod = 0.4f;
 		Spacing = 0.0f;
@@ -325,6 +332,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	{
 		IconRowY = 8.0f;
 		IconSize = 25.0f;
+		IconRowX = 35.0f;
 		LineHeight = 15.0f;
 		TeeSizeMod = 0.25f;
 		Spacing = 0.0f;
@@ -335,6 +343,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	{
 		IconRowY = 7.0f;
 		IconSize = 25.0f;
+		IconRowX = 47.0f;
 		LineHeight = 7.0f;
 		TeeSizeMod = 0.2f;
 		Spacing = 0.0f;
@@ -586,19 +595,19 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				if(GameClient()->m_aClients[pInfo->m_ClientId].m_IsMute)
 				{
 					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
-					int IdOffset = 5;
-					
+					int IdOffest = IconRowX * -1 + 2;
 					if(g_Config.m_ClShowIds)
 					{
-						if(pInfo->m_ClientId >= 10)
+						GameClient()->m_Snap.m_HighestClientId;
+						if(GameClient()->m_Snap.m_HighestClientId >= 10)
 						{
-							IdOffset = 47;
+							IdOffest = 3;
 							TextRender()->TextEx(&Cursor, "     ");
 						}
 						else
 						{
-							IdOffset = 33;
-							TextRender()->TextEx(&Cursor, "     ");
+							IdOffest = -15;
+							TextRender()->TextEx(&Cursor, "    ");
 						}
 					}
 					else
@@ -608,7 +617,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
 					Graphics()->QuadsBegin();
 					Graphics()->SetColor(Color);
-					IGraphics::CQuadItem QuadItem(NameOffset + IdOffset, Row.y + IconRowY, IconSize, IconSize);
+					IGraphics::CQuadItem QuadItem(NameOffset + IconRowX + IdOffest, Row.y + IconRowY, IconSize, IconSize);
 					Graphics()->QuadsDrawTL(&QuadItem, 2);
 					Graphics()->QuadsEnd();
 				}
@@ -639,9 +648,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 				else
 					TextRender()->TextColor(1.f, 1.f, 1.f, Alpha);
-
-				
-
 
 				TextRender()->TextEx(&Cursor, ClientData.m_aName);
 
