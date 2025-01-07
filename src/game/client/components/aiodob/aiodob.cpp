@@ -550,43 +550,6 @@ void CAiodob::UpdateTempPlayers()
 	}
 }
 
-void CAiodob::OnNewSnapshot()
-{
-	UpdateTempPlayers();
-}
-
-void CAiodob::OnInit()
-{
-	// on client load
-	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
-	
-	const char *A = "Aiodob";
-
-	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A)&& str_comp(g_Config.m_ClSavedDummyClan, A))
-		SaveSkin();
-
-	m_ServersideDelay = 0;
-	m_RainbowSpeed = 10;
-	m_LastMovement = 0;
-	m_RainbowDelay = 0;
-	m_Saturation = 200;
-	m_Lightness = 30;
-	m_LastTile = -1;
-	m_JoinTeam = 0;
-	m_JoinedTeam = false;
-	m_RainbowWasOn = false;
-	m_KogModeRebound = false;
-	m_AttempedJoinTeam = false;
-	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
-
-	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
-	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
-
-	char aBuf[1024];
-	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
-	dbg_msg("Aiodob", aBuf);
-}
-
 void CAiodob::Rainbow()
 {
 	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
@@ -624,6 +587,45 @@ void CAiodob::Rainbow()
 		m_RainbowDelay = time_get() + time_freq() * 5.10;
 		m_RainbowColor = getIntFromColor(h, s, l);
 	}
+}
+
+void CAiodob::OnNewSnapshot()
+{
+	UpdateTempPlayers();
+}
+
+void CAiodob::OnInit()
+{
+	// on client load
+	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
+	
+	const char *A = "Aiodob";
+
+	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A)&& str_comp(g_Config.m_ClSavedDummyClan, A))
+		SaveSkin();
+
+	m_ServersideDelay = 0;
+	m_RainbowSpeed = 10;
+	m_LastMovement = 0;
+	m_RainbowDelay = 0;
+	m_Saturation = 200;
+	m_Lightness = 30;
+	m_LastTile = -1;
+	m_JoinTeam = 0;
+	m_JoinedTeam = false;
+	m_RainbowWasOn = false;
+	m_KogModeRebound = false;
+	m_AttempedJoinTeam = false;
+	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
+
+	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
+	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+
+	char aBuf[1024];
+	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
+	dbg_msg("Aiodob", aBuf);
+
+	GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
 }
 
 void CAiodob::OnShutdown()
