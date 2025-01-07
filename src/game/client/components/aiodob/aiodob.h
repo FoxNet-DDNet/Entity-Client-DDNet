@@ -153,12 +153,13 @@ public:
 	// Rainbow
 	void Rainbow();
 
+	int m_RainbowColor;
 	int m_RainbowSpeed;
 	int m_Saturation;
 	int m_Lightness;
 
 	// Preview
-	unsigned int m_RainbowColor;
+	unsigned int m_PreviewRainbowColor;
 	int m_ShowServerSide;
 	int64_t m_ServersideDelay;
 

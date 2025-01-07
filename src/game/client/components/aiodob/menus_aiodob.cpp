@@ -1161,7 +1161,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoScrollbarOption(&GameClient()->m_Aiodob.m_RainbowSpeed, &GameClient()->m_Aiodob.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 1000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
 
 				RainbowSettings.VSplitLeft(52, &Button, &RainbowSettings);
-				RenderHslaScrollbars(&RainbowSettings, &GameClient()->m_Aiodob.m_RainbowColor, false, ColorHSLA::DARKEST_LGT, false);
+				RenderHslaScrollbars(&RainbowSettings, &GameClient()->m_Aiodob.m_PreviewRainbowColor, false, ColorHSLA::DARKEST_LGT, false);
 				RainbowSettings.VSplitLeft(-140, &Button, &RainbowSettings);
 
 				RainbowSettings.HSplitTop(-54, &Button, &RainbowSettings);

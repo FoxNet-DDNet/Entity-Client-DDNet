@@ -823,7 +823,7 @@ void CGameClient::OnRender()
 		g_Config.m_ClDummy = 0;
 
 	// resend player and dummy info if it was filtered by server
-	if(Client()->State() == IClient::STATE_ONLINE && !m_Menus.IsActive() && WasNewTick)
+	if(Client()->State() == IClient::STATE_ONLINE && !m_Menus.IsActive() && WasNewTick && !g_Config.m_ClServerRainbow)
 	{
 		if(m_aCheckInfo[0] == 0)
 		{
@@ -2837,14 +2837,10 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_pClan = g_Config.m_PlayerClan;
 		Msg.m_Country = g_Config.m_PlayerCountry;
 		Msg.m_pSkin = g_Config.m_ClPlayerSkin;
-		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
-		if(g_Config.m_ClServerRainbow )
+		if(g_Config.m_ClServerRainbow)
 		{
-			if(m_Aiodob.m_RainbowDelay < time_get())
-			{
-				Msg.m_UseCustomColor = true;
-				Msg.m_ColorBody = m_Aiodob.m_RainbowColor;
-			}
+			Msg.m_UseCustomColor = true;
+			Msg.m_ColorBody = m_Aiodob.m_RainbowColor;
 		}
 		else
 		{
@@ -2893,11 +2889,8 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_pSkin = g_Config.m_ClDummySkin;
 		if(g_Config.m_ClServerRainbow)
 		{
-			if(m_Aiodob.m_RainbowDelay < time_get())
-			{
-				Msg.m_UseCustomColor = true;
-				Msg.m_ColorBody = m_Aiodob.m_RainbowColor;
-			}
+			Msg.m_UseCustomColor = true;
+			Msg.m_ColorBody = m_Aiodob.m_RainbowColor;
 		}
 		else
 		{

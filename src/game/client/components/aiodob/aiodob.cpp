@@ -608,12 +608,12 @@ void CAiodob::Rainbow()
 	{
 		if(m_ServersideDelay < time_get())
 		{
-			m_RainbowColor = getIntFromColor(h, s, l);
+			m_PreviewRainbowColor = getIntFromColor(h, s, l);
 			m_ServersideDelay = time_get() + time_freq() * 5.10;
 		}
 	}
 	else
-		m_RainbowColor = getIntFromColor(h, s, l);
+		m_PreviewRainbowColor = getIntFromColor(h, s, l);
 
 	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 	{
