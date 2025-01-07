@@ -266,7 +266,7 @@ void CAiodob::GoresMode()
 
 	CCharacterCore Core = GameClient()->m_PredictedPrevChar;
 
-	if(g_Config.m_ClGoresModeDisableIfWeapons)
+	if(g_Config.m_ClGoresModeDisableIfWeapons && g_Config.m_ClGoresMode)
 	{
 
 		if((Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_ExplosionGun || Core.m_ShortExplosionGun || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) && g_Config.m_ClGoresMode)
@@ -282,21 +282,19 @@ void CAiodob::GoresMode()
 		}
 	}
 
-	if(!g_Config.m_ClGoresMode && m_KogModeRebound == true)
+	if(!g_Config.m_ClGoresMode && m_KogModeRebound)
 	{
 	
 		GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
 		m_KogModeRebound = false;
-		return;
 	}
 
 	// if hasnt rebound yet and turning on kog mode, rebind to kog mode
 
-	if(m_KogModeRebound == false && g_Config.m_ClGoresMode)
+	if(!m_KogModeRebound && g_Config.m_ClGoresMode)
 	{
 		GameClient()->m_Binds.Bind(KEY_MOUSE_1, "+fire;+prevweapon");
 		m_KogModeRebound = true;
-		return;
 	}
 
 	// if not local return
@@ -617,13 +615,14 @@ void CAiodob::Rainbow()
 	else
 		m_RainbowColor = getIntFromColor(h, s, l);
 
-	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() + time_freq() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
+	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 	{
 		if(g_Config.m_ClDummy)
 			GameClient()->SendDummyInfo(false);
 		else
 			GameClient()->SendInfo(false);
 		m_RainbowDelay = time_get() + time_freq() * 5.10;
+		m_RainbowColor = getIntFromColor(h, s, l);
 	}
 }
 
