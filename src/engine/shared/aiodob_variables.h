@@ -9,7 +9,7 @@
 
 
 MACRO_CONFIG_STR(ClAutoReplyMsg, ac_auto_reply_msg, 255, "I'm currently tabbed out", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply when pinged in chat and ac_auto_reply is set to 1")
-MACRO_CONFIG_INT(ClTabbedOutMsg, ac_tabbed_out_msg, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let others know when pinged in chat that you are tabbed out")
+MACRO_CONFIG_INT(ClTabbedOutMsg, ac_tabbed_out_msg, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let others know when pinged in chat that you are tabbed out")
 
 MACRO_CONFIG_INT(ClChangeTileNotification, ac_change_tile_notification, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when leaving current tile type")
 
