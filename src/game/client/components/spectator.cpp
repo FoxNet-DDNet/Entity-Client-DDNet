@@ -520,7 +520,12 @@ void CSpectator::OnRender()
 		{
 			if(g_Config.m_ClSpecMenuColors)
 			{
-				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
+
+				if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar)
+					TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Alpha));
+				else if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempHelper)
+					TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Alpha));
+				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
 					TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(ClientId).WithAlpha(Alpha));
 				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
 					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(ClientId).WithAlpha(Alpha));
@@ -528,6 +533,7 @@ void CSpectator::OnRender()
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 				else
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, PlayerSelected ? 1.0f : 0.5f);
+
 				TeeAlpha = 1.0f;
 			}
 			else
