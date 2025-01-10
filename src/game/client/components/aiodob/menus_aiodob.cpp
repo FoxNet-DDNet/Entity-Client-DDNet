@@ -1245,11 +1245,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Gores Mode"), FontSize, TEXTALIGN_MC);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if Player Has Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresModeSettings, LineSize);
-
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresModeSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is 'Gores'"), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
-
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresModeSettings, LineSize);
 			}
 		}

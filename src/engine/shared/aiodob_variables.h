@@ -242,7 +242,6 @@ MACRO_CONFIG_INT(ClAutoJoinTest, ac_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CF
 // Discord
 
 MACRO_CONFIG_INT(ClDiscordMapStatus, ac_discord_map_status, 1,0,1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show What Map you're on")
-
 MACRO_CONFIG_STR(ClDiscordOnlineStatus, ac_discord_online_status, 24, "Online", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Online Status")
 MACRO_CONFIG_STR(ClDiscordOfflineStatus, ac_discord_offline_status, 24, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status")
 
@@ -289,74 +288,50 @@ MACRO_CONFIG_INT(ClFpsSpoofer, ac_fps_spoofer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG
 MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fps Spoofer Percentage")
 MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "shows ping range 76-77 in black (ping of a weirdo)")
 
-// Might be Cheating
 
-	// KoG Mode
-	MACRO_CONFIG_INT(ClGoresMode, ac_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
-	MACRO_CONFIG_INT(ClGoresModeDisableIfWeapons, ac_gores_mode_disable_weapons, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable Gores Mode When The Player Has Another Weapon")
-	MACRO_CONFIG_INT(ClAutoEnableGoresMode, ac_auto_enable_gores_mode, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "enables it on Gores gametype and disables on others")
-	MACRO_CONFIG_INT(ClDisableGoresOnShutdown, ac_disable_gores_on_shutdown, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "disables it on shutdown")
-	MACRO_CONFIG_STR(ClGoresModeSaved, ac_gores_mode_saved, 128, "+fire", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Edit This")
+// Gores Mode
+MACRO_CONFIG_INT(ClGoresMode, ac_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
+MACRO_CONFIG_INT(ClGoresModeDisableIfWeapons, ac_gores_mode_disable_weapons, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable Gores Mode When The Player Has Another Weapon")
+MACRO_CONFIG_INT(ClAutoEnableGoresMode, ac_auto_enable_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "enables it on Gores gametype and disables on others")
+MACRO_CONFIG_INT(ClDisableGoresOnShutdown, ac_disable_gores_on_shutdown, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "disables it on shutdown")
+MACRO_CONFIG_STR(ClGoresModeSaved, ac_gores_mode_saved, 128, "+fire", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Edit This")
 
-	// auto kill if player is sitting ontop of you
-	MACRO_CONFIG_INT(ClAutoKill, ac_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
-	MACRO_CONFIG_INT(ClAutoKillIgnoreKillProt, ac_autokill_ignore_kill_prot, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
-	MACRO_CONFIG_INT(ClAutoKillMultOnly, ac_autokill_mult_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
-	MACRO_CONFIG_INT(ClAutoKillWarOnly, ac_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
-	MACRO_CONFIG_INT(ClAutoKillRangeX, ac_autokill_range_x, 35, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "x coordinate range to autokill in ↔")
-	MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
-	MACRO_CONFIG_INT(ClAutoKillDebug, ac_auto_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
+// auto kill if player is sitting ontop of you
+MACRO_CONFIG_INT(ClAutoKill, ac_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+MACRO_CONFIG_INT(ClAutoKillIgnoreKillProt, ac_autokill_ignore_kill_prot, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
+MACRO_CONFIG_INT(ClAutoKillMultOnly, ac_autokill_mult_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+MACRO_CONFIG_INT(ClAutoKillWarOnly, ac_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
+MACRO_CONFIG_INT(ClAutoKillRangeX, ac_autokill_range_x, 35, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "x coordinate range to autokill in ↔")
+MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
+MACRO_CONFIG_INT(ClAutoKillDebug, ac_auto_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 
-	//Dummy Controls +
-
-	MACRO_CONFIG_INT(ClDummyHammerSpeed, ac_dummy_hammer_speed, 25, 0, 100, CFGFLAG_CLIENT, "Speed at which the dummy hammers")
-	MACRO_CONFIG_INT(ClIdToHammer, ac_id_to_hammer, -1, -1, MAX_CLIENTS, CFGFLAG_CLIENT, "Speed at which the dummy hammers")
-
-	// Tee
-
+// Tee
 MACRO_CONFIG_INT(ClOwnTeeSkin, cle_own_tee_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")
 MACRO_CONFIG_INT(ClOwnTeeSkinCustomColor, cle_own_tee_custom_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")
 MACRO_CONFIG_STR(ClOwnTeeSkinName, cle_own_tee_skin_name, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Own Tee Skin Name")
 MACRO_CONFIG_COL(ClOwnTeeColorBody, cle_own_tee_color_body, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player body color")
 MACRO_CONFIG_COL(ClOwnTeeColorFeet, cle_own_tee_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player feet color")
 
-
 // Sweat mode
-
 MACRO_CONFIG_INT(ClSweatMode, ac_sweat_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
 MACRO_CONFIG_INT(ClSweatModeSkin, ac_sweat_mode_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
 MACRO_CONFIG_INT(ClSweatModeOnlyOthers, ac_sweat_mode_only_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
 MACRO_CONFIG_STR(ClSweatModeSkinName, ac_sweat_mode_skin_name, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have")
 
-
-// Effects
+// Visuals
 MACRO_CONFIG_COL(ClSparkleColor, cle_sparkle_color, 14155743, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Sparkle effect Color")
-
-
 MACRO_CONFIG_INT(ClSparkleEffect, cle_sparkle_effect, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
 MACRO_CONFIG_INT(ClSparkleEffectOthers, cle_sparkle_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
-
 MACRO_CONFIG_INT(ClSpecialEffect, cle_special_effect, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
-
 MACRO_CONFIG_INT(ClFreezeParticleSpin, cle_freeze_particle_spin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make Freeze Particles Spin Around The Player")
-
-
-// Rainbow
+MACRO_CONFIG_INT(ClSmallSkins, cle_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
 
 MACRO_CONFIG_INT(ClServerRainbow, ac_server_rainbow, 0, 0, 1, CFGFLAG_CLIENT, "Enables Rainbow Mode Server Side! (Way Slower though)")
-
-
 MACRO_CONFIG_INT(ClRainbowSpeed, ac_rainbow_speed, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
-
 MACRO_CONFIG_INT(ClRainbowHookOthers, ac_rainbow_hook_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook for others client side")
-
 MACRO_CONFIG_INT(ClRainbowHook, ac_rainbow_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
-
 MACRO_CONFIG_INT(ClRainbowOthers, ac_rainbow_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow client side for others")
-
 MACRO_CONFIG_INT(ClRainbow, ac_rainbow, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Rainbow mode Client Side")
-
-MACRO_CONFIG_INT(ClSmallSkins, cle_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
 
 // Custom Vairiables from My Server for the editor
 // ignore these you cant do anything with them except if you make ur own version on a server

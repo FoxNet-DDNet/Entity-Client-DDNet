@@ -196,5 +196,5 @@ jobs:
     - name: Upload Artifacts
       uses: actions/upload-artifact@v4
       with:
-        name: Aiodob-Client-${{ matrix.os }}
+        name: A-Client-${{ matrix.os }}
         path: release/artifacts

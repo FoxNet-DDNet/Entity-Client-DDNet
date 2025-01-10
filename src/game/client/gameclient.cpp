@@ -528,7 +528,7 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 	}
 	else
 	{
-		if(m_DummyFire % g_Config.m_ClDummyHammerSpeed != 0)
+		if(m_DummyFire % 25 != 0)
 		{
 			m_DummyFire++;
 			return 0;
@@ -543,9 +543,6 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 		}
 
 		vec2 MainPos = m_LocalCharacterPos;
-
-		if(g_Config.m_ClIdToHammer != -1)
-			MainPos = m_aClients[g_Config.m_ClIdToHammer].m_Predicted.m_Pos;
 
 		vec2 DummyPos = m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
 		vec2 Dir = MainPos - DummyPos;
