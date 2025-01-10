@@ -1171,7 +1171,33 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
 				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_Lightness, &GameClient()->m_Aiodob.m_Lightness, &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
 
-				RenderDevSkin(vec2(RainbowSettings.Center().x - 131, RainbowSettings.Center().y - 60), 75.0f, g_Config.m_ClDummy ? g_Config.m_ClDummySkin : g_Config.m_ClPlayerSkin, "default", g_Config.m_ClPlayerUseCustomColor, 0, g_Config.m_ClServerRainbow ? GameClient()->m_Aiodob.m_RainbowColor : g_Config.m_ClPlayerColorBody, 0, false);
+				{
+
+					CTeeRenderInfo TeeRenderInfo;
+					TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClPlayerSkin));
+					TeeRenderInfo.ApplyColors(g_Config.m_ClPlayerUseCustomColor, g_Config.m_ClPlayerColorBody, g_Config.m_ClPlayerColorFeet);
+
+					if(g_Config.m_ClDummy)
+					{
+						TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClDummySkin));
+						TeeRenderInfo.ApplyColors(g_Config.m_ClDummyUseCustomColor, g_Config.m_ClDummyColorBody, g_Config.m_ClDummyColorFeet);
+					}
+
+					TeeRenderInfo.m_Size = 75.0f;
+
+					if(g_Config.m_ClServerRainbow)
+						TeeRenderInfo.ApplyColors(true, GameClient()->m_Aiodob.m_PreviewRainbowColor, g_Config.m_ClDummyColorFeet);
+
+					const vec2 TeePosition = vec2(RainbowSettings.Center().x - 128, RainbowSettings.Center().y - 50);
+					// interactive tee: tee looking towards cursor, and it is happy when you touch it
+					const vec2 DeltaPosition = Ui()->MousePos() - TeePosition;
+					const float Distance = length(DeltaPosition);
+					const float InteractionDistance = 20.0f;
+					const vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, maximum(DeltaPosition.y, 0.5f))) : normalize(DeltaPosition);
+					const int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
+					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, TeePosition);
+				}
+
 
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
 				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_ShowServerSide, "Show Server-side", &GameClient()->m_Aiodob.m_ShowServerSide, &RainbowSettings, LineSize);

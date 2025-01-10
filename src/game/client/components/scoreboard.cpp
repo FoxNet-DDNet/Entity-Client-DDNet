@@ -602,7 +602,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 						}
 						else
 						{
-							IdOffest = -15;
+							IdOffest = -18;
 							TextRender()->TextEx(&Cursor, "    ");
 						}
 					}
