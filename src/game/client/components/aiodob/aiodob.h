@@ -130,7 +130,7 @@ public:
 
 	void SaveSkin();
 	void RestoreSkin();
-	void OnlineInfo();
+	void OnlineInfo(bool Integrate = false);
 
 
 	// Get ClientId per name

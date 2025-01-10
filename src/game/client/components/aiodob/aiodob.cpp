@@ -347,65 +347,6 @@ void CAiodob::OnConnect()
 		}
 	}
 
-	int Local = m_pClient->m_Snap.m_LocalClientId;
-
-	char aBuf[512];
-
-	if(g_Config.m_ClListsInfo)
-	{
-		int NumberWars = 0;
-		for(auto &Client : GameClient()->m_aClients)
-		{
-			bool War = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[1];
-			bool TempWar = m_TempPlayers[IdWithName(Client.m_aName)].IsTempWar;
-
-			if(!Client.m_Active && !Local)
-				continue;
-
-			if((War && !TempWar) || (!War && TempWar))
-				NumberWars++;
-		}
-
-		int NumberTeams = 0;
-		for(auto &Client : GameClient()->m_aClients)
-		{
-			bool Team = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[2];
-
-			if(!Client.m_Active && !Local)
-				continue;
-
-			if(Team)
-				NumberTeams++;
-		}
-
-		int NumberHelpers = 0;
-		for(auto &Client : GameClient()->m_aClients)
-		{
-			bool Helper = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[3];
-			bool TempHelper = m_TempPlayers[IdWithName(Client.m_aName)].IsTempHelper;
-
-			if(!Client.m_Active && !Local)
-				continue;
-
-			if((Helper && !TempHelper) || (!Helper && TempHelper))
-				NumberHelpers++;
-		}
-
-		int NumberMutes = 0;
-		for(auto &Client : GameClient()->m_aClients)
-		{
-			bool Mute = GameClient()->m_aClients[IdWithName(Client.m_aName)].m_Foe;
-			bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute;
-
-			if(!Client.m_Active && !Local)
-				continue;
-
-			if((Mute && !TempMute) || (!Mute && TempMute))
-				NumberMutes++;
-		}
-		str_format(aBuf, sizeof(aBuf), "│ %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);
-	}
-
 	// info when joining a server of enabled components
 
 	if(g_Config.m_ClEnabledInfo)
@@ -415,7 +356,7 @@ void CAiodob::OnConnect()
 		
 		if(g_Config.m_ClListsInfo)
 		{
-			GameClient()->aMessage(aBuf);
+			OnlineInfo(true);
 			GameClient()->aMessage("│");
 
 		}
@@ -641,7 +582,6 @@ void CAiodob::OnShutdown()
 	}
 	//g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
 	
-
 	//str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
 	//str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
 	//str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));

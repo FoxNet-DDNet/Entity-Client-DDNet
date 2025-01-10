@@ -313,15 +313,10 @@ void CAiodob::SaveSkin()
 	else GameClient()->aMessage("Can't Save! Rainbow mode is enabled.");
 }
 
-void CAiodob::OnlineInfo()
+void CAiodob::OnlineInfo(bool Integrate)
 {
 	char aBuf[512];
 	char active[512];
-
-	str_format(aBuf, sizeof(aBuf), "[Inactive] Couldn't be", "Loaded");
-	str_format(active, sizeof(active), "[active] Couldn't be", "Loaded");
-
-	int Local = m_pClient->m_Snap.m_LocalClientId;
 
 	int NumberWars = 0;
 	int NumberWarsAfk = 0;
@@ -330,7 +325,7 @@ void CAiodob::OnlineInfo()
 		bool War = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[1];
 		bool TempWar = m_TempPlayers[IdWithName(Client.m_aName)].IsTempWar;
 
-		if(!Client.m_Active && !Local)
+		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
 			continue;
 
 		if((War && !TempWar) || (!War && TempWar))
@@ -347,7 +342,7 @@ void CAiodob::OnlineInfo()
 	{
 		bool Team = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[2];
 
-		if(!Client.m_Active && !Local)
+		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
 			continue;
 
 		if(Team)
@@ -365,7 +360,7 @@ void CAiodob::OnlineInfo()
 		bool Helper = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[3];
 		bool TempHelper = m_TempPlayers[IdWithName(Client.m_aName)].IsTempHelper;
 
-		if(!Client.m_Active && !Local)
+		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
 			continue;
 
 		if((Helper && !TempHelper) || (!Helper && TempHelper))
@@ -380,10 +375,10 @@ void CAiodob::OnlineInfo()
 	int NumberMutesAfk = 0;
 	for(auto &Client : GameClient()->m_aClients)
 	{
-		bool Mute = GameClient()->m_aClients[IdWithName(Client.m_aName)].m_Foe;
+		bool Mute = GameClient()->m_WarList.m_WarPlayers[Client.m_Id].IsMuted;
 		bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute;
 
-		if(!Client.m_Active && !Local)
+		if(!Client.m_Active)
 			continue;
 
 		if((Mute && !TempMute) || (!Mute && TempMute))
@@ -396,12 +391,18 @@ void CAiodob::OnlineInfo()
 
 	str_format(aBuf, sizeof(aBuf), "│ [online] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams, NumberWars, NumberHelpers, NumberMutes);
 	str_format(active, sizeof(active), "│ [active] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams - NumberTeamsAfk, NumberWars - NumberWarsAfk, NumberHelpers - NumberHelpersAfk, NumberMutes - NumberMutesAfk);
-	GameClient()->aMessage("╭──                  Aiodob Info");
-	GameClient()->aMessage("│");
+	if(!Integrate)
+	{
+		GameClient()->aMessage("╭──                  Aiodob Info");
+		GameClient()->aMessage("│");
+	}
 	GameClient()->aMessage(aBuf);
 	GameClient()->aMessage(active);
-	GameClient()->aMessage("│");
-	GameClient()->aMessage("╰───────────────────────");
+	if(!Integrate)
+	{
+		GameClient()->aMessage("│");
+		GameClient()->aMessage("╰───────────────────────");
+	}
 }
 
 void CAiodob::OnConsoleInit()

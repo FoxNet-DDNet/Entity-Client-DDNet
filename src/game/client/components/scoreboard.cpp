@@ -319,7 +319,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	{
 		IconRowY = 1.0f;
 		IconSize = 19.0f;
-		IconRowX = 33.0f;
+		IconRowX = 29.0f;
 		LineHeight = 20.0f;
 		TeeSizeMod = 0.4f;
 		Spacing = 0.0f;
@@ -341,7 +341,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 	{
 		IconRowY = 7.0f;
 		IconSize = 25.0f;
-		IconRowX = 47.0f;
+		IconRowX = 38.0f;
 		LineHeight = 7.0f;
 		TeeSizeMod = 0.2f;
 		Spacing = 0.0f;
@@ -602,7 +602,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 						}
 						else
 						{
-							IdOffest = -18;
+							IdOffest = -15;
 							TextRender()->TextEx(&Cursor, "    ");
 						}
 					}
