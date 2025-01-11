@@ -296,7 +296,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					FreezeKillSettings.HSplitTop(200.0f, &FreezeKillSettings, &ChatSettings);
 			}
 			else
-				FreezeKillSettings.HSplitTop(55.0f, &FreezeKillSettings, &ChatSettings);
+				FreezeKillSettings.HSplitTop(80.0f, &FreezeKillSettings, &ChatSettings);
 			if(s_ScrollRegion.AddRect(FreezeKillSettings))
 			{
 				FreezeKillSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
