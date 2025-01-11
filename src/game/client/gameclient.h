@@ -492,6 +492,7 @@ public:
 		bool m_IsHelper;
 
 		bool m_IsMute;
+		bool m_IsAnyList;
 
 		int m_AuthLevel;
 		bool m_Afk;

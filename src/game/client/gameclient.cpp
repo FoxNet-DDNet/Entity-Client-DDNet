@@ -1766,6 +1766,8 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_Id = Item.m_Id;
 
 					pClient->m_IsMute = m_Aiodob.m_TempPlayers[Item.m_Id].IsTempMute || m_WarList.m_WarPlayers[Item.m_Id].IsMuted;
+
+					pClient->m_IsAnyList = m_WarList.m_WarPlayers[Item.m_Id].IsWarName;
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_SPECCHAR)

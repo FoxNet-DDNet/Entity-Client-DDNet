@@ -46,6 +46,7 @@ class CChat : public CComponent
 		bool m_IsHelper;
 		bool m_IsTeam;
 		bool m_IsMute;
+		bool m_IsAnyList;
 
 		bool m_Highlighted;
 		std::optional<ColorRGBA> m_CustomColor;

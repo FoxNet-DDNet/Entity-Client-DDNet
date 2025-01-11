@@ -853,9 +853,10 @@ private:
 	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
 
 	// A-Client
+	void RenderChatPreview(CUIRect MainView);
 	void RenderSettingsAiodob(CUIRect MainView);
-	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
+	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
 
 	const CWarType *m_pRemoveWarType = nullptr;

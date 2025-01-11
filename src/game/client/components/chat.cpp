@@ -113,6 +113,7 @@ void CChat::ClearLines()
 		Line.m_IsHelper = false;
 		Line.m_IsTeam = false;
 		Line.m_IsMute = false;
+		Line.m_IsAnyList = false;
 		Line.m_TimesRepeated = 0;
 		Line.m_HasRenderTee = false;
 	}
@@ -666,15 +667,15 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		const char *Name = m_pClient->m_aClients[ClientId].m_aName;
 
-		if(g_Config.m_ClWarlistConsoleColors || g_Config.m_ClMutedConsoleColor)
+		if(g_Config.m_ClMutedConsoleColor)
 			Colors = g_Config.m_ClMutedColor;
 
 		str_append(Muted, Name);
 		str_append(MutedWhisper, Name);
 		if(Team == 3)
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, Colors);
 		else if(Team < 3)
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, Colors);
 	}
 	else if(g_Config.m_ClHideEnemyChat && GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
 	{
@@ -683,15 +684,12 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		const char *Name = m_pClient->m_aClients[ClientId].m_aName;
 
-		if(g_Config.m_ClWarlistConsoleColors)
-			Colors = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-
 		str_append(War, Name);
 		str_append(WarWhisper, Name);
 		if(Team == 3)
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, WarWhisper, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, WarWhisper, pLine, Colors);
 		else if(Team < 3)
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, War, pLine, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(Colors)));
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, War, pLine, Colors);
 	}
 
 	if(*pLine == 0 ||
@@ -763,21 +761,20 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 		}
 
+		char TypeName[512];
+		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(pLine_->m_aName));
+
 		const char *pFrom;
 		if(pLine_->m_Whisper)
 			pFrom = "whisper";
 		else if(pLine_->m_Team)
 			pFrom = "teamchat";
-		else if(pLine_->m_IsTeam)
-			pFrom = "[Team]";
-		else if(pLine_->m_IsHelper)
-			pFrom = "[Helper]";
+		if(pLine_->m_IsAnyList && !g_Config.m_ClHideEnemyChat)
+			pFrom = TypeName;
 		else if(pLine_->m_ClientId == SERVER_MSG)
 			pFrom = "server";
 		else if(pLine_->m_ClientId == CLIENT_MSG)
 			pFrom = "client";
-		else if(!g_Config.m_ClHideEnemyChat && pLine_->m_IsWar)
-			pFrom = "[Enemy]";
 		else
 			pFrom = "chat";
 
@@ -917,6 +914,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		pCurrentLine->m_Friend = LineAuthor.m_Friend;
 		pCurrentLine->m_Paused = LineAuthor.m_Paused || LineAuthor.m_Spec;
+		pCurrentLine->m_IsAnyList = LineAuthor.m_IsAnyList;
 
 		if(pCurrentLine->m_aName[0] != '\0')
 		{
@@ -1243,7 +1241,7 @@ void CChat::OnPrepareLines(float y)
 			{
 				Cursor.m_X += RealMsgPaddingTee;
 
-				if(Line.m_Paused && g_Config.m_ClChatSpecPrefix)
+				if(Line.m_Paused && g_Config.m_ClSpectatePrefix)
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
@@ -1332,7 +1330,7 @@ void CChat::OnPrepareLines(float y)
 			NameColor = ColorRGBA(0.7f, 0.7f, 1.0f, 1.f);
 		else if(Line.m_NameColor == TEAM_SPECTATORS)
 			NameColor = ColorRGBA(0.75f, 0.5f, 0.75f, 1.f);
-		else if(Line.m_Friend && g_Config.m_ClDoFriendColorInchat)
+		else if(Line.m_Friend && g_Config.m_ClDoFriendColors)
 			NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 		else if(Line.m_ClientId >= 0 && g_Config.m_ClChatTeamColors && m_pClient->m_Teams.Team(Line.m_ClientId))
 			NameColor = m_pClient->GetDDTeamColor(m_pClient->m_Teams.Team(Line.m_ClientId), 0.75f);

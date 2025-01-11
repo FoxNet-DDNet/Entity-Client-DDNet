@@ -209,7 +209,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 				Graphics()->QuadsEnd();
 			}
 			// A-Client
-			if((GameClient()->m_aClients[Data.m_RealClientId].m_IsMute && g_Config.m_ClMutedIconNameplate))
+			if((GameClient()->m_aClients[Data.m_RealClientId].m_IsMute && g_Config.m_ClMutedIcon))
 			{
 				ColorRGBA IconColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 				Graphics()->TextureClear();
@@ -224,7 +224,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		{
 			ColorRGBA WarColor = Color;
 
-			if(m_pClient->m_aClients[Data.m_RealClientId].m_Friend && g_Config.m_ClDoFriendNameColor)
+			if(m_pClient->m_aClients[Data.m_RealClientId].m_Friend && g_Config.m_ClDoFriendColors)
 				WarColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Data.m_Alpha));
 
 			if(GameClient()->m_WarList.GetWarData(Data.m_RealClientId).IsWarClan)

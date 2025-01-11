@@ -502,6 +502,18 @@ int CWarList::FindWarTypeWithClan(const char *pClan)
 	return 0;
 }
 
+char *CWarList::GetWarTypeName(const char *pName)
+{
+	for(CWarEntry &Entry : m_WarEntries)
+	{
+		if(str_comp(pName, Entry.m_aName) == 0 && str_comp(Entry.m_aName, "") != 0)
+		{
+			return Entry.m_pWarType->m_aWarName;
+		}
+	}
+	return nullptr;
+}
+
 CWarType *CWarList::FindWarType(const char *pType)
 {
 	CWarType Type(pType);

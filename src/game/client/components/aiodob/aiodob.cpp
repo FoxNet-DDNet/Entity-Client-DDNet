@@ -546,6 +546,7 @@ void CAiodob::OnInit()
 		SaveSkin();
 
 	m_ServersideDelay = 0;
+	m_RainbowColor = g_Config.m_ClPlayerColorBody;
 	m_RainbowSpeed = 10;
 	m_LastMovement = 0;
 	m_RainbowDelay = 0;
@@ -575,23 +576,23 @@ void CAiodob::OnShutdown()
 	//str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
 	//str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
 	//g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
+	//g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
 	if(g_Config.m_ClServerRainbow)
 	{
 		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
 		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
 	}
-	//g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
 	
 	//str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
 	//str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
 	//str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
 	//g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
+	//g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
 	if(g_Config.m_ClServerRainbow)
 	{
 		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 	}
-	//g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
 
 	if(g_Config.m_ClDisableGoresOnShutdown)
 		g_Config.m_ClGoresMode = 0;

@@ -14,7 +14,6 @@ MACRO_CONFIG_INT(ClTabbedOutMsg, ac_tabbed_out_msg, 0, 0, 1, CFGFLAG_CLIENT | CF
 MACRO_CONFIG_INT(ClChangeTileNotification, ac_change_tile_notification, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when leaving current tile type")
 
 MACRO_CONFIG_COL(ClWarlistMessageColor, ac_warlist_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
-MACRO_CONFIG_INT(ClWarlistConsoleColors, ac_warlist_console_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 MACRO_CONFIG_INT(ClMutedConsoleColor, ac_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
 // from tater client (credits to tater)
@@ -174,18 +173,14 @@ MACRO_CONFIG_INT(ClOldNameplateIds, ac_old_nameplate_ids, 0, 0, 1, CFGFLAG_CLIEN
 MACRO_CONFIG_INT(ClStrongWeakColorId, ac_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
 
 MACRO_CONFIG_INT(ClDoAfkColors, ac_do_afk_colors, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Makes Names Darker in Scoreboard if Player is afk")
-MACRO_CONFIG_INT(ClScoreSpecPlayer, ac_do_score_spec_tee, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes The Tee in The Scoreboard to a Spectating Tee if The Player is Spectating")
 
 
 // friend name settings
 
-MACRO_CONFIG_INT(ClDoFriendNameColor, ac_do_friend_name_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors")
-MACRO_CONFIG_INT(ClDoFriendColorScore, ac_do_friend_color_score, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors in scoreboard")
-MACRO_CONFIG_INT(ClDoFriendColorInchat, ac_do_friend_color_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on friend color in chat")
+MACRO_CONFIG_INT(ClDoFriendColors, ac_do_friend_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors")
 
 // Prefix toggles
-MACRO_CONFIG_INT(ClScoreSpecPrefix, ac_do_score_spec_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Spectator Prefix Next to Names in Scoreboard")
-MACRO_CONFIG_INT(ClChatSpecPrefix, ac_do_chat_spec_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Spectator Prefix Next to Names in Chat")
+MACRO_CONFIG_INT(ClSpectatePrefix, ac_chat_spectate_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Spectator Prefix Next to Names")
 
 MACRO_CONFIG_INT(ClChatServerPrefix, ac_do_chat_server_prefix, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Server Prefix")
 MACRO_CONFIG_INT(ClChatClientPrefix, ac_do_chat_client_prefix, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Client Prefix")
@@ -201,7 +196,7 @@ MACRO_CONFIG_STR(ClSpecPrefix, ac_spec_prefix, 8, "• ", CFGFLAG_CLIENT | CFGFL
 // Mutes
 MACRO_CONFIG_INT(ClReplyMuted, ac_reply_muted, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "replies to muted players if they ping you")
 MACRO_CONFIG_INT(ClShowMutedInConsole, ac_show_muted_in_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows messages of muted people in the console")
-MACRO_CONFIG_INT(ClMutedIconNameplate, ac_muted_icon_nameplate, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows an Icon Next to Nameplates of Muted Players")
+MACRO_CONFIG_INT(ClMutedIcon, ac_muted_icon, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows an Icon Next to Nameplates of Muted Players")
 MACRO_CONFIG_INT(ClHideEnemyChat, ac_hide_enemy_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides Chat Messages of Enemies")
 MACRO_CONFIG_STR(ClAutoReplyMutedMsg, ac_auto_reply_muted_msg, 255, "I can't see your messages, you're muted", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply with then a muted player pings you")
 MACRO_CONFIG_COL(ClMutedColor, ac_muted_color, 12792139, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Muted Icon Color")
@@ -270,7 +265,7 @@ MACRO_CONFIG_INT(ClFreezeKillDebug, ac_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIEN
 
 // Ui/Sound
 MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something")
-MACRO_CONFIG_INT(ClCornerRoundness, ac_corner_roundness, 50, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How round corners are in scrollable menus")
+MACRO_CONFIG_INT(ClCornerRoundness, ac_corner_roundness, 70, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How round corners are in scrollable menus")
 MACRO_CONFIG_INT(ClFpsSpoofer, ac_fps_spoofer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spoof Da Fps counter")
 MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fps Spoofer Percentage")
 MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "shows ping range 76-77 in black (ping of a weirdo)")

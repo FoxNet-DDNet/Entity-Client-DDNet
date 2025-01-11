@@ -237,7 +237,7 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 		}
 		if(GameClient()->m_aClients[pInfo->m_ClientId].m_Friend)
 		{
-			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoFriendNameColor)));
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoFriendColors)));
 		}
 
 		TextRender()->TextEx(&Cursor, GameClient()->m_aClients[pInfo->m_ClientId].m_aName);
@@ -565,10 +565,8 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				vec2 OffsetToMid;
 				CRenderTools::GetRenderTeeOffsetToRenderedTee(CAnimState::GetIdle(), &TeeInfo, OffsetToMid);
 				const vec2 TeeRenderPos = vec2(TeeOffset + TeeLength / 2, Row.y + Row.h / 2.0f + OffsetToMid.y);
-				if(g_Config.m_ClScoreSpecPlayer && paused)
-				{
+				if(paused)
 					RenderTools()->RenderTee(CAnimState::GetSpec(), &TeeInfo, EMOTE_BLINK, vec2(1.0f, 0.0f), TeeRenderPos);
-				}
 				else
 					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
 
@@ -617,7 +615,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					Graphics()->QuadsDrawTL(&QuadItem, 2);
 					Graphics()->QuadsEnd();
 				}
-				if(g_Config.m_ClScoreSpecPrefix && paused)
+				if(g_Config.m_ClSpectatePrefix && paused)
 				{
 					const char *pSpecMark = g_Config.m_ClSpecPrefix;
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
@@ -629,6 +627,9 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
 					Alpha = 0.4f;
 
+				if(g_Config.m_ClDoFriendColors && ClientData.m_Friend)
+					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
+
 				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)
 				{
 					if(GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempWar)
@@ -637,11 +638,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 						TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Alpha));
 					else if(GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
 						TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId).WithAlpha(Alpha));
-					else if(g_Config.m_ClDoFriendColorScore && ClientData.m_Friend)
-						TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 				}
-				else if(g_Config.m_ClDoFriendColorScore && ClientData.m_Friend)
-					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 				else
 					TextRender()->TextColor(1.f, 1.f, 1.f, Alpha);
 
