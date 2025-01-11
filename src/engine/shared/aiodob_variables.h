@@ -38,19 +38,21 @@ MACRO_CONFIG_INT(ClUnpredGhostsAlpha, ac_unpred_ghosts_alpha, 50, 0, 100, CFGFLA
 MACRO_CONFIG_INT(ClRenderGhostAsCircle, ac_render_ghost_as_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render Ghosts as circles instead of tee")
 
 // Outline Variables
-MACRO_CONFIG_INT(ClOutline, ac_outline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outlines")
-MACRO_CONFIG_INT(ClOutlineEntities, ac_outline_in_entities, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show outlines in entities")
-MACRO_CONFIG_INT(ClOutlineFreeze, ac_outline_freeze, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around freeze and deep")
-MACRO_CONFIG_INT(ClOutlineUnFreeze, ac_outline_unfreeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around unfreeze and undeep")
-MACRO_CONFIG_INT(ClOutlineTele, ac_outline_tele, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around teleporters")
-MACRO_CONFIG_INT(ClOutlineSolid, ac_outline_solid, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around hook and unhook")
-MACRO_CONFIG_INT(ClOutlineWidth, ac_outline_width, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of freeze outline")
-MACRO_CONFIG_INT(ClOutlineAlpha, ac_outline_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(0-100) Outline alpha")
-MACRO_CONFIG_INT(ClOutlineAlphaSolid, ac_outline_alpha_solid, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(0-100) Outline solids alpha")
-MACRO_CONFIG_COL(ClOutlineColorSolid, ac_outline_color_solid, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Solid outline color") // 0 0 0
-MACRO_CONFIG_COL(ClOutlineColorFreeze, ac_outline_color_freeze, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Freeze outline color") // 0 0 0
-MACRO_CONFIG_COL(ClOutlineColorTele, ac_outline_color_tele, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tele outline color") // 0 0 0
-MACRO_CONFIG_COL(ClOutlineColorUnfreeze, ac_outline_color_unfreeze, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Unfreeze outline color") // 0 0 0
+MACRO_CONFIG_INT(ClOutline, tc_outline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outlines")
+MACRO_CONFIG_INT(ClOutlineEntities, tc_outline_in_entities, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show outlines in entities")
+MACRO_CONFIG_INT(ClOutlineFreeze, tc_outline_freeze, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around freeze and deep")
+MACRO_CONFIG_INT(ClOutlineKill, tc_outline_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around kill")
+MACRO_CONFIG_INT(ClOutlineUnFreeze, tc_outline_unfreeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around unfreeze and undeep")
+MACRO_CONFIG_INT(ClOutlineTele, tc_outline_tele, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around teleporters")
+MACRO_CONFIG_INT(ClOutlineSolid, tc_outline_solid, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around hook and unhook")
+MACRO_CONFIG_INT(ClOutlineWidth, tc_outline_width, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of freeze outline")
+MACRO_CONFIG_INT(ClOutlineAlpha, tc_outline_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(0-100) Outline alpha")
+MACRO_CONFIG_INT(ClOutlineAlphaSolid, tc_outline_alpha_solid, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(0-100) Outline solids alpha")
+MACRO_CONFIG_COL(ClOutlineColorSolid, tc_outline_color_solid, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Solid outline color") // 0 0 0
+MACRO_CONFIG_COL(ClOutlineColorFreeze, tc_outline_color_freeze, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Freeze outline color") // 0 0 0
+MACRO_CONFIG_COL(ClOutlineColorTele, tc_outline_color_tele, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tele outline color") // 0 0 0
+MACRO_CONFIG_COL(ClOutlineColorUnfreeze, tc_outline_color_unfreeze, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Unfreeze outline color") // 0 0 0
+MACRO_CONFIG_COL(ClOutlineColorKill, tc_outline_color_kill, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Unfreeze outline color") // 0 0 0
 
 // fast input
 MACRO_CONFIG_INT(ClFastInput, ac_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction up to 20ms faster")
@@ -99,7 +101,7 @@ MACRO_CONFIG_STR(ClNotifyWhenLastText, ac_last_notify_text, 64, "Last!", CFGFLAG
 MACRO_CONFIG_COL(ClNotifyWhenLastColor, ac_last_notify_color, 29057, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color for last notify")
 
 
-
+// Spectate Cursor
 MACRO_CONFIG_INT(ClRenderCursorSpec, ac_cursor_in_spec, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render your gun cursor when spectating in freeview")
 MACRO_CONFIG_INT(ClRenderCursorSpecOpacity, ac_cursor_opacity_in_spec, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes Opacity of Curser when Spectating")
 
@@ -130,9 +132,6 @@ MACRO_CONFIG_INT(ClIndicatorTees, ac_indicator_tees, 1, 0, 1, CFGFLAG_CLIENT | C
 // Bind Wheel
 MACRO_CONFIG_INT(ClResetBindWheelMouse, ac_reset_bindwheel_mouse, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reset position of mouse when opening bindwheel")
 
-// Auto Verify
-MACRO_CONFIG_INT(ClAutoVerify, ac_auto_verify, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto verify")
-
 // Skin Profiles
 MACRO_CONFIG_INT(ClApplyProfileSkin, ac_profile_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply skin in profiles")
 MACRO_CONFIG_INT(ClApplyProfileName, ac_profile_name, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply name in profiles")
@@ -149,20 +148,15 @@ MACRO_CONFIG_STR(ClCustomFont, ac_custom_font, 255, "DejaVu Sans", CFGFLAG_CLIEN
 
 // Color Variables
 
-	// Icon Color
+// Misc Color
+MACRO_CONFIG_COL(ClAfkColor, ac_afk_color, 10951270, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Afk name color")
+MACRO_CONFIG_COL(ClSpecColor, ac_spec_color, 8936607, CFGFLAG_CLIENT | CFGFLAG_SAVE, "'(s)' color in scoreboard")
 
-	MACRO_CONFIG_COL(ClMutedColor, ac_muted_color, 12792139, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Muted Icon Color")
+// Friend
+MACRO_CONFIG_COL(ClFriendColor, ac_friend_color, 14745554, CFGFLAG_CLIENT | CFGFLAG_SAVE, "friend name color")
 
-	// Misc Color
-	MACRO_CONFIG_COL(ClAfkColor, ac_afk_color, 10951270, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Afk name color")
-	MACRO_CONFIG_COL(ClSpecColor, ac_spec_color, 8936607, CFGFLAG_CLIENT | CFGFLAG_SAVE, "'(s)' color in scoreboard")
-
-	// Friend / Foe Color
-
-	MACRO_CONFIG_COL(ClFriendColor, ac_friend_color, 14745554, CFGFLAG_CLIENT | CFGFLAG_SAVE, "friend name color")
-
-	// Aiodob Menu color plates
-	MACRO_CONFIG_COL(AiodobColor, Aiodob_color, 654311494, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Color in Aiodob Menu")
+// Aiodob Menu color plates
+MACRO_CONFIG_COL(AiodobColor, Aiodob_color, 654311494, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Color in Aiodob Menu")
 
 	
 // chatbubble / Menu
@@ -171,9 +165,9 @@ MACRO_CONFIG_INT(ClChatBubble, ac_chatbubble, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_
 MACRO_CONFIG_INT(ClShowOthersInMenu, ac_show_others_in_menu , 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Settings Emote if Someones in The Menu")
 MACRO_CONFIG_INT(ClShowOwnMenuToOthers, ac_show_self_in_menu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show The Settings Emot to Others When In The Menu")
 
-
 // misc
 
+MACRO_CONFIG_INT(ClSendDotsChat, ac_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Never send a message if it starts with a '.'")
 MACRO_CONFIG_INT(ClShowIdsChat, ac_show_ids_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to Show Client IDs in Chat")
 
 MACRO_CONFIG_INT(ClOldNameplateIds, ac_old_nameplate_ids, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render the old version of nameplate ids")
@@ -196,7 +190,6 @@ MACRO_CONFIG_INT(ClChatSpecPrefix, ac_do_chat_spec_prefix, 0, 0, 1, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClChatServerPrefix, ac_do_chat_server_prefix, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Server Prefix")
 MACRO_CONFIG_INT(ClChatClientPrefix, ac_do_chat_client_prefix, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Client Prefix")
 
-
 // Prefixes
 
 MACRO_CONFIG_STR(ClClientPrefix, ac_client_prefix, 8, "— ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client (Echo) Message Prefix")
@@ -205,21 +198,15 @@ MACRO_CONFIG_STR(ClWarlistPrefix, ac_warlist_prefix, 8, "♦ ", CFGFLAG_CLIENT |
 MACRO_CONFIG_STR(ClFriendPrefix, ac_friend_prefix, 8, "♥ ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Friend Prefix (alt + num3 = ♥)")
 MACRO_CONFIG_STR(ClSpecPrefix, ac_spec_prefix, 8, "• ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spectating Prefix (alt + num7 = ♥)")
 
-MACRO_CONFIG_INT(ClSendDotsChat, ac_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Never send a message if it starts with a '.'")
-MACRO_CONFIG_INT(ClAutoAddOnNameChange, ac_auto_add_on_name_change, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds a player back to a list if their name changed")
-
-MACRO_CONFIG_STR(ClAutoReplyMutedMsg, ac_auto_reply_muted_msg, 255, "I can't see your messages, you're muted", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply with then a muted player pings you")
-MACRO_CONFIG_INT(ClHideEnemyChat, ac_hide_enemy_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides Chat Messages of Enemies")
-MACRO_CONFIG_INT(ClShowMutedInConsole, ac_show_muted_in_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows messages of muted people in the console")
+// Mutes
 MACRO_CONFIG_INT(ClReplyMuted, ac_reply_muted, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "replies to muted players if they ping you")
+MACRO_CONFIG_INT(ClShowMutedInConsole, ac_show_muted_in_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows messages of muted people in the console")
 MACRO_CONFIG_INT(ClMutedIconNameplate, ac_muted_icon_nameplate, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows an Icon Next to Nameplates of Muted Players")
+MACRO_CONFIG_INT(ClHideEnemyChat, ac_hide_enemy_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides Chat Messages of Enemies")
+MACRO_CONFIG_STR(ClAutoReplyMutedMsg, ac_auto_reply_muted_msg, 255, "I can't see your messages, you're muted", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply with then a muted player pings you")
+MACRO_CONFIG_COL(ClMutedColor, ac_muted_color, 12792139, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Muted Icon Color")
 
-// Cloning People with chatcommands
-
-//MACRO_CONFIG_INT(ClCloningPerson, cloning_person, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-//MACRO_CONFIG_INT(ClCloningPersonDummy, cloning_person_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-//MACRO_CONFIG_INT(ClCopyingSkin, copying_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
-//MACRO_CONFIG_INT(ClCopyingSkinDummy, copying_skin_dummy, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Dont edit this")
+// Saving/Restoring
 
 MACRO_CONFIG_INT(ClSavedCountry, saved_country, -1, -1, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Saved to restore for !restore")
 MACRO_CONFIG_STR(ClSavedName, saved_name, 24, "Aiodob", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !restore")
@@ -237,22 +224,19 @@ MACRO_CONFIG_COL(ClSavedDummyColorBody, saved_dummy_color_body, 65408, CFGFLAG_C
 MACRO_CONFIG_COL(ClSavedDummyColorFeet, saved_dummy_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Saved to restore for !restore")
 MACRO_CONFIG_STR(ClSavedDummySkin, saved_dummy_skin, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_INSENSITIVE, "Saved to restore for !restore")
 
-MACRO_CONFIG_INT(ClAutoJoinTest, ac_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
-
 // Discord
 
-MACRO_CONFIG_INT(ClDiscordMapStatus, ac_discord_map_status, 1,0,1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show What Map you're on")
-MACRO_CONFIG_STR(ClDiscordOnlineStatus, ac_discord_online_status, 24, "Online", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Online Status")
-MACRO_CONFIG_STR(ClDiscordOfflineStatus, ac_discord_offline_status, 24, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status")
+MACRO_CONFIG_INT(ClDiscordRPC, ac_discord_rpc, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Discord Rpc (requires restart)")
+MACRO_CONFIG_INT(ClDiscordMapStatus, ac_discord_map_status, 1,0,1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show What Map you're on (requires rejoin)")
+MACRO_CONFIG_STR(ClDiscordOnlineStatus, ac_discord_online_status, 24, "Online", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Online Status (requires rejoin)")
+MACRO_CONFIG_STR(ClDiscordOfflineStatus, ac_discord_offline_status, 24, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status (requires rejoin)")
 
-
-// In Spec Menu Prefixes
+// Spec Menu Prefixes
 
 MACRO_CONFIG_INT(ClSpecMenuColors, ac_specmenu_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on colors in the spectate menu")
-MACRO_CONFIG_INT(ClSpecMenuFriendPrefix, ac_specmenu_friend_prefix, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Friend Prefix Next to Names in The Spectate Menu")
 MACRO_CONFIG_INT(ClSpecMenuPrefixes, ac_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Prefixes Next to Names in The Spectate Menu")
 
-// Notify on join
+// Chat Name Detection
 
 MACRO_CONFIG_INT(ClNotifyOnJoin, ac_auto_notify_on_join, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notifies you if a player joined")
 MACRO_CONFIG_STR(ClAutoNotifyName, ac_auto_notify_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
@@ -260,6 +244,9 @@ MACRO_CONFIG_STR(ClAutoNotifyMsg, ac_auto_notify_msg, 256, "Your Fav Person Has 
 
 MACRO_CONFIG_INT(ClAutoJoinTeam, ac_auto_join_team, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Joins that players team if they join one")
 MACRO_CONFIG_STR(ClAutoJoinTeamName, ac_auto_join_team_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
+
+MACRO_CONFIG_INT(ClAutoAddOnNameChange, ac_auto_add_on_name_change, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds a player back to a list if their name changed")
+MACRO_CONFIG_INT(ClAutoJoinTest, ac_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
 
 // Info
 
@@ -281,13 +268,12 @@ MACRO_CONFIG_INT(ClFreezeDontKillMoving, ac_freeze_dont_kill_moving, 1, 0, 1, CF
 
 MACRO_CONFIG_INT(ClFreezeKillDebug, ac_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "debug")
 
-// Ui
+// Ui/Sound
 MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something")
 MACRO_CONFIG_INT(ClCornerRoundness, ac_corner_roundness, 50, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How round corners are in scrollable menus")
 MACRO_CONFIG_INT(ClFpsSpoofer, ac_fps_spoofer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spoof Da Fps counter")
 MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fps Spoofer Percentage")
 MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "shows ping range 76-77 in black (ping of a weirdo)")
-
 
 // Gores Mode
 MACRO_CONFIG_INT(ClGoresMode, ac_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")

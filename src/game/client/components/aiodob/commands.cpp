@@ -124,6 +124,12 @@ void CAiodob::ConOnlineInfo(IConsole::IResult *pResult, void *pUserData)
 	pSelf->OnlineInfo();
 }
 
+void CAiodob::ConPlayerInfo(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+	pSelf->PlayerInfo(pResult->GetString(0));
+}
+
 void CAiodob::TempWar(const char *pName)
 {
 	CTempEntry Entry(pName, "", "");
@@ -405,10 +411,57 @@ void CAiodob::OnlineInfo(bool Integrate)
 	}
 }
 
+void CAiodob::PlayerInfo(const char *pName)
+{
+	char aBuf[1024];
+	str_format(aBuf, sizeof(aBuf), "Couldnt Find a Player With The Name \"%s\"", pName);
+	if(IdWithName(pName) != -1)
+	{
+		int Id = IdWithName(pName);
+		GameClient()->aMessage("╭──                  Player Info");
+		GameClient()->aMessage("│");
+
+		str_format(aBuf, sizeof(aBuf), "│ Name: %s", pName);
+		GameClient()->aMessage(aBuf);
+		str_format(aBuf, sizeof(aBuf), "│ Clan: %s", GameClient()->m_aClients[Id].m_aClan);
+		GameClient()->aMessage(aBuf);
+		GameClient()->aMessage("│");
+		if(!GameClient()->m_aClients[Id].m_UseCustomColor)
+		{
+			str_format(aBuf, sizeof(aBuf), "│ Custom Color: No", GameClient()->m_aClients[Id].m_ColorBody);
+			GameClient()->aMessage(aBuf);
+			GameClient()->aMessage("│");
+		}
+		else
+		{
+			str_format(aBuf, sizeof(aBuf), "│ Custom Color: Yes", GameClient()->m_aClients[Id].m_ColorBody);
+			GameClient()->aMessage(aBuf);
+			str_format(aBuf, sizeof(aBuf), "│ Body Color: %d", GameClient()->m_aClients[Id].m_ColorBody);
+			GameClient()->aMessage(aBuf);
+			str_format(aBuf, sizeof(aBuf), "│ Feet Color: %d", GameClient()->m_aClients[Id].m_ColorFeet);
+			GameClient()->aMessage(aBuf);
+			GameClient()->aMessage("│");
+		}
+		if(GameClient()->m_aClients[Id].m_AuthLevel > 0)
+			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes", GameClient()->m_aClients[Id].m_AuthLevel);
+		else
+		str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
+		GameClient()->aMessage(aBuf);
+
+		GameClient()->aMessage("│");
+		GameClient()->aMessage("╰───────────────────────");
+	}
+	else
+		GameClient()->aMessage(aBuf);
+}
+
+
 void CAiodob::OnConsoleInit()
 {
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");
 	Console()->Register("onlineinfo", "", CFGFLAG_CLIENT, ConOnlineInfo, this, "Shows you how many people of default lists are on the current server");
+	Console()->Register("PlayerInfo", "s[name]", CFGFLAG_CLIENT, ConPlayerInfo, this, "Get Info of a Player");
+
 
 	Console()->Register("addtempwar", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempWar, this, "temporary War");
 	Console()->Register("deltempwar", "s[name]", CFGFLAG_CLIENT, ConUnTempWar, this, "remove temporary War");

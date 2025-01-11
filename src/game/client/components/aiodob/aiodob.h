@@ -103,6 +103,8 @@ class CAiodob : public CComponent
 
 	static void ConOnlineInfo(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConPlayerInfo(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConTempWar(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnTempWar(IConsole::IResult *pResult, void *pUserData);
 
@@ -127,6 +129,8 @@ public:
 	void UnTempMute(const char *pName, bool Silent = false);
 
 	void Votekick(const char *pName, const char *pReason);
+
+	void PlayerInfo(const char *pName);
 
 	void SaveSkin();
 	void RestoreSkin();

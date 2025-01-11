@@ -55,8 +55,9 @@ public:
 		ClearGameInfo("Started A-Client");
 		return false;
 	}
-	void Update() override
+	void Update(bool RPC) override
 	{
+		if(RPC)
 		m_pCore->run_callbacks(m_pCore);
 	}
 	void ClearGameInfo(const char *pDetail) override
@@ -107,7 +108,7 @@ IDiscord *CreateDiscordImpl()
 
 class CDiscordStub : public IDiscord
 {
-	void Update() override {}
+	void Update(bool RPC) override {}
 	void ClearGameInfo(const char *pDetail) override {}
 	void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, const char *pDetail, bool ShowMap, bool AnnounceAddr) override {}
 };

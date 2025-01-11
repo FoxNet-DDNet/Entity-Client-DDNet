@@ -356,10 +356,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			MiscSettings.VMargin(5.0f, &MiscSettings);
 				if(g_Config.m_ClRenderCursorSpec)
 				{
-					MiscSettings.HSplitTop(200.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(180.0f, &MiscSettings, &AutoKillOntopSettings);
 				}
 				else
-					MiscSettings.HSplitTop(180.0f, &MiscSettings, &AutoKillOntopSettings);
+					MiscSettings.HSplitTop(160.0f, &MiscSettings, &AutoKillOntopSettings);
 			if(s_ScrollRegion.AddRect(MiscSettings))
 			{
 				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -414,7 +414,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							Client()->ViewFile("data/aiodob/fonts");
 						}
 					}
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoVerify, ("Auto Verify"), &g_Config.m_ClAutoVerify, &MiscSettings, LineSize);
+
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &MiscSettings, LineSize);
 
 					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);
@@ -535,7 +535,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			MenuSettings.HSplitTop(Margin, nullptr, &MenuSettings);
-			MenuSettings.HSplitTop(120.0f, &MenuSettings, 0);
+			MenuSettings.HSplitTop(100.0f, &MenuSettings, 0);
 			if(s_ScrollRegion.AddRect(MenuSettings))
 			{
 				MenuSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -549,9 +549,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Player Colors in Spectate Menu"), &g_Config.m_ClSpecMenuColors, &MenuSettings, LineSize);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, Localize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &MenuSettings, LineSize);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuFriendPrefix, Localize("Friend Prefix in Spectate Menu"), &g_Config.m_ClSpecMenuFriendPrefix, &MenuSettings, LineSize);
-					
 				}
 			}
 		}
@@ -1313,7 +1310,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		// Weapon Settings
 		{
 			OutlineSettings.VMargin(5.0f, &OutlineSettings);
-			OutlineSettings.HSplitTop(365.0f, &OutlineSettings, &FrozenTeeHudSettings);
+			OutlineSettings.HSplitTop(385.0f, &OutlineSettings, &FrozenTeeHudSettings);
 			if(s_ScrollRegion.AddRect(OutlineSettings))
 			{
 				OutlineSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1322,13 +1319,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				OutlineSettings.HSplitTop(HeaderHeight, &Button, &OutlineSettings);
 				Ui()->DoLabel(&Button, Localize("Outlines"), FontSize, TEXTALIGN_MC);
 				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutline, ("Enable Outlines"), &g_Config.m_ClOutline, &OutlineSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutline, Localize("Enable Outlines"), &g_Config.m_ClOutline, &OutlineSettings, LineMargin);
 					OutlineSettings.HSplitTop(5.0f, &Button, &OutlineSettings);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineEntities, ("Only show outlines in entities"), &g_Config.m_ClOutlineEntities, &OutlineSettings, LineMargin);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineFreeze, ("Outline freeze & deep"), &g_Config.m_ClOutlineFreeze, &OutlineSettings, LineMargin);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineSolid, ("Outline walls"), &g_Config.m_ClOutlineSolid, &OutlineSettings, LineMargin);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineTele, ("Outline teleporter"), &g_Config.m_ClOutlineTele, &OutlineSettings, LineMargin);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineUnFreeze, ("Outline unfreeze & undeep"), &g_Config.m_ClOutlineUnFreeze, &OutlineSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineEntities, Localize("Only show outlines in entities"), &g_Config.m_ClOutlineEntities, &OutlineSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineFreeze, Localize("Outline freeze & deep"), &g_Config.m_ClOutlineFreeze, &OutlineSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineSolid, Localize("Outline walls"), &g_Config.m_ClOutlineSolid, &OutlineSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineTele, Localize("Outline teleporter"), &g_Config.m_ClOutlineTele, &OutlineSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineUnFreeze, Localize("Outline unfreeze & undeep"), &g_Config.m_ClOutlineUnFreeze, &OutlineSettings, LineMargin);
 
 					{
 						OutlineSettings.HSplitTop(5.0f, &Button, &OutlineSettings);
@@ -1357,23 +1354,25 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						Ui()->DoLabel(&Label, aBuf, 14.0f, TEXTALIGN_LEFT);
 						g_Config.m_ClOutlineAlphaSolid = (int)(Ui()->DoScrollbarH(&g_Config.m_ClOutlineAlphaSolid, &Button, (g_Config.m_ClOutlineAlphaSolid) / 100.0f) * 100.0f);
 					}
-					static CButtonContainer OutlineColorFreezeID, OutlineColorSolidID, OutlineColorTeleID, OutlineColorUnfreezeID;
+					static CButtonContainer OutlineColorFreezeID, OutlineColorSolidID, OutlineColorTeleID, OutlineColorUnfreezeID, OutlineColorKillID;
 
 					OutlineSettings.HSplitTop(5.0f, 0x0, &OutlineSettings);
 					OutlineSettings.VSplitLeft(-5.0f, 0x0, &OutlineSettings);
 
 					OutlineSettings.HSplitTop(2.0f, &OutlineSettings, &OutlineSettings);
-					DoLine_ColorPicker(&OutlineColorFreezeID, 25.0f, 13.0f, 5.0f, &OutlineSettings, ("Freeze Outline Color"), &g_Config.m_ClOutlineColorFreeze, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
+					DoLine_ColorPicker(&OutlineColorFreezeID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OutlineSettings, Localize("Freeze Outline Color"), &g_Config.m_ClOutlineColorFreeze, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
 
 					OutlineSettings.HSplitTop(2.0f, &OutlineSettings, &OutlineSettings);
-					DoLine_ColorPicker(&OutlineColorSolidID, 25.0f, 13.0f, 5.0f, &OutlineSettings, ("Walls Outline Color"), &g_Config.m_ClOutlineColorSolid, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
+					DoLine_ColorPicker(&OutlineColorSolidID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OutlineSettings, Localize("Walls Outline Color"), &g_Config.m_ClOutlineColorSolid, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
 
 					OutlineSettings.HSplitTop(2.0f, &OutlineSettings, &OutlineSettings);
-					DoLine_ColorPicker(&OutlineColorTeleID, 25.0f, 13.0f, 5.0f, &OutlineSettings, ("Teleporter Outline Color"), &g_Config.m_ClOutlineColorTele, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
+					DoLine_ColorPicker(&OutlineColorTeleID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OutlineSettings, Localize("Teleporter Outline Color"), &g_Config.m_ClOutlineColorTele, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
 
 					OutlineSettings.HSplitTop(2.0f, &OutlineSettings, &OutlineSettings);
-					DoLine_ColorPicker(&OutlineColorUnfreezeID, 25.0f, 13.0f, 5.0f, &OutlineSettings, ("Unfreeze Outline Color"), &g_Config.m_ClOutlineColorUnfreeze, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
-		
+					DoLine_ColorPicker(&OutlineColorUnfreezeID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OutlineSettings, Localize("Unfreeze Outline Color"), &g_Config.m_ClOutlineColorUnfreeze, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
+
+					DoLine_ColorPicker(&OutlineColorKillID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OutlineSettings, Localize("Kill outline color"), &g_Config.m_ClOutlineColorKill, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+
 				}
 			}
 		}
