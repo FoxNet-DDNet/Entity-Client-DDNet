@@ -706,7 +706,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				}
 
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_ShowServerSide, "Show Server-side", &GameClient()->m_Aiodob.m_ShowServerSide, &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_ShowServerSide, "Show what it'll look like Server-side", &GameClient()->m_Aiodob.m_ShowServerSide, &RainbowSettings, LineSize);
 			}
 		}
 
