@@ -192,6 +192,7 @@ void CBindchat::OnConsoleInit()
 	AddBindDefault(".extra", "exec data/aiodob/binds/.extra.cfg");
 	AddBindDefault(".kick", "votekick");
 	AddBindDefault(".votekick", "votekick");
+	AddBindDefault(".playerinfo", "PlayerInfo");
 
 	AddBindDefault(".friend", "add_friend");
 	AddBindDefault(".unfriend", "remove_friend");

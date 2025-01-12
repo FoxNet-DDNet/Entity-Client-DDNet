@@ -428,13 +428,13 @@ void CAiodob::PlayerInfo(const char *pName)
 		GameClient()->aMessage("│");
 		if(!GameClient()->m_aClients[Id].m_UseCustomColor)
 		{
-			str_format(aBuf, sizeof(aBuf), "│ Custom Color: No", GameClient()->m_aClients[Id].m_ColorBody);
+			str_format(aBuf, sizeof(aBuf), "│ Custom Color: %s", "No");
 			GameClient()->aMessage(aBuf);
 			GameClient()->aMessage("│");
 		}
 		else
 		{
-			str_format(aBuf, sizeof(aBuf), "│ Custom Color: Yes", GameClient()->m_aClients[Id].m_ColorBody);
+			str_format(aBuf, sizeof(aBuf), "│ Custom Color: %s", "Yes");
 			GameClient()->aMessage(aBuf);
 			str_format(aBuf, sizeof(aBuf), "│ Body Color: %d", GameClient()->m_aClients[Id].m_ColorBody);
 			GameClient()->aMessage(aBuf);
@@ -442,11 +442,16 @@ void CAiodob::PlayerInfo(const char *pName)
 			GameClient()->aMessage(aBuf);
 			GameClient()->aMessage("│");
 		}
+		str_format(aBuf, sizeof(aBuf), "│ Skin Name: %s", GameClient()->m_aClients[Id].m_aSkinName);
+		GameClient()->aMessage(aBuf);
+		GameClient()->aMessage("│");
+
 		if(GameClient()->m_aClients[Id].m_AuthLevel > 0)
 			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes", GameClient()->m_aClients[Id].m_AuthLevel);
 		else
 		str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
 		GameClient()->aMessage(aBuf);
+
 
 		GameClient()->aMessage("│");
 		GameClient()->aMessage("╰───────────────────────");
