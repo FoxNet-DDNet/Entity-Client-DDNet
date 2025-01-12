@@ -139,6 +139,8 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	bool m_GenerateTimeoutSeed = true;
 
 	// A-Client
+	static void ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData);
+	void DiscordRPCchange() override;
 	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
 	bool m_aOnJoinInfo[NUM_DUMMIES] = {false, false};
 

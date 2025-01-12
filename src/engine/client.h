@@ -340,6 +340,10 @@ public:
 	};
 	virtual void ShowMessageBox(const char *pTitle, const char *pMessage, EMessageBoxType Type = MESSAGE_BOX_TYPE_ERROR) = 0;
 	virtual void GetGpuInfoString(char (&aGpuInfo)[256]) = 0;
+
+	
+	// A-Client
+	virtual void DiscordRPCchange() = 0;
 };
 
 class IGameClient : public IInterface

@@ -223,8 +223,8 @@ MACRO_CONFIG_STR(ClSavedDummySkin, saved_dummy_skin, 24, "default", CFGFLAG_CLIE
 
 MACRO_CONFIG_INT(ClDiscordRPC, ac_discord_rpc, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Discord Rpc (requires restart)")
 MACRO_CONFIG_INT(ClDiscordMapStatus, ac_discord_map_status, 1,0,1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show What Map you're on (requires rejoin)")
-MACRO_CONFIG_STR(ClDiscordOnlineStatus, ac_discord_online_status, 24, "Online", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Online Status (requires rejoin)")
-MACRO_CONFIG_STR(ClDiscordOfflineStatus, ac_discord_offline_status, 24, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status (requires rejoin)")
+MACRO_CONFIG_STR(ClDiscordOnlineStatus, ac_discord_online_status, 25, "Online", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Online Status (requires rejoin)")
+MACRO_CONFIG_STR(ClDiscordOfflineStatus, ac_discord_offline_status, 25, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status (requires rejoin)")
 
 // Spec Menu Prefixes
 

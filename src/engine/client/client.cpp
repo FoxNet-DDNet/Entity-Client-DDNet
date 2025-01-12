@@ -431,13 +431,31 @@ void CClient::SetState(EClientState State)
 	if(State == IClient::STATE_ONLINE)
 	{
 		const bool AnnounceAddr = m_ServerBrowser.IsRegistered(ServerAddress());
-		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, AnnounceAddr);
 		Steam()->SetGameInfo(ServerAddress(), m_aCurrentMap, AnnounceAddr);
 	}
 	else if(OldState == IClient::STATE_ONLINE)
 	{
-		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus);
 		Steam()->ClearGameInfo();
+	}
+	DiscordRPCchange();
+}
+
+void CClient::ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData)
+{
+	CClient *pSelf = (CClient *)pUserData;
+	pSelf->DiscordRPCchange();
+}
+
+void CClient::DiscordRPCchange()
+{
+	if(State() == IClient::STATE_ONLINE)
+	{
+		const bool AnnounceAddr = m_ServerBrowser.IsRegistered(ServerAddress());
+		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, AnnounceAddr);	
+	}
+	else if(State() == IClient::STATE_OFFLINE)
+	{
+		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus);
 	}
 }
 
@@ -4528,6 +4546,9 @@ void CClient::RegisterCommands()
 
 	m_pConsole->Chain("loglevel", ConchainLoglevel, this);
 	m_pConsole->Chain("stdout_output_level", ConchainStdoutOutputLevel, this);
+
+	// A-Client
+	m_pConsole->Register("discord_rpc_reload", "", CFGFLAG_CLIENT, ConDiscordRPCchange, this, "Reloads The Discord RPC");
 }
 
 static CClient *CreateClient()

@@ -831,6 +831,24 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
 
+					
+					if(m_DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
+					{
+						GameClient()->Console()->ExecuteLine("discord_rpc_reload");
+						m_DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
+					}
+					else if(str_comp(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
+					{
+						GameClient()->Console()->ExecuteLine("discord_rpc_reload");
+						str_copy(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
+					}
+					else if(str_comp(m_DiscordRPCOfflineMsg ,g_Config.m_ClDiscordOfflineStatus) != 0)
+					{
+						GameClient()->Console()->ExecuteLine("discord_rpc_reload");
+						str_copy(m_DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
+					}
+
+
 					{
 						DiscordSettings.HSplitTop(19.9f, &Button, &MainView);
 

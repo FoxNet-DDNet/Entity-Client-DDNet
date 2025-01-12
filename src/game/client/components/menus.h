@@ -855,6 +855,9 @@ private:
 
 	// A-Client
 
+	int m_DiscordRPCMap;
+	char m_DiscordRPCOnlineMsg[25];
+	char m_DiscordRPCOfflineMsg[25];
 	int m_InitDiscordRPC;
 	bool m_NeedRestartDiscordRPC;
 
