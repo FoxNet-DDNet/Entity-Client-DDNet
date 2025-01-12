@@ -519,7 +519,8 @@ void CAiodob::Rainbow()
 	else
 		m_PreviewRainbowColor = getIntFromColor(h, s, l);
 
-	if(m_RainbowDelay < time_get() && g_Config.m_ClServerRainbow && m_LastMovement > time_get() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
+	if(Client()->State() == IClient::STATE_ONLINE)
+	if(m_pClient->m_NextChangeInfo < time_get() && g_Config.m_ClServerRainbow && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 	{
 		if(g_Config.m_ClDummy)
 			GameClient()->SendDummyInfo(false);

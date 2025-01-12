@@ -307,7 +307,7 @@ MACRO_CONFIG_INT(ClSpecialEffect, ac_special_effect, 1, 0, 1, CFGFLAG_CLIENT | C
 MACRO_CONFIG_INT(ClFreezeParticleSpin, ac_freeze_particle_spin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make Freeze Particles Spin Around The Player")
 MACRO_CONFIG_INT(ClSmallSkins, ac_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
 
-MACRO_CONFIG_INT(ClServerRainbow, ac_server_rainbow, 0, 0, 1, CFGFLAG_CLIENT, "Enables Rainbow Mode Server Side! (Way Slower though)")
+MACRO_CONFIG_INT(ClServerRainbow, ac_server_rainbow, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enables Rainbow Mode Server Side! (Way Slower though)")
 MACRO_CONFIG_INT(ClRainbowSpeed, ac_rainbow_speed, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
 MACRO_CONFIG_INT(ClRainbowHookOthers, ac_rainbow_hook_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook for others client side")
 MACRO_CONFIG_INT(ClRainbowHook, ac_rainbow_hook, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on rainbow hook client side")
