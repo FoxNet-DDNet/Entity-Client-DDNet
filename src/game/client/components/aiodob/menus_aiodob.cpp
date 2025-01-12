@@ -125,14 +125,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		// left side in settings menu
 
 		CUIRect OtherSettings, ColorSettings, FreezeKillSettings, ChatSettings, AutoKillOntopSettings, GoresModeSettings, MenuSettings, AiodobSettings;
-		MainView.VSplitMid(&OtherSettings, &AutoKillOntopSettings);
+		MainView.VSplitMid(&OtherSettings, &GoresModeSettings);
 
 		{
 			OtherSettings.VMargin(5.0f, &OtherSettings);
 			if(g_Config.m_ClNotifyOnJoin)
-				OtherSettings.HSplitTop(245.0f, &OtherSettings, &FreezeKillSettings);
-			else
 				OtherSettings.HSplitTop(225.0f, &OtherSettings, &FreezeKillSettings);
+			else
+				OtherSettings.HSplitTop(205.0f, &OtherSettings, &FreezeKillSettings);
 			if(s_ScrollRegion.AddRect(OtherSettings))
 			{
 				OtherSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -229,8 +229,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, ("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubble, ("Show Chat Bubble"), &g_Config.m_ClChatBubble, &OtherSettings, LineSize);
-
 					OtherSettings.HSplitTop(5.0f, &Button, &OtherSettings);
 					{
 						OtherSettings.HSplitTop(20.0f, &Button, &MainView);
@@ -296,7 +294,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					FreezeKillSettings.HSplitTop(200.0f, &FreezeKillSettings, &ChatSettings);
 			}
 			else
-				FreezeKillSettings.HSplitTop(80.0f, &FreezeKillSettings, &ChatSettings);
+				FreezeKillSettings.HSplitTop(75.0f, &FreezeKillSettings, &ChatSettings);
 			if(s_ScrollRegion.AddRect(FreezeKillSettings))
 			{
 				FreezeKillSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -338,7 +336,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		// chat settings
 		{
 			ChatSettings.HSplitTop(Margin, nullptr, &ChatSettings);
-			ChatSettings.HSplitTop(370.0f, &ChatSettings, 0);
+			ChatSettings.HSplitTop(395.0f, &ChatSettings, 0);
 			if(s_ScrollRegion.AddRect(ChatSettings))
 			{
 				ChatSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -347,6 +345,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				ChatSettings.HSplitTop(HeaderHeight, &Button, &ChatSettings);
 				Ui()->DoLabel(&Button, Localize("Chat Settings"), FontSize, TEXTALIGN_MC);
 				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubble, ("Show Chat Bubble"), &g_Config.m_ClChatBubble, &ChatSettings, LineSize);
+					ChatSettings.HSplitTop(2.5f, &Button, &ChatSettings);
+
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowMutedInConsole, ("Show Messages of Muted People in The Console"), &g_Config.m_ClShowMutedInConsole, &ChatSettings, LineSize);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideEnemyChat, ("Hide Enemy Chat (Shows in Console)"), &g_Config.m_ClHideEnemyChat, &ChatSettings, LineSize);
@@ -463,11 +464,49 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		// right side
 
 		{
-			AutoKillOntopSettings.VMargin(5.0f, &AutoKillOntopSettings);
+			GoresModeSettings.VMargin(5.0f, &GoresModeSettings);
+			GoresModeSettings.HSplitTop(120.0f, &GoresModeSettings, &MenuSettings);
+			if(s_ScrollRegion.AddRect(GoresModeSettings))
+			{
+				GoresModeSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				GoresModeSettings.VMargin(Margin, &GoresModeSettings);
+
+				GoresModeSettings.HSplitTop(HeaderHeight, &Button, &GoresModeSettings);
+				Ui()->DoLabel(&Button, Localize("Gores Mode"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresModeSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is 'Gores'"), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresModeSettings, LineSize);
+			}
+		}
+
+		{
+			MenuSettings.HSplitTop(Margin, nullptr, &MenuSettings);
+			MenuSettings.HSplitTop(100.0f, &MenuSettings, &AutoKillOntopSettings);
+			if(s_ScrollRegion.AddRect(MenuSettings))
+			{
+				MenuSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				MenuSettings.VMargin(Margin, &MenuSettings);
+
+				MenuSettings.HSplitTop(HeaderHeight, &Button, &MenuSettings);
+				Ui()->DoLabel(&Button, Localize("Menu Settings"), FontSize, TEXTALIGN_MC);
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, Localize("Show Settigns Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &MenuSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Player Colors in Spectate Menu"), &g_Config.m_ClSpecMenuColors, &MenuSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, Localize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &MenuSettings, LineSize);
+				}
+			}
+		}
+
+			{
+			AutoKillOntopSettings.HSplitTop(Margin, nullptr, &AutoKillOntopSettings);
 			if(g_Config.m_ClAutoKill)
-				AutoKillOntopSettings.HSplitTop(205.0f, &AutoKillOntopSettings, &GoresModeSettings);
+				AutoKillOntopSettings.HSplitTop(205.0f, &AutoKillOntopSettings, &AiodobSettings);
 			else
-				AutoKillOntopSettings.HSplitTop(75.0f, &AutoKillOntopSettings, &GoresModeSettings);
+				AutoKillOntopSettings.HSplitTop(75.0f, &AutoKillOntopSettings, &AiodobSettings);
 			if(s_ScrollRegion.AddRect(AutoKillOntopSettings))
 			{
 				AutoKillOntopSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -490,46 +529,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					AutoKillOntopSettings.HSplitTop(2 * LineSize, &Button, &AutoKillOntopSettings);
 					Ui()->DoScrollbarOption(&g_Config.m_ClAutoKillRangeY, &g_Config.m_ClAutoKillRangeY, &Button, Localize("y Axis ↕ Auto Kill Range"), 1, 100, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
-				}
-			}
-		}
-		
-
-
-		{
-			GoresModeSettings.HSplitTop(Margin, nullptr, &GoresModeSettings);
-			GoresModeSettings.HSplitTop(120.0f, &GoresModeSettings, &MenuSettings);
-			if(s_ScrollRegion.AddRect(GoresModeSettings))
-			{
-				GoresModeSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				GoresModeSettings.VMargin(Margin, &GoresModeSettings);
-
-				GoresModeSettings.HSplitTop(HeaderHeight, &Button, &GoresModeSettings);
-				Ui()->DoLabel(&Button, Localize("Gores Mode"), FontSize, TEXTALIGN_MC);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresModeSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is 'Gores'"), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresModeSettings, LineSize);
-			}
-		}
-
-		{
-			MenuSettings.HSplitTop(Margin, nullptr, &MenuSettings);
-			MenuSettings.HSplitTop(100.0f, &MenuSettings, &AiodobSettings);
-			if(s_ScrollRegion.AddRect(MenuSettings))
-			{
-				MenuSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				MenuSettings.VMargin(Margin, &MenuSettings);
-
-				MenuSettings.HSplitTop(HeaderHeight, &Button, &MenuSettings);
-				Ui()->DoLabel(&Button, Localize("Menu Settings"), FontSize, TEXTALIGN_MC);
-				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, Localize("Show Settigns Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &MenuSettings, LineSize);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Player Colors in Spectate Menu"), &g_Config.m_ClSpecMenuColors, &MenuSettings, LineSize);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, Localize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &MenuSettings, LineSize);
 				}
 			}
 		}
@@ -1166,6 +1165,40 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 	}
 }
 
+void CMenus::RenderAClientVersionPage(CUIRect MainView)
+{
+	GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_NEWS);
+
+	g_Config.m_UiUnreadNews = false;
+
+	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
+
+	MainView.HSplitTop(10.0f, nullptr, &MainView);
+	MainView.VSplitLeft(15.0f, nullptr, &MainView);
+
+	CUIRect Button;
+
+	MainView.HSplitTop(15.0f, &Button, nullptr);
+	MainView.HSplitTop(25.0f, &Button, nullptr);
+	Button.VSplitRight(20.0f, &Button, nullptr);
+	Button.VSplitRight(150.0f, &Button, &Button);
+
+	static CButtonContainer s_GithubButton;
+	if(DoButton_Menu(&s_GithubButton, Localize("Go to Github Page"), 0, &Button, 0, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.40f), 10.0f))
+	{
+		Client()->ViewLink(Localize("https://github.com/qxdFox/Aiodob-Client-DDNet/releases/"));
+	}
+
+	const char *Monkey = "▒▒▒▒▒▄██████████▄▒▒▒▒▒\n▒▒▒▄██████████████▄▒▒▒\n▒▒██████████████████▒▒\n▒▐███▀▀▀▀▀██▀▀▀▀▀███▌▒\n▒███▒▒▌■▐▒▒▒▒▌■▐▒▒███▒\n▒▐██▄▒▀▀▀▒▒▒▒▀▀▀▒▄██▌▒\n▒▒▀████▒▄▄▒▒▄▄▒████▀▒▒\n▒▒▐███▒▒▒▀▒▒▀▒▒▒███▌▒▒\n▒▒███▒▒▒▒▒▒▒▒▒▒▒▒███▒▒\n▒▒▒██▒▒▀▀▀▀▀▀▀▀▒▒██▒▒▒\n▒▒▒▐██▄▒▒▒▒▒▒▒▒▄██▌▒▒▒\n▒▒▒▒▀████████████▀▒▒▒▒";
+	const char *Smiley = "░░░░░░░░░░░░░░░░░░░░░░█████████░░░░░░░░░\n░░███████░░░░░░░░░░███▒▒▒▒▒▒▒▒███░░░░░░░\n░░█▒▒▒▒▒▒█░░░░░░░███▒▒▒▒▒▒▒▒▒▒▒▒▒███░░░░\n░░░█▒▒▒▒▒▒█░░░░██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██░░\n░░░░█▒▒▒▒▒█░░░██▒▒▒▒▒██▒▒▒▒▒▒██▒▒▒▒▒███░\n░░░░░█▒▒▒█░░░█▒▒▒▒▒▒████▒▒▒▒████▒▒▒▒▒▒██\n░░░█████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██\n░░░█▒▒▒▒▒▒▒▒▒▒▒▒█▒▒▒▒▒▒▒▒▒█▒▒▒▒▒▒▒▒▒▒▒██\n░██▒▒▒▒▒▒▒▒▒▒▒▒▒█▒▒▒██▒▒▒▒▒▒▒▒▒▒██▒▒▒▒██\n██▒▒▒███████████▒▒▒▒▒██▒▒▒▒▒▒▒▒██▒▒▒▒▒██\n█▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▒▒▒▒▒▒████████▒▒▒▒▒▒▒██\n██▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██░\n░█▒▒▒███████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██░░░\n░██▒▒▒▒▒▒▒▒▒▒████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█░░░░░\n░░████████████░░░█████████████████░░░░░░";
+	CUIRect Label;
+	char aBuf[5000];
+	str_format(aBuf, sizeof(aBuf), "I'm too stupid to it tell you when to update but you can check on the github page every once in a while\n\nI guess I can put whatever I want here so..\n\n%s\n\n%s", Monkey, Smiley);
+	MainView.HSplitTop(540.0f, &Label, &MainView);	
+	Ui()->DoLabel(&Label, aBuf, 15.f, TEXTALIGN_ML);
+
+	
+}
 void CMenus::RenderChatPreview(CUIRect MainView)
 {
 	CChat &Chat = GameClient()->m_Chat;

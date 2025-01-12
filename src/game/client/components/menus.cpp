@@ -118,7 +118,7 @@ int CMenus::DoButton_Toggle(const void *pId, int Checked, const CUIRect *pRect, 
 	return Active ? Ui()->DoButtonLogic(pId, Checked, pRect) : 0;
 }
 
-int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color, float Size)
 {
 	CUIRect Text = *pRect;
 
@@ -150,7 +150,10 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 
 	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
 	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
-	Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+	if(Size == 0.0f)
+		Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+	else
+		Ui()->DoLabel(&Text, pText, Size, TEXTALIGN_MC);
 
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect);
 }
@@ -1143,6 +1146,10 @@ void CMenus::Render()
 			else if(m_MenuPage == PAGE_SETTINGS)
 			{
 				RenderSettings(MainView);
+			}
+			else if(m_MenuPage == PAGE_ACLIENT)
+			{
+				RenderAClientVersionPage(MainView);
 			}
 			else
 			{
