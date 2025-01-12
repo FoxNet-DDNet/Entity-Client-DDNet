@@ -58,7 +58,7 @@ public:
 	void Update(bool RPC) override
 	{
 		if(RPC)
-		m_pCore->run_callbacks(m_pCore);
+			m_pCore->run_callbacks(m_pCore);
 	}
 	void ClearGameInfo(const char *pDetail) override
 	{

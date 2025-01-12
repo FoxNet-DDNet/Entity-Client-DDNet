@@ -881,6 +881,7 @@ void CMenus::OnInit()
 
 	SetMenuPage(g_Config.m_UiPage);
 
+
 	m_RefreshButton.Init(Ui(), -1);
 	m_ConnectButton.Init(Ui(), -1);
 
@@ -931,6 +932,9 @@ void CMenus::OnInit()
 	m_DirectionQuadContainerIndex = Graphics()->CreateQuadContainer(false);
 	RenderTools()->QuadContainerAddSprite(m_DirectionQuadContainerIndex, 0.f, 0.f, 22.f);
 	Graphics()->QuadContainerUpload(m_DirectionQuadContainerIndex);
+
+	// A-Client
+	m_InitDiscordRPC = g_Config.m_ClDiscordRPC;
 }
 
 void CMenus::OnConsoleInit()

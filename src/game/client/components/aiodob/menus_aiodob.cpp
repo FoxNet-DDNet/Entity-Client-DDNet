@@ -590,7 +590,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect MiscSettings, PlayerSettings, WarVisual, UiSettings, RainbowSettings;
+		CUIRect MiscSettings, PlayerSettings, WarVisual, UiSettings, RainbowSettings, DiscordSettings;
 		MainView.VSplitMid(&PlayerSettings, &UiSettings);
 
 		{
@@ -745,9 +745,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			MiscSettings.HSplitTop(Margin, nullptr, &MiscSettings);
 			if(g_Config.m_ClRenderCursorSpec)
-				MiscSettings.HSplitTop(120.0f, &MiscSettings, &WarVisual);
+				MiscSettings.HSplitTop(120.0f, &MiscSettings, &DiscordSettings);
 			else
-				MiscSettings.HSplitTop(100.0f, &MiscSettings, &WarVisual);
+				MiscSettings.HSplitTop(100.0f, &MiscSettings, &DiscordSettings);
 			if(s_ScrollRegion.AddRect(MiscSettings))
 			{
 				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -814,6 +814,60 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpecOpacity, &g_Config.m_ClRenderCursorSpecOpacity, &Button, Localize("Cursor Opacity"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
 					}
 				}
+			}
+		}
+
+		{
+			DiscordSettings.HSplitTop(Margin, nullptr, &DiscordSettings);
+			DiscordSettings.HSplitTop(125.0f, &DiscordSettings, &WarVisual);
+			if(s_ScrollRegion.AddRect(DiscordSettings))
+			{
+				DiscordSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				DiscordSettings.VMargin(Margin, &DiscordSettings);
+
+				DiscordSettings.HSplitTop(HeaderHeight, &Button, &DiscordSettings);
+				Ui()->DoLabel(&Button, Localize("Discord RPC"), FontSize, TEXTALIGN_MC);
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
+
+					{
+						DiscordSettings.HSplitTop(19.9f, &Button, &MainView);
+
+						DiscordSettings.HSplitTop(2.5f, &Label, &Label);
+						Ui()->DoLabel(&Label, "Online Message:", FontSize, TEXTALIGN_TL);
+
+						Button.VSplitLeft(0.0f, &Button, &DiscordSettings);
+						Button.VSplitLeft(140.0f, &Label, &Button);
+						Button.VSplitLeft(200.0f, &Button, 0);
+
+						static CLineInput s_PrefixMsg;
+						s_PrefixMsg.SetBuffer(g_Config.m_ClDiscordOnlineStatus, sizeof(g_Config.m_ClDiscordOnlineStatus));
+						s_PrefixMsg.SetEmptyText("Online");
+						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
+					}
+
+					DiscordSettings.HSplitTop(21.0f, &Button, &DiscordSettings);
+					{
+						DiscordSettings.HSplitTop(19.9f, &Button, &MainView);
+
+						DiscordSettings.HSplitTop(2.5f, &Label, &Label);
+						Ui()->DoLabel(&Label, "Offline Message:", FontSize, TEXTALIGN_TL);
+
+						Button.VSplitLeft(0.0f, &Button, &DiscordSettings);
+						Button.VSplitLeft(140.0f, &Label, &Button);
+						Button.VSplitLeft(200.0f, &Button, 0);
+
+						static CLineInput s_PrefixMsg;
+						s_PrefixMsg.SetBuffer(g_Config.m_ClDiscordOfflineStatus, sizeof(g_Config.m_ClDiscordOfflineStatus));
+						s_PrefixMsg.SetEmptyText("Offline");
+						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
+					}
+				}
+				if(m_InitDiscordRPC != g_Config.m_ClDiscordRPC)
+					m_NeedRestartDiscordRPC = true;
+				else
+					m_NeedRestartDiscordRPC = false;
 			}
 		}
 

@@ -854,6 +854,10 @@ private:
 	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
 
 	// A-Client
+
+	int m_InitDiscordRPC;
+	bool m_NeedRestartDiscordRPC;
+
 	void RenderChatPreview(CUIRect MainView);
 	void RenderSettingsAiodob(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
