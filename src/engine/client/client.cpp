@@ -436,7 +436,7 @@ void CClient::SetState(EClientState State)
 	}
 	else if(OldState == IClient::STATE_ONLINE)
 	{
-		Discord()->ClearGameInfo(g_Config.m_ClDiscordOnlineStatus);
+		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus);
 		Steam()->ClearGameInfo();
 	}
 }
