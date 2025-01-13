@@ -13,6 +13,11 @@
 #include <cmath>
 #include <engine/serverbrowser.h>
 
+void CAiodob::OnNewSnapshot()
+{
+	UpdateTempPlayers();
+}
+
 int CAiodob::IdWithName(const char *pName)
 {
 	int ClientId;
@@ -512,28 +517,29 @@ void CAiodob::Rainbow()
 	{
 		if(m_ServersideDelay < time_get())
 		{
+			int Delay = g_Config.m_SvInfoChangeDelay;
+			if(Client()->State() != IClient::STATE_ONLINE)
+				int Delay = 5.0f;
+
 			m_PreviewRainbowColor = getIntFromColor(h, s, l);
-			m_ServersideDelay = time_get() + time_freq() * 5.10;
+			m_ServersideDelay = time_get() + time_freq() * Delay;
 		}
 	}
 	else
 		m_PreviewRainbowColor = getIntFromColor(h, s, l);
 
 	if(Client()->State() == IClient::STATE_ONLINE)
-	if(m_pClient->m_NextChangeInfo < time_get() && g_Config.m_ClServerRainbow && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 	{
-		if(g_Config.m_ClDummy)
-			GameClient()->SendDummyInfo(false);
-		else
-			GameClient()->SendInfo(false);
-		m_RainbowDelay = time_get() + time_freq() * 5.10;
-		m_RainbowColor = getIntFromColor(h, s, l);
+		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
+		{
+			if(g_Config.m_ClDummy)
+				GameClient()->SendDummyInfo(false);
+			else
+				GameClient()->SendInfo(false);
+			m_RainbowDelay = time_get() + time_freq() * g_Config.m_SvInfoChangeDelay;
+			m_RainbowColor = getIntFromColor(h, s, l);
+		}
 	}
-}
-
-void CAiodob::OnNewSnapshot()
-{
-	UpdateTempPlayers();
 }
 
 void CAiodob::OnInit()
@@ -543,7 +549,7 @@ void CAiodob::OnInit()
 	
 	const char *A = "Aiodob";
 
-	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A)&& str_comp(g_Config.m_ClSavedDummyClan, A))
+	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A) && str_comp(g_Config.m_ClSavedDummyClan, A))
 		SaveSkin();
 
 	m_ServersideDelay = 0;
@@ -601,9 +607,7 @@ void CAiodob::OnShutdown()
 
 void CAiodob::OnRender()
 {
-	if(g_Config.m_ClServerRainbow)
-		Rainbow();
-
+	Rainbow();
 	ChangeTileNotifyTick();
 	GoresMode();
 	AutoJoinTeam();
