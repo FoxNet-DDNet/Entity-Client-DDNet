@@ -854,7 +854,7 @@ private:
 	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
 
 	// A-Client
-
+	int64_t m_RPC_Ratelimit;
 	int m_DiscordRPCMap;
 	char m_DiscordRPCOnlineMsg[25];
 	char m_DiscordRPCOfflineMsg[25];

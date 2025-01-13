@@ -831,21 +831,30 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
 
-					
-					if(m_DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
+					if(g_Config.m_ClDiscordRPC)
 					{
-						GameClient()->Console()->ExecuteLine("discord_rpc_reload");
-						m_DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
-					}
-					else if(str_comp(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
-					{
-						GameClient()->Console()->ExecuteLine("discord_rpc_reload");
-						str_copy(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
-					}
-					else if(str_comp(m_DiscordRPCOfflineMsg ,g_Config.m_ClDiscordOfflineStatus) != 0)
-					{
-						GameClient()->Console()->ExecuteLine("discord_rpc_reload");
-						str_copy(m_DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
+	
+						if(m_DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
+						{
+							m_DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
+							m_RPC_Ratelimit = time_get() + time_freq() * 1.5f;
+						}
+						else if(str_comp(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
+						{
+							str_copy(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
+							// Ratelimit this so it doesn't get changed instantly every time you edit this, but rather once youre finished
+							m_RPC_Ratelimit = time_get() + time_freq() * 2.5f; 
+						}
+						else if(str_comp(m_DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus) != 0)
+						{
+							str_copy(m_DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
+							m_RPC_Ratelimit = time_get() + time_freq() * 2.5f;
+						}
+						if(m_RPC_Ratelimit < time_get() && (m_RPC_Ratelimit - time_get()) / time_freq() > -1)
+						{
+							Client()->DiscordRPCchange();
+							m_RPC_Ratelimit = -1;
+						}
 					}
 
 
