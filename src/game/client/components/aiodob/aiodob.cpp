@@ -513,12 +513,7 @@ void CAiodob::Rainbow()
 	float s = abs(m_Saturation - 255);
 	float l = abs(m_Lightness - 255);
 
-	if(m_ShowServerSide)
-	{
-		m_PreviewRainbowColor = getIntFromColor(h, s, l);
-	}
-	else
-		m_PreviewRainbowColor = getIntFromColor(h, s, l);
+	m_PreviewRainbowColor = getIntFromColor(h, s, l);
 
 	if(Client()->State() == IClient::STATE_ONLINE)
 	{
