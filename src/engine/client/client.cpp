@@ -451,11 +451,11 @@ void CClient::DiscordRPCchange()
 	if(State() == IClient::STATE_ONLINE)
 	{
 		const bool AnnounceAddr = m_ServerBrowser.IsRegistered(ServerAddress());
-		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, AnnounceAddr);	
+		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, g_Config.m_ClDiscordTimestamp, AnnounceAddr);	
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{
-		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus);
+		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus, g_Config.m_ClDiscordTimestamp);
 	}
 }
 

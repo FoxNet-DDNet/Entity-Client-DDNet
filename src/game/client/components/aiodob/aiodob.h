@@ -98,6 +98,9 @@ class CAiodob : public CComponent
 	static void ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData);
 	static void ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData);
 	static void ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData);
+	static void ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData);
+	static void ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData);
+
 
 	static void ConVotekick(IConsole::IResult *pResult, void *pUserData);
 
@@ -157,6 +160,8 @@ public:
 	// Rainbow
 	void Rainbow();
 
+	int m_RainbowBody;
+	int m_RainbowFeet;
 	int m_RainbowColor;
 	int m_RainbowSpeed;
 	int m_Saturation;
@@ -197,6 +202,7 @@ public:
 	*/
 	int test;
 	int64_t m_LastMovement = 10.0f;
+
 private:
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnInit() override;

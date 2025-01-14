@@ -515,15 +515,7 @@ void CAiodob::Rainbow()
 
 	if(m_ShowServerSide)
 	{
-		if(m_ServersideDelay < time_get())
-		{
-			int Delay = g_Config.m_SvInfoChangeDelay;
-			if(Client()->State() != IClient::STATE_ONLINE)
-				int Delay = 5.0f;
-
-			m_PreviewRainbowColor = getIntFromColor(h, s, l);
-			m_ServersideDelay = time_get() + time_freq() * Delay;
-		}
+		m_PreviewRainbowColor = getIntFromColor(h, s, l);
 	}
 	else
 		m_PreviewRainbowColor = getIntFromColor(h, s, l);
@@ -532,10 +524,13 @@ void CAiodob::Rainbow()
 	{
 		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 		{
-			if(g_Config.m_ClDummy)
-				GameClient()->SendDummyInfo(false);
-			else
-				GameClient()->SendInfo(false);
+			if(m_RainbowBody || m_RainbowFeet)
+			{
+				if(g_Config.m_ClDummy)
+					GameClient()->SendDummyInfo(false);
+				else
+					GameClient()->SendInfo(false);
+			}
 			m_RainbowDelay = time_get() + time_freq() * g_Config.m_SvInfoChangeDelay;
 			m_RainbowColor = getIntFromColor(h, s, l);
 		}
@@ -551,7 +546,7 @@ void CAiodob::OnInit()
 
 	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A) && str_comp(g_Config.m_ClSavedDummyClan, A))
 		SaveSkin();
-
+	// set
 	m_ServersideDelay = 0;
 	m_RainbowColor = g_Config.m_ClPlayerColorBody;
 	m_RainbowSpeed = 10;
@@ -561,20 +556,25 @@ void CAiodob::OnInit()
 	m_Lightness = 30;
 	m_LastTile = -1;
 	m_JoinTeam = 0;
+
 	m_JoinedTeam = false;
+	m_RainbowBody = true;
+	m_RainbowFeet = false;
 	m_RainbowWasOn = false;
 	m_KogModeRebound = false;
 	m_AttempedJoinTeam = false;
-	dbg_msg("Aiodob", "Aiodob Client Features Loaded Successfully!");
-
+	
+	// Get Bindslot for Mouse1, default shoot bind
 	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
 	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
 
+	// tells you what the bind is
 	char aBuf[1024];
 	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
 	dbg_msg("Aiodob", aBuf);
-
+	// binds the mouse to the saved bind, also doe
 	GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
+
 }
 
 void CAiodob::OnShutdown()

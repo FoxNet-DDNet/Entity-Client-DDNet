@@ -53,6 +53,42 @@ void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserD
 		pSelf->GameClient()->aMessage(aBuf);
 }
 
+void CAiodob::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+
+	char aBuf[8];
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowBody);
+
+	if(pResult->NumArguments() > 0)
+	{
+		if(pResult->GetInteger(0) == 0)
+			pSelf->m_RainbowBody = 0;
+		else if(pResult->GetInteger(0) > 0)
+			pSelf->m_RainbowBody = 1;
+	}
+	else
+		pSelf->GameClient()->aMessage(aBuf);
+}
+
+void CAiodob::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+
+	char aBuf[8];
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowFeet);
+
+	if(pResult->NumArguments() > 0)
+	{
+		if(pResult->GetInteger(0) == 0)
+			pSelf->m_RainbowFeet = 0;
+		else if(pResult->GetInteger(0) > 0)
+			pSelf->m_RainbowFeet = 1;
+	}
+	else
+		pSelf->GameClient()->aMessage(aBuf);
+}
+
 void CAiodob::Votekick(const char *pName, const char *pReason)
 {
 	int ClientId;
@@ -481,6 +517,9 @@ void CAiodob::OnConsoleInit()
 	Console()->Register("saveskin", "", CFGFLAG_CLIENT, ConSaveSkin, this, "Restore Your Saved Info");
 
 	Console()->Register("server_rainbow_speed", "?s[speed]", CFGFLAG_CLIENT, ConServerRainbowSpeed, this, "Rainbow Speed of Server side rainbow mode (default = 10)");
-	Console()->Register("server_rainbow_sat", "?s[Sat]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 10)");
-	Console()->Register("server_rainbow_lht", "?s[Lht]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 10)");
+	Console()->Register("server_rainbow_sat", "?s[Sat]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 200)");
+	Console()->Register("server_rainbow_lht", "?s[Lht]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 30)");
+
+	Console()->Register("server_rainbow_body", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
+	Console()->Register("server_rainbow_feet", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
 }

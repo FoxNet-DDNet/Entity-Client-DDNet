@@ -654,7 +654,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			RainbowSettings.HSplitTop(Margin, nullptr, &RainbowSettings);
-			RainbowSettings.HSplitTop(200.0f, &RainbowSettings, 0);
+			RainbowSettings.HSplitTop(240.0f, &RainbowSettings, 0);
 			if(s_ScrollRegion.AddRect(RainbowSettings))
 			{
 				RainbowSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -681,21 +681,50 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				{
 					CTeeRenderInfo TeeRenderInfo;
+
+					bool PUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
+					int PBodyColor = g_Config.m_ClPlayerColorBody;
+					int PFeetColor = g_Config.m_ClPlayerColorFeet;
+
+					bool DUseCustomColor = g_Config.m_ClDummyUseCustomColor;
+					int DBodyColor = g_Config.m_ClDummyColorBody;
+					int DFeetColor = g_Config.m_ClDummyColorFeet;
+
+					
+					if(GameClient()->m_Aiodob.m_ServersideDelay < time_get() && GameClient()->m_Aiodob.m_ShowServerSide)
+					{
+						int Delay = g_Config.m_SvInfoChangeDelay;
+						if(Client()->State() != IClient::STATE_ONLINE)
+							int Delay = 5.0f;
+
+						m_MenusRainbowColor = GameClient()->m_Aiodob.m_PreviewRainbowColor;
+						GameClient()->m_Aiodob.m_ServersideDelay = time_get() + time_freq() * Delay;
+					}
+					else if(!GameClient()->m_Aiodob.m_ShowServerSide)
+						m_MenusRainbowColor = GameClient()->m_Aiodob.m_PreviewRainbowColor;
+
+
+					if(g_Config.m_ClServerRainbow)
+					{
+						if(GameClient()->m_Aiodob.m_RainbowBody)
+							PBodyColor = m_MenusRainbowColor;
+						if(GameClient()->m_Aiodob.m_RainbowFeet)
+							PFeetColor = m_MenusRainbowColor;
+						PUseCustomColor = true;
+					}
+
 					TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClPlayerSkin));
-					TeeRenderInfo.ApplyColors(g_Config.m_ClPlayerUseCustomColor, g_Config.m_ClPlayerColorBody, g_Config.m_ClPlayerColorFeet);
+					TeeRenderInfo.ApplyColors(PUseCustomColor, PBodyColor, PFeetColor);
 
 					if(g_Config.m_ClDummy)
 					{
 						TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClDummySkin));
-						TeeRenderInfo.ApplyColors(g_Config.m_ClDummyUseCustomColor, g_Config.m_ClDummyColorBody, g_Config.m_ClDummyColorFeet);
+						TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 					}
 			
 					TeeRenderInfo.m_Size = g_Config.m_ClFatSkins ? 55.0f : 75.0f;
 
-					if(g_Config.m_ClServerRainbow)
-						TeeRenderInfo.ApplyColors(true, GameClient()->m_Aiodob.m_PreviewRainbowColor, g_Config.m_ClDummyColorFeet);
-
-					const vec2 TeePosition = vec2(RainbowSettings.Center().x - 135, RainbowSettings.Center().y - 50);
+					const vec2 TeePosition = vec2(RainbowSettings.Center().x - 130, RainbowSettings.Center().y - 70);
 					// interactive tee: tee looking towards cursor, and it is happy when you touch it
 					const vec2 DeltaPosition = Ui()->MousePos() - TeePosition + vec2(0, 5);
 					const float Distance = length(DeltaPosition);
@@ -706,6 +735,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				}
 
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_RainbowBody, "Rainbow Body", &GameClient()->m_Aiodob.m_RainbowBody, &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_RainbowFeet, "Rainbow Feet", &GameClient()->m_Aiodob.m_RainbowFeet, &RainbowSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_ShowServerSide, "Show what it'll look like Server-side", &GameClient()->m_Aiodob.m_ShowServerSide, &RainbowSettings, LineSize);
 			}
 		}
@@ -819,7 +850,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			DiscordSettings.HSplitTop(Margin, nullptr, &DiscordSettings);
-			DiscordSettings.HSplitTop(125.0f, &DiscordSettings, &WarVisual);
+			DiscordSettings.HSplitTop(145.0f, &DiscordSettings, &WarVisual);
 			if(s_ScrollRegion.AddRect(DiscordSettings))
 			{
 				DiscordSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -829,7 +860,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Discord RPC"), FontSize, TEXTALIGN_MC);
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordSettings, LineSize);
+					
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
+					
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordTimestamp, "Show Timestamp", &g_Config.m_ClDiscordTimestamp, &DiscordSettings, LineSize);
 
 					if(g_Config.m_ClDiscordRPC)
 					{
@@ -837,6 +871,11 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						if(m_DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
 						{
 							m_DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
+							m_RPC_Ratelimit = time_get() + time_freq() * 1.5f;
+						}
+						else if (m_DiscordRPCTimestamp != g_Config.m_ClDiscordTimestamp)
+						{
+							m_DiscordRPCTimestamp = g_Config.m_ClDiscordTimestamp;
 							m_RPC_Ratelimit = time_get() + time_freq() * 1.5f;
 						}
 						else if(str_comp(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)

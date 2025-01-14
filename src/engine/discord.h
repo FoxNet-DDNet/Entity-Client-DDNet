@@ -10,8 +10,8 @@ class IDiscord : public IInterface
 public:
 	virtual void Update(bool RPC) = 0;
 
-	virtual void ClearGameInfo(const char *pDetail) = 0;
-	virtual void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, const char *pDetail, bool ShowMap, bool AnnounceAddr) = 0;
+	virtual void ClearGameInfo(const char *pDetail, bool Timestamp) = 0;
+	virtual void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, const char *pDetail, bool ShowMap, bool Timestamp, bool AnnounceAddr) = 0;
 };
 
 IDiscord *CreateDiscord();
