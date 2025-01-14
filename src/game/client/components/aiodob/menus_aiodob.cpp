@@ -695,7 +695,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					{
 						int Delay = g_Config.m_SvInfoChangeDelay;
 						if(Client()->State() != IClient::STATE_ONLINE)
-							int Delay = 5.0f;
+							Delay = 5.0f;
 
 						m_MenusRainbowColor = GameClient()->m_Aiodob.m_PreviewRainbowColor;
 						GameClient()->m_Aiodob.m_ServersideDelay = time_get() + time_freq() * Delay;
