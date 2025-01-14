@@ -276,7 +276,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			m_CommandsNeedSorting = false;
 		}
 
-		if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString())); // Do nothing as bindchat was executed
+		if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString()) && m_Mode == MODE_ALL); // Do nothing as bindchat was executed
 		else
 			SendChatQueued(m_Input.GetString());
 		m_pHistoryEntry = nullptr;
@@ -1299,6 +1299,12 @@ void CChat::OnPrepareLines(float y)
 		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
 		{
 			Cursor.m_X += RealMsgPaddingTee;
+
+			if(g_Config.m_ClSpectatePrefix &&Line.m_Paused && !Line.m_Whisper)
+			{
+				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClSpecPrefix);
+			}
 
 			if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
 			{

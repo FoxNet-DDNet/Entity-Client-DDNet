@@ -149,7 +149,7 @@ MACRO_CONFIG_STR(ClCustomFont, ac_custom_font, 255, "DejaVu Sans", CFGFLAG_CLIEN
 
 // Misc Color
 MACRO_CONFIG_COL(ClAfkColor, ac_afk_color, 10951270, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Afk name color")
-MACRO_CONFIG_COL(ClSpecColor, ac_spec_color, 8936607, CFGFLAG_CLIENT | CFGFLAG_SAVE, "'(s)' color in scoreboard")
+MACRO_CONFIG_COL(ClSpecColor, ac_spec_color, 8936607, CFGFLAG_CLIENT | CFGFLAG_SAVE, "• color in scoreboard")
 
 // Friend
 MACRO_CONFIG_COL(ClFriendColor, ac_friend_color, 14745554, CFGFLAG_CLIENT | CFGFLAG_SAVE, "friend name color")
