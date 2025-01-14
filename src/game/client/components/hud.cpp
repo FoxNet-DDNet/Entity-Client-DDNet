@@ -1660,7 +1660,7 @@ void CHud::RenderSpectatorHud()
 
 void CHud::RenderLocalTime(float x)
 {
-	if(!g_Config.m_ClShowLocalTimeAlways && !m_pClient->m_Scoreboard.Active())
+	if(!g_Config.m_ClShowLocalTimeAlways && !m_pClient->m_Scoreboard.IsActive())
 		return;
 
 	// draw the box
