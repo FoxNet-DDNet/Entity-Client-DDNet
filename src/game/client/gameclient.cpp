@@ -2855,7 +2855,6 @@ void CGameClient::SendInfo(bool Start)
 		Client()->SendMsg(IClient::CONN_MAIN, &Packer, MSGFLAG_VITAL);
 		m_aCheckInfo[0] = Client()->GameTickSpeed();
 	}
-	dbg_msg("a", "wcrwacra");
 }
 
 void CGameClient::SendDummyInfo(bool Start)

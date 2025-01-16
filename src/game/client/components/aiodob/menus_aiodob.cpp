@@ -867,7 +867,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					if(g_Config.m_ClDiscordRPC)
 					{
-	
 						if(m_DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
 						{
 							m_DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
@@ -888,11 +887,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						{
 							str_copy(m_DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
 							m_RPC_Ratelimit = time_get() + time_freq() * 2.5f;
-						}
-						if(m_RPC_Ratelimit < time_get() && (m_RPC_Ratelimit - time_get()) / time_freq() > -1)
-						{
-							Client()->DiscordRPCchange();
-							m_RPC_Ratelimit = -1;
 						}
 					}
 

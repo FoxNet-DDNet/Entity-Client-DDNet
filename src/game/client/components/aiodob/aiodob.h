@@ -200,7 +200,6 @@ public:
 	*	Mouse Inputs such as aiming 
 	*   or shooting are excluded
 	*/
-	int test;
 	int64_t m_LastMovement = 10.0f;
 
 private:

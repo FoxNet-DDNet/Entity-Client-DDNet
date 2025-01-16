@@ -615,17 +615,23 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					Graphics()->QuadsDrawTL(&QuadItem, 2);
 					Graphics()->QuadsEnd();
 				}
-				if(g_Config.m_ClSpectatePrefix && paused)
-				{
-					const char *pSpecMark = g_Config.m_ClSpecPrefix;
-					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
-					TextRender()->TextEx(&Cursor, pSpecMark);
-
-				}
 
 				float Alpha = 1.0f;
 				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
 					Alpha = 0.4f;
+
+				if(g_Config.m_ClSpectatePrefix && paused)
+				{
+					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
+					//TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+					//TextRender()->TextEx(&Cursor, FontIcons::FONT_ICON_EYE);
+					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
+					//TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+					TextRender()->TextColor(1.f, 1.f, 1.f, Alpha);
+
+				}
+
+
 
 				if(g_Config.m_ClDoFriendColors && ClientData.m_Friend)
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
