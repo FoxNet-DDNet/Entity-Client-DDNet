@@ -68,7 +68,7 @@ public:
 		str_copy(Activity.assets.large_image, "ac_image_b_o", sizeof(Activity.assets.large_image));
 		str_copy(Activity.assets.large_text, "A-Client", sizeof(Activity.assets.large_text));
 		if(Timestamp)
-		Activity.timestamps.start = TimeStamp;
+			Activity.timestamps.start = TimeStamp;
 		str_copy(Activity.details, pDetail, sizeof(Activity.details));
 		m_pActivityManager->update_activity(m_pActivityManager, &Activity, 0, 0);
 	}
@@ -79,7 +79,7 @@ public:
 		str_copy(Activity.assets.large_image, "ac_image_b", sizeof(Activity.assets.large_image));
 		str_copy(Activity.assets.large_text, "A-Client", sizeof(Activity.assets.large_text));
 		if(Timestamp)
-		Activity.timestamps.start = TimeStamp;
+			Activity.timestamps.start = TimeStamp;
 		str_copy(Activity.details, pDetail, sizeof(Activity.details));
 		if(ShowMap)
 			str_copy(Activity.state, pMapName, sizeof(Activity.state));
