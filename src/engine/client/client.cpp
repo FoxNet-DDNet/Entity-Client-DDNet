@@ -446,45 +446,13 @@ void CClient::ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData)
 	pSelf->DiscordRPCchange();
 }
 
-
-char *CClient::FormatString(const char *pText) const
-{
-	char aBuf[1028] = {0};
-	long unsigned int i = 0;
-	long unsigned int BufI = 0;
-	for(i = 0; pText[i] && i < sizeof(aBuf); i++)
-	{
-		if(pText[i] == '%' && pText[maximum((int)i - 1, 0)] != '\\')
-		{
-			if(pText[i + 1] == 'm')
-			{
-				str_append(aBuf,m_aCurrentMap, sizeof(aBuf));
-				BufI += str_length(m_aCurrentMap);
-				i++;
-				continue;
-			}
-			else if(pText[i + 1] == 'n')
-			{
-				str_append(aBuf, g_Config.m_PlayerName, sizeof(aBuf));
-				BufI += str_length(g_Config.m_PlayerName);
-				i++;
-				continue;
-			}
-		}
-		aBuf[BufI++] = pText[i];
-	}
-	// string end
-	aBuf[BufI] = '\0';
-	// fallback nullterm at buffer end
-	aBuf[sizeof(aBuf) - 1] = '\0';
-	return aBuf;
-}
 void CClient::DiscordRPCchange()
 {
 	if(State() == IClient::STATE_ONLINE)
 	{
 		const bool AnnounceAddr = m_ServerBrowser.IsRegistered(ServerAddress());
-		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, FormatString(g_Config.m_ClDiscordOnlineStatus), g_Config.m_ClDiscordMapStatus, g_Config.m_ClDiscordTimestamp, AnnounceAddr);	
+
+		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, g_Config.m_ClDiscordTimestamp, AnnounceAddr);	
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{

@@ -141,7 +141,6 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	// A-Client
 	static void ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData);
 	void DiscordRPCchange() override;
-	char *FormatString(const char *Text) const;
 	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
 	bool m_aOnJoinInfo[NUM_DUMMIES] = {false, false};
 
