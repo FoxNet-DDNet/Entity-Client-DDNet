@@ -136,6 +136,8 @@ public:
 	bool IsSuper() { return m_Core.m_Super; }
 	int m_FreezeAccumulation;
 	int m_AliveAccumulation;
+	// TClient
+	CNetObj_PlayerInput *LatestInput() { return &m_LatestInput; };
 
 private:
 	// weapon info

@@ -986,7 +986,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect OutlineSettings, PlayerIndicatorSettings, FrozenTeeHudSettings, LatencySettings, GhostSettings, FastInputSettings;
+		CUIRect OutlineSettings, PlayerIndicatorSettings, FrozenTeeHudSettings, LatencySettings, GhostSettings, FastInputSettings, ImprovedAntiSettings;
 		MainView.VSplitMid(&OutlineSettings, &PlayerIndicatorSettings);
 
 		// Weapon Settings
@@ -1114,12 +1114,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			}
 		}
 
-		{
+		{ // ***** Input ***** //
 			FastInputSettings.HSplitTop(Margin, nullptr, &FastInputSettings);
-			if(g_Config.m_ClFastInput)
-				FastInputSettings.HSplitTop(125.0f, &FastInputSettings, 0);
-			else
-			FastInputSettings.HSplitTop(95.0f, &FastInputSettings, 0);
+			FastInputSettings.HSplitTop(105.0f, &FastInputSettings, &ImprovedAntiSettings);
 			if(s_ScrollRegion.AddRect(FastInputSettings))
 			{
 				FastInputSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -1128,19 +1125,37 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				FastInputSettings.HSplitTop(HeaderHeight, &Button, &FastInputSettings);
 				Ui()->DoLabel(&Button, Localize("Input"), FontSize, TEXTALIGN_MC);
 				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFastInput, ("Fast Inputs (-20ms visual input delay)"), &g_Config.m_ClFastInput, &FastInputSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFastInput, Localize("Fast Inputs (-20ms visual delay)"), &g_Config.m_ClFastInput, &FastInputSettings, LineSize);
+
+					FastInputSettings.HSplitTop(MarginSmall, nullptr, &FastInputSettings);
 					if(g_Config.m_ClFastInput)
-					{
-						FastInputSettings.HSplitTop(7.0f, 0x0, &FastInputSettings);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFastInputOthers, ("Extra tick other tees (increases other tees visual latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_ClFastInputOthers, &FastInputSettings, LineMargin);
-						FastInputSettings.HSplitTop(5.0f, 0x0, &FastInputSettings);
-					}
-					
-					FastInputSettings.HSplitTop(10.0f, 0x0, &FastInputSettings);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClImproveMousePrecision, Localize("Improve mouse precision by scaling sent max distance to 1000"), &g_Config.m_ClImproveMousePrecision, &FastInputSettings, LineMargin);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFastInputOthers, Localize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_ClFastInputOthers, &FastInputSettings, LineSize);
+					else
+						FastInputSettings.HSplitTop(LineSize, nullptr, &FastInputSettings);
 				}
 			}
 		}
+
+		{ // ***** Improved Anti Ping ***** //
+			ImprovedAntiSettings.HSplitTop(Margin, nullptr, &ImprovedAntiSettings);
+			ImprovedAntiSettings.HSplitTop(140.0f, &ImprovedAntiSettings, 0);
+			if(s_ScrollRegion.AddRect(ImprovedAntiSettings))
+			{
+				ImprovedAntiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				ImprovedAntiSettings.VMargin(Margin, &ImprovedAntiSettings);
+
+				ImprovedAntiSettings.HSplitTop(HeaderHeight, &Button, &ImprovedAntiSettings);
+				Ui()->DoLabel(&Button, Localize("Input"), FontSize, TEXTALIGN_MC);
+				{ 
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiPingImproved, Localize("Use new smoothing algorithm"), &g_Config.m_ClAntiPingImproved, &ImprovedAntiSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiPingStableDirection, Localize("Optimistic prediction along stable direction"), &g_Config.m_ClAntiPingStableDirection, &ImprovedAntiSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiPingNegativeBuffer, Localize("Negative stability buffer (for Gores)"), &g_Config.m_ClAntiPingNegativeBuffer, &ImprovedAntiSettings, LineSize);
+					ImprovedAntiSettings.HSplitTop(LineSize, &Button, &ImprovedAntiSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClAntiPingUncertaintyScale, &g_Config.m_ClAntiPingUncertaintyScale, &Button, Localize("Uncertainty duration"), 50, 400, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "%");
+				}
+			}
+		}
+
 		// right side
 		{
 			PlayerIndicatorSettings.VMargin(5.0f, &PlayerIndicatorSettings);

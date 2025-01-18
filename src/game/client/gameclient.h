@@ -474,6 +474,14 @@ public:
 		CCharacterCore m_Predicted;
 		CCharacterCore m_PrevPredicted;
 
+		// TClient
+		vec2 m_ImprovedPredPos = vec2(0, 0);
+		vec2 m_PrevImprovedPredPos = vec2(0, 0);
+		// vec2 m_DebugVector = vec2(0, 0);
+		// vec2 m_DebugVector2 = vec2(0, 0);
+		// vec2 m_DebugVector3 = vec2(0, 0);
+		float m_Uncertainty = 0.0f;
+
 		CTeeRenderInfo m_SkinInfo; // this is what the server reports
 		CTeeRenderInfo m_RenderInfo; // this is what we use
 
@@ -536,6 +544,10 @@ public:
 	};
 
 	CClientData m_aClients[MAX_CLIENTS];
+
+	// TClient
+	int m_SmoothTick[2] = {};
+	float m_SmoothIntraTick[2] = {};
 
 	class CClientStats
 	{
@@ -678,7 +690,9 @@ public:
 	CGameWorld m_GameWorld;
 	CGameWorld m_PredictedWorld;
 	CGameWorld m_PrevPredictedWorld;
+	// TClient
 	CGameWorld m_ExtraPredictedWorld;
+	CGameWorld m_PredSmoothingWorld;
 
 	std::vector<SSwitchers> &Switchers() { return m_GameWorld.m_Core.m_vSwitchers; }
 	std::vector<SSwitchers> &PredSwitchers() { return m_PredictedWorld.m_Core.m_vSwitchers; }
