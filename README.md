@@ -1,27 +1,11 @@
 Foxs turn on copying files from other clients and making a *semi* All In One client, which will be called... Aiodob.
 
-## How to use the Client
-
-### Steam
-go to manage > browse local files and find the ddnet folder, then replace it with mine, if you dont want to replace the whole folder you can only add the .exe and in the data directory you have to add my aiodob folder, it conains images that are important
-### Windows
-download the Game.zip and extract it to somewhere. Create a *Shortcut* and place *the shortcut* on your desktop and you're done!
-
-### Windows protected your PC?
-
-I mean the source is literally right here.
-
-press on More Info and run anyway :p
-
-### Different OS?
-If on a different operating system you have to build the Client yourself.
-steps on how to do that are on the official [ddnet github](https://github.com/ddnet/ddnet/)
-
 # Features
-![Usefull Settings](https://github.com/user-attachments/assets/b6dab982-09e6-423d-8e5f-6ebb81b1f222)
-![other Settings](https://github.com/user-attachments/assets/b0ac7d00-f881-4b9a-ab66-37aa295714a8)
-![tclient](https://github.com/user-attachments/assets/a6ff1cc5-bdd8-4f12-a11f-b222d4f14d0e)
-![Bindwheel](https://github.com/user-attachments/assets/8362b047-b79f-40e0-ad19-56e4fa2a24e1)
+![Settings Page](https://github.com/user-attachments/assets/e361a830-0623-4216-b767-665328b7bbaa)
+![Visual Settings](https://github.com/user-attachments/assets/392b2124-4a3b-4790-8597-da5f0b4f6a64)
+![T-Client Settings](https://github.com/user-attachments/assets/a8e11be4-ee53-4b37-b60d-5681ea43157a)
+![Warlist](https://github.com/user-attachments/assets/dbed6164-71fe-4ba1-9062-47f4b87eed63)
+![Bindwheel](https://github.com/user-attachments/assets/aaa86b5b-6d3d-4902-88ae-2f08449ba2a3)
 
 
 
