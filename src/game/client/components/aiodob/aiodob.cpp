@@ -570,6 +570,8 @@ void CAiodob::OnInit()
 	// binds the mouse to the saved bind, also doe
 	GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
 
+	// Set Offline RPC on Client start
+	Client()->DiscordRPCchange();
 }
 
 void CAiodob::OnShutdown()
