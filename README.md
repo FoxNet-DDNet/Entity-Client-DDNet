@@ -1,4 +1,4 @@
-Foxs turn on copying files from other clients and making a *semi* All In One client, which will be called... Aiodob.
+Foxs turn on copying files from other clients and making a *semi* All In One client
 
 # Features
 ![Settings Page](https://github.com/user-attachments/assets/e361a830-0623-4216-b767-665328b7bbaa)
