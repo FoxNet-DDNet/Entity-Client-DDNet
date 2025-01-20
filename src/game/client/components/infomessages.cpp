@@ -139,6 +139,8 @@ void CInfoMessages::CreateTextContainersIfNotCreated(CInfoMsg &InfoMsg)
 		if(ClientId == m_pClient->m_Snap.m_LocalClientId)
 		{
 			Color = g_Config.m_ClKillMessageHighlightColor;
+			if(!str_comp(InfoMsg.m_aVictimName, g_Config.m_ClDummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName))
+				GameClient()->m_Aiodob.m_SentKill = true;
 		}
 		else
 		{

@@ -611,6 +611,12 @@ void CAiodob::OnRender()
 
 	// "secret" effect, makes a circle go around the player
 
+	if(m_SentKill)
+	{
+		GameClient()->m_AntiSpawnBlock.m_SentKill = true;
+		m_SentKill = false;
+	}
+
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 	{
 		m_LastMovement = time_get() + time_freq() * 30;

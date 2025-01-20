@@ -121,6 +121,7 @@ class CAiodob : public CComponent
 	static void ConRestoreSkin(IConsole::IResult *pResult, void *pUserData);
 
 public:
+	bool m_SentKill;
 
 	void TempWar(const char *pName);
 	void UnTempWar(const char *pName, bool Silent = false);

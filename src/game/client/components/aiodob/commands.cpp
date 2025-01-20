@@ -496,7 +496,6 @@ void CAiodob::PlayerInfo(const char *pName)
 		GameClient()->aMessage(aBuf);
 }
 
-
 void CAiodob::OnConsoleInit()
 {
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");

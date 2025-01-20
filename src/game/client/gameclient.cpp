@@ -163,6 +163,7 @@ void CGameClient::OnConsoleInit()
 					      &m_GameConsole,
 						  // aiodob
 					      &m_Aiodob,
+					      &m_AntiSpawnBlock,
 						  &m_FreezeKill,
 						  &m_AutoKill,
 					      &m_MenuBackground});

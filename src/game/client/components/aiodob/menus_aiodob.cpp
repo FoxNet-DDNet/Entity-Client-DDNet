@@ -130,9 +130,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			OtherSettings.VMargin(5.0f, &OtherSettings);
 			if(g_Config.m_ClNotifyOnJoin)
-				OtherSettings.HSplitTop(225.0f, &OtherSettings, &FreezeKillSettings);
+				OtherSettings.HSplitTop(240.0f, &OtherSettings, &FreezeKillSettings);
 			else
-				OtherSettings.HSplitTop(205.0f, &OtherSettings, &FreezeKillSettings);
+				OtherSettings.HSplitTop(220.0f, &OtherSettings, &FreezeKillSettings);
 			if(s_ScrollRegion.AddRect(OtherSettings))
 			{
 				OtherSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -142,144 +142,145 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Automation"), FontSize, TEXTALIGN_MC);
 				{
 					{
-						OtherSettings.HSplitTop(20.0f, &Button, &MainView);
-
-						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-						Button.VSplitLeft(120.0f, &Label, &Button);
-						Button.VSplitLeft(280.0f, &Button, 0);
-
-						static CLineInput s_ReplyMsg;
-						s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMsg, sizeof(g_Config.m_ClAutoReplyMsg));
-						s_ReplyMsg.SetEmptyText("I'm Currently Tabbed Out");
-
-						if(DoButton_CheckBox(&g_Config.m_ClTabbedOutMsg, "Tabbed reply", g_Config.m_ClTabbedOutMsg, &OtherSettings))
 						{
-							g_Config.m_ClTabbedOutMsg ^= 1;
+							OtherSettings.HSplitTop(20.0f, &Button, &MainView);
+
+							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
+							Button.VSplitLeft(120.0f, &Label, &Button);
+							Button.VSplitLeft(280.0f, &Button, 0);
+
+							static CLineInput s_ReplyMsg;
+							s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMsg, sizeof(g_Config.m_ClAutoReplyMsg));
+							s_ReplyMsg.SetEmptyText("I'm Currently Tabbed Out");
+
+							if(DoButton_CheckBox(&g_Config.m_ClTabbedOutMsg, "Tabbed reply", g_Config.m_ClTabbedOutMsg, &OtherSettings))
+							{
+								g_Config.m_ClTabbedOutMsg ^= 1;
+							}
+
+							if(g_Config.m_ClTabbedOutMsg)
+								Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 						}
-
-						if(g_Config.m_ClTabbedOutMsg)
-							Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
-					}
-					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
-					{
-						OtherSettings.HSplitTop(20.0f, &Button, &MainView);
-
-						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-						Button.VSplitLeft(120.0f, &Label, &Button);
-						Button.VSplitLeft(280.0f, &Button, 0);
-
-						static CLineInput s_ReplyMsg;
-						s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMutedMsg, sizeof(g_Config.m_ClAutoReplyMutedMsg));
-						s_ReplyMsg.SetEmptyText("You're muted, I can't see your messages");
-
-						if(DoButton_CheckBox(&g_Config.m_ClReplyMuted, "Muted Reply", g_Config.m_ClReplyMuted, &OtherSettings))
+						OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
 						{
-							g_Config.m_ClReplyMuted ^= 1;
+							OtherSettings.HSplitTop(20.0f, &Button, &MainView);
+
+							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
+							Button.VSplitLeft(120.0f, &Label, &Button);
+							Button.VSplitLeft(280.0f, &Button, 0);
+
+							static CLineInput s_ReplyMsg;
+							s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMutedMsg, sizeof(g_Config.m_ClAutoReplyMutedMsg));
+							s_ReplyMsg.SetEmptyText("You're muted, I can't see your messages");
+
+							if(DoButton_CheckBox(&g_Config.m_ClReplyMuted, "Muted Reply", g_Config.m_ClReplyMuted, &OtherSettings))
+							{
+								g_Config.m_ClReplyMuted ^= 1;
+							}
+							if(g_Config.m_ClReplyMuted)
+								Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 						}
-						if(g_Config.m_ClReplyMuted)
-							Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
-					}
-					OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
-					{
-						OtherSettings.HSplitTop(19.9f, &Button, &MainView);
-
-						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-						Button.VSplitLeft(160.0f, &Label, &Button);
-						Button.VSplitLeft(180.0f, &Button, 0);
-
-						static CLineInput s_NotifyName;
-						s_NotifyName.SetBuffer(g_Config.m_ClAutoNotifyName, sizeof(g_Config.m_ClAutoNotifyName));
-						s_NotifyName.SetEmptyText("qxdFox");
-
-						if(DoButton_CheckBox(&g_Config.m_ClNotifyOnJoin, "Notify on Join Name", g_Config.m_ClNotifyOnJoin, &OtherSettings))
+						OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
 						{
-							g_Config.m_ClNotifyOnJoin ^= 1;
-						}
-						if(g_Config.m_ClNotifyOnJoin)
-						Ui()->DoEditBox(&s_NotifyName, &Button, 14.0f);
-
-						static CLineInput s_NotifyMsg;
-						s_NotifyMsg.SetBuffer(g_Config.m_ClAutoNotifyMsg, sizeof(g_Config.m_ClAutoNotifyMsg));
-						s_NotifyMsg.SetEmptyText("Your Fav Person Has Joined!");
-
-						if(g_Config.m_ClNotifyOnJoin)
-						{
-							OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
 							OtherSettings.HSplitTop(19.9f, &Button, &MainView);
 
-							Button.VSplitLeft(25.0f, &Button, &OtherSettings);
-							Button.VSplitLeft(125.0f, &Label, &Button);
-							Button.VSplitLeft(275.0f, &Button, 0);
+							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
+							Button.VSplitLeft(160.0f, &Label, &Button);
+							Button.VSplitLeft(180.0f, &Button, 0);
 
-							OtherSettings.HSplitTop(2.8f, &Label, &OtherSettings);
-							Ui()->DoLabel(&OtherSettings, "Notify Message", 12.5f, TEXTALIGN_LEFT);
+							static CLineInput s_NotifyName;
+							s_NotifyName.SetBuffer(g_Config.m_ClAutoNotifyName, sizeof(g_Config.m_ClAutoNotifyName));
+							s_NotifyName.SetEmptyText("qxdFox");
 
-							Ui()->DoEditBox(&s_NotifyMsg, &Button, 14.0f);
+							if(DoButton_CheckBox(&g_Config.m_ClNotifyOnJoin, "Notify on Join Name", g_Config.m_ClNotifyOnJoin, &OtherSettings))
+							{
+								g_Config.m_ClNotifyOnJoin ^= 1;
+							}
+							if(g_Config.m_ClNotifyOnJoin)
+								Ui()->DoEditBox(&s_NotifyName, &Button, 14.0f);
+
+							static CLineInput s_NotifyMsg;
+							s_NotifyMsg.SetBuffer(g_Config.m_ClAutoNotifyMsg, sizeof(g_Config.m_ClAutoNotifyMsg));
+							s_NotifyMsg.SetEmptyText("Your Fav Person Has Joined!");
+
+							if(g_Config.m_ClNotifyOnJoin)
+							{
+								OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
+								OtherSettings.HSplitTop(19.9f, &Button, &MainView);
+
+								Button.VSplitLeft(25.0f, &Button, &OtherSettings);
+								Button.VSplitLeft(125.0f, &Label, &Button);
+								Button.VSplitLeft(275.0f, &Button, 0);
+
+								OtherSettings.HSplitTop(2.8f, &Label, &OtherSettings);
+								Ui()->DoLabel(&OtherSettings, "Notify Message", 12.5f, TEXTALIGN_LEFT);
+
+								Ui()->DoEditBox(&s_NotifyMsg, &Button, 14.0f);
+							}
 						}
-					}
-					if(g_Config.m_ClNotifyOnJoin)
-					{
-						OtherSettings.VSplitLeft(-25.0f, &Button, &OtherSettings);
-					}
-					OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
-
-					
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoAddOnNameChange, Localize("Auto Add to Lists on Name Change"), &g_Config.m_ClAutoAddOnNameChange, &OtherSettings, LineSize);
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, ("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
-
-					OtherSettings.HSplitTop(5.0f, &Button, &OtherSettings);
-					{
-						OtherSettings.HSplitTop(20.0f, &Button, &MainView);
-						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-						Button.VSplitLeft(158.0f, &Label, &Button);
-						Button.VSplitLeft(248.0f, &Button, 0);
-
-						static CLineInput s_ReplyMsg;
-						s_ReplyMsg.SetBuffer(g_Config.m_ClRunOnJoinMsg, sizeof(g_Config.m_ClRunOnJoinMsg));
-						s_ReplyMsg.SetEmptyText("Any Console Command");
-
-						if(DoButton_CheckBox(&g_Config.m_ClRunOnJoinConsole, "Run on Join Console", g_Config.m_ClRunOnJoinConsole, &OtherSettings))
+						if(g_Config.m_ClNotifyOnJoin)
 						{
-							g_Config.m_ClRunOnJoinConsole ^= 1;
+							OtherSettings.VSplitLeft(-25.0f, &Button, &OtherSettings);
 						}
-						Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
-					}
-
-
-					{
-						OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
-
 						OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 
-
-						Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-						Button.VSplitLeft(175.0f, &Label, &Button);
-						Button.VSplitLeft(125.0f, &Button, 0);
-
-						static CLineInput s_LastInput;
-						s_LastInput.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
-						s_LastInput.SetEmptyText("Last!");
-
-						if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when you're last", g_Config.m_ClNotifyWhenLast, &OtherSettings))
+						OtherSettings.HSplitTop(5.0f, &Button, &OtherSettings);
 						{
-							g_Config.m_ClNotifyWhenLast ^= 1;
+							OtherSettings.HSplitTop(20.0f, &Button, &MainView);
+							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
+							Button.VSplitLeft(158.0f, &Label, &Button);
+							Button.VSplitLeft(248.0f, &Button, 0);
+
+							static CLineInput s_ReplyMsg;
+							s_ReplyMsg.SetBuffer(g_Config.m_ClRunOnJoinMsg, sizeof(g_Config.m_ClRunOnJoinMsg));
+							s_ReplyMsg.SetEmptyText("Any Console Command");
+
+							if(DoButton_CheckBox(&g_Config.m_ClRunOnJoinConsole, "Run on Join Console", g_Config.m_ClRunOnJoinConsole, &OtherSettings))
+							{
+								g_Config.m_ClRunOnJoinConsole ^= 1;
+							}
+							Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 						}
 
-						if(g_Config.m_ClNotifyWhenLast)
 						{
-							Ui()->DoEditBox(&s_LastInput, &Button, 14.0f);
-							static CLineInput s_NotifyMsg;
-							static CButtonContainer s_LastColor;
-							s_NotifyMsg.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
-							s_NotifyMsg.SetEmptyText("Last!");
+							OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
 
-							OtherSettings.HSplitTop(-3.0f, &Label, &OtherSettings);
+							OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 
-							DoLine_ColorPicker(&s_LastColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OtherSettings, Localize(""), &g_Config.m_ClNotifyWhenLastColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(29057)), true);
+							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
+							Button.VSplitLeft(175.0f, &Label, &Button);
+							Button.VSplitLeft(125.0f, &Button, 0);
+
+							static CLineInput s_LastInput;
+							s_LastInput.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
+							s_LastInput.SetEmptyText("Last!");
+
+							if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when you're last", g_Config.m_ClNotifyWhenLast, &OtherSettings))
+							{
+								g_Config.m_ClNotifyWhenLast ^= 1;
+							}
+
+							if(g_Config.m_ClNotifyWhenLast)
+							{
+								Ui()->DoEditBox(&s_LastInput, &Button, 14.0f);
+								static CLineInput s_NotifyMsg;
+								static CButtonContainer s_LastColor;
+								s_NotifyMsg.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
+								s_NotifyMsg.SetEmptyText("Last!");
+
+								OtherSettings.HSplitTop(-3.0f, &Label, &OtherSettings);
+
+								DoLine_ColorPicker(&s_LastColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OtherSettings, Localize(""), &g_Config.m_ClNotifyWhenLastColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(29057)), true);
+								OtherSettings.HSplitTop(-27.0f, &Button, &OtherSettings);
+							}
+							OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 						}
 					}
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoAddOnNameChange, Localize("Auto Add to Lists on Name Change"), &g_Config.m_ClAutoAddOnNameChange, &OtherSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, Localize("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, Localize("Anti Mult Spawn Block", "Puts you into a random Team when you Kill and get frozen"), &g_Config.m_ClAntiSpawnBlock, &OtherSettings, LineSize);
 				}
 			}
 		}

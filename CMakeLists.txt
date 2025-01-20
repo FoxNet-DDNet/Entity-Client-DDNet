@@ -2349,7 +2349,9 @@ if(CLIENT)
     component.cpp
     component.h
     components/aiodob/aiodob.cpp
-    components/aiodob/aiodob.h
+    components/aiodob/aiodob.h 
+    components/aiodob/anti_spawn_block.cpp
+    components/aiodob/anti_spawn_block.h
     components/aiodob/auto_kill.cpp
     components/aiodob/auto_kill.h
     components/aiodob/commands.cpp

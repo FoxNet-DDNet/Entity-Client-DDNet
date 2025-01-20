@@ -64,6 +64,7 @@
 // Aiodob
 
 #include "components/aiodob/aiodob.h"
+#include "components/aiodob/anti_spawn_block.h"
 #include "components/aiodob/auto_kill.h"
 #include "components/aiodob/freeze_kill.h"
 
@@ -186,6 +187,7 @@ public:
 	// Aiodob
 
 	CAiodob m_Aiodob;
+	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CAutoKill m_AutoKill;
 
