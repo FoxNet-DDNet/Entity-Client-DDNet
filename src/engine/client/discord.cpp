@@ -66,7 +66,7 @@ public:
 		DiscordActivity Activity;
 		mem_zero(&Activity, sizeof(DiscordActivity));
 		str_copy(Activity.assets.large_image, "ac_image_b_o", sizeof(Activity.assets.large_image));
-		str_copy(Activity.assets.large_text, "A-Client", sizeof(Activity.assets.large_text));
+		str_copy(Activity.assets.large_text, "github.com/qxdFox/Aiodob-Client-DDNet", sizeof(Activity.assets.large_text));
 		if(Timestamp)
 			Activity.timestamps.start = TimeStamp;
 		str_copy(Activity.details, pDetail, sizeof(Activity.details));
@@ -77,7 +77,7 @@ public:
 		DiscordActivity Activity;
 		mem_zero(&Activity, sizeof(DiscordActivity));
 		str_copy(Activity.assets.large_image, "ac_image_b", sizeof(Activity.assets.large_image));
-		str_copy(Activity.assets.large_text, "A-Client", sizeof(Activity.assets.large_text));
+		str_copy(Activity.assets.large_text, "github.com/qxdFox/Aiodob-Client-DDNet", sizeof(Activity.assets.large_text));
 		if(Timestamp)
 			Activity.timestamps.start = TimeStamp;
 		str_copy(Activity.details, pDetail, sizeof(Activity.details));
