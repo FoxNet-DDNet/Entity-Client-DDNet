@@ -772,14 +772,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			
 					TeeRenderInfo.m_Size = g_Config.m_ClFatSkins ? 55.0f : 75.0f;
 
-					const vec2 TeePosition = vec2(RainbowSettings.Center().x - 130, RainbowSettings.Center().y - 70);
+					const vec2 TeeRainbowPosition = vec2(RainbowSettings.Center().x - 130, RainbowSettings.Center().y - 70);
 					// interactive tee: tee looking towards cursor, and it is happy when you touch it
-					const vec2 DeltaPosition = Ui()->MousePos() - TeePosition + vec2(0, 5);
+					const vec2 DeltaPosition = Ui()->MousePos() - TeeRainbowPosition + vec2(0, 5);
 					const float Distance = length(DeltaPosition);
 					const float InteractionDistance = 20.0f;
 					const vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, maximum(DeltaPosition.y, 0.5f))) : normalize(DeltaPosition);
 					const int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
-					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, TeePosition);
+					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, TeeRainbowPosition);
 				}
 
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
@@ -1393,7 +1393,6 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 				vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, maximum(DeltaPosition.y, 0.0f))) : normalize(DeltaPosition);
 				int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
 				RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, TeePosition);
-				static char s_InteractiveTeeButtonId;
 				if(Distance < InteractionDistance && GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1))
 				{
 					TeePosition = Ui()->MousePos() - vec2(0.0f, 5.0f);
