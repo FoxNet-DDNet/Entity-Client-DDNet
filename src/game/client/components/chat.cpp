@@ -973,7 +973,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 						if(GameClient()->m_WarList.FindWarTypeWithName(name) == 2)
 						{
 							str_format(aBuf, sizeof(aBuf), "%s changed their name to a Teammates [%s]", CharOname, name);
-							GameClient()->aMessage(aBuf);
+							if(g_Config.m_ClAutoAddOnNameChange == 2)
+								GameClient()->aMessage(aBuf);
 						}
 						else
 						{
@@ -983,7 +984,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
 								str_copy(Entry.m_aTempWar, name);
 								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
-								GameClient()->aMessage(aBuf);
+								if(g_Config.m_ClAutoAddOnNameChange == 2)
+									GameClient()->aMessage(aBuf);
 							}
 							else if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsHelper)
 							{
@@ -991,16 +993,18 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
 								str_copy(Entry.m_aTempHelper, name);
 								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
-								GameClient()->aMessage(aBuf);
+								if(g_Config.m_ClAutoAddOnNameChange == 2)
+									GameClient()->aMessage(aBuf);
 							}
-							if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsMute)
-							{
-								CTempEntry Entry("", "", name);
-								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
-								str_copy(Entry.m_aTempMute, name);
-								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+						}
+						if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsMute)
+						{
+							CTempEntry Entry("", "", name);
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+							str_copy(Entry.m_aTempMute, name);
+							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->aMessage(aBuf);
-							}
 						}
 					}
 				}
@@ -1246,7 +1250,7 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
 
-				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // A-Client
+				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !Line.m_IsMute) // A-Client
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClWarlistPrefix);
 				}

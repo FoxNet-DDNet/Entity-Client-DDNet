@@ -245,7 +245,7 @@ MACRO_CONFIG_STR(ClAutoNotifyMsg, ac_auto_notify_msg, 256, "Your Fav Person Has 
 MACRO_CONFIG_INT(ClAutoJoinTeam, ac_auto_join_team, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Joins that players team if they join one")
 MACRO_CONFIG_STR(ClAutoJoinTeamName, ac_auto_join_team_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
 
-MACRO_CONFIG_INT(ClAutoAddOnNameChange, ac_auto_add_on_name_change, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds a player back to a list if their name changed")
+MACRO_CONFIG_INT(ClAutoAddOnNameChange, ac_auto_add_on_name_change, 2, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds a player back to a list if their name changed")
 MACRO_CONFIG_INT(ClAutoJoinTest, ac_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
 
 // Info

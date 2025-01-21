@@ -155,9 +155,16 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			OtherSettings.VMargin(5.0f, &OtherSettings);
 			if(g_Config.m_ClNotifyOnJoin)
-				OtherSettings.HSplitTop(240.0f, &OtherSettings, &FreezeKillSettings);
+			{
+				if(g_Config.m_ClAutoAddOnNameChange)
+					OtherSettings.HSplitTop(265.0f, &OtherSettings, &FreezeKillSettings);
+				else
+					OtherSettings.HSplitTop(245.0f, &OtherSettings, &FreezeKillSettings);
+			}
+			else if(g_Config.m_ClAutoAddOnNameChange)
+				OtherSettings.HSplitTop(245.0f, &OtherSettings, &FreezeKillSettings);
 			else
-				OtherSettings.HSplitTop(220.0f, &OtherSettings, &FreezeKillSettings);
+				OtherSettings.HSplitTop(225.0f, &OtherSettings, &FreezeKillSettings);
 			if(s_ScrollRegion.AddRect(OtherSettings))
 			{
 				OtherSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -301,7 +308,22 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 						}
 					}
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoAddOnNameChange, Localize("Auto Add to Lists on Name Change"), &g_Config.m_ClAutoAddOnNameChange, &OtherSettings, LineSize);
+
+					
+					OtherSettings.HSplitTop(2.5f, &Button, &OtherSettings);
+					OtherSettings.HSplitTop(LineSize, &Button, &OtherSettings);
+					if(DoButton_CheckBox(&g_Config.m_ClAutoAddOnNameChange, Localize("Auto Add to Default Lists on Name Change"), g_Config.m_ClAutoAddOnNameChange, &Button))
+					{
+						g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange ? 0 : 1;
+					}
+					OtherSettings.HSplitTop(LineSize, &Button, &OtherSettings);
+					if(g_Config.m_ClAutoAddOnNameChange)
+					{
+						static int s_NamePlatesStrong = 0;
+						if(DoButton_CheckBox(&s_NamePlatesStrong, Localize("Notify you everytime someone gets auto added"), g_Config.m_ClAutoAddOnNameChange == 2, &Button))
+							g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange != 2 ? 2 : 1;
+					}
+					OtherSettings.HSplitTop(2.5f, &Button, &OtherSettings);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, Localize("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
 
