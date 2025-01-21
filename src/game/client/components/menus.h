@@ -748,6 +748,7 @@ public:
 		SMALL_TAB_BROWSER_FILTER,
 		SMALL_TAB_BROWSER_INFO,
 		SMALL_TAB_BROWSER_FRIENDS,
+		SMALL_TAB_ACLIENT,
 
 		SMALL_TAB_LENGTH,
 	};
@@ -871,6 +872,8 @@ public:
 	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderAClientVersionPage(CUIRect MainView);
+	bool OverrideTeePos;
+	vec2 TeePosition;
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();

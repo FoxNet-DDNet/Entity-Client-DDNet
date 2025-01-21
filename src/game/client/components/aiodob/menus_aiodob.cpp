@@ -33,7 +33,7 @@ using namespace std::chrono_literals;
 
 
 enum {
-		AIODOB_TAB_PAGE1 = 0,
+		AIODOB_TAB_SETTINGS = 0,
 		AIODOB_TAB_VISUAL = 1,
 		AIODOB_TAB_TCLIENT = 2,
 		AIODOB_TAB_WARLIST = 3,
@@ -63,6 +63,7 @@ const float Margin = 10.0f;
 const float MarginSmall = 5.0f;
 const float MarginExtraSmall = 2.5f;
 const float MarginBetweenSections = 30.0f;
+const float MarginBetweenViews = 30.0f;
 
 const float HeadlineHeight = HeadlineFontSize + 0.0f;
 
@@ -71,6 +72,18 @@ const float HeaderHeight = FontSize + 5.0f + Margin;
 const float ColorPickerLineSize = 25.0f;
 const float ColorPickerLabelSize = 13.0f;
 const float ColorPickerLineSpacing = 5.0f;
+
+void SetFlag(int32_t &Flags, int n, bool Value)
+{
+	if(Value)
+		Flags |= (1 << n);
+	else
+		Flags &= ~(1 << n);
+}
+bool IsFlagSet(int32_t Flags, int n)
+{
+	return (Flags & (1 << n)) != 0;
+}
 
 void CMenus::RenderSettingsAiodob(CUIRect MainView)
 {
@@ -81,13 +94,23 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		s_Time = (float)rand() / (float)RAND_MAX;
 	}
 
-
 	static int s_CurTab = 0;
 
 	CUIRect TabBar, Button, Label;
 
-	MainView.HSplitTop(20.0f, &TabBar, &MainView);
-	const float TabWidth = TabBar.w / NUMBER_OF_AIODOB_TABS;
+	int TabCount = NUMBER_OF_AIODOB_TABS;
+	for(int Tab = 0; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
+	{
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
+		{
+			TabCount--;
+			if(s_CurTab == Tab)
+				s_CurTab++;
+		}
+	}
+
+	MainView.HSplitTop(LineSize * 1.1f, &TabBar, &MainView);
+	const float TabWidth = TabBar.w / TabCount;
 	static CButtonContainer s_aPageTabs[NUMBER_OF_AIODOB_TABS] = {};
 	const char *apTabNames[NUMBER_OF_AIODOB_TABS] = {
 		Localize("A-Client Settings"),
@@ -97,22 +120,24 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		Localize("Bindwheel"),
 	};
 
-	for(int Tab = AIODOB_TAB_PAGE1; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
+	for(int Tab = 0; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
 	{
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
+			continue;
+
 		TabBar.VSplitLeft(TabWidth, &Button, &TabBar);
-		const int Corners = Tab == AIODOB_TAB_PAGE1 ? IGraphics::CORNER_L : Tab == NUMBER_OF_AIODOB_TABS - 1 ? IGraphics::CORNER_R :
-														       IGraphics::CORNER_NONE;
+		const int Corners = Tab == 0 ? IGraphics::CORNER_L : Tab == TabCount - 1 ? IGraphics::CORNER_R :
+													 IGraphics::CORNER_NONE;
+
 		if(DoButton_MenuTab(&s_aPageTabs[Tab], apTabNames[Tab], s_CurTab == Tab, &Button, Corners, nullptr, nullptr, nullptr, nullptr, 4.0f))
-		{
 			s_CurTab = Tab;
-		}
 	}
 
-	MainView.HSplitTop(10.0f, nullptr, &MainView);
+	MainView.HSplitTop(MarginSmall, nullptr, &MainView);
 
 	// Client Page 1
 
-	if(s_CurTab == AIODOB_TAB_PAGE1)
+	if(s_CurTab == AIODOB_TAB_SETTINGS)
 	{
 		static CScrollRegion s_ScrollRegion;
 		vec2 ScrollOffset(0.0f, 0.0f);
@@ -1297,38 +1322,176 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 void CMenus::RenderAClientVersionPage(CUIRect MainView)
 {
-	GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_NEWS);
-
-	g_Config.m_UiUnreadNews = false;
-
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
 
 	MainView.HSplitTop(10.0f, nullptr, &MainView);
 	MainView.VSplitLeft(15.0f, nullptr, &MainView);
+	MainView.VSplitRight(15.0f, &MainView, nullptr);
+	MainView.HSplitBottom(10.0f, &MainView, nullptr);
 
-	CUIRect Button;
+	CUIRect LeftView, RightView, Button, Label, LowerRightView;
+	MainView.HSplitTop(MarginSmall, nullptr, &MainView);
 
-	MainView.HSplitTop(15.0f, &Button, nullptr);
-	MainView.HSplitTop(25.0f, &Button, nullptr);
-	Button.VSplitRight(20.0f, &Button, nullptr);
-	Button.VSplitRight(150.0f, &Button, &Button);
+	MainView.VSplitMid(&LeftView, &RightView, MarginBetweenViews);
+	RightView.VSplitLeft(MarginSmall, nullptr, &RightView);
+	LeftView.VSplitRight(MarginSmall, &LeftView, nullptr);
+	RightView.HSplitMid(&RightView, &LowerRightView, 0.0f);
 
-	static CButtonContainer s_GithubButton;
-	if(DoButton_Menu(&s_GithubButton, Localize("Go to Github Page"), 0, &Button, 0, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.40f), 10.0f))
+	// Left Side
 	{
-		Client()->ViewLink(Localize("https://github.com/qxdFox/Aiodob-Client-DDNet/releases/"));
+		LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
+		Ui()->DoLabel(&Label, Localize("Code Stealer:"), HeadlineFontSize, TEXTALIGN_ML);
+		LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+		LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+
+		const float TeeSize = 75.0f;
+		const float CardSize = TeeSize + MarginSmall;
+		CUIRect TeeRect, DevCardRect;
+		static CButtonContainer s_LinkButton;
+		{
+			CTeeRenderInfo TeeRenderInfo;
+
+			LeftView.HSplitTop(CardSize, &DevCardRect, &LeftView);
+			DevCardRect.VSplitLeft(CardSize, &TeeRect, &Label);
+
+			// Render Tee Below everything else
+			{
+				TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClPlayerSkin));
+				TeeRenderInfo.ApplyColors(true, 5374207, 12767844);
+
+				TeeRenderInfo.m_Size = g_Config.m_ClFatSkins ? TeeSize - 20.0f : TeeSize;
+
+				if(!OverrideTeePos)
+					TeePosition = vec2(TeeRect.Center().x, TeeRect.Center().y);
+
+				// interactive tee: tee looking towards cursor, and it is happy when you touch it
+				vec2 DeltaPosition = Ui()->MousePos() - TeePosition;
+				float Distance = length(DeltaPosition);
+				float InteractionDistance = 20.0f;
+				vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, maximum(DeltaPosition.y, 0.0f))) : normalize(DeltaPosition);
+				int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
+				RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, TeePosition);
+				static char s_InteractiveTeeButtonId;
+				if(Distance < InteractionDistance && GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1))
+				{
+					TeePosition = Ui()->MousePos() - vec2(0.0f, 5.0f);
+					OverrideTeePos = true;
+				}
+			}
+
+
+			Label.VSplitLeft(TextRender()->TextWidth(LineSize, "qxdFox"), &Label, &Button);
+			Button.VSplitLeft(MarginSmall, nullptr, &Button);
+			Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
+			Ui()->DoLabel(&Label, "qxdFox", LineSize, TEXTALIGN_ML);
+			if(DoButton_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, IGraphics::CORNER_ALL))
+				Client()->ViewLink("https://github.com/qxdFox");
+		}
+
+		LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
+		Ui()->DoLabel(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
+		LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
+
+		static int s_ShowSettings = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_SETTINGS);
+		DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettings, Localize("Settings"), &s_ShowSettings, &LeftView, LineSize);
+		SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_SETTINGS, s_ShowSettings);
+
+		static int s_ShowBindWheel = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_VISUAL);
+		DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindWheel, Localize("Visual"), &s_ShowBindWheel, &LeftView, LineSize);
+		SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_VISUAL, s_ShowBindWheel);
+
+		static int s_ShowWarlist = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_TCLIENT);
+		DoButton_CheckBoxAutoVMarginAndSet(&s_ShowWarlist, Localize("TClient"), &s_ShowWarlist, &LeftView, LineSize);
+		SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_TCLIENT, s_ShowWarlist);
+
+		static int s_ShowBindChat = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_WARLIST);
+		DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindChat, Localize("Warlist"), &s_ShowBindChat, &LeftView, LineSize);
+		SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_WARLIST, s_ShowBindChat);
+
+		static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_BINDWHEEL);
+		DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, Localize("BindWheel"), &s_ShowStatusBar, &LeftView, LineSize);
+		SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_BINDWHEEL, s_ShowStatusBar);
+
+		CUIRect LeftBottom;
+		MainView.HSplitBottom(Margin, 0, &LeftBottom);
+		LeftBottom.HSplitBottom(Margin, &LeftView, &LeftBottom);
+		LeftBottom.HSplitBottom(LineSize * 2.0f, 0, &LeftBottom);
+		LeftBottom.VSplitLeft(10.0f, &LeftView, &LeftBottom);
+		LeftBottom.VSplitLeft(LineSize * 6.0f, &LeftBottom, &Button);
+		static CButtonContainer s_NewestRelGithub;
+		if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+		{
+			open_link("https://github.com/qxdFox/Aiodob-Client-DDNet/releases");
+		}
+
 	}
 
-	const char *Monkey = "▒▒▒▒▒▄██████████▄▒▒▒▒▒\n▒▒▒▄██████████████▄▒▒▒\n▒▒██████████████████▒▒\n▒▐███▀▀▀▀▀██▀▀▀▀▀███▌▒\n▒███▒▒▌■▐▒▒▒▒▌■▐▒▒███▒\n▒▐██▄▒▀▀▀▒▒▒▒▀▀▀▒▄██▌▒\n▒▒▀████▒▄▄▒▒▄▄▒████▀▒▒\n▒▒▐███▒▒▒▀▒▒▀▒▒▒███▌▒▒\n▒▒███▒▒▒▒▒▒▒▒▒▒▒▒███▒▒\n▒▒▒██▒▒▀▀▀▀▀▀▀▀▒▒██▒▒▒\n▒▒▒▐██▄▒▒▒▒▒▒▒▒▄██▌▒▒▒\n▒▒▒▒▀████████████▀▒▒▒▒";
-	const char *Smiley = "░░░░░░░░░░░░░░░░░░░░░░█████████░░░░░░░░░\n░░███████░░░░░░░░░░███▒▒▒▒▒▒▒▒███░░░░░░░\n░░█▒▒▒▒▒▒█░░░░░░░███▒▒▒▒▒▒▒▒▒▒▒▒▒███░░░░\n░░░█▒▒▒▒▒▒█░░░░██▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██░░\n░░░░█▒▒▒▒▒█░░░██▒▒▒▒▒██▒▒▒▒▒▒██▒▒▒▒▒███░\n░░░░░█▒▒▒█░░░█▒▒▒▒▒▒████▒▒▒▒████▒▒▒▒▒▒██\n░░░█████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██\n░░░█▒▒▒▒▒▒▒▒▒▒▒▒█▒▒▒▒▒▒▒▒▒█▒▒▒▒▒▒▒▒▒▒▒██\n░██▒▒▒▒▒▒▒▒▒▒▒▒▒█▒▒▒██▒▒▒▒▒▒▒▒▒▒██▒▒▒▒██\n██▒▒▒███████████▒▒▒▒▒██▒▒▒▒▒▒▒▒██▒▒▒▒▒██\n█▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▒▒▒▒▒▒████████▒▒▒▒▒▒▒██\n██▒▒▒▒▒▒▒▒▒▒▒▒▒▒█▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██░\n░█▒▒▒███████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒██░░░\n░██▒▒▒▒▒▒▒▒▒▒████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒█░░░░░\n░░████████████░░░█████████████████░░░░░░";
-	CUIRect Label;
-	char aBuf[5000];
-	str_format(aBuf, sizeof(aBuf), "Cucumber\n\nBanana\n\n%s\n\n%s", Monkey, Smiley);
-	MainView.HSplitTop(540.0f, &Label, &MainView);	
-	Ui()->DoLabel(&Label, aBuf, 15.f, TEXTALIGN_ML);
+	// Right Side
+	{
+		RightView.HSplitTop(HeadlineHeight, &Label, &RightView);
+		Ui()->DoLabel(&Label, Localize("Config Files"), HeadlineFontSize, TEXTALIGN_MR);
+		RightView.HSplitTop(MarginSmall, nullptr, &RightView);
 
-	
+		char aBuf[128 + IO_MAX_PATH_LENGTH];
+
+		CUIRect FilesLeft, FilesRight;
+
+		RightView.HSplitTop(LineSize * 2.0f, &Button, &RightView);
+		Button.VSplitMid(&FilesLeft, &FilesRight, MarginSmall);
+
+		static CButtonContainer s_AClientConfig, s_Config, s_Warlist, s_Profiles, s_Chatbinds, s_FontFolder;
+		if(DoButtonLineSize_Menu(&s_AClientConfig, Localize("A-Client Setting File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+		{
+			Storage()->GetCompletePath(IStorage::TYPE_SAVE, ACONFIG_FILE, aBuf, sizeof(aBuf));
+			Client()->ViewFile(aBuf);
+		}
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
+		if(DoButtonLineSize_Menu(&s_Config, Localize("Default Settings File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+		{
+			Storage()->GetCompletePath(IStorage::TYPE_SAVE, CONFIG_FILE, aBuf, sizeof(aBuf));
+			Client()->ViewFile(aBuf);
+		}
+
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
+		if(DoButtonLineSize_Menu(&s_Profiles, Localize("Profiles File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+		{
+			Storage()->GetCompletePath(IStorage::TYPE_SAVE, PROFILES_FILE, aBuf, sizeof(aBuf));
+			Client()->ViewFile(aBuf);
+		}
+
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
+
+		if(DoButtonLineSize_Menu(&s_Warlist, Localize("Warlist File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+		{
+			Storage()->GetCompletePath(IStorage::TYPE_SAVE, WARLIST_FILE, aBuf, sizeof(aBuf));
+			Client()->ViewFile(aBuf);
+		}
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
+		if(DoButtonLineSize_Menu(&s_Chatbinds, Localize("Chatbinds File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+		{
+			Storage()->GetCompletePath(IStorage::TYPE_SAVE, BINDCHAT_FILE, aBuf, sizeof(aBuf));
+			Client()->ViewFile(aBuf);
+		}
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
+		FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
+		if(DoButtonLineSize_Menu(&s_FontFolder, Localize("Fonts Folder"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+		{
+			Storage()->CreateFolder("data/aiodob", IStorage::TYPE_ABSOLUTE);
+			Storage()->CreateFolder("data/aiodob/fonts", IStorage::TYPE_ABSOLUTE);
+			Client()->ViewFile("data/aiodob/fonts");
+		}
+	}
 }
+
 void CMenus::RenderChatPreview(CUIRect MainView)
 {
 	CChat &Chat = GameClient()->m_Chat;

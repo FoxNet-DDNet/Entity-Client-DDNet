@@ -591,6 +591,19 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
 	}
 
+
+	// A-Client
+	{
+		Box.VSplitRight(10.0f, &Box, nullptr);
+		Box.VSplitRight(33.0f, &Box, &Button);
+		static CButtonContainer s_AClientButton;
+		if(DoButton_MenuTab(&s_AClientButton, FONT_ICON_INFO, ActivePage == PAGE_ACLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ACLIENT]))
+		{
+			NewPage = PAGE_ACLIENT;
+		}
+		GameClient()->m_Tooltips.DoToolTip(&s_AClientButton, &Button, Localize("A-Client"));
+	}
+
 	Box.VSplitRight(10.0f, &Box, nullptr);
 
 	TextRender()->SetRenderFlags(0);
@@ -1168,7 +1181,7 @@ void CMenus::Render()
 			}
 			else
 			{
-				dbg_assert(false, "m_MenuPage invalid");
+				dbg_assert(false, "m_MenuPage invalid STATE_OFFLINE");
 			}
 
 			RenderMenubar(TabBar, ClientState);
@@ -1214,9 +1227,13 @@ void CMenus::Render()
 			{
 				RenderSettings(MainView);
 			}
+			else if(m_GamePage == PAGE_ACLIENT)
+			{
+				RenderAClientVersionPage(MainView);
+			}
 			else
 			{
-				dbg_assert(false, "m_GamePage invalid");
+				dbg_assert(false, "m_GamePage invalid STATE_ONLINE");
 			}
 
 			RenderMenubar(TabBar, ClientState);
@@ -1234,6 +1251,9 @@ void CMenus::Render()
 		}
 		break;
 	}
+
+	if(m_MenuPage != PAGE_ACLIENT && m_GamePage != PAGE_ACLIENT)
+		OverrideTeePos = false;
 
 	Ui()->RenderPopupMenus();
 

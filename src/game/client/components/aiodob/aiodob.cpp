@@ -539,8 +539,6 @@ void CAiodob::OnInit()
 	
 	const char *A = "Aiodob";
 
-	if(str_comp(g_Config.m_ClSavedName, A) && str_comp(g_Config.m_ClSavedDummyName, A) && str_comp(g_Config.m_ClSavedClan, A) && str_comp(g_Config.m_ClSavedDummyClan, A))
-		SaveSkin();
 	// set
 	m_ServersideDelay = 0;
 	m_RainbowColor = g_Config.m_ClPlayerColorBody;
@@ -566,7 +564,7 @@ void CAiodob::OnInit()
 	// tells you what the bind is
 	char aBuf[1024];
 	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
-	dbg_msg("Aiodob", aBuf);
+	dbg_msg(A, aBuf);
 	// binds the mouse to the saved bind, also doe
 	GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
 
