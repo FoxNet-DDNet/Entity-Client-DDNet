@@ -1412,6 +1412,13 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 		DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, Localize("BindWheel"), &s_ShowStatusBar, &LeftView, LineSize);
 		SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_BINDWHEEL, s_ShowStatusBar);
 
+		// Make this Saveable and somewhere hidden in roaming
+		char DeathCounter[32];
+		str_format(DeathCounter, sizeof(DeathCounter), "%d Deaths this Session", GameClient()->m_Aiodob.m_KillCount);
+		LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
+		Ui()->DoLabel(&LeftView, DeathCounter, FontSize, TEXTALIGN_ML);
+
+
 		CUIRect LeftBottom;
 		MainView.HSplitBottom(Margin, 0, &LeftBottom);
 		LeftBottom.HSplitBottom(Margin, &LeftView, &LeftBottom);

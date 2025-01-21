@@ -122,6 +122,7 @@ class CAiodob : public CComponent
 
 public:
 	bool m_SentKill;
+	int m_KillCount;
 
 	void TempWar(const char *pName);
 	void UnTempWar(const char *pName, bool Silent = false);

@@ -547,6 +547,7 @@ void CAiodob::OnInit()
 	m_RainbowDelay = 0;
 	m_Saturation = 200;
 	m_Lightness = 30;
+	m_KillCount = 0;
 	m_LastTile = -1;
 	m_JoinTeam = 0;
 
@@ -613,6 +614,7 @@ void CAiodob::OnRender()
 	{
 		GameClient()->m_AntiSpawnBlock.m_SentKill = true;
 		m_SentKill = false;
+		m_KillCount++;
 	}
 
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
