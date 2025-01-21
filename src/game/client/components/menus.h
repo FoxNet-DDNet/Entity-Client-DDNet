@@ -873,6 +873,7 @@ public:
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderAClientVersionPage(CUIRect MainView);
 	bool OverrideTeePos;
+	bool CanDrag;
 	vec2 TeePosition;
 
 	const CWarType *m_pRemoveWarType = nullptr;
