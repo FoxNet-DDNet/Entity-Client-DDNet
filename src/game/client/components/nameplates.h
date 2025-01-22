@@ -173,8 +173,10 @@ public:
 class CNameplateChatData 
 {
 public:
+	int64_t m_Time;
 	int m_ChatTeam = -1;
 	bool m_ChatHighlighted = false;
+	char m_ChatName[MAX_LINE_LENGTH] = "";
 	char m_ChatMsg[MAX_LINE_LENGTH] = "";
 };
 

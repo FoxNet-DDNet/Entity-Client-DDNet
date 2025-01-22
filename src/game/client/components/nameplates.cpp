@@ -146,7 +146,6 @@ void CNamePlates::OnMessage(int MsgType, void *pRawMsg)
 
 	if(MsgType == NETMSGTYPE_SV_CHAT)
 	{
-		CRenderNamePlateData Data;
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
 		OnChatMessage(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
 	}
@@ -185,8 +184,6 @@ void CNamePlates::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		{
 			// main character
 			Highlighted |= LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName);
-			// dummy
-			Highlighted |= m_pClient->Client()->DummyConnected() && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName);
 		}
 	}
 	else
@@ -205,13 +202,11 @@ void CNamePlates::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	char aName[16];
 	str_copy(aName, m_pClient->m_aClients[ClientId].m_aName, sizeof(aName));
 
-	// ignore own and dummys messages
-	if(!str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName))
-		return;
-
+	m_NameplatePlayers[ClientId].m_Time = time_get() + time_freq() * 2.5 + time_freq() * str_length(pMsg) / 30.0f;
 	m_NameplatePlayers[ClientId].m_ChatTeam = Team;
 	m_NameplatePlayers[ClientId].m_ChatHighlighted = Highlighted;
 	str_copy(m_NameplatePlayers[ClientId].m_ChatMsg, pMsg);
+	str_copy(m_NameplatePlayers[ClientId].m_ChatName, aName);
 }
 
 void CNamePlate::CNamePlateChatBox::Update(CNamePlates &This, const char *pMsg, float FontSize)
@@ -299,6 +294,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 
 		if(Data.m_IsGame && Data.m_RealClientId >= 0)
 		{
+			// TClient / A-Client
 			ColorRGBA WarColor = Color;
 
 			if(m_pClient->m_aClients[Data.m_RealClientId].m_Friend && g_Config.m_ClDoFriendColors)
@@ -325,6 +321,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 			YOffset -= Data.m_FontSizeClan;
 			NamePlate.m_Clan.Update(*this, Data.m_pClan, Data.m_FontSizeClan);
 
+			// TClient
 			ColorRGBA WarColor = Color;
 
 			if(Data.m_IsGame && Data.m_RealClientId >= 0 && GameClient()->m_WarList.GetWarData(Data.m_RealClientId).IsWarClan)
@@ -332,15 +329,6 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 
 			if(NamePlate.m_Clan.m_TextContainerIndex.Valid())
 				TextRender()->RenderTextContainer(NamePlate.m_Clan.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Clan.m_TextContainerIndex).m_W / 2.0f, YOffset);
-		}
-
-		// A-Client Chat Box
-		if(Data.m_IsGame && Data.m_RealClientId >= 0 && m_NameplatePlayers[Data.m_RealClientId].m_ChatMsg && m_NameplatePlayers[Data.m_RealClientId].m_ChatMsg != '\0' && g_Config.m_ClNameplateChatBubble)
-		{
-			YOffset -= Data.m_FontSizeClan;
-			NamePlate.m_ChatBox.Update(*this, m_NameplatePlayers[Data.m_RealClientId].m_ChatMsg, Data.m_FontSizeClan);
-			if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid())
-				TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, Color, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f, YOffset);
 		}
 
 		// TClient war reason
@@ -420,6 +408,48 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 					X -= ShowHookWeakStrongIdSize / 2.0f;
 				RenderTools()->DrawSprite(X, YOffset + StrongWeakImgSize / 2.7f, StrongWeakImgSize);
 				Graphics()->QuadsEnd();
+			}
+		}
+
+		// A-Client Chat Box
+		if(Data.m_IsGame && Data.m_RealClientId >= 0 && m_NameplatePlayers[Data.m_RealClientId].m_ChatMsg && g_Config.m_ClNameplateChatBubble)
+		{
+			CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
+
+			if(ChatData.m_ChatTeam == 2)
+				return;
+
+			float Time = (static_cast<float>(ChatData.m_Time) - time_get());
+			float Max = 1.5f;
+			float Blend = clamp(Time / time_freq(), 0.0f, Max) / Max;
+
+			const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBubbleSize / 350.0f;
+
+			ColorRGBA ChatBoxColor = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f * Blend);
+			if(ChatData.m_ChatHighlighted)
+				ChatBoxColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor).WithAlpha(Blend));
+			else if(ChatData.m_ChatTeam)
+				ChatBoxColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor).WithAlpha(Blend));
+
+			YOffset -= FontSize;
+
+			NamePlate.m_ChatBox.Update(*this, ChatData.m_ChatMsg, FontSize);
+			if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid())
+			{
+				// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
+				int xPosLeft = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
+				int xPosRight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize;
+
+				int yPosBottom = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H - FontSize * 1.45f;
+				int yPosTop = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
+
+				int ContainerIndex = Graphics()->CreateRectQuadContainer(xPosLeft, yPosBottom, xPosRight, yPosTop, 8, IGraphics::CORNER_ALL);
+
+				Graphics()->TextureClear();
+				Graphics()->SetColor(0, 0, 0, 0.35f * Blend);
+				Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2, YOffset + g_Config.m_ClNameplateChatBubbleSize / 10.0f);
+
+				TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, ChatBoxColor, OutlineColor.WithAlpha(Blend), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, YOffset + g_Config.m_ClNameplateChatBubbleSize / 10.0f); // Draw backgrounds for messages in one batch
 			}
 		}
 	}
