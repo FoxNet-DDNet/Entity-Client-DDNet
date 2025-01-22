@@ -120,14 +120,56 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		Localize("Bindwheel"),
 	};
 
+
 	for(int Tab = 0; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
 	{
+		int LeftTab = 0;
+		int RightTab = NUMBER_OF_AIODOB_TABS - 1;
+
+
 		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
 			continue;
 
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_SETTINGS))
+		{
+			LeftTab = AIODOB_TAB_VISUAL;
+			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_VISUAL))
+			{
+				LeftTab = AIODOB_TAB_TCLIENT;
+				if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_TCLIENT))
+				{
+					LeftTab = AIODOB_TAB_WARLIST;
+					if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_WARLIST))
+					{
+						LeftTab = AIODOB_TAB_BINDWHEEL;
+					}
+				}
+			}
+		}
+
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_BINDWHEEL))
+		{
+			RightTab = AIODOB_TAB_WARLIST;
+			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_WARLIST))
+			{
+				RightTab = AIODOB_TAB_TCLIENT;
+				if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_TCLIENT))
+				{
+					RightTab = AIODOB_TAB_VISUAL;
+					if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_VISUAL))
+					{
+						RightTab = AIODOB_TAB_SETTINGS;
+					}
+				}
+			}
+		}
+
 		TabBar.VSplitLeft(TabWidth, &Button, &TabBar);
-		const int Corners = Tab == 0 ? IGraphics::CORNER_L : Tab == TabCount - 1 ? IGraphics::CORNER_R :
+
+		int Corners = Tab == LeftTab ? IGraphics::CORNER_L : Tab == RightTab ? IGraphics::CORNER_R :
 													 IGraphics::CORNER_NONE;
+		if(LeftTab == RightTab)
+			Corners = IGraphics::CORNER_ALL;
 
 		if(DoButton_MenuTab(&s_aPageTabs[Tab], apTabNames[Tab], s_CurTab == Tab, &Button, Corners, nullptr, nullptr, nullptr, nullptr, 4.0f))
 			s_CurTab = Tab;
