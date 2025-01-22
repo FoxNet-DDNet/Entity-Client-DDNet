@@ -769,7 +769,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			pFrom = "whisper";
 		else if(pLine_->m_Team)
 			pFrom = "teamchat";
-		if(pLine_->m_IsAnyList && !g_Config.m_ClHideEnemyChat)
+		else if(pLine_->m_IsAnyList && !g_Config.m_ClHideEnemyChat)
 			pFrom = TypeName;
 		else if(pLine_->m_ClientId == SERVER_MSG)
 			pFrom = "server";

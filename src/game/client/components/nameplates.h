@@ -10,6 +10,11 @@
 #include <game/client/component.h>
 #include "tclient/warlist.h"
 
+enum Chat
+{
+	MAX_LINE_LENGTH = 256,
+};
+
 struct CNetObj_Character;
 struct CNetObj_PlayerInfo;
 
@@ -109,9 +114,9 @@ public:
 		m_Name.Reset();
 		m_Clan.Reset();
 		m_WeakStrongId.Reset();
+		m_ChatBox.Reset();
 
 		// TClient
-		m_SkinName.Reset();
 		m_Reason.Reset();
 	}
 	CNamePlateName m_Name;
@@ -120,26 +125,28 @@ public:
 	CNamePlateHookWeakStrongId m_WeakStrongId;
 
 
-
-	// TClient
-	class CNamePlateSkin
+	class CNamePlateChatBox
 	{
 	public:
-		CNamePlateSkin()
+		CNamePlateChatBox()
 		{
 			Reset();
 		}
 		void Reset()
 		{
 			m_TextContainerIndex.Reset();
-			m_aSkin[0] = '\0';
+			m_aMsg[0] = '\0';
 			m_FontSize = -INFINITY;
 		}
-		void Update(CNamePlates &This, const char *pSkin, float FontSize);
+		void Update(CNamePlates &This, const char *pMsg, float FontSize);
 		STextContainerIndex m_TextContainerIndex;
-		char m_aSkin[MAX_SKIN_LENGTH];
+		char m_aMsg[MAX_LINE_LENGTH];
 		float m_FontSize;
 	};
+
+
+
+	// TClient
 	class CNamePlateReason
 	{
 	public:
@@ -158,8 +165,17 @@ public:
 		char m_aReason[MAX_WARLIST_REASON_LENGTH];
 		float m_FontSize;
 	};
-	CNamePlateSkin m_SkinName;
+	CNamePlateChatBox m_ChatBox;
 	CNamePlateReason m_Reason;
+};
+
+// A-Client
+class CNameplateChatData 
+{
+public:
+	int m_ChatTeam = -1;
+	bool m_ChatHighlighted = false;
+	char m_ChatMsg[MAX_LINE_LENGTH] = "";
 };
 
 class CNamePlates : public CComponent
@@ -168,15 +184,15 @@ class CNamePlates : public CComponent
 	friend class CNamePlate::CNamePlateClan;
 	friend class CNamePlate::CNamePlateOldWeakStrong;
 	friend class CNamePlate::CNamePlateHookWeakStrongId;
+	friend class CNamePlate::CNamePlateChatBox;
 
 	// TClient
-	friend class CNamePlate::CNamePlateSkin;
 	friend class CNamePlate::CNamePlateReason;
 
 	CNamePlate m_aNamePlates[MAX_CLIENTS];
 
-	// C-Client
-public:
+	
+public: // A-Client
 	void ResetNamePlates();
 private:
 
@@ -213,9 +229,22 @@ private:
 		bool m_ShowClanWarInName = false;
 		bool m_IsLocal = false;
 	};
+
 	void RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateData &Data);
 
+	// A-Client
+
+	void OnMessage(int MsgType, void *pRawMsg) override;
+	void OnChatMessage(int ClientId, int Team, const char *pMsg);
+	bool LineShouldHighlight(const char *pLine, const char *pName);
+
 public:
+	int m_ChatTeam;
+	bool m_ChatHighlighted;
+	char m_ChatMsg[MAX_LINE_LENGTH];
+	CNameplateChatData m_NameplatePlayers[MAX_CLIENTS];
+
+
 	void RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha, bool ForceAlpha);
 	void RenderNamePlatePreview(vec2 Position);
 	virtual int Sizeof() const override { return sizeof(*this); }

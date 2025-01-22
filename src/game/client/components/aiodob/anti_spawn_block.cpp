@@ -17,28 +17,25 @@ void CAntiSpawnBlock::OnRender()
 	int Local = m_pClient->m_Snap.m_LocalClientId;
 
 	// if Anti Spawn Block isnt turned on, stop
-
 	if(!g_Config.m_ClAntiSpawnBlock)
 		return;
 
-
-	if(m_SentKill)
+	if(m_SentKill) // So it resets the state
 	{
 		m_SentTeamRequest = false;
 		m_SentKill = false;
 	}
 
 	// if Can't find Player or player has started the race, stop
-
 	if(!m_pClient || !m_pClient->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
 		return;
 
 	// if map name isnt "Multeasymap", stop
-
 	if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 		return;
 
 	{
+		// ToDo: find a way to find an emtpy fkin team im bouta flip
 
 		vec2 Pos = m_pClient->m_PredictedChar.m_Pos;
 
@@ -60,7 +57,6 @@ void CAntiSpawnBlock::OnRender()
 
 					}
 				}
-
 			}
 			//char TeamChar[256];
 			//str_format(TeamChar, sizeof(TeamChar), "%d", m_Team);

@@ -496,7 +496,6 @@ public:
 
 		// A-Client
 		int m_Id;
-		int m_DDRTeam;
 
 		bool m_IsWar;
 		bool m_IsTeam;

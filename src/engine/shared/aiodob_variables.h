@@ -165,6 +165,7 @@ MACRO_CONFIG_COL(AiodobColor, ac_aiodob_color, 654311494, CFGFLAG_CLIENT | CFGFL
 // chatbubble / Menu
 
 MACRO_CONFIG_INT(ClChatBubble, ac_chatbubble, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Chatbubble on or Off")
+MACRO_CONFIG_INT(ClNameplateChatBubble, ac_nameplate_chatbubbles, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Bubble with the message above the writers Tee")
 MACRO_CONFIG_INT(ClShowOthersInMenu, ac_show_others_in_menu , 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Settings Emote if Someones in The Menu")
 MACRO_CONFIG_INT(ClShowOwnMenuToOthers, ac_show_self_in_menu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show The Settings Emot to Others When In The Menu")
 

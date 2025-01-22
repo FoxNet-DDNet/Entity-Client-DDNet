@@ -98,7 +98,25 @@ void CNamePlate::CNamePlateHookWeakStrongId::Update(CNamePlates &This, int Id, f
 	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
+// TClient
+
+void CNamePlate::CNamePlateReason::Update(CNamePlates &This, const char *pReason, float FontSize)
+{
+	if(str_comp(m_aReason, pReason) == 0 && m_FontSize == FontSize)
+		return;
+	str_copy(m_aReason, pReason);
+	m_FontSize = FontSize;
+	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
+	This.Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	This.RenderTools()->MapScreenToInterface(This.m_pClient->m_Camera.m_Center.x, This.m_pClient->m_Camera.m_Center.y);
+	CTextCursor Cursor;
+	This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	This.TextRender()->RecreateTextContainer(m_TextContainerIndex, &Cursor, m_aReason);
+	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+}
+
 // A-Client
+
 void CNamePlate::CNamePlateOldWeakStrong::Update(CNamePlates &This, int Id, float FontSize)
 {
 	if(Id == m_Id && m_FontSize == FontSize)
@@ -121,34 +139,93 @@ void CNamePlate::CNamePlateOldWeakStrong::Update(CNamePlates &This, int Id, floa
 	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
-// TClient
-void CNamePlate::CNamePlateSkin::Update(CNamePlates &This, const char *pSkin, float FontSize)
+void CNamePlates::OnMessage(int MsgType, void *pRawMsg)
 {
-	if(str_comp(m_aSkin, pSkin) == 0 && m_FontSize == FontSize)
+	if(m_pClient->m_SuppressEvents)
 		return;
-	str_copy(m_aSkin, pSkin);
-	m_FontSize = FontSize;
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	This.Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	This.RenderTools()->MapScreenToInterface(This.m_pClient->m_Camera.m_Center.x, This.m_pClient->m_Camera.m_Center.y);
-	CTextCursor Cursor;
-	This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
-	This.TextRender()->RecreateTextContainer(m_TextContainerIndex, &Cursor, m_aSkin);
-	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+
+	if(MsgType == NETMSGTYPE_SV_CHAT)
+	{
+		CRenderNamePlateData Data;
+		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
+		OnChatMessage(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
+	}
 }
 
-void CNamePlate::CNamePlateReason::Update(CNamePlates &This, const char *pReason, float FontSize)
+bool CNamePlates::LineShouldHighlight(const char *pLine, const char *pName)
 {
-	if(str_comp(m_aReason, pReason) == 0 && m_FontSize == FontSize)
+	const char *pHL = str_utf8_find_nocase(pLine, pName);
+
+	if(pHL)
+	{
+		int Length = str_length(pName);
+
+		if(Length > 0 && (pLine == pHL || pHL[-1] == ' ') && (pHL[Length] == 0 || pHL[Length] == ' ' || pHL[Length] == '.' || pHL[Length] == '!' || pHL[Length] == ',' || pHL[Length] == '?' || pHL[Length] == ':'))
+			return true;
+	}
+
+	return false;
+}
+
+void CNamePlates::OnChatMessage(int ClientId, int Team, const char *pMsg)
+{
+	if(ClientId < 0 || ClientId > MAX_CLIENTS)
 		return;
-	str_copy(m_aReason, pReason);
+	bool Highlighted = false;
+
+	CRenderNamePlateData Data;
+	// check for highlighted name
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	{
+		if(m_pClient->m_aLocalIds[0] == -1)
+			return;
+		if(m_pClient->Client()->DummyConnected() && m_pClient->m_aLocalIds[1] == -1)
+			return;
+		if(ClientId >= 0 && ClientId != m_pClient->m_aLocalIds[0] && (!m_pClient->Client()->DummyConnected() || ClientId != m_pClient->m_aLocalIds[1]))
+		{
+			// main character
+			Highlighted |= LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName);
+			// dummy
+			Highlighted |= m_pClient->Client()->DummyConnected() && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName);
+		}
+	}
+	else
+	{
+		if(m_pClient->m_Snap.m_LocalClientId == -1)
+			return;
+		// on demo playback use local id from snap directly,
+		// since m_aLocalIds isn't valid there
+		Highlighted |= m_pClient->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_aName);
+	}
+
+	if(Team == 3) // whisper recv
+		Highlighted = true;
+
+
+	char aName[16];
+	str_copy(aName, m_pClient->m_aClients[ClientId].m_aName, sizeof(aName));
+
+	// ignore own and dummys messages
+	if(!str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName))
+		return;
+
+	m_NameplatePlayers[ClientId].m_ChatTeam = Team;
+	m_NameplatePlayers[ClientId].m_ChatHighlighted = Highlighted;
+	str_copy(m_NameplatePlayers[ClientId].m_ChatMsg, pMsg);
+}
+
+void CNamePlate::CNamePlateChatBox::Update(CNamePlates &This, const char *pMsg, float FontSize)
+{
+	if(str_comp(m_aMsg, pMsg) == 0 && m_FontSize == FontSize)
+		return;
+	str_copy(m_aMsg, pMsg);
 	m_FontSize = FontSize;
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	This.Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
 	This.RenderTools()->MapScreenToInterface(This.m_pClient->m_Camera.m_Center.x, This.m_pClient->m_Camera.m_Center.y);
 	CTextCursor Cursor;
 	This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
-	This.TextRender()->RecreateTextContainer(m_TextContainerIndex, &Cursor, m_aReason);
+	This.TextRender()->RecreateTextContainer(m_TextContainerIndex, &Cursor, m_aMsg);
 	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
@@ -255,6 +332,15 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 
 			if(NamePlate.m_Clan.m_TextContainerIndex.Valid())
 				TextRender()->RenderTextContainer(NamePlate.m_Clan.m_TextContainerIndex, WarColor, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_Clan.m_TextContainerIndex).m_W / 2.0f, YOffset);
+		}
+
+		// A-Client Chat Box
+		if(Data.m_IsGame && Data.m_RealClientId >= 0 && m_NameplatePlayers[Data.m_RealClientId].m_ChatMsg && m_NameplatePlayers[Data.m_RealClientId].m_ChatMsg != '\0' && g_Config.m_ClNameplateChatBubble)
+		{
+			YOffset -= Data.m_FontSizeClan;
+			NamePlate.m_ChatBox.Update(*this, m_NameplatePlayers[Data.m_RealClientId].m_ChatMsg, Data.m_FontSizeClan);
+			if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid())
+				TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, Color, OutlineColor, Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f, YOffset);
 		}
 
 		// TClient war reason
@@ -457,6 +543,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_HookWeakStrong = TRISTATE::SOME;
 	Data.m_ShowHookWeakStrongId = false;
 	Data.m_HookWeakStrongId = false;
+	// A-Client
 	Data.m_OldNameplateId = false;
 
 	if(g_Config.m_ClOldNameplateIds)

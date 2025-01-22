@@ -1769,8 +1769,6 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_Id = Item.m_Id;
 
 					pClient->m_IsMute = m_Aiodob.m_TempPlayers[Item.m_Id].IsTempMute || m_WarList.m_WarPlayers[Item.m_Id].IsMuted;
-					if(m_aClients[Item.m_Id].m_Team != TEAM_ALL)
-						pClient->m_DDRTeam = m_Teams.Team(Item.m_Id);
 
 					pClient->m_IsAnyList = m_WarList.m_WarPlayers[Item.m_Id].IsWarName;
 				}
