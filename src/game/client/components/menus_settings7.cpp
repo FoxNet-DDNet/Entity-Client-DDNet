@@ -135,13 +135,13 @@ void CMenus::RenderSettingsTee7(CUIRect MainView)
 
 	{
 		// interactive tee: tee looking towards cursor, and it is happy when you touch it
-		const vec2 TeePosition = NormalSkinPreview.Center() + vec2(0.0f, 6.0f);
-		const vec2 DeltaPosition = Ui()->MousePos() - TeePosition;
+		const vec2 TeesPosition = NormalSkinPreview.Center() + vec2(0.0f, 6.0f);
+		const vec2 DeltaPosition = Ui()->MousePos() - TeesPosition;
 		const float Distance = length(DeltaPosition);
 		const float InteractionDistance = 20.0f;
 		const vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, maximum(DeltaPosition.y, 0.5f))) : normalize(DeltaPosition);
 		const int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &OwnSkinInfo, TeeEmote, TeeDirection, TeePosition);
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &OwnSkinInfo, TeeEmote, TeeDirection, TeesPosition);
 		static char s_InteractiveTeeButtonId;
 		if(Distance < InteractionDistance && Ui()->DoButtonLogic(&s_InteractiveTeeButtonId, 0, &NormalSkinPreview))
 		{

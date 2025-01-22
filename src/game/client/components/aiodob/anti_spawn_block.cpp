@@ -46,17 +46,25 @@ void CAntiSpawnBlock::OnRender()
 		{
 			for(int i = 0; i < MAX_CLIENTS; i++)
 			{
-				int ExcludeTeam = -1;
+				int RandomTeam = round_to_int(random_float(1, 63));
 				if(m_pClient->m_Teams.Team(i))
 				{
-					ExcludeTeam = m_pClient->m_Teams.Team(i);
-
+					numbers.push_back(m_pClient->m_Teams.Team(i));
 				}
-				if(i != ExcludeTeam)
+				for(int number : numbers)
 				{
-					m_Team = i;
+					for(int t = 1; t < MAX_CLIENTS; t++)
+					{
+						if(RandomTeam != number)
+							m_Team = RandomTeam;
+
+					}
 				}
+
 			}
+			//char TeamChar[256];
+			//str_format(TeamChar, sizeof(TeamChar), "%d", m_Team);
+			//GameClient()->aMessage(TeamChar);
 		}
 
 		if(m_pClient->m_aClients[Local].m_Predicted.m_FreezeEnd > 0 && !m_SentTeamRequest)
@@ -67,10 +75,9 @@ void CAntiSpawnBlock::OnRender()
 			char aBuf[2048] = "/team ";
 			str_append(aBuf, TeamChar);
 			GameClient()->m_Chat.SendChat(0, aBuf);
-			if(m_pClient->m_Teams.Team(Local) != 0)
-				GameClient()->m_Chat.SendChat(0, "/Lock");
 			m_Team = 0;
 			m_SentTeamRequest = true;
+			// m_Locked = false;
 		}
 		else if(m_pClient->RaceHelper()->IsNearStart(Pos, 2) && m_SentTeamRequest)
 		{
@@ -80,5 +87,11 @@ void CAntiSpawnBlock::OnRender()
 				m_SentTeamRequest = false;
 			}
 		}
+
+		//if(m_pClient->m_Teams.Team(Local) != 0 && !m_Locked)
+		//{
+		//	GameClient()->m_Chat.SendChat(0, "/Lock");
+		//	m_Locked = true;
+		//}
 	}
 }
