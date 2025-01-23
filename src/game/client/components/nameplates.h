@@ -172,7 +172,7 @@ public:
 // A-Client
 class CNameplateChatData 
 {
-public:
+public: 
 	int64_t m_Time;
 	int m_ChatTeam = -1;
 	bool m_ChatHighlighted = false;
