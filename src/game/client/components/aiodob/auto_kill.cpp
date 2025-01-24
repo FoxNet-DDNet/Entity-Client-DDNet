@@ -1,4 +1,5 @@
 #include "auto_kill.h"
+
 #include <base/system.h>
 #include <base/vmath.h>
 #include <engine/client.h>
@@ -8,103 +9,130 @@
 #include <game/client/components/chat.h>
 #include <game/client/gameclient.h>
 #include <game/generated/protocol.h>
+
 void CAutoKill::OnRender()
 {
-	int Local = m_pClient->m_Snap.m_LocalClientId;
+	const int LocalCID = m_pClient->m_Snap.m_LocalClientId;
+	const float CurrentRaceTime = GameClient()->CurrentRaceTime();
 
-	if(!GameClient()->CurrentRaceTime())
+	if(CurrentRaceTime <= 0.0f)
 		m_SentAutoKill = false;
 
-	CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
-	if(g_Config.m_ClAutoKill)
+	if(!g_Config.m_ClAutoKill || m_SentAutoKill)
+		return;
+
+	// Local player pointer
+	CCharacterCore *pLocalCharacter = &m_pClient->m_aClients[LocalCID].m_Predicted;
+	const bool LocalIsInFreeze = pLocalCharacter->m_IsInFreeze;
+
+	// If "AutoKill only on Multeasymap" is enabled, check map name once before iterating players.
+	if(g_Config.m_ClAutoKillMultOnly)
 	{
-		// if sent kill, stop
-
-		if(m_SentAutoKill == true)
-			return;
-
-		for(int i = 0; i < MAX_CLIENTS; i++)
+		bool IsOnMulteasymap = (str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0);
+		if(!IsOnMulteasymap)
 		{
-			CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
-
-			// if not on "Multeasymap", stop
-			if(g_Config.m_ClAutoKillMultOnly)
-			{
-				if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
-				{
-					if(g_Config.m_ClAutoKillDebug)
-						TextRender()->Text(100, 50, 15, "Not on Mult");
-					return;
-				}
-				else if(g_Config.m_ClAutoKillDebug)
-					TextRender()->Text(100, 50, 15, "On Mult");
-			}
-
-			// stuff
-
-			const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Prev;
-			const CNetObj_Character *pCurChar = &m_pClient->m_Snap.m_aCharacters[Local].m_Cur;
-			const CNetObj_Character *pPrevCharO = &m_pClient->m_Snap.m_aCharacters[!Local].m_Prev;
-			const CNetObj_Character *pCurCharO = &m_pClient->m_Snap.m_aCharacters[!Local].m_Cur;
-			bool IsWar = false;
-			bool EnemyFrozen = false;
-
-			// so it only takes info from other players and not self (could probably be made smarter :p)
-			if(i != Local)
-			{
-				pPrevCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Prev;
-				pCurCharO = &m_pClient->m_Snap.m_aCharacters[i].m_Cur;
-				IsWar = m_pClient->m_aClients[i].m_IsWar && (!m_pClient->m_aClients[i].m_IsTeam || !m_pClient->m_aClients[i].m_IsHelper);
-				EnemyFrozen = pCharacterOther->m_IsInFreeze;
-			}
-
-			// position and vel
-			const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
-			const vec2 SelfPos = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pCurChar->m_X, pCurChar->m_Y), IntraTick) / 32.0f;
-			const vec2 EnemyPos = vec2(pPrevCharO->m_X, pPrevCharO->m_Y) / 32.0f;
-			const vec2 EnemyVel = mix(vec2(pPrevCharO->m_VelX, pPrevCharO->m_VelY), vec2(pCurCharO->m_VelX, pCurCharO->m_VelY), IntraTick) / 1000 / 1.5;
-			const float RangeX = g_Config.m_ClAutoKillRangeX / 100.0f;
-			const float RangeY = g_Config.m_ClAutoKillRangeY / 100.0f;
-
-			// debug
 			if(g_Config.m_ClAutoKillDebug)
 			{
-				char aBuf[100];
-				str_format(aBuf, sizeof(aBuf), "%d", round_to_int(SelfPos.x));
-				TextRender()->Text(100, 100, 15, aBuf);
-				char bBuf[100];
-				str_format(bBuf, sizeof(bBuf), "%d", round_to_int(EnemyPos.x));
-				TextRender()->Text(100, 120, 15, bBuf);
+				TextRender()->Text(100.0f, 50.0f, 15.0f, "Not on Mult");
 			}
+			return; // Stop if not on Multeasymap.
+		}
+		else if(g_Config.m_ClAutoKillDebug)
+		{
+			TextRender()->Text(100.0f, 50.0f, 15.0f, "On Mult");
+		}
+	}
 
-			// if in freeze tile
-			if((pCharacter->m_IsInFreeze && !g_Config.m_ClAutoKillWarOnly) || (g_Config.m_ClAutoKillWarOnly && IsWar && pCharacter->m_IsInFreeze))
+	// Access local character snapshots.
+	const CNetObj_Character &LocalPrevChar = m_pClient->m_Snap.m_aCharacters[LocalCID].m_Prev;
+	const CNetObj_Character &LocalCurChar = m_pClient->m_Snap.m_aCharacters[LocalCID].m_Cur;
+
+	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
+
+	// Compute local player's interpolated position.
+	const vec2 LocalPos = mix(
+				      vec2(LocalPrevChar.m_X, LocalPrevChar.m_Y),
+				      vec2(LocalCurChar.m_X, LocalCurChar.m_Y),
+				      IntraTick) /
+			      32.0f;
+
+	const float RangeX = g_Config.m_ClAutoKillRangeX / 100.0f;
+	const float RangeY = g_Config.m_ClAutoKillRangeY / 100.0f;
+
+	// Loop through all clients
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
+		// Skip if it's the local player's slot.
+		if(i == LocalCID)
+			continue;
+
+		CCharacterCore *pOtherCharacter = &m_pClient->m_aClients[i].m_Predicted;
+		const bool EnemyFrozen = pOtherCharacter->m_IsInFreeze;
+
+		const bool IsWar = m_pClient->m_aClients[i].m_IsWar && (!m_pClient->m_aClients[i].m_IsTeam || !m_pClient->m_aClients[i].m_IsHelper);
+
+		// Fetch the other character's previous/current snapshots.
+		const CNetObj_Character &OtherPrevChar = m_pClient->m_Snap.m_aCharacters[i].m_Prev;
+		const CNetObj_Character &OtherCurChar = m_pClient->m_Snap.m_aCharacters[i].m_Cur;
+
+		// Interpolate enemy position and velocity.
+		const vec2 EnemyPos = vec2(OtherPrevChar.m_X, OtherPrevChar.m_Y) / 32.0f;
+		const vec2 EnemyVel = mix(
+					      vec2(OtherPrevChar.m_VelX, OtherPrevChar.m_VelY),
+					      vec2(OtherCurChar.m_VelX, OtherCurChar.m_VelY),
+					      IntraTick) /
+				      (1000.0f * 1.5f);
+
+		// Debug output if enabled.
+		if(g_Config.m_ClAutoKillDebug)
+		{
+			char aBuf[64];
+			str_format(aBuf, sizeof(aBuf), "Local X: %d", round_to_int(LocalPos.x));
+			TextRender()->Text(100.0f, 100.0f, 15.0f, aBuf);
+
+			char bBuf[64];
+			str_format(bBuf, sizeof(bBuf), "Enemy X: %d", round_to_int(EnemyPos.x));
+			TextRender()->Text(100.0f, 120.0f, 15.0f, bBuf);
+		}
+
+		// Check if local is in freeze
+		const bool LocalFreezeCheck =
+			(LocalIsInFreeze && !g_Config.m_ClAutoKillWarOnly) ||
+			(g_Config.m_ClAutoKillWarOnly && LocalIsInFreeze && IsWar);
+
+		if(LocalFreezeCheck)
+		{
+			// Check if the other player is above us within a Y range,
+			// and horizontally within range of our position.
+			// Combine both to confirm the enemy is "on top" or extremely close above in freeze.
+			if(!EnemyFrozen)
 			{
-				// check where other player is
-				if((EnemyPos.y < SelfPos.y && EnemyPos.y > SelfPos.y - 1 - RangeY - EnemyVel.y) && ((EnemyPos.x <= SelfPos.x + RangeX) && (EnemyPos.x + RangeX >= SelfPos.x)))
-				{
-					// if other player is frozen, stop, so it doesnt kill when you and the enemy are in a freeze tile
-					if(EnemyFrozen)
-						return;
+				const bool InVerticalRange =
+					(EnemyPos.y < LocalPos.y) &&
+					(EnemyPos.y > (LocalPos.y - 1.0f - RangeY - EnemyVel.y));
 
-		
-					// if player is ontop of you and their x coordinate is close to own players 
-				//	if(EnemyPos.x <= SelfPos.x + 0.04f && EnemyPos.x + +0.04f >= SelfPos.x && EnemyFreezeEnd < 1)
+				const bool InHorizontalRange =
+					(EnemyPos.x <= LocalPos.x + RangeX) &&
+					((EnemyPos.x + RangeX) >= LocalPos.x);
+
+				if(InVerticalRange && InHorizontalRange)
+				{
+					// Decide whether to ignore the server kill protection
+					const bool IgnoreKillProt = g_Config.m_ClFreezeKillIgnoreKillProt;
+					const float RequiredTimeBeforeProt = 60.0f * g_Config.m_SvKillProtection;
+
+					// Switch kill between /kill and client->sendkill
+					if(CurrentRaceTime > RequiredTimeBeforeProt && IgnoreKillProt)
 					{
-						// kill
-						if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
-						{
-							m_pClient->m_Chat.SendChat(0, "/kill");
-							m_SentAutoKill = true;
-							return;
-						}
-						else
-						{
-							GameClient()->SendKill(Local);
-							m_SentAutoKill = true;
-							return;
-						}
+						m_pClient->m_Chat.SendChat(0, "/kill");
 					}
+					else
+					{
+						GameClient()->SendKill(LocalCID);
+					}
+
+					m_SentAutoKill = true;
+					return; // Immediately stop once a kill command has been executed.
 				}
 			}
 		}
