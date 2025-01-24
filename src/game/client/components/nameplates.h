@@ -114,16 +114,17 @@ public:
 		m_Name.Reset();
 		m_Clan.Reset();
 		m_WeakStrongId.Reset();
+
+		// A-Client
 		m_ChatBox.Reset();
+		m_OldWeakStrongId.Reset();
 
 		// TClient
 		m_Reason.Reset();
 	}
 	CNamePlateName m_Name;
 	CNamePlateClan m_Clan;
-	CNamePlateOldWeakStrong m_OldWeakStrongId;
 	CNamePlateHookWeakStrongId m_WeakStrongId;
-
 
 	class CNamePlateChatBox
 	{
@@ -165,6 +166,8 @@ public:
 		char m_aReason[MAX_WARLIST_REASON_LENGTH];
 		float m_FontSize;
 	};
+
+	CNamePlateOldWeakStrong m_OldWeakStrongId;
 	CNamePlateChatBox m_ChatBox;
 	CNamePlateReason m_Reason;
 };
@@ -176,8 +179,6 @@ public:
 	int64_t m_Time;
 	int m_ChatTeam = -1;
 	bool m_ChatHighlighted = false;
-	char m_ChatName[MAX_LINE_LENGTH] = "";
-	char m_ChatMsg[MAX_LINE_LENGTH] = "";
 };
 
 class CNamePlates : public CComponent
@@ -241,9 +242,6 @@ private:
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 
 public:
-	int m_ChatTeam;
-	bool m_ChatHighlighted;
-	char m_ChatMsg[MAX_LINE_LENGTH];
 	CNameplateChatData m_NameplatePlayers[MAX_CLIENTS];
 
 

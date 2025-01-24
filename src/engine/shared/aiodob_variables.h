@@ -325,7 +325,7 @@ MACRO_CONFIG_INT(ClRainbow, ac_rainbow, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, 
 
 // Nameplates Chat Messages
 MACRO_CONFIG_INT(ClNameplateChatBox, ac_nameplate_chatbox, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
-MACRO_CONFIG_INT(ClNameplateChatBoxFriends, ac_nameplate_chatbox_friends, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Chat Box for friends only")
+MACRO_CONFIG_INT(ClNameplateChatBoxFriends, ac_nameplate_chatbox_friends, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Chat Box for friends only")
 MACRO_CONFIG_INT(ClNameplateChatBoxSize, ac_nameplate_chatbox_size, 40, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
 
 // Flags
