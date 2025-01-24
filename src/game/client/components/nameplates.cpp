@@ -421,7 +421,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		{
 			CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
 
-			if(ChatData.m_ChatTeam == 2)
+			if(ChatData.m_ChatTeam == 2 || !GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
 				return;
 
 			if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
