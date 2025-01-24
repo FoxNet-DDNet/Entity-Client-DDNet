@@ -1899,8 +1899,13 @@ bool CMenus::RenderLanguageSelection(CUIRect MainView)
 	}
 
 	const int OldSelected = s_SelectedLanguage;
+	const float CreditsFontSize = 14.0f;
+	const float CreditsMargin = 10.0f;
 
-	s_ListBox.DoStart(24.0f, g_Localization.Languages().size(), 1, 3, s_SelectedLanguage, &MainView);
+	CUIRect List, CreditsScroll;
+	MainView.HSplitBottom(4.0f * CreditsFontSize + 2.0f * CreditsMargin + CScrollRegion::HEIGHT_MAGIC_FIX, &List, &CreditsScroll);
+	List.HSplitBottom(5.0f, &List, nullptr);
+	s_ListBox.DoStart(24.0f, g_Localization.Languages().size(), 1, 3, s_SelectedLanguage, &List);
 
 	for(const auto &Language : g_Localization.Languages())
 	{
@@ -1924,6 +1929,36 @@ bool CMenus::RenderLanguageSelection(CUIRect MainView)
 		str_copy(g_Config.m_ClLanguagefile, g_Localization.Languages()[s_SelectedLanguage].m_FileName.c_str());
 		GameClient()->OnLanguageChange();
 	}
+
+	CreditsScroll.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), IGraphics::CORNER_ALL, 5.0f);
+
+	static CScrollRegion s_CreditsScrollRegion;
+	vec2 ScrollOffset(0.0f, 0.0f);
+	CScrollRegionParams ScrollParams;
+	ScrollParams.m_ScrollUnit = CreditsFontSize;
+	s_CreditsScrollRegion.Begin(&CreditsScroll, &ScrollOffset, &ScrollParams);
+	CreditsScroll.y += ScrollOffset.y;
+
+	CTextCursor Cursor;
+	TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, CreditsFontSize, TEXTFLAG_RENDER);
+	Cursor.m_LineWidth = CreditsScroll.w - 2.0f * CreditsMargin;
+
+	const unsigned OldRenderFlags = TextRender()->GetRenderFlags();
+	TextRender()->SetRenderFlags(OldRenderFlags | TEXT_RENDER_FLAG_ONE_TIME_USE);
+	STextContainerIndex CreditsTextContainer;
+	TextRender()->CreateTextContainer(CreditsTextContainer, &Cursor, Localize("English translation by the DDNet Team", "Translation credits: Add your own name here when you update translations"));
+	TextRender()->SetRenderFlags(OldRenderFlags);
+	if(CreditsTextContainer.Valid())
+	{
+		CUIRect CreditsLabel;
+		CreditsScroll.HSplitTop(TextRender()->GetBoundingBoxTextContainer(CreditsTextContainer).m_H + 2.0f * CreditsMargin, &CreditsLabel, &CreditsScroll);
+		s_CreditsScrollRegion.AddRect(CreditsLabel);
+		CreditsLabel.Margin(CreditsMargin, &CreditsLabel);
+		TextRender()->RenderTextContainer(CreditsTextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), CreditsLabel.x, CreditsLabel.y);
+		TextRender()->DeleteTextContainer(CreditsTextContainer);
+	}
+
+	s_CreditsScrollRegion.End();
 
 	return s_ListBox.WasItemActivated();
 }
@@ -2378,6 +2413,7 @@ void CMenus::RenderSettingsAppearance(CUIRect MainView)
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudHealthAmmo, Localize("Show health, shields and ammo"), &g_Config.m_ClShowhudHealthAmmo, &LeftView, LineSize);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudScore, Localize("Show score"), &g_Config.m_ClShowhudScore, &LeftView, LineSize);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowLocalTimeAlways, Localize("Show local time always"), &g_Config.m_ClShowLocalTimeAlways, &LeftView, LineSize);
+		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecCursor, Localize("Show spectator cursor"), &g_Config.m_ClSpecCursor, &LeftView, LineSize);
 
 		// Settings of the HUD element for votes
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowVotesAfterVoting, Localize("Show votes window after voting"), &g_Config.m_ClShowVotesAfterVoting, &LeftView, LineSize);

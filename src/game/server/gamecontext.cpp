@@ -1667,6 +1667,7 @@ bool CGameContext::OnClientDataPersist(int ClientId, void *pData)
 	}
 	pPersistent->m_IsSpectator = m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS;
 	pPersistent->m_IsAfk = m_apPlayers[ClientId]->IsAfk();
+	pPersistent->m_LastWhisperTo = m_apPlayers[ClientId]->m_LastWhisperTo;
 	return true;
 }
 
@@ -1675,10 +1676,21 @@ void CGameContext::OnClientConnected(int ClientId, void *pData)
 	CPersistentClientData *pPersistentData = (CPersistentClientData *)pData;
 	bool Spec = false;
 	bool Afk = true;
+	int LastWhisperTo = -1;
 	if(pPersistentData)
 	{
 		Spec = pPersistentData->m_IsSpectator;
 		Afk = pPersistentData->m_IsAfk;
+		LastWhisperTo = pPersistentData->m_LastWhisperTo;
+	}
+	else
+	{
+		// new player connected, clear whispers waiting for the old player with this id
+		for(auto &pPlayer : m_apPlayers)
+		{
+			if(pPlayer && pPlayer->m_LastWhisperTo == ClientId)
+				pPlayer->m_LastWhisperTo = -1;
+		}
 	}
 
 	{
@@ -1705,6 +1717,7 @@ void CGameContext::OnClientConnected(int ClientId, void *pData)
 		delete m_apPlayers[ClientId];
 	m_apPlayers[ClientId] = new(ClientId) CPlayer(this, NextUniqueClientId, ClientId, StartTeam);
 	m_apPlayers[ClientId]->SetInitialAfk(Afk);
+	m_apPlayers[ClientId]->m_LastWhisperTo = LastWhisperTo;
 	NextUniqueClientId += 1;
 
 	SendMotd(ClientId);
@@ -3774,6 +3787,7 @@ void CGameContext::RegisterChatCommands()
 	Console()->Register("practice", "?i['0'|'1']", CFGFLAG_CHAT | CFGFLAG_SERVER, ConPractice, this, "Enable cheats for your current team's run, but you can't earn a rank");
 	Console()->Register("practicecmdlist", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConPracticeCmdList, this, "List all commands that are avaliable in practice mode");
 	Console()->Register("swap", "?r[player name]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSwap, this, "Request to swap your tee with another team member");
+	Console()->Register("cancelswap", "", CFGFLAG_CHAT | CFGFLAG_SERVER, ConCancelSwap, this, "Cancel your swap request");
 	Console()->Register("save", "?r[code]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConSave, this, "Save team with code r.");
 	Console()->Register("load", "?r[code]", CFGFLAG_CHAT | CFGFLAG_SERVER, ConLoad, this, "Load with code r. /load to check your existing saves");
 	Console()->Register("map", "?r[map]", CFGFLAG_CHAT | CFGFLAG_SERVER | CFGFLAG_NONTEEHISTORIC, ConMap, this, "Vote a map by name");
@@ -4768,10 +4782,10 @@ void CGameContext::Converse(int ClientId, char *pStr)
 
 	if(pPlayer->m_LastWhisperTo < 0)
 		SendChatTarget(ClientId, "You do not have an ongoing conversation. Whisper to someone to start one");
+	else if(!m_apPlayers[pPlayer->m_LastWhisperTo])
+		SendChatTarget(ClientId, "The player you were whispering to hasn't reconnected yet or left. Please wait or whisper to someone else");
 	else
-	{
 		WhisperId(ClientId, pPlayer->m_LastWhisperTo, pStr);
-	}
 }
 
 bool CGameContext::IsVersionBanned(int Version)

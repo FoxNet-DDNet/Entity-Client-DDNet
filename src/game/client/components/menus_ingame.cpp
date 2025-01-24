@@ -737,6 +737,44 @@ void CMenus::RenderServerInfo(CUIRect MainView)
 		}
 	}
 
+	if(m_pClient->m_GameInfo.m_DDRaceTeam)
+	{
+		const char *pTeamMode = nullptr;
+		switch(Config()->m_SvTeam)
+		{
+		case SV_TEAM_FORBIDDEN:
+			pTeamMode = Localize("forbidden", "Teaming status");
+			break;
+		case SV_TEAM_ALLOWED:
+			if(g_Config.m_SvSoloServer)
+				pTeamMode = Localize("solo", "Teaming status");
+			else
+				pTeamMode = Localize("allowed", "Teaming status");
+			break;
+		case SV_TEAM_MANDATORY:
+			pTeamMode = Localize("required", "Teaming status");
+			break;
+		case SV_TEAM_FORCED_SOLO:
+			pTeamMode = Localize("solo", "Teaming status");
+			break;
+		default:
+			dbg_assert(false, "unknown team mode");
+		}
+		if((Config()->m_SvTeam == SV_TEAM_ALLOWED || Config()->m_SvTeam == SV_TEAM_MANDATORY) && (Config()->m_SvMinTeamSize != CConfig::ms_SvMinTeamSize || Config()->m_SvMaxTeamSize != CConfig::ms_SvMaxTeamSize))
+		{
+			if(Config()->m_SvMinTeamSize != CConfig::ms_SvMinTeamSize && Config()->m_SvMaxTeamSize != CConfig::ms_SvMaxTeamSize)
+				str_format(aBuf, sizeof(aBuf), "%s: %s (%s %d, %s %d)", Localize("Teams"), pTeamMode, Localize("minimum", "Team size"), Config()->m_SvMinTeamSize, Localize("maximum", "Team size"), Config()->m_SvMaxTeamSize);
+			else if(Config()->m_SvMinTeamSize != CConfig::ms_SvMinTeamSize)
+				str_format(aBuf, sizeof(aBuf), "%s: %s (%s %d)", Localize("Teams"), pTeamMode, Localize("minimum", "Team size"), Config()->m_SvMinTeamSize);
+			else
+				str_format(aBuf, sizeof(aBuf), "%s: %s (%s %d)", Localize("Teams"), pTeamMode, Localize("maximum", "Team size"), Config()->m_SvMaxTeamSize);
+		}
+		else
+			str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Teams"), pTeamMode);
+		GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
+		Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
+	}
+
 	GameInfo.HSplitTop(FontSizeBody, &Label, &GameInfo);
 	str_format(aBuf, sizeof(aBuf), "%s: %d/%d", Localize("Players"), m_pClient->m_Snap.m_NumPlayers, CurrentServerInfo.m_MaxClients);
 	Ui()->DoLabel(&Label, aBuf, FontSizeBody, TEXTALIGN_ML);
@@ -787,34 +825,33 @@ void CMenus::RenderServerInfoMotd(CUIRect Motd)
 	s_ScrollRegion.End();
 }
 
-bool CMenus::RenderServerControlServer(CUIRect MainView)
+bool CMenus::RenderServerControlServer(CUIRect MainView, bool UpdateScroll)
 {
 	CUIRect List = MainView;
-	int Total = m_pClient->m_Voting.m_NumVoteOptions;
 	int NumVoteOptions = 0;
 	int aIndices[MAX_VOTE_OPTIONS];
-	static int s_CurVoteOption = 0;
+	int Selected = -1;
 	int TotalShown = 0;
 
-	for(CVoteOptionClient *pOption = m_pClient->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext)
+	int i = 0;
+	for(CVoteOptionClient *pOption = m_pClient->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext, i++)
 	{
 		if(!m_FilterInput.IsEmpty() && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
 			continue;
+		if(i == m_CallvoteSelectedOption)
+			Selected = TotalShown;
 		TotalShown++;
 	}
 
 	static CListBox s_ListBox;
-	s_ListBox.DoStart(19.0f, TotalShown, 1, 3, s_CurVoteOption, &List);
+	s_ListBox.DoStart(19.0f, TotalShown, 1, 3, Selected, &List);
 
-	int i = -1;
-	for(CVoteOptionClient *pOption = m_pClient->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext)
+	i = 0;
+	for(CVoteOptionClient *pOption = m_pClient->m_Voting.m_pFirst; pOption; pOption = pOption->m_pNext, i++)
 	{
-		i++;
 		if(!m_FilterInput.IsEmpty() && !str_utf8_find_nocase(pOption->m_aDescription, m_FilterInput.GetString()))
 			continue;
-
-		if(NumVoteOptions < Total)
-			aIndices[NumVoteOptions] = i;
+		aIndices[NumVoteOptions] = i;
 		NumVoteOptions++;
 
 		const CListboxItem Item = s_ListBox.DoNextItem(pOption);
@@ -826,13 +863,14 @@ bool CMenus::RenderServerControlServer(CUIRect MainView)
 		Ui()->DoLabel(&Label, pOption->m_aDescription, 13.0f, TEXTALIGN_ML);
 	}
 
-	s_CurVoteOption = s_ListBox.DoEnd();
-	if(s_CurVoteOption < Total)
-		m_CallvoteSelectedOption = aIndices[s_CurVoteOption];
+	Selected = s_ListBox.DoEnd();
+	if(UpdateScroll)
+		s_ListBox.ScrollToSelected();
+	m_CallvoteSelectedOption = Selected != -1 ? aIndices[Selected] : -1;
 	return s_ListBox.WasItemActivated();
 }
 
-bool CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
+bool CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators, bool UpdateScroll)
 {
 	int NumOptions = 0;
 	int Selected = -1;
@@ -881,6 +919,8 @@ bool CMenus::RenderServerControlKick(CUIRect MainView, bool FilterSpectators)
 	}
 
 	Selected = s_ListBox.DoEnd();
+	if(UpdateScroll)
+		s_ListBox.ScrollToSelected();
 	m_CallvoteSelectedPlayer = Selected != -1 ? aPlayerIds[Selected] : -1;
 	return s_ListBox.WasItemActivated();
 }
@@ -926,16 +966,6 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	Bottom.HMargin(5.0f, &Bottom);
 	Bottom.HSplitTop(5.0f, nullptr, &Bottom);
 
-	bool Call = false;
-	if(s_ControlPage == EServerControlTab::SETTINGS)
-		Call = RenderServerControlServer(MainView);
-	else if(s_ControlPage == EServerControlTab::KICKVOTE)
-		Call = RenderServerControlKick(MainView, false);
-	else if(s_ControlPage == EServerControlTab::SPECVOTE)
-		Call = RenderServerControlKick(MainView, true);
-
-	// vote menu
-
 	// render quick search
 	CUIRect QuickSearch;
 	Bottom.VSplitLeft(5.0f, nullptr, &Bottom);
@@ -946,7 +976,16 @@ void CMenus::RenderServerControl(CUIRect MainView)
 		Ui()->SetActiveItem(&m_FilterInput);
 		m_FilterInput.SelectAll();
 	}
-	Ui()->DoEditBox_Search(&m_FilterInput, &QuickSearch, 14.0f, !Ui()->IsPopupOpen() && !m_pClient->m_GameConsole.IsActive());
+	bool Searching = Ui()->DoEditBox_Search(&m_FilterInput, &QuickSearch, 14.0f, !Ui()->IsPopupOpen() && !m_pClient->m_GameConsole.IsActive());
+
+	// vote menu
+	bool Call = false;
+	if(s_ControlPage == EServerControlTab::SETTINGS)
+		Call = RenderServerControlServer(MainView, Searching);
+	else if(s_ControlPage == EServerControlTab::KICKVOTE)
+		Call = RenderServerControlKick(MainView, false, Searching);
+	else if(s_ControlPage == EServerControlTab::SPECVOTE)
+		Call = RenderServerControlKick(MainView, true, Searching);
 
 	// call vote
 	Bottom.VSplitRight(10.0f, &Bottom, 0);
@@ -957,9 +996,12 @@ void CMenus::RenderServerControl(CUIRect MainView)
 	{
 		if(s_ControlPage == EServerControlTab::SETTINGS)
 		{
-			m_pClient->m_Voting.CallvoteOption(m_CallvoteSelectedOption, m_CallvoteReasonInput.GetString());
-			if(g_Config.m_UiCloseWindowAfterChangingSetting)
-				SetActive(false);
+			if(0 <= m_CallvoteSelectedOption && m_CallvoteSelectedOption < m_pClient->m_Voting.m_NumVoteOptions)
+			{
+				m_pClient->m_Voting.CallvoteOption(m_CallvoteSelectedOption, m_CallvoteReasonInput.GetString());
+				if(g_Config.m_UiCloseWindowAfterChangingSetting)
+					SetActive(false);
+			}
 		}
 		else if(s_ControlPage == EServerControlTab::KICKVOTE)
 		{

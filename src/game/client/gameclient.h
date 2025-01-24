@@ -120,6 +120,8 @@ public:
 
 	bool m_NoWeakHookAndBounce;
 	bool m_NoSkinChangeForFrozen;
+
+	bool m_DDRaceTeam;
 };
 
 class CSnapEntities
