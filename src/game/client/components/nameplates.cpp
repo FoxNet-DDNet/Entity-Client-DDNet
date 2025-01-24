@@ -418,18 +418,21 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		}
 
 		// A-Client Chat Box
-		if(Data.m_IsGame && Data.m_RealClientId >= 0 && g_Config.m_ClNameplateChatBubble)
+		if(Data.m_IsGame && Data.m_RealClientId >= 0 && g_Config.m_ClNameplateChatBox)
 		{
 			CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
 
 			if(ChatData.m_ChatTeam == 2)
 				return;
 
+			if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
+				return;
+
 			float Time = (static_cast<float>(ChatData.m_Time) - time_get());
 			float Max = 1.5f;
 			float Blend = clamp(Time / time_freq(), 0.0f, Max) / Max;
 
-			const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBubbleSize / 350.0f;
+			const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
 
 			ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, 0.75f * Blend);
 			if(ChatData.m_ChatHighlighted || ChatData.m_ChatTeam == 3)
@@ -457,9 +460,9 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 
 				int ContainerIndex = Graphics()->CreateRectQuadContainer(xPosLeft, yPosBottom, xPosRight, yPosTop, 8, IGraphics::CORNER_ALL);
 
-				Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2, YOffset + g_Config.m_ClNameplateChatBubbleSize / 10.0f);
+				Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2, YOffset + g_Config.m_ClNameplateChatBoxSize / 10.0f);
 
-				TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, ColorRGBA(1.0f, 1.0f, 1.0f, Blend), ColorRGBA(0.0f, 0.0f, 0.0f, Blend), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, YOffset + g_Config.m_ClNameplateChatBubbleSize / 10.0f); // Draw backgrounds for messages in one batch
+				TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, ColorRGBA(1.0f, 1.0f, 1.0f, Blend), ColorRGBA(0.0f, 0.0f, 0.0f, Blend), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, YOffset + g_Config.m_ClNameplateChatBoxSize / 10.0f); // Draw backgrounds for messages in one batch
 			}
 		}
 	}
