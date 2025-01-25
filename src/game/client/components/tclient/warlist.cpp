@@ -190,7 +190,6 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 				else
 				{
 					str_format(aBuf, sizeof(aBuf), "No clan found for user \"%s\"", pName);
-					GameClient()->Echo(aBuf);
 					break;
 				}
 			}
@@ -200,8 +199,6 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 	{
 		str_copy(Entry.m_aName, pName);
 		str_format(aBuf, sizeof(aBuf), "added \"%s\" to '%s' list ", pName, pWarType->m_aWarName);
-		GameClient()->aMessage(aBuf);
-
 		CTempEntry TempEntry(pName, pName, "");
 
 		auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), TempEntry);
@@ -220,6 +217,9 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 	}
 	if(!g_Config.m_ClWarListAllowDuplicates)
 		RemoveWarEntryDuplicates(Entry.m_aName, Entry.m_aClan);
+
+	GameClient()->aMessage(aBuf);
+
 
 	AddWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_aReason, Entry.m_pWarType->m_aWarName);
 	// if(str_comp(Entry.m_aClan, "") != 0 || str_comp(Entry.m_aName, "") != 0)
