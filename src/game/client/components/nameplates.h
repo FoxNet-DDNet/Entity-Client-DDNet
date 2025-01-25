@@ -10,9 +10,10 @@
 #include <game/client/component.h>
 #include "tclient/warlist.h"
 
-enum Chat
+enum
 {
-	MAX_LINE_LENGTH = 256,
+	MAX_LINES = 64,
+	MAX_LINE_LENGTH = 256
 };
 
 struct CNetObj_Character;
@@ -175,10 +176,13 @@ public:
 // A-Client
 class CNameplateChatData 
 {
-public: 
+public:
+	STextContainerIndex m_TextContainerIndex;
 	int64_t m_Time;
+	int m_ChatClientId;
 	int m_ChatTeam = -1;
 	bool m_ChatHighlighted = false;
+
 };
 
 class CNamePlates : public CComponent
@@ -236,6 +240,7 @@ private:
 	void RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateData &Data);
 
 	// A-Client
+	void NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData &Data,float y);
 
 	void OnMessage(int MsgType, void *pRawMsg) override;
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
