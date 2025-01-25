@@ -510,8 +510,7 @@ void CSpectator::OnRender()
 		float Alpha = 0.5f;
 		if(PlayerSelected)
 			Alpha = 1.0f;
-		if(Client()->State() == IClient::STATE_DEMOPLAYBACK &&
-			!m_pClient->m_Snap.m_aCharacters[m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Active)
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK &&	!m_pClient->m_Snap.m_aCharacters[ClientId].m_Active)
 		{
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.25f);
 			TeeAlpha = 0.5f;
@@ -529,10 +528,10 @@ void CSpectator::OnRender()
 					Color = GameClient()->m_WarList.GetPriorityColor(ClientId);
 				else if(m_pClient->m_aClients[ClientId].m_Friend)
 					Color =  color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-				TeeAlpha = 1.0f;
 
 			}
 			TextRender()->TextColor(Color.WithAlpha(Alpha));
+			TeeAlpha = 1.0f;
 		}
 		CTextCursor NameCursor;
 		TextRender()->SetCursor(&NameCursor, Width / 2.0f + x + 50.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
