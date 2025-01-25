@@ -17,5 +17,5 @@
 extern const char *GIT_SHORTREV_HASH;
 #define GAME_NAME "DDNet"
 #define CLIENT_NAME "A-Client"
-#define ACLIENT_VERSION "v1.1.4"
+#define ACLIENT_VERSION "v1.2.0"
 #endif
