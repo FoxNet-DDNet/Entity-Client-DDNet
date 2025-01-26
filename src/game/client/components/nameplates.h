@@ -177,11 +177,15 @@ public:
 class CNameplateChatData 
 {
 public:
-	STextContainerIndex m_TextContainerIndex;
 	int64_t m_Time;
-	int m_ChatClientId;
-	int m_ChatTeam = -1;
-	bool m_ChatHighlighted = false;
+	float m_aYOffset;
+	int m_ClientId;
+	int m_Team = -1;
+	char m_aText[MAX_LINE_LENGTH];
+	bool m_Highlighted = false;
+
+	STextContainerIndex m_TextContainerIndex;
+	int m_QuadContainerIndex;
 
 };
 
@@ -239,7 +243,9 @@ private:
 
 	void RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateData &Data);
 
-	// A-Client
+	float FontSize() const { return 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f; }
+
+	// A-Client 
 	void NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData &Data,float y);
 
 	void OnMessage(int MsgType, void *pRawMsg) override;
