@@ -502,11 +502,15 @@ int CWarList::FindWarTypeWithClan(const char *pClan)
 	return 0;
 }
 
-char *CWarList::GetWarTypeName(const char *pName)
+char *CWarList::GetWarTypeName(int ClientId)
 {
 	for(CWarEntry &Entry : m_WarEntries)
 	{
-		if(str_comp(pName, Entry.m_aName) == 0 && str_comp(Entry.m_aName, "") != 0)
+		if(!str_comp(GameClient()->m_aClients[ClientId].m_aName, Entry.m_aName) && str_comp(Entry.m_aName, "") != 0)
+		{
+			return Entry.m_pWarType->m_aWarName;
+		}
+		else if(!str_comp(GameClient()->m_aClients[ClientId].m_aClan, Entry.m_aClan) && str_comp(Entry.m_aClan, "") != 0)
 		{
 			return Entry.m_pWarType->m_aWarName;
 		}

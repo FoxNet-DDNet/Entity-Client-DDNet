@@ -762,7 +762,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		}
 
 		char TypeName[512];
-		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(pLine_->m_aName));
+		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(pLine_->m_ClientId));
 
 		const char *pFrom;
 		if(pLine_->m_Whisper)

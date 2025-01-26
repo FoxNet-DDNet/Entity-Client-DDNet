@@ -212,7 +212,7 @@ public:
 
 	int FindWarTypeWithName(const char *pName);
 	int FindWarTypeWithClan(const char *pClan);
-	char *GetWarTypeName(const char *pName);
+	char *GetWarTypeName(int ClientId);
 
 
 	void AddWarEntry(const char *pName, const char *pClan, const char *pReason, const char *pType);
