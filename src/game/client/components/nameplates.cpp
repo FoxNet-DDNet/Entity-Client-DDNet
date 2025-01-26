@@ -462,34 +462,39 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
 	y -= FontSize;
 
+	
+	const bool OtherTeam = m_pClient->IsOtherTeam(Data.m_RealClientId);
+	if(OtherTeam)
+	{
+		float OthersAlpha = (float)g_Config.m_ClShowOthersAlpha / 100;
+
+		if((float)g_Config.m_ClShowOthersAlpha / 100 <= 0.7f)
+			BoxAlpha = 0.7f;
+		TextAlpha = OthersAlpha;
+	}
+
 	if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid() && Blend > 0)
 	{
+		float TextHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H;
 		// Background
 		{
-			const bool OtherTeam = m_pClient->IsOtherTeam(Data.m_RealClientId);
-			if(OtherTeam)
-			{
-				float OthersAlpha = (float)g_Config.m_ClShowOthersAlpha / 100;
-
-				if((float)g_Config.m_ClShowOthersAlpha / 100 <= 0.7f)
-					BoxAlpha = 0.7f;
-				TextAlpha = OthersAlpha;
-			}
 
 			Graphics()->TextureClear();
 			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * 0.75f * Blend));
 
 			// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
-			float xPosLeft = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
-			float xPosRight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize;
-			float yPosTop = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
-			float yPosBottom = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H - FontSize * 1.45f;
-			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPosLeft, yPosBottom, xPosRight, yPosTop, 4, IGraphics::CORNER_ALL);
-			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2, y + g_Config.m_ClNameplateChatBoxSize / 10.0f);
-		}
+			float xPos = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
+			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize;
 
+			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
+			float yPos = y - TextHeight;
+			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 4, IGraphics::CORNER_ALL);
+
+			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2, -6);
+
+		}
 		// Text
-		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y + g_Config.m_ClNameplateChatBoxSize / 10.0f);
+		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y + g_Config.m_ClNameplateChatBoxSize / 10.0f - TextHeight);
 	}
 }
 
