@@ -1801,6 +1801,8 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 			else
 			{
 				DummyDisconnect("reconnect");
+				// Reset dummy connect time to allow immediate reconnect
+				m_LastDummyConnectTime = 0.0f;
 				DummyConnect();
 			}
 		}
@@ -1829,6 +1831,8 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					// the client assumes that main and dummy use the same map.
 					return;
 				}
+				// Reset dummy connect time to allow immediate reconnect
+				m_LastDummyConnectTime = 0.0f;
 				DummyConnect();
 			}
 		}
