@@ -1016,6 +1016,7 @@ set(EXPECTED_DATA
   aiodob/fonts/Montserrat-Regular.ttf
   aiodob/fonts/Nunito-Black.ttf
   aiodob/fonts/Rubik-Regular.ttf
+  aiodob/icons/aiodob_flag.png
   aiodob/icons/muted_icon.png
   aiodob/icons/settings_icon.png
   announcement.txt

@@ -226,8 +226,10 @@ container.sounds.Add(SoundSet("ctf_capture", ["audio/sfx_ctf_cap_pl.wv"]))
 
 container.sounds.Add(SoundSet("menu", ["audio/music_menu.wv"]))
 
-image_settings_icon = Image("settings_icon", "aiodob/icons/settings_icon.png")
+# A-Client
+image_aiodob_flag = Image("aiodob_flag", "aiodob/icons/aiodob_flag.png")
 image_muted_icon = Image("muted_icon", "aiodob/icons/muted_icon.png")
+image_settings_icon = Image("settings_icon", "aiodob/icons/settings_icon.png")
 
 image_null = Image("null", "")
 image_particles = Image("particles", "particles.png")
@@ -254,12 +256,15 @@ container.images.Add(image_guibuttons)
 container.images.Add(image_guiicons)
 container.images.Add(image_arrow)
 container.images.Add(image_audio_source)
-container.images.Add(image_muted_icon)
-container.images.Add(image_settings_icon)
 container.images.Add(image_strongweak)
 container.images.Add(image_hud)
 container.images.Add(image_extras)
 container.images.Add(Image("raceflag", "race_flag.png"))
+
+# A-Client
+container.images.Add(image_aiodob_flag)
+container.images.Add(image_muted_icon)
+container.images.Add(image_settings_icon)
 
 container.pickups.Add(Pickup("health"))
 container.pickups.Add(Pickup("armor"))
@@ -278,11 +283,14 @@ set_speedup_arrow = SpriteSet("speedup_arrow", image_speedup_arrow, 1, 1)
 set_guibuttons = SpriteSet("guibuttons", image_guibuttons, 12, 4)
 set_guiicons = SpriteSet("guiicons", image_guiicons, 12, 2)
 set_audio_source = SpriteSet("audio_source", image_audio_source, 1, 1)
-set_settings_icon = SpriteSet("settings_icon", image_settings_icon, 1, 1)
-set_muted_icon = SpriteSet("muted_icon", image_muted_icon, 1, 1)
 set_strongweak = SpriteSet("strongweak", image_strongweak, 3, 1)
 set_hud = SpriteSet("hud", image_hud, 16, 16)
 set_extras = SpriteSet("extras", image_extras, 16, 16)
+
+# A-Client
+set_aiodob_flag = SpriteSet("aiodob_flag", image_aiodob_flag, 1, 1)
+set_muted_icon = SpriteSet("muted_icon", image_muted_icon, 1, 1)
+set_settings_icon = SpriteSet("settings_icon", image_settings_icon, 1, 1)
 
 container.spritesets.Add(set_particles)
 container.spritesets.Add(set_game)
@@ -295,6 +303,9 @@ container.spritesets.Add(set_audio_source)
 container.spritesets.Add(set_strongweak)
 container.spritesets.Add(set_hud)
 container.spritesets.Add(set_extras)
+
+# A-Client
+container.spritesets.Add(set_aiodob_flag)
 container.spritesets.Add(set_settings_icon)
 container.spritesets.Add(set_muted_icon)
 
@@ -424,6 +435,8 @@ container.sprites.Add(Sprite("guiicon_friend", set_guiicons, 8,0,4,2))
 
 container.sprites.Add(Sprite("audio_source", set_audio_source, 0,0,1,1))
 
+# A-Client
+container.sprites.Add(Sprite("aiodob_flag", set_aiodob_flag, 0,0,1,1))
 container.sprites.Add(Sprite("settings_icon", set_settings_icon, 0,0,1,1))
 container.sprites.Add(Sprite("muted_icon", set_muted_icon, 0,0,1,1))
 

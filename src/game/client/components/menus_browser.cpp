@@ -328,6 +328,24 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 			Button.w = Col.m_Rect.w;
 
 			const int Id = Col.m_Id;
+
+			char ServerIp[32];
+			bool qxdFoxServer = false;
+			{
+				using namespace std;
+				const char *aName = str_find_nocase(pItem->m_aAddress, ":");
+
+				int n = str_length(pItem->m_aAddress) - str_length(aName);
+				string s(pItem->m_aAddress);
+				s.erase(n);
+
+				strcpy(ServerIp, s.c_str());
+				if (!str_comp(ServerIp, "85.215.138.194"))
+				{
+					qxdFoxServer = true;
+				}
+			}
+
 			if(Id == COL_FLAG_LOCK)
 			{
 				if(pItem->m_Flags & SERVER_FLAG_PASSWORD)
@@ -338,17 +356,34 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				{
 					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_KEY_ICON), &Button, ColorRGBA(1.0f, 0.6f, 0.55f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_KEY, TEXTALIGN_MC);
 				}
+
 			}
 			else if(Id == COL_FLAG_FAV)
 			{
 				if(pItem->m_Favorite != TRISTATE::NONE)
 				{
-					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(1.0f, 0.85f, 0.3f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
+					if(qxdFoxServer)
+						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(0.25f, 0.55f, 0.85f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
+					else
+						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(1.0f, 0.85f, 0.3f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
 				}
+
 			}
 			else if(Id == COL_COMMUNITY)
 			{
-				if(pCommunity != nullptr)
+				if(qxdFoxServer)
+				{
+					CUIRect FoxServerIcon;
+					Button.Margin(2.0f, &FoxServerIcon);
+
+					Graphics()->TextureClear();
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_AIODOB_FLAG].m_Id);
+					Graphics()->SetColor(ColorRGBA(1.0f,1.0f,1.0f,1.0f));
+					Graphics()->QuadsSetRotation(0);
+		
+					Graphics()->RenderQuadContainerAsSprite(m_DirectionQuadContainerIndex, 0, Button.x, Button.y);
+				}
+				else if(pCommunity != nullptr)
 				{
 					const SCommunityIcon *pIcon = FindCommunityIcon(pCommunity->Id());
 					if(pIcon != nullptr)
