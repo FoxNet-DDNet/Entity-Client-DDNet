@@ -769,7 +769,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			pFrom = "whisper";
 		else if(pLine_->m_Team)
 			pFrom = "teamchat";
-		else if(pLine_->m_IsAnyList && !g_Config.m_ClHideEnemyChat)
+		else if(GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId) && !g_Config.m_ClHideEnemyChat && pLine_->m_ClientId >= 0)
 			pFrom = TypeName;
 		else if(pLine_->m_ClientId == SERVER_MSG)
 			pFrom = "server";
@@ -1336,7 +1336,7 @@ void CChat::OnPrepareLines(float y)
 			NameColor = ColorRGBA(1.0f, 0.5f, 0.5f, 1.f);
 		else if(Line.m_NameColor == TEAM_BLUE)
 			NameColor = ColorRGBA(0.7f, 0.7f, 1.0f, 1.f);
-		else if(g_Config.m_ClWarList && g_Config.m_ClWarListChat && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
+		else if(g_Config.m_ClWarList && g_Config.m_ClWarListChat && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId)) // TClient
 			NameColor = GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId);
 		else if(Line.m_NameColor == TEAM_SPECTATORS)
 			NameColor = ColorRGBA(0.75f, 0.5f, 0.75f, 1.f);
