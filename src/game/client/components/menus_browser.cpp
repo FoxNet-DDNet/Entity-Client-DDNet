@@ -147,6 +147,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 		UI_ELEM_PLAYERS,
 		UI_ELEM_FRIEND_ICON,
 		UI_ELEM_PING,
+		UI_ELEM_KEY_ICON,
 		NUM_UI_ELEMS,
 	};
 
@@ -332,6 +333,10 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				if(pItem->m_Flags & SERVER_FLAG_PASSWORD)
 				{
 					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_LOCK_ICON), &Button, ColorRGBA(0.75f, 0.75f, 0.75f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_LOCK, TEXTALIGN_MC);
+				}
+				else if(pItem->m_RequiresLogin)
+				{
+					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_KEY_ICON), &Button, ColorRGBA(1.0f, 0.6f, 0.55f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_KEY, TEXTALIGN_MC);
 				}
 			}
 			else if(Id == COL_FLAG_FAV)
@@ -593,6 +598,29 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 		Ui()->DoLabel(&PlayersOnline, aBuf, 12.0f, TEXTALIGN_MR);
 	}
 
+	// status box
+	{
+		CUIRect ServersOnline, PlayersOnline;
+		ServersPlayersOnline.HSplitMid(&PlayersOnline, &ServersOnline);
+
+		char aBuf[128];
+		if(ServerBrowser()->NumServers() != 1)
+			str_format(aBuf, sizeof(aBuf), Localize("%d of %d servers"), ServerBrowser()->NumSortedServers(), ServerBrowser()->NumServers());
+		else
+			str_format(aBuf, sizeof(aBuf), Localize("%d of %d server"), ServerBrowser()->NumSortedServers(), ServerBrowser()->NumServers());
+		Ui()->DoLabel(&ServersOnline, aBuf, 12.0f, TEXTALIGN_MR);
+
+		int NumPlayers = 0;
+		for(int i = 0; i < ServerBrowser()->NumSortedServers(); i++)
+			NumPlayers += ServerBrowser()->SortedGet(i)->m_NumFilteredPlayers;
+
+		if(NumPlayers != 1)
+			str_format(aBuf, sizeof(aBuf), Localize("%d players"), NumPlayers);
+		else
+			str_format(aBuf, sizeof(aBuf), Localize("%d player"), NumPlayers);
+		Ui()->DoLabel(&PlayersOnline, aBuf, 12.0f, TEXTALIGN_MR);
+	}
+
 	// address info
 	{
 		CUIRect ServerAddrLabel, ServerAddrEditBox;
@@ -644,7 +672,6 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 			if(Ui()->DoButton_Menu(m_ConnectButton, &s_ConnectButton, ConnectLabelFunc, &ButtonConnect, Props) || WasListboxItemActivated || (!Ui()->IsPopupOpen() && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
 			{
 				Connect(g_Config.m_UiServerAddress);
-				GameClient()->m_Aiodob.m_LastMovement = time_get() + time_freq() * 60;
 			}
 		}
 	}
@@ -734,7 +761,9 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		const float OldWidth = Flag.w;
 		Flag.w = Flag.h * 2.0f;
 		Flag.x += (OldWidth - Flag.w) / 2.0f;
-		m_pClient->m_CountryFlags.Render(g_Config.m_BrFilterCountryIndex, ColorRGBA(1.0f, 1.0f, 1.0f, Ui()->HotItem() == &g_Config.m_BrFilterCountryIndex ? 1.0f : g_Config.m_BrFilterCountry ? 0.9f : 0.5f), Flag.x, Flag.y, Flag.w, Flag.h);
+		m_pClient->m_CountryFlags.Render(g_Config.m_BrFilterCountryIndex, ColorRGBA(1.0f, 1.0f, 1.0f, Ui()->HotItem() == &g_Config.m_BrFilterCountryIndex ? 1.0f : g_Config.m_BrFilterCountry ? 0.9f :
+																									0.5f),
+			Flag.x, Flag.y, Flag.w, Flag.h);
 
 		if(Ui()->DoButtonLogic(&g_Config.m_BrFilterCountryIndex, 0, &Flag))
 		{
@@ -838,7 +867,7 @@ void CMenus::ResetServerbrowserFilters()
 	g_Config.m_BrFilterGametypeStrict = 0;
 	g_Config.m_BrFilterConnectingPlayers = 1;
 	g_Config.m_BrFilterServerAddress[0] = '\0';
-	g_Config.m_BrFilterLogin = true;
+	g_Config.m_BrFilterLogin = false;
 
 	if(g_Config.m_UiPage != PAGE_LAN)
 	{
@@ -1781,7 +1810,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 		|                           | |      tool       |
 		|                           | |      box        |
 		+---------------------------+ |                 |
-		        status box            +-----------------+
+			status box            +-----------------+
 	*/
 
 	CUIRect ServerList, StatusBox, ToolBox, TabBar;

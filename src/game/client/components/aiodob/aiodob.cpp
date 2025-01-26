@@ -171,7 +171,6 @@ void CAiodob::OnMessage(int MsgType, void *pRawMsg)
 	}
 }
 
-
 void CAiodob::AutoJoinTeam()
 {
 	if(m_JoinTeam > time_get())
@@ -332,6 +331,8 @@ void CAiodob::OnConnect()
 
 	if(g_Config.m_ClDummy)
 		return;
+
+	GameClient()->m_Aiodob.m_LastMovement = time_get() + time_freq() * 60;
 
 	// if current server is type "Gores", turn the config on, else turn it off
 
