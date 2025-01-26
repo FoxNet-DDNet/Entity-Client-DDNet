@@ -177,7 +177,8 @@ public:
 class CNameplateChatData 
 {
 public:
-	int64_t m_Time;
+	int64_t m_TimeI;
+	int64_t m_TimeO;
 	float m_aYOffset;
 	int m_ClientId;
 	int m_Team = -1;

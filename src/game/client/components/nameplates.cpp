@@ -197,18 +197,20 @@ void CNamePlates::OnChatMessage(int ClientId, int Team, const char *pMsg)
 
 	if(Team == 3) // whisper recv
 		Highlighted = true;
+	if(Team == 2)
+		return;
 
 	char Message[MAX_LINE_LENGTH];
 	str_format(Message, sizeof(Message), "%s", pMsg);
 	if(Team == 3)
 		str_format(Message, sizeof(Message), "→ %s", pMsg);
 
-	m_NameplatePlayers[ClientId].m_Time = time_get() + time_freq() * 4.0f + time_freq() * str_length(pMsg) / 30.0f;
+	m_NameplatePlayers[ClientId].m_TimeI = time_get() + time_freq() * 4.0f + time_freq() * str_length(pMsg) / 30.0f;
+	m_NameplatePlayers[ClientId].m_TimeO = -time_get();
 	m_NameplatePlayers[ClientId].m_Team = Team;
 	m_NameplatePlayers[ClientId].m_Highlighted = Highlighted;
 
 	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
-
 	m_aNamePlates[ClientId].m_ChatBox.Update(*this, Message, FontSize);
 }
 
@@ -438,11 +440,17 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 	if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
 		return;
 
-	float Time = (static_cast<float>(ChatData.m_Time) - time_get());
+	float FadeOut = (static_cast<float>(ChatData.m_TimeI) - time_get());
 	float Max = 1.0f;
-	float Blend = clamp(Time / time_freq(), 0.0f, Max) / Max;
+	float Blend = clamp(FadeOut / time_freq() * 2, 0.0f, Max) / Max;
 
-	float BoxAlpha = 0.7f;
+	float FadeIn = (static_cast<float>(ChatData.m_TimeO) + time_get());
+	if(FadeIn / time_freq() <= 1.0f)
+	{
+		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, 1.0f) / 1.0f;
+	}
+
+	float BoxAlpha = 0.65f;
 	float TextAlpha = 1.0f;
 
 	ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, BoxAlpha);
@@ -466,10 +474,11 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 	const bool OtherTeam = m_pClient->IsOtherTeam(Data.m_RealClientId);
 	if(OtherTeam)
 	{
-		float OthersAlpha = (float)g_Config.m_ClShowOthersAlpha / 100;
+		const float OthersAlpha = g_Config.m_ClShowOthersAlpha / 100.0f;
 
-		if((float)g_Config.m_ClShowOthersAlpha / 100 <= 0.7f)
-			BoxAlpha = 0.7f;
+		if(g_Config.m_ClShowOthersAlpha / 100.0f <= 0.7f)
+			BoxAlpha = OthersAlpha;
+
 		TextAlpha = OthersAlpha;
 	}
 
@@ -480,18 +489,17 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 		{
 
 			Graphics()->TextureClear();
-			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * 0.75f * Blend));
+			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * Blend));
 
 			// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
 			float xPos = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
-			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize;
+			float yPos = y - TextHeight;
+			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize * 1.1;
 
 			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
-			float yPos = y - TextHeight;
-			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 4, IGraphics::CORNER_ALL);
+			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
 
-			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2, -6);
-
+			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2, -(g_Config.m_ClNameplateChatBoxSize / 10.0f));
 		}
 		// Text
 		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y + g_Config.m_ClNameplateChatBoxSize / 10.0f - TextHeight);
