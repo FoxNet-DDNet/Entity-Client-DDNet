@@ -116,7 +116,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
 		return;
 
-	if(g_Config.m_ClReplyMuted && GameClient()->m_aClients[ClientId].m_IsMute) // || (GameClient()->m_WarList.IsWarlist(m_pClient->m_aClients[ClientId].m_aName) && g_Config.m_ClHideEnemyChat))
+	if(g_Config.m_ClReplyMuted && GameClient()->m_aClients[ClientId].m_IsMute || (GameClient()->m_aClients[ClientId].m_IsWar && g_Config.m_ClHideEnemyChat))
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
