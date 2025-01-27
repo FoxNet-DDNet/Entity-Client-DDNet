@@ -176,10 +176,12 @@ void CChat::ConSayTeam(IConsole::IResult *pResult, void *pUserData)
 void CChat::ConChat(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *pMode = pResult->GetString(0);
-	if(str_comp(pMode, "all") == 0)
+	if(!str_comp(pMode, "all"))
 		((CChat *)pUserData)->EnableMode(0);
-	else if(str_comp(pMode, "team") == 0)
+	else if(!str_comp(pMode, "team"))
 		((CChat *)pUserData)->EnableMode(1);
+	else if(!str_comp(pMode, "silent"))
+		((CChat *)pUserData)->EnableMode(2);
 	else
 		((CChat *)pUserData)->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", "expected all or team as mode");
 
@@ -238,7 +240,7 @@ void CChat::OnConsoleInit()
 {
 	Console()->Register("say", "r[message]", CFGFLAG_CLIENT, ConSay, this, "Say in chat");
 	Console()->Register("say_team", "r[message]", CFGFLAG_CLIENT, ConSayTeam, this, "Say in team chat");
-	Console()->Register("chat", "s['team'|'all'] ?r[message]", CFGFLAG_CLIENT, ConChat, this, "Enable chat with all/team mode");
+	Console()->Register("chat", "s['team'|'all'|'silent'] ?r[message]", CFGFLAG_CLIENT, ConChat, this, "Enable chat with all/team mode");
 	Console()->Register("+show_chat", "", CFGFLAG_CLIENT, ConShowChat, this, "Show chat");
 	Console()->Register("echo", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConEcho, this, "Echo the text in chat window");
 	Console()->Register("message", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConaMessage, this, "Echo the text in chat window");
@@ -276,7 +278,9 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			m_CommandsNeedSorting = false;
 		}
 
-		if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString()) && m_Mode == MODE_ALL); // Do nothing as bindchat was executed
+		if(m_Mode == MODE_SILENT)
+			AddLine(m_pClient->m_Snap.m_LocalClientId, TEAM_ALL, m_Input.GetString());
+		else if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString())); // Do nothing as bindchat was executed
 		else
 			SendChatQueued(m_Input.GetString());
 		m_pHistoryEntry = nullptr;
@@ -531,8 +535,10 @@ void CChat::EnableMode(int Team)
 
 	if(m_Mode == MODE_NONE)
 	{
-		if(Team)
+		if(Team == 1)
 			m_Mode = MODE_TEAM;
+		else if(Team == 2)
+			m_Mode = MODE_SILENT;
 		else
 			m_Mode = MODE_ALL;
 
@@ -1445,12 +1451,26 @@ void CChat::OnRender()
 		TextRender()->SetCursor(&Cursor, x, y, ScaledFontSize, TEXTFLAG_RENDER);
 		Cursor.m_LineWidth = Width - 190.0f;
 
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+
 		if(m_Mode == MODE_ALL)
+		{
 			TextRender()->TextEx(&Cursor, Localize("All"));
+		}
 		else if(m_Mode == MODE_TEAM)
+		{
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor)));
 			TextRender()->TextEx(&Cursor, Localize("Team"));
+		}
+		else if(m_Mode == MODE_SILENT)
+		{
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)));
+			TextRender()->TextEx(&Cursor, Localize("Silent"));
+		}
 		else
+		{
 			TextRender()->TextEx(&Cursor, Localize("Chat"));
+		}
 
 		TextRender()->TextEx(&Cursor, ": ");
 
@@ -1483,6 +1503,10 @@ void CChat::OnRender()
 
 		m_Input.SetScrollOffset(ScrollOffset);
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
+		
+		const char *TextInput = m_Input.GetString();
+
+		str_copy(GameClient()->m_NamePlates.InputText, TextInput);
 
 		// Autocompletion hint
 		if(m_Input.GetString()[0] == '/' && m_Input.GetString()[1] != '\0' && !m_vCommands.empty())

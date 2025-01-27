@@ -99,6 +99,7 @@ class CChat : public CComponent
 		MODE_NONE = 0,
 		MODE_ALL,
 		MODE_TEAM,
+		MODE_SILENT,
 
 		CHAT_SERVER = 0,
 		CHAT_HIGHLIGHT,
