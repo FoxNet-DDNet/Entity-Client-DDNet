@@ -177,8 +177,8 @@ public:
 class CNameplateChatData 
 {
 public:
-	int64_t m_TimeI;
 	int64_t m_TimeO;
+	int64_t m_TimeI;
 	float m_aYOffset;
 	int m_ClientId;
 	int m_Team = -1;
@@ -246,7 +246,8 @@ private:
 
 	float FontSize() const { return 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f; }
 
-	// A-Client 
+	// A-Client
+	void NameplateBoxSelf(CNamePlate &NamePlate, const CRenderNamePlateData &Data, float y);
 	void NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData &Data,float y);
 
 	void OnMessage(int MsgType, void *pRawMsg) override;
@@ -254,6 +255,11 @@ private:
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 
 public:
+	bool SentText;
+	char InputText[MAX_LINE_LENGTH];
+	int64_t FadeOutSelf;
+	int64_t FadeInSelf;
+	bool ShowSelf;
 	CNameplateChatData m_NameplatePlayers[MAX_CLIENTS];
 
 

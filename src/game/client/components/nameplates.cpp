@@ -205,8 +205,8 @@ void CNamePlates::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(Team == 3)
 		str_format(Message, sizeof(Message), "→ %s", pMsg);
 
-	m_NameplatePlayers[ClientId].m_TimeI = time_get() + time_freq() * 4.0f + time_freq() * str_length(pMsg) / 30.0f;
-	m_NameplatePlayers[ClientId].m_TimeO = -time_get();
+	m_NameplatePlayers[ClientId].m_TimeO = time_get() + time_freq() * 4.0f + time_freq() * str_length(pMsg) / 40.0f;
+	m_NameplatePlayers[ClientId].m_TimeI = -time_get();
 	m_NameplatePlayers[ClientId].m_Team = Team;
 	m_NameplatePlayers[ClientId].m_Highlighted = Highlighted;
 
@@ -267,6 +267,27 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		Graphics()->QuadsSetRotation(0.0f);
 	}
 
+	bool Chatting = m_pClient->m_Controls.m_aInputData[g_Config.m_ClDummy].m_PlayerFlags & PLAYERFLAG_CHATTING;
+
+	if(Chatting)
+	{
+		ShowSelf = true;
+		FadeOutSelf = time_get() + time_freq() * 2.0f;
+	}
+	else
+		FadeInSelf = -time_get();
+
+	if(Data.m_IsLocal && ShowSelf)
+	{
+		char TextInput[MAX_LINE_LENGTH];
+		if(str_length(InputText) >= 1)
+			str_format(TextInput, sizeof(TextInput), "%s", InputText);
+		else
+			str_format(TextInput, sizeof(TextInput), "%s", "...");
+
+		m_aNamePlates[m_pClient->m_Snap.m_LocalClientId].m_ChatBox.Update(*this, TextInput, 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f);
+		NameplateBoxSelf(NamePlate, Data, YOffset);
+	}
 
 	if((Data.m_pName && Data.m_pName[0] != '\0') || Data.m_ClientId >= 0 || Data.m_ShowFriendMark)
 	{
@@ -440,15 +461,13 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 	if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
 		return;
 
-	float FadeOut = (static_cast<float>(ChatData.m_TimeI) - time_get());
+	float FadeOut = (static_cast<float>(ChatData.m_TimeO) - time_get());
 	float Max = 1.0f;
 	float Blend = clamp(FadeOut / time_freq() * 2, 0.0f, Max) / Max;
 
-	float FadeIn = (static_cast<float>(ChatData.m_TimeO) + time_get());
-	if(FadeIn / time_freq() <= 1.0f)
-	{
-		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, 1.0f) / 1.0f;
-	}
+	float FadeIn = (static_cast<float>(ChatData.m_TimeI) + time_get());
+	if(FadeIn / time_freq() <= Max)
+		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, Max) / Max;
 
 	float BoxAlpha = 0.65f;
 	float TextAlpha = 1.0f;
@@ -470,7 +489,6 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
 	y -= FontSize;
 
-	
 	const bool OtherTeam = m_pClient->IsOtherTeam(Data.m_RealClientId);
 	if(OtherTeam)
 	{
@@ -487,7 +505,6 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 		float TextHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H;
 		// Background
 		{
-
 			Graphics()->TextureClear();
 			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * Blend));
 
@@ -499,13 +516,81 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
 			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
 
-			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2, -(g_Config.m_ClNameplateChatBoxSize / 10.0f));
+			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -3, -(g_Config.m_ClNameplateChatBoxSize / 10.0f));
 		}
 		// Text
 		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y + g_Config.m_ClNameplateChatBoxSize / 10.0f - TextHeight);
 	}
 }
 
+void CNamePlates::NameplateBoxSelf(CNamePlate &NamePlate, const CRenderNamePlateData &Data, float y)
+{
+	CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
+
+	if(ChatData.m_Team == 2 || GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
+		return;
+
+	if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
+		return;
+
+	float FadeOut = (FadeOutSelf - time_get());
+	float Max = 1.0f;
+	float Blend = clamp(FadeOut / time_freq() * 2, 0.0f, Max) / Max;
+
+	float FadeIn = (FadeInSelf + time_get());
+	
+		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, Max) / Max;
+	
+
+	char abuf[512];
+	str_format(abuf, sizeof(abuf), "%f", FadeOut / time_freq());
+	GameClient()->aMessage(abuf);
+
+	float BoxAlpha = 0.65f;
+	float TextAlpha = 1.0f;
+
+	ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, BoxAlpha);
+	ColorRGBA TextColor = ColorRGBA(1.0f, 1.0f, 1.0f, TextAlpha);
+
+	if(ChatData.m_Highlighted || ChatData.m_Team == 3)
+	{
+		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor));
+		ChatBoxColor.s = TextColor.s / 4;
+	}
+	else if(ChatData.m_Team == 1)
+	{
+		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor));
+		ChatBoxColor.s = TextColor.s / 4;
+	}
+
+	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
+	y -= FontSize;
+
+	if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid() && Blend > 0)
+	{
+		ShowSelf = true;
+		float TextHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H;
+		// Background
+		{
+			Graphics()->TextureClear();
+			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * Blend));
+
+			// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
+			float xPos = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
+			float yPos = y - TextHeight;
+			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize * 1.05;
+
+			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
+			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
+
+			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -3, -(g_Config.m_ClNameplateChatBoxSize / 10.0f));
+		}
+		// Text
+		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y + g_Config.m_ClNameplateChatBoxSize / 10.0f - TextHeight);
+	}
+	else
+		ShowSelf = false;
+}
 
 void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha, bool ForceAlpha)
 {
