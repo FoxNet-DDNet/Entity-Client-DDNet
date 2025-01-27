@@ -256,10 +256,9 @@ private:
 
 public:
 	bool SentText;
-	char InputText[MAX_LINE_LENGTH];
-	int64_t FadeOutSelf;
-	int64_t FadeInSelf;
 	bool ShowSelf;
+	char InputText[MAX_LINE_LENGTH];
+	int64_t FadeInSelf;
 	CNameplateChatData m_NameplatePlayers[MAX_CLIENTS];
 
 

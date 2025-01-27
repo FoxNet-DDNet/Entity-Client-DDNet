@@ -270,10 +270,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 	bool Chatting = m_pClient->m_Controls.m_aInputData[g_Config.m_ClDummy].m_PlayerFlags & PLAYERFLAG_CHATTING;
 
 	if(Chatting)
-	{
 		ShowSelf = true;
-		FadeOutSelf = time_get() + time_freq() * 2.0f;
-	}
 	else
 		FadeInSelf = -time_get();
 
@@ -533,21 +530,18 @@ void CNamePlates::NameplateBoxSelf(CNamePlate &NamePlate, const CRenderNamePlate
 	if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
 		return;
 
-	float FadeOut = (FadeOutSelf - time_get());
-	float Max = 1.0f;
-	float Blend = clamp(FadeOut / time_freq() * 2, 0.0f, Max) / Max;
-
 	float FadeIn = (FadeInSelf + time_get());
-	
-		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, Max) / Max;
-	
-
-	char abuf[512];
-	str_format(abuf, sizeof(abuf), "%f", FadeOut / time_freq());
-	GameClient()->aMessage(abuf);
+	float Max = 1.0f;
+	float Blend = clamp(FadeIn / time_freq() * 10, 0.0f, Max) / Max;
 
 	float BoxAlpha = 0.65f;
 	float TextAlpha = 1.0f;
+
+	if(!SentText)
+	{
+		BoxAlpha = 0.45f;
+		TextAlpha = 0.85f;
+	}
 
 	ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, BoxAlpha);
 	ColorRGBA TextColor = ColorRGBA(1.0f, 1.0f, 1.0f, TextAlpha);
