@@ -600,6 +600,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		if(DoButton_MenuTab(&s_AClientButton, FONT_ICON_INFO, ActivePage == PAGE_ACLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ACLIENT]))
 		{
 			NewPage = PAGE_ACLIENT;
+			ResetTeePos = true;
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_AClientButton, &Button, Localize("A-Client"));
 	}
@@ -1251,9 +1252,6 @@ void CMenus::Render()
 		}
 		break;
 	}
-
-	if(m_MenuPage != PAGE_ACLIENT && m_GamePage != PAGE_ACLIENT)
-		OverrideTeePos = false;
 
 	Ui()->RenderPopupMenus();
 

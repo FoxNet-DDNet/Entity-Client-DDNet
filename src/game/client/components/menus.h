@@ -866,15 +866,22 @@ public:
 	int m_InitDiscordRPC;
 	bool m_NeedRestartDiscordRPC;
 
+	/*
+	* 
+	* If Draggable = 1 the Tee can be dragged to anywhere on the screen
+	* If 2 its limited to the size of the big menu
+	* If 3 its limited to the size of the settings menu (ToDo)
+	* 
+	*/
+	bool ResetTeePos;
+	void RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable = 0, float TeeSize = 75.0f, float Alpha = 1.0f);
+
 	void RenderChatPreview(CUIRect MainView);
 	void RenderSettingsAiodob(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderAClientVersionPage(CUIRect MainView);
-	bool OverrideTeePos;
-	bool CanDrag;
-	vec2 TeePosition;
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();

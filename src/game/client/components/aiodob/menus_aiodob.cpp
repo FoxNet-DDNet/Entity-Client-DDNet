@@ -172,7 +172,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			Corners = IGraphics::CORNER_ALL;
 
 		if(DoButton_MenuTab(&s_aPageTabs[Tab], apTabNames[Tab], s_CurTab == Tab, &Button, Corners, nullptr, nullptr, nullptr, nullptr, 4.0f))
+		{
 			s_CurTab = Tab;
+			ResetTeePos = true;
+		}
 	}
 
 	MainView.HSplitTop(MarginSmall, nullptr, &MainView);
@@ -812,16 +815,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 					}
 			
-					TeeRenderInfo.m_Size = g_Config.m_ClFatSkins ? 55.0f : 75.0f;
-
-					const vec2 TeeRainbowPosition = vec2(RainbowSettings.Center().x - 130, RainbowSettings.Center().y - 70);
-					// interactive tee: tee looking towards cursor, and it is happy when you touch it
-					const vec2 DeltaPosition = Ui()->MousePos() - TeeRainbowPosition + vec2(0, 5);
-					const float Distance = length(DeltaPosition);
-					const float InteractionDistance = 20.0f;
-					const vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, maximum(DeltaPosition.y, 0.5f))) : normalize(DeltaPosition);
-					const int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
-					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, TeeRainbowPosition);
+					RenderACTee(MainView, vec2(RainbowSettings.Center().x - 130, RainbowSettings.Center().y - 70), CAnimState::GetIdle(), &TeeRenderInfo);
 				}
 
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
@@ -1532,58 +1526,16 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	}
 
 	// Render Tee Above everything else
+
 	{
 		CTeeRenderInfo TeeRenderInfo;
 
 		TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClPlayerSkin));
 		TeeRenderInfo.ApplyColors(true, 5374207, 12767844);
 
-		TeeRenderInfo.m_Size = g_Config.m_ClFatSkins ? TeeSize - 20.0f : TeeSize;
-
-		if(!OverrideTeePos)
-			TeePosition = TeeRect.Center();
-
-		// interactive tee: tee looking towards cursor, and it is happy when you touch it
-		vec2 DeltaPosition = Ui()->MousePos() - TeePosition;
-		float Distance = length(DeltaPosition);
-		float InteractionDistance = 20.0f;
-		vec2 TeeDirection = normalize(DeltaPosition);
-		int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
-
-		if(Distance < InteractionDistance)
-			CanDrag = true;
-
-		if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && CanDrag)
-		{
-			TeeDirection = normalize(TeeRect.Center() - TeePosition);
-			float MenuTop = MainView.y + 25.0f;
-			float MenuBottom = MainView.Size().y + 35.0f;
-
-			float MenuLeft = MainView.x + 15.0f;
-			float MenuRight = MainView.Size().x + 10.0f;
-
-			vec2 Offset = vec2(0.0f, 2.5f);
-			TeePosition = Ui()->MousePos() - Offset;
-			if(Ui()->MousePos().y < MenuTop)
-				TeePosition.y = MenuTop - Offset.y;
-			if(Ui()->MousePos().y > MenuBottom)
-				TeePosition.y = MenuBottom - Offset.y;
-
-			if(Ui()->MousePos().x < MenuLeft)
-				TeePosition.x = MenuLeft;
-			if(Ui()->MousePos().x > MenuRight)
-				TeePosition.x = MenuRight;
-
-			CanDrag = true;
-			OverrideTeePos = true;
-		}
-		else if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_2) && OverrideTeePos)
-			OverrideTeePos = false;
-		else
-			CanDrag = false;
-
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, TeePosition);
+		RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo, 2);
 	}
+
 }
 
 void CMenus::RenderChatPreview(CUIRect MainView)
@@ -3135,3 +3087,70 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 	}
 	return false;
 }
+
+void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable, float TeeSize, float Alpha)
+{
+	static bool OverrideTeePos = false;
+	static bool CanDrag = false;
+	static vec2 Pos = SpawnPos;
+
+	if(ResetTeePos || !OverrideTeePos || !Draggable)
+	{
+		Pos = SpawnPos;
+
+		if(ResetTeePos)
+			ResetTeePos = false;
+	}
+
+	pInfo->m_Size = g_Config.m_ClFatSkins ? TeeSize - 20.0f : TeeSize;
+
+	// interactive tee: tee looking towards cursor, and it is happy when you touch it
+	vec2 DeltaPosition = Ui()->MousePos() - Pos;
+	float Distance = length(DeltaPosition);
+	float InteractionDistance = 20.0f;
+	vec2 TeeDirection = normalize(DeltaPosition);
+	int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
+
+	if(Draggable > 0)
+	{
+		if(Distance < InteractionDistance)
+			CanDrag = true;
+
+		if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && CanDrag)
+		{
+			vec2 Offset = vec2(0.0f, 2.5f);
+			Pos = Ui()->MousePos() - Offset;
+
+			TeeDirection = normalize(SpawnPos - Pos);
+
+			if(Draggable == 2)
+			{
+				float MenuTop = MainView.y + 25.0f;
+				float MenuBottom = MainView.Size().y + 35.0f;
+
+				float MenuLeft = MainView.x + 15.0f;
+				float MenuRight = MainView.Size().x + 10.0f;
+
+				if(Ui()->MousePos().y < MenuTop)
+					Pos.y = MenuTop - Offset.y;
+				if(Ui()->MousePos().y > MenuBottom)
+					Pos.y = MenuBottom - Offset.y;
+
+				if(Ui()->MousePos().x < MenuLeft)
+					Pos.x = MenuLeft;
+				if(Ui()->MousePos().x > MenuRight)
+					Pos.x = MenuRight;
+			}
+
+			CanDrag = true;
+			OverrideTeePos = true;
+		}
+		else if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_2) && OverrideTeePos && CanDrag)
+			OverrideTeePos = false;
+		else
+			CanDrag = false;
+	}
+
+	RenderTools()->RenderTee(CAnimState::GetIdle(), pInfo, TeeEmote, TeeDirection, Pos);
+}
+

@@ -2002,7 +2002,10 @@ void CMenus::RenderSettings(CUIRect MainView)
 		TabBar.HSplitTop(10.0f, nullptr, &TabBar);
 		TabBar.HSplitTop(26.0f, &Button, &TabBar);
 		if(DoButton_MenuTab(&s_aTabButtons[i], apTabs[i], g_Config.m_UiSettingsPage == i, &Button, IGraphics::CORNER_R, &m_aAnimatorsSettingsTab[i]))
+		{
 			g_Config.m_UiSettingsPage = i;
+			ResetTeePos = true;
+		}
 	}
 
 	if(g_Config.m_UiSettingsPage == SETTINGS_LANGUAGE)
