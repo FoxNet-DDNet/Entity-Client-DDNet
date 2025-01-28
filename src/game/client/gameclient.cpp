@@ -510,6 +510,10 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 	{
 		return m_Controls.SnapInput(pData);
 	}
+	if(m_aLocalIds[!g_Config.m_ClDummy] < 0)
+	{
+		return 0;
+	}
 
 	if(!g_Config.m_ClDummyHammer)
 	{
@@ -543,12 +547,9 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 			m_DummyInput.m_WantedWeapon = WEAPON_HAMMER + 1;
 		}
 
-		vec2 MainPos = m_LocalCharacterPos;
-
-		vec2 DummyPos = m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
-		vec2 Dir = MainPos - DummyPos;
-		m_HammerInput.m_TargetX = (int)(Dir.x);
-		m_HammerInput.m_TargetY = (int)(Dir.y);
+		const vec2 Dir = m_LocalCharacterPos - m_aClients[m_aLocalIds[!g_Config.m_ClDummy]].m_Predicted.m_Pos;
+		m_HammerInput.m_TargetX = (int)Dir.x;
+		m_HammerInput.m_TargetY = (int)Dir.y;
 
 		mem_copy(pData, &m_HammerInput, sizeof(m_HammerInput));
 		return sizeof(m_HammerInput);
@@ -821,7 +822,7 @@ void CGameClient::OnRender()
 		g_Config.m_ClDummy = 0;
 
 	// resend player and dummy info if it was filtered by server
-	if(Client()->State() == IClient::STATE_ONLINE && !m_Menus.IsActive() && WasNewTick && !g_Config.m_ClServerRainbow)
+	if(m_aLocalIds[0] >= 0 && Client()->State() == IClient::STATE_ONLINE && !m_Menus.IsActive() && WasNewTick && !g_Config.m_ClServerRainbow)
 	{
 		if(m_aCheckInfo[0] == 0)
 		{
@@ -853,7 +854,7 @@ void CGameClient::OnRender()
 			m_aCheckInfo[0] -= minimum(Client()->GameTick(0) - Client()->PrevGameTick(0), m_aCheckInfo[0]);
 		}
 
-		if(Client()->DummyConnected())
+		if(m_aLocalIds[1] >= 0)
 		{
 			if(m_aCheckInfo[1] == 0)
 			{
@@ -890,6 +891,7 @@ void CGameClient::OnRender()
 
 void CGameClient::OnDummyDisconnect()
 {
+	m_aLocalIds[1] = -1;
 	m_aDDRaceMsgSent[1] = false;
 	m_aShowOthers[1] = SHOW_OTHERS_NOT_SET;
 	m_aLastNewPredictedTick[1] = -1;
@@ -2360,6 +2362,20 @@ void CGameClient::OnPredict()
 					m_aClients[i].m_PrevPredicted = pChar->GetCore();
 		}
 
+		if(Tick == Client()->PredGameTick(g_Config.m_ClDummy))
+		{
+			m_PredictedPrevChar = pLocalChar->GetCore();
+			m_aClients[m_Snap.m_LocalClientId].m_PrevPredicted = pLocalChar->GetCore();
+
+			if(pDummyChar)
+				m_aClients[m_PredictedDummyId].m_PrevPredicted = pDummyChar->GetCore();
+		}
+
+		if(Tick == PredictionTick)
+		{
+			m_PrevPredictedWorld.CopyWorld(&m_PredictedWorld);
+		}
+
 		// optionally allow some movement in freeze by not predicting freeze the last one to two ticks
 		if(g_Config.m_ClPredictFreeze == 2 && Client()->PredGameTick(g_Config.m_ClDummy) - 1 - Client()->PredGameTick(g_Config.m_ClDummy) % 2 <= Tick)
 			pLocalChar->m_CanMoveInFreeze = true;
@@ -2396,6 +2412,15 @@ void CGameClient::OnPredict()
 			for(int i = 0; i < MAX_CLIENTS; i++)
 				if(CCharacter *pChar = m_PredictedWorld.GetCharacterById(i))
 					m_aClients[i].m_Predicted = pChar->GetCore();
+		}
+
+		if(Tick == Client()->PredGameTick(g_Config.m_ClDummy))
+		{
+			m_PredictedChar = pLocalChar->GetCore();
+			m_aClients[m_Snap.m_LocalClientId].m_Predicted = pLocalChar->GetCore();
+
+			if(pDummyChar)
+				m_aClients[m_PredictedDummyId].m_Predicted = pDummyChar->GetCore();
 		}
 
 		for(int i = 0; i < MAX_CLIENTS; i++)
@@ -3286,7 +3311,11 @@ void CGameClient::UpdatePrediction()
 
 	if(m_GameWorld.m_WorldConfig.m_UseTuneZones)
 	{
-		int TuneZone = Collision()->IsTune(Collision()->GetMapIndex(LocalCharPos));
+		int TuneZone =
+			m_Snap.m_aCharacters[m_Snap.m_LocalClientId].m_HasExtendedData &&
+					m_Snap.m_aCharacters[m_Snap.m_LocalClientId].m_ExtendedData.m_TuneZoneOverride != -1 ?
+				m_Snap.m_aCharacters[m_Snap.m_LocalClientId].m_ExtendedData.m_TuneZoneOverride :
+				Collision()->IsTune(Collision()->GetMapIndex(LocalCharPos));
 
 		if(TuneZone != m_aLocalTuneZone[g_Config.m_ClDummy])
 		{
