@@ -2371,10 +2371,10 @@ void CGameClient::OnPredict()
 				m_aClients[m_PredictedDummyId].m_PrevPredicted = pDummyChar->GetCore();
 		}
 
-		if(Tick == PredictionTick)
-		{
-			m_PrevPredictedWorld.CopyWorld(&m_PredictedWorld);
-		}
+		// if(Tick == PredictionTick)
+		// {
+		//	m_PrevPredictedWorld.CopyWorld(&m_PredictedWorld);
+		// }
 
 		// optionally allow some movement in freeze by not predicting freeze the last one to two ticks
 		if(g_Config.m_ClPredictFreeze == 2 && Client()->PredGameTick(g_Config.m_ClDummy) - 1 - Client()->PredGameTick(g_Config.m_ClDummy) % 2 <= Tick)
