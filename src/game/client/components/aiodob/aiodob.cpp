@@ -512,7 +512,7 @@ void CAiodob::Rainbow()
 		m_RainbowWasOn = false;
 	}
 
-	float h = (round_to_int(static_cast<float>(time_get()) / time_freq() * m_RainbowSpeed[g_Config.m_ClDummy] * 0.1f) % 255 / 255.f);
+	float h = (round_to_int(static_cast<float>(time_get()) / time_freq() * m_RainbowSpeed * 0.1f) % 255 / 255.f);
 	float s = abs(m_Saturation[g_Config.m_ClDummy] - 255);
 	float l = abs(m_Lightness[g_Config.m_ClDummy] - 255);
 
@@ -535,7 +535,7 @@ void CAiodob::Rainbow()
 					GameClient()->SendInfo(false);
 			}
 			m_RainbowDelay = time_get() + time_freq() * g_Config.m_SvInfoChangeDelay;
-			m_RainbowColor[g_Config.m_ClDummy] = getIntFromColor(h, s, l);
+			m_RainbowColor[0] = m_RainbowColor[1] = getIntFromColor(h, s, l);
 		}
 	}
 }
@@ -557,7 +557,7 @@ void CAiodob::OnInit()
 	m_KogModeRebound = false;
 	m_AttempedJoinTeam = false;
 
-	// rainbow
+	// Rainbow
 	m_RainbowColor[0] = g_Config.m_ClPlayerColorBody;
 
 	// Dummy Rainbow

@@ -7,6 +7,7 @@
 
 #include "aiodob.h"
 #include "../../../../engine/shared/config.h"
+#include <base/log.h>
 
 void CAiodob::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 {
@@ -19,12 +20,14 @@ void CAiodob::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData)
 	CAiodob *pSelf = (CAiodob *)pUserData;
 	
 	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSpeed[g_Config.m_ClDummy]);
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSpeed);
 
 	if(pResult->NumArguments() > 0)
-		pSelf->m_RainbowSpeed[g_Config.m_ClDummy] = pResult->GetInteger(0);
+	{
+		pSelf->m_RainbowSpeed = pResult->GetInteger(0);
+	}
 	else
-		pSelf->GameClient()->aMessage(aBuf);
+		log_info("[Aiodob]", aBuf);
 }
 
 void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData)
@@ -35,9 +38,20 @@ void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUser
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Saturation[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
-		pSelf->m_Saturation[g_Config.m_ClDummy] = pResult->GetInteger(0);
+	{
+		int Dummy = g_Config.m_ClDummy;
+		if(pResult->NumArguments() > 1)
+		{
+			if(pResult->GetInteger(1) == 0)
+				Dummy = 0;
+			else if(pResult->GetInteger(1) > 0)
+				Dummy = 1;
+		}
+
+		pSelf->m_Saturation[Dummy] = pResult->GetInteger(0);
+	}
 	else
-		pSelf->GameClient()->aMessage(aBuf);
+		log_info("[Aiodob]", aBuf);
 }
 
 void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData)
@@ -48,9 +62,20 @@ void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserD
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Lightness[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
-		pSelf->m_Lightness[g_Config.m_ClDummy] = pResult->GetInteger(0);
+	{
+		int Dummy = g_Config.m_ClDummy;
+		if(pResult->NumArguments() > 1)
+		{
+			if(pResult->GetInteger(1) == 0)
+				Dummy = 0;
+			else if(pResult->GetInteger(1) > 0)
+				Dummy = 1;
+		}
+
+		pSelf->m_Lightness[Dummy] = pResult->GetInteger(0);
+	}
 	else
-		pSelf->GameClient()->aMessage(aBuf);
+		log_info("[Aiodob]", aBuf);
 }
 
 void CAiodob::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
@@ -62,13 +87,22 @@ void CAiodob::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
 
 	if(pResult->NumArguments() > 0)
 	{
+		int Dummy = g_Config.m_ClDummy;
+		if(pResult->NumArguments() > 1)
+		{
+			if(pResult->GetInteger(1) == 0)
+				Dummy = 0;
+			else if(pResult->GetInteger(1) > 0)
+				Dummy = 1;
+		}
+
 		if(pResult->GetInteger(0) == 0)
-			pSelf->m_RainbowBody[g_Config.m_ClDummy] = 0;
+			pSelf->m_RainbowBody[Dummy] = 0;
 		else if(pResult->GetInteger(0) > 0)
-			pSelf->m_RainbowBody[g_Config.m_ClDummy] = 1;
+			pSelf->m_RainbowBody[Dummy] = 1;
 	}
 	else
-		pSelf->GameClient()->aMessage(aBuf);
+		log_info("[Aiodob]", aBuf);
 }
 
 void CAiodob::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
@@ -80,13 +114,22 @@ void CAiodob::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
 
 	if(pResult->NumArguments() > 0)
 	{
+		int Dummy = g_Config.m_ClDummy;
+		if(pResult->NumArguments() > 1)
+		{
+			if(pResult->GetInteger(1) == 0)
+				Dummy = 0;
+			else if(pResult->GetInteger(1) > 0)
+				Dummy = 1;
+		}
+
 		if(pResult->GetInteger(0) == 0)
-			pSelf->m_RainbowFeet[g_Config.m_ClDummy] = 0;
+			pSelf->m_RainbowFeet[Dummy] = 0;
 		else if(pResult->GetInteger(0) > 0)
-			pSelf->m_RainbowFeet[g_Config.m_ClDummy] = 1;
+			pSelf->m_RainbowFeet[Dummy] = 1;
 	}
 	else
-		pSelf->GameClient()->aMessage(aBuf);
+		log_info("[Aiodob]", aBuf);
 }
 
 void CAiodob::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData)
@@ -104,7 +147,7 @@ void CAiodob::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUse
 			pSelf->m_BothPlayers = 1;
 	}
 	else
-		pSelf->GameClient()->aMessage(aBuf);
+		log_info("[Aiodob]", aBuf);
 }
 
 void CAiodob::Votekick(const char *pName, const char *pReason)
@@ -516,11 +559,12 @@ void CAiodob::PlayerInfo(const char *pName)
 
 void CAiodob::OnConsoleInit()
 {
+	// Misc
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");
 	Console()->Register("onlineinfo", "", CFGFLAG_CLIENT, ConOnlineInfo, this, "Shows you how many people of default lists are on the current server");
-	Console()->Register("PlayerInfo", "s[name]", CFGFLAG_CLIENT, ConPlayerInfo, this, "Get Info of a Player");
+	Console()->Register("playerinfo", "s[name]", CFGFLAG_CLIENT, ConPlayerInfo, this, "Get Info of a Player");
 
-
+	// Temporary Lists
 	Console()->Register("addtempwar", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempWar, this, "temporary War");
 	Console()->Register("deltempwar", "s[name]", CFGFLAG_CLIENT, ConUnTempWar, this, "remove temporary War");
 
@@ -530,15 +574,16 @@ void CAiodob::OnConsoleInit()
 	Console()->Register("addtempmute", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempMute, this, "temporary Mute");
 	Console()->Register("deltempmute", "s[name]", CFGFLAG_CLIENT, ConUnTempMute, this, "remove temporary Mute");
 
-	Console()->Register("restoreskin", "", CFGFLAG_CLIENT, ConRestoreSkin, this, "Save Your Current Info (Skin, name, etc.)");
-	Console()->Register("saveskin", "", CFGFLAG_CLIENT, ConSaveSkin, this, "Restore Your Saved Info");
+	// Skin Saving/Restoing
+	Console()->Register("restoreskin", "", CFGFLAG_CLIENT, ConRestoreSkin, this, "Restore Your Saved Info");
+	Console()->Register("saveskin", "", CFGFLAG_CLIENT, ConSaveSkin, this, "Save Your Current Info (Skin, name, etc.)");
 
+	// Rainbow Commands
 	Console()->Register("server_rainbow_speed", "?s[speed]", CFGFLAG_CLIENT, ConServerRainbowSpeed, this, "Rainbow Speed of Server side rainbow mode (default = 10)");
-	Console()->Register("server_rainbow_sat", "?s[Sat]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 200)");
-	Console()->Register("server_rainbow_lht", "?s[Lht]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 30)");
-
-	Console()->Register("server_rainbow_body", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
-	Console()->Register("server_rainbow_feet", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
-
 	Console()->Register("server_rainbow_both_players", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowBothPlayers, this, "Rainbow Both Players at the same time");
+	Console()->Register("server_rainbow_sat", "?i[Sat] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 200)");
+	Console()->Register("server_rainbow_lht", "?i[Lht] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 30)");
+
+	Console()->Register("server_rainbow_body", "?i[int] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
+	Console()->Register("server_rainbow_feet", "?i[int] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
 }

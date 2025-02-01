@@ -747,7 +747,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			RainbowSettings.HSplitTop(Margin, nullptr, &RainbowSettings);
-			RainbowSettings.HSplitTop(240.0f, &RainbowSettings, 0);
+			RainbowSettings.HSplitTop(260.0f, &RainbowSettings, 0);
 			if(s_ScrollRegion.AddRect(RainbowSettings))
 			{
 				RainbowSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -759,7 +759,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, "Enable Serverside Rainbow", &g_Config.m_ClServerRainbow, &RainbowSettings, LineSize);
 
 				RainbowSettings.HSplitTop(2 * LineSize, &Button, &RainbowSettings);
-				Ui()->DoScrollbarOption(&GameClient()->m_Aiodob.m_RainbowSpeed[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_RainbowSpeed[g_Config.m_ClDummy], &Button, Localize("Rainbow Speed"), 1, 1000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
+				Ui()->DoScrollbarOption(&GameClient()->m_Aiodob.m_RainbowSpeed, &GameClient()->m_Aiodob.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 1000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
 
 				RainbowSettings.VSplitLeft(52, &Button, &RainbowSettings);
 				RenderHslaScrollbars(&RainbowSettings, &GameClient()->m_Aiodob.m_PreviewRainbowColor[g_Config.m_ClDummy], false, ColorHSLA::DARKEST_LGT, false);
@@ -815,12 +815,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 					}
 			
-					RenderACTee(MainView, vec2(RainbowSettings.Center().x - 130, RainbowSettings.Center().y - 70), CAnimState::GetIdle(), &TeeRenderInfo);
+					RenderACTee(MainView, vec2(RainbowSettings.Center().x - 130, RainbowSettings.Center().y - 80), CAnimState::GetIdle(), &TeeRenderInfo);
 				}
 
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
 				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_Aiodob.m_RainbowBody[g_Config.m_ClDummy], &RainbowSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_RainbowFeet[g_Config.m_ClDummy], "Rainbow Feet", &GameClient()->m_Aiodob.m_RainbowFeet[g_Config.m_ClDummy], &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_BothPlayers, "Do Dummy and Main Player at the same time", &GameClient()->m_Aiodob.m_BothPlayers, &RainbowSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_ShowServerSide, "Show what it'll look like Server-side", &GameClient()->m_Aiodob.m_ShowServerSide, &RainbowSettings, LineSize);
 			}
 		}

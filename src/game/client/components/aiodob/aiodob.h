@@ -163,12 +163,12 @@ public:
 	// Rainbow
 	void Rainbow();
 
-	bool m_BothPlayers;
+	int m_BothPlayers = true;
 
 	int m_RainbowBody[2] = {true, true};
 	int m_RainbowFeet[2] = {false, false};
 	int m_RainbowColor[2];
-	int m_RainbowSpeed[2] = {10, 10};
+	int m_RainbowSpeed = 10;
 	int m_Saturation[2] = {200, 200};
 	int m_Lightness[2] = {30, 30};
 
