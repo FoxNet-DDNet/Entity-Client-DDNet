@@ -802,7 +802,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						if(GameClient()->m_Aiodob.m_RainbowBody[g_Config.m_ClDummy])
 							PBodyColor = DBodyColor = m_MenusRainbowColor;
 						if(GameClient()->m_Aiodob.m_RainbowFeet[g_Config.m_ClDummy])
-							PFeetColor = PFeetColor = m_MenusRainbowColor;
+							PFeetColor = DFeetColor = m_MenusRainbowColor;
 						PUseCustomColor = DUseCustomColor = true;
 					}
 
