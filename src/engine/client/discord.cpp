@@ -105,7 +105,7 @@ IDiscord *CreateDiscordImpl()
 #else
 IDiscord *CreateDiscordImpl()
 {
-	return 0;
+	return nullptr;
 }
 #endif
 

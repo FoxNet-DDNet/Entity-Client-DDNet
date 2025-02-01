@@ -379,6 +379,7 @@ private:
 
 	void UpdateFromHttp();
 	CServerEntry *Add(const NETADDR *pAddrs, int NumAddrs);
+	CServerEntry *ReplaceEntry(CServerEntry *pEntry, const NETADDR *pAddrs, int NumAddrs);
 
 	void RemoveRequest(CServerEntry *pEntry);
 

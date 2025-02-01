@@ -68,7 +68,7 @@ public:
 	CEntity()
 	{
 		m_Id = -1;
-		m_pGameWorld = 0;
+		m_pGameWorld = nullptr;
 	}
 };
 
