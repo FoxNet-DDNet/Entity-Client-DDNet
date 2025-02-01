@@ -965,15 +965,15 @@ void CPlayers::RenderPlayer(
 		{
 			float a = 1;
 
-			if(FromEnd < Client()->GameTickSpeed() / 5)
+			if(FromEnd < Client()->GameTickSpeed() / 5.0f)
 				a = FromEnd / (Client()->GameTickSpeed() / 5.0f);
 
 			float h = 1;
-			if(SinceStart < Client()->GameTickSpeed() / 10)
+			if(SinceStart < Client()->GameTickSpeed() / 10.0f)
 				h = SinceStart / (Client()->GameTickSpeed() / 10.0f);
 
 			float Wiggle = 0;
-			if(SinceStart < Client()->GameTickSpeed() / 5)
+			if(SinceStart < Client()->GameTickSpeed() / 5.0f)
 				Wiggle = SinceStart / (Client()->GameTickSpeed() / 5.0f);
 
 			float WiggleAngle = std::sin(5 * Wiggle);
@@ -1388,15 +1388,15 @@ void CPlayers::RenderPlayerGhost(
 		{
 			float a = 1;
 
-			if(FromEnd < Client()->GameTickSpeed() / 5)
+			if(FromEnd < Client()->GameTickSpeed() / 5.0f)
 				a = FromEnd / (Client()->GameTickSpeed() / 5.0f);
 
 			float h = 1;
-			if(SinceStart < Client()->GameTickSpeed() / 10)
+			if(SinceStart < Client()->GameTickSpeed() / 10.0f)
 				h = SinceStart / (Client()->GameTickSpeed() / 10.0f);
 
 			float Wiggle = 0;
-			if(SinceStart < Client()->GameTickSpeed() / 5)
+			if(SinceStart < Client()->GameTickSpeed() / 5.0f)
 				Wiggle = SinceStart / (Client()->GameTickSpeed() / 5.0f);
 
 			float WiggleAngle = std::sin(5 * Wiggle);
