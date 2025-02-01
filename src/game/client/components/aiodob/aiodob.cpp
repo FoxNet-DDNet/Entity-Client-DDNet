@@ -499,6 +499,8 @@ void CAiodob::UpdateTempPlayers()
 
 void CAiodob::Rainbow()
 {
+	static bool m_RainbowWasOn = false; 
+
 	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
 	{
 		m_RainbowWasOn = false;
@@ -510,25 +512,30 @@ void CAiodob::Rainbow()
 		m_RainbowWasOn = false;
 	}
 
-	float h = (round_to_int(static_cast<float>(time_get()) / time_freq() * m_RainbowSpeed * 0.1f) % 255 / 255.f);
-	float s = abs(m_Saturation - 255);
-	float l = abs(m_Lightness - 255);
+	float h = (round_to_int(static_cast<float>(time_get()) / time_freq() * m_RainbowSpeed[g_Config.m_ClDummy] * 0.1f) % 255 / 255.f);
+	float s = abs(m_Saturation[g_Config.m_ClDummy] - 255);
+	float l = abs(m_Lightness[g_Config.m_ClDummy] - 255);
 
-	m_PreviewRainbowColor = getIntFromColor(h, s, l);
+	m_PreviewRainbowColor[g_Config.m_ClDummy] = getIntFromColor(h, s, l);
 
 	if(Client()->State() == IClient::STATE_ONLINE)
 	{
 		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 		{
-			if(m_RainbowBody || m_RainbowFeet)
+			if(m_RainbowBody[g_Config.m_ClDummy] || m_RainbowFeet[g_Config.m_ClDummy])
 			{
-				if(g_Config.m_ClDummy)
+				if(m_BothPlayers)
+				{
+					GameClient()->SendDummyInfo(false);
+					GameClient()->SendInfo(false);
+				}
+				else if(g_Config.m_ClDummy)
 					GameClient()->SendDummyInfo(false);
 				else
 					GameClient()->SendInfo(false);
 			}
 			m_RainbowDelay = time_get() + time_freq() * g_Config.m_SvInfoChangeDelay;
-			m_RainbowColor = getIntFromColor(h, s, l);
+			m_RainbowColor[g_Config.m_ClDummy] = getIntFromColor(h, s, l);
 		}
 	}
 }
@@ -540,25 +547,23 @@ void CAiodob::OnInit()
 	
 	const char *A = "Aiodob";
 
-	// set
-	m_ServersideDelay = 0;
-	m_RainbowColor = g_Config.m_ClPlayerColorBody;
-	m_RainbowSpeed = 10;
+	m_ServersideDelay[g_Config.m_ClDummy] = 0;
 	m_LastMovement = 0;
-	m_RainbowDelay = 0;
-	m_Saturation = 200;
-	m_Lightness = 30;
 	m_KillCount = 0;
 	m_LastTile = -1;
 	m_JoinTeam = 0;
 
 	m_JoinedTeam = false;
-	m_RainbowBody = true;
-	m_RainbowFeet = false;
-	m_RainbowWasOn = false;
 	m_KogModeRebound = false;
 	m_AttempedJoinTeam = false;
-	
+
+	// rainbow
+	m_RainbowColor[0] = g_Config.m_ClPlayerColorBody;
+
+	// Dummy Rainbow
+	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
+
+
 	// Get Bindslot for Mouse1, default shoot bind
 	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
 	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
@@ -614,8 +619,8 @@ void CAiodob::OnRender()
 	if(m_SentKill)
 	{
 		GameClient()->m_AntiSpawnBlock.m_SentKill = true;
-		m_SentKill = false;
 		m_KillCount++;
+		m_SentKill = false;
 	}
 
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))

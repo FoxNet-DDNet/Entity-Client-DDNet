@@ -3081,11 +3081,11 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
 		if(g_Config.m_ClServerRainbow)
 		{
-			if(m_Aiodob.m_RainbowBody)
-				Msg.m_ColorBody = m_Aiodob.m_RainbowColor;
-			if(m_Aiodob.m_RainbowFeet)
-				Msg.m_ColorFeet = m_Aiodob.m_RainbowColor;
-			if(m_Aiodob.m_RainbowBody || m_Aiodob.m_RainbowFeet)
+			if(m_Aiodob.m_RainbowBody[0])
+				Msg.m_ColorBody = m_Aiodob.m_RainbowColor[0];
+			if(m_Aiodob.m_RainbowFeet[0])
+				Msg.m_ColorFeet = m_Aiodob.m_RainbowColor[0];
+			if(m_Aiodob.m_RainbowBody[0] || m_Aiodob.m_RainbowFeet[0])
 				Msg.m_UseCustomColor = true;
 		}
 		CMsgPacker Packer(&Msg);
@@ -3132,11 +3132,11 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
 		if(g_Config.m_ClServerRainbow)
 		{
-			if(m_Aiodob.m_RainbowBody)
-				Msg.m_ColorBody = m_Aiodob.m_RainbowColor;
-			if(m_Aiodob.m_RainbowFeet)
-				Msg.m_ColorFeet = m_Aiodob.m_RainbowColor;
-			if(m_Aiodob.m_RainbowBody || m_Aiodob.m_RainbowFeet)
+			if(m_Aiodob.m_RainbowBody[1])
+				Msg.m_ColorBody = m_Aiodob.m_RainbowColor[1];
+			if(m_Aiodob.m_RainbowFeet[1])
+				Msg.m_ColorFeet = m_Aiodob.m_RainbowColor[1];
+			if(m_Aiodob.m_RainbowBody[1] || m_Aiodob.m_RainbowFeet[1])
 				Msg.m_UseCustomColor = true;
 		}
 		CMsgPacker Packer(&Msg);

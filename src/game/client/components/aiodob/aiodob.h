@@ -100,6 +100,7 @@ class CAiodob : public CComponent
 	static void ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData);
 	static void ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData);
 	static void ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData);
+	static void ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData);
 
 
 	static void ConVotekick(IConsole::IResult *pResult, void *pUserData);
@@ -162,17 +163,19 @@ public:
 	// Rainbow
 	void Rainbow();
 
-	int m_RainbowBody;
-	int m_RainbowFeet;
-	int m_RainbowColor;
-	int m_RainbowSpeed;
-	int m_Saturation;
-	int m_Lightness;
+	bool m_BothPlayers;
+
+	int m_RainbowBody[2] = {true, true};
+	int m_RainbowFeet[2] = {false, false};
+	int m_RainbowColor[2];
+	int m_RainbowSpeed[2] = {10, 10};
+	int m_Saturation[2] = {200, 200};
+	int m_Lightness[2] = {30, 30};
 
 	// Preview
-	unsigned int m_PreviewRainbowColor;
+	unsigned int m_PreviewRainbowColor[2];
 	int m_ShowServerSide;
-	int64_t m_ServersideDelay;
+	int64_t m_ServersideDelay[2];
 
 	int getIntFromColor(float Hue, float Sat, float LhT)
 	{
@@ -185,7 +188,6 @@ public:
 		return 0xFF000000 | R | G | B;
 	}
 
-	bool m_RainbowWasOn;
 	int64_t m_RainbowDelay;
 
 

@@ -19,10 +19,10 @@ void CAiodob::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData)
 	CAiodob *pSelf = (CAiodob *)pUserData;
 	
 	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSpeed);
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSpeed[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
-		pSelf->m_RainbowSpeed = pResult->GetInteger(0);
+		pSelf->m_RainbowSpeed[g_Config.m_ClDummy] = pResult->GetInteger(0);
 	else
 		pSelf->GameClient()->aMessage(aBuf);
 }
@@ -32,10 +32,10 @@ void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUser
 	CAiodob *pSelf = (CAiodob *)pUserData;
 
 	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Saturation);
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Saturation[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
-		pSelf->m_Saturation= pResult->GetInteger(0);
+		pSelf->m_Saturation[g_Config.m_ClDummy] = pResult->GetInteger(0);
 	else
 		pSelf->GameClient()->aMessage(aBuf);
 }
@@ -45,10 +45,10 @@ void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserD
 	CAiodob *pSelf = (CAiodob *)pUserData;
 
 	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Lightness);
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Lightness[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
-		pSelf->m_Lightness = pResult->GetInteger(0);
+		pSelf->m_Lightness[g_Config.m_ClDummy] = pResult->GetInteger(0);
 	else
 		pSelf->GameClient()->aMessage(aBuf);
 }
@@ -58,14 +58,14 @@ void CAiodob::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
 	CAiodob *pSelf = (CAiodob *)pUserData;
 
 	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowBody);
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowBody[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
 	{
 		if(pResult->GetInteger(0) == 0)
-			pSelf->m_RainbowBody = 0;
+			pSelf->m_RainbowBody[g_Config.m_ClDummy] = 0;
 		else if(pResult->GetInteger(0) > 0)
-			pSelf->m_RainbowBody = 1;
+			pSelf->m_RainbowBody[g_Config.m_ClDummy] = 1;
 	}
 	else
 		pSelf->GameClient()->aMessage(aBuf);
@@ -76,14 +76,32 @@ void CAiodob::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
 	CAiodob *pSelf = (CAiodob *)pUserData;
 
 	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowFeet);
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowFeet[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
 	{
 		if(pResult->GetInteger(0) == 0)
-			pSelf->m_RainbowFeet = 0;
+			pSelf->m_RainbowFeet[g_Config.m_ClDummy] = 0;
 		else if(pResult->GetInteger(0) > 0)
-			pSelf->m_RainbowFeet = 1;
+			pSelf->m_RainbowFeet[g_Config.m_ClDummy] = 1;
+	}
+	else
+		pSelf->GameClient()->aMessage(aBuf);
+}
+
+void CAiodob::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+
+	char aBuf[8];
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_BothPlayers);
+
+	if(pResult->NumArguments() > 0)
+	{
+		if(pResult->GetInteger(0) == 0)
+			pSelf->m_BothPlayers = 0;
+		else if(pResult->GetInteger(0) > 0)
+			pSelf->m_BothPlayers = 1;
 	}
 	else
 		pSelf->GameClient()->aMessage(aBuf);
@@ -521,4 +539,6 @@ void CAiodob::OnConsoleInit()
 
 	Console()->Register("server_rainbow_body", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
 	Console()->Register("server_rainbow_feet", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
+
+	Console()->Register("server_rainbow_both_players", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowBothPlayers, this, "Rainbow Both Players at the same time");
 }
