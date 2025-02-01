@@ -873,8 +873,8 @@ public:
 	* If 3 its limited to the size of the settings menu (ToDo)
 	* 
 	*/
-	bool ResetTeePos;
 	void RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable = 0, float TeeSize = 75.0f, float Alpha = 1.0f);
+	bool ResetTeePos;
 
 	void RenderChatPreview(CUIRect MainView);
 	void RenderSettingsAiodob(CUIRect MainView);
