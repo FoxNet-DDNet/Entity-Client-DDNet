@@ -3861,6 +3861,11 @@ void CGameClient::OnJoinInfo()
 	m_Aiodob.OnConnect();
 }
 
+void CGameClient::SetLastMovementTime(int Delay)
+{
+	m_Aiodob.m_LastMovement = time_get() + time_freq() * Delay;
+}
+
 bool CGameClient::IsOtherTeam(int ClientId) const
 {
 	bool Local = m_Snap.m_LocalClientId == ClientId;

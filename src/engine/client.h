@@ -391,6 +391,7 @@ public:
 	// A-Client
 	virtual void aMessage(const char *pString) = 0;
 	virtual void OnJoinInfo() = 0;
+	virtual void SetLastMovementTime(int Delay) = 0;
 
 	virtual bool CanDisplayWarning() const = 0;
 	virtual void RenderShutdownMessage() = 0;

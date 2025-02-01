@@ -711,6 +711,7 @@ public:
 	// A-Client	
 	void aMessage(const char *pString) override;
 	void OnJoinInfo() override;
+	void SetLastMovementTime(int Delay) override;
 
 
 	CNetObjHandler *GetNetObjHandler() override;
