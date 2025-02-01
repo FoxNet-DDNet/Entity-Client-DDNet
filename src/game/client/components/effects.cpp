@@ -17,6 +17,7 @@
 
 CEffects::CEffects()
 {
+	m_AddXhz = false;
 	m_Add5hz = false;
 	m_Add50hz = false;
 	m_Add100hz = false;
@@ -97,31 +98,6 @@ void CEffects::FreezingFlakes(vec2 Pos, vec2 Size, float Alpha)
 	p.m_Gravity = random_float(250.0f);
 	p.m_Friction = 0.9f;
 	p.m_FlowAffected = 0.0f;
-	p.m_Collides = false;
-	p.m_Color.a = Alpha;
-	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
-}
-
-void CEffects::FreezingFlakesCircle(vec2 Pos, vec2 Size, float Alpha)
-{
-	if(!m_Add50hz)
-		return;
-
-	CParticle p;
-	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SNOWFLAKE;
-	p.m_Pos = Pos;
-	p.m_Vel = vec2(0, 0);
-	p.m_LifeSpan = 0.6f;
-	p.m_StartSize = 0.2f;
-	p.m_EndSize = 25.0f;
-	p.m_UseAlphaFading = true;
-	p.m_StartAlpha = 1.0f;
-	p.m_EndAlpha = 0.0f;
-	p.m_Rot = random_angle();
-	p.m_Rotspeed = pi;
-	p.m_Gravity = random_float(250.0f);
 	p.m_Collides = false;
 	p.m_Color.a = Alpha;
 	p.m_StartAlpha = Alpha;
@@ -411,10 +387,9 @@ void CEffects::HammerHit(vec2 Pos, float Alpha)
 		m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
 }
 
-
 void CEffects::SparklePlayer(vec2 Pos, float Alpha)
 {
-	if(!m_Add50hz)
+	if(!m_AddXhz)
 		return;
 
 	CParticle p;
@@ -434,7 +409,7 @@ void CEffects::SparklePlayer(vec2 Pos, float Alpha)
 }
 
 
-void CEffects::EffectPlayer(vec2 Pos, float Alpha)
+void CEffects::CirclingPlayerEffect(vec2 Pos, float Alpha)
 {
 	if(!m_Add100hz)
 		return;
@@ -459,15 +434,50 @@ void CEffects::EffectPlayer(vec2 Pos, float Alpha)
 	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
 }
 
+void CEffects::FreezingFlakesCircle(vec2 Pos, vec2 Size, float Alpha)
+{
+	if(!m_Add50hz)
+		return;
+
+	CParticle p;
+	p.SetDefault();
+	p.m_Spr = SPRITE_PART_SNOWFLAKE;
+	p.m_Pos = Pos;
+	p.m_Vel = vec2(0, 0);
+	p.m_LifeSpan = 0.6f;
+	p.m_StartSize = 0.2f;
+	p.m_EndSize = 25.0f;
+	p.m_UseAlphaFading = true;
+	p.m_StartAlpha = 1.0f;
+	p.m_EndAlpha = 0.0f;
+	p.m_Rot = random_angle();
+	p.m_Rotspeed = pi;
+	p.m_Gravity = random_float(250.0f);
+	p.m_Collides = false;
+	p.m_Color.a = Alpha;
+	p.m_StartAlpha = Alpha;
+	m_pClient->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
+}
+
 void CEffects::OnRender()
 {
 	static int64_t s_LastUpdate100hz = 0;
 	static int64_t s_LastUpdate50hz = 0;
 	static int64_t s_LastUpdate5hz = 0;
 
+	static int64_t s_LastUpdate = 0;
+
 	float Speed = 1.0f;
 	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 		Speed = DemoPlayer()->BaseInfo()->m_Speed;
+
+	if(time() - s_LastUpdate > time_freq() / (g_Config.m_ClEffectSpeed * Speed))
+	{
+		m_AddXhz = true;
+		s_LastUpdate = time();
+	}
+	else
+		m_AddXhz = false;
 
 	if(time() - s_LastUpdate100hz > time_freq() / (100 * Speed))
 	{

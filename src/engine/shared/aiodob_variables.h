@@ -309,6 +309,8 @@ MACRO_CONFIG_INT(ClSweatModeOnlyOthers, ac_sweat_mode_only_others, 0, 0, 1, CFGF
 MACRO_CONFIG_STR(ClSweatModeSkinName, ac_sweat_mode_skin_name, 24, "x_ninja", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have")
 
 // Visuals
+MACRO_CONFIG_INT(ClEffectSpeed, ac_effect_speed, 50, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How Fast The Particles Should Update")
+
 MACRO_CONFIG_COL(ClSparkleColor, ac_sparkle_color, 14155743, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Sparkle effect Color")
 MACRO_CONFIG_INT(ClSparkleEffect, ac_sparkle_effect, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
 MACRO_CONFIG_INT(ClSparkleEffectOthers, ac_sparkle_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")

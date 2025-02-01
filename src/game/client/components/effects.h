@@ -13,6 +13,8 @@ class CEffects : public CComponent
 	bool m_Add50hz;
 	bool m_Add100hz;
 
+	bool m_AddXhz;
+
 public:
 	CEffects();
 	virtual int Sizeof() const override { return sizeof(*this); }
@@ -33,11 +35,10 @@ public:
 	void SparkleTrail(vec2 Pos, float Alpha = 1.0f);
 	void Confetti(vec2 Pos, float Alpha = 1.0f);
 
+	// A-Client
 	void SparklePlayer(vec2 Pos, float Alpha = 1.0f);
-
 	void FreezingFlakesCircle(vec2 Pos, vec2 Size, float Alpha = 1.0f);
-
-	void EffectPlayer(vec2 Pos, float Alpha = 1.0f);
+	void CirclingPlayerEffect(vec2 Pos, float Alpha = 1.0f);
 
 	void Update();
 };
