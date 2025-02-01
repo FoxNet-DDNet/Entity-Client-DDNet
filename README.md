@@ -15,6 +15,34 @@ If you find any bugs or have an Idea for a *sinmple* Feature then create a new I
 
 # Command List:
 ```
+votekick "<Name> <Reason>"
+
+onlineinfo
+saveskin
+restoreskin
+
+playerinfo "<Name>"
+
+addtempwar "<Name>"
+deltempwar "<Name>"
+addtemphelper "<Name>"
+deltemphelper "<Name>"
+addtempmute "<Name>"
+deltempmute "<Name>"
+
+
+server_rainbow_both_players "<0 | 1>"
+server_rainbow_speed "<speed>"
+server_rainbow_sat <Saturation> <0 | 1 (Dummy)>
+server_rainbow_lht <Lightness> <0 | 1 (Dummy)>
+
+server_rainbow_body <0 | 1> <0 | 1 (Dummy)>
+server_rainbow_feet <0 | 1> <0 | 1 (Dummy)>
+
+```
+
+# Setting List:
+```
 ac_auto_reply_msg
 ac_tabbed_out_msg
 ac_change_tile_notification
