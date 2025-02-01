@@ -840,24 +840,26 @@ void CPlayers::RenderPlayer(
 		RenderTools()->RenderTee(&State, &Shadow, Player.m_Emote, Direction, ShadowPosition, 0.5f); // render ghost
 	}
 
-	if(IsRainbowBody && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	const bool Frozen = RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN;
+
+	if(IsRainbowBody && !Frozen)
 	{
 		RenderInfo.m_CustomColoredSkin = 1;
 		RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
 	}
-	if(IsRainbowFeet && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	if(IsRainbowFeet && !Frozen)
 	{
 		RenderInfo.m_CustomColoredSkin = 1;
 		RenderInfo.m_ColorFeet = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
 	}
 	
-	if(IsRainbowBodyOthers && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	if(IsRainbowBodyOthers && !Frozen)
 	{
 		RenderInfo.m_CustomColoredSkin = 1;
 		RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
 	}
 
-	if(IsRainbowFeetOthers && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
+	if(IsRainbowFeetOthers && !Frozen)
 	{
 		RenderInfo.m_CustomColoredSkin = 1;
 		RenderInfo.m_ColorFeet = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
@@ -871,7 +873,7 @@ void CPlayers::RenderPlayer(
 	float Time = time_get() / 400000000.0f;
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
-	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN)
+	if(Frozen)
 	{
 		if(g_Config.m_ClFreezeParticleSpin)
 		{
@@ -881,33 +883,26 @@ void CPlayers::RenderPlayer(
 		else
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32), Alpha);
 	}
-	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_SPARKLE)
+
+	if(!Frozen)
 	{
-		if(g_Config.m_ClFreezeParticleSpin)
+		if(g_Config.m_ClSparkleEffect && Local)
 		{
-			GameClient()->m_Effects.FreezingFlakesCircle(vec2(BodyPos.x + 50 * cos(Time), BodyPos.y + 50 * sin(Time)), vec2(32, 32), Alpha);
-			GameClient()->m_Effects.FreezingFlakesCircle(vec2(BodyPos.x - 50 * cos(Time), BodyPos.y - 50 * sin(Time)), vec2(32, 32), Alpha);
+			GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
 		}
-		else
-		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
-	}
-
-	if(g_Config.m_ClSparkleEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
-	{
-		GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
-	}
-
-	if(g_Config.m_ClSparkleEffectOthers && !Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
-	{
-		GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
-	}
-	if(g_Config.m_ClSpecialEffect && Local && !(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN))
-	{
-		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
+		if(g_Config.m_ClSparkleEffectOthers && !Local)
 		{
-			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)),Alpha);
+			GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
+		}
 
-			GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)),Alpha);
+		if(g_Config.m_ClSpecialEffect && Local)
+		{
+			if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
+			{
+				GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)), Alpha);
+
+				GameClient()->m_Effects.EffectPlayer(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)), Alpha);
+			}
 		}
 	}
 
