@@ -310,12 +310,14 @@ MACRO_CONFIG_STR(ClSweatModeSkinName, ac_sweat_mode_skin_name, 24, "x_ninja", CF
 
 // Visuals
 MACRO_CONFIG_INT(ClEffectSpeed, ac_effect_speed, 50, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How Fast The Particles Should Update")
+MACRO_CONFIG_INT(ClEffectSpeedOverride, ac_effect_speed_override, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Change the Speed to an \"ideal\" one after switching to a different effect")
 
-MACRO_CONFIG_COL(ClSparkleColor, ac_sparkle_color, 14155743, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Sparkle effect Color")
-MACRO_CONFIG_INT(ClSparkleEffect, ac_sparkle_effect, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
-MACRO_CONFIG_INT(ClSparkleEffectOthers, ac_sparkle_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Sparkle Effect Client Side")
+MACRO_CONFIG_COL(ClEffectColor, ac_effect_color, 14155743, CFGFLAG_CLIENT | CFGFLAG_SAVE, "effect Color")
+MACRO_CONFIG_INT(ClEffectColors, ac_effect_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "effect Color")
+
+MACRO_CONFIG_INT(ClEffect, ac_effect, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on  Effect Client Side")
+MACRO_CONFIG_INT(ClEffectOthers, ac_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Effect Client Side")
 MACRO_CONFIG_INT(ClSpecialEffect, ac_special_effect, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
-MACRO_CONFIG_INT(ClFreezeParticleSpin, ac_freeze_particle_spin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Make Freeze Particles Spin Around The Player")
 MACRO_CONFIG_INT(ClSmallSkins, ac_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
 
 MACRO_CONFIG_INT(ClServerRainbow, ac_server_rainbow, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enables Rainbow Mode Server Side! (Way Slower though)")

@@ -864,45 +864,72 @@ void CPlayers::RenderPlayer(
 		RenderInfo.m_CustomColoredSkin = 1;
 		RenderInfo.m_ColorFeet = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
 	}
-
-
-
 	RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position, Alpha);
 
 	float TeeAnimScale, TeeBaseSize;
-	float Time = time_get() / 400000000.0f;
+	float Time = time_get();
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
 	if(Frozen)
-	{
-		if(g_Config.m_ClFreezeParticleSpin)
-		{
-			GameClient()->m_Effects.FreezingFlakesCircle(vec2(BodyPos.x + 50 * cos(Time), BodyPos.y + 50 * sin(Time)), vec2(32, 32), Alpha);
-			GameClient()->m_Effects.FreezingFlakesCircle(vec2(BodyPos.x - 50 * cos(Time), BodyPos.y - 50 * sin(Time)), vec2(32, 32), Alpha);
-		}
-		else
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32), Alpha);
-	}
 
 	if(!Frozen)
 	{
-		if(g_Config.m_ClSparkleEffect && Local)
+		if(Local)
 		{
-			GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
-		}
-		if(g_Config.m_ClSparkleEffectOthers && !Local)
-		{
-			GameClient()->m_Effects.SparklePlayer(BodyPos, Alpha);
-		}
-
-		if(g_Config.m_ClSpecialEffect && Local)
-		{
-			if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
+			if(g_Config.m_ClSpecialEffect)
 			{
-				GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x + 100 * cos(Time), BodyPos.y + 100 * sin(Time)), Alpha);
+				if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
+				{
+					GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x + 100 * cos(Time / time_freq() * 2), BodyPos.y + 100 * sin(Time / time_freq() * 2)), Alpha);
 
-				GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x - 100 * cos(Time), BodyPos.y - 100 * sin(Time)), Alpha);
+					GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x - 100 * cos(Time / time_freq() * 2), BodyPos.y - 100 * sin(Time / time_freq() * 2)), Alpha);
+				}
 			}
+
+			if(g_Config.m_ClEffect == 1)
+			{
+				GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
+			}
+			else if(g_Config.m_ClEffect == 2)
+			{
+				GameClient()->m_Effects.FireTrailEffet(BodyPos, Alpha);
+			}
+			else if(g_Config.m_ClEffect == 3)
+			{
+				static int64_t Change = time_get() + time_freq() * 30;
+				static float Sin = 5;
+
+				
+				const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 750) % 10000 / 100.f);
+
+				float RotSpeed = 50.0f + Changer;
+				if(Changer > 50.0f)
+					RotSpeed = 50.0f + 100.0f - Changer;
+
+
+				char abuf[512];
+				str_format(abuf, sizeof(abuf), "%f", (Time / (time_freq() + RotSpeed)));
+				GameClient()->aMessage(abuf);
+	
+
+				vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / (time_freq() + RotSpeed)));
+				vec2 EffectPos = BodyPos;
+
+				if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
+				{
+					Sin = round_to_int(random_float(3.0f, 6.0f));
+					Change = time_get() + time_freq() * 15;
+				}
+				GameClient()->m_Effects.SwitchEffet(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), Alpha);
+				GameClient()->m_Effects.SwitchEffet(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), Alpha);
+			}
+				
+		}
+
+		if(g_Config.m_ClEffectOthers && !Local)
+		{
+			GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
 		}
 	}
 

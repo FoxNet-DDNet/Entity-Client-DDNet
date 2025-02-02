@@ -113,7 +113,7 @@ void CEffects::SparkleTrail(vec2 Pos, float Alpha)
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SPARKLE;
 	p.m_Pos = Pos + random_direction() * random_float(40.0f);
-	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSparkleColor));
+	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor));
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 0.0f;
@@ -387,7 +387,7 @@ void CEffects::HammerHit(vec2 Pos, float Alpha)
 		m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_HAMMER_HIT, 1.0f, Pos);
 }
 
-void CEffects::SparklePlayer(vec2 Pos, float Alpha)
+void CEffects::SparkleEffect(vec2 Pos, float Alpha)
 {
 	if(!m_AddXhz)
 		return;
@@ -396,7 +396,7 @@ void CEffects::SparklePlayer(vec2 Pos, float Alpha)
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SPARKLE;
 	p.m_Pos = Pos + random_direction() * random_float(40.0f);
-	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSparkleColor));
+	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f, 1.0f, 1.0f);
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 0.0f;
@@ -408,6 +408,53 @@ void CEffects::SparklePlayer(vec2 Pos, float Alpha)
 	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
 }
 
+void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
+{
+	if(!m_AddXhz)
+		return;
+
+	const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 100) % 1000 / 100.f);
+	
+	float RotSpeed = 5.0f + Changer;
+	if(Changer > 5.0f)
+		RotSpeed = 5.0f + (10 - Changer);
+
+	CParticle p;
+	p.SetDefault();
+	p.m_Spr = SPRITE_PART_SMOKE;
+	p.m_Pos = Pos;
+	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f,1.0f,1.0f);
+	p.m_Vel = vec2(0, 0);
+	p.m_LifeSpan = 0.5f;
+	p.m_StartSize = 35.0f;
+	p.m_EndSize = 25.0f;
+	p.m_Rotspeed = RotSpeed;
+	p.m_UseAlphaFading = true;
+	p.m_StartAlpha = Alpha - 0.2f;
+	p.m_EndAlpha = 0.0f;
+	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
+}
+
+void CEffects::SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha)
+{
+	if(!m_AddXhz)
+		return;
+
+	CParticle p;
+	p.SetDefault();
+	p.m_Spr = SPRITE_PART_SPLAT02;
+	p.m_Pos = Pos;
+	p.m_Color = Color;
+	p.m_Vel = vec2(0, 0);
+	p.m_LifeSpan = 0.5f;
+	p.m_StartSize = 27.5f;
+	p.m_EndSize = 17.5f;
+	p.m_Rotspeed = 25.0f;
+	p.m_UseAlphaFading = true;
+	p.m_StartAlpha = Alpha - 0.2f;
+	p.m_EndAlpha = 0.0f;
+	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
+}
 
 void CEffects::CirclingPlayerEffect(vec2 Pos, float Alpha)
 {
@@ -417,7 +464,7 @@ void CEffects::CirclingPlayerEffect(vec2 Pos, float Alpha)
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SPARKLE; 
-	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSparkleColor));
+	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor));
 	p.m_Pos = Pos;
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.8f;
@@ -432,31 +479,6 @@ void CEffects::CirclingPlayerEffect(vec2 Pos, float Alpha)
 	p.m_EndAlpha = std::min(0.2f, Alpha);
 	p.m_Collides = false;
 	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
-}
-
-void CEffects::FreezingFlakesCircle(vec2 Pos, vec2 Size, float Alpha)
-{
-	if(!m_Add50hz)
-		return;
-
-	CParticle p;
-	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SNOWFLAKE;
-	p.m_Pos = Pos;
-	p.m_Vel = vec2(0, 0);
-	p.m_LifeSpan = 0.6f;
-	p.m_StartSize = 0.2f;
-	p.m_EndSize = 25.0f;
-	p.m_UseAlphaFading = true;
-	p.m_StartAlpha = 1.0f;
-	p.m_EndAlpha = 0.0f;
-	p.m_Rot = random_angle();
-	p.m_Rotspeed = pi;
-	p.m_Gravity = random_float(250.0f);
-	p.m_Collides = false;
-	p.m_Color.a = Alpha;
-	p.m_StartAlpha = Alpha;
-	m_pClient->m_Particles.Add(CParticles::GROUP_EXTRA, &p);
 }
 
 void CEffects::OnRender()

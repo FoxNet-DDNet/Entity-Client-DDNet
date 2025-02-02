@@ -36,8 +36,9 @@ public:
 	void Confetti(vec2 Pos, float Alpha = 1.0f);
 
 	// A-Client
-	void SparklePlayer(vec2 Pos, float Alpha = 1.0f);
-	void FreezingFlakesCircle(vec2 Pos, vec2 Size, float Alpha = 1.0f);
+	void FireTrailEffet(vec2 Pos, float Alpha = 1.0f);
+	void SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha = 1.0f);
+	void SparkleEffect(vec2 Pos, float Alpha = 1.0f);
 	void CirclingPlayerEffect(vec2 Pos, float Alpha = 1.0f);
 
 	void Update();

@@ -689,9 +689,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
 			if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
-				PlayerSettings.HSplitTop(195.0f, &PlayerSettings, &RainbowSettings);
+				PlayerSettings.HSplitTop(215.0f, &PlayerSettings, &RainbowSettings);
 			else
-				PlayerSettings.HSplitTop(175.0f, &PlayerSettings, &RainbowSettings);
+				PlayerSettings.HSplitTop(195.0f, &PlayerSettings, &RainbowSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -702,19 +702,50 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
 
-				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
-		
-	
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecialEffect, ("Secret Effect"), &g_Config.m_ClSpecialEffect, &PlayerSettings, LineMargin);
-				
-				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffect, ("Sparkle Effect Self"), &g_Config.m_ClSparkleEffect, &PlayerSettings, LineMargin);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSparkleEffectOthers, ("Sparkle Effect Others"), &g_Config.m_ClSparkleEffectOthers, &PlayerSettings, LineMargin);
+				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
 
-				static CButtonContainer SparkleR;
-				PlayerSettings.HSplitTop(-35.0f, &PlayerSettings, &PlayerSettings);
-				DoLine_ColorPicker(&SparkleR, 25.0f, 13.0f, 5.0f, &PlayerSettings, (""), &g_Config.m_ClSparkleColor, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
-				PlayerSettings.HSplitTop(5.0f, &PlayerSettings, &PlayerSettings);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecialEffect, ("Secret Effect"), &g_Config.m_ClSpecialEffect, &PlayerSettings, LineMargin);
+
+				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
+
+				static std::vector<const char *> s_RainbowDropDownNames;
+				s_RainbowDropDownNames = {Localize("Off"), Localize("Sparkle effect"), Localize("Fire Trail"), Localize("Switch Effect")};
+				static CUi::SDropDownState s_RainbowDropDownState;
+				static CScrollRegion s_RainbowDropDownScrollRegion;
+				s_RainbowDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_RainbowDropDownScrollRegion;
+				int RainbowSelectedOld = g_Config.m_ClEffect;
+				CUIRect EffectDropDownRect;
+				PlayerSettings.HSplitTop(LineSize, &EffectDropDownRect, &PlayerSettings);
+				const int RainbowSelectedNew = Ui()->DoDropDown(&EffectDropDownRect, RainbowSelectedOld, s_RainbowDropDownNames.data(), s_RainbowDropDownNames.size(), s_RainbowDropDownState);
+				if(RainbowSelectedOld != RainbowSelectedNew)
+				{
+					g_Config.m_ClEffect = RainbowSelectedNew;
+					RainbowSelectedOld = RainbowSelectedNew;
+					dbg_msg("A-Client", "Effect changed to %d", g_Config.m_ClEffect);
+
+					if(RainbowSelectedNew == 1)
+						g_Config.m_ClEffectSpeed = 75;
+					else if(RainbowSelectedNew == 2)
+						g_Config.m_ClEffectSpeed = 125;
+					else if(RainbowSelectedNew == 150)
+						g_Config.m_ClEffectSpeed = 150;
+				}
+
+				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectColors, ("Effect Color"), &g_Config.m_ClEffectColors, &PlayerSettings, LineMargin);
+
+				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClEffectColors, &PlayerSettings, "Doesn't work if the sprite already has a set color\nMake the sprite the color you want if it doesn't work");
+				if(g_Config.m_ClEffectColors)
+				{
+					static CButtonContainer s_EffectR;
+					PlayerSettings.HSplitTop(-3.0f, &Label, &PlayerSettings);
+					PlayerSettings.HSplitTop(-17.0f, &Button, &PlayerSettings);
+					DoLine_ColorPicker(&s_EffectR, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerSettings, Localize(""), &g_Config.m_ClEffectColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(29057)), true);
+					PlayerSettings.HSplitTop(-10.0f, &Button, &PlayerSettings);
+				}
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectOthers, ("Effect Others"), &g_Config.m_ClEffectOthers, &PlayerSettings, LineMargin);
 
 				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
 				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
@@ -756,7 +787,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				RainbowSettings.HSplitTop(HeaderHeight, &Button, &RainbowSettings);
 				Ui()->DoLabel(&Button, Localize("Server-Side Rainbow"), FontSize, TEXTALIGN_MC);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, "Enable Serverside Rainbow", &g_Config.m_ClServerRainbow, &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, Localize("Enable Serverside Rainbow"), &g_Config.m_ClServerRainbow, &RainbowSettings, LineSize);
 
 				RainbowSettings.HSplitTop(2 * LineSize, &Button, &RainbowSettings);
 				Ui()->DoScrollbarOption(&GameClient()->m_Aiodob.m_RainbowSpeed, &GameClient()->m_Aiodob.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 1000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
