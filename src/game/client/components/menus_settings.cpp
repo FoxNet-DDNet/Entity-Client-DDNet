@@ -1208,7 +1208,7 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 	const float Margin = 10.0f;
 	const float HeaderHeight = FontSize + 5.0f + Margin;
 
-	CUIRect MouseSettings, MovementSettings, WeaponSettings, VotingSettings, ChatSettings, DummySettings, MiscSettings, NewSettings, JoystickSettings, ResetButton, Button;
+	CUIRect MouseSettings, MovementSettings, WeaponSettings, VotingSettings, ChatSettings, DummySettings, MiscSettings, JoystickSettings, ResetButton, Button;
 	MainView.VSplitMid(&MouseSettings, &VotingSettings);
 
 	// mouse settings
