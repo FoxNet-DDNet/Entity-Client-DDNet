@@ -906,14 +906,8 @@ void CPlayers::RenderPlayer(
 				float RotSpeed = 50.0f + Changer;
 				if(Changer > 50.0f)
 					RotSpeed = 50.0f + 100.0f - Changer;
-
-
-				char abuf[512];
-				str_format(abuf, sizeof(abuf), "%f", (Time / (time_freq() + RotSpeed)));
-				GameClient()->aMessage(abuf);
 	
-
-				vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / (time_freq() + RotSpeed)));
+				vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / time_freq() + RotSpeed));
 				vec2 EffectPos = BodyPos;
 
 				if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
