@@ -451,7 +451,7 @@ void CEffects::SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha)
 	p.m_EndSize = 17.5f;
 	p.m_Rotspeed = 25.0f;
 	p.m_UseAlphaFading = true;
-	p.m_StartAlpha = Alpha - 0.2f;
+	p.m_StartAlpha = Alpha;
 	p.m_EndAlpha = 0.0f;
 	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
