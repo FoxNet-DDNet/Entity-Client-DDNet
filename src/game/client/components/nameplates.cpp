@@ -452,23 +452,30 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 {
 	CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
 
-	if(ChatData.m_Team == 2 || GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
+	// If You send the Whisper or the Player is in the mute list, dont show the box
+	if(ChatData.m_Team == TEAM_WHISPER_SEND || GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
 		return;
 
+	// If the player isnt a Friend and ClNameplateChatBoxFriends is turned on, dont show the message
 	if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
 		return;
 
-	float FadeOut = (static_cast<float>(ChatData.m_TimeO) - time_get());
-	float Max = 1.0f;
-	float Blend = clamp(FadeOut / time_freq() * 2, 0.0f, Max) / Max;
-
-	float FadeIn = (static_cast<float>(ChatData.m_TimeI) + time_get());
-	if(FadeIn / time_freq() <= Max)
-		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, Max) / Max;
-
+		// Values
 	float BoxAlpha = 0.65f;
 	float TextAlpha = 1.0f;
 
+	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
+	y -= FontSize;
+	const bool OtherTeam = m_pClient->IsOtherTeam(Data.m_RealClientId);
+
+	float FadeOut = (static_cast<float>(ChatData.m_TimeO) - time_get());
+	float FadeIn = (static_cast<float>(ChatData.m_TimeI) + time_get());
+
+	float Blend = clamp(FadeOut / time_freq() * 2, 0.0f, 1.0f);
+	if(FadeIn / time_freq() <= 1.0f)
+		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, 1.0f);
+
+	// ColorRGBA for the text/background
 	ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, BoxAlpha);
 	ColorRGBA TextColor = ColorRGBA(1.0f, 1.0f, 1.0f, TextAlpha);
 
@@ -483,10 +490,7 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 		ChatBoxColor.s = TextColor.s / 4;
 	}
 
-	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
-	y -= FontSize;
-
-	const bool OtherTeam = m_pClient->IsOtherTeam(Data.m_RealClientId);
+	// Change Alpha Value if Player is in a different team and show others is turned on
 	if(OtherTeam)
 	{
 		const float OthersAlpha = g_Config.m_ClShowOthersAlpha / 100.0f;
@@ -497,6 +501,7 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 		TextAlpha = OthersAlpha;
 	}
 
+	// Make sure the TextContainerIndex is Valid and the messages Alpha is > 0
 	if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid() && Blend > 0)
 	{
 		float TextHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H;
