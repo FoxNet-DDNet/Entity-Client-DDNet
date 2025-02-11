@@ -906,7 +906,7 @@ void CPlayers::RenderPlayer(
 		{
 			GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
 		}
-		else if(g_Config.m_ClEffect == 2 && abs(Vel.x) > 0.1f && abs(Vel.y) > 0.1f)
+		else if(g_Config.m_ClEffect == 2 && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
 		{
 			GameClient()->m_Effects.FireTrailEffet(BodyPos, Alpha);
 		}

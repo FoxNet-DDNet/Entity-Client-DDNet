@@ -26,6 +26,7 @@
 
 #include <string>
 #include <vector>
+#include "a_enums.h"
 
 using namespace FontIcons;
 using namespace std::chrono_literals;
@@ -708,27 +709,30 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
 
-				static std::vector<const char *> s_RainbowDropDownNames;
-				s_RainbowDropDownNames = {Localize("Off"), Localize("Sparkle effect"), Localize("Fire Trail"), Localize("Switch Effect")};
-				static CUi::SDropDownState s_RainbowDropDownState;
+				static std::vector<const char *> s_EffectDropDownNames;
+				s_EffectDropDownNames = {Localize("Off"), Localize("Sparkle effect"), Localize("Fire Trail"), Localize("Switch Effect")};
+				static CUi::SDropDownState s_EffectDropDownState;
 				static CScrollRegion s_RainbowDropDownScrollRegion;
-				s_RainbowDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_RainbowDropDownScrollRegion;
-				int RainbowSelectedOld = g_Config.m_ClEffect;
+				s_EffectDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_RainbowDropDownScrollRegion;
+				int EffectSelectedOld = g_Config.m_ClEffect;
 				CUIRect EffectDropDownRect;
 				PlayerSettings.HSplitTop(LineSize, &EffectDropDownRect, &PlayerSettings);
-				const int RainbowSelectedNew = Ui()->DoDropDown(&EffectDropDownRect, RainbowSelectedOld, s_RainbowDropDownNames.data(), s_RainbowDropDownNames.size(), s_RainbowDropDownState);
-				if(RainbowSelectedOld != RainbowSelectedNew)
+				const int EffectSelectedNew = Ui()->DoDropDown(&EffectDropDownRect, EffectSelectedOld, s_EffectDropDownNames.data(), s_EffectDropDownNames.size(), s_EffectDropDownState);
+				if(EffectSelectedOld != EffectSelectedNew)
 				{
-					g_Config.m_ClEffect = RainbowSelectedNew;
-					RainbowSelectedOld = RainbowSelectedNew;
+					g_Config.m_ClEffect = EffectSelectedNew;
+					EffectSelectedOld = EffectSelectedNew;
 					dbg_msg("A-Client", "Effect changed to %d", g_Config.m_ClEffect);
 
-					if(RainbowSelectedNew == 1)
-						g_Config.m_ClEffectSpeed = 75;
-					else if(RainbowSelectedNew == 2)
-						g_Config.m_ClEffectSpeed = 125;
-					else if(RainbowSelectedNew == 150)
-						g_Config.m_ClEffectSpeed = 150;
+					if(g_Config.m_ClEffectSpeedOverride)
+					{
+						if(g_Config.m_ClEffect == EFFECT_SPARKLE)
+							g_Config.m_ClEffectSpeed = 75;
+						else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL)
+							g_Config.m_ClEffectSpeed = 125;
+						else if(g_Config.m_ClEffect == EFFECT_SWITCH)
+							g_Config.m_ClEffectSpeed = 150;
+					}
 				}
 
 				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
