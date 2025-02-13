@@ -1,4 +1,3 @@
-
 ![gui_logo](https://github.com/user-attachments/assets/ce3d9a6f-f8ae-4a6c-819b-0150e4095118)
 
 ### Fox's client which mostly consists of stolen code
