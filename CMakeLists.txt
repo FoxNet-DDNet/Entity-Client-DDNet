@@ -2351,13 +2351,13 @@ if(CLIENT)
     animstate.h
     component.cpp
     component.h
+    components/aiodob/a_enums.h
     components/aiodob/aiodob.cpp
     components/aiodob/aiodob.h 
     components/aiodob/anti_spawn_block.cpp
     components/aiodob/anti_spawn_block.h
     components/aiodob/auto_kill.cpp
     components/aiodob/auto_kill.h
-    components/aiodob/a_enums.h
     components/aiodob/commands.cpp
     components/aiodob/freeze_kill.cpp
     components/aiodob/freeze_kill.h
