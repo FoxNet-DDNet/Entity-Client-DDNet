@@ -1481,7 +1481,10 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 
 	// Make this Saveable and somewhere hidden in roaming
 	char DeathCounter[32];
-	str_format(DeathCounter, sizeof(DeathCounter), "%d Deaths this Session", GameClient()->m_Aiodob.m_KillCount);
+	if(GameClient()->m_Aiodob.m_KillCount > 1 || GameClient()->m_Aiodob.m_KillCount == 0)
+		str_format(DeathCounter, sizeof(DeathCounter), "%d deaths (all time)", GameClient()->m_Aiodob.m_KillCount);
+	else
+		str_format(DeathCounter, sizeof(DeathCounter), "%d death (all time)", GameClient()->m_Aiodob.m_KillCount);
 	LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
 	Ui()->DoLabel(&LeftView, DeathCounter, FontSize, TEXTALIGN_ML);
 

@@ -577,6 +577,9 @@ void CAiodob::OnInit()
 
 	// Set Offline RPC on Client start
 	Client()->DiscordRPCchange();
+
+	// Set Kill Counter
+	m_KillCount = g_Config.m_ClKillCounter;
 }
 
 void CAiodob::OnShutdown()
@@ -605,6 +608,8 @@ void CAiodob::OnShutdown()
 
 	if(g_Config.m_ClDisableGoresOnShutdown)
 		g_Config.m_ClGoresMode = 0;
+
+	g_Config.m_ClKillCounter = m_KillCount;
 }
 
 void CAiodob::OnRender()
