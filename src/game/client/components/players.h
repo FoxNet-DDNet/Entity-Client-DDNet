@@ -49,6 +49,9 @@ class CPlayers : public CComponent
 
 	int64_t m_SkidSoundTime = 0;
 
+	//A-Client
+	void RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha);
+
 public:
 	float GetPlayerTargetAngle(
 		const CNetObj_Character *pPrevChar,

@@ -545,7 +545,7 @@ void CAiodob::OnInit()
 	// on client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 	
-	const char *A = "Aiodob";
+	const char *Aio = "Aiodob";
 
 	m_ServersideDelay[g_Config.m_ClDummy] = 0;
 	m_LastMovement = 0;
@@ -571,7 +571,7 @@ void CAiodob::OnInit()
 	// tells you what the bind is
 	char aBuf[1024];
 	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
-	dbg_msg(A, aBuf);
+	dbg_msg(Aio, aBuf);
 	// binds the mouse to the saved bind, also doe
 	GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
 
