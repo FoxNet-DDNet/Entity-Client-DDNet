@@ -219,6 +219,21 @@ public:
 	float MessageTeeSize() const { return FontSize() * (7 / 6.f); }
 	float MessageRounding() const { return FontSize() * (1 / 2.f); }
 
+	// A-Client
+	/*  Detection 
+	*
+	* 1 = Auto Add Name Change
+	* 2 = Auto Join Team
+	* 3 = Notify On Join
+	* 4 = Ad Bot
+	* 
+	*/
+	int ChatDetection(int ClientId, int Team, const char *pLine);
+	void ChatDetectionAction(int ClientId, int Team, const char *pLine, int Detection);
+
+	int m_AdBotId;
+	int64_t m_VoteKickTimer;
+
 	// ----- send functions -----
 
 	// Sends a chat message to the server.

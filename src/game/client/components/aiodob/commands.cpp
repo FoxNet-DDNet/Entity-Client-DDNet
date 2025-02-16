@@ -227,6 +227,12 @@ void CAiodob::ConPlayerInfo(IConsole::IResult *pResult, void *pUserData)
 	pSelf->PlayerInfo(pResult->GetString(0));
 }
 
+void CAiodob::ConViewLink(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+	pSelf->Client()->ViewLink(pResult->GetString(0));
+}
+
 void CAiodob::TempWar(const char *pName)
 {
 	CTempEntry Entry(pName, "", "");
@@ -586,4 +592,7 @@ void CAiodob::OnConsoleInit()
 
 	Console()->Register("server_rainbow_body", "?i[int] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
 	Console()->Register("server_rainbow_feet", "?i[int] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
+
+	// View Link
+	Console()->Register("view_link", "s[Url]", CFGFLAG_CLIENT, ConViewLink, this, "Opens a new Browser tab with that Link");
 }

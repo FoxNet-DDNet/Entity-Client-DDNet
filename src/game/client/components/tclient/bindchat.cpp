@@ -65,9 +65,9 @@ void CBindchat::ConRemoveBindchatAll(IConsole::IResult *pResult, void *pUserData
 void CBindchat::ConBindchatDefaults(IConsole::IResult *pResult, void *pUserData)
 {
 	CBindchat *pThis = static_cast<CBindchat *>(pUserData);
-	pThis->AddBind("!shrug", "say ¯\\_(ツ)_/¯");
-	pThis->AddBind("!flip", "say (╯°□°)╯︵ ┻━┻");
-	pThis->AddBind("!unflip", "say ┬─┬ノ( º _ ºノ)");
+	pThis->AddBind(".shrug", "say ¯\\_(ツ)_/¯");
+	pThis->AddBind(".flip", "say (╯°□°)╯︵ ┻━┻");
+	pThis->AddBind(".unflip", "say ┬─┬ノ( º _ ºノ)");
 }
 
 void CBindchat::AddBind(const char *pName, const char *pCommand)
@@ -187,13 +187,14 @@ void CBindchat::OnConsoleInit()
 		Console()->ExecuteFile(BINDCHAT_FILE);
 	}
 
-	// Default Binds
+	// Default Binds (.)
 	AddBindDefault(".help", "exec data/aiodob/binds/.help.cfg");
 	AddBindDefault(".extra", "exec data/aiodob/binds/.extra.cfg");
 	AddBindDefault(".kick", "votekick");
 	AddBindDefault(".votekick", "votekick");
 	AddBindDefault(".info", "OnlineInfo");
 	AddBindDefault(".playerinfo", "PlayerInfo");
+	AddBindDefault(".github", "view_link https://github.com/qxdFox/Aiodob-Client");
 
 	AddBindDefault(".friend", "add_friend");
 	AddBindDefault(".unfriend", "remove_friend");
@@ -248,6 +249,68 @@ void CBindchat::OnConsoleInit()
 	AddBindDefault(".addclanteam", "war_clan_index 2");
 	AddBindDefault(".delclanteam", "remove_war_clan_index 2");
 	AddBindDefault(".unclanteam", "remove_war_clan_index 2");
+
+	// Default Binds (!)
+	AddBindDefault("!help", "exec data/aiodob/binds/.help.cfg");
+	AddBindDefault("!extra", "exec data/aiodob/binds/.extra.cfg");
+	AddBindDefault("!kick", "votekick");
+	AddBindDefault("!votekick", "votekick");
+	AddBindDefault("!info", "OnlineInfo");
+	AddBindDefault("!playerinfo", "PlayerInfo");
+
+	AddBindDefault("!friend", "add_friend");
+	AddBindDefault("!unfriend", "remove_friend");
+
+	AddBindDefault("!restoreskin", "restoreskin");
+	AddBindDefault("!saveskin", "saveskin");
+
+	AddBindDefault("!restore", "restoreskin");
+	AddBindDefault("!save", "saveskin");
+
+	AddBindDefault("!tempwar", "addtempwar");
+	AddBindDefault("!addtempwar", "addtempwar");
+	AddBindDefault("!untempwar", "deltempwar");
+	AddBindDefault("!deltempwar", "deltempwar");
+
+	AddBindDefault("!temphelper", "addtemphelper");
+	AddBindDefault("!addtemphelper", "addtemphelper");
+	AddBindDefault("!untemphelper", "deltemphelper");
+	AddBindDefault("!deltemphelper", "deltemphelper");
+
+	AddBindDefault("!tempmute", "addtempmute");
+	AddBindDefault("!addtempmute", "addtempmute");
+	AddBindDefault("!untempmute", "deltempmute");
+	AddBindDefault("!deltempmute", "deltempmute");
+
+	AddBindDefault("!war", "war_name_index 1");
+	AddBindDefault("!addwar", "war_name_index 1");
+	AddBindDefault("!delwar", "remove_war_name_index 1");
+	AddBindDefault("!unwar", "remove_war_name_index 1");
+
+	AddBindDefault("!team", "war_name_index 2");
+	AddBindDefault("!addteam", "war_name_index 2");
+	AddBindDefault("!delteam", "remove_war_name_index 2");
+	AddBindDefault("!unteam", "remove_war_name_index 2");
+
+	AddBindDefault("!helper", "war_name_index 3");
+	AddBindDefault("!addhelper", "war_name_index 3");
+	AddBindDefault("!delhelper", "remove_war_name_index 3");
+	AddBindDefault("!unhelper", "remove_war_name_index 3");
+
+	AddBindDefault("!mute", "addmute");
+	AddBindDefault("!addmute", "addmute");
+	AddBindDefault("!delmute", "delmute");
+	AddBindDefault("!unmute", "delmute");
+
+	AddBindDefault("!clanwar", "war_clan_index 1");
+	AddBindDefault("!addclanwar", "war_clan_index 1");
+	AddBindDefault("!delclanwar", "remove_war_clan_index 1");
+	AddBindDefault("!unclanwar", "remove_war_clan_index 1");
+
+	AddBindDefault("!clanteam", "war_clan_index 2");
+	AddBindDefault("!addclanteam", "war_clan_index 2");
+	AddBindDefault("!delclanteam", "remove_war_clan_index 2");
+	AddBindDefault("!unclanteam", "remove_war_clan_index 2");
 }
 
 void CBindchat::ExecuteBind(int Bind, const char *pArgs)
@@ -276,16 +339,21 @@ bool CBindchat::CheckBindChat(const char *pText)
 
 bool CBindchat::ChatDoBinds(const char *pText)
 {
-	if(pText[0] == ' ' || !pText[0])
+	if(pText[0] == ' ' || pText[0] == '\0' || pText[1] == '\0')
 		return false;
-	 
+
+	char Prefix[2];
+	str_format(Prefix, sizeof(Prefix), "%s", pText);
+
+	const bool IsExclemataion = str_comp(&pText[0], ".") != 0 && g_Config.m_ClSendExclamation;
+
 	CChat &Chat = GameClient()->m_Chat;
 	const char *pSpace = str_find(pText, " ");
-
 	size_t SpaceIndex = pSpace ? pSpace - pText : strlen(pText);
 	for(const CBind &Bind : m_vBinds)
 	{
-		if(str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
+		if(str_startswith_nocase(pText, Bind.m_aName) &&
+			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{
 			ExecuteBind(&Bind - m_vBinds.data(), pSpace ? pSpace + 1 : nullptr);
 			// Add to history (see CChat::SendChatQueued)
@@ -293,6 +361,8 @@ bool CBindchat::ChatDoBinds(const char *pText)
 			CChat::CHistoryEntry *pEntry = Chat.m_History.Allocate(sizeof(CChat::CHistoryEntry) + Length);
 			pEntry->m_Team = 0; // All
 			str_copy(pEntry->m_aText, pText, Length + 1);
+			if(IsExclemataion)
+				return false;
 			return true;
 		}
 	}

@@ -109,6 +109,8 @@ class CAiodob : public CComponent
 
 	static void ConPlayerInfo(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConViewLink(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConTempWar(IConsole::IResult *pResult, void *pUserData);
 	static void ConUnTempWar(IConsole::IResult *pResult, void *pUserData);
 
@@ -196,15 +198,14 @@ public:
 	void AutoJoinTeam();
 	void OnConnect();
 
-	/* Last Movement 
-	*	Tracks
+	/* Last Movement
 	*	+left
 	*	+right
 	*	+jump
-	*	Mouse Inputs such as aiming 
-	*   or shooting are excluded
 	*/
 	int64_t m_LastMovement = 10.0f;
+
+	bool m_FirstLaunch = false;
 
 private:
 	virtual int Sizeof() const override { return sizeof(*this); }

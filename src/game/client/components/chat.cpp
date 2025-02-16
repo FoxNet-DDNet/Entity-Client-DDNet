@@ -22,6 +22,7 @@
 #include "chat.h"
 #include "tclient/warlist.h"
 #include "aiodob/aiodob.h"
+#include "aiodob/a_enums.h"
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = {'\0'};
 
@@ -278,11 +279,31 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			m_CommandsNeedSorting = false;
 		}
 
+		bool SendMessage = true;
+
+		if(m_VoteKickTimer > time_freq())
+		{
+			if(!str_comp(m_Input.GetString(), "Yes") || !str_comp(m_Input.GetString(), "yes"))
+			{
+				char BotterId[8];
+				str_format(BotterId, sizeof(BotterId), "%s", m_AdBotId);
+
+				GameClient()->m_Voting.Callvote("kick", BotterId, "Krx detected");
+				m_VoteKickTimer = 0;
+				SendMessage = false;
+			}
+		}
+
+		if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString()))
+			SendMessage = false;
+
 		if(m_Mode == MODE_SILENT)
 			AddLine(m_pClient->m_Snap.m_LocalClientId, TEAM_ALL, m_Input.GetString());
-		else if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString())); // Do nothing as bindchat was executed
-		else
+		else if(SendMessage)
+		{
 			SendChatQueued(m_Input.GetString());
+		}
+
 		m_pHistoryEntry = nullptr;
 		DisableMode();
 		m_pClient->OnRelease();
@@ -566,7 +587,11 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	if(MsgType == NETMSGTYPE_SV_CHAT)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
-		AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
+		int Detected = ChatDetection(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
+		if(Detected == DETECTION_ADBOT && !GameClient()->m_aClients[pMsg->m_ClientId].m_Friend && g_Config.m_ClDismissAdBots) // Ignore Friends
+			ChatDetectionAction(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage, Detected);
+		else
+			AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
 	}
 	else if(MsgType == NETMSGTYPE_SV_COMMANDINFO)
 	{
@@ -859,7 +884,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if(g_Config.m_ClChatServerPrefix)
 			str_copy(pCurrentLine->m_aName, g_Config.m_ClServerPrefix);
 		else
-		str_copy(pCurrentLine->m_aName, "*** ");
+			str_copy(pCurrentLine->m_aName, "*** ");
 		str_copy(pCurrentLine->m_aText, pLine);
 	}
 	else if(pCurrentLine->m_ClientId == CLIENT_MSG)
@@ -871,7 +896,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		str_copy(pCurrentLine->m_aText, pLine);
 		// Set custom color
 		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageClientColor));
-		//bro, check out this client: kr​xclient ·xyz
 	}
 	else if(pCurrentLine->m_ClientId == -3)
 	{
@@ -945,148 +969,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_SERVER, 1.0f);
 				m_aLastSoundPlayed[CHAT_SERVER] = Now;
 			}
-
-			if(g_Config.m_ClAutoAddOnNameChange)
-			{
-				if(str_find_nocase(pLine, "' changed name to '"))
-				{
-			
-					const char *aName = str_find_nocase(pLine, " '");
-					const char *OldName = str_find_nocase(pLine, "'");
-					const char *NameLength = str_find_nocase(pLine, "' ");
-					{
-						using namespace std;
-
-						int n = str_length(aName);
-						string s(aName);
-						s.erase(s.begin() + n - 1);
-						s.erase(s.begin());
-						s.erase(s.begin());
-
-						char name[16];
-						strcpy(name, s.c_str());
-
-						int nLength = str_length(OldName) - str_length(NameLength);
-						string oName(OldName);
-						oName.erase(nLength);
-						oName.erase(oName.begin());
-
-						char CharOname[16];
-						strcpy(CharOname, oName.c_str());
-						char aBuf[512];
-
-						if(GameClient()->m_WarList.FindWarTypeWithName(name) == 2)
-						{
-							str_format(aBuf, sizeof(aBuf), "%s changed their name to a Teammates [%s]", CharOname, name);
-							if(g_Config.m_ClAutoAddOnNameChange == 2)
-								GameClient()->aMessage(aBuf);
-						}
-						else
-						{
-							if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsWar && !GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(name)].m_IsTeam)
-							{
-								CTempEntry Entry(name, "", "");
-								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
-								str_copy(Entry.m_aTempWar, name);
-								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
-								if(g_Config.m_ClAutoAddOnNameChange == 2)
-									GameClient()->aMessage(aBuf);
-							}
-							else if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsHelper)
-							{
-								CTempEntry Entry("", name, "");
-								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
-								str_copy(Entry.m_aTempHelper, name);
-								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
-								if(g_Config.m_ClAutoAddOnNameChange == 2)
-									GameClient()->aMessage(aBuf);
-							}
-						}
-						if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsMute)
-						{
-							CTempEntry Entry("", "", name);
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
-							str_copy(Entry.m_aTempMute, name);
-							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
-							if(g_Config.m_ClAutoAddOnNameChange == 2)
-								GameClient()->aMessage(aBuf);
-						}
-					}
-				}
-			}
-
-			if(g_Config.m_ClAutoJoinTeam)
-			{
-				if(str_find_nocase(pLine, "' joined team "))
-				{
-					const char *FindTeam = str_find_nocase(pLine, "m ");
-					const char *PName = str_find_nocase(pLine, "'");
-					const char *NameLength = str_find_nocase(pLine, "' ");
-					using namespace std;
-					if(str_find_nocase(pLine, g_Config.m_ClAutoJoinTeamName))
-					{
-		
-						string s(FindTeam);
-						s.erase(s.begin());
-						s.erase(s.begin());
-
-						char p_Team[16];
-						strcpy(p_Team, s.c_str());
-
-						int nLength = str_length(PName) - str_length(NameLength);
-						string Name(PName);
-						Name.erase(nLength);
-						Name.erase(Name.begin());
-
-						char PlayerName[16];
-						strcpy(PlayerName, Name.c_str());
-
-						int NameToJoin = str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName);
-						int Team0 = str_comp(p_Team, "0");
-						if(Team0 > 0 && NameToJoin == 0)
-						{
-							char aBuf[2048] = "/team ";
-							str_append(aBuf, p_Team);
-							m_pClient->m_Chat.SendChat(0, aBuf);
-							char Joined[2048] = "Auto Joined ";
-							str_append(Joined, PlayerName);
-
-							m_pClient->m_Chat.AddLine(-3, 0, Joined);
-						}
-					}
-				}
-			}
-
-			if(g_Config.m_ClNotifyOnJoin)
-			{
-				if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
-				{
-					if(str_find_nocase(pLine, "entered and joined the game"))
-					{
-						const char *PName = str_find_nocase(pLine, "'");
-						const char *NameLength = str_find_nocase(pLine, "' ");
-						using namespace std;
-						if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
-						{
-							int nLength = str_length(PName) - str_length(NameLength);
-							string Name(PName);
-							Name.erase(nLength);
-							Name.erase(Name.begin());
-
-							char PlayerName[16];
-							strcpy(PlayerName, Name.c_str());
-
-							int NameToJoin = str_comp(g_Config.m_ClAutoNotifyName, PlayerName);
-							if(NameToJoin == 0)
-							{
-								GameClient()->aMessage(g_Config.m_ClAutoNotifyMsg);
-
-								m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 1.0f);
-							}
-						}
-					}
-				}
-			}
 		}
 	}
 	else if(ClientId == CLIENT_MSG)
@@ -1143,6 +1025,224 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			}
 
 		}
+	}
+}
+
+int CChat::ChatDetection(int ClientId, int Team, const char *pLine)
+{
+	if(ClientId == SERVER_MSG)
+	{
+		if(g_Config.m_ClAutoAddOnNameChange)
+		{
+			if(str_find_nocase(pLine, "' changed name to '"))
+			{
+				const char *aName = str_find_nocase(pLine, " '");
+				const char *OldName = str_find_nocase(pLine, "'");
+				const char *NameLength = str_find_nocase(pLine, "' ");
+				{
+					using namespace std;
+
+					int n = str_length(aName);
+					string s(aName);
+					s.erase(s.begin() + n - 1);
+					s.erase(s.begin());
+					s.erase(s.begin());
+
+					char name[16];
+					strcpy(name, s.c_str());
+
+					int nLength = str_length(OldName) - str_length(NameLength);
+					string oName(OldName);
+					oName.erase(nLength);
+					oName.erase(oName.begin());
+
+					char CharOname[16];
+					strcpy(CharOname, oName.c_str());
+					char aBuf[512];
+
+					if(GameClient()->m_WarList.FindWarTypeWithName(name) == 2)
+					{
+						str_format(aBuf, sizeof(aBuf), "%s changed their name to a Teammates [%s]", CharOname, name);
+						if(g_Config.m_ClAutoAddOnNameChange == 2)
+							GameClient()->aMessage(aBuf);
+						return DETECTION_NAMECHANGE;
+					}
+					else
+					{
+						if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsWar && !GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(name)].m_IsTeam)
+						{
+							CTempEntry Entry(name, "", "");
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+							str_copy(Entry.m_aTempWar, name);
+							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+							if(g_Config.m_ClAutoAddOnNameChange == 2)
+								GameClient()->aMessage(aBuf);
+							return DETECTION_NAMECHANGE;
+						}
+						else if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsHelper)
+						{
+							CTempEntry Entry("", name, "");
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+							str_copy(Entry.m_aTempHelper, name);
+							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+							if(g_Config.m_ClAutoAddOnNameChange == 2)
+								GameClient()->aMessage(aBuf);
+							return DETECTION_NAMECHANGE;
+						}
+					}
+					if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsMute)
+					{
+						CTempEntry Entry("", "", name);
+						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+						str_copy(Entry.m_aTempMute, name);
+						GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+						if(g_Config.m_ClAutoAddOnNameChange == 2)
+							GameClient()->aMessage(aBuf);
+						return DETECTION_NAMECHANGE;
+					}
+				}
+			}
+		}
+
+		if(g_Config.m_ClAutoJoinTeam)
+		{
+			if(str_find_nocase(pLine, "' joined team "))
+			{
+				const char *FindTeam = str_find_nocase(pLine, "m ");
+				const char *PName = str_find_nocase(pLine, "'");
+				const char *NameLength = str_find_nocase(pLine, "' ");
+				using namespace std;
+				if(str_find_nocase(pLine, g_Config.m_ClAutoJoinTeamName))
+				{
+					string s(FindTeam);
+					s.erase(s.begin());
+					s.erase(s.begin());
+
+					char p_Team[16];
+					strcpy(p_Team, s.c_str());
+
+					int nLength = str_length(PName) - str_length(NameLength);
+					string Name(PName);
+					Name.erase(nLength);
+					Name.erase(Name.begin());
+
+					char PlayerName[16];
+					strcpy(PlayerName, Name.c_str());
+
+					int NameToJoin = str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName);
+					int Team0 = str_comp(p_Team, "0");
+					if(Team0 > 0 && NameToJoin == 0)
+					{
+						char aBuf[2048] = "/team ";
+						str_append(aBuf, p_Team);
+						m_pClient->m_Chat.SendChat(0, aBuf);
+						char Joined[2048] = "Auto Joined ";
+						str_append(Joined, PlayerName);
+
+						m_pClient->m_Chat.AddLine(-3, 0, Joined);
+						return DETECTION_AUTOJOINTEAM;
+					}
+				}
+			}
+		}
+
+		if(g_Config.m_ClNotifyOnJoin)
+		{
+			if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
+			{
+				if(str_find_nocase(pLine, "entered and joined the game"))
+				{
+					const char *PName = str_find_nocase(pLine, "'");
+					const char *NameLength = str_find_nocase(pLine, "' ");
+					using namespace std;
+					if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
+					{
+						int nLength = str_length(PName) - str_length(NameLength);
+						string Name(PName);
+						Name.erase(nLength);
+						Name.erase(Name.begin());
+
+						char PlayerName[16];
+						strcpy(PlayerName, Name.c_str());
+
+						int NameToJoin = str_comp(g_Config.m_ClAutoNotifyName, PlayerName);
+						if(NameToJoin == 0)
+						{
+							GameClient()->aMessage(g_Config.m_ClAutoNotifyMsg);
+
+							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 1.0f);
+						}
+						return DETECTION_NOTIFYONJOIN;
+					}
+				}
+			}
+		}
+	}
+	else if(ClientId >= 0) // Player Message
+	{
+		if(g_Config.m_ClDismissAdBots)
+		{
+			bool SpamFound = false;
+			int fancy_count = 0;
+			const char* alphabet_fancy[] = {
+				"𝕢", "𝕨", "𝕖", "𝕣", "𝕥", "𝕪", "𝕦", "𝕚", "𝕠", "𝕡", "𝕒", "𝕤", "𝕕", "𝕗", "𝕘", "𝕙", "𝕛", "𝕜", "𝕝", "𝕫", "𝕩", "	", "𝕧", "𝕓", "𝕟", "𝕞",
+				"ｑ", "ｗ", "ｅ", "ｒ", "ｔ", "ｙ", "ｕ", "ｉ", "ｏ", "ｐ", "ａ", "ｓ", "ｄ", "ｆ", "ｇ", "ｈ", "ｊ", "ｋ", "ｌ", "ｚ", "ｘ", "ｃ", "ｖ", "ｂ", "ｎ", "ｍ",
+				"🆀", "🆆", "🅴", "🆁", "🆃", "🆈", "🆄", "🅸", "🅾", "🅿", "🅰", "🆂", "🅳", "🅵", "🅶", "🅷", "🅹", "🅺", "🅻", "🆉", "🆇", "🅲", "🆅", "🅱", "🅽", "🅼",
+				"🅀", "🅆", "🄴", "🅁", "🅃", "🅈", "🅄", "🄸", "🄾", "🄿", "🄰", "🅂", "🄳", "🄵", "🄶", "🄷", "🄹", "🄺", "🄻", "🅉", "🅇", "🄲", "🅅", "🄱", "🄽", "🄼",
+				"ⓠ", "ⓦ", "ⓔ", "ⓡ", "ⓣ", "ⓨ", "ⓤ", "ⓘ", "ⓞ", "ⓟ", "ⓐ", "ⓢ", "ⓓ", "ⓕ", "ⓖ", "ⓗ", "ⓙ", "ⓚ", "ⓛ", "ⓩ", "ⓧ", "ⓒ", "ⓥ", "ⓑ", "ⓝ", "ⓜ",
+			};
+		
+			for(int i = 0; i < 130; i++)
+			{
+				if(str_find_nocase(pLine, alphabet_fancy[i]))
+				{
+					fancy_count++;
+				}
+			}
+			if(fancy_count > 3)
+				SpamFound = true;
+			// general needles to disallow
+			const char *disallowedStrings[] = {"krx", "discord.gg", "http", "free", "bot client", "cheat client"};
+			for(int i = 0; i < 6; i++)
+			{
+				if(str_find_nocase(pLine, disallowedStrings[i]))
+				{
+					// Does nothing, might make this do something some time later
+				}
+			}
+
+			// generic krx message
+			if(str_find_nocase(pLine, "bro, check out this client"))
+			{
+				SpamFound = true;
+			}
+			if(SpamFound == true)
+				return DETECTION_ADBOT;	
+		}
+	}
+	return DETECTION_NONE;
+}
+
+void CChat::ChatDetectionAction(int ClientId, int Team, const char *pLine, int Detection)
+{
+	if(!g_Config.m_ClDismissAdBots)
+		return;
+	if(Detection == DETECTION_ADBOT)
+	{
+		char AdBotInfo[256];
+		str_format(AdBotInfo, sizeof(AdBotInfo), "│ Dismissed message of \"%s\" (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
+
+		GameClient()->aMessage("╭──                  Aiodob Alert");
+		GameClient()->aMessage("│");
+		GameClient()->aMessage(AdBotInfo);
+		GameClient()->aMessage("│");
+		GameClient()->aMessage("│ If you want to start a Vote Kick Type \"Yes\"");
+		GameClient()->aMessage("│");
+		GameClient()->aMessage("│ This will last for one Minute");
+		GameClient()->aMessage("│");
+		GameClient()->aMessage("╰───────────────────────");
+		m_AdBotId = ClientId;
+		m_VoteKickTimer = time_get() + time_freq() * 60;
 	}
 }
 
