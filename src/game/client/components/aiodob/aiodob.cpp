@@ -338,91 +338,102 @@ void CAiodob::OnConnect()
 
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
-
-	if(g_Config.m_ClAutoEnableGoresMode)
-	{
-		if(!str_comp(CurrentServerInfo.m_aGameType, "Gores"))
-		{
-			m_GoresServer = true;
-			g_Config.m_ClGoresMode = 1;
-		}
-		else
-		{
-			m_GoresServer = false;
-			g_Config.m_ClGoresMode = 0;
-		}
-	}
-
-	// info when joining a server of enabled components
-
-	if(g_Config.m_ClEnabledInfo)
+	if(m_FirstLaunch)
 	{
 		GameClient()->aMessage("╭──                  Aiodob Info");
 		GameClient()->aMessage("│");
-		
-		if(g_Config.m_ClListsInfo)
-		{
-			OnlineInfo(true);
-			GameClient()->aMessage("│");
-
-		}
-		if((g_Config.m_ClAutoKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
-		{
-			GameClient()->aMessage("│ Auto Kill Enabled!");
-			GameClient()->aMessage("│");
-		}
-		else if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
-		{
-			GameClient()->aMessage("│ Auto Kill Disabled, Not on Mult!");
-			GameClient()->aMessage("│");
-		}
-		else if(!g_Config.m_ClAutoKill)
-		{
-			GameClient()->aMessage("│ Auto Kill Disabled!");
-			GameClient()->aMessage("│");
-		}
-
-		// Freeze Kill
-
-		if((g_Config.m_ClFreezeKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
-		{
-			GameClient()->aMessage("│ Freeze Kill Enabled!");
-			GameClient()->aMessage("│");
-		}
-		else if(g_Config.m_ClFreezeKill && (g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
-		{
-			GameClient()->aMessage("│ Freeze Kill Disabled, Not on Mult!");
-			GameClient()->aMessage("│");
-		}
-		if(!g_Config.m_ClFreezeKill)
-		{
-			GameClient()->aMessage("│ Freeze Kill Disabled!");
-			GameClient()->aMessage("│");
-		}
-		if(g_Config.m_ClGoresMode)
-		{
-			GameClient()->aMessage("│ Gores Mode: ON");
-			GameClient()->aMessage("│");
-		}
-		else
-		{
-			GameClient()->aMessage("│ Gores Mode: OFF");
-			GameClient()->aMessage("│");
-		}
-		if(g_Config.m_ClChatBubble)
-		{
-			GameClient()->aMessage("│ Chat Bubble is Currently: ON");
-			GameClient()->aMessage("│");
-		}
-		else
-		{
-			GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
-			GameClient()->aMessage("│");
-		}
+		GameClient()->aMessage("│ Seems like it's your first time running the client!");
+		GameClient()->aMessage("│");
+		GameClient()->aMessage("│ To view a list of Default Chat Commands do \".help\"");
+		GameClient()->aMessage("│");
+		GameClient()->aMessage("│ If you find a bug or have a Feature Request do \".github\"");
+		GameClient()->aMessage("│");
 		GameClient()->aMessage("╰───────────────────────");
 	}
+	else
+	{
+		if(g_Config.m_ClAutoEnableGoresMode)
+		{
+			if(!str_comp(CurrentServerInfo.m_aGameType, "Gores"))
+			{
+				m_GoresServer = true;
+				g_Config.m_ClGoresMode = 1;
+			}
+			else
+			{
+				m_GoresServer = false;
+				g_Config.m_ClGoresMode = 0;
+			}
+		}
 
-	// disables connected so it only does it once on join
+		// info when joining a server of enabled components
+
+		if(g_Config.m_ClEnabledInfo)
+		{
+			GameClient()->aMessage("╭──                  Aiodob Info");
+			GameClient()->aMessage("│");
+
+			if(g_Config.m_ClListsInfo)
+			{
+				OnlineInfo(true);
+				GameClient()->aMessage("│");
+			}
+			if((g_Config.m_ClAutoKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
+			{
+				GameClient()->aMessage("│ Auto Kill Enabled!");
+				GameClient()->aMessage("│");
+			}
+			else if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
+			{
+				GameClient()->aMessage("│ Auto Kill Disabled, Not on Mult!");
+				GameClient()->aMessage("│");
+			}
+			else if(!g_Config.m_ClAutoKill)
+			{
+				GameClient()->aMessage("│ Auto Kill Disabled!");
+				GameClient()->aMessage("│");
+			}
+
+			// Freeze Kill
+
+			if((g_Config.m_ClFreezeKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
+			{
+				GameClient()->aMessage("│ Freeze Kill Enabled!");
+				GameClient()->aMessage("│");
+			}
+			else if(g_Config.m_ClFreezeKill && (g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
+			{
+				GameClient()->aMessage("│ Freeze Kill Disabled, Not on Mult!");
+				GameClient()->aMessage("│");
+			}
+			if(!g_Config.m_ClFreezeKill)
+			{
+				GameClient()->aMessage("│ Freeze Kill Disabled!");
+				GameClient()->aMessage("│");
+			}
+			if(g_Config.m_ClGoresMode)
+			{
+				GameClient()->aMessage("│ Gores Mode: ON");
+				GameClient()->aMessage("│");
+			}
+			else
+			{
+				GameClient()->aMessage("│ Gores Mode: OFF");
+				GameClient()->aMessage("│");
+			}
+			if(g_Config.m_ClChatBubble)
+			{
+				GameClient()->aMessage("│ Chat Bubble is Currently: ON");
+				GameClient()->aMessage("│");
+			}
+			else
+			{
+				GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
+				GameClient()->aMessage("│");
+			}
+			GameClient()->aMessage("╰───────────────────────");
+		}
+	}
 }
 
 void CAiodob::ChangeTileNotifyTick()
@@ -542,11 +553,9 @@ void CAiodob::Rainbow()
 
 void CAiodob::OnInit()
 {
-	// on client load
+	// On client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 	
-	const char *Aio = "Aiodob";
-
 	m_ServersideDelay[g_Config.m_ClDummy] = 0;
 	m_LastMovement = 0;
 	m_KillCount = 0;
@@ -563,16 +572,16 @@ void CAiodob::OnInit()
 	// Dummy Rainbow
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
 
-
 	// Get Bindslot for Mouse1, default shoot bind
 	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
 	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
 
-	// tells you what the bind is
+	// Tells you what the bind is
 	char aBuf[1024];
 	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
-	dbg_msg(Aio, aBuf);
-	// binds the mouse to the saved bind, also doe
+	dbg_msg("A-Client", aBuf);
+
+	// Binds the mouse to the saved bind, also doe
 	GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
 
 	// Set Offline RPC on Client start
@@ -580,6 +589,13 @@ void CAiodob::OnInit()
 
 	// Set Kill Counter
 	m_KillCount = g_Config.m_ClKillCounter;
+
+	// First Launch
+	if(g_Config.m_ClFirstLaunch)
+	{
+		m_FirstLaunch = true;
+		g_Config.m_ClFirstLaunch = 0;
+	}
 }
 
 void CAiodob::OnShutdown()
@@ -619,7 +635,6 @@ void CAiodob::OnRender()
 	GoresMode();
 	AutoJoinTeam();
 
-	// "secret" effect, makes a circle go around the player
 
 	if(m_SentKill)
 	{
@@ -628,6 +643,7 @@ void CAiodob::OnRender()
 		m_SentKill = false;
 	}
 
+	// "secret" effect, makes a circle go around the player
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 	{
 		m_LastMovement = time_get() + time_freq() * 30;
