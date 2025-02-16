@@ -2445,6 +2445,8 @@ if(CLIENT)
     components/tclient/outlines.h
     components/tclient/player_indicator.cpp
     components/tclient/player_indicator.h
+    components/tclient/rainbow.cpp
+    components/tclient/rainbow.h
     components/tclient/skinprofiles.cpp
     components/tclient/skinprofiles.h
     components/tclient/warlist.cpp

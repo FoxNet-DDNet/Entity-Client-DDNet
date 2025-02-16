@@ -191,14 +191,23 @@ void CPlayers::RenderHookCollLine(
 	if(Local && !m_pClient->m_Snap.m_SpecInfo.m_Active && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		// just use the direct input if it's the local player we are rendering
-		Angle = angle(m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy]);
+		vec2 Pos = m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+		if(g_Config.m_ClScaleMouseDistance)
+		{
+			const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
+			if(MaxDistance > 5 && MaxDistance < 1000) // Don't scale if angle bind or reduces precision
+				Pos *= 1000.0f / (float)MaxDistance;
+		}
+		Pos.x = (int)Pos.x;
+		Pos.y = (int)Pos.y;
+		Angle = angle(Pos);
 	}
 	else
 	{
 		Angle = GetPlayerTargetAngle(&Prev, &Player, ClientId, IntraTick);
 	}
 
-	vec2 Direction = direction(Angle);
+	vec2 ExDirection = direction(Angle);
 	vec2 Position;
 	if(in_range(ClientId, MAX_CLIENTS - 1))
 		Position = m_pClient->m_aClients[ClientId].m_RenderPos;
@@ -230,16 +239,6 @@ void CPlayers::RenderHookCollLine(
 #endif
 		if((AlwaysRenderHookColl || RenderHookCollPlayer) && RenderHookCollVideo)
 		{
-			vec2 ExDirection = Direction;
-
-			if(Local && !m_pClient->m_Snap.m_SpecInfo.m_Active && Client()->State() != IClient::STATE_DEMOPLAYBACK)
-			{
-				ExDirection = normalize(vec2((int)m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy].x, (int)m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy].y));
-
-				// fix direction if mouse is exactly in the center
-				if(!(int)m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy].x && !(int)m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy].y)
-					ExDirection = vec2(1, 0);
-			}
 			Graphics()->TextureClear();
 			vec2 InitPos = Position;
 			vec2 FinishPos = InitPos + ExDirection * (m_pClient->m_aTuning[g_Config.m_ClDummy].m_HookLength - 42.0f);
@@ -352,10 +351,10 @@ void CPlayers::RenderHookCollLine(
 			{
 				Graphics()->LinesEnd();
 			}
-			
 		}
 	}
 }
+
 void CPlayers::RenderHook(
 	const CNetObj_Character *pPrevChar,
 	const CNetObj_Character *pPlayerChar,
@@ -369,8 +368,6 @@ void CPlayers::RenderHook(
 	Player = *pPlayerChar;
 
 	CTeeRenderInfo RenderInfo = *pRenderInfo;
-
-	bool Local = m_pClient->m_Snap.m_LocalClientId == ClientId;
 
 	// don't render hooks to not active character cores
 	if(pPlayerChar->m_HookedPlayer != -1 && !m_pClient->m_Snap.m_aCharacters[pPlayerChar->m_HookedPlayer].m_Active)
@@ -397,6 +394,7 @@ void CPlayers::RenderHook(
 	if(Prev.m_HookState > 0 && Player.m_HookState > 0)
 	{
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+
 		if(ClientId < 0)
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.5f);
 
@@ -404,7 +402,13 @@ void CPlayers::RenderHook(
 		vec2 HookPos;
 
 		if(in_range(pPlayerChar->m_HookedPlayer, MAX_CLIENTS - 1))
+		{
 			HookPos = m_pClient->m_aClients[pPlayerChar->m_HookedPlayer].m_RenderPos;
+			if(g_Config.m_ClSwapGhosts && Client()->State() != IClient::STATE_DEMOPLAYBACK && m_pClient->m_Snap.m_LocalClientId == ClientId)
+			{
+				HookPos = GameClient()->GetSmoothPos(pPlayerChar->m_HookedPlayer);
+			}
+		}
 		else
 			HookPos = mix(vec2(Prev.m_HookX, Prev.m_HookY), vec2(Player.m_HookX, Player.m_HookY), IntraTick);
 
@@ -415,27 +419,12 @@ void CPlayers::RenderHook(
 		Graphics()->QuadsSetRotation(angle(Dir) + pi);
 		// render head
 		int QuadOffset = NUM_WEAPONS * 2 + 2;
-		
-		if(g_Config.m_ClRainbowHook == 0 || g_Config.m_ClRainbowHookOthers == 0)
-		{
-			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
-		}
-		if(Local && g_Config.m_ClRainbowHook == 1)
-		{
-			ColorHSVA ColorHSV(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f);
-			ColorRGBA ColorWithAlpha = color_cast<ColorRGBA>(ColorHSV);
-			ColorWithAlpha.a = Alpha;
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 
-			Graphics()->SetColor(ColorWithAlpha);
-		}
-		if(g_Config.m_ClRainbowHookOthers && !Local && !g_Config.m_ClSweatMode)
-		{
-			ColorHSVA ColorHSV(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f);
-			ColorRGBA ColorWithAlpha = color_cast<ColorRGBA>(ColorHSV);
-			ColorWithAlpha.a = Alpha;
-
-			Graphics()->SetColor(ColorWithAlpha);
-		}
+		bool Local = m_pClient->m_Snap.m_LocalClientId == ClientId;
+		bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
+		if(g_Config.m_ClRainbowHook && !DontOthers)
+			Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
 
 		Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, HookPos.x, HookPos.y);
 
@@ -456,6 +445,9 @@ void CPlayers::RenderHook(
 
 		Graphics()->QuadsSetRotation(0);
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+		if(g_Config.m_ClRainbowHook && !DontOthers)
+			Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
 
 		RenderHand(&RenderInfo, Position, normalize(HookPos - Pos), -pi / 2, vec2(20, 0), Alpha);
 	}
@@ -493,7 +485,7 @@ void CPlayers::RenderPlayer(
 		Alpha = g_Config.m_ClRaceGhostAlpha / 100.0f;
 
 	// set size
-	RenderInfo.m_Size = 64;
+	RenderInfo.m_Size = 64.0f;
 
 	float IntraTick = Intra;
 	if(ClientId >= 0)
@@ -522,7 +514,16 @@ void CPlayers::RenderPlayer(
 	if(Local && !m_pClient->m_Snap.m_SpecInfo.m_Active && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		// just use the direct input if it's the local player we are rendering
-		Angle = angle(m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy]);
+		vec2 Pos = m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+		if(g_Config.m_ClScaleMouseDistance)
+		{
+			const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
+			if(MaxDistance > 5 && MaxDistance < 1000) // Don't scale if angle bind or reduces precision
+				Pos *= 1000.0f / (float)MaxDistance;
+		}
+		Pos.x = (int)Pos.x;
+		Pos.y = (int)Pos.y;
+		Angle = angle(Pos);
 	}
 	else
 	{
@@ -535,6 +536,14 @@ void CPlayers::RenderPlayer(
 		Position = m_pClient->m_aClients[ClientId].m_RenderPos;
 	else
 		Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), IntraTick);
+
+	if(g_Config.m_ClSwapGhosts && g_Config.m_ClShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+		if(ClientId >= 0)
+			Position = mix(
+				vec2(m_pClient->m_Snap.m_aCharacters[ClientId].m_Prev.m_X, m_pClient->m_Snap.m_aCharacters[ClientId].m_Prev.m_Y),
+				vec2(m_pClient->m_Snap.m_aCharacters[ClientId].m_Cur.m_X, m_pClient->m_Snap.m_aCharacters[ClientId].m_Cur.m_Y),
+				Client()->IntraGameTick(g_Config.m_ClDummy));
+
 	vec2 Vel = mix(vec2(Prev.m_VelX / 256.0f, Prev.m_VelY / 256.0f), vec2(Player.m_VelX / 256.0f, Player.m_VelY / 256.0f), IntraTick);
 
 	m_pClient->m_Flow.Add(Position, Vel * 100.0f, 10.0f);
@@ -552,7 +561,7 @@ void CPlayers::RenderPlayer(
 	bool Inactive = ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_Afk || m_pClient->m_aClients[ClientId].m_Paused);
 
 	// evaluate animation
-	float WalkTime = std::fmod(Position.x,	100.0f) / 100.0f;
+	float WalkTime = std::fmod(Position.x, 100.0f) / 100.0f;
 	float RunTime = std::fmod(Position.x, 200.0f) / 200.0f;
 
 	// Don't do a moon walk outside the left border
@@ -605,32 +614,7 @@ void CPlayers::RenderPlayer(
 			Alpha);
 	}
 
-	// rainbow
-
-	bool IsRainbowBody = g_Config.m_ClRainbow,
-	     IsRainbowFeet = g_Config.m_ClRainbow;
-
-		bool IsRainbowBodyOthers = g_Config.m_ClRainbowOthers,
-	     IsRainbowFeetOthers = g_Config.m_ClRainbowOthers;
-
-	if(g_Config.m_ClRainbow == 1 && (m_pClient->m_Snap.m_LocalClientId == ClientId) == 1)
-	{
-		IsRainbowBody = true;
-		IsRainbowFeet = true;
-	}
-	else if(g_Config.m_ClRainbowOthers == 1 && (m_pClient->m_Snap.m_LocalClientId == ClientId) != 1 && !g_Config.m_ClSweatMode)
-	{
-		IsRainbowBodyOthers = true;
-		IsRainbowFeetOthers = true;
-	}
-	else
-	{
-		IsRainbowBody = false;
-		IsRainbowFeet = false;
-
-		IsRainbowBodyOthers = false;
-		IsRainbowFeetOthers = false;
-	}
+	vec2 GhostWeaponPos = vec2(0, 0);
 	// draw gun
 	if(Player.m_Weapon >= 0)
 	{
@@ -649,6 +633,10 @@ void CPlayers::RenderPlayer(
 
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 
+			bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
+			if(g_Config.m_ClRainbowWeapon && !DontOthers)
+				Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
+
 			vec2 Dir = Direction;
 			float Recoil = 0.0f;
 			vec2 WeaponPosition;
@@ -659,7 +647,7 @@ void CPlayers::RenderPlayer(
 				// static position for hammer
 				WeaponPosition = Position + vec2(State.GetAttach()->m_X, State.GetAttach()->m_Y);
 				WeaponPosition.y += g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsety;
-				if(Direction.x < 0)
+				if(Direction.x < 0.0f)
 					WeaponPosition.x -= g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsetx;
 				if(IsSit)
 					WeaponPosition.y += 3.0f;
@@ -755,8 +743,8 @@ void CPlayers::RenderPlayer(
 				WeaponPosition.y += g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsety;
 				if(IsSit)
 					WeaponPosition.y += 3.0f;
-				if(Player.m_Weapon == WEAPON_GUN)
-					WeaponPosition.y -= 4;
+				if(Player.m_Weapon == WEAPON_GUN && g_Config.m_ClOldGunPosition)
+					WeaponPosition.y -= 8;
 				Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, WeaponPosition.x, WeaponPosition.y);
 			}
 
@@ -806,17 +794,8 @@ void CPlayers::RenderPlayer(
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 			Graphics()->QuadsSetRotation(0);
 
-			if(IsRainbowBody)
-			{
-				RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
-			}
-				
-
-			if(IsRainbowBodyOthers)
-			{
-				RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
-				
-			}
+			if(g_Config.m_ClRainbowTees && !DontOthers)
+				Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
 
 			switch(Player.m_Weapon)
 			{
@@ -824,6 +803,7 @@ void CPlayers::RenderPlayer(
 			case WEAPON_SHOTGUN: RenderHand(&RenderInfo, WeaponPosition, Direction, -pi / 2, vec2(-5, 4), Alpha); break;
 			case WEAPON_GRENADE: RenderHand(&RenderInfo, WeaponPosition, Direction, -pi / 2, vec2(-4, 7), Alpha); break;
 			}
+			GhostWeaponPos = WeaponPosition;
 		}
 	}
 
@@ -840,38 +820,13 @@ void CPlayers::RenderPlayer(
 		CTeeRenderInfo Shadow = RenderInfo;
 		RenderTools()->RenderTee(&State, &Shadow, Player.m_Emote, Direction, ShadowPosition, 0.5f); // render ghost
 	}
-
-	const bool Frozen = RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN;
-
-	if(IsRainbowBody && !Frozen)
-	{
-		RenderInfo.m_CustomColoredSkin = 1;
-		RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
-	}
-	if(IsRainbowFeet && !Frozen)
-	{
-		RenderInfo.m_CustomColoredSkin = 1;
-		RenderInfo.m_ColorFeet = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
-	}
-	
-	if(IsRainbowBodyOthers && !Frozen)
-	{
-		RenderInfo.m_CustomColoredSkin = 1;
-		RenderInfo.m_ColorBody = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
-	}
-
-	if(IsRainbowFeetOthers && !Frozen)
-	{
-		RenderInfo.m_CustomColoredSkin = 1;
-		RenderInfo.m_ColorFeet = color_cast<ColorRGBA>(ColorHSVA(round_to_int(LocalTime() * g_Config.m_ClRainbowSpeed) % 255 / 255.f, 1.f, 1.f));
-	}
 	RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position, Alpha);
-
 	float TeeAnimScale, TeeBaseSize;
 	const float Time = time_get();
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
 
+	const bool Frozen = RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN;
 	if(Frozen)
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32), Alpha);
 
@@ -909,7 +864,7 @@ void CPlayers::RenderPlayer(
 		else if(g_Config.m_ClEffect == 2 && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
 		{
 			GameClient()->m_Effects.FireTrailEffet(BodyPos, Alpha);
-		}
+	}
 		else if(g_Config.m_ClEffect == 3 && !Frozen)
 		{
 			static int64_t Change = time_get() + time_freq() * 30;
@@ -925,7 +880,7 @@ void CPlayers::RenderPlayer(
 			vec2 EffectPos = BodyPos;
 
 			if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
-			{
+	{
 				Sin = round_to_int(random_float(3.0f, 6.0f));
 				Change = time_get() + time_freq() * 15;
 			}
@@ -933,7 +888,7 @@ void CPlayers::RenderPlayer(
 			GameClient()->m_Effects.SwitchEffet(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
 		}
 	}
-	
+
 
 	if(ClientId < 0)
 		return;
@@ -951,7 +906,7 @@ void CPlayers::RenderPlayer(
 		Graphics()->QuadsSetRotation(0);
 	}
 
-	if(g_Config.m_ClAfkEmote && m_pClient->m_aClients[ClientId].m_Afk && ClientId != m_pClient->m_aLocalIds[!g_Config.m_ClDummy])
+	if(g_Config.m_ClAfkEmote && m_pClient->m_aClients[ClientId].m_Afk && !(Client()->DummyConnected() && ClientId == m_pClient->m_aLocalIds[!g_Config.m_ClDummy]))
 	{
 		int CurEmoticon = (SPRITE_ZZZ - SPRITE_OOP);
 		Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[CurEmoticon]);
@@ -1041,7 +996,6 @@ void CPlayers::RenderPlayerGhost(
 	if(!OtherTeam && FrozenSwappingHide)
 		Alpha = 1.0f;
 
-
 	// set size
 	RenderInfo.m_Size = 64.0f;
 
@@ -1072,7 +1026,16 @@ void CPlayers::RenderPlayerGhost(
 	if(Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		// just use the direct input if it's the local player we are rendering
-		Angle = angle(m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy]);
+		vec2 Pos = m_pClient->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+		if(g_Config.m_ClScaleMouseDistance)
+		{
+			const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
+			if(MaxDistance > 5 && MaxDistance < 1000) // Don't scale if angle bind or reduces precision
+				Pos *= 1000.0f / (float)MaxDistance;
+		}
+		Pos.x = (int)Pos.x;
+		Pos.y = (int)Pos.y;
+		Angle = angle(Pos);
 	}
 	else
 	{
@@ -1113,7 +1076,7 @@ void CPlayers::RenderPlayerGhost(
 
 	m_pClient->m_Flow.Add(Position, Vel * 100.0f, 10.0f);
 
-	RenderInfo.m_GotAirJump = Player.m_Jumped & 2 ? 0 : 1;
+	RenderInfo.m_GotAirJump = Player.m_Jumped & 2 ? false : true;
 
 	RenderInfo.m_FeetFlipped = false;
 
@@ -1164,12 +1127,12 @@ void CPlayers::RenderPlayerGhost(
 	// do skidding
 	if(!InAir && WantOtherDir && length(Vel * 50) > 500.0f)
 	{
-		static int64_t SkidSoundTime = 0;
-		if(time() - SkidSoundTime > time_freq() / 10)
+		static int64_t s_SkidSoundTime = 0;
+		if(time() - s_SkidSoundTime > time_freq() / 10)
 		{
 			if(g_Config.m_SndGame)
 				m_pClient->m_Sounds.PlayAt(CSounds::CHN_WORLD, SOUND_PLAYER_SKID, 0.25f, Position);
-			SkidSoundTime = time();
+			s_SkidSoundTime = time();
 		}
 
 		m_pClient->m_Effects.SkidTrail(
@@ -1365,7 +1328,7 @@ void CPlayers::RenderPlayerGhost(
 	RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position, Alpha);
 
 	float TeeAnimScale, TeeBaseSize;
-	RenderTools()->GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
+	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
 	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN)
 	{

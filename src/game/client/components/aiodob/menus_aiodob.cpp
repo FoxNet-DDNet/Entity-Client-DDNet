@@ -688,11 +688,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		MainView.VSplitMid(&PlayerSettings, &UiSettings);
 
 		{
+			bool RainbowOn = g_Config.m_ClRainbowHook || g_Config.m_ClRainbowTees || g_Config.m_ClRainbowWeapon || g_Config.m_ClRainbowOthers;
+
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
-				PlayerSettings.HSplitTop(215.0f, &PlayerSettings, &RainbowSettings);
+			if(RainbowOn)
+				PlayerSettings.HSplitTop(305.0f, &PlayerSettings, &RainbowSettings);
 			else
-				PlayerSettings.HSplitTop(195.0f, &PlayerSettings, &RainbowSettings);
+				PlayerSettings.HSplitTop(285.0f, &PlayerSettings, &RainbowSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -712,8 +714,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				static std::vector<const char *> s_EffectDropDownNames;
 				s_EffectDropDownNames = {Localize("Off"), Localize("Sparkle effect"), Localize("Fire Trail"), Localize("Switch Effect")};
 				static CUi::SDropDownState s_EffectDropDownState;
-				static CScrollRegion s_RainbowDropDownScrollRegion;
-				s_EffectDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_RainbowDropDownScrollRegion;
+				static CScrollRegion s_EffectDropDownScrollRegion;
+				s_EffectDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_EffectDropDownScrollRegion;
 				int EffectSelectedOld = g_Config.m_ClEffect;
 				CUIRect EffectDropDownRect;
 				PlayerSettings.HSplitTop(LineSize, &EffectDropDownRect, &PlayerSettings);
@@ -751,32 +753,41 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectOthers, ("Effect Others"), &g_Config.m_ClEffectOthers, &PlayerSettings, LineMargin);
 
-				PlayerSettings.HSplitTop(5.f, &Button, &PlayerSettings);
+				PlayerSettings.HSplitTop(MarginSmall, &Button, &PlayerSettings);
 				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClRainbow, Localize("Rainbow Tee"), g_Config.m_ClRainbow, &Button))
-					g_Config.m_ClRainbow ^= 1;
 
-				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClRainbowHook, Localize("Rainbow Hook"), g_Config.m_ClRainbowHook, &Button))
-					g_Config.m_ClRainbowHook ^= 1;
-				if(g_Config.m_ClRainbow || g_Config.m_ClRainbowHook || g_Config.m_ClRainbowHookOthers || g_Config.m_ClRainbowOthers)
+				// ***** Rainbow ***** //
+				//PlayerSettings.HSplitTop(HeadlineHeight, &Label, &PlayerSettings);
+				//Ui()->DoLabel(&Label, Localize("Rainbow"), HeadlineFontSize, TEXTALIGN_ML);
+				//PlayerSettings.HSplitTop(MarginSmall, nullptr, &PlayerSettings);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowTees, Localize("Rainbow Tees"), &g_Config.m_ClRainbowTees, &PlayerSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowWeapon, Localize("Rainbow weapons"), &g_Config.m_ClRainbowWeapon, &PlayerSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowHook, Localize("Rainbow hook"), &g_Config.m_ClRainbowHook, &PlayerSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowOthers, Localize("Rainbow others"), &g_Config.m_ClRainbowOthers, &PlayerSettings, LineSize);
+
+				PlayerSettings.HSplitTop(MarginExtraSmall, nullptr, &PlayerSettings);
+				static std::vector<const char *> s_RainbowDropDownNames;
+				s_RainbowDropDownNames = {Localize("Rainbow"), Localize("Pulse"), Localize("Black"), Localize("Random")};
+				static CUi::SDropDownState s_RainbowDropDownState;
+				static CScrollRegion s_RainbowDropDownScrollRegion;
+				s_RainbowDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_RainbowDropDownScrollRegion;
+				int RainbowSelectedOld = g_Config.m_ClRainbowMode - 1;
+				CUIRect RainbowDropDownRect;
+				PlayerSettings.HSplitTop(LineSize, &RainbowDropDownRect, &PlayerSettings);
+				const int RainbowSelectedNew = Ui()->DoDropDown(&RainbowDropDownRect, RainbowSelectedOld, s_RainbowDropDownNames.data(), s_RainbowDropDownNames.size(), s_RainbowDropDownState);
+				if(RainbowSelectedOld != RainbowSelectedNew)
 				{
-					PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-					Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "%");
-					PlayerSettings.HSplitTop(-20.f, &Button, &PlayerSettings);
+					g_Config.m_ClRainbowMode = RainbowSelectedNew + 1;
+					RainbowSelectedOld = RainbowSelectedNew;
+					dbg_msg("rainbow", "rainbow mode changed to %d", g_Config.m_ClRainbowMode);
 				}
-
-				PlayerSettings.VSplitLeft(0.f, &Button, &PlayerSettings);
-				PlayerSettings.VSplitLeft(150.f, &Button, &PlayerSettings);
-
-				PlayerSettings.HSplitTop(-40.f, &Button, &PlayerSettings);
-				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClRainbowOthers, Localize("Rainbow Tee Others"), g_Config.m_ClRainbowOthers, &Button))
-					g_Config.m_ClRainbowOthers ^= 1;
-
-				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
-				if(DoButton_CheckBox(&g_Config.m_ClRainbowHookOthers, Localize("Rainbow Hook Others"), g_Config.m_ClRainbowHookOthers, &Button))
-					g_Config.m_ClRainbowHookOthers ^= 1;
+				PlayerSettings.HSplitTop(MarginExtraSmall, nullptr, &PlayerSettings);
+				PlayerSettings.HSplitTop(LineSize, &Button, &PlayerSettings);
+				if(RainbowOn)
+					Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, Localize("Rainbow speed"), 0, 200, &CUi::ms_LogarithmicScrollbarScale, 0, "%");
+				PlayerSettings.HSplitTop(MarginExtraSmall, nullptr, &PlayerSettings);
+				PlayerSettings.HSplitTop(MarginSmall, nullptr, &PlayerSettings);
 			}
 		}
 

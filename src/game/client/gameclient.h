@@ -76,6 +76,7 @@
 #include "components/tclient/skinprofiles.h"
 #include "components/tclient/bindwheel.h"
 #include "components/tclient/warlist.h"
+#include "components/tclient/rainbow.h"
 
 class CGameInfo
 {
@@ -201,6 +202,7 @@ public:
 	CBindWheel m_Bindwheel;
 	CPlayerIndicator m_PlayerIndicator;
 	COutlines m_Outlines;
+	CRainbow m_Rainbow;
 	CWarList m_WarList;
 
 private:
