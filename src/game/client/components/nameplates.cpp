@@ -520,7 +520,6 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 
 			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2.5f, 0.0f);
 		}
-
 		// Text
 		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y - TextHeight + FontSize / 2);
 	}

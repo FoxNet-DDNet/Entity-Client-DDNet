@@ -182,7 +182,6 @@ public:
 	float m_aYOffset;
 	int m_ClientId;
 	int m_Team = -1;
-	char m_aText[MAX_LINE_LENGTH];
 	bool m_Highlighted = false;
 
 	STextContainerIndex m_TextContainerIndex;
