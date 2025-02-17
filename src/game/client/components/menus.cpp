@@ -951,15 +951,6 @@ void CMenus::OnInit()
 
 	// Rainbow Color again for the preview..
 	m_MenusRainbowColor = g_Config.m_ClPlayerColorBody;
-
-	// To check if you have to restart your Client
-	m_InitDiscordRPC = g_Config.m_ClDiscordRPC;
-
-	// So it doesn't change when you first go on to the settings page
-	m_DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
-	m_DiscordRPCTimestamp = g_Config.m_ClDiscordTimestamp;
-	str_copy(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
-	str_copy(m_DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
 }
 
 void CMenus::OnConsoleInit()

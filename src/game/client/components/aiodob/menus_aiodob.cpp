@@ -981,7 +981,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			DiscordSettings.HSplitTop(Margin, nullptr, &DiscordSettings);
-			DiscordSettings.HSplitTop(145.0f, &DiscordSettings, &WarVisual);
+			DiscordSettings.HSplitTop(125.0f, &DiscordSettings, &WarVisual);
 			if(s_ScrollRegion.AddRect(DiscordSettings))
 			{
 				DiscordSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -994,29 +994,41 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
 					
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordTimestamp, "Show Timestamp", &g_Config.m_ClDiscordTimestamp, &DiscordSettings, LineSize);
+					//DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordTimestamp, "Show Timestamp", &g_Config.m_ClDiscordTimestamp, &DiscordSettings, LineSize); -> Discord made it always have a timestamp?
+
+					static int DiscordRPC = g_Config.m_ClDiscordRPC;
+					static int DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
+					static char DiscordRPCOnlineMsg[25];
+					static char DiscordRPCOfflineMsg[25];
+					static bool DiscordRpcSet = false;
+					if(!DiscordRpcSet)
+					{
+						str_copy(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
+						str_copy(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
+						DiscordRpcSet = true;
+					}
+					if(DiscordRPC != g_Config.m_ClDiscordRPC)
+					{
+						m_RPC_Ratelimit = time_get() + time_freq() * 1.5f;
+						DiscordRPC = g_Config.m_ClDiscordRPC;
+					}
 
 					if(g_Config.m_ClDiscordRPC)
 					{
-						if(m_DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
+						if(DiscordRPCMap != g_Config.m_ClDiscordMapStatus)
 						{
-							m_DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
+							// Ratelimit this so it doesn't get changed instantly every time you edit this
+							DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
 							m_RPC_Ratelimit = time_get() + time_freq() * 1.5f;
 						}
-						else if (m_DiscordRPCTimestamp != g_Config.m_ClDiscordTimestamp)
+						else if(str_comp(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
 						{
-							m_DiscordRPCTimestamp = g_Config.m_ClDiscordTimestamp;
-							m_RPC_Ratelimit = time_get() + time_freq() * 1.5f;
-						}
-						else if(str_comp(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
-						{
-							str_copy(m_DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
-							// Ratelimit this so it doesn't get changed instantly every time you edit this, but rather once youre finished
+							str_copy(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
 							m_RPC_Ratelimit = time_get() + time_freq() * 2.5f; 
 						}
-						else if(str_comp(m_DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus) != 0)
+						else if(str_comp(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus) != 0)
 						{
-							str_copy(m_DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
+							str_copy(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus);
 							m_RPC_Ratelimit = time_get() + time_freq() * 2.5f;
 						}
 					}
@@ -1055,10 +1067,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
 					}
 				}
-				if(m_InitDiscordRPC != g_Config.m_ClDiscordRPC)
-					m_NeedRestartDiscordRPC = true;
-				else
-					m_NeedRestartDiscordRPC = false;
 			}
 		}
 

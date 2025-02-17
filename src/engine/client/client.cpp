@@ -462,12 +462,13 @@ void CClient::DiscordRPCchange()
 	{
 		const bool AnnounceAddr = m_ServerBrowser.IsRegistered(ServerAddress());
 
-		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, g_Config.m_ClDiscordTimestamp, AnnounceAddr);	
+		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, AnnounceAddr);	
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{
-		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus, g_Config.m_ClDiscordTimestamp);
+		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus);
 	}
+	dbg_msg("A-Client", "Discord RPC reloaded");
 }
 
 // called when the map is loaded and we should init for a new round

@@ -584,9 +584,6 @@ void CAiodob::OnInit()
 	// Binds the mouse to the saved bind, also doe
 	GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
 
-	// Set Offline RPC on Client start
-	Client()->DiscordRPCchange();
-
 	// Set Kill Counter
 	m_KillCount = g_Config.m_ClKillCounter;
 
@@ -635,6 +632,20 @@ void CAiodob::OnRender()
 	GoresMode();
 	AutoJoinTeam();
 
+	// Set Offline RPC on Client start
+	if(g_Config.m_ClDiscordRPC)
+	{
+		static int64_t Delay = time_get() + time_freq();
+		static bool SetRpc = false;
+		if(!SetRpc && Client()->State() != Client()->STATE_LOADING)
+		{
+			if(Delay < time_get())
+			{
+				Client()->DiscordRPCchange();
+				SetRpc = true;
+			}
+		}
+	}
 
 	if(m_SentKill)
 	{
