@@ -513,15 +513,16 @@ void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData
 			// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
 			float xPos = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
 			float yPos = y - TextHeight;
-			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize * 1.1;
+			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize * 1.05;
 
 			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
 			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
 
-			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -3, -(g_Config.m_ClNameplateChatBoxSize / 10.0f));
+			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2.5f, 0.0f);
 		}
+
 		// Text
-		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y + g_Config.m_ClNameplateChatBoxSize / 10.0f - TextHeight);
+		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y - TextHeight + FontSize / 2);
 	}
 }
 
@@ -530,9 +531,6 @@ void CNamePlates::NameplateBoxSelf(CNamePlate &NamePlate, const CRenderNamePlate
 	CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
 
 	if(ChatData.m_Team == 2 || GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
-		return;
-
-	if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
 		return;
 
 	float FadeIn = (FadeInSelf + time_get());
@@ -582,10 +580,11 @@ void CNamePlates::NameplateBoxSelf(CNamePlate &NamePlate, const CRenderNamePlate
 			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
 			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
 
-			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -3, -(g_Config.m_ClNameplateChatBoxSize / 10.0f));
+			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2.5f, 0.0f);
 		}
+		
 		// Text
-		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y + g_Config.m_ClNameplateChatBoxSize / 10.0f - TextHeight);
+		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y - TextHeight + FontSize / 2);
 	}
 	else
 		ShowSelf = false;
