@@ -84,6 +84,9 @@ public:
 	}
 	void ClearGameInfo(const char *pDetail) override
 	{
+		if(!m_Enabled || !m_pActivityManager)
+			return;
+
 		DiscordActivity Activity;
 		mem_zero(&Activity, sizeof(DiscordActivity));
 		str_copy(Activity.assets.large_image, "ac_image_b_o", sizeof(Activity.assets.large_image));
@@ -94,6 +97,9 @@ public:
 	}
 	void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, const char *pDetail, bool ShowMap, bool AnnounceAddr) override
 	{
+		if(!m_Enabled || !m_pActivityManager)
+			return;
+
 		DiscordActivity Activity;
 		mem_zero(&Activity, sizeof(DiscordActivity));
 		str_copy(Activity.assets.large_image, "ac_image_b", sizeof(Activity.assets.large_image));
