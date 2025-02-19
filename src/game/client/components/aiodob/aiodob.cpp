@@ -553,7 +553,6 @@ void CAiodob::Rainbow()
 			}
 			m_RainbowDelay = time_get() + time_freq() * g_Config.m_SvInfoChangeDelay;
 			m_RainbowColor[0] = m_RainbowColor[1] = getIntFromColor(h, s, l);
-			dbg_msg("A-Client", "Changed Color");
 		}
 	}
 }
