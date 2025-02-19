@@ -13,7 +13,8 @@ MACRO_CONFIG_INT(ClTabbedOutMsg, ac_tabbed_out_msg, 0, 0, 1, CFGFLAG_CLIENT | CF
 
 MACRO_CONFIG_INT(ClChangeTileNotification, ac_change_tile_notification, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when leaving current tile type")
 
-MACRO_CONFIG_COL(ClWarlistMessageColor, ac_warlist_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
+MACRO_CONFIG_COL(ClACMessageColor, ac_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
+MACRO_CONFIG_COL(ClSilenteColor, ac_silent_color, 8924078, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
 MACRO_CONFIG_INT(ClMutedConsoleColor, ac_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
 // from tater client (credits to tater)
@@ -80,15 +81,12 @@ MACRO_CONFIG_INT(ClWarListIndicatorAll, ac_warlist_indicator_all, 1, 0, 1, CFGFL
 MACRO_CONFIG_INT(ClWarListIndicatorEnemy, ac_warlist_indicator_enemy, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from the first group")
 MACRO_CONFIG_INT(ClWarListIndicatorTeam, ac_warlist_indicator_team, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from second group")
 
-
-
 // Run on Join
 MACRO_CONFIG_INT(ClRunOnJoinConsole, ac_run_on_join_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use run on join in chat or console")
 MACRO_CONFIG_INT(ClRunOnJoinDelay, ac_run_on_join_delay, 2, 7, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 MACRO_CONFIG_STR(ClRunOnJoinMsg, ac_run_on_join_console_msg, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 
 MACRO_CONFIG_INT(ClLimitMouseToScreen, ac_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundries")
-
 
 // Frozen Tee Display
 MACRO_CONFIG_INT(ClShowFrozenText, ac_frozen_tees_text, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show how many tees in your team are currently frozen. (0 - off, 1 - show alive, 2 - show frozen)")
@@ -103,7 +101,6 @@ MACRO_CONFIG_INT(ClFrozenHudTeamOnly, ac_frozen_tees_only_inteam, 0, 0, 1, CFGFL
 MACRO_CONFIG_INT(ClNotifyWhenLast, ac_last_notify, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when you are last")
 MACRO_CONFIG_STR(ClNotifyWhenLastText, ac_last_notify_text, 64, "Last!", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Text for last notify")
 MACRO_CONFIG_COL(ClNotifyWhenLastColor, ac_last_notify_color, 29057, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color for last notify")
-
 
 // Spectate Cursor
 MACRO_CONFIG_INT(ClRenderCursorSpec, ac_cursor_in_spec, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render your gun cursor when spectating in freeview")
@@ -147,11 +144,13 @@ MACRO_CONFIG_INT(ClApplyProfileEmote, ac_profile_emote, 1, 0, 1, CFGFLAG_CLIENT 
 // AAAAAAA
 MACRO_CONFIG_INT(ClAmIFrozen, EEEfrz, 0, 0, 1, CFGFLAG_CLIENT, "")
 
-// First Client Launch
-MACRO_CONFIG_INT(ClFirstLaunch, ac_first_launch, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show welcome message indicating the first launch of the client")
-
 // Font
 MACRO_CONFIG_STR(ClCustomFont, ac_custom_font, 255, "DejaVu Sans", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom font face")
+
+// A-CLient
+
+// First Client Launch
+MACRO_CONFIG_INT(ClFirstLaunch, ac_first_launch, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show welcome message indicating the first launch of the client")
 
 // Misc Color
 MACRO_CONFIG_COL(ClAfkColor, ac_afk_color, 10951270, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Afk name color")

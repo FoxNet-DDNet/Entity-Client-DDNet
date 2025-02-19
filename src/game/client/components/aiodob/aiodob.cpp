@@ -338,7 +338,8 @@ void CAiodob::OnConnect()
 
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
-	if(m_FirstLaunch)
+	static bool SentInfoMessage = false;
+	if(m_FirstLaunch && SentInfoMessage)
 	{
 		GameClient()->aMessage("╭──                  Aiodob Info");
 		GameClient()->aMessage("│");
@@ -348,7 +349,12 @@ void CAiodob::OnConnect()
 		GameClient()->aMessage("│");
 		GameClient()->aMessage("│ If you find a bug or have a Feature Request do \".github\"");
 		GameClient()->aMessage("│");
+		GameClient()->aMessage("│ Chat Commands that start with \".\" are silent by default,");
+		GameClient()->aMessage("│ which means no one will see them.");
+		GameClient()->aMessage("│ Messages that start with \"!\" will be sent");
+		GameClient()->aMessage("│");
 		GameClient()->aMessage("╰───────────────────────");
+		SentInfoMessage = true;
 	}
 	else
 	{
@@ -547,6 +553,7 @@ void CAiodob::Rainbow()
 			}
 			m_RainbowDelay = time_get() + time_freq() * g_Config.m_SvInfoChangeDelay;
 			m_RainbowColor[0] = m_RainbowColor[1] = getIntFromColor(h, s, l);
+			dbg_msg("A-Client", "Changed Color");
 		}
 	}
 }

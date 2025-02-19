@@ -279,7 +279,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			m_CommandsNeedSorting = false;
 		}
 
-		bool SendMessage = true;
+		bool SilentMessage = false;
 
 		if(m_VoteKickTimer > time_freq())
 		{
@@ -288,20 +288,33 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				char BotterId[8];
 				str_format(BotterId, sizeof(BotterId), "%s", m_AdBotId);
 
-				GameClient()->m_Voting.Callvote("kick", BotterId, "Krx detected");
+				GameClient()->m_Voting.Callvote("kick", BotterId, "Krx");
 				m_VoteKickTimer = 0;
-				SendMessage = false;
+				SilentMessage = true;
 			}
 		}
 
 		if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString()))
-			SendMessage = false;
+		{
+			SilentMessage = true;
+		}
 
 		if(m_Mode == MODE_SILENT)
-			AddLine(m_pClient->m_Snap.m_LocalClientId, TEAM_ALL, m_Input.GetString());
-		else if(SendMessage)
+			SilentMessage = true;
+
+		if(!SilentMessage)
 		{
 			SendChatQueued(m_Input.GetString());
+		}
+		else if(SilentMessage)
+		{
+			static bool SilentMessageInfo = false;
+			AddLine(TEAM_SILENT, TEAM_ALL, m_Input.GetString());
+			if(GameClient()->m_Aiodob.m_FirstLaunch && !SilentMessageInfo)
+			{
+				AddLine(TEAM_MESSAGE, TEAM_ALL, "This Message was a Silent Message, no one else can see it!");
+				SilentMessageInfo = true;
+			}
 		}
 
 		m_pHistoryEntry = nullptr;
@@ -897,7 +910,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		// Set custom color
 		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageClientColor));
 	}
-	else if(pCurrentLine->m_ClientId == -3)
+	else if(pCurrentLine->m_ClientId == TEAM_MESSAGE)
 	{
 		if(g_Config.m_ClChatClientPrefix)
 			str_copy(pCurrentLine->m_aName, g_Config.m_ClClientPrefix);
@@ -905,7 +918,29 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		str_copy(pCurrentLine->m_aName, "— ");
 		str_copy(pCurrentLine->m_aText, pLine);
 		// Set custom color
-		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClWarlistMessageColor));
+		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClACMessageColor));
+	}
+	else if(pCurrentLine->m_ClientId == TEAM_SILENT)
+	{
+		auto &LineAuthor = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId];
+
+		str_copy(pCurrentLine->m_aName, LineAuthor.m_aName);
+		str_copy(pCurrentLine->m_aText, pLine);
+
+		// Set custom color
+		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSilenteColor));
+
+		if(pCurrentLine->m_aName[0] != '\0')
+		{
+			if(!g_Config.m_ClChatOld)
+			{
+				str_copy(pCurrentLine->m_aSkinName, LineAuthor.m_aSkinName);
+				pCurrentLine->m_TeeRenderInfo = LineAuthor.m_RenderInfo;
+				pCurrentLine->m_HasRenderTee = true;
+			}
+		}
+
+		pCurrentLine->m_ClientId = m_pClient->m_Snap.m_LocalClientId; // Set it to a valid ClientId
 	}
 	else
 	{
@@ -938,7 +973,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		}
 		else
 			str_copy(pCurrentLine->m_aName, LineAuthor.m_aName);
-
 		str_copy(pCurrentLine->m_aText, pLine);
 
 		pCurrentLine->m_Friend = LineAuthor.m_Friend;
@@ -1563,7 +1597,7 @@ void CChat::OnRender()
 		}
 		else if(m_Mode == MODE_SILENT)
 		{
-			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)));
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSilenteColor)));
 			TextRender()->TextEx(&Cursor, Localize("Silent"));
 		}
 		else
@@ -1729,9 +1763,8 @@ void CChat::SendChat(int Team, const char *pLine)
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
 		return;
 
-	if(!g_Config.m_ClSendDotsChat)
-		if(pLine[0] == '.')
-			return;
+	if(!g_Config.m_ClSendDotsChat && pLine[0] == '.')
+		return;
 
 	m_LastChatSend = time();
 
