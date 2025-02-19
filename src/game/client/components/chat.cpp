@@ -285,10 +285,10 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		{
 			if(!str_comp(m_Input.GetString(), "Yes") || !str_comp(m_Input.GetString(), "yes"))
 			{
-				char BotterId[8];
-				str_format(BotterId, sizeof(BotterId), "%s", m_AdBotId);
+				char Id[8];
 
-				GameClient()->m_Voting.Callvote("kick", BotterId, "Krx");
+				str_format(Id, sizeof(Id), "%d", m_AdBotId);
+				GameClient()->m_Voting.Callvote("kick", Id, "Krx");
 				m_VoteKickTimer = 0;
 				SilentMessage = true;
 			}
