@@ -78,6 +78,7 @@
 
 #include "prediction/entities/character.h"
 #include "prediction/entities/projectile.h"
+#include "components/aiodob/a_enums.h"
 
 using namespace std::chrono_literals;
 
@@ -651,6 +652,7 @@ void CGameClient::OnReset()
 		Stats.Reset();
 
 	m_NextChangeInfo = 0;
+
 	std::fill(std::begin(m_aLocalIds), std::end(m_aLocalIds), -1);
 	m_DummyInput = {};
 	m_HammerInput = {};
@@ -1160,6 +1162,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 	{
 		CNetMsg_Sv_ChangeInfoCooldown *pMsg = (CNetMsg_Sv_ChangeInfoCooldown *)pRawMsg;
 		m_NextChangeInfo = pMsg->m_WaitUntil;
+		g_Config.m_SvInfoChangeDelay = (pMsg->m_WaitUntil - Client()->GameTick(g_Config.m_ClDummy) + Client()->GameTickSpeed() - 1) / Client()->GameTickSpeed(); 
 	}
 	else if(MsgId == NETMSGTYPE_SV_MAPSOUNDGLOBAL)
 	{
@@ -3853,7 +3856,7 @@ void CGameClient::Echo(const char *pString)
 
 void CGameClient::aMessage(const char *pString)
 {
-	m_Chat.AddLine(-3, 0, pString);
+	m_Chat.AddLine(TEAM_MESSAGE, 0, pString);
 }
 
 void CGameClient::OnJoinInfo()
