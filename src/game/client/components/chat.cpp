@@ -302,11 +302,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(m_Mode == MODE_SILENT)
 			SilentMessage = true;
 
-		if(!SilentMessage)
-		{
-			SendChatQueued(m_Input.GetString());
-		}
-		else if(SilentMessage)
+		if(SilentMessage)
 		{
 			static bool SilentMessageInfo = false;
 			AddLine(TEAM_SILENT, TEAM_ALL, m_Input.GetString());
@@ -316,6 +312,8 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				SilentMessageInfo = true;
 			}
 		}
+		else
+			SendChatQueued(m_Input.GetString());
 
 		m_pHistoryEntry = nullptr;
 		DisableMode();
