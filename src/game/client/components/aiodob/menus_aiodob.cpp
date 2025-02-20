@@ -1587,8 +1587,8 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 
 	{
 		CTeeRenderInfo TeeRenderInfo;
-
-		TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClPlayerSkin));
+		char *Skin = "Catnoa";
+		TeeRenderInfo.Apply(m_pClient->m_Skins.Find(Skin));
 		TeeRenderInfo.ApplyColors(true, 5374207, 12767844);
 
 		RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo, 2);

@@ -64,6 +64,22 @@
 #include "components/touch_controls.h"
 #include "components/voting.h"
 
+// Aiodob
+
+#include "components/aiodob/aiodob.h"
+#include "components/aiodob/anti_spawn_block.h"
+#include "components/aiodob/auto_kill.h"
+#include "components/aiodob/freeze_kill.h"
+
+// Tater
+#include "components/tclient/bindchat.h"
+#include "components/tclient/bindwheel.h"
+#include "components/tclient/outlines.h"
+#include "components/tclient/player_indicator.h"
+#include "components/tclient/rainbow.h"
+#include "components/tclient/skinprofiles.h"
+#include "components/tclient/warlist.h"
+
 class CGameInfo
 {
 public:
@@ -175,14 +191,12 @@ public:
 	CTooltips m_Tooltips;
 
 	// Aiodob
-
 	CAiodob m_Aiodob;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CAutoKill m_AutoKill;
 
 	// T-Client
-
 	CSkinProfiles m_SkinProfiles;
 	CBindchat m_Bindchat;
 	CBindWheel m_Bindwheel;

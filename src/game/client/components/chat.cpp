@@ -20,9 +20,10 @@
 
 #include <string.h>
 #include "chat.h"
-#include "tclient/warlist.h"
+
 #include "aiodob/aiodob.h"
 #include "aiodob/a_enums.h"
+#include "tclient/warlist.h"
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = {'\0'};
 
@@ -197,7 +198,7 @@ void CChat::ConShowChat(IConsole::IResult *pResult, void *pUserData)
 
 void CChat::ConaMessage(IConsole::IResult *pResult, void *pUserData)
 {
-	((CChat *)pUserData)->AddLine(-3,0,pResult->GetString(0));
+	((CChat *)pUserData)->AddLine(TEAM_MESSAGE, TEAM_ALL, pResult->GetString(0));
 }
 
 void CChat::ConEcho(IConsole::IResult *pResult, void *pUserData)
@@ -313,7 +314,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			}
 		}
 		else
-			SendChatQueued(m_Input.GetString());
+		SendChatQueued(m_Input.GetString());
 
 		m_pHistoryEntry = nullptr;
 		DisableMode();
@@ -359,8 +360,8 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				}
 			}
 			std::stable_sort(m_aPlayerCompletionList, m_aPlayerCompletionList + m_PlayerCompletionListLength,
-				[](const CCompletablePlayer &p1, const CCompletablePlayer &p2) -> bool {
-					return (g_Config.m_ClChatCompleteFriendsFirst && p1.IsFriend && !p2.IsFriend) || p1.Score < p2.Score;
+				[](const CRateablePlayer &p1, const CRateablePlayer &p2) -> bool {
+					return p1.Score < p2.Score;
 				});
 		}
 
@@ -476,7 +477,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 				// quote the name
 				char aQuoted[128];
-				if((m_Input.GetString()[0] == '/' || m_pClient->m_Bindchat.CheckBindChat(m_Input.GetString())) && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"")))
+				if(m_Input.GetString()[0] == '/' && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"")))
 				{
 					// escape the name
 					str_copy(aQuoted, "\"");
@@ -737,10 +738,10 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		(ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
 					  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_aClients[ClientId].m_IsMute || (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] && g_Config.m_ClHideEnemyChat) ||
-			  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
-			  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
-			  (m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))
-	return;
+					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
+					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
+					  (m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))
+		return;
 
 	// trim right and set maximum length to 256 utf8-characters
 	int Length = 0;
@@ -798,7 +799,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageSystemColor));
 			else if(pLine_->m_ClientId == CLIENT_MSG)
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageClientColor));
-			else // regular messages
+			else // regular message
 				ChatLogColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 		}
 
@@ -895,7 +896,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if(g_Config.m_ClChatServerPrefix)
 			str_copy(pCurrentLine->m_aName, g_Config.m_ClServerPrefix);
 		else
-			str_copy(pCurrentLine->m_aName, "*** ");
+		str_copy(pCurrentLine->m_aName, "*** ");
 		str_copy(pCurrentLine->m_aText, pLine);
 	}
 	else if(pCurrentLine->m_ClientId == CLIENT_MSG)
@@ -903,7 +904,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if(g_Config.m_ClChatClientPrefix)
 			str_copy(pCurrentLine->m_aName, g_Config.m_ClClientPrefix);
 		else
-			str_copy(pCurrentLine->m_aName, "— ");
+		str_copy(pCurrentLine->m_aName, "— ");
 		str_copy(pCurrentLine->m_aText, pLine);
 		// Set custom color
 		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageClientColor));
@@ -930,12 +931,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		if(pCurrentLine->m_aName[0] != '\0')
 		{
-			if(!g_Config.m_ClChatOld)
-			{
-				str_copy(pCurrentLine->m_aSkinName, LineAuthor.m_aSkinName);
-				pCurrentLine->m_TeeRenderInfo = LineAuthor.m_RenderInfo;
-				pCurrentLine->m_HasRenderTee = true;
-			}
+			pCurrentLine->m_pManagedTeeRenderInfo = GameClient()->CreateManagedTeeRenderInfo(LineAuthor);
 		}
 
 		pCurrentLine->m_ClientId = m_pClient->m_Snap.m_LocalClientId; // Set it to a valid ClientId
@@ -971,8 +967,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		}
 		else
 			str_copy(pCurrentLine->m_aName, LineAuthor.m_aName);
-		str_copy(pCurrentLine->m_aText, pLine);
 
+		str_copy(pCurrentLine->m_aText, pLine);
 		pCurrentLine->m_Friend = LineAuthor.m_Friend;
 		pCurrentLine->m_Paused = LineAuthor.m_Paused || LineAuthor.m_Spec;
 		pCurrentLine->m_IsAnyList = LineAuthor.m_IsAnyList;
@@ -1028,10 +1024,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			bool PlaySound = m_aLines[m_CurrentLine].m_Team ? g_Config.m_SndTeamChat : g_Config.m_SndChat;
 			bool PlaySoundFriend = m_aLines[m_CurrentLine].m_Team ? g_Config.m_SndTeamChat : g_Config.m_SndFriendChat;
 
-			char Name[1024];
-			str_format(Name, sizeof(Name), "%s", m_aLines[m_CurrentLine].m_aName);
-
-
 #if defined(CONF_VIDEORECORDER)
 			if(IVideo::Current())
 			{
@@ -1044,9 +1036,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 1.0f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 			}
-			if(!PlaySound && PlaySoundFriend && (GameClient()->Friends()->IsFriend(Name, "\0", true)))
+			if(!PlaySound && PlaySoundFriend && (GameClient()->Friends()->IsFriend(m_aLines[m_CurrentLine].m_aName, "\0", true)))
 			{
-				Client()->Notify("DDNet Chat", Name);
 				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 1.0f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 			}
@@ -1166,7 +1157,7 @@ int CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						char Joined[2048] = "Auto Joined ";
 						str_append(Joined, PlayerName);
 
-						m_pClient->m_Chat.AddLine(-3, 0, Joined);
+						GameClient()->aMessage(Joined);
 						return DETECTION_AUTOJOINTEAM;
 					}
 				}
@@ -1218,7 +1209,7 @@ int CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				"🅀", "🅆", "🄴", "🅁", "🅃", "🅈", "🅄", "🄸", "🄾", "🄿", "🄰", "🅂", "🄳", "🄵", "🄶", "🄷", "🄹", "🄺", "🄻", "🅉", "🅇", "🄲", "🅅", "🄱", "🄽", "🄼",
 				"ⓠ", "ⓦ", "ⓔ", "ⓡ", "ⓣ", "ⓨ", "ⓤ", "ⓘ", "ⓞ", "ⓟ", "ⓐ", "ⓢ", "ⓓ", "ⓕ", "ⓖ", "ⓗ", "ⓙ", "ⓚ", "ⓛ", "ⓩ", "ⓧ", "ⓒ", "ⓥ", "ⓑ", "ⓝ", "ⓜ",
 			};
-		
+
 			for(int i = 0; i < 130; i++)
 			{
 				if(str_find_nocase(pLine, alphabet_fancy[i]))
@@ -1244,7 +1235,7 @@ int CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				SpamFound = true;
 			}
 			if(SpamFound == true)
-				return DETECTION_ADBOT;	
+				return DETECTION_ADBOT;
 		}
 	}
 	return DETECTION_NONE;
@@ -1609,7 +1600,7 @@ void CChat::OnRender()
 
 		m_Input.SetScrollOffset(ScrollOffset);
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
-		
+
 		const char *TextInput = m_Input.GetString();
 
 		str_copy(GameClient()->m_NamePlates.InputText, TextInput);
