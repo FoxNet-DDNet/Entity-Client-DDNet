@@ -209,19 +209,12 @@ public:
 	float MessageRounding() const { return FontSize() * (1 / 2.f); }
 
 	// A-Client
-	/*  Detection 
-	*
-	* 1 = Auto Add Name Change
-	* 2 = Auto Join Team
-	* 3 = Notify On Join
-	* 4 = Ad Bot
-	* 
-	*/
-	int ChatDetection(int ClientId, int Team, const char *pLine);
-	void ChatDetectionAction(int ClientId, int Team, const char *pLine, int Detection);
+	void ChatDetection(int ClientId, int Team, const char *pLine);
 
+	bool ReturnChat;
 	int m_AdBotId;
 	int64_t m_VoteKickTimer;
+
 
 	// ----- send functions -----
 
