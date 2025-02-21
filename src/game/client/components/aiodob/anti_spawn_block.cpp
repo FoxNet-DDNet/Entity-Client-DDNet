@@ -20,7 +20,7 @@ void CAntiSpawnBlock::OnRender()
 	if(!g_Config.m_ClAntiSpawnBlock)
 		return;
 
-	// if Can't find Player or player has started the race, stop
+	// if Can't find Player or player STARTED the race, stop
 	if(!m_pClient || !m_pClient->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
 		return;
 
@@ -29,29 +29,44 @@ void CAntiSpawnBlock::OnRender()
 		return;
 
 	static bool SentTeamRequest;
+	static bool Team0Request;
 
 	if(m_SentKill) // So it resets the state
 	{
+		if(m_pClient->m_Teams.Team(Local) != 0)
+		{
+			GameClient()->m_Chat.SendChat(0, "/team 0");
+		}
 		SentTeamRequest = false;
+		Team0Request = false;
 		m_SentKill = false;
 	}
-
 
 	{
 		vec2 Pos = m_pClient->m_PredictedChar.m_Pos;
 
-		if(m_pClient->m_aClients[Local].m_Predicted.m_FreezeEnd > 0 && !SentTeamRequest)
+		static int64_t Delay = time_get() + time_freq();
+
+		if(!GameClient()->CurrentRaceTime() && !SentTeamRequest)
 		{
-			GameClient()->m_Chat.SendChat(0, "/team -1");
-			SentTeamRequest = true;
+			if(m_pClient->m_Teams.Team(Local) != 0)
+				SentTeamRequest = true;
+			else if(Delay < time_get())
+			{
+				GameClient()->m_Chat.SendChat(0, "/team -1");
+				GameClient()->m_Chat.SendChat(0, "/lock");
+				Delay = time_get() + time_freq() * 2.5f;
+				Team0Request = false;
+			}
 		}
-		else if(m_pClient->RaceHelper()->IsNearStart(Pos, 2) && SentTeamRequest)
+		else if(m_pClient->RaceHelper()->IsNearStart(Pos, 2) && SentTeamRequest && !Team0Request)
 		{
 			if(m_pClient->m_Teams.Team(Local) != 0)
 			{
 				GameClient()->m_Chat.SendChat(0, "/team 0");
-				SentTeamRequest = false;
+				Team0Request = true;
 			}
 		}
+
 	}
 }
