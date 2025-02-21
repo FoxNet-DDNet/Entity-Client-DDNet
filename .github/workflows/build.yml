@@ -229,3 +229,4 @@ jobs:
       uses: actions/upload-artifact@v4
       with:
         name: A-Client-${{ matrix.os }}
+        path: release/artifacts
