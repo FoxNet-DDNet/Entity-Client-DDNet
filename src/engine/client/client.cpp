@@ -2202,18 +2202,11 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 
 							char aBuf[128];
 							char aBufMsg[256];
-							// if(!g_Config.m_ClRunOnJoin[0] && !g_Config.m_ClDummyDefaultEyes && !g_Config.m_ClPlayerDefaultEyes)
-							//	str_format(aBufMsg, sizeof(aBufMsg), "/timeout %s", m_aTimeoutCodes[Conn]);
-							// else
-							//	str_format(aBufMsg, sizeof(aBufMsg), "/mc;timeout %s", m_aTimeoutCodes[Conn]);
-							str_copy(aBufMsg, "/mc");
-							bool HasMsg = false;
-							if(g_Config.m_ClRunOnJoin[0] && !g_Config.m_ClRunOnJoinConsole)
-							{
-								str_format(aBuf, sizeof(aBuf), ";%s", g_Config.m_ClRunOnJoin);
-								str_append(aBufMsg, aBuf);
-								HasMsg = true;
-							}
+							if(!g_Config.m_ClRunOnJoin[0] && !g_Config.m_ClDummyDefaultEyes && !g_Config.m_ClPlayerDefaultEyes)
+								str_format(aBufMsg, sizeof(aBufMsg), "/timeout %s", m_aTimeoutCodes[Conn]);
+							else
+								str_format(aBufMsg, sizeof(aBufMsg), "/mc;timeout %s", m_aTimeoutCodes[Conn]);
+
 							if(g_Config.m_ClDummyDefaultEyes || g_Config.m_ClPlayerDefaultEyes)
 							{
 								int Emote = ((g_Config.m_ClDummy) ? !Dummy : Dummy) ? g_Config.m_ClDummyDefaultEyes : g_Config.m_ClPlayerDefaultEyes;
@@ -2245,6 +2238,11 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 									str_append(aBufMsg, aBuf);
 									HasMsg = true;
 								}
+							}
+							if(g_Config.m_ClRunOnJoin[0])
+							{
+								str_format(aBuf, sizeof(aBuf), ";%s", g_Config.m_ClRunOnJoin);
+								str_append(aBufMsg, aBuf);
 							}
 							if(IsSixup())
 							{
