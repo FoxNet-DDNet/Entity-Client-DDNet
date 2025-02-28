@@ -174,6 +174,7 @@ public:
 };
 
 // A-Client
+/*
 class CNameplateChatData 
 {
 public:
@@ -187,7 +188,7 @@ public:
 	STextContainerIndex m_TextContainerIndex;
 	int m_QuadContainerIndex;
 
-};
+};*/
 
 class CNamePlates : public CComponent
 {
@@ -242,23 +243,25 @@ private:
 	};
 
 	void RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateData &Data);
-
+	
+	/*
 	float FontSize() const { return 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f; }
-
-	// A-Client
+	
+	A-Client
 	void NameplateBoxSelf(CNamePlate &NamePlate, const CRenderNamePlateData &Data, float y);
 	void NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData &Data,float y);
 
 	void OnMessage(int MsgType, void *pRawMsg) override;
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
-	bool LineShouldHighlight(const char *pLine, const char *pName);
+	bool LineShouldHighlight(const char *pLine, const char *pName);*/
 
 public:
+	/*
 	bool SentText;
 	bool ShowSelf;
 	char InputText[MAX_LINE_LENGTH];
 	int64_t FadeInSelf;
-	CNameplateChatData m_NameplatePlayers[MAX_CLIENTS];
+	CNameplateChatData m_NameplatePlayers[MAX_CLIENTS];*/
 
 
 	void RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha, bool ForceAlpha);

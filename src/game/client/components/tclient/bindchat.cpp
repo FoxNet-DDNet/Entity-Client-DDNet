@@ -342,10 +342,7 @@ bool CBindchat::ChatDoBinds(const char *pText)
 	if(pText[0] == ' ' || pText[0] == '\0' || pText[1] == '\0')
 		return false;
 
-	char Prefix[2];
-	str_format(Prefix, sizeof(Prefix), "%s", pText);
-
-	const bool IsExclemataion = !str_comp(Prefix, "!") && g_Config.m_ClSendExclamation;
+	const bool IsExclemataion = str_startswith(pText, "!") && g_Config.m_ClSendExclamation;
 
 	CChat &Chat = GameClient()->m_Chat;
 	const char *pSpace = str_find(pText, " ");

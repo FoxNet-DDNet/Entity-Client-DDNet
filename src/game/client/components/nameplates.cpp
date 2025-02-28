@@ -139,97 +139,6 @@ void CNamePlate::CNamePlateOldWeakStrong::Update(CNamePlates &This, int Id, floa
 	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
-void CNamePlates::OnMessage(int MsgType, void *pRawMsg)
-{
-	if(m_pClient->m_SuppressEvents)
-		return;
-
-	if(MsgType == NETMSGTYPE_SV_CHAT)
-	{
-		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
-		OnChatMessage(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
-	}
-}
-
-bool CNamePlates::LineShouldHighlight(const char *pLine, const char *pName)
-{
-	const char *pHL = str_utf8_find_nocase(pLine, pName);
-
-	if(pHL)
-	{
-		int Length = str_length(pName);
-
-		if(Length > 0 && (pLine == pHL || pHL[-1] == ' ') && (pHL[Length] == 0 || pHL[Length] == ' ' || pHL[Length] == '.' || pHL[Length] == '!' || pHL[Length] == ',' || pHL[Length] == '?' || pHL[Length] == ':'))
-			return true;
-	}
-
-	return false;
-}
-
-void CNamePlates::OnChatMessage(int ClientId, int Team, const char *pMsg)
-{
-	if(ClientId < 0 || ClientId > MAX_CLIENTS)
-		return;
-	bool Highlighted = false;
-
-	CRenderNamePlateData Data;
-	// check for highlighted name
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		if(m_pClient->m_aLocalIds[0] == -1)
-			return;
-		if(m_pClient->Client()->DummyConnected() && m_pClient->m_aLocalIds[1] == -1)
-			return;
-		if(ClientId >= 0 && ClientId != m_pClient->m_aLocalIds[0] && (!m_pClient->Client()->DummyConnected() || ClientId != m_pClient->m_aLocalIds[1]))
-		{
-			// main character
-			Highlighted |= LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName);
-		}
-	}
-	else
-	{
-		if(m_pClient->m_Snap.m_LocalClientId == -1)
-			return;
-		// on demo playback use local id from snap directly,
-		// since m_aLocalIds isn't valid there
-		Highlighted |= m_pClient->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_aName);
-	}
-
-	if(Team == 3) // whisper recv
-		Highlighted = true;
-	if(Team == 2)
-		return;
-
-	char Message[MAX_LINE_LENGTH];
-	str_format(Message, sizeof(Message), "%s", pMsg);
-	if(Team == 3)
-		str_format(Message, sizeof(Message), "→ %s", pMsg);
-
-	m_NameplatePlayers[ClientId].m_TimeO = time_get() + time_freq() * 4.0f + time_freq() * str_length(pMsg) / 40.0f;
-	m_NameplatePlayers[ClientId].m_TimeI = -time_get();
-	m_NameplatePlayers[ClientId].m_Team = Team;
-	m_NameplatePlayers[ClientId].m_Highlighted = Highlighted;
-
-	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
-	m_aNamePlates[ClientId].m_ChatBox.Update(*this, Message, FontSize);
-}
-
-void CNamePlate::CNamePlateChatBox::Update(CNamePlates &This, const char *pMsg, float FontSize)
-{
-	if(str_comp(m_aMsg, pMsg) == 0 && m_FontSize == FontSize)
-		return;
-	str_copy(m_aMsg, pMsg);
-	m_FontSize = FontSize;
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	This.Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	This.RenderTools()->MapScreenToInterface(This.m_pClient->m_Camera.m_Center.x, This.m_pClient->m_Camera.m_Center.y);
-	CTextCursor Cursor;
-	This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
-	Cursor.m_LineWidth = 800.0f;
-	This.TextRender()->RecreateTextContainer(m_TextContainerIndex, &Cursor, m_aMsg);
-	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
-}
-
 void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateData &Data)
 {
 	ColorRGBA OutlineColor = Data.m_OutlineColor.WithAlpha(Data.m_Alpha / 2.0f);
@@ -266,7 +175,8 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 		Graphics()->QuadsSetRotation(0.0f);
 	}
-
+	
+	/*
 	bool Chatting = m_pClient->m_Controls.m_aInputData[g_Config.m_ClDummy].m_PlayerFlags & PLAYERFLAG_CHATTING;
 
 	if(Chatting)
@@ -284,7 +194,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 
 		m_aNamePlates[m_pClient->m_Snap.m_LocalClientId].m_ChatBox.Update(*this, TextInput, 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f);
 		NameplateBoxSelf(NamePlate, Data, YOffset);
-	}
+	}*/
 
 	if((Data.m_pName && Data.m_pName[0] != '\0') || Data.m_ClientId >= 0 || Data.m_ShowFriendMark)
 	{
@@ -437,156 +347,16 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 			}
 		}
 
+		/*
 		// A-Client Chat Box
 		if(Data.m_IsGame && Data.m_RealClientId >= 0 && g_Config.m_ClNameplateChatBox)
 		{
 			NameplateBox(NamePlate, Data, YOffset);
-		}
+		}*/
 	}
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 	TextRender()->TextOutlineColor(TextRender()->DefaultTextOutlineColor());
 	TextRender()->SetRenderFlags(0);
-}
-
-void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData &Data, float y)
-{
-	CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
-
-	// If You send the Whisper or the Player is in the mute list, dont show the box
-	if(ChatData.m_Team == TEAM_WHISPER_SEND || GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
-		return;
-
-	// If the player isnt a Friend and ClNameplateChatBoxFriends is turned on, dont show the message
-	if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
-		return;
-
-		// Values
-	float BoxAlpha = 0.65f;
-	float TextAlpha = 1.0f;
-
-	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
-	y -= FontSize;
-	const bool OtherTeam = m_pClient->IsOtherTeam(Data.m_RealClientId);
-
-	float FadeOut = (static_cast<float>(ChatData.m_TimeO) - time_get());
-	float FadeIn = (static_cast<float>(ChatData.m_TimeI) + time_get());
-
-	float Blend = clamp(FadeOut / time_freq() * 2, 0.0f, 1.0f);
-	if(FadeIn / time_freq() <= 1.0f)
-		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, 1.0f);
-
-	// ColorRGBA for the text/background
-	ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, BoxAlpha);
-	ColorRGBA TextColor = ColorRGBA(1.0f, 1.0f, 1.0f, TextAlpha);
-
-	if(ChatData.m_Highlighted || ChatData.m_Team == 3)
-	{
-		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor));
-		ChatBoxColor.s = TextColor.s / 4;
-	}
-	else if(ChatData.m_Team == 1)
-	{
-		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor));
-		ChatBoxColor.s = TextColor.s / 4;
-	}
-
-	// Change Alpha Value if Player is in a different team and show others is turned on
-	if(OtherTeam)
-	{
-		const float OthersAlpha = g_Config.m_ClShowOthersAlpha / 100.0f;
-
-		if(g_Config.m_ClShowOthersAlpha / 100.0f <= 0.7f)
-			BoxAlpha = OthersAlpha;
-
-		TextAlpha = OthersAlpha;
-	}
-
-	// Make sure the TextContainerIndex is Valid and the messages Alpha is > 0
-	if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid() && Blend > 0)
-	{
-		float TextHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H;
-		// Background
-		{
-			Graphics()->TextureClear();
-			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * Blend));
-
-			// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
-			float xPos = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
-			float yPos = y - TextHeight;
-			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize * 1.05;
-
-			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
-			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
-
-			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2.5f, 0.0f);
-		}
-		// Text
-		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y - TextHeight + FontSize / 2);
-	}
-}
-
-void CNamePlates::NameplateBoxSelf(CNamePlate &NamePlate, const CRenderNamePlateData &Data, float y)
-{
-	CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
-
-	if(ChatData.m_Team == 2 || GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
-		return;
-
-	float FadeIn = (FadeInSelf + time_get());
-	float Max = 1.0f;
-	float Blend = clamp(FadeIn / time_freq() * 10, 0.0f, Max) / Max;
-
-	float BoxAlpha = 0.65f;
-	float TextAlpha = 1.0f;
-
-	if(!SentText)
-	{
-		BoxAlpha = 0.45f;
-		TextAlpha = 0.85f;
-	}
-
-	ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, BoxAlpha);
-	ColorRGBA TextColor = ColorRGBA(1.0f, 1.0f, 1.0f, TextAlpha);
-
-	if(ChatData.m_Highlighted || ChatData.m_Team == 3)
-	{
-		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor));
-		ChatBoxColor.s = TextColor.s / 4;
-	}
-	else if(ChatData.m_Team == 1)
-	{
-		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor));
-		ChatBoxColor.s = TextColor.s / 4;
-	}
-
-	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
-	y -= FontSize;
-
-	if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid() && Blend > 0)
-	{
-		ShowSelf = true;
-		float TextHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H;
-		// Background
-		{
-			Graphics()->TextureClear();
-			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * Blend));
-
-			// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
-			float xPos = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
-			float yPos = y - TextHeight;
-			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize * 1.05;
-
-			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
-			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
-
-			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2.5f, 0.0f);
-		}
-		
-		// Text
-		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y - TextHeight + FontSize / 2);
-	}
-	else
-		ShowSelf = false;
 }
 
 void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha, bool ForceAlpha)
@@ -846,3 +616,235 @@ void CNamePlates::OnInit()
 	RenderTools()->QuadContainerAddSprite(m_DirectionQuadContainerIndex, 0.0f, 0.0f, 1.0f);
 	Graphics()->QuadContainerUpload(m_DirectionQuadContainerIndex);
 }
+/*
+void CNamePlates::NameplateBoxSelf(CNamePlate &NamePlate, const CRenderNamePlateData &Data, float y)
+{
+	CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
+
+	if(ChatData.m_Team == 2 || GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
+		return;
+
+	float FadeIn = (FadeInSelf + time_get());
+	float Max = 1.0f;
+	float Blend = clamp(FadeIn / time_freq() * 10, 0.0f, Max) / Max;
+
+	float BoxAlpha = 0.65f;
+	float TextAlpha = 1.0f;
+
+	if(!SentText)
+	{
+		BoxAlpha = 0.45f;
+		TextAlpha = 0.85f;
+	}
+
+	ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, BoxAlpha);
+	ColorRGBA TextColor = ColorRGBA(1.0f, 1.0f, 1.0f, TextAlpha);
+
+	if(ChatData.m_Highlighted || ChatData.m_Team == 3)
+	{
+		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor));
+		ChatBoxColor.s = TextColor.s / 4;
+	}
+	else if(ChatData.m_Team == 1)
+	{
+		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor));
+		ChatBoxColor.s = TextColor.s / 4;
+	}
+
+	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
+	y -= FontSize;
+
+	if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid() && Blend > 0)
+	{
+		ShowSelf = true;
+		float TextHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H;
+		// Background
+		{
+			Graphics()->TextureClear();
+			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * Blend));
+
+			// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
+			float xPos = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
+			float yPos = y - TextHeight;
+			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize * 1.05;
+
+			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
+			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
+
+			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2.5f, 0.0f);
+		}
+
+		// Text
+		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y - TextHeight + FontSize / 2);
+	}
+	else
+		ShowSelf = false;
+}
+
+void CNamePlates::NameplateBox(CNamePlate &NamePlate, const CRenderNamePlateData &Data, float y)
+{
+	CNameplateChatData ChatData = m_NameplatePlayers[Data.m_RealClientId];
+
+	// If You send the Whisper or the Player is in the mute list, dont show the box
+	if(ChatData.m_Team == TEAM_WHISPER_SEND || GameClient()->m_aClients[Data.m_RealClientId].m_IsMute)
+		return;
+
+	// If the player isnt a Friend and ClNameplateChatBoxFriends is turned on, dont show the message
+	if(g_Config.m_ClNameplateChatBoxFriends && !m_pClient->m_aClients[Data.m_RealClientId].m_Friend)
+		return;
+
+		// Values
+	float BoxAlpha = 0.65f;
+	float TextAlpha = 1.0f;
+
+	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
+	y -= FontSize;
+	const bool OtherTeam = m_pClient->IsOtherTeam(Data.m_RealClientId);
+
+	float FadeOut = (static_cast<float>(ChatData.m_TimeO) - time_get());
+	float FadeIn = (static_cast<float>(ChatData.m_TimeI) + time_get());
+
+	float Blend = clamp(FadeOut / time_freq() * 2, 0.0f, 1.0f);
+	if(FadeIn / time_freq() <= 1.0f)
+		Blend = clamp(FadeIn / time_freq() * 8, 0.0f, 1.0f);
+
+	// ColorRGBA for the text/background
+	ColorRGBA ChatBoxColor = ColorRGBA(0.0f, 0.0f, 0.0f, BoxAlpha);
+	ColorRGBA TextColor = ColorRGBA(1.0f, 1.0f, 1.0f, TextAlpha);
+
+	if(ChatData.m_Highlighted || ChatData.m_Team == 3)
+	{
+		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor));
+		ChatBoxColor.s = TextColor.s / 4;
+	}
+	else if(ChatData.m_Team == 1)
+	{
+		TextColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor));
+		ChatBoxColor.s = TextColor.s / 4;
+	}
+
+	// Change Alpha Value if Player is in a different team and show others is turned on
+	if(OtherTeam)
+	{
+		const float OthersAlpha = g_Config.m_ClShowOthersAlpha / 100.0f;
+
+		if(g_Config.m_ClShowOthersAlpha / 100.0f <= 0.7f)
+			BoxAlpha = OthersAlpha;
+
+		TextAlpha = OthersAlpha;
+	}
+
+	// Make sure the TextContainerIndex is Valid and the messages Alpha is > 0
+	if(NamePlate.m_ChatBox.m_TextContainerIndex.Valid() && Blend > 0)
+	{
+		float TextHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H;
+		// Background
+		{
+			Graphics()->TextureClear();
+			Graphics()->SetColor(ChatBoxColor.WithAlpha(BoxAlpha * Blend));
+
+			// All of these are magic numbers, so if you read this don't even try to figure them out - I have no clue either
+			float xPos = (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - FontSize / 2.15f;
+			float yPos = y - TextHeight;
+			float xWidth = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W + FontSize * 1.05;
+
+			float yHeight = TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_H + FontSize * 1.1f;
+			int ContainerIndex = Graphics()->CreateRectQuadContainer(xPos, yPos, xWidth, yHeight, 8, IGraphics::CORNER_ALL);
+
+			Graphics()->RenderQuadContainerEx(ContainerIndex, 0, -1, -2.5f, 0.0f);
+		}
+		// Text
+		TextRender()->RenderTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex, TextColor.WithAlpha(Blend * TextAlpha), ColorRGBA(0.0f, 0.0f, 0.0f, Blend * TextAlpha), (Data.m_Position.x - TextRender()->GetBoundingBoxTextContainer(NamePlate.m_ChatBox.m_TextContainerIndex).m_W / 2.0f) - 2, y - TextHeight + FontSize / 2);
+	}
+}
+
+void CNamePlates::OnMessage(int MsgType, void *pRawMsg)
+{
+	if(m_pClient->m_SuppressEvents)
+		return;
+
+	if(MsgType == NETMSGTYPE_SV_CHAT)
+	{
+		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
+		OnChatMessage(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
+	}
+}
+
+bool CNamePlates::LineShouldHighlight(const char *pLine, const char *pName)
+{
+	const char *pHL = str_utf8_find_nocase(pLine, pName);
+
+	if(pHL)
+	{
+		int Length = str_length(pName);
+
+		if(Length > 0 && (pLine == pHL || pHL[-1] == ' ') && (pHL[Length] == 0 || pHL[Length] == ' ' || pHL[Length] == '.' || pHL[Length] == '!' || pHL[Length] == ',' || pHL[Length] == '?' || pHL[Length] == ':'))
+			return true;
+	}
+
+	return false;
+}
+
+void CNamePlates::OnChatMessage(int ClientId, int Team, const char *pMsg)
+{
+	if(ClientId < 0 || ClientId > MAX_CLIENTS)
+		return;
+	bool Highlighted = false;
+
+	CRenderNamePlateData Data;
+	// check for highlighted name
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	{
+		if(m_pClient->m_aLocalIds[0] == -1)
+			return;
+		if(m_pClient->Client()->DummyConnected() && m_pClient->m_aLocalIds[1] == -1)
+			return;
+		if(ClientId >= 0 && ClientId != m_pClient->m_aLocalIds[0] && (!m_pClient->Client()->DummyConnected() || ClientId != m_pClient->m_aLocalIds[1]))
+		{
+			// main character
+			Highlighted |= LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName);
+		}
+	}
+	else
+	{
+		if(m_pClient->m_Snap.m_LocalClientId == -1)
+			return;
+		// on demo playback use local id from snap directly,
+		// since m_aLocalIds isn't valid there
+		Highlighted |= m_pClient->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pMsg, m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_aName);
+	}
+
+	if(Team == 3) // whisper recv
+		Highlighted = true;
+	if(Team == 2)
+		return;
+
+	char Message[MAX_LINE_LENGTH];
+	str_format(Message, sizeof(Message), "%s", pMsg);
+	if(Team == 3)
+		str_format(Message, sizeof(Message), "→ %s", pMsg);
+
+	m_NameplatePlayers[ClientId].m_TimeO = time_get() + time_freq() * 4.0f + time_freq() * str_length(pMsg) / 40.0f;
+	m_NameplatePlayers[ClientId].m_TimeI = -time_get();
+	m_NameplatePlayers[ClientId].m_Team = Team;
+	m_NameplatePlayers[ClientId].m_Highlighted = Highlighted;
+
+	const float FontSize = 18.0f + 20.0f * g_Config.m_ClNameplateChatBoxSize / 350.0f;
+	m_aNamePlates[ClientId].m_ChatBox.Update(*this, Message, FontSize);
+}
+
+void CNamePlate::CNamePlateChatBox::Update(CNamePlates &This, const char *pMsg, float FontSize)
+{
+	if(str_comp(m_aMsg, pMsg) == 0 && m_FontSize == FontSize)
+		return;
+	str_copy(m_aMsg, pMsg);
+	m_FontSize = FontSize;
+	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
+	This.Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	This.RenderTools()->MapScreenToInterface(This.m_pClient->m_Camera.m_Center.x, This.m_pClient->m_Camera.m_Center.y);
+	CTextCursor Cursor;
+	This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	Cursor.m_LineWidth = 800.0f;
+	This.TextRender()->RecreateTextContainer(m_TextContainerIndex, &Cursor, m_aMsg);
+	This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+}*/

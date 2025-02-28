@@ -323,9 +323,9 @@ MACRO_CONFIG_INT(ClRainbowMode, tc_rainbow_mode, 1, 1, 4, CFGFLAG_CLIENT | CFGFL
 MACRO_CONFIG_INT(ClRainbowSpeed, tc_rainbow_speed, 25, 0, 10000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow speed as a percentage (50 = half speed, 200 = double speed)")
 
 // Nameplates Chat Messages
-MACRO_CONFIG_INT(ClNameplateChatBox, ac_nameplate_chatbox, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
-MACRO_CONFIG_INT(ClNameplateChatBoxFriends, ac_nameplate_chatbox_friends, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Chat Box for friends only")
-MACRO_CONFIG_INT(ClNameplateChatBoxSize, ac_nameplate_chatbox_size, 40, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
+//MACRO_CONFIG_INT(ClNameplateChatBox, ac_nameplate_chatbox, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
+//MACRO_CONFIG_INT(ClNameplateChatBoxFriends, ac_nameplate_chatbox_friends, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Chat Box for friends only")
+//MACRO_CONFIG_INT(ClNameplateChatBoxSize, ac_nameplate_chatbox_size, 40, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
 
 // Flags
 MACRO_CONFIG_INT(ClAClientSettingsTabs, ac_aclient_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")
