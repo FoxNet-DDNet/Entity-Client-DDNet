@@ -97,6 +97,8 @@ static ColorRGBA GetGametypeTextColor(const char *pGametype)
 		HslaColor = ColorHSLA(0.46f, 1.0f, 0.75f);
 	else if(str_find_nocase(pGametype, "s-ddr"))
 		HslaColor = ColorHSLA(1.0f, 1.0f, 0.7f);
+	else if(str_find_nocase(pGametype, "FoxNetwork"))
+		HslaColor = ColorHSLA(0.72f, 0.68f, 0.73f);
 	else
 		HslaColor = ColorHSLA(1.0f, 1.0f, 1.0f);
 	return color_cast<ColorRGBA>(HslaColor);

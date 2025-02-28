@@ -128,7 +128,7 @@ void CAutoKill::OnRender()
 					}
 					else
 					{
-						GameClient()->SendKill(LocalCID);
+						GameClient()->SendKill();
 					}
 
 					m_SentAutoKill = true;

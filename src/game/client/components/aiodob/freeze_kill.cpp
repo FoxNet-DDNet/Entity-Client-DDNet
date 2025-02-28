@@ -134,7 +134,7 @@ void CFreezeKill::OnRender()
 				}
 				else if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
 				{
-					GameClient()->SendKill(Local);
+					GameClient()->SendKill();
 					m_SentFreezeKill = true;
 					return;
 				}
@@ -153,7 +153,7 @@ void CFreezeKill::OnRender()
 			}
 			else
 			{
-				GameClient()->SendKill(Local);
+				GameClient()->SendKill();
 				m_SentFreezeKill = true;
 			}
 			return;

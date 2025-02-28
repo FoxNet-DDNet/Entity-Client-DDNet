@@ -1723,6 +1723,9 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 			if(AdBotFound == true)
 			{
+				if(str_find_nocase(pLine,"← "))
+					return;
+
 				// Console Storing
 				char Text[260] = "";
 				char aBuf[260];
@@ -1765,13 +1768,13 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					GameClient()->aMessage("│");
 					GameClient()->aMessage(AdBotInfo);
 					GameClient()->aMessage("│");
-					GameClient()->aMessage("│ If you wish to vote manually change");
-					GameClient()->aMessage("│ ac_dismiss_adbots to 1");
+					GameClient()->aMessage("│");
+					GameClient()->aMessage("│ Press F4 (Vote No) to cancel the vote");
 					GameClient()->aMessage("│");
 					GameClient()->aMessage("╰───────────────────────");
 
 					char Id[8];
-					str_format(Id, sizeof(Id), "%d", m_AdBotId);
+					str_format(Id, sizeof(Id), "%d", ClientId);
 
 					GameClient()->m_Voting.Callvote("kick", Id, "Krx (auto vote)");
 

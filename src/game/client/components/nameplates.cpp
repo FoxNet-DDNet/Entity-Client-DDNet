@@ -274,7 +274,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 	else
 		FadeInSelf = -time_get();
 
-	if(Data.m_IsLocal && ShowSelf)
+	if(Data.m_IsLocal && ShowSelf && g_Config.m_ClNameplateChatBox)
 	{
 		char TextInput[MAX_LINE_LENGTH];
 		if(str_length(InputText) >= 1)
