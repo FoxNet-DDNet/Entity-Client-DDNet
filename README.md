@@ -1,7 +1,7 @@
 ![gui_logo](https://github.com/user-attachments/assets/ce3d9a6f-f8ae-4a6c-819b-0150e4095118)
 
 ### Fox's client which mostly consists of stolen code
-If you find any bugs or have an Idea for a *sinmple* Feature then create a new Issue
+If you find any bugs or have an Idea for a *simple* Feature then create a new Issue
 
 # Setting Pages:
 ![Settings Page](https://github.com/user-attachments/assets/e361a830-0623-4216-b767-665328b7bbaa)
