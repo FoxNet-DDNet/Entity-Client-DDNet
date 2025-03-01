@@ -374,7 +374,7 @@ void CAiodob::OnConnect()
 
 		// info when joining a server of enabled components
 
-		if(g_Config.m_ClEnabledInfo)
+		if(g_Config.m_ClEnabledInfo || g_Config.m_ClListsInfo)
 		{
 			GameClient()->aMessage("╭──                  Aiodob Info");
 			GameClient()->aMessage("│");
@@ -384,58 +384,61 @@ void CAiodob::OnConnect()
 				OnlineInfo(true);
 				GameClient()->aMessage("│");
 			}
-			if((g_Config.m_ClAutoKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
+			if(g_Config.m_ClEnabledInfo)
 			{
-				GameClient()->aMessage("│ Auto Kill Enabled!");
-				GameClient()->aMessage("│");
-			}
-			else if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
-			{
-				GameClient()->aMessage("│ Auto Kill Disabled, Not on Mult!");
-				GameClient()->aMessage("│");
-			}
-			else if(!g_Config.m_ClAutoKill)
-			{
-				GameClient()->aMessage("│ Auto Kill Disabled!");
-				GameClient()->aMessage("│");
-			}
+				if((g_Config.m_ClAutoKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
+				{
+					GameClient()->aMessage("│ Auto Kill Enabled!");
+					GameClient()->aMessage("│");
+				}
+				else if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
+				{
+					GameClient()->aMessage("│ Auto Kill Disabled, Not on Mult!");
+					GameClient()->aMessage("│");
+				}
+				else if(!g_Config.m_ClAutoKill)
+				{
+					GameClient()->aMessage("│ Auto Kill Disabled!");
+					GameClient()->aMessage("│");
+				}
 
-			// Freeze Kill
+				// Freeze Kill
 
-			if((g_Config.m_ClFreezeKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
-			{
-				GameClient()->aMessage("│ Freeze Kill Enabled!");
-				GameClient()->aMessage("│");
-			}
-			else if(g_Config.m_ClFreezeKill && (g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
-			{
-				GameClient()->aMessage("│ Freeze Kill Disabled, Not on Mult!");
-				GameClient()->aMessage("│");
-			}
-			if(!g_Config.m_ClFreezeKill)
-			{
-				GameClient()->aMessage("│ Freeze Kill Disabled!");
-				GameClient()->aMessage("│");
-			}
-			if(g_Config.m_ClGoresMode)
-			{
-				GameClient()->aMessage("│ Gores Mode: ON");
-				GameClient()->aMessage("│");
-			}
-			else
-			{
-				GameClient()->aMessage("│ Gores Mode: OFF");
-				GameClient()->aMessage("│");
-			}
-			if(g_Config.m_ClChatBubble)
-			{
-				GameClient()->aMessage("│ Chat Bubble is Currently: ON");
-				GameClient()->aMessage("│");
-			}
-			else
-			{
-				GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
-				GameClient()->aMessage("│");
+				if((g_Config.m_ClFreezeKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
+				{
+					GameClient()->aMessage("│ Freeze Kill Enabled!");
+					GameClient()->aMessage("│");
+				}
+				else if(g_Config.m_ClFreezeKill && (g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
+				{
+					GameClient()->aMessage("│ Freeze Kill Disabled, Not on Mult!");
+					GameClient()->aMessage("│");
+				}
+				if(!g_Config.m_ClFreezeKill)
+				{
+					GameClient()->aMessage("│ Freeze Kill Disabled!");
+					GameClient()->aMessage("│");
+				}
+				if(g_Config.m_ClGoresMode)
+				{
+					GameClient()->aMessage("│ Gores Mode: ON");
+					GameClient()->aMessage("│");
+				}
+				else
+				{
+					GameClient()->aMessage("│ Gores Mode: OFF");
+					GameClient()->aMessage("│");
+				}
+				if(g_Config.m_ClChatBubble)
+				{
+					GameClient()->aMessage("│ Chat Bubble is Currently: ON");
+					GameClient()->aMessage("│");
+				}
+				else
+				{
+					GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
+					GameClient()->aMessage("│");
+				}
 			}
 			GameClient()->aMessage("╰───────────────────────");
 		}
