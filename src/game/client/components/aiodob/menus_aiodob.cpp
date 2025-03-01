@@ -1974,7 +1974,11 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	int HoveringIndex = -1;
 
 	float MouseDist = distance(Pos, Ui()->MousePos());
-	if(MouseDist < Radius && MouseDist > Radius * 0.25f)
+	if(GameClient()->m_Bindwheel.m_vBinds.empty()) // A-Client -> Fixes a Crash
+	{
+		TextRender()->Text(Pos.x - 30.0f, Pos.y - 10.0f, 20.0f, "Empty");
+	}
+	else if(MouseDist < Radius && MouseDist > Radius * 0.25f)
 	{
 		int SegmentCount = GameClient()->m_Bindwheel.m_vBinds.size();
 		float SegmentAngle = 2 * pi / SegmentCount;
