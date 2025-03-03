@@ -163,7 +163,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Tooltips,
 					      &CMenus::m_Binder,
 					      &m_GameConsole,
-						  // aiodob
+						  // A-Client
 					      &m_Aiodob,
 					      &m_AntiSpawnBlock,
 						  &m_FreezeKill,
@@ -366,8 +366,8 @@ void CGameClient::OnInit()
 	Client()->UpdateAndSwap();
 
 	const char *pLoadingDDNetCaption = Localize("Loading A-Client");
-	const char *pLoadingMessageComponents = Localize("Loading Something");
-	const char *pLoadingMessageComponentsSpecial = Localize("Madly in love with Sulie");
+	const char *pLoadingMessageComponents = Localize("Initializing components");
+	const char *pLoadingMessageComponentsSpecial = Localize("Why are you slowmo replaying to read this?");
 	char aLoadingMessage[256];
 
 	// init all components
@@ -660,7 +660,6 @@ void CGameClient::OnReset()
 		Stats.Reset();
 
 	m_NextChangeInfo = 0;
-
 	std::fill(std::begin(m_aLocalIds), std::end(m_aLocalIds), -1);
 	m_DummyInput = {};
 	m_HammerInput = {};
@@ -776,6 +775,9 @@ void CGameClient::UpdatePositions()
 
 void CGameClient::OnRender()
 {
+	const ColorRGBA ClearColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOverlayEntities ? g_Config.m_ClBackgroundEntitiesColor : g_Config.m_ClBackgroundColor));
+	Graphics()->Clear(ClearColor.r, ClearColor.g, ClearColor.b);
+
 	// check if multi view got activated
 	if(!m_MultiView.m_IsInit && m_MultiViewActivated)
 	{
@@ -2622,8 +2624,8 @@ void CGameClient::OnPredict()
 			pSmoothDummyChar->OnPredictedInput(pDummyInputData);
 		m_PredSmoothingWorld.Tick();
 
-		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
+	for(int i = 0; i < MAX_CLIENTS; i++)
+	{
 			if(!m_Snap.m_aCharacters[i].m_Active || !m_aLastActive[i])
 				continue;
 
@@ -2785,9 +2787,9 @@ void CGameClient::OnPredict()
 		{
 			if(m_NewPredictedTick)
 			{
-				m_aLastPos[i] = m_aClients[i].m_Predicted.m_Pos;
-				m_aLastActive[i] = true;
-			}
+			m_aLastPos[i] = m_aClients[i].m_Predicted.m_Pos;
+			m_aLastActive[i] = true;
+		}
 		}
 		else
 			m_aLastActive[i] = false;
@@ -3714,6 +3716,7 @@ void CGameClient::UpdateRenderedCharacters()
 			vec2(m_Snap.m_aCharacters[i].m_Cur.m_X, m_Snap.m_aCharacters[i].m_Cur.m_Y),
 			Client()->IntraGameTick(g_Config.m_ClDummy));
 		vec2 Pos = UnpredPos;
+
 		CCharacter *pChar = m_PredictedWorld.GetCharacterById(i);
 		// TODO: @Tater remove this garbage
 		if(i == m_Snap.m_LocalClientId)
@@ -3944,7 +3947,7 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 			m_aClients[ClientId].m_aPredTick[(SmoothTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
 			m_aClients[ClientId].m_aPredTick[SmoothTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + g_Config.m_ClFastInput)
 		{
-			Pos[i] = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200][i], m_aClients[ClientId].m_aPredPos[SmoothTick % 200][i], SmoothIntra);
+				Pos[i] = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200][i], m_aClients[ClientId].m_aPredPos[SmoothTick % 200][i], SmoothIntra);
 		}
 	}
 	return Pos;
@@ -3953,21 +3956,6 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 void CGameClient::Echo(const char *pString)
 {
 	m_Chat.Echo(pString);
-}
-
-void CGameClient::aMessage(const char *pString)
-{
-	m_Chat.AddLine(TEAM_MESSAGE, 0, pString);
-}
-
-void CGameClient::OnJoinInfo()
-{
-	m_Aiodob.OnConnect();
-}
-
-void CGameClient::SetLastMovementTime(int Delay)
-{
-	m_Aiodob.m_LastMovement = time_get() + time_freq() * Delay;
 }
 
 bool CGameClient::IsOtherTeam(int ClientId) const
@@ -5168,4 +5156,19 @@ int CGameClient::FindFirstMultiViewId()
 bool CGameClient::CheckNewInput()
 {
 	return m_Controls.CheckNewInput();
+}
+
+void CGameClient::aMessage(const char *pString)
+{
+	m_Chat.AddLine(TEAM_MESSAGE, 0, pString);
+}
+
+void CGameClient::OnJoinInfo()
+{
+	m_Aiodob.OnConnect();
+}
+
+void CGameClient::SetLastMovementTime(int Delay)
+{
+	m_Aiodob.m_LastMovement = time_get() + time_freq() * Delay;
 }
