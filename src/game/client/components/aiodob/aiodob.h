@@ -95,6 +95,8 @@ class CAiodob : public CComponent
 	// Console Commands
 	virtual void OnConsoleInit() override;
 
+	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
+
 	static void ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData);
 	static void ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData);
 	static void ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData);
@@ -171,8 +173,8 @@ public:
 	int m_RainbowFeet[2] = {false, false};
 	int m_RainbowColor[2];
 	int m_RainbowSpeed = 10;
-	int m_Saturation[2] = {200, 200};
-	int m_Lightness[2] = {30, 30};
+	int m_RainbowSat[2] = {200, 200};
+	int m_RainbowLht[2] = {30, 30};
 
 	// Preview
 	unsigned int m_PreviewRainbowColor[2];

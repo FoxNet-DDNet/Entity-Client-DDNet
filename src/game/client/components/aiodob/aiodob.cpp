@@ -533,8 +533,8 @@ void CAiodob::Rainbow()
 	}
 
 	float h = (round_to_int(static_cast<float>(time_get()) / time_freq() * m_RainbowSpeed * 0.1f) % 255 / 255.f);
-	float s = abs(m_Saturation[g_Config.m_ClDummy] - 255);
-	float l = abs(m_Lightness[g_Config.m_ClDummy] - 255);
+	float s = abs(m_RainbowSat[g_Config.m_ClDummy] - 255);
+	float l = abs(m_RainbowLht[g_Config.m_ClDummy] - 255);
 
 	m_PreviewRainbowColor[g_Config.m_ClDummy] = getIntFromColor(h, s, l);
 

@@ -813,10 +813,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				RainbowSettings.HSplitTop(-54, &Button, &RainbowSettings);
 				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
-				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_Saturation[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_Saturation[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
+				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_RainbowSat[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_RainbowSat[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
 				RainbowSettings.HSplitTop(-3, &Button, &RainbowSettings);
 				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
-				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_Lightness[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_Lightness[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
+				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_RainbowLht[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_RainbowLht[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
 
 				{
 					CTeeRenderInfo TeeRenderInfo;

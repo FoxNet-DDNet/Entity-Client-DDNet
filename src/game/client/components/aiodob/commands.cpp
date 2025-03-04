@@ -27,7 +27,7 @@ void CAiodob::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData)
 		pSelf->m_RainbowSpeed = pResult->GetInteger(0);
 	}
 	else
-		log_info("[Aiodob]", aBuf);
+		log_info("A-Client", aBuf);
 }
 
 void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData)
@@ -35,7 +35,7 @@ void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUser
 	CAiodob *pSelf = (CAiodob *)pUserData;
 
 	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Saturation[g_Config.m_ClDummy]);
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSat[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
 	{
@@ -48,10 +48,10 @@ void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUser
 				Dummy = 1;
 		}
 
-		pSelf->m_Saturation[Dummy] = pResult->GetInteger(0);
+		pSelf->m_RainbowSat[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("[Aiodob]", aBuf);
+		log_info("A-Client", aBuf);
 }
 
 void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData)
@@ -59,7 +59,7 @@ void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserD
 	CAiodob *pSelf = (CAiodob *)pUserData;
 
 	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_Lightness[g_Config.m_ClDummy]);
+	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowLht[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
 	{
@@ -72,10 +72,10 @@ void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserD
 				Dummy = 1;
 		}
 
-		pSelf->m_Lightness[Dummy] = pResult->GetInteger(0);
+		pSelf->m_RainbowLht[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("[Aiodob]", aBuf);
+		log_info("A-Client", aBuf);
 }
 
 void CAiodob::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
@@ -102,7 +102,7 @@ void CAiodob::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
 			pSelf->m_RainbowBody[Dummy] = 1;
 	}
 	else
-		log_info("[Aiodob]", aBuf);
+		log_info("A-Client", aBuf);
 }
 
 void CAiodob::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
@@ -129,7 +129,7 @@ void CAiodob::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
 			pSelf->m_RainbowFeet[Dummy] = 1;
 	}
 	else
-		log_info("[Aiodob]", aBuf);
+		log_info("A-Client", aBuf);
 }
 
 void CAiodob::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData)
@@ -147,7 +147,7 @@ void CAiodob::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUse
 			pSelf->m_BothPlayers = 1;
 	}
 	else
-		log_info("[Aiodob]", aBuf);
+		log_info("A-Client", aBuf);
 }
 
 void CAiodob::Votekick(const char *pName, const char *pReason)
@@ -565,6 +565,11 @@ void CAiodob::PlayerInfo(const char *pName)
 
 void CAiodob::OnConsoleInit()
 {
+	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
+
+	if(pConfigManager)
+		pConfigManager->RegisterACallback(ConfigSaveCallback, this);
+
 	// Misc
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");
 	Console()->Register("onlineinfo", "", CFGFLAG_CLIENT, ConOnlineInfo, this, "Shows you how many people of default lists are on the current server");
@@ -584,15 +589,40 @@ void CAiodob::OnConsoleInit()
 	Console()->Register("restoreskin", "", CFGFLAG_CLIENT, ConRestoreSkin, this, "Restore Your Saved Info");
 	Console()->Register("saveskin", "", CFGFLAG_CLIENT, ConSaveSkin, this, "Save Your Current Info (Skin, name, etc.)");
 
+	// View Link
+	Console()->Register("view_link", "s[Url]", CFGFLAG_CLIENT, ConViewLink, this, "Opens a new Browser tab with that Link");
+
 	// Rainbow Commands
 	Console()->Register("server_rainbow_speed", "?s[speed]", CFGFLAG_CLIENT, ConServerRainbowSpeed, this, "Rainbow Speed of Server side rainbow mode (default = 10)");
 	Console()->Register("server_rainbow_both_players", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowBothPlayers, this, "Rainbow Both Players at the same time");
-	Console()->Register("server_rainbow_sat", "?i[Sat] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 200)");
-	Console()->Register("server_rainbow_lht", "?i[Lht] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 30)");
+	Console()->Register("server_rainbow_sat", "?i[Sat] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 200)");
+	Console()->Register("server_rainbow_lht", "?i[Lht] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 30)");
 
-	Console()->Register("server_rainbow_body", "?i[int] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
-	Console()->Register("server_rainbow_feet", "?i[int] ?d[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
+	Console()->Register("server_rainbow_body", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
+	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
+}
 
-	// View Link
-	Console()->Register("view_link", "s[Url]", CFGFLAG_CLIENT, ConViewLink, this, "Opens a new Browser tab with that Link");
+void CAiodob::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
+{
+	CAiodob *pThis = (CAiodob *)pUserData;
+
+	char aBuf[128];
+
+	str_format(aBuf, sizeof(aBuf), "server_rainbow_speed %d", pThis->m_RainbowSpeed);
+	pConfigManager->WriteLine(aBuf);
+	str_format(aBuf, sizeof(aBuf), "server_rainbow_both_players %d", pThis->m_BothPlayers);
+	pConfigManager->WriteLine(aBuf);
+
+	for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
+	{
+		str_format(aBuf, sizeof(aBuf), "server_rainbow_sat %d %d", pThis->m_RainbowSat[Dummy], Dummy);
+		pConfigManager->WriteLine(aBuf);
+		str_format(aBuf, sizeof(aBuf), "server_rainbow_lht %d %d", pThis->m_RainbowLht[Dummy], Dummy);
+		pConfigManager->WriteLine(aBuf);
+
+		str_format(aBuf, sizeof(aBuf), "server_rainbow_body %d %d", pThis->m_RainbowBody[Dummy], Dummy);
+		pConfigManager->WriteLine(aBuf);
+		str_format(aBuf, sizeof(aBuf), "server_rainbow_feet %d %d", pThis->m_RainbowFeet[Dummy], Dummy);
+		pConfigManager->WriteLine(aBuf);
+	}
 }
