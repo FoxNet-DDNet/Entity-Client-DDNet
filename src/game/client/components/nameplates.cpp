@@ -334,7 +334,7 @@ void CNamePlates::RenderNamePlate(CNamePlate &NamePlate, const CRenderNamePlateD
 	TextRender()->SetRenderFlags(0);
 }
 
-void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha, bool ForceAlpha)
+void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha)
 {
 	CRenderNamePlateData Data;
 
@@ -365,13 +365,10 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_FontSizeDirection = 18.0f + 20.0f * g_Config.m_ClDirectionSize / 100.0f;
 
 	Data.m_Alpha = Alpha;
-	if(!ForceAlpha)
-	{
-		if(g_Config.m_ClNamePlatesAlways == 0)
-			Data.m_Alpha *= clamp(1.0f - std::pow(distance(m_pClient->m_Controls.m_aTargetPos[g_Config.m_ClDummy], Position) / 200.0f, 16.0f), 0.0f, 1.0f);
-		if(OtherTeam)
-			Data.m_Alpha *= (float)g_Config.m_ClShowOthersAlpha / 100.0f;
-	}
+	if(g_Config.m_ClNamePlatesAlways == 0)
+		Data.m_Alpha *= clamp(1.0f - std::pow(distance(m_pClient->m_Controls.m_aTargetPos[g_Config.m_ClDummy], Position) / 200.0f, 16.0f), 0.0f, 1.0f);
+	if(OtherTeam)
+		Data.m_Alpha *= (float)g_Config.m_ClShowOthersAlpha / 100.0f;
 
 	Data.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 	Data.m_OutlineColor = ColorRGBA(0.0f, 0.0f, 0.0f);
@@ -549,10 +546,7 @@ void CNamePlates::OnRender()
 			// don't render offscreen
 			if(in_range(RenderPos.x, ScreenX0, ScreenX1) && in_range(RenderPos.y, ScreenY0, ScreenY1))
 			{
-				if(!g_Config.m_ClRenderNameplateSpec)
-				{
-					RenderNamePlateGame(RenderPos, pInfo, 0.4f, true);
-				}
+				RenderNamePlateGame(RenderPos, pInfo, 0.4f);
 			}
 		}
 		if(m_pClient->m_Snap.m_aCharacters[i].m_Active)
@@ -562,7 +556,7 @@ void CNamePlates::OnRender()
 			// don't render offscreen
 			if(in_range(RenderPos.x, ScreenX0, ScreenX1) && in_range(RenderPos.y, ScreenY0, ScreenY1))
 			{
-				RenderNamePlateGame(RenderPos, pInfo, 1.0f, false);
+				RenderNamePlateGame(RenderPos, pInfo, 1.0f);
 			}
 		}
 	}
