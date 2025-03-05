@@ -249,6 +249,7 @@ protected:
 		}
 		else
 			m_Color = Data.m_Color;
+
 		return m_FontSize != Data.m_FontSizeClientId || m_ClientId != Data.m_ClientId;
 	}
 	void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) override
@@ -256,7 +257,6 @@ protected:
 		m_FontSize = Data.m_FontSizeClientId;
 		m_ClientId = Data.m_ClientId;
 		str_format(m_aText, sizeof(m_aText), m_ClientIdSeperateLine ? "%d" : "%d:", m_ClientId);
-
 		CTextCursor Cursor;
 		This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, m_FontSize, TEXTFLAG_RENDER);
 		This.TextRender()->CreateOrAppendTextContainer(m_TextContainerIndex, &Cursor, m_aText);
@@ -670,10 +670,6 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	const auto &ClientData = GameClient()->m_aClients[pPlayerInfo->m_ClientId];
 	const bool OtherTeam = GameClient()->IsOtherTeam(pPlayerInfo->m_ClientId);
 
-	// A-Client
-	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
-	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
-
 	// TClient
 	bool ClanPlateOverride = g_Config.m_ClWarList && g_Config.m_ClWarListShowClan && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarClan;
 	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || ClanPlateOverride;
@@ -687,6 +683,10 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_ShowFriendMark = Data.m_ShowName && g_Config.m_ClNamePlatesFriendMark && GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_Friend;
 	Data.m_ShowClientId = Data.m_ShowName && (g_Config.m_Debug || g_Config.m_ClNamePlatesIds);
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
+
+	// A-Client
+	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
+	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
 
 	Data.m_ClientId = pPlayerInfo->m_ClientId;
 	Data.m_ClientIdSeperateLine = g_Config.m_ClNamePlatesIdsSeperateLine;
