@@ -105,9 +105,6 @@ MACRO_CONFIG_COL(ClNotifyWhenLastColor, ac_last_notify_color, 29057, CFGFLAG_CLI
 MACRO_CONFIG_INT(ClRenderCursorSpec, ac_cursor_in_spec, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render your gun cursor when spectating in freeview")
 MACRO_CONFIG_INT(ClRenderCursorSpecOpacity, ac_cursor_opacity_in_spec, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Changes Opacity of Curser when Spectating")
 
-// Nameplate in Spec
-MACRO_CONFIG_INT(ClRenderNameplateSpec, ac_render_nameplate_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render nameplates when spectating")
-
 // Pingcircle next to name
 MACRO_CONFIG_INT(ClPingNameCircle, ac_nameplate_ping_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a circle next to nameplate to indicate ping")
 
@@ -170,11 +167,7 @@ MACRO_CONFIG_INT(ClShowOwnMenuToOthers, ac_show_self_in_menu, 1, 0, 1, CFGFLAG_C
 MACRO_CONFIG_INT(ClSendDotsChat, ac_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Never send a message if it starts with a '.'")
 MACRO_CONFIG_INT(ClShowIdsChat, ac_show_ids_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to Show Client IDs in Chat")
 
-MACRO_CONFIG_INT(ClOldNameplateIds, ac_old_nameplate_ids, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render the old version of nameplate ids")
-MACRO_CONFIG_INT(ClStrongWeakColorId, ac_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
-
 MACRO_CONFIG_INT(ClDoAfkColors, ac_do_afk_colors, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Makes Names Darker in Scoreboard if Player is afk")
-
 
 // friend name settings
 MACRO_CONFIG_INT(ClDoFriendColors, ac_do_friend_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors")
@@ -229,7 +222,7 @@ MACRO_CONFIG_INT(ClSpecMenuColors, ac_specmenu_colors, 1, 0, 1, CFGFLAG_CLIENT |
 MACRO_CONFIG_INT(ClSpecMenuPrefixes, ac_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Prefixes Next to Names in The Spectate Menu")
 
 // Chat Detection
-MACRO_CONFIG_INT(ClDismissAdBots, ac_dismiss_adbots, 1, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If an AdBot messages you it hides their message and gives you the option to votekick them| 2 = Info and Vote Option | 3 = Auto Vote Message Sender")
+MACRO_CONFIG_INT(ClDismissAdBots, ac_dismiss_adbots, 1, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If an AdBot messages you it | 1 = hides their message | 2 = Info and Vote Kick Option | 3 = Info and Auto Vote Kick")
 
 MACRO_CONFIG_INT(ClNotifyOnJoin, ac_auto_notify_on_join, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notifies you if a player joined")
 MACRO_CONFIG_STR(ClAutoNotifyName, ac_auto_notify_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
@@ -339,6 +332,10 @@ MACRO_CONFIG_INT(ClSendExclamation, ac_send_exclamation_mark, 1, 0, 1, CFGFLAG_C
 // Silent Messages
 MACRO_CONFIG_INT(ClSilentMessages, ac_silent_messages, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "When sending a Silent Message to the chat it will still show what you typed")
 MACRO_CONFIG_COL(ClSilenteColor, ac_silent_color, 8924078, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
+
+// Nameplate
+MACRO_CONFIG_INT(ClRenderNameplateSpec, ac_render_nameplate_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render nameplates when spectating")
+MACRO_CONFIG_INT(ClStrongWeakColorId, ac_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
 
 // Custom Vairiables from My Server for the editor
 // ignore these you cant do anything with them except if you make ur own version on a server

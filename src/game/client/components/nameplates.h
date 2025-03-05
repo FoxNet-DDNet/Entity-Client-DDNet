@@ -40,6 +40,13 @@ public:
 	bool m_ShowHookStrongWeakId;
 	int m_HookStrongWeakId;
 	float m_FontSizeHookStrongWeak;
+
+	// A-Client
+	const char *m_pReason;
+	bool m_ShowReason;
+
+	// TClient
+	bool m_ShowClanWarInName;
 };
 
 class CNamePlate;
