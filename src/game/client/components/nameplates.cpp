@@ -684,13 +684,13 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_ShowClientId = Data.m_ShowName && (g_Config.m_Debug || g_Config.m_ClNamePlatesIds);
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
 
+	// A-Client
+	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
+	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
+
 	Data.m_ClientId = pPlayerInfo->m_ClientId;
 	Data.m_ClientIdSeperateLine = g_Config.m_ClNamePlatesIdsSeperateLine;
 	Data.m_FontSizeClientId = Data.m_ClientIdSeperateLine ? (18.0f + 20.0f * g_Config.m_ClNamePlatesIdsSize / 100.0f) : Data.m_FontSize;
-
-		// A-Client
-	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
-	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
 
 	Data.m_ShowClan = Data.m_ShowName && ShowClanPlate;
 	Data.m_pClan = GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_aClan;
@@ -816,10 +816,36 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 
 	// A-Client
 	Data.m_pReason = "Reason";
-	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
+	Data.m_ShowReason = g_Config.m_ClWarListReason;
 
 	Data.m_InGame = false;
-	Data.m_Color = g_Config.m_ClNamePlatesTeamcolors ? GameClient()->GetDDTeamColor(13, 0.75f) : TextRender()->DefaultTextColor();
+
+	static ColorRGBA Colors = TextRender()->DefaultTextColor();
+	static int64_t SwitchDelay = time_get() + time_freq() * 1.75f;
+	static const char *Reason = "Reason";
+
+	if(SwitchDelay < time_get())
+	{
+		static int Type = 0;
+		int Amount = GameClient()->m_WarList.m_WarTypes.size();
+
+		Type++;
+		if(Type < Amount)
+		{
+			Colors = GameClient()->m_WarList.m_WarTypes[Type]->m_Color;
+			Reason = GameClient()->m_WarList.m_WarTypes[Type]->m_aWarName;
+		}
+		else
+		{
+			Colors = g_Config.m_ClNamePlatesTeamcolors ? GameClient()->GetDDTeamColor(round_to_int(random_float(1.0f, 24.0f)), 0.75f) : TextRender()->DefaultTextColor();
+			Reason = "In Team";
+			Type = 0;
+		}
+		SwitchDelay = time_get() + time_freq() * 1.75f;
+	}
+	Data.m_pReason = Reason;
+
+	Data.m_Color = Colors;
 	Data.m_Color.a = 1.0f;
 
 	Data.m_ShowName = g_Config.m_ClNamePlates || g_Config.m_ClNamePlatesOwn;
