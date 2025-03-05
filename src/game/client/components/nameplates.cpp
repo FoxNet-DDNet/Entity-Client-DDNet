@@ -523,8 +523,7 @@ void CNamePlates::OnRender()
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
 	// expand the edges to prevent popping in/out onscreen
-	//
-	// it is assumed that the namePlate and all its components fit into a 800x800 box placed directly above the tee
+	// it is assumed that the name plate and all its components fit into a 800x800 box placed directly above the tee
 	// this may need to be changed or calculated differently in the future
 	ScreenX0 -= 400;
 	ScreenX1 += 400;
@@ -533,31 +532,25 @@ void CNamePlates::OnRender()
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		const CNetObj_PlayerInfo *pInfo = m_pClient->m_Snap.m_apPlayerInfos[i];
+		const CNetObj_PlayerInfo *pInfo = GameClient()->m_Snap.m_apPlayerInfos[i];
 		if(!pInfo)
-		{
 			continue;
-		}
 
-		if(m_pClient->m_aClients[i].m_SpecCharPresent)
+		if(GameClient()->m_aClients[i].m_SpecCharPresent)
 		{
-			// Each player can also have a spec char whose namePlate is displayed independently
-			const vec2 RenderPos = m_pClient->m_aClients[i].m_SpecChar;
+			// Each player can also have a spec char whose name plate is displayed independently
+			const vec2 RenderPos = GameClient()->m_aClients[i].m_SpecChar;
 			// don't render offscreen
 			if(in_range(RenderPos.x, ScreenX0, ScreenX1) && in_range(RenderPos.y, ScreenY0, ScreenY1))
-			{
 				RenderNamePlateGame(RenderPos, pInfo, 0.4f);
-			}
 		}
-		if(m_pClient->m_Snap.m_aCharacters[i].m_Active)
+		if(GameClient()->m_Snap.m_aCharacters[i].m_Active)
 		{
-			// Only render namePlates for active characters
-			const vec2 RenderPos = m_pClient->m_aClients[i].m_RenderPos;
+			// Only render name plates for active characters
+			const vec2 RenderPos = GameClient()->m_aClients[i].m_RenderPos;
 			// don't render offscreen
 			if(in_range(RenderPos.x, ScreenX0, ScreenX1) && in_range(RenderPos.y, ScreenY0, ScreenY1))
-			{
 				RenderNamePlateGame(RenderPos, pInfo, 1.0f);
-			}
 		}
 	}
 }
@@ -584,4 +577,9 @@ void CNamePlates::OnInit()
 	m_DirectionQuadContainerIndex = Graphics()->CreateQuadContainer(false);
 	RenderTools()->QuadContainerAddSprite(m_DirectionQuadContainerIndex, 0.0f, 0.0f, 1.0f);
 	Graphics()->QuadContainerUpload(m_DirectionQuadContainerIndex);
+}
+
+CNamePlates::~CNamePlates()
+{
+	delete[] m_aNamePlates;
 }
