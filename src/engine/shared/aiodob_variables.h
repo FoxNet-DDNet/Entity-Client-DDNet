@@ -229,7 +229,7 @@ MACRO_CONFIG_INT(ClSpecMenuColors, ac_specmenu_colors, 1, 0, 1, CFGFLAG_CLIENT |
 MACRO_CONFIG_INT(ClSpecMenuPrefixes, ac_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Prefixes Next to Names in The Spectate Menu")
 
 // Chat Detection
-MACRO_CONFIG_INT(ClDismissAdBots, ac_dismiss_adbots, 1, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If an AdBot messages you it hides their message and gives you the option to votekick them | 2 = auto vote Yes")
+MACRO_CONFIG_INT(ClDismissAdBots, ac_dismiss_adbots, 1, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If an AdBot messages you it hides their message and gives you the option to votekick them| 2 = Info and Vote Option | 3 = Auto Vote Message Sender")
 
 MACRO_CONFIG_INT(ClNotifyOnJoin, ac_auto_notify_on_join, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notifies you if a player joined")
 MACRO_CONFIG_STR(ClAutoNotifyName, ac_auto_notify_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")

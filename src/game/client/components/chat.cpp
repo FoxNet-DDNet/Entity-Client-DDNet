@@ -1723,7 +1723,7 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 	}
 	else if(ClientId >= 0) // Player Message
 	{
-		if(g_Config.m_ClDismissAdBots > 0 && !GameClient()->m_aClients[ClientId].m_Friend)
+		if(g_Config.m_ClDismissAdBots > 0 && Team != TEAM_WHISPER_RECV && !GameClient()->m_aClients[ClientId].m_Friend)
 		{
 			bool AdBotFound = false;
 
@@ -1733,22 +1733,27 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 			if(AdBotFound == true)
 			{
+				// This is done so that when a player forwards a message of another player sending a krx message it wont start a vote for the forwarder
 				if(str_find_nocase(pLine,"← "))
 					return;
 
 				// Console Storing
 				char Text[260] = "";
-				char aBuf[260];
 
 				if(Team == 3)
 					str_copy(Text, "← ");
 
-				str_format(aBuf, sizeof(aBuf), "%s%s%s", GameClient()->m_aClients[ClientId].m_aName, ClientId >= 0 ? ": " : "", pLine);
-				str_append(Text, aBuf);
+				str_format(Text, sizeof(Text), "%s%s%s", GameClient()->m_aClients[ClientId].m_aName, ClientId >= 0 ? ": " : "", pLine);
 				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "A-Client", Text, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor)));
 
 				// Chat Response
 				if(g_Config.m_ClDismissAdBots == 1)
+				{
+					ReturnChat = true; // Just don't show their messages
+					m_AdBotId = ClientId;
+					m_VoteKickTimer = time_get() + time_freq() * 60;
+				}
+				else if(g_Config.m_ClDismissAdBots == 2)
 				{
 					char AdBotInfo[256];
 					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Dismissed message of \"%s\" (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
@@ -1767,9 +1772,8 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					ReturnChat = true;
 					m_AdBotId = ClientId;
 					m_VoteKickTimer = time_get() + time_freq() * 60;
-					m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_GRAB_PL, 1.0f);
 				}
-				else if (g_Config.m_ClDismissAdBots == 2)
+				else if (g_Config.m_ClDismissAdBots == 3)
 				{
 					char AdBotInfo[256];
 					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Player \"%s\" has been Auto Voted (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
@@ -1777,7 +1781,6 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					GameClient()->aMessage("╭──                  Aiodob Alert");
 					GameClient()->aMessage("│");
 					GameClient()->aMessage(AdBotInfo);
-					GameClient()->aMessage("│");
 					GameClient()->aMessage("│");
 					GameClient()->aMessage("│ Press F4 (Vote No) to cancel the vote");
 					GameClient()->aMessage("│");
@@ -1789,7 +1792,6 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					GameClient()->m_Voting.Callvote("kick", Id, "Krx (auto vote)");
 
 					ReturnChat = true;
-					m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_GRAB_PL, 1.0f);
 				}
 				return;
 			}
