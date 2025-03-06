@@ -369,11 +369,8 @@ protected:
 		// A-Client
 		ColorRGBA Color = Data.m_Color;
 
-		if(Data.m_pClan && Data.m_pClan[0] != '\0')
-		{
-			if(g_Config.m_ClWarList && Data.m_ClientId >= 0 && This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
+		if(g_Config.m_ClWarList && Data.m_ClientId >= 0 && This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
 				Color = This.m_WarList.GetClanColor(Data.m_ClientId).WithAlpha(Data.m_Color.a);
-		}
 
 		m_Color = Color.WithAlpha(Data.m_Color.a);
 		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, Data.m_pClan) != 0;
@@ -563,8 +560,8 @@ private:
 
 		AddPart<CNamePlatePartHookStrongWeak>(This);
 		AddPart<CNamePlatePartHookStrongWeakId>(This);
-
 		AddPart<CNamePlatePartNewLine>(This);
+
 		AddPart<CNamePlatePartDirection>(This, DIRECTION_LEFT);
 		AddPart<CNamePlatePartDirection>(This, DIRECTION_UP);
 		AddPart<CNamePlatePartDirection>(This, DIRECTION_RIGHT);
@@ -707,7 +704,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	if(Data.m_Color == ColorRGBA(0,0,0,0)) // If It doesn't have a Value -> so it isn't completely black
 		Data.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 
-	if(g_Config.m_ClNamePlatesTeamcolors) // Override everything else cause why not
+	if(g_Config.m_ClNamePlatesTeamcolors) // Override every other color because why not
 	{
 		if(GameClient()->IsTeamPlay())
 		{
@@ -723,7 +720,6 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 				Data.m_Color = GameClient()->GetDDTeamColor(Team, 0.75f);
 		}
 	}
-
 	Data.m_Color.a = Alpha;
 
 	int ShowDirectionConfig = g_Config.m_ClShowDirection;
@@ -801,7 +797,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		}
 	}
 
-	m_aNamePlates[pPlayerInfo->m_ClientId].Render(*GameClient(), &Data);
+	m_pNamePlates[pPlayerInfo->m_ClientId].Render(*GameClient(), &Data);
 }
 
 void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
@@ -914,7 +910,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 void CNamePlates::ResetNamePlates()
 {
 	for(int i = 0; i < MAX_CLIENTS; ++i)
-		m_aNamePlates[i].Reset(*GameClient());
+		m_pNamePlates[i].Reset(*GameClient());
 }
 
 void CNamePlates::OnRender()
@@ -971,12 +967,12 @@ void CNamePlates::OnWindowResize()
 	ResetNamePlates();
 }
 
-void CNamePlates::OnInit()
+CNamePlates::CNamePlates()
 {
-	m_aNamePlates = new CNamePlate[MAX_CLIENTS];
+	m_pNamePlates = new CNamePlate[MAX_CLIENTS];
 }
 
 CNamePlates::~CNamePlates()
 {
-	delete[] m_aNamePlates;
+	delete[] m_pNamePlates;
 }
