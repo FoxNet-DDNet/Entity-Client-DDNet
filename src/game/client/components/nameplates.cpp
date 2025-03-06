@@ -841,7 +841,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 			Reason = "In Team";
 			Type = 0;
 		}
-		SwitchDelay = time_get() + time_freq() * 1.75f;
+		SwitchDelay = time_get() + time_freq() * 2.0f;
 	}
 	Data.m_pReason = Reason;
 
