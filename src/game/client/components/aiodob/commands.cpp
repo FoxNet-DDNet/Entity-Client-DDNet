@@ -437,6 +437,9 @@ void CAiodob::OnlineInfo(bool Integrate)
 		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
 			continue;
 
+		if(Client.m_Id == m_pClient->m_Snap.m_LocalClientId)
+			continue;
+
 		if((War && !TempWar) || (!War && TempWar))
 		{
 			NumberWars++;
@@ -452,6 +455,9 @@ void CAiodob::OnlineInfo(bool Integrate)
 		bool Team = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[2];
 
 		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
+			continue;
+
+		if(Client.m_Id == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
 		if(Team)
@@ -472,6 +478,9 @@ void CAiodob::OnlineInfo(bool Integrate)
 		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
 			continue;
 
+		if(Client.m_Id == m_pClient->m_Snap.m_LocalClientId)
+			continue;
+
 		if((Helper && !TempHelper) || (!Helper && TempHelper))
 		{
 			NumberHelpers++;
@@ -488,6 +497,9 @@ void CAiodob::OnlineInfo(bool Integrate)
 		bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute;
 
 		if(!Client.m_Active)
+			continue;
+
+		if(Client.m_Id == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
 		if((Mute && !TempMute) || (!Mute && TempMute))
