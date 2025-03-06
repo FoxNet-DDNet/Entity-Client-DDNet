@@ -239,7 +239,7 @@ MACRO_CONFIG_INT(ClListsInfo, ac_lists_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_S
 MACRO_CONFIG_INT(ClEnabledInfo, ac_enabled_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
 
 // Anti Spawn Block
-MACRO_CONFIG_INT(ClAntiSpawnBlock, ac_anti_spawn_block, 0, 0, 1, CFGFLAG_CLIENT, "Puts you in a Team before enter Play Ground on Multeasymap")
+MACRO_CONFIG_INT(ClAntiSpawnBlock, ac_anti_spawn_block, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Puts you in a Team before enter Play Ground on Multeasymap")
 
 // Freeze Kill
 MACRO_CONFIG_INT(ClFreezeKill, ac_freeze_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
