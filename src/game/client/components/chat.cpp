@@ -1728,8 +1728,20 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			bool AdBotFound = false;
 
 			// generic krx message
-			if(str_find_nocase(pLine, "bro, check out this client"))
+			if(str_find_nocase(pLine, "bro, check out this client")) // whisper advertising
 				AdBotFound = true;
+
+			if(str_find_nocase(pLine, "Think you could do better") && str_find_nocase(pLine, "Not without")) // mass ping advertising
+			{
+				// try to not remove their message if they are just trying to be funny
+				if(!str_find_nocase(pLine, "github.com")
+					&& !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") // TClient
+					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") // AClient
+					&& !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus")) // Other
+					AdBotFound = true;
+				if(str_find(pLine, " ")) // This is the little white space it uses between some letters
+					AdBotFound = true;
+			}
 
 			if(AdBotFound == true)
 			{
@@ -1738,9 +1750,9 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					return;
 
 				// Console Storing
-				char Text[260] = "";
+				char Text[265] = "";
 
-				if(Team == 3)
+				if(Team == TEAM_WHISPER_RECV)
 					str_copy(Text, "← ");
 
 				str_format(Text, sizeof(Text), "%s%s%s", GameClient()->m_aClients[ClientId].m_aName, ClientId >= 0 ? ": " : "", pLine);
