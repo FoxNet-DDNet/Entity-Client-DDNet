@@ -455,7 +455,7 @@ void CAiodob::ChangeTileNotifyTick()
 	float X = m_pClient->m_Snap.m_aCharacters[m_pClient->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_X;
 	float Y = m_pClient->m_Snap.m_aCharacters[m_pClient->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_Y;
 	int CurrentTile = Collision()->GetTileIndex(Collision()->GetPureMapIndex(X, Y));
-	if(m_LastTile != CurrentTile && m_LastNotification + time_freq() * 10 < time_get())
+	if(m_LastTile != CurrentTile && m_LastNotification + time_freq() < time_get())
 	{
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 		if(pGraphics && !pGraphics->WindowActive() && Graphics())
