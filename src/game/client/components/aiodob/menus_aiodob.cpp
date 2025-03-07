@@ -220,94 +220,107 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Automation"), FontSize, TEXTALIGN_MC);
 				{
 					{
+						// group em up
 						{
-							OtherSettings.HSplitTop(20.0f, &Button, &MainView);
+							std::array<float, 2> Sizes = {
+								TextRender()->TextBoundingBox(12.0f, "Friend Prefix").m_W,
+								TextRender()->TextBoundingBox(12.0f, "Spec Prefix").m_W
+							};
+							float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 36.5f;
 
-							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-							Button.VSplitLeft(120.0f, &Label, &Button);
-							Button.VSplitLeft(280.0f, &Button, 0);
-
-							static CLineInput s_ReplyMsg;
-							s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMsg, sizeof(g_Config.m_ClAutoReplyMsg));
-							s_ReplyMsg.SetEmptyText("I'm Currently Tabbed Out");
-
-							if(DoButton_CheckBox(&g_Config.m_ClTabbedOutMsg, "Tabbed reply", g_Config.m_ClTabbedOutMsg, &OtherSettings))
 							{
-								g_Config.m_ClTabbedOutMsg ^= 1;
-							}
+								OtherSettings.HSplitTop(20.0f, &Button, &MainView);
 
-							if(g_Config.m_ClTabbedOutMsg)
-								Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
+								Button.VSplitLeft(0.0f, 0, &OtherSettings);
+								Button.VSplitLeft(Length, &Label, &Button);
+								Button.VSplitRight(0.0f, &Button, &MainView);
+
+								static CLineInput s_ReplyMsg;
+								s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMsg, sizeof(g_Config.m_ClAutoReplyMsg));
+								s_ReplyMsg.SetEmptyText("I'm Currently Tabbed Out");
+
+								if(DoButton_CheckBox(&g_Config.m_ClTabbedOutMsg, "Tabbed reply", g_Config.m_ClTabbedOutMsg, &OtherSettings))
+								{
+									g_Config.m_ClTabbedOutMsg ^= 1;
+								}
+
+								if(g_Config.m_ClTabbedOutMsg)
+									Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
+							}
+							OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
+							{
+								OtherSettings.HSplitTop(20.0f, &Button, &MainView);
+
+								Button.VSplitLeft(0.0f, 0, &OtherSettings);
+								Button.VSplitLeft(Length, &Label, &Button);
+								Button.VSplitRight(0.0f, &Button, &MainView);
+
+								static CLineInput s_ReplyMsg;
+								s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMutedMsg, sizeof(g_Config.m_ClAutoReplyMutedMsg));
+								s_ReplyMsg.SetEmptyText("You're muted, I can't see your messages");
+
+								if(DoButton_CheckBox(&g_Config.m_ClReplyMuted, "Muted Reply", g_Config.m_ClReplyMuted, &OtherSettings))
+								{
+									g_Config.m_ClReplyMuted ^= 1;
+								}
+								if(g_Config.m_ClReplyMuted)
+									Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
+							}
 						}
-						OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
+						OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
 						{
-							OtherSettings.HSplitTop(20.0f, &Button, &MainView);
-
-							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-							Button.VSplitLeft(120.0f, &Label, &Button);
-							Button.VSplitLeft(280.0f, &Button, 0);
-
-							static CLineInput s_ReplyMsg;
-							s_ReplyMsg.SetBuffer(g_Config.m_ClAutoReplyMutedMsg, sizeof(g_Config.m_ClAutoReplyMutedMsg));
-							s_ReplyMsg.SetEmptyText("You're muted, I can't see your messages");
-
-							if(DoButton_CheckBox(&g_Config.m_ClReplyMuted, "Muted Reply", g_Config.m_ClReplyMuted, &OtherSettings))
 							{
-								g_Config.m_ClReplyMuted ^= 1;
+								const char *Name = g_Config.m_ClNotifyOnJoin ? "Notify on Join Name" : "Notify on Join";
+								float Length = TextRender()->TextBoundingBox(12.5f, Name).m_W + 27.5f; // Give it some breathing room
+
+								OtherSettings.HSplitTop(19.9f, &Button, &MainView);
+
+								Button.VSplitLeft(0.0f, &Button, &OtherSettings);
+								Button.VSplitLeft(Length, &Label, &Button);
+								Button.VSplitLeft(160.0f, &Button, 0);
+
+
+								static CLineInput s_NotifyName;
+								s_NotifyName.SetBuffer(g_Config.m_ClAutoNotifyName, sizeof(g_Config.m_ClAutoNotifyName));
+								s_NotifyName.SetEmptyText("qxdFox");
+
+								if(DoButton_CheckBox(&g_Config.m_ClNotifyOnJoin, Name, g_Config.m_ClNotifyOnJoin, &OtherSettings))
+									g_Config.m_ClNotifyOnJoin ^= 1;
+
+								if(g_Config.m_ClNotifyOnJoin)
+									Ui()->DoEditBox(&s_NotifyName, &Button, 14.0f);
 							}
-							if(g_Config.m_ClReplyMuted)
-								Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
-						}
-						OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
-						{
-							OtherSettings.HSplitTop(19.9f, &Button, &MainView);
-
-							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-							Button.VSplitLeft(160.0f, &Label, &Button);
-							Button.VSplitLeft(180.0f, &Button, 0);
-
-							static CLineInput s_NotifyName;
-							s_NotifyName.SetBuffer(g_Config.m_ClAutoNotifyName, sizeof(g_Config.m_ClAutoNotifyName));
-							s_NotifyName.SetEmptyText("qxdFox");
-
-							if(DoButton_CheckBox(&g_Config.m_ClNotifyOnJoin, "Notify on Join Name", g_Config.m_ClNotifyOnJoin, &OtherSettings))
-							{
-								g_Config.m_ClNotifyOnJoin ^= 1;
-							}
-							if(g_Config.m_ClNotifyOnJoin)
-								Ui()->DoEditBox(&s_NotifyName, &Button, 14.0f);
-
-							static CLineInput s_NotifyMsg;
-							s_NotifyMsg.SetBuffer(g_Config.m_ClAutoNotifyMsg, sizeof(g_Config.m_ClAutoNotifyMsg));
-							s_NotifyMsg.SetEmptyText("Your Fav Person Has Joined!");
 
 							if(g_Config.m_ClNotifyOnJoin)
 							{
+								static CLineInput s_NotifyMsg;
+								s_NotifyMsg.SetBuffer(g_Config.m_ClAutoNotifyMsg, sizeof(g_Config.m_ClAutoNotifyMsg));
+								s_NotifyMsg.SetEmptyText("Your Fav Person Has Joined!");
+
+								float Length = TextRender()->TextBoundingBox(12.5f, "Notify Message").m_W + 3.5f; // Give it some breathing room
+
 								OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
 								OtherSettings.HSplitTop(19.9f, &Button, &MainView);
 
-								Button.VSplitLeft(25.0f, &Button, &OtherSettings);
-								Button.VSplitLeft(125.0f, &Label, &Button);
-								Button.VSplitLeft(275.0f, &Button, 0);
-
-								OtherSettings.HSplitTop(2.8f, &Label, &OtherSettings);
-								Ui()->DoLabel(&OtherSettings, "Notify Message", 12.5f, TEXTALIGN_LEFT);
+								Button.VSplitLeft(Length, &Label, &Button);
+								Button.VSplitRight(0.0f, &Button, &MainView);
 
 								Ui()->DoEditBox(&s_NotifyMsg, &Button, 14.0f);
+
+								OtherSettings.HSplitTop(3.0f, &Button, &OtherSettings);
+								Ui()->DoLabel(&OtherSettings, "Notify Message", 12.5f, TEXTALIGN_LEFT);
+								OtherSettings.HSplitTop(-3.0f, &Button, &OtherSettings);
 							}
 						}
-						if(g_Config.m_ClNotifyOnJoin)
+						OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
 						{
-							OtherSettings.VSplitLeft(-25.0f, &Button, &OtherSettings);
-						}
-						OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
+							float Length = TextRender()->TextBoundingBox(FontSize, "Run on Join Console").m_W + 20.0f; // Give it some breathing room
 
-						OtherSettings.HSplitTop(5.0f, &Button, &OtherSettings);
-						{
 							OtherSettings.HSplitTop(20.0f, &Button, &MainView);
-							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-							Button.VSplitLeft(158.0f, &Label, &Button);
-							Button.VSplitLeft(248.0f, &Button, 0);
+
+							Button.VSplitLeft(0.0f, 0, &OtherSettings);
+							Button.VSplitLeft(Length, &Label, &Button);
+							Button.VSplitRight(0.0f, &Button, &MainView);
 
 							static CLineInput s_ReplyMsg;
 							s_ReplyMsg.SetBuffer(g_Config.m_ClRunOnJoinMsg, sizeof(g_Config.m_ClRunOnJoinMsg));
@@ -319,21 +332,21 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							}
 							Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 						}
-
+						OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
 						{
-							OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
+							float Length = TextRender()->TextBoundingBox(FontSize, "Show when last").m_W + 30.0f; // Give it some breathing room
 
 							OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 
-							Button.VSplitLeft(0.0f, &Button, &OtherSettings);
-							Button.VSplitLeft(175.0f, &Label, &Button);
-							Button.VSplitLeft(125.0f, &Button, 0);
+							Button.VSplitLeft(0.0f, 0, &OtherSettings);
+							Button.VSplitLeft(Length, &Label, &Button);
+							Button.VSplitRight(120.0f, &Button, &MainView);
 
 							static CLineInput s_LastInput;
 							s_LastInput.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
 							s_LastInput.SetEmptyText("Last!");
 
-							if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when you're last", g_Config.m_ClNotifyWhenLast, &OtherSettings))
+							if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when last", g_Config.m_ClNotifyWhenLast, &OtherSettings))
 							{
 								g_Config.m_ClNotifyWhenLast ^= 1;
 							}
@@ -362,9 +375,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					{
 						g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange ? 0 : 1;
 					}
-					OtherSettings.HSplitTop(LineSize, &Button, &OtherSettings);
 					if(g_Config.m_ClAutoAddOnNameChange)
 					{
+						OtherSettings.HSplitTop(LineSize, &Button, &OtherSettings);
 						static int s_NamePlatesStrong = 0;
 						if(DoButton_CheckBox(&s_NamePlatesStrong, Localize("Notify you everytime someone gets auto added"), g_Config.m_ClAutoAddOnNameChange == 2, &Button))
 							g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange != 2 ? 2 : 1;
@@ -450,11 +463,20 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					ChatSettings.HSplitTop(10.0f, &Button, &ChatSettings);
 
+					// Please no one ask me.
+					std::array<float, 5> Sizes = {
+						TextRender()->TextBoundingBox(FontSize, "Friend Prefix").m_W,
+						TextRender()->TextBoundingBox(FontSize, "Spec Prefix").m_W,
+						TextRender()->TextBoundingBox(FontSize, "Server Prefix").m_W,
+						TextRender()->TextBoundingBox(FontSize, "Client Prefix").m_W,
+						TextRender()->TextBoundingBox(FontSize, "Warlist Prefix").m_W,
+					};
+					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 20.0f;
 					{
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
 
 						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
+						Button.VSplitLeft(Length, &Label, &Button);
 						Button.VSplitLeft(85.0f, &Button, 0);
 
 						static CLineInput s_PrefixMsg;
@@ -474,7 +496,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
 
 						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
+						Button.VSplitLeft(Length, &Label, &Button);
 						Button.VSplitLeft(85.0f, &Button, 0);
 
 						static CLineInput s_PrefixMsg;
@@ -494,7 +516,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
 
 						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
+						Button.VSplitLeft(Length, &Label, &Button);
 						Button.VSplitLeft(85.0f, &Button, 0);
 
 						static CLineInput s_PrefixMsg;
@@ -514,7 +536,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
 
 						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
+						Button.VSplitLeft(Length, &Label, &Button);
 						Button.VSplitLeft(85.0f, &Button, 0);
 
 						static CLineInput s_PrefixMsg;
@@ -532,7 +554,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
 
 						Button.VSplitLeft(0.0f, &Button, &ChatSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
+						Button.VSplitLeft(Length, &Label, &Button);
 						Button.VSplitLeft(85.0f, &Button, 0);
 
 						static CLineInput s_PrefixMsg;
@@ -936,11 +958,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						}
 						CUIRect FontDropDownRect, FontDirectory;
 						MiscSettings.HSplitTop(LineSize, &FontDropDownRect, &MiscSettings);
-						FontDropDownRect.VSplitLeft(100.0f, &Label, &FontDropDownRect);
+
+						float Length = TextRender()->TextBoundingBox(FontSize, "Custom Font:").m_W + 3.5f;
+
+						FontDropDownRect.VSplitLeft(Length, &Label, &FontDropDownRect);
 						FontDropDownRect.VSplitRight(20.0f, &FontDropDownRect, &FontDirectory);
 						FontDropDownRect.VSplitRight(MarginSmall, &FontDropDownRect, nullptr);
 
-						Ui()->DoLabel(&Label, Localize("Custom Font: "), FontSize, TEXTALIGN_ML);
+						Ui()->DoLabel(&Label, Localize("Custom Font:"), FontSize, TEXTALIGN_ML);
 						const int FontSelectedNew = Ui()->DoDropDown(&FontDropDownRect, FontSelectedOld, s_FontDropDownNames.data(), s_FontDropDownNames.size(), s_FontDropDownState);
 						if(FontSelectedOld != FontSelectedNew)
 						{
@@ -1033,6 +1058,11 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						}
 					}
 
+					std::array<float, 2> Sizes = {
+						TextRender()->TextBoundingBox(12.5f, "Online Message:").m_W,
+						TextRender()->TextBoundingBox(12.5f, "Offline Message:").m_W};
+					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 20.5f;
+
 
 					{
 						DiscordSettings.HSplitTop(19.9f, &Button, &MainView);
@@ -1040,9 +1070,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						DiscordSettings.HSplitTop(2.5f, &Label, &Label);
 						Ui()->DoLabel(&Label, "Online Message:", FontSize, TEXTALIGN_TL);
 
-						Button.VSplitLeft(0.0f, &Button, &DiscordSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
-						Button.VSplitLeft(200.0f, &Button, 0);
+						Button.VSplitLeft(0.0f, 0, &DiscordSettings);
+						Button.VSplitLeft(Length, &Label, &Button);
+						Button.VSplitRight(0.0f, &Button, &MainView);
 
 						static CLineInput s_PrefixMsg;
 						s_PrefixMsg.SetBuffer(g_Config.m_ClDiscordOnlineStatus, sizeof(g_Config.m_ClDiscordOnlineStatus));
@@ -1057,9 +1087,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						DiscordSettings.HSplitTop(2.5f, &Label, &Label);
 						Ui()->DoLabel(&Label, "Offline Message:", FontSize, TEXTALIGN_TL);
 
-						Button.VSplitLeft(0.0f, &Button, &DiscordSettings);
-						Button.VSplitLeft(140.0f, &Label, &Button);
-						Button.VSplitLeft(200.0f, &Button, 0);
+						Button.VSplitLeft(0.0f, 0, &DiscordSettings);
+						Button.VSplitLeft(Length, &Label, &Button);
+						Button.VSplitRight(0.0f, &Button, &MainView);
 
 						static CLineInput s_PrefixMsg;
 						s_PrefixMsg.SetBuffer(g_Config.m_ClDiscordOfflineStatus, sizeof(g_Config.m_ClDiscordOfflineStatus));
@@ -1101,9 +1131,12 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					WarVisual.HSplitTop(-1, &Button, &WarVisual);
 					WarVisual.HSplitTop(18.9f, &Button, &WarVisual);
 
-					Button.VSplitLeft(0.0f, &Button, &WarVisual);
-					Button.VSplitLeft(80.0f, &Label, &Button);
-					Button.VSplitLeft(120.0f, &Button, 0);
+					float Length = TextRender()->TextBoundingBox(FontSize, "Skin Name").m_W + 3.5f;
+
+
+					Button.VSplitLeft(0.0f, 0, &WarVisual);
+					Button.VSplitLeft(Length, &Label, &Button);
+					Button.VSplitLeft(150.0f, &Button, 0);
 
 					Ui()->DoEditBox(&s_Name, &Button, 14.0f);
 				}
