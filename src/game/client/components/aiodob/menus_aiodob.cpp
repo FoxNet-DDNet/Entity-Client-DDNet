@@ -279,7 +279,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 								Button.VSplitLeft(Length, &Label, &Button);
 								Button.VSplitLeft(160.0f, &Button, 0);
 
-
 								static CLineInput s_NotifyName;
 								s_NotifyName.SetBuffer(g_Config.m_ClAutoNotifyName, sizeof(g_Config.m_ClAutoNotifyName));
 								s_NotifyName.SetEmptyText("qxdFox");
@@ -327,9 +326,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							s_ReplyMsg.SetEmptyText("Any Console Command");
 
 							if(DoButton_CheckBox(&g_Config.m_ClRunOnJoinConsole, "Run on Join Console", g_Config.m_ClRunOnJoinConsole, &OtherSettings))
-							{
 								g_Config.m_ClRunOnJoinConsole ^= 1;
-							}
 							Ui()->DoEditBox(&s_ReplyMsg, &Button, 14.0f);
 						}
 						OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
@@ -347,9 +344,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							s_LastInput.SetEmptyText("Last!");
 
 							if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when last", g_Config.m_ClNotifyWhenLast, &OtherSettings))
-							{
 								g_Config.m_ClNotifyWhenLast ^= 1;
-							}
 
 							if(g_Config.m_ClNotifyWhenLast)
 							{
@@ -360,7 +355,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 								s_NotifyMsg.SetEmptyText("Last!");
 
 								OtherSettings.HSplitTop(-3.0f, &Label, &OtherSettings);
-
 								DoLine_ColorPicker(&s_LastColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OtherSettings, Localize(""), &g_Config.m_ClNotifyWhenLastColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(29057)), true);
 								OtherSettings.HSplitTop(-27.0f, &Button, &OtherSettings);
 							}
@@ -385,7 +379,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					OtherSettings.HSplitTop(2.5f, &Button, &OtherSettings);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, Localize("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
-
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, Localize("Anti Mult Spawn Block", "Puts you into a random Team when you Kill and get frozen"), &g_Config.m_ClAntiSpawnBlock, &OtherSettings, LineSize);
 				}
 			}
@@ -409,19 +402,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				FreezeKillSettings.HSplitTop(HeaderHeight, &Button, &FreezeKillSettings);
 				Ui()->DoLabel(&Button, Localize("Freeze Kill"), FontSize, TEXTALIGN_MC);
-
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKill, Localize("Kill on Freeze"), &g_Config.m_ClFreezeKill, &FreezeKillSettings, LineSize);
 
 				if(g_Config.m_ClFreezeKill)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillMultOnly, Localize("Only Enable on Multeasymap"), &g_Config.m_ClFreezeKillMultOnly, &FreezeKillSettings, LineSize);
-
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, Localize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &FreezeKillSettings, LineSize);
-
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
-
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
-
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKillSettings, LineSize);
 
 					if(g_Config.m_ClFreezeKillTeamClose)
@@ -456,9 +444,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					ChatSettings.HSplitTop(2.5f, &Button, &ChatSettings);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowMutedInConsole, ("Show Messages of Muted People in The Console"), &g_Config.m_ClShowMutedInConsole, &ChatSettings, LineSize);
-
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideEnemyChat, ("Hide Enemy Chat (Shows in Console)"), &g_Config.m_ClHideEnemyChat, &ChatSettings, LineSize);
-
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowIdsChat, ("Show Client Ids in Chat"), &g_Config.m_ClShowIdsChat, &ChatSettings, LineSize);
 
 					ChatSettings.HSplitTop(10.0f, &Button, &ChatSettings);
@@ -472,6 +458,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						TextRender()->TextBoundingBox(FontSize, "Warlist Prefix").m_W,
 					};
 					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 20.0f;
+
 					{
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
 
@@ -490,7 +477,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 
 					// spectate prefix
-
 					ChatSettings.HSplitTop(21.0f, &Button, &ChatSettings);
 					{
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
@@ -510,7 +496,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 
 					// server prefix
-
 					ChatSettings.HSplitTop(21.0f, &Button, &ChatSettings);
 					{
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
@@ -530,7 +515,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 
 					// client prefix
-
 					ChatSettings.HSplitTop(21.0f, &Button, &ChatSettings);
 					{
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
@@ -548,7 +532,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						}
 						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
 					}
-
 					ChatSettings.HSplitTop(21.0f, &Button, &ChatSettings);
 					{
 						ChatSettings.HSplitTop(19.9f, &Button, &MainView);
@@ -566,11 +549,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						}
 						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
 					}
-
 					ChatSettings.HSplitTop(55.0f, &Button, &ChatSettings);
 					Ui()->DoLabel(&Button, Localize("Chat Preview"), FontSize + 3, TEXTALIGN_ML);
 					ChatSettings.HSplitTop(-15.0f, &Button, &ChatSettings);
-
 
 					RenderChatPreview(ChatSettings);
 				}
@@ -578,7 +559,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		}
 
 		// right side
-
 		{
 			GoresModeSettings.VMargin(5.0f, &GoresModeSettings);
 			GoresModeSettings.HSplitTop(120.0f, &GoresModeSettings, &MenuSettings);
@@ -1132,7 +1112,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					WarVisual.HSplitTop(18.9f, &Button, &WarVisual);
 
 					float Length = TextRender()->TextBoundingBox(FontSize, "Skin Name").m_W + 3.5f;
-
 
 					Button.VSplitLeft(0.0f, 0, &WarVisual);
 					Button.VSplitLeft(Length, &Label, &Button);
