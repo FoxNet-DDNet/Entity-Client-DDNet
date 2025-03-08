@@ -189,7 +189,7 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 	AClientVersion.VSplitRight(5.0f, &AClientVersion, nullptr);
 	AClientVersion.VSplitRight(100.0f, &AClientVersion, &AClientVersion);
 	static CButtonContainer s_AClient;
-	if(DoButton_Menu(&s_AClient, Localize("A-Client " ACLIENT_VERSION), 0, &AClientVersion, BUTTONFLAG_NONE, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 10.0f))
+	if(DoButton_Menu(&s_AClient, Localize("A-Client " ACLIENT_VERSION), 0, &AClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 10.0f))
 	{
 		NewPage = PAGE_ACLIENT;
 	}
