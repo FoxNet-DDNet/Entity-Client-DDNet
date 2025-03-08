@@ -223,10 +223,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						// group em up
 						{
 							std::array<float, 2> Sizes = {
-								TextRender()->TextBoundingBox(12.0f, "Friend Prefix").m_W,
-								TextRender()->TextBoundingBox(12.0f, "Spec Prefix").m_W
+								TextRender()->TextBoundingBox(FontSize, "Tabbed reply").m_W,
+								TextRender()->TextBoundingBox(FontSize, "Muted Reply").m_W
 							};
-							float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 36.5f;
+							float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 23.5f;
 
 							{
 								OtherSettings.HSplitTop(20.0f, &Button, &MainView);
@@ -271,7 +271,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						{
 							{
 								const char *Name = g_Config.m_ClNotifyOnJoin ? "Notify on Join Name" : "Notify on Join";
-								float Length = TextRender()->TextBoundingBox(12.5f, Name).m_W + 27.5f; // Give it some breathing room
+								float Length = TextRender()->TextBoundingBox(FontSize, Name).m_W + 27.5f; // Give it some breathing room
 
 								OtherSettings.HSplitTop(19.9f, &Button, &MainView);
 
