@@ -819,14 +819,13 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 
 	static ColorRGBA Colors = TextRender()->DefaultTextColor();
 	static int64_t SwitchDelay = time_get() + time_freq() * 1.75f;
-	static const char *Reason = "Reason";
+	static char *Reason = "Reason";
 
 	if(SwitchDelay < time_get())
 	{
-		static int Type = 0;
+		static int Type = 1;
 		int Amount = GameClient()->m_WarList.m_WarTypes.size();
 
-		Type++;
 		if(Type < Amount)
 		{
 			Colors = GameClient()->m_WarList.m_WarTypes[Type]->m_Color;
@@ -834,11 +833,13 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 		}
 		else
 		{
-			Colors = g_Config.m_ClNamePlatesTeamcolors ? GameClient()->GetDDTeamColor(round_to_int(random_float(1.0f, 24.0f)), 0.75f) : TextRender()->DefaultTextColor();
-			Reason = "In Team";
-			Type = 0;
+			int RandomTeam = round_to_int(random_float(1.0f, 32.0f));
+			Colors = g_Config.m_ClNamePlatesTeamcolors ? GameClient()->GetDDTeamColor(RandomTeam, 0.75f) : TextRender()->DefaultTextColor();
+			str_format(Reason, 16, "In Team %d", RandomTeam);
+			Type = 1;
 		}
-		SwitchDelay = time_get() + time_freq() * 2.0f;
+		Type++;
+		SwitchDelay = time_get() + time_freq() * 1.5f;
 	}
 	Data.m_pReason = Reason;
 
