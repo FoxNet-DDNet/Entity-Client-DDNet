@@ -331,7 +331,7 @@ MACRO_CONFIG_INT(ClSendExclamation, ac_send_exclamation_mark, 1, 0, 1, CFGFLAG_C
 
 // Silent Messages
 MACRO_CONFIG_INT(ClSilentMessages, ac_silent_messages, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "When sending a Silent Message to the chat it will still show what you typed")
-MACRO_CONFIG_COL(ClSilenteColor, ac_silent_color, 8924078, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
+MACRO_CONFIG_COL(ClSilentColor, ac_silent_color, 8924078, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
 
 // Nameplate
 MACRO_CONFIG_INT(ClRenderNameplateSpec, ac_render_nameplate_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render nameplates when spectating")
