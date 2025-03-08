@@ -931,12 +931,12 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		auto &LineAuthor = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId];
 
 		str_copy(pCurrentLine->m_aName, LineAuthor.m_aName);
+		str_append(pCurrentLine->m_aName, ": ");
 		str_copy(pCurrentLine->m_aText, pLine);
 
 		// Set custom color
-		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSilenteColor));
+		pCurrentLine->m_CustomColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSilentColor));
 
-		pCurrentLine->m_ClientId = m_pClient->m_Snap.m_LocalClientId; // Set it to a valid ClientId
 	}
 	else
 	{
@@ -1359,7 +1359,7 @@ void CChat::OnRender()
 		}
 		else if(m_Mode == MODE_SILENT)
 		{
-			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSilenteColor)));
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSilentColor)));
 			TextRender()->TextEx(&Cursor, Localize("Silent"));
 		}
 		else
