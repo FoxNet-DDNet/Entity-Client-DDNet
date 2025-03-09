@@ -12,6 +12,7 @@
 #include <vector>
 
 #include "nameplates.h"
+#include <game/generated/protocol.h>
 
 // Part Types
 
@@ -113,6 +114,27 @@ public:
 		This.Graphics()->SetColor(m_Color);
 		This.Graphics()->QuadsSetRotation(m_Rotation);
 		This.Graphics()->QuadsDrawTL(&QuadItem, 1);
+		This.Graphics()->QuadsEnd();
+		This.Graphics()->QuadsSetRotation(0.0f);
+	}
+};
+
+class CNamePlatePartCircle : public CNamePlatePart
+{
+protected:
+	IGraphics::CTextureHandle m_Texture;
+	float m_Rotation = 0.0f;
+	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
+	void Create(CGameClient &This) {}
+
+public:
+	void Render(CGameClient &This, float X, float Y) const override
+	{
+		This.Graphics()->TextureClear();
+		This.Graphics()->QuadsBegin();
+		This.Graphics()->SetColor(m_Color);
+		This.Graphics()->QuadsSetRotation(m_Rotation);
+		This.Graphics()->DrawCircle(X, Y + 2.0f, m_Size.x, m_Size.y);
 		This.Graphics()->QuadsEnd();
 		This.Graphics()->QuadsSetRotation(0.0f);
 	}
@@ -392,6 +414,7 @@ public:
 	}
 };
 
+// A-Client
 class CNamePlatePartReason : public CNamePlatePartText
 {
 private:
@@ -421,6 +444,56 @@ public:
 	void Create(CGameClient &This)
 	{
 		CNamePlatePartText::Create(This);
+	}
+};
+
+class CNamePlatePartPingCircle : public CNamePlatePartCircle
+{
+protected:
+	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	{
+		m_Visible = Data.m_PingCircle;
+		if(!m_Visible)
+			return;
+
+		if((This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency == 77 || This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency == 76) && g_Config.m_ClAidsPingDetection)
+			m_Color = ColorRGBA(0.f, 0.f, 0.f, 0.5f);
+		m_Color = color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f)).WithAlpha(Data.m_Color.a);
+		float CircleSize = 7.0f;
+		m_Size = vec2(CircleSize, 24);
+
+		m_Color.a = Data.m_Color.a;
+	}
+
+public:
+	void Create(CGameClient &This)
+	{
+		CNamePlatePartCircle::Create(This);
+	}
+};
+
+class CNamePlatePartMutedIcon : public CNamePlatePartSprite
+{
+protected:
+	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	{
+		m_Visible = Data.m_IsMuted;
+		if(!m_Visible)
+			return;
+
+		m_Size = vec2(Data.m_FontSize, Data.m_FontSize) * 1.2f;
+
+		m_Sprite = SPRITE_MUTED_ICON;
+		m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
+
+		m_Color.a = Data.m_Color.a;
+	}
+
+public:
+	void Create(CGameClient &This)
+	{
+		CNamePlatePartSprite::Create(This);
+		m_Texture = g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id;
 	}
 };
 
@@ -549,9 +622,11 @@ private:
 		AddPart<CNamePlatePartDirection>(This, DIRECTION_RIGHT);
 		AddPart<CNamePlatePartNewLine>(This);
 
+		AddPart<CNamePlatePartPingCircle>(This);
 		AddPart<CNamePlatePartClientId>(This, false);
 		AddPart<CNamePlatePartFriendMark>(This);
 		AddPart<CNamePlatePartName>(This);
+		AddPart<CNamePlatePartMutedIcon>(This);
 		AddPart<CNamePlatePartNewLine>(This);
 
 		AddPart<CNamePlatePartClan>(This);
@@ -683,6 +758,8 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
 
 	// A-Client
+	Data.m_IsMuted = Data.m_ShowName && GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_IsMute;
+	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
 	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
 
@@ -836,7 +913,12 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 			int RandomTeam = round_to_int(random_float(1.0f, 32.0f));
 			Colors = g_Config.m_ClNamePlatesTeamcolors ? GameClient()->GetDDTeamColor(RandomTeam, 0.75f) : TextRender()->DefaultTextColor();
 			str_format(Reason, sizeof(Reason), "In Team %d", RandomTeam);
-			Type = 1;
+			if(Type == Amount + 1)
+			{
+				str_format(Reason, sizeof(Reason), "Friend", RandomTeam);
+				Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+				Type = 1;
+			}
 		}
 		Type++;
 		SwitchDelay = time_get() + time_freq() * 1.5f;

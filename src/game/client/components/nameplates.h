@@ -42,11 +42,13 @@ public:
 	float m_FontSizeHookStrongWeak;
 
 	// A-Client
-	const char *m_pReason;
-	bool m_ShowReason;
+	bool m_PingCircle = false;
+	bool m_IsMuted = false;
+	const char *m_pReason = "";
+	bool m_ShowReason = false;
 
 	// TClient
-	bool m_ShowClanWarInName;
+	bool m_ShowClanWarInName = false;
 };
 
 class CNamePlate;
