@@ -630,8 +630,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 				}
 
-
-
 				if(g_Config.m_ClDoFriendColors && ClientData.m_Friend)
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 
