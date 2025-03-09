@@ -57,7 +57,6 @@ void CFreezeKill::OnRender()
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		// stuff
-
 		CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
 
 		CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
@@ -67,17 +66,14 @@ void CFreezeKill::OnRender()
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
 		// if tried to kill, stop
-
 		if(m_SentFreezeKill == true)
 			return;
 
 		// stop when spectating
-
 		if(m_pClient->m_aClients[Local].m_Paused || m_pClient->m_aClients[Local].m_Spec)
 			m_LastFreeze = TimeReset;
 
 		// dont kill if moving
-
 		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0) && i == Local && g_Config.m_ClFreezeDontKillMoving)
 		{
 			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
@@ -86,7 +82,6 @@ void CFreezeKill::OnRender()
 		}
 
 		// dont kill if teamate is in x * 2 blocks range
-
 		if(g_Config.m_ClFreezeKillTeamClose && OtherTee.m_IsTeam && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[Local].m_Team && i != Local)
 		{
 			if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
@@ -99,16 +94,13 @@ void CFreezeKill::OnRender()
 		}
 
 		// wait x amount of seconds before killing
-
 		if(g_Config.m_ClFreezeKillWaitMs)
 		{
 			// kill if frozen (without deep and live freeze)
-
 			if(m_pClient->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
 				m_LastFreeze = TimeReset;
 
 			// only kill if player is in a freeze tile
-
 			if(g_Config.m_ClFreezeKillOnlyFullFrozen)
 			{
 				if(!pCharacter->m_IsInFreeze)
@@ -142,7 +134,6 @@ void CFreezeKill::OnRender()
 		}
 
 		// if not wating for x amount of seconds
-
 		else if(pCharacter->m_IsInFreeze)
 		{
 			if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
