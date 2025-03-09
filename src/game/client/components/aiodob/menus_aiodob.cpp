@@ -1093,34 +1093,27 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				WarVisual.HSplitTop(5, &Button, &WarVisual);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode"), &g_Config.m_ClSweatMode, &WarVisual, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &WarVisual, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSelfColor, ("Don't Change Own Color"), &g_Config.m_ClSweatModeSelfColor, &WarVisual, LineMargin);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSkin, ("Change Everyones Skin"), &g_Config.m_ClSweatModeSkin, &WarVisual, LineMargin);
+				static CLineInput s_Name;
+				s_Name.SetBuffer(g_Config.m_ClSweatModeSkinName, sizeof(g_Config.m_ClSweatModeSkinName));
+				s_Name.SetEmptyText("x_ninja");
 
-				if(g_Config.m_ClSweatModeSkin)
-				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &WarVisual, LineMargin);
+				WarVisual.HSplitTop(2.4f, &Label, &WarVisual);
+				WarVisual.VSplitLeft(25.0f, &WarVisual, &WarVisual);
+				Ui()->DoLabel(&WarVisual, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
 
-					static CLineInput s_Name;
-					s_Name.SetBuffer(g_Config.m_ClSweatModeSkinName, sizeof(g_Config.m_ClSweatModeSkinName));
-					s_Name.SetEmptyText("x_ninja");
+				WarVisual.HSplitTop(-1, &Button, &WarVisual);
+				WarVisual.HSplitTop(18.9f, &Button, &WarVisual);
 
-					WarVisual.HSplitTop(2.4f, &Label, &WarVisual);
-					WarVisual.VSplitLeft(25.0f, &WarVisual, &WarVisual);
-					Ui()->DoLabel(&WarVisual, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
+				float Length = TextRender()->TextBoundingBox(FontSize, "Skin Name").m_W + 3.5f;
 
-					WarVisual.HSplitTop(-1, &Button, &WarVisual);
-					WarVisual.HSplitTop(18.9f, &Button, &WarVisual);
+				Button.VSplitLeft(0.0f, 0, &WarVisual);
+				Button.VSplitLeft(Length, &Label, &Button);
+				Button.VSplitLeft(150.0f, &Button, 0);
 
-					float Length = TextRender()->TextBoundingBox(FontSize, "Skin Name").m_W + 3.5f;
-
-					Button.VSplitLeft(0.0f, 0, &WarVisual);
-					Button.VSplitLeft(Length, &Label, &Button);
-					Button.VSplitLeft(150.0f, &Button, 0);
-
-					Ui()->DoEditBox(&s_Name, &Button, 14.0f);
-				}
-				else
-					g_Config.m_ClSweatModeOnlyOthers = 0;
+				Ui()->DoEditBox(&s_Name, &Button, 14.0f);
 			}
 		}
 		s_ScrollRegion.End();

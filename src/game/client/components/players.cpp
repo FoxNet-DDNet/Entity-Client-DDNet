@@ -1418,42 +1418,43 @@ void CPlayers::OnRender()
 	// update render info for ninja
 	CTeeRenderInfo aRenderInfo[MAX_CLIENTS];
 	const bool IsTeamPlay = m_pClient->IsTeamPlay();
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	const int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
-		const int Local = m_pClient->m_Snap.m_LocalClientId;
-		aRenderInfo[i] = m_pClient->m_aClients[i].m_RenderInfo;
-		aRenderInfo[i].m_TeeRenderFlags = 0;
-		if(m_pClient->m_aClients[i].m_FreezeEnd != 0)
-			aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
-		if(m_pClient->m_aClients[i].m_LiveFrozen)
-			aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
-		if(m_pClient->m_aClients[i].m_Invincible)
-			aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+		aRenderInfo[ClientId] = m_pClient->m_aClients[ClientId].m_RenderInfo;
+		aRenderInfo[ClientId].m_TeeRenderFlags = 0;
+		if(m_pClient->m_aClients[ClientId].m_FreezeEnd != 0)
+			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+		if(m_pClient->m_aClients[ClientId].m_LiveFrozen)
+			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+		if(m_pClient->m_aClients[ClientId].m_Invincible)
+			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
-		const CGameClient::CSnapState::CCharacterInfo &CharacterInfo = m_pClient->m_Snap.m_aCharacters[i];
+		const CGameClient::CSnapState::CCharacterInfo &CharacterInfo = m_pClient->m_Snap.m_aCharacters[ClientId];
 		const bool Frozen = CharacterInfo.m_HasExtendedData && CharacterInfo.m_ExtendedData.m_FreezeEnd != 0;
 
-		if(((CharacterInfo.m_Cur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja) || (g_Config.m_ClAmIFrozen && g_Config.m_ClFreezeUpdateFix && m_pClient->m_Snap.m_LocalClientId == i && g_Config.m_ClShowNinja) || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen && g_Config.m_ClShowNinja))
+		if(((CharacterInfo.m_Cur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja) || (g_Config.m_ClAmIFrozen && g_Config.m_ClFreezeUpdateFix && m_pClient->m_Snap.m_LocalClientId == ClientId && g_Config.m_ClShowNinja) || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen && g_Config.m_ClShowNinja))
 		{
 			// change the skin for the player to the ninja
 			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr("x_ninja");
 			if(pSkin != nullptr)
 			{
-				aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
+				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
 
-				aRenderInfo[i].Apply(pSkin);
-				aRenderInfo[i].m_CustomColoredSkin = IsTeamPlay;
+				aRenderInfo[ClientId].Apply(pSkin);
+				aRenderInfo[ClientId].m_CustomColoredSkin = IsTeamPlay;
 				if(!IsTeamPlay)
 				{
-					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 1);
-					aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 1);
+					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
 				}
 			}
 		}
 
-		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
+		const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
 
-		if(g_Config.m_ClOwnTeeSkin && i == Local)
+		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
+		if(g_Config.m_ClOwnTeeSkin && Local)
 		{
 			// change the skin for the player to the ninja
 
@@ -1464,120 +1465,66 @@ void CPlayers::OnRender()
 
 			if(pSkin != nullptr)
 			{
-				aRenderInfo[Local].m_aSixup[g_Config.m_ClDummy].Reset();
-
-				aRenderInfo[Local].Apply(pSkin);
+				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
+				aRenderInfo[ClientId].Apply(pSkin);
 
 				if(g_Config.m_ClOwnTeeSkinCustomColor)
 				{
-					aRenderInfo[Local].m_CustomColoredSkin = 1;
-					aRenderInfo[Local].m_ColorBody = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorBody)));
-					aRenderInfo[Local].m_ColorFeet = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorFeet)));
+					aRenderInfo[ClientId].m_CustomColoredSkin = 1;
+					aRenderInfo[ClientId].m_ColorBody = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorBody)));
+					aRenderInfo[ClientId].m_ColorFeet = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorFeet)));
 				}
-
 				else
 				{
-					aRenderInfo[Local].m_CustomColoredSkin = 0;
-					aRenderInfo[Local].m_ColorBody = ColorRGBA(1, 1, 1);
-					aRenderInfo[Local].m_ColorFeet = ColorRGBA(1, 1, 1);
+					aRenderInfo[ClientId].m_CustomColoredSkin = 0;
+					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
 				}
 			}
 		}
 
-		// sweat mode code
-
+		// sweat mode
 		if(g_Config.m_ClSweatMode)
 		{
-			// if player used dj
-
-			const auto UsedDj = aRenderInfo[i].m_GotAirJump = 0;
-
-			// change the skin for the player to the ninja
-
 			// find skin in database
 			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClSweatModeSkinName);
 
 			// if found apply
 			if(pSkin != nullptr)
 			{
-				aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
-				if(g_Config.m_ClSweatModeSkin)
-				{
-					// if setting is on to only change other skin
-
-					if(i == Local)
-					{
-						if(!g_Config.m_ClSweatModeOnlyOthers)
-							aRenderInfo[i].Apply(pSkin);
-					}
-					// if that setting is not on
-
-					else
-						aRenderInfo[i].Apply(pSkin);
-				}
-
-				// if local and setting is on to only change other skins, so the colors dont change on own player
-
-				if(i == Local)
+				if(Local)
 				{
 					if(!g_Config.m_ClSweatModeOnlyOthers)
-						{
-						if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
-							aRenderInfo[i].m_CustomColoredSkin = 1;
-						aRenderInfo[i].m_ColorBody = ColorRGBA(1, 0, 0);
-						if(UsedDj)
-							aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 0, 0);
-						else
-							aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 0, 0);
-					}
-				
+						aRenderInfo[ClientId].Apply(pSkin);
 				}
-				// if Player is in i List, change color accordingly
-
-				if(m_pClient->m_aClients[i].m_IsWar && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
-				{
-					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
-						aRenderInfo[i].m_CustomColoredSkin = 1;
-					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 0, 0);
-					if(UsedDj)
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(0.7, 0.3, 0.3);
-					else
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 0, 0);
-				}
-				else if(m_pClient->m_aClients[i].m_IsHelper && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
-				{
-					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
-						aRenderInfo[i].m_CustomColoredSkin = 1;
-					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 0);
-					if(UsedDj)
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(0.7, 0.7, 0.3);
-					else
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 0);
-				}
-				else if(m_pClient->m_aClients[i].m_IsTeam && !(i == Local && g_Config.m_ClSweatModeOnlyOthers))
-				{
-					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
-						aRenderInfo[i].m_CustomColoredSkin = 1;
-					aRenderInfo[i].m_ColorBody = ColorRGBA(0, 1, 0);
-					if(UsedDj)
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(0.3, 0.7, 0.3);
-					else
-						aRenderInfo[i].m_ColorFeet = ColorRGBA(0, 1, 0);
-				}
-				else if(!(i == Local && g_Config.m_ClSweatModeOnlyOthers))
-					{
-					if(!(m_pClient->m_aClients[i].m_FreezeEnd > 0))
-					{
-						aRenderInfo[i].m_CustomColoredSkin = 1;
-						aRenderInfo[i].m_ColorBody = ColorRGBA(0.5f, 0.5f, 0.5f);
-						if(UsedDj)
-							aRenderInfo[i].m_ColorFeet = ColorRGBA(0.3f, 0.3f, 0.3f);
-						else
-							aRenderInfo[i].m_ColorFeet = ColorRGBA(0.5f, 0.5f, 0.5f);
-					}
-				}
-			
+				else
+					aRenderInfo[ClientId].Apply(pSkin);
 			}
+
+			ColorRGBA Color = ColorRGBA(0.5f, 0.5f, 0.5f);
+
+			if(GameClient()->m_aClients[ClientId].m_Friend && g_Config.m_ClDoFriendColors)
+				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+			if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
+				Color = GameClient()->m_WarList.GetClanColor(ClientId);
+
+			if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
+				Color = GameClient()->m_WarList.GetNameplateColor(ClientId);
+			else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
+				Color = GameClient()->m_WarList.GetClanColor(ClientId);
+
+			if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar)
+				Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
+			else if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempHelper)
+				Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
+				
+			if(g_Config.m_ClSweatModeSelfColor && Local)
+				continue;
+
+				if(!(m_pClient->m_aClients[ClientId].m_FreezeEnd > 0))
+					aRenderInfo[ClientId].m_CustomColoredSkin = 1;
+				aRenderInfo[ClientId].m_ColorBody = Color;
+				aRenderInfo[ClientId].m_ColorFeet = Color;
 		}
 
 	}
@@ -1585,7 +1532,6 @@ void CPlayers::OnRender()
 	CTeeRenderInfo RenderInfoSpec;
 	RenderInfoSpec.Apply(m_pClient->m_Skins.Find("x_spec"));
 	RenderInfoSpec.m_Size = 64.0f;
-	const int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
 
 	// get screen edges to avoid rendering offscreen
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
@@ -1604,9 +1550,7 @@ void CPlayers::OnRender()
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(ClientId == LocalClientId || !m_pClient->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
-		{
 			continue;
-		}
 		RenderHook(&m_pClient->m_aClients[ClientId].m_RenderPrev, &m_pClient->m_aClients[ClientId].m_RenderCur, &aRenderInfo[ClientId], ClientId);
 	}
 	if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
@@ -1619,20 +1563,14 @@ void CPlayers::OnRender()
 	for(const auto &Client : m_pClient->m_aClients)
 	{
 		if(!Client.m_SpecCharPresent)
-		{
 			continue;
-		}
 		// don't render offscreen
 		if(!in_range(Client.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Client.m_RenderPos.y, ScreenY0, ScreenY1))
-		{
 			continue;
-		}
 		const int ClientId = Client.ClientId();
 		float Alpha = (m_pClient->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
 		if(ClientId == -2) // ghost
-		{
 			Alpha = g_Config.m_ClRaceGhostAlpha / 100.f;
-		}
 		RenderTools()->RenderTee(CAnimState::GetIdle(), &RenderInfoSpec, EMOTE_BLINK, vec2(1, 0), Client.m_SpecChar, Alpha);
 	}
 
@@ -1642,29 +1580,21 @@ void CPlayers::OnRender()
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(ClientId == RenderLastId || !m_pClient->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
-		{
 			continue;
-		}
 
 		RenderHookCollLine(&m_pClient->m_aClients[ClientId].m_RenderPrev, &m_pClient->m_aClients[ClientId].m_RenderCur, ClientId);
 
 		if(!in_range(m_pClient->m_aClients[ClientId].m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(m_pClient->m_aClients[ClientId].m_RenderPos.y, ScreenY0, ScreenY1))
-		{
 			if(!(g_Config.m_ClShowOthersGhosts && g_Config.m_ClSwapGhosts))
 				continue;
-		}
 
 		bool Frozen = (m_pClient->m_aClients[ClientId].m_FreezeEnd > 0) && g_Config.m_ClHideFrozenGhosts;
 		bool RenderGhost = true;
 		if(g_Config.m_ClHideFrozenGhosts && Frozen && g_Config.m_ClShowOthersGhosts)
-		{
 			if(!g_Config.m_ClSwapGhosts)
 				RenderGhost = false;
-		}
 		if(g_Config.m_ClUnpredOthersInFreeze && g_Config.m_ClAmIFrozen && g_Config.m_ClShowOthersGhosts)
-		{
 			RenderGhost = false;
-		}
 
 		bool Spec = m_pClient->m_Snap.m_SpecInfo.m_Active;
 
