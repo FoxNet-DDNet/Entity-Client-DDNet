@@ -1521,10 +1521,10 @@ void CPlayers::OnRender()
 			if(g_Config.m_ClSweatModeSelfColor && Local)
 				continue;
 
-				if(!(m_pClient->m_aClients[ClientId].m_FreezeEnd > 0))
-					aRenderInfo[ClientId].m_CustomColoredSkin = 1;
-				aRenderInfo[ClientId].m_ColorBody = Color;
-				aRenderInfo[ClientId].m_ColorFeet = Color;
+			if(!(m_pClient->m_aClients[ClientId].m_FreezeEnd > 0))
+				aRenderInfo[ClientId].m_CustomColoredSkin = 1;
+			aRenderInfo[ClientId].m_ColorBody = Color;
+			aRenderInfo[ClientId].m_ColorFeet = Color;
 		}
 
 	}
