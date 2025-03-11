@@ -531,8 +531,14 @@ void CAiodob::Rainbow()
 		GameClient()->SendDummyInfo(false);
 		m_RainbowWasOn = false;
 	}
+	// Makes the slider look smoother
+	static float Speed = 1.0f;
+	Speed = Speed + m_RainbowSpeed * 0.00005f;
 
-	float h = (round_to_int(static_cast<float>(time_get()) / time_freq() * m_RainbowSpeed * 0.1f) % 255 / 255.f);
+	if(Speed > 510.0f)
+		Speed = 1.0f;
+
+	float h = round_to_int(Speed) % 255 / 255.f;
 	float s = abs(m_RainbowSat[g_Config.m_ClDummy] - 255);
 	float l = abs(m_RainbowLht[g_Config.m_ClDummy] - 255);
 
