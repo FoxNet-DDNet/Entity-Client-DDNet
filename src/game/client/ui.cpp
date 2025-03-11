@@ -1483,6 +1483,16 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 		Value -= Increment;
 		Value = clamp(Value, Min, Max);
 	}
+	if(Input()->KeyPress(KEY_A) && MouseInside(pRect))
+	{
+		Value -= Input()->ModifierIsPressed() ? 5 : 1;
+		Value = clamp(Value, Min, Max);
+	}
+	if(Input()->KeyPress(KEY_D) && MouseInside(pRect))
+	{
+		Value += Input()->ModifierIsPressed() ? 5 : 1;
+		Value = clamp(Value, Min, Max);
+	}
 
 	char aBuf[256];
 	if(!Infinite || Value != Max)
