@@ -1589,7 +1589,6 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	}
 
 	// Render Tee Above everything else
-
 	{
 		CTeeRenderInfo TeeRenderInfo;
 		TeeRenderInfo.Apply(m_pClient->m_Skins.Find("Catnoa"));
@@ -3176,7 +3175,6 @@ void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 	float InteractionDistance = 20.0f;
 	vec2 TeeDirection = normalize(DeltaPosition);
 	int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
-
 	if(Draggable > 0)
 	{
 		if(Distance < InteractionDistance)
@@ -3217,6 +3215,6 @@ void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 			CanDrag = false;
 	}
 
-	RenderTools()->RenderTee(CAnimState::GetIdle(), pInfo, TeeEmote, TeeDirection, Pos);
+	RenderTools()->RenderTee(pAnim, pInfo, TeeEmote, TeeDirection, Pos);
 }
 
