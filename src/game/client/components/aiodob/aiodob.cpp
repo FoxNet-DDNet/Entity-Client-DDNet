@@ -533,9 +533,9 @@ void CAiodob::Rainbow()
 	}
 	// Makes the slider look smoother
 	static float Speed = 1.0f;
-	Speed = Speed + m_RainbowSpeed * 0.00005f;
+	Speed = Speed + m_RainbowSpeed * Client()->FrameTimeAvg() * 0.1f;
 
-	if(Speed > 510.0f)
+	if(Speed > 255.f * 10) // Reset if Value gets highish, why? why not :D
 		Speed = 1.0f;
 
 	float h = round_to_int(Speed) % 255 / 255.f;
