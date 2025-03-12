@@ -199,20 +199,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		MainView.VSplitMid(&OtherSettings, &GoresModeSettings);
 
 		{
+			static float Offset = 0.0f;
+
 			OtherSettings.VMargin(5.0f, &OtherSettings);
-			if(g_Config.m_ClNotifyOnJoin)
-			{
-				if(g_Config.m_ClAutoAddOnNameChange)
-					OtherSettings.HSplitTop(265.0f, &OtherSettings, &FreezeKillSettings);
-				else
-					OtherSettings.HSplitTop(245.0f, &OtherSettings, &FreezeKillSettings);
-			}
-			else if(g_Config.m_ClAutoAddOnNameChange)
-				OtherSettings.HSplitTop(245.0f, &OtherSettings, &FreezeKillSettings);
-			else
-				OtherSettings.HSplitTop(225.0f, &OtherSettings, &FreezeKillSettings);
+			OtherSettings.HSplitTop(225.0f + Offset, &OtherSettings, &FreezeKillSettings);
 			if(s_ScrollRegion.AddRect(OtherSettings))
 			{
+				Offset = 0.0f;
+
 				OtherSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				OtherSettings.VMargin(Margin, &OtherSettings);
 
@@ -271,13 +265,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						{
 							{
 								const char *Name = g_Config.m_ClNotifyOnJoin ? "Notify on Join Name" : "Notify on Join";
-								float Length = TextRender()->TextBoundingBox(FontSize, Name).m_W + 27.5f; // Give it some breathing room
+								float Length = TextRender()->TextBoundingBox(FontSize, "Notify on Join Name").m_W + 27.5f; // Give it some breathing room
 
 								OtherSettings.HSplitTop(19.9f, &Button, &MainView);
 
-								Button.VSplitLeft(0.0f, &Button, &OtherSettings);
+								Button.VSplitLeft(0.0f, 0, &OtherSettings);
 								Button.VSplitLeft(Length, &Label, &Button);
-								Button.VSplitLeft(160.0f, &Button, 0);
+								Button.VSplitRight(0.0f, &Button, &MainView);
 
 								static CLineInput s_NotifyName;
 								s_NotifyName.SetBuffer(g_Config.m_ClAutoNotifyName, sizeof(g_Config.m_ClAutoNotifyName));
@@ -309,6 +303,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 								OtherSettings.HSplitTop(3.0f, &Button, &OtherSettings);
 								Ui()->DoLabel(&OtherSettings, "Notify Message", 12.5f, TEXTALIGN_LEFT);
 								OtherSettings.HSplitTop(-3.0f, &Button, &OtherSettings);
+								Offset = Offset + 20.0f;
 							}
 						}
 						OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
@@ -331,35 +326,45 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						}
 						OtherSettings.HSplitTop(25.0f, &Button, &OtherSettings);
 						{
-							float Length = TextRender()->TextBoundingBox(FontSize, "Show when last").m_W + 30.0f; // Give it some breathing room
-
 							OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 
 							Button.VSplitLeft(0.0f, 0, &OtherSettings);
-							Button.VSplitLeft(Length, &Label, &Button);
-							Button.VSplitRight(120.0f, &Button, &MainView);
 
-							static CLineInput s_LastInput;
-							s_LastInput.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
-							s_LastInput.SetEmptyText("Last!");
-
-							if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when last", g_Config.m_ClNotifyWhenLast, &OtherSettings))
+							if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when you're the last player", g_Config.m_ClNotifyWhenLast, &OtherSettings))
 								g_Config.m_ClNotifyWhenLast ^= 1;
 
+							
 							if(g_Config.m_ClNotifyWhenLast)
 							{
-								Ui()->DoEditBox(&s_LastInput, &Button, 14.0f);
-								static CLineInput s_NotifyMsg;
-								static CButtonContainer s_LastColor;
-								s_NotifyMsg.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
-								s_NotifyMsg.SetEmptyText("Last!");
+								static CLineInput s_LastMessage;
+								s_LastMessage.SetBuffer(g_Config.m_ClNotifyWhenLastText, sizeof(g_Config.m_ClNotifyWhenLastText));
+								s_LastMessage.SetEmptyText("Last!");
 
-								OtherSettings.HSplitTop(-3.0f, &Label, &OtherSettings);
+								float Length = TextRender()->TextBoundingBox(12.5f, "Text to Show").m_W + 3.5f; // Give it some breathing room
+
+								OtherSettings.HSplitTop(21.0f, &Button, &OtherSettings);
+								OtherSettings.HSplitTop(19.9f, &Button, &MainView);
+
+								Button.VSplitLeft(Length, &Label, &Button);
+								Button.VSplitRight(100.0f, &Button, &MainView);
+
+								Ui()->DoEditBox(&s_LastMessage, &Button, FontSize);
+
+
+
+								OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
+								Ui()->DoLabel(&OtherSettings, "Text to Show", 12.5f, TEXTALIGN_ML);
+								OtherSettings.HSplitTop(-20.0f, &Button, &OtherSettings);
+
+								static CButtonContainer s_LastColor;
+								OtherSettings.HSplitTop(-3.0f, &Button, &OtherSettings);
 								DoLine_ColorPicker(&s_LastColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OtherSettings, Localize(""), &g_Config.m_ClNotifyWhenLastColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(29057)), true);
-								OtherSettings.HSplitTop(-27.0f, &Button, &OtherSettings);
+
+								OtherSettings.HSplitTop(-25.0f, &Button, &OtherSettings);
+								Offset = Offset + 20.0f;
 							}
-							OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 						}
+						OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 					}
 
 					
@@ -375,6 +380,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						static int s_NamePlatesStrong = 0;
 						if(DoButton_CheckBox(&s_NamePlatesStrong, Localize("Notify you everytime someone gets auto added"), g_Config.m_ClAutoAddOnNameChange == 2, &Button))
 							g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange != 2 ? 2 : 1;
+						Offset = Offset + 20.0f;
 					}
 					OtherSettings.HSplitTop(2.5f, &Button, &OtherSettings);
 
@@ -385,18 +391,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		}
 		
 		{
+			static float Offset = 0.0f;
 			FreezeKillSettings.HSplitTop(Margin, nullptr, &FreezeKillSettings);
-			if(g_Config.m_ClFreezeKill)
-			{
-				if(g_Config.m_ClFreezeKillWaitMs)
-					FreezeKillSettings.HSplitTop(240.0f, &FreezeKillSettings, &ChatSettings);
-				else
-					FreezeKillSettings.HSplitTop(200.0f, &FreezeKillSettings, &ChatSettings);
-			}
-			else
-				FreezeKillSettings.HSplitTop(75.0f, &FreezeKillSettings, &ChatSettings);
+			FreezeKillSettings.HSplitTop(75.0f + Offset, &FreezeKillSettings, &ChatSettings);
 			if(s_ScrollRegion.AddRect(FreezeKillSettings))
 			{
+				Offset = 0.0f;
+
 				FreezeKillSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				FreezeKillSettings.VMargin(Margin, &FreezeKillSettings);
 
@@ -406,6 +407,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				if(g_Config.m_ClFreezeKill)
 				{
+					Offset = Offset + 105.0f;
+
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillMultOnly, Localize("Only Enable on Multeasymap"), &g_Config.m_ClFreezeKillMultOnly, &FreezeKillSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, Localize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &FreezeKillSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
@@ -414,13 +417,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 					if(g_Config.m_ClFreezeKillTeamClose)
 					{
-						FreezeKillSettings.HSplitTop(20.f, &Button, &FreezeKillSettings);
+						FreezeKillSettings.HSplitTop(20.0f, &Button, &FreezeKillSettings);
 						Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillTeamDistance, &g_Config.m_ClFreezeKillTeamDistance, &Button, Localize("Team Max Distance"), 1, 25, &CUi::ms_LinearScrollbarScale, 0u, "");
 					}
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, Localize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &FreezeKillSettings, LineSize);
 					if(g_Config.m_ClFreezeKillWaitMs)
 					{
+						Offset = Offset + 35.0f;
 						FreezeKillSettings.HSplitTop(2 * LineSize, &Button, &FreezeKillSettings);
 						Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, Localize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
 					}
@@ -572,7 +576,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &GoresModeSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresModeSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is 'Gores'"), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &GoresModeSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresModeSettings, LineSize);
 			}
 		}
@@ -597,14 +601,14 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			}
 		}
 
-			{
+		{
+			static float Offset = 0.0f;
 			AutoKillOntopSettings.HSplitTop(Margin, nullptr, &AutoKillOntopSettings);
-			if(g_Config.m_ClAutoKill)
-				AutoKillOntopSettings.HSplitTop(205.0f, &AutoKillOntopSettings, &AiodobSettings);
-			else
-				AutoKillOntopSettings.HSplitTop(75.0f, &AutoKillOntopSettings, &AiodobSettings);
+			AutoKillOntopSettings.HSplitTop(75.0f + Offset, &AutoKillOntopSettings, &AiodobSettings);
 			if(s_ScrollRegion.AddRect(AutoKillOntopSettings))
 			{
+				Offset = 0.0f;
+
 				AutoKillOntopSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				AutoKillOntopSettings.VMargin(Margin, &AutoKillOntopSettings);
 
@@ -614,6 +618,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKill, ("Auto Kill if Frozen And You're Below a Player"), &g_Config.m_ClAutoKill, &AutoKillOntopSettings, LineMargin);
 				if(g_Config.m_ClAutoKill)
 				{
+					Offset = Offset + 130.0f;
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillMultOnly, ("Only Enable on Multeasymap"), &g_Config.m_ClAutoKillMultOnly, &AutoKillOntopSettings, LineMargin);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillIgnoreKillProt, ("Ignore Kill Protection"), &g_Config.m_ClAutoKillIgnoreKillProt, &AutoKillOntopSettings, LineMargin);
@@ -691,14 +696,13 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		{
 			bool RainbowOn = g_Config.m_ClRainbowHook || g_Config.m_ClRainbowTees || g_Config.m_ClRainbowWeapon || g_Config.m_ClRainbowOthers;
+			static float Offset = 0.0f;
 
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			if(RainbowOn)
-				PlayerSettings.HSplitTop(305.0f, &PlayerSettings, &RainbowSettings);
-			else
-				PlayerSettings.HSplitTop(285.0f, &PlayerSettings, &RainbowSettings);
+			PlayerSettings.HSplitTop(285.0f + Offset, &PlayerSettings, &RainbowSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
+				Offset = 0.0f;
 				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				PlayerSettings.VMargin(Margin, &PlayerSettings);
 
@@ -787,14 +791,19 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				PlayerSettings.HSplitTop(MarginExtraSmall, nullptr, &PlayerSettings);
 				PlayerSettings.HSplitTop(LineSize, &Button, &PlayerSettings);
 				if(RainbowOn)
+				{
+					Offset = Offset + 20.0f;
 					Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, Localize("Rainbow speed"), 0, 200, &CUi::ms_LogarithmicScrollbarScale, 0, "%");
+				}
 				PlayerSettings.HSplitTop(MarginExtraSmall, nullptr, &PlayerSettings);
 				PlayerSettings.HSplitTop(MarginSmall, nullptr, &PlayerSettings);
 			}
 		}
 
 		{
+			CUIRect TeeRect;
 			RainbowSettings.HSplitTop(Margin, nullptr, &RainbowSettings);
+			RainbowSettings.HSplitTop(Margin, nullptr, &TeeRect);
 			RainbowSettings.HSplitTop(260.0f, &RainbowSettings, 0);
 			if(s_ScrollRegion.AddRect(RainbowSettings))
 			{
@@ -807,8 +816,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, Localize("Enable Serverside Rainbow"), &g_Config.m_ClServerRainbow, &RainbowSettings, LineSize);
 
 				RainbowSettings.HSplitTop(2 * LineSize, &Button, &RainbowSettings);
-				Ui()->DoScrollbarOption(&GameClient()->m_Aiodob.m_RainbowSpeed, &GameClient()->m_Aiodob.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 1000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
-
+				Ui()->DoScrollbarOption(&GameClient()->m_Aiodob.m_RainbowSpeed, &GameClient()->m_Aiodob.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 5000, &CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
 				RainbowSettings.VSplitLeft(52, &Button, &RainbowSettings);
 				RenderHslaScrollbars(&RainbowSettings, &GameClient()->m_Aiodob.m_PreviewRainbowColor[g_Config.m_ClDummy], false, ColorHSLA::DARKEST_LGT, false);
 				RainbowSettings.VSplitLeft(-140, &Button, &RainbowSettings);
@@ -821,6 +829,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_RainbowLht[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_RainbowLht[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
 
 				{
+					TeeRect.HSplitTop(80.0f, nullptr, &TeeRect);
+					TeeRect.HSplitTop(80.0f, &TeeRect, nullptr);
+					TeeRect.VSplitLeft(80.0f, &TeeRect, nullptr);
+					
 					CTeeRenderInfo TeeRenderInfo;
 
 					bool PUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
@@ -863,7 +875,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 					}
 			
-					RenderACTee(MainView, vec2(RainbowSettings.Center().x - 130, RainbowSettings.Center().y - 80), CAnimState::GetIdle(), &TeeRenderInfo);
+					RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
 				}
 
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
@@ -877,13 +889,16 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		// right side in settings menu
 
 		{
+			static float Offset = 0.0f;
+
 			UiSettings.VMargin(5.0f, &UiSettings);
 			if(g_Config.m_ClFpsSpoofer)
 				UiSettings.HSplitTop(160.0f, &UiSettings, &MiscSettings);
 			else
-				UiSettings.HSplitTop(125.0f, &UiSettings, &MiscSettings);
+				UiSettings.HSplitTop(125.0f + Offset, &UiSettings, &MiscSettings);
 			if(s_ScrollRegion.AddRect(UiSettings))
 			{
+				Offset = 0.0f;
 				UiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				UiSettings.VMargin(10.0f, &UiSettings);
 
@@ -900,6 +915,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFpsSpoofer, Localize("Fps Spoofer"), &g_Config.m_ClFpsSpoofer, &UiSettings, LineSize);
 				if(g_Config.m_ClFpsSpoofer)
 				{
+					Offset = Offset + 35.0f;
 					UiSettings.HSplitTop(2 * LineSize, &Button, &UiSettings);
 					Ui()->DoScrollbarOption(&g_Config.m_ClFpsSpoofPercentage, &g_Config.m_ClFpsSpoofPercentage, &Button, Localize("Fps Spoofer Percentage"), 1, 750, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "%");
 				}
@@ -907,13 +923,12 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		}
 
 		{
+			static float Offset = 0.0f;
 			MiscSettings.HSplitTop(Margin, nullptr, &MiscSettings);
-			if(g_Config.m_ClRenderCursorSpec)
-				MiscSettings.HSplitTop(120.0f, &MiscSettings, &DiscordSettings);
-			else
-				MiscSettings.HSplitTop(100.0f, &MiscSettings, &DiscordSettings);
+			MiscSettings.HSplitTop(105.0f + Offset, &MiscSettings, &DiscordSettings);
 			if(s_ScrollRegion.AddRect(MiscSettings))
 			{
+				Offset = 0.0f;
 				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				MiscSettings.VMargin(Margin, &MiscSettings);
 
@@ -977,6 +992,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderCursorSpec, ("Show Cursor While Spectating"), &g_Config.m_ClRenderCursorSpec, &MiscSettings, LineSize);
 					if(g_Config.m_ClRenderCursorSpec)
 					{
+						Offset = Offset + 20.0f;
 						MiscSettings.HSplitTop(20.f, &Button, &MiscSettings);
 						Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpecOpacity, &g_Config.m_ClRenderCursorSpecOpacity, &Button, Localize("Cursor Opacity"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
 					}
