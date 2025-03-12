@@ -1728,7 +1728,7 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			bool AdBotFound = false;
 
 			// generic krx message
-			if(str_find_nocase(pLine, "bro, check out this client")) // whisper advertising
+			if(str_find_nocase(pLine, "bro, check out this client") && Team == TEAM_WHISPER_RECV) // whisper advertising
 				AdBotFound = true;
 
 			if(str_find_nocase(pLine, "Think you could do better") && str_find_nocase(pLine, "Not without")) // mass ping advertising
