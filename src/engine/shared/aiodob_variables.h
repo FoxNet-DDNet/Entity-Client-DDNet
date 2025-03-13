@@ -338,8 +338,7 @@ MACRO_CONFIG_INT(ClRenderNameplateSpec, ac_render_nameplate_spec, 0, 0, 1, CFGFL
 MACRO_CONFIG_INT(ClStrongWeakColorId, ac_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
 
 // Custom Vairiables from My Server for the editor
-// ignore these you cant do anything with them except if you make ur own version on a server
-
+// You can use these if you get my server from https://github.com/qxdFoxs/FoxNet-DDNet
 
 MACRO_CONFIG_INT(SvAutoHammer, fs_auto_hammer, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
 MACRO_CONFIG_INT(SvAutoGun, fs_auto_gun, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
