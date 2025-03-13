@@ -1723,7 +1723,7 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 	}
 	else if(ClientId >= 0) // Player Message
 	{
-		if(g_Config.m_ClDismissAdBots > 0 && Team != TEAM_WHISPER_RECV && !GameClient()->m_aClients[ClientId].m_Friend)
+		if(g_Config.m_ClDismissAdBots > 0 && !GameClient()->m_aClients[ClientId].m_Friend)
 		{
 			bool AdBotFound = false;
 
