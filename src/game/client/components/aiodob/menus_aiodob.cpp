@@ -1055,9 +1055,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 
 					std::array<float, 2> Sizes = {
-						TextRender()->TextBoundingBox(12.5f, "Online Message:").m_W,
-						TextRender()->TextBoundingBox(12.5f, "Offline Message:").m_W};
-					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 20.5f;
+						TextRender()->TextBoundingBox(FontSize, "Online Message:").m_W,
+						TextRender()->TextBoundingBox(FontSize, "Offline Message:").m_W};
+					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 3.5f;
 
 
 					{
