@@ -2638,8 +2638,8 @@ void CGameClient::OnPredict()
 			pSmoothDummyChar->OnPredictedInput(pDummyInputData);
 		m_PredSmoothingWorld.Tick();
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
+		for(int i = 0; i < MAX_CLIENTS; i++)
+		{
 			if(!m_Snap.m_aCharacters[i].m_Active || !m_aLastActive[i])
 				continue;
 
@@ -2801,9 +2801,9 @@ void CGameClient::OnPredict()
 		{
 			if(m_NewPredictedTick)
 			{
-			m_aLastPos[i] = m_aClients[i].m_Predicted.m_Pos;
-			m_aLastActive[i] = true;
-		}
+				m_aLastPos[i] = m_aClients[i].m_Predicted.m_Pos;
+				m_aLastActive[i] = true;
+			}
 		}
 		else
 			m_aLastActive[i] = false;
