@@ -28,6 +28,7 @@
 #include <base/color.h>
 #include <base/math.h>
 #include <cstdlib>
+#include "aiodob/a_enums.h"
 
 void CPlayers::RenderHand(const CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset, float Alpha)
 {
@@ -651,8 +652,8 @@ void CPlayers::RenderPlayer(
 					WeaponPosition.x -= g_pData->m_Weapons.m_aId[CurrentWeapon].m_Offsetx;
 				if(IsSit)
 					WeaponPosition.y += 3.0f;
-
-			// if active and attack is under way, bash stuffs
+				
+				// if active and attack is under way, bash stuffs
 				if(!Inactive || LastAttackTime < m_pClient->m_aTuning[g_Config.m_ClDummy].GetWeaponFireDelay(Player.m_Weapon))
 				{
 					if(Direction.x < 0)
@@ -662,7 +663,7 @@ void CPlayers::RenderPlayer(
 				}
 				else
 					Graphics()->QuadsSetRotation(Direction.x < 0 ? 100.0f : 500.0f);
-
+				
 				Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, WeaponPosition.x, WeaponPosition.y);
 			}
 			else if(Player.m_Weapon == WEAPON_NINJA)
@@ -937,15 +938,15 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 
 	if((ShowFor == 1 && Local) || (ShowFor == 2 && !Local) || ShowFor == 3)
 	{
-		if(g_Config.m_ClEffect == 1 && !Frozen)
+		if(g_Config.m_ClEffect == EFFECT_SPARKLE && !Frozen)
 		{
 			GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
 		}
-		else if(g_Config.m_ClEffect == 2 && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
+		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
 		{
 			GameClient()->m_Effects.FireTrailEffet(BodyPos, Alpha);
 		}
-		else if(g_Config.m_ClEffect == 3 && !Frozen)
+		else if(g_Config.m_ClEffect == EFFECT_SWITCH && !Frozen)
 		{
 			static int64_t Change = time_get() + time_freq() * 30;
 			static float Sin = 5;
