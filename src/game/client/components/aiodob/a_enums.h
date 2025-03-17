@@ -1,5 +1,7 @@
 // I have no clue why I thought that this is needed but here we are
 
+#include <game/generated/protocol.h>
+
 enum
 {
 	EFFECT_OFF = 0,
@@ -7,6 +9,6 @@ enum
 	EFFECT_FIRETRAIL,
 	EFFECT_SWITCH,
 
-	TEAM_SILENT = -4,
+	TEAM_SILENT = TEAM_ALL - 2,
 	TEAM_MESSAGE,
 };
