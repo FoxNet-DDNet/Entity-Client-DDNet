@@ -1372,6 +1372,38 @@ void CPlayers::OnRender()
 		const CGameClient::CSnapState::CCharacterInfo &CharacterInfo = m_pClient->m_Snap.m_aCharacters[ClientId];
 		const bool Frozen = CharacterInfo.m_HasExtendedData && CharacterInfo.m_ExtendedData.m_FreezeEnd != 0;
 
+		const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
+
+		// Pro_Gaming1921 Extra
+		if(g_Config.m_ClChangeAllSkin)
+		{
+			// find skin in database
+			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClChangeAllSkinName);
+
+			if(pSkin == nullptr)
+				pSkin = m_pClient->m_Skins.FindOrNullptr("Catnoa");
+
+			if(pSkin != nullptr)
+			{
+				const bool CustomColor = g_Config.m_ClChangeAllCustomCol;
+
+				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
+
+				aRenderInfo[ClientId].Apply(pSkin);
+				aRenderInfo[ClientId].m_CustomColoredSkin = CustomColor;
+				if(!CustomColor)
+				{
+					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
+				}
+				else
+				{
+					aRenderInfo[ClientId].m_ColorBody = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorBody));
+					aRenderInfo[ClientId].m_ColorFeet = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorFeet));
+				}
+			}
+		}
+
 		if(((CharacterInfo.m_Cur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja) || (g_Config.m_ClAmIFrozen && g_Config.m_ClFreezeUpdateFix && m_pClient->m_Snap.m_LocalClientId == ClientId && g_Config.m_ClShowNinja) || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen && g_Config.m_ClShowNinja))
 		{
 			// change the skin for the player to the ninja
@@ -1389,8 +1421,6 @@ void CPlayers::OnRender()
 				}
 			}
 		}
-
-		const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
 
 		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
 		if(g_Config.m_ClOwnTeeSkin && Local)
@@ -1465,7 +1495,6 @@ void CPlayers::OnRender()
 			aRenderInfo[ClientId].m_ColorBody = Color;
 			aRenderInfo[ClientId].m_ColorFeet = Color;
 		}
-
 	}
 
 	CTeeRenderInfo RenderInfoSpec;

@@ -337,6 +337,14 @@ MACRO_CONFIG_COL(ClSilentColor, ac_silent_color, 8924078, CFGFLAG_CLIENT | CFGFL
 MACRO_CONFIG_INT(ClRenderNameplateSpec, ac_render_nameplate_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render nameplates when spectating")
 MACRO_CONFIG_INT(ClStrongWeakColorId, ac_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
 
+// Pro_Gaming1921 Extra
+MACRO_CONFIG_INT(ClChangeAllSkin, ac_change_all_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "change everyones Skin")
+
+MACRO_CONFIG_STR(ClChangeAllSkinName, ac_change_all_skin_name, 24, "Catnoa", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have (leave empty to not change)")
+MACRO_CONFIG_INT(ClChangeAllCustomCol, ac_change_all_custom_col, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Change everyones Skin")
+MACRO_CONFIG_COL(ClChangeAllColorBody, ac_change_all_color_body, 5374207, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Body Color of everyone")
+MACRO_CONFIG_COL(ClChangeAllColorFeet, ac_change_all_color_feet, 12767844, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Feet Color of everyone")
+
 // Custom Vairiables from My Server for the editor
 // You can use these if you get my server from https://github.com/qxdFoxs/FoxNet-DDNet
 
