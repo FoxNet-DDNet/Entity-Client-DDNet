@@ -1,13 +1,13 @@
 ﻿
 #include <engine/console.h>
+#include <engine/shared/config.h>
 
 #include <game/client/gameclient.h>
 
 #include <base/system.h>
 
-#include "aiodob.h"
-#include "../../../../engine/shared/config.h"
 #include <base/log.h>
+#include "aiodob.h"
 
 void CAiodob::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 {
@@ -18,7 +18,7 @@ void CAiodob::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 void CAiodob::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	
+
 	char aBuf[8];
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSpeed);
 
@@ -190,7 +190,7 @@ void CAiodob::ConTempHelper(IConsole::IResult *pResult, void *pUserData)
 void CAiodob::ConUnTempHelper(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->UnTempHelper(pResult->GetString(0) );
+	pSelf->UnTempHelper(pResult->GetString(0));
 }
 
 void CAiodob::ConTempMute(IConsole::IResult *pResult, void *pUserData)
@@ -387,7 +387,6 @@ void CAiodob::RestoreSkin()
 	}
 	else
 		GameClient()->aMessage("Can't Restore! Rainbow mode is enabled.");
-	
 }
 
 void CAiodob::SaveSkin()
@@ -419,7 +418,8 @@ void CAiodob::SaveSkin()
 			m_pClient->SendInfo(false);
 		}
 	}
-	else GameClient()->aMessage("Can't Save! Rainbow mode is enabled.");
+	else 
+		GameClient()->aMessage("Can't Save! Rainbow mode is enabled.");
 }
 
 void CAiodob::OnlineInfo(bool Integrate)
@@ -564,9 +564,8 @@ void CAiodob::PlayerInfo(const char *pName)
 		if(GameClient()->m_aClients[Id].m_AuthLevel > 0)
 			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes, Auth Level %s", GameClient()->m_aClients[Id].m_AuthLevel);
 		else
-		str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
+			str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
 		GameClient()->aMessage(aBuf);
-
 
 		GameClient()->aMessage("│");
 		GameClient()->aMessage("╰───────────────────────");
