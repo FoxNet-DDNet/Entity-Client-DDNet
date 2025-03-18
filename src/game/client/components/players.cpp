@@ -909,68 +909,6 @@ void CPlayers::RenderPlayer(
 	}
 }
 
-void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha)
-{
-	const bool ShowEffectSelf = g_Config.m_ClEffect ? true : false;
-	const bool ShowEffectOthers = g_Config.m_ClEffectOthers;
-	const float Time = time_get();
-
-	if(g_Config.m_ClSpecialEffect && !Frozen && Local)
-	{
-		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
-		{
-			GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x + 100 * cos(Time / time_freq() * 2), BodyPos.y + 100 * sin(Time / time_freq() * 2)), Alpha);
-
-			GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x - 100 * cos(Time / time_freq() * 2), BodyPos.y - 100 * sin(Time / time_freq() * 2)), Alpha);
-		}
-	}
-
-	int ShowFor = 0;
-
-	if(ShowEffectSelf)
-	{
-		ShowFor = 1; // Self only
-		if(ShowEffectOthers)
-			ShowFor = 3; // All
-	}
-	else if(ShowEffectOthers)
-		ShowFor = 2; // All but Self | doesn't exist currently but just in case
-
-	if((ShowFor == 1 && Local) || (ShowFor == 2 && !Local) || ShowFor == 3)
-	{
-		if(g_Config.m_ClEffect == EFFECT_SPARKLE && !Frozen)
-		{
-			GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
-		}
-		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
-		{
-			GameClient()->m_Effects.FireTrailEffet(BodyPos, Alpha);
-		}
-		else if(g_Config.m_ClEffect == EFFECT_SWITCH && !Frozen)
-		{
-			static int64_t Change = time_get() + time_freq() * 30;
-			static float Sin = 5;
-
-			const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 750) % 10000 / 100.f);
-
-			float RotSpeed = 50.0f + Changer;
-			if(Changer > 50.0f)
-				RotSpeed = 50.0f + 100.0f - Changer;
-
-			vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / time_freq() + RotSpeed));
-			vec2 EffectPos = BodyPos;
-
-			if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
-			{
-				Sin = round_to_int(random_float(3.0f, 6.0f));
-				Change = time_get() + time_freq() * 15;
-			}
-			GameClient()->m_Effects.SwitchEffet(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
-			GameClient()->m_Effects.SwitchEffet(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
-		}
-	}
-}
-
 void CPlayers::RenderPlayerGhost(
 	const CNetObj_Character *pPrevChar,
 	const CNetObj_Character *pPlayerChar,
@@ -1684,4 +1622,66 @@ void CPlayers::OnInit()
 
 	Graphics()->QuadsSetSubset(0.f, 0.f, 1.f, 1.f);
 	Graphics()->QuadsSetRotation(0.f);
+}
+
+void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha)
+{
+	const bool ShowEffectSelf = g_Config.m_ClEffect ? true : false;
+	const bool ShowEffectOthers = g_Config.m_ClEffectOthers;
+	const float Time = time_get();
+
+	if(g_Config.m_ClSpecialEffect && !Frozen && Local)
+	{
+		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
+		{
+			GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x + 100 * cos(Time / time_freq() * 2), BodyPos.y + 100 * sin(Time / time_freq() * 2)), Alpha);
+
+			GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x - 100 * cos(Time / time_freq() * 2), BodyPos.y - 100 * sin(Time / time_freq() * 2)), Alpha);
+		}
+	}
+
+	int ShowFor = 0;
+
+	if(ShowEffectSelf)
+	{
+		ShowFor = 1; // Self only
+		if(ShowEffectOthers)
+			ShowFor = 3; // All
+	}
+	else if(ShowEffectOthers)
+		ShowFor = 2; // All but Self | doesn't exist currently but just in case
+
+	if((ShowFor == 1 && Local) || (ShowFor == 2 && !Local) || ShowFor == 3)
+	{
+		if(g_Config.m_ClEffect == EFFECT_SPARKLE && !Frozen)
+		{
+			GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
+		}
+		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
+		{
+			GameClient()->m_Effects.FireTrailEffet(BodyPos, Alpha);
+		}
+		else if(g_Config.m_ClEffect == EFFECT_SWITCH && !Frozen)
+		{
+			static int64_t Change = time_get() + time_freq() * 30;
+			static float Sin = 5;
+
+			const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 750) % 10000 / 100.f);
+
+			float RotSpeed = 50.0f + Changer;
+			if(Changer > 50.0f)
+				RotSpeed = 50.0f + 100.0f - Changer;
+
+			vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / time_freq() + RotSpeed));
+			vec2 EffectPos = BodyPos;
+
+			if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
+			{
+				Sin = round_to_int(random_float(3.0f, 6.0f));
+				Change = time_get() + time_freq() * 15;
+			}
+			GameClient()->m_Effects.SwitchEffet(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
+			GameClient()->m_Effects.SwitchEffet(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
+		}
+	}
 }
