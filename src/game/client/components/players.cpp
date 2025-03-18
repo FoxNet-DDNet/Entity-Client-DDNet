@@ -1374,38 +1374,6 @@ void CPlayers::OnRender()
 
 		const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
 
-		// Pro_Gaming1921 Extra
-		if(g_Config.m_ClChangeAllSkin)
-		{
-			// find skin in database
-			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClChangeAllSkinName);
-
-			if(pSkin == nullptr)
-				pSkin = m_pClient->m_Skins.FindOrNullptr("Catnoa");
-
-			if(pSkin != nullptr)
-			{
-				const bool CustomColor = g_Config.m_ClChangeAllCustomCol;
-
-				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
-
-				aRenderInfo[ClientId].Apply(pSkin);
-				aRenderInfo[ClientId].m_CustomColoredSkin = CustomColor;
-				if(!CustomColor)
-				{
-					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
-					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
-				}
-				else
-				{
-					aRenderInfo[ClientId].m_ColorBody = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorBody));
-					aRenderInfo[ClientId].m_ColorFeet = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorFeet));
-				}
-			}
-		}
-
-				const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
-
 		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
 		if(g_Config.m_ClOwnTeeSkin && Local)
 		{
@@ -1432,7 +1400,34 @@ void CPlayers::OnRender()
 			}
 		}
 
-		const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
+		// Pro_Gaming1921 Extra
+		if(g_Config.m_ClChangeAllSkin)
+		{
+			// find skin in database
+			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClChangeAllSkinName);
+
+			if(pSkin == nullptr)
+				pSkin = m_pClient->m_Skins.FindOrNullptr("Catnoa");
+
+			if(pSkin != nullptr)
+			{
+				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
+				aRenderInfo[ClientId].Apply(pSkin);
+
+				const bool CustomColor = g_Config.m_ClChangeAllCustomCol;
+				aRenderInfo[ClientId].m_CustomColoredSkin = CustomColor;
+				if(!CustomColor)
+				{
+					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
+				}
+				else
+				{
+					aRenderInfo[ClientId].m_ColorBody = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorBody));
+					aRenderInfo[ClientId].m_ColorFeet = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorFeet));
+				}
+			}
+		}
 
 		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
 		if(g_Config.m_ClOwnTeeSkin && Local)
