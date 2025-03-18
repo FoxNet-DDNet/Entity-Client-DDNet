@@ -279,11 +279,11 @@ MACRO_CONFIG_INT(ClAutoKillRangeY, ac_autokill_range_y, 10, 1, 1000, CFGFLAG_CLI
 MACRO_CONFIG_INT(ClAutoKillDebug, ac_auto_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
 
 // Tee
-MACRO_CONFIG_INT(ClOwnTeeSkin, cle_own_tee_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")
-MACRO_CONFIG_INT(ClOwnTeeSkinCustomColor, cle_own_tee_custom_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")
-MACRO_CONFIG_STR(ClOwnTeeSkinName, cle_own_tee_skin_name, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Own Tee Skin Name")
-MACRO_CONFIG_COL(ClOwnTeeColorBody, cle_own_tee_color_body, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player body color")
-MACRO_CONFIG_COL(ClOwnTeeColorFeet, cle_own_tee_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player feet color")
+MACRO_CONFIG_INT(ClOwnTeeSkin, ac_own_tee_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")
+MACRO_CONFIG_INT(ClOwnTeeSkinCustomColor, ac_own_tee_custom_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")
+MACRO_CONFIG_STR(ClOwnTeeSkinName, ac_own_tee_skin_name, 24, "default", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Own Tee Skin Name")
+MACRO_CONFIG_COL(ClOwnTeeColorBody, ac_own_tee_color_body, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player body color")
+MACRO_CONFIG_COL(ClOwnTeeColorFeet, ac_own_tee_color_feet, 65408, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLLIGHT | CFGFLAG_INSENSITIVE, "Player feet color")
 
 // Sweat mode
 MACRO_CONFIG_INT(ClSweatMode, ac_sweat_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "sweat mode")
