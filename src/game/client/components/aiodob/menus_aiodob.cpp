@@ -31,17 +31,14 @@
 using namespace FontIcons;
 using namespace std::chrono_literals;
 
-
-
 enum {
-		AIODOB_TAB_SETTINGS = 0,
-		AIODOB_TAB_VISUAL = 1,
-		AIODOB_TAB_TCLIENT = 2,
-		AIODOB_TAB_WARLIST = 3,
-		AIODOB_TAB_BINDWHEEL = 4,
-		NUMBER_OF_AIODOB_TABS = 5
-
-	};
+	AIODOB_TAB_SETTINGS = 0,
+	AIODOB_TAB_VISUAL = 1,
+	AIODOB_TAB_TCLIENT = 2,
+	AIODOB_TAB_WARLIST = 3,
+	AIODOB_TAB_BINDWHEEL = 4,
+	NUMBER_OF_AIODOB_TABS = 5,
+};
 
 typedef struct
 {
@@ -121,12 +118,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		Localize("Bindwheel"),
 	};
 
-
 	for(int Tab = 0; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
 	{
 		int LeftTab = 0;
 		int RightTab = NUMBER_OF_AIODOB_TABS - 1;
-
 
 		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
 			continue;
@@ -167,8 +162,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		TabBar.VSplitLeft(TabWidth, &Button, &TabBar);
 
-		int Corners = Tab == LeftTab ? IGraphics::CORNER_L : Tab == RightTab ? IGraphics::CORNER_R :
-													 IGraphics::CORNER_NONE;
+		int Corners = Tab == LeftTab ? IGraphics::CORNER_L : Tab == RightTab ? IGraphics::CORNER_R : IGraphics::CORNER_NONE;
 		if(LeftTab == RightTab)
 			Corners = IGraphics::CORNER_ALL;
 
@@ -218,7 +212,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						{
 							std::array<float, 2> Sizes = {
 								TextRender()->TextBoundingBox(FontSize, "Tabbed reply").m_W,
-								TextRender()->TextBoundingBox(FontSize, "Muted Reply").m_W
+								TextRender()->TextBoundingBox(FontSize, "Muted Reply").m_W,
 							};
 							float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 23.5f;
 
@@ -333,7 +327,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 							if(DoButton_CheckBox(&g_Config.m_ClNotifyWhenLast, "Show when you're the last player", g_Config.m_ClNotifyWhenLast, &OtherSettings))
 								g_Config.m_ClNotifyWhenLast ^= 1;
 
-							
 							if(g_Config.m_ClNotifyWhenLast)
 							{
 								static CLineInput s_LastMessage;
@@ -350,8 +343,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 								Ui()->DoEditBox(&s_LastMessage, &Button, FontSize);
 
-
-
 								OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 								Ui()->DoLabel(&OtherSettings, "Text to Show", 12.5f, TEXTALIGN_ML);
 								OtherSettings.HSplitTop(-20.0f, &Button, &OtherSettings);
@@ -367,7 +358,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						OtherSettings.HSplitTop(20.0f, &Button, &OtherSettings);
 					}
 
-					
 					OtherSettings.HSplitTop(2.5f, &Button, &OtherSettings);
 					OtherSettings.HSplitTop(LineSize, &Button, &OtherSettings);
 					if(DoButton_CheckBox(&g_Config.m_ClAutoAddOnNameChange, Localize("Auto Add to Default Lists on Name Change"), g_Config.m_ClAutoAddOnNameChange, &Button))
@@ -431,7 +421,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				}
 			}
 		}
-	
 		// chat settings
 		{
 			ChatSettings.HSplitTop(Margin, nullptr, &ChatSettings);
@@ -690,7 +679,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		MainView.y += ScrollOffset.y;
 
 		// left side in settings menu
-
 		CUIRect MiscSettings, PlayerSettings, WarVisual, UiSettings, RainbowSettings, DiscordSettings;
 		MainView.VSplitMid(&PlayerSettings, &UiSettings);
 
@@ -827,7 +815,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				RainbowSettings.HSplitTop(-3, &Button, &RainbowSettings);
 				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
 				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_RainbowLht[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_RainbowLht[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
-
 				{
 					TeeRect.HSplitTop(80.0f, nullptr, &TeeRect);
 					TeeRect.HSplitTop(80.0f, &TeeRect, nullptr);
@@ -843,7 +830,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					int DBodyColor = g_Config.m_ClDummyColorBody;
 					int DFeetColor = g_Config.m_ClDummyColorFeet;
 
-					
 					if(GameClient()->m_Aiodob.m_ServersideDelay[g_Config.m_ClDummy] < time_get() && GameClient()->m_Aiodob.m_ShowServerSide)
 					{
 						int Delay = g_Config.m_SvInfoChangeDelay;
@@ -855,7 +841,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					}
 					else if(!GameClient()->m_Aiodob.m_ShowServerSide)
 						m_MenusRainbowColor = GameClient()->m_Aiodob.m_PreviewRainbowColor[g_Config.m_ClDummy];
-
 
 					if(g_Config.m_ClServerRainbow)
 					{
@@ -874,10 +859,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClDummySkin));
 						TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 					}
-			
 					RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
 				}
-
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
 				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_Aiodob.m_RainbowBody[g_Config.m_ClDummy], &RainbowSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_RainbowFeet[g_Config.m_ClDummy], "Rainbow Feet", &GameClient()->m_Aiodob.m_RainbowFeet[g_Config.m_ClDummy], &RainbowSettings, LineSize);
@@ -1012,11 +995,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Discord RPC"), FontSize, TEXTALIGN_MC);
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordSettings, LineSize);
-					
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
-					
 					//DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordTimestamp, "Show Timestamp", &g_Config.m_ClDiscordTimestamp, &DiscordSettings, LineSize); -> Discord made it always have a timestamp?
-
 					static int DiscordRPC = g_Config.m_ClDiscordRPC;
 					static int DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
 					static char DiscordRPCOnlineMsg[25];
@@ -1045,7 +1025,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						else if(str_comp(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus) != 0)
 						{
 							str_copy(DiscordRPCOnlineMsg, g_Config.m_ClDiscordOnlineStatus);
-							m_RPC_Ratelimit = time_get() + time_freq() * 2.5f; 
+							m_RPC_Ratelimit = time_get() + time_freq() * 2.5f;
 						}
 						else if(str_comp(DiscordRPCOfflineMsg, g_Config.m_ClDiscordOfflineStatus) != 0)
 						{
@@ -1058,7 +1038,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						TextRender()->TextBoundingBox(FontSize, "Online Message:").m_W,
 						TextRender()->TextBoundingBox(FontSize, "Offline Message:").m_W};
 					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 3.5f;
-
 
 					{
 						DiscordSettings.HSplitTop(19.9f, &Button, &MainView);
@@ -1214,7 +1193,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					DoLine_ColorPicker(&OutlineColorUnfreezeID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OutlineSettings, Localize("Unfreeze Outline Color"), &g_Config.m_ClOutlineColorUnfreeze, ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f), false);
 
 					DoLine_ColorPicker(&OutlineColorKillID, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &OutlineSettings, Localize("Kill outline color"), &g_Config.m_ClOutlineColorKill, ColorRGBA(0.0f, 0.0f, 0.0f), false);
-
 				}
 			}
 		}
@@ -1306,7 +1284,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				ImprovedAntiSettings.HSplitTop(HeaderHeight, &Button, &ImprovedAntiSettings);
 				Ui()->DoLabel(&Button, Localize("Input"), FontSize, TEXTALIGN_MC);
-				{ 
+				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiPingImproved, Localize("Use new smoothing algorithm"), &g_Config.m_ClAntiPingImproved, &ImprovedAntiSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiPingStableDirection, Localize("Optimistic prediction along stable direction"), &g_Config.m_ClAntiPingStableDirection, &ImprovedAntiSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiPingNegativeBuffer, Localize("Negative stability buffer (for Gores)"), &g_Config.m_ClAntiPingNegativeBuffer, &ImprovedAntiSettings, LineSize);
@@ -1376,8 +1354,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				}
 			}
 		}
-
-
 	
 		{
 			LatencySettings.HSplitTop(Margin, nullptr, &LatencySettings);
@@ -1409,7 +1385,6 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					LatencySettings.HSplitTop(LineMargin, &Button, &LatencySettings);
 					if(g_Config.m_ClPredMarginInFreeze)
 						Ui()->DoScrollbarOption(&g_Config.m_ClPredMarginInFreezeAmount, &g_Config.m_ClPredMarginInFreezeAmount, &Button, Localize("Frozen Margin"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "ms");
-		
 				}
 			}
 		}
@@ -1425,21 +1400,17 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				GhostSettings.HSplitTop(HeaderHeight, &Button, &GhostSettings);
 				Ui()->DoLabel(&Button, Localize("Ghost Tools"), FontSize, TEXTALIGN_MC);
 				{
-					{
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersGhosts, Localize("Show unpredicted ghosts for other players"), &g_Config.m_ClShowOthersGhosts, &GhostSettings, LineSize);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSwapGhosts, Localize("Swap ghosts and normal players"), &g_Config.m_ClSwapGhosts, &GhostSettings, LineSize);
-						GhostSettings.HSplitTop(LineSize, &Button, &GhostSettings);
-						Ui()->DoScrollbarOption(&g_Config.m_ClPredGhostsAlpha, &g_Config.m_ClPredGhostsAlpha, &Button, Localize("Predicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
-						GhostSettings.HSplitTop(LineSize, &Button, &GhostSettings);
-						Ui()->DoScrollbarOption(&g_Config.m_ClUnpredGhostsAlpha, &g_Config.m_ClUnpredGhostsAlpha, &Button, Localize("Unpredicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideFrozenGhosts, Localize("Hide ghosts of frozen players"), &g_Config.m_ClHideFrozenGhosts, &GhostSettings, LineSize);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderGhostAsCircle, Localize("Render ghosts as circles"), &g_Config.m_ClRenderGhostAsCircle, &GhostSettings, LineSize);
-
-					}
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersGhosts, Localize("Show unpredicted ghosts for other players"), &g_Config.m_ClShowOthersGhosts, &GhostSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSwapGhosts, Localize("Swap ghosts and normal players"), &g_Config.m_ClSwapGhosts, &GhostSettings, LineSize);
+					GhostSettings.HSplitTop(LineSize, &Button, &GhostSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClPredGhostsAlpha, &g_Config.m_ClPredGhostsAlpha, &Button, Localize("Predicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
+					GhostSettings.HSplitTop(LineSize, &Button, &GhostSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClUnpredGhostsAlpha, &g_Config.m_ClUnpredGhostsAlpha, &Button, Localize("Unpredicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideFrozenGhosts, Localize("Hide ghosts of frozen players"), &g_Config.m_ClHideFrozenGhosts, &GhostSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderGhostAsCircle, Localize("Render ghosts as circles"), &g_Config.m_ClRenderGhostAsCircle, &GhostSettings, LineSize);
 				}
 			}
 		}
-
 		s_ScrollRegion.End();
 	}
 
@@ -1612,7 +1583,6 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 
 		RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo, 2);
 	}
-
 }
 
 void CMenus::RenderChatPreview(CUIRect MainView)
@@ -3051,7 +3021,6 @@ int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char
 
 void CMenus::RenderDevSkin(vec2 RenderPos, float Size, const char *pSkinName, const char *pBackupSkin, bool CustomColors, int FeetColor, int BodyColor, int Emote, bool Rainbow, ColorRGBA ColorFeet, ColorRGBA ColorBody)
 {
-
 	float DefTick = std::fmod(s_Time, 1.0f);
 
 	CTeeRenderInfo SkinInfo;
@@ -3233,4 +3202,3 @@ void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 
 	RenderTools()->RenderTee(pAnim, pInfo, TeeEmote, TeeDirection, Pos);
 }
-

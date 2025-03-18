@@ -194,7 +194,6 @@ public:
 
 	int64_t m_RainbowDelay;
 
-
 	void GoresMode();
 	int64_t m_JoinTeam;
 	void AutoJoinTeam();

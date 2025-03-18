@@ -74,7 +74,7 @@ public:
 };
 
 // A-Client [Mutes]
-class CMuteEntry 
+class CMuteEntry
 {
 public:
 	char m_aMutedName[MAX_NAME_LENGTH] = "";
@@ -174,7 +174,7 @@ public:
 		new CWarType("none", ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f), false),
 		new CWarType("enemy", ColorRGBA(1.0f, 0.2f, 0.2f, 1.0f), false),
 		new CWarType("team", ColorRGBA(0.0f, 0.9f, 0.2f, 1.0f), false),
-		new CWarType("helper", ColorRGBA(0.9f, 0.87f, 0.2f, 1.0f), false)
+		new CWarType("helper", ColorRGBA(0.9f, 0.87f, 0.2f, 1.0f), false),
 	};
 
 	// A-Client [Mutes]
@@ -204,7 +204,6 @@ public:
 	void AddWarEntryInGame(int WarType, const char *pName, const char *pReason, bool IsClan);
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
 
-
 	// A-Client
 	void AddMuteEntry(const char *pName); // A-Client [Mutes]
 	void AddMute(const char *pName);
@@ -213,7 +212,6 @@ public:
 	int FindWarTypeWithName(const char *pName);
 	int FindWarTypeWithClan(const char *pClan);
 	char *GetWarTypeName(int ClientId);
-
 
 	void AddWarEntry(const char *pName, const char *pClan, const char *pReason, const char *pType);
 	void AddWarType(const char *pType, ColorRGBA Color);

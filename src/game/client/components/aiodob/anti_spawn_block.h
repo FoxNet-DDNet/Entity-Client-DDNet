@@ -1,8 +1,6 @@
 #ifndef GAME_CLIENT_COMPONENTS_AIODOB_ANTISPAWNBLOCK_H
 #define GAME_CLIENT_COMPONENTS_AIODOB_ANTISPAWNBLOCK_H
 #include <game/client/component.h>
-#include <cstdint>
-#include<list>
 
 class CAntiSpawnBlock : public CComponent
 {
