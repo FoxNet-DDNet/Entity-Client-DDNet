@@ -1429,8 +1429,7 @@ void CPlayers::OnRender()
 			}
 		}
 
-		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
-		if(g_Config.m_ClOwnTeeSkin && Local)
+		if(((CharacterInfo.m_Cur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja) || (g_Config.m_ClAmIFrozen && g_Config.m_ClFreezeUpdateFix && m_pClient->m_Snap.m_LocalClientId == ClientId && g_Config.m_ClShowNinja) || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen && g_Config.m_ClShowNinja))
 		{
 			// change the skin for the player to the ninja
 			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr("x_ninja");
