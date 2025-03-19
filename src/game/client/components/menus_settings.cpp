@@ -1993,7 +1993,8 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("DDNet"),
 		Localize("Assets"),
 		("A-Client"),
-		("Skin Profiles")};
+		("Skin Profiles"),
+		("Pro Gaming Extra")};
 
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
 
@@ -2070,6 +2071,11 @@ void CMenus::RenderSettings(CUIRect MainView)
 	{
 		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_SKINPROFILES);
 		RenderSettingsProfiles(MainView);
+	}
+	else if(g_Config.m_UiSettingsPage == SETTINGS_PROGAMING)
+	{
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_AIODOB);
+		RenderSettingsProGaming(MainView);
 	}
 	else
 	{

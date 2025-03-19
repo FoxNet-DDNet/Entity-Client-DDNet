@@ -1360,6 +1360,10 @@ void CPlayers::OnRender()
 	const int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
+			if(m_pClient->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
+				continue;
+			
 		aRenderInfo[ClientId] = m_pClient->m_aClients[ClientId].m_RenderInfo;
 		aRenderInfo[ClientId].m_TeeRenderFlags = 0;
 		if(m_pClient->m_aClients[ClientId].m_FreezeEnd != 0)
@@ -1514,6 +1518,11 @@ void CPlayers::OnRender()
 	{
 		if(ClientId == LocalClientId || !m_pClient->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
 			continue;
+
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
+			if(m_pClient->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
+				continue;
+
 		RenderHook(&m_pClient->m_aClients[ClientId].m_RenderPrev, &m_pClient->m_aClients[ClientId].m_RenderCur, &aRenderInfo[ClientId], ClientId);
 	}
 	if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
@@ -1523,18 +1532,23 @@ void CPlayers::OnRender()
 	}
 
 	// render spectating players
-	for(const auto &Client : m_pClient->m_aClients)
+	for(const auto &Clients : m_pClient->m_aClients)
 	{
-		if(!Client.m_SpecCharPresent)
+		if(!Clients.m_SpecCharPresent)
 			continue;
+
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
+			if(Clients.m_Solo && Clients.ClientId() != LocalClientId)
+				continue;
+
 		// don't render offscreen
-		if(!in_range(Client.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Client.m_RenderPos.y, ScreenY0, ScreenY1))
+		if(!in_range(Clients.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Clients.m_RenderPos.y, ScreenY0, ScreenY1))
 			continue;
-		const int ClientId = Client.ClientId();
+		const int ClientId = Clients.ClientId();
 		float Alpha = (m_pClient->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
 		if(ClientId == -2) // ghost
 			Alpha = g_Config.m_ClRaceGhostAlpha / 100.f;
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &RenderInfoSpec, EMOTE_BLINK, vec2(1, 0), Client.m_SpecChar, Alpha);
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &RenderInfoSpec, EMOTE_BLINK, vec2(1, 0), Clients.m_SpecChar, Alpha);
 	}
 
 	// render everyone else's tee, then either our own or the tee we are spectating.
@@ -1544,6 +1558,10 @@ void CPlayers::OnRender()
 	{
 		if(ClientId == RenderLastId || !m_pClient->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
 			continue;
+
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
+			if(m_pClient->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
+				continue;
 
 		RenderHookCollLine(&m_pClient->m_aClients[ClientId].m_RenderPrev, &m_pClient->m_aClients[ClientId].m_RenderCur, ClientId);
 

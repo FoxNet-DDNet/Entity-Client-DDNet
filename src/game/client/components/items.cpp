@@ -25,6 +25,10 @@
 
 void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId)
 {
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
+		if(m_pClient->m_aClients[pCurrent->m_Owner].m_Solo && pCurrent->m_Owner != m_pClient->m_Snap.m_LocalClientId)
+			return;
+
 	int CurWeapon = clamp(pCurrent->m_Type, 0, NUM_WEAPONS - 1);
 
 	// get positions

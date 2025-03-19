@@ -3202,3 +3202,180 @@ void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 
 	RenderTools()->RenderTee(pAnim, pInfo, TeeEmote, TeeDirection, Pos);
 }
+
+enum
+{
+	PG1921_TAB_SETTINGS = 0,
+	NUMBER_OF_PG1921_TABS,
+};
+
+void CMenus::RenderSettingsProGaming(CUIRect MainView)
+{
+	s_Time += Client()->RenderFrameTime() * (1.0f / 100.0f);
+	if(!s_StartedTime)
+	{
+		s_StartedTime = true;
+		s_Time = (float)rand() / (float)RAND_MAX;
+	}
+
+	static int s_CurTab = 0;
+
+	CUIRect TabBar, Button, Label;
+
+	int TabCount = NUMBER_OF_PG1921_TABS;
+	for(int Tab = 0; Tab < NUMBER_OF_PG1921_TABS; ++Tab)
+	{
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
+		{
+			TabCount--;
+			if(s_CurTab == Tab)
+				s_CurTab++;
+		}
+	}
+
+	MainView.HSplitTop(LineSize * 1.1f, &TabBar, &MainView);
+	const float TabWidth = TabBar.w / TabCount;
+	static CButtonContainer s_aPageTabs[NUMBER_OF_PG1921_TABS] = {};
+	const char *apTabNames[NUMBER_OF_PG1921_TABS] = {
+		Localize("Pro_Gaming1921"),
+	};
+
+	for(int Tab = 0; Tab < NUMBER_OF_PG1921_TABS; ++Tab)
+	{
+
+		TabBar.VSplitLeft(TabWidth, &Button, &TabBar);
+
+		int Corners = Tab == 0 ? IGraphics::CORNER_L : Tab == 1 ? IGraphics::CORNER_R :
+										       IGraphics::CORNER_NONE;
+		if(NUMBER_OF_PG1921_TABS == 1)
+			Corners = IGraphics::CORNER_ALL;
+
+		if(DoButton_MenuTab(&s_aPageTabs[Tab], apTabNames[Tab], s_CurTab == Tab, &Button, Corners, nullptr, nullptr, nullptr, nullptr, 4.0f))
+		{
+			s_CurTab = Tab;
+			ResetTeePos = true;
+		}
+	}
+
+	MainView.HSplitTop(MarginSmall, nullptr, &MainView);
+
+	// Client Page 1
+
+	if(s_CurTab == PG1921_TAB_SETTINGS)
+	{
+		static CScrollRegion s_ScrollRegion;
+		vec2 ScrollOffset(0.0f, 0.0f);
+		CScrollRegionParams ScrollParams;
+		ScrollParams.m_ScrollUnit = 120.0f;
+		s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
+		MainView.y += ScrollOffset.y;
+
+		// left side in settings menu
+
+		CUIRect AllPlayerSettings, DemoSettings;
+		MainView.VSplitMid(&AllPlayerSettings, &DemoSettings);
+
+		{
+			CUIRect TeeRect;
+			AllPlayerSettings.HSplitTop(Margin, nullptr, &AllPlayerSettings);
+			AllPlayerSettings.HSplitTop(Margin, nullptr, &TeeRect);
+			AllPlayerSettings.HSplitTop(235.0f, &AllPlayerSettings, 0);
+			if(s_ScrollRegion.AddRect(AllPlayerSettings))
+			{
+				AllPlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				AllPlayerSettings.VMargin(Margin, &AllPlayerSettings);
+
+				AllPlayerSettings.HSplitTop(HeaderHeight, &Button, &AllPlayerSettings);
+				Ui()->DoLabel(&Button, Localize("Change All Skins"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeAllSkin, Localize("Change All Skins"), &g_Config.m_ClChangeAllSkin, &AllPlayerSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeAllCustomCol, Localize("Use Custom Color"), &g_Config.m_ClChangeAllCustomCol, &AllPlayerSettings, LineSize);
+
+				{
+					static CLineInput s_Name;
+					s_Name.SetBuffer(g_Config.m_ClChangeAllSkinName, sizeof(g_Config.m_ClChangeAllSkinName));
+					s_Name.SetEmptyText("default");
+
+					AllPlayerSettings.HSplitTop(3.4f, &Label, &AllPlayerSettings);
+					AllPlayerSettings.VSplitLeft(25.0f, &AllPlayerSettings, &AllPlayerSettings);
+					Ui()->DoLabel(&AllPlayerSettings, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
+
+					AllPlayerSettings.HSplitTop(-1, &Button, &AllPlayerSettings);
+					AllPlayerSettings.HSplitTop(18.9f, &Button, &AllPlayerSettings);
+
+					float Length = TextRender()->TextBoundingBox(FontSize, "Skin Name").m_W + 3.5f;
+
+					Button.VSplitLeft(0.0f, 0, &AllPlayerSettings);
+					Button.VSplitLeft(Length, &Label, &Button);
+					Button.VSplitLeft(150.0f, &Button, 0);
+
+					Ui()->DoEditBox(&s_Name, &Button, 14.0f);
+					AllPlayerSettings.VSplitLeft(-25.0f, &AllPlayerSettings, &AllPlayerSettings);
+					AllPlayerSettings.HSplitTop(23.0f, &Button, &AllPlayerSettings);
+				}
+
+				static int s_CustomColorSwitch = 0;
+
+				DoButton_CheckBoxAutoVMarginAndSet(&s_CustomColorSwitch, Localize("Change Feet Color"), &s_CustomColorSwitch, &AllPlayerSettings, LineSize);
+
+				AllPlayerSettings.VSplitLeft(52, &Button, &AllPlayerSettings);
+				if(s_CustomColorSwitch)
+					RenderHslaScrollbars(&AllPlayerSettings, &g_Config.m_ClChangeAllColorFeet, false, ColorHSLA::DARKEST_LGT, false);
+				else 
+					RenderHslaScrollbars(&AllPlayerSettings, &g_Config.m_ClChangeAllColorBody, false, ColorHSLA::DARKEST_LGT, false);
+				AllPlayerSettings.VSplitLeft(-140, &Button, &AllPlayerSettings);
+
+				{
+					TeeRect.HSplitTop(105.0f, nullptr, &TeeRect);
+					TeeRect.HSplitTop(80.0f, &TeeRect, nullptr);
+					TeeRect.VSplitLeft(75.0f, &TeeRect, nullptr);
+
+					CTeeRenderInfo TeeRenderInfo;
+
+					bool UseCustomColor = g_Config.m_ClChangeAllCustomCol;
+					int BodyColor = g_Config.m_ClChangeAllColorBody;
+					int FeetColor = g_Config.m_ClChangeAllColorFeet;
+
+					TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClChangeAllSkinName));
+					TeeRenderInfo.ApplyColors(UseCustomColor, BodyColor, FeetColor);
+
+					RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
+				}
+				CUIRect CurSkin;
+				float Length = TextRender()->TextBoundingBox(FontSize, "Use Current Tee Settings").m_W + 8.0f;
+				float Height = TextRender()->TextBoundingBox(FontSize, "Use Current Tee Settings").m_H + 15.0f;
+
+				AllPlayerSettings.HSplitTop(Margin, &CurSkin, 0);
+				CurSkin.HSplitTop(Height, &CurSkin, 0);
+				CurSkin.VSplitLeft(90.0f, &AllPlayerSettings, &CurSkin);
+				CurSkin.VSplitLeft(Length, &CurSkin, &Button);
+				static CButtonContainer s_NewestRelGithub;
+				if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Use Current Tee Settings"), 0, &CurSkin, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f,-2))
+				{
+					str_copy(g_Config.m_ClChangeAllSkinName, g_Config.m_ClPlayerSkin);
+					g_Config.m_ClChangeAllCustomCol = g_Config.m_ClPlayerUseCustomColor;
+					g_Config.m_ClChangeAllColorBody = g_Config.m_ClPlayerColorBody;
+					g_Config.m_ClChangeAllColorFeet = g_Config.m_ClPlayerColorFeet;
+				}
+			}
+		}
+
+		{
+			DemoSettings.HSplitTop(Margin, nullptr, &DemoSettings);
+			DemoSettings.HSplitTop(120.0f, &DemoSettings, 0);
+			if(s_ScrollRegion.AddRect(DemoSettings))
+			{
+				DemoSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				DemoSettings.VMargin(Margin, &DemoSettings);
+
+				DemoSettings.HSplitTop(HeaderHeight, &Button, &DemoSettings);
+				Ui()->DoLabel(&Button, Localize("Demo Settings"), FontSize, TEXTALIGN_MC);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDemoHideIfSolo, Localize("Hide Solo Players in Demos"), &g_Config.m_ClDemoHideIfSolo, &AllPlayerSettings, LineSize);
+			}
+		}
+
+		s_ScrollRegion.End();
+	}
+
+}

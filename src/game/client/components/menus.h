@@ -735,6 +735,7 @@ public:
 		SETTINGS_ASSETS,
 		SETTINGS_AIODOB,
 		SETTINGS_SKINPROFILES,
+		SETTINGS_PROGAMING,
 
 		SETTINGS_LENGTH,
 
@@ -887,6 +888,8 @@ public:
 	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderAClientVersionPage(CUIRect MainView);
+
+	void RenderSettingsProGaming(CUIRect MainView);
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();

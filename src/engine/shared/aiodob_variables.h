@@ -345,6 +345,8 @@ MACRO_CONFIG_INT(ClChangeAllCustomCol, ac_change_all_custom_col, 1, 0, 1, CFGFLA
 MACRO_CONFIG_COL(ClChangeAllColorBody, ac_change_all_color_body, 5374207, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Body Color of everyone")
 MACRO_CONFIG_COL(ClChangeAllColorFeet, ac_change_all_color_feet, 12767844, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Feet Color of everyone")
 
+MACRO_CONFIG_INT(ClDemoHideIfSolo, ac_demo_hide_solo, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide Players in Demo if they are in a solo part")
+
 // Custom Vairiables from My Server for the editor
 // You can use these if you get my server from https://github.com/qxdFoxs/FoxNet-DDNet
 
