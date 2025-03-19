@@ -220,7 +220,6 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 
 	GameClient()->aMessage(aBuf);
 
-
 	AddWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_aReason, Entry.m_pWarType->m_aWarName);
 	// if(str_comp(Entry.m_aClan, "") != 0 || str_comp(Entry.m_aName, "") != 0)
 	//	m_WarEntries.push_back(Entry);

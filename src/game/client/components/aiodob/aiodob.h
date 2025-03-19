@@ -27,7 +27,6 @@ public:
 	{
 		return !str_comp(m_aTempWar, Other.m_aTempWar) || !str_comp(m_aTempHelper, Other.m_aTempHelper) || !str_comp(m_aTempMute, Other.m_aTempMute);
 	}
-
 };
 
 class CTempData
@@ -104,7 +103,6 @@ class CAiodob : public CComponent
 	static void ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData);
 	static void ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData);
 
-
 	static void ConVotekick(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConOnlineInfo(IConsole::IResult *pResult, void *pUserData);
@@ -146,10 +144,8 @@ public:
 	void RestoreSkin();
 	void OnlineInfo(bool Integrate = false);
 
-
 	// Get ClientId per name
 	int IdWithName(const char *pName);
-
 
 	// Temporary War Entries
 	std::vector<CTempEntry> m_TempEntries;
@@ -162,7 +158,6 @@ public:
 	int64_t m_LastNotification;
 	int m_LastTile = -1;
 	void ChangeTileNotifyTick();
-
 
 	// Rainbow
 	void Rainbow();
