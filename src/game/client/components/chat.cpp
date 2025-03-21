@@ -1767,7 +1767,8 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			if(str_find_nocase(pLine, "bro, check out this client") && Team == TEAM_WHISPER_RECV) // whisper advertising
 				AdBotFound = true;
 
-			if(str_find_nocase(pLine, "Think you could do better") && str_find_nocase(pLine, "Not without")) // mass ping advertising
+			// removed "t" from "think" because it sometimes sends "hink" instead of "think" - trash clients i suppose
+			if(str_find_nocase(pLine, "hink you could do better") && str_find_nocase(pLine, "Not without")) // mass ping advertising
 			{
 				// try to not remove their message if they are just trying to be funny
 				if(!str_find_nocase(pLine, "github.com")

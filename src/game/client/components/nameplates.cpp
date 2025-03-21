@@ -631,11 +631,11 @@ private:
 		AddPart<CNamePlatePartMutedIcon>(This);
 		AddPart<CNamePlatePartNewLine>(This);
 
-		AddPart<CNamePlatePartClan>(This);
-		AddPart<CNamePlatePartNewLine>(This);
-
 		// A-Client
 		AddPart<CNamePlatePartReason>(This);
+		AddPart<CNamePlatePartNewLine>(This);
+
+		AddPart<CNamePlatePartClan>(This);
 		AddPart<CNamePlatePartNewLine>(This);
 
 		AddPart<CNamePlatePartClientId>(This, true);
@@ -764,6 +764,12 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
 	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
+
+	if(Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
+	{
+		Data.m_pReason = Data.m_pName;
+		Data.m_pName = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
+	}
 
 	Data.m_ClientId = pPlayerInfo->m_ClientId;
 	Data.m_ClientIdSeperateLine = g_Config.m_ClNamePlatesIdsSeperateLine;
