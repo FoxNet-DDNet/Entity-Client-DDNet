@@ -1474,7 +1474,6 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 			const CServerInfo::CClient &CurrentClient = pEntry->m_aClients[ClientIndex];
 			if(CurrentClient.m_FriendState == IFriends::FRIEND_NO)
 				continue;
-
 			const int FriendIndex = CurrentClient.m_FriendState == IFriends::FRIEND_PLAYER ? FRIEND_PLAYER_ON : FRIEND_CLAN_ON;
 			m_avFriends[FriendIndex].emplace_back(CurrentClient, pEntry);
 			const auto &&RemovalPredicate = [CurrentClient](const CFriendItem &Friend) {
