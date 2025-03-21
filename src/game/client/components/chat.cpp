@@ -1417,6 +1417,42 @@ void CChat::OnRender()
 				}
 			}
 		}
+
+		CBindchat pBindchat = m_pClient->m_Bindchat;
+
+		if(pBindchat.CheckBindChat(m_Input.GetString()) && m_Input.GetString()[0] != '\0')
+		{
+			for(int i = 0; i < (int)pBindchat.m_vBinds.size(); i++)
+			{
+				int CommandIndex = (pBindchat.m_vBinds.size() + i) % pBindchat.m_vBinds.size();
+				if(str_startswith_nocase(pBindchat.m_vBinds.at(CommandIndex).m_aName, m_Input.GetString()))
+				{
+					Cursor.m_X = Cursor.m_X + TextRender()->TextWidth(Cursor.m_FontSize, m_Input.GetString(), -1, Cursor.m_LineWidth);
+					Cursor.m_Y = m_Input.GetCaretPosition().y;
+					TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
+					TextRender()->TextEx(&Cursor, pBindchat.m_vBinds.at(CommandIndex).m_aName + str_length(m_Input.GetString()));
+					TextRender()->TextColor(TextRender()->DefaultTextColor());
+					break;
+				}
+			}
+		}
+
+		// Autocompletion hint
+		if(m_Input.GetString()[0] == '/' && m_Input.GetString()[1] != '\0' && !m_vCommands.empty())
+		{
+			for(const auto &Command : m_vCommands)
+			{
+				if(str_startswith_nocase(Command.m_aName, m_Input.GetString() + 1))
+				{
+					Cursor.m_X = Cursor.m_X + TextRender()->TextWidth(Cursor.m_FontSize, m_Input.GetString(), -1, Cursor.m_LineWidth);
+					Cursor.m_Y = m_Input.GetCaretPosition().y;
+					TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
+					TextRender()->TextEx(&Cursor, Command.m_aName + str_length(m_Input.GetString() + 1));
+					TextRender()->TextColor(TextRender()->DefaultTextColor());
+					break;
+				}
+			}
+		}
 	}
 
 #if defined(CONF_VIDEORECORDER)
