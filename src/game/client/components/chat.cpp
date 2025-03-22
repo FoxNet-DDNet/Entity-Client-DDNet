@@ -1641,7 +1641,7 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					}
 					else
 					{
-						if(GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[1] && !GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2])
+						if(GameClient()->m_WarList.m_WarPlayers[GameClient()->GetClientId(CharOname)].m_WarGroupMatches[1])
 						{
 							CTempEntry Entry(name, "", "");
 							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
@@ -1650,7 +1650,7 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->aMessage(aBuf);
 						}
-						else if(GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[3])
+						else if(GameClient()->m_WarList.m_WarPlayers[GameClient()->GetClientId(CharOname)].m_WarGroupMatches[3])
 						{
 							CTempEntry Entry("", name, "");
 							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name);
@@ -1660,7 +1660,7 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 								GameClient()->aMessage(aBuf);
 						}
 					}
-					if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
+					if(GameClient()->m_WarList.m_WarPlayers[GameClient()->GetClientId(CharOname)].IsMuted)
 					{
 						CTempEntry Entry("", "", name);
 						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name);
@@ -1699,8 +1699,7 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					strcpy(PlayerName, Name.c_str());
 
 					int NameToJoin = str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName);
-					int Team0 = str_comp(p_Team, "0");
-					if(Team0 > 0 && NameToJoin == 0)
+					if(str_comp(p_Team, "0") != 0 && NameToJoin == 0)
 					{
 						char aBuf[2048] = "/team ";
 						str_append(aBuf, p_Team);

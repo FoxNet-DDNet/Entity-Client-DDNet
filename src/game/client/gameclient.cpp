@@ -5175,3 +5175,18 @@ void CGameClient::SetLastMovementTime(int Delay)
 {
 	m_Aiodob.m_LastMovement = time_get() + time_freq() * Delay;
 }
+
+int CGameClient::GetClientId(const char *pName)
+{
+	int ClientId;
+
+	for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		if(!str_comp(pName, m_aClients[ClientId].m_aName))
+		{
+			return ClientId;
+		}
+	}
+	return -1;
+}
+
