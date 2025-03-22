@@ -13,7 +13,7 @@ MACRO_CONFIG_INT(ClTabbedOutMsg, ac_tabbed_out_msg, 0, 0, 1, CFGFLAG_CLIENT | CF
 
 MACRO_CONFIG_INT(ClChangeTileNotification, ac_change_tile_notification, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when leaving current tile type")
 
-MACRO_CONFIG_COL(ClACMessageColor, ac_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
+MACRO_CONFIG_COL(ClACMessageColor, ac_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds (usually)")
 MACRO_CONFIG_INT(ClMutedConsoleColor, ac_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
 // from tater client (credits to tater)
@@ -79,6 +79,8 @@ MACRO_CONFIG_INT(ClWarListIndicator, ac_warlist_indicator, 0, 0, 1, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClWarListIndicatorAll, ac_warlist_indicator_all, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show all groups")
 MACRO_CONFIG_INT(ClWarListIndicatorEnemy, ac_warlist_indicator_enemy, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from the first group")
 MACRO_CONFIG_INT(ClWarListIndicatorTeam, ac_warlist_indicator_team, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from second group")
+
+MACRO_CONFIG_INT(ClWarListSwitchNameReason, ac_warlist_switch_name_reason, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If a Player has a Reason, their Name will be switched with the Reason")
 
 // Run on Join
 MACRO_CONFIG_INT(ClRunOnJoinConsole, ac_run_on_join_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use run on join in chat or console")

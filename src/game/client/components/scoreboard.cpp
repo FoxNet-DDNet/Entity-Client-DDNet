@@ -586,7 +586,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					GameClient()->FormatClientId(pInfo->m_ClientId, aClientId, EClientIdFormat::INDENT_AUTO);
 					TextRender()->TextEx(&Cursor, aClientId);
 				}
-				if(GameClient()->m_aClients[pInfo->m_ClientId].m_IsMute)
+				if(GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted)
 				{
 					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 					int IdOffest = IconRowX * -1 + 2;

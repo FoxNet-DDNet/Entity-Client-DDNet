@@ -111,11 +111,6 @@ void CChat::ClearLines()
 		Line.m_aName[0] = 0;
 		Line.m_Friend = false;
 		Line.m_Paused = false;
-		Line.m_IsWar = false;
-		Line.m_IsHelper = false;
-		Line.m_IsTeam = false;
-		Line.m_IsMute = false;
-		Line.m_IsAnyList = false;
 		Line.m_TimesRepeated = 0;
 		Line.m_pManagedTeeRenderInfo = nullptr;
 	}
@@ -709,7 +704,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		return;
 	}
 
-	if(ClientId >= 0 && GameClient()->m_aClients[ClientId].m_IsMute && g_Config.m_ClShowMutedInConsole)
+	if(ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted && g_Config.m_ClShowMutedInConsole)
 	{
 		char Muted[2048] = "[Muted] ";
 		char MutedWhisper[2048] = "[Muted] ← ";
@@ -744,7 +739,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(*pLine == 0 ||
 		(ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
-					  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_aClients[ClientId].m_IsMute || (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] && g_Config.m_ClHideEnemyChat) ||
+					  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] && g_Config.m_ClHideEnemyChat) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))
@@ -868,10 +863,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	pCurrentLine->m_NameColor = -2;
 	pCurrentLine->m_Friend = false;
 	pCurrentLine->m_Paused = false;
-	pCurrentLine->m_IsWar = false;
-	pCurrentLine->m_IsHelper = false;
-	pCurrentLine->m_IsTeam = false;
-	pCurrentLine->m_IsMute = false;
 	pCurrentLine->m_CustomColor = CustomColor;
 	pCurrentLine->m_pManagedTeeRenderInfo = nullptr;
 
@@ -990,7 +981,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		{
 			pCurrentLine->m_Friend = LineAuthor.m_Friend;
 			pCurrentLine->m_Paused = LineAuthor.m_Paused || LineAuthor.m_Spec;
-			pCurrentLine->m_IsAnyList = LineAuthor.m_IsAnyList;
 			pCurrentLine->m_pManagedTeeRenderInfo = GameClient()->CreateManagedTeeRenderInfo(LineAuthor);
 		}
 	}
@@ -1151,7 +1141,7 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
 
-				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !Line.m_IsMute) // A-Client
+				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].IsMuted) // A-Client
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClWarlistPrefix);
 				}
@@ -1651,29 +1641,29 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					}
 					else
 					{
-						if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsWar && !GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(name)].m_IsTeam)
+						if(GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[1] && !GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2])
 						{
 							CTempEntry Entry(name, "", "");
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
 							str_copy(Entry.m_aTempWar, name);
 							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->aMessage(aBuf);
 						}
-						else if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsHelper)
+						else if(GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[3])
 						{
 							CTempEntry Entry("", name, "");
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name);
 							str_copy(Entry.m_aTempHelper, name);
 							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->aMessage(aBuf);
 						}
 					}
-					if(GameClient()->m_aClients[GameClient()->m_Aiodob.IdWithName(CharOname)].m_IsMute)
+					if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
 					{
 						CTempEntry Entry("", "", name);
-						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name, GameClient()->m_Aiodob.IdWithName(CharOname));
+						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name);
 						str_copy(Entry.m_aTempMute, name);
 						GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 						if(g_Config.m_ClAutoAddOnNameChange == 2)
@@ -1767,7 +1757,8 @@ void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			if(str_find_nocase(pLine, "bro, check out this client") && Team == TEAM_WHISPER_RECV) // whisper advertising
 				AdBotFound = true;
 
-			if(str_find_nocase(pLine, "Think you could do better") && str_find_nocase(pLine, "Not without")) // mass ping advertising
+			// removed "t" from "think" because it sometimes sends "hink" instead of "think" - trash clients i suppose
+			if(str_find_nocase(pLine, "hink you could do better") && str_find_nocase(pLine, "Not without")) // mass ping advertising
 			{
 				// try to not remove their message if they are just trying to be funny
 				if(!str_find_nocase(pLine, "github.com")

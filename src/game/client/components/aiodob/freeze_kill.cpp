@@ -54,15 +54,15 @@ void CFreezeKill::OnRender()
 		GameClient()->TextRender()->Text(50, 100, 10, aBuf);
 	}
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		// stuff
-		CCharacterCore *pCharacterOther = &m_pClient->m_aClients[i].m_Predicted;
+		CCharacterCore *pCharacterOther = &m_pClient->m_aClients[ClientId].m_Predicted;
 
 		CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
 
 		vec2 Position = m_pClient->m_aClients[Local].m_RenderPos;
-		CGameClient::CClientData OtherTee = m_pClient->m_aClients[i];
+		CGameClient::CClientData OtherTee = m_pClient->m_aClients[ClientId];
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
 		// if tried to kill, stop
@@ -74,7 +74,7 @@ void CFreezeKill::OnRender()
 			m_LastFreeze = TimeReset;
 
 		// dont kill if moving
-		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0) && i == Local && g_Config.m_ClFreezeDontKillMoving)
+		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0) && ClientId == Local && g_Config.m_ClFreezeDontKillMoving)
 		{
 			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
 				if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
@@ -82,7 +82,8 @@ void CFreezeKill::OnRender()
 		}
 
 		// dont kill if teamate is in x * 2 blocks range
-		if(g_Config.m_ClFreezeKillTeamClose && OtherTee.m_IsTeam && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[Local].m_Team && i != Local)
+	
+		if(g_Config.m_ClFreezeKillTeamClose && !m_pClient->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2] && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[Local].m_Team && ClientId != Local)
 		{
 			if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
 			{

@@ -508,16 +508,6 @@ public:
 		bool m_Friend;
 		bool m_Foe;
 
-		// A-Client
-		int m_Id;
-
-		bool m_IsWar;
-		bool m_IsTeam;
-		bool m_IsHelper;
-
-		bool m_IsMute;
-		bool m_IsAnyList;
-
 		int m_AuthLevel;
 		bool m_Afk;
 		bool m_Paused;

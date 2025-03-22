@@ -60,20 +60,21 @@ void CAutoKill::OnRender()
 	const float RangeY = g_Config.m_ClAutoKillRangeY / 100.0f;
 
 	// Loop through all clients
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		// Skip if it's the local player's slot.
-		if(i == LocalCID)
+		if(ClientId == LocalCID)
 			continue;
 
-		CCharacterCore *pOtherCharacter = &m_pClient->m_aClients[i].m_Predicted;
+		CCharacterCore *pOtherCharacter = &m_pClient->m_aClients[ClientId].m_Predicted;
 		const bool EnemyFrozen = pOtherCharacter->m_IsInFreeze;
 
-		const bool IsWar = m_pClient->m_aClients[i].m_IsWar && (!m_pClient->m_aClients[i].m_IsTeam || !m_pClient->m_aClients[i].m_IsHelper);
+
+		const bool IsWar = m_pClient->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[1] && (!m_pClient->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2] || !m_pClient->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[3]);
 
 		// Fetch the other character's previous/current snapshots.
-		const CNetObj_Character &OtherPrevChar = m_pClient->m_Snap.m_aCharacters[i].m_Prev;
-		const CNetObj_Character &OtherCurChar = m_pClient->m_Snap.m_aCharacters[i].m_Cur;
+		const CNetObj_Character &OtherPrevChar = m_pClient->m_Snap.m_aCharacters[ClientId].m_Prev;
+		const CNetObj_Character &OtherCurChar = m_pClient->m_Snap.m_aCharacters[ClientId].m_Cur;
 
 		// Interpolate enemy position and velocity.
 		const vec2 EnemyPos = vec2(OtherPrevChar.m_X, OtherPrevChar.m_Y) / 32.0f;

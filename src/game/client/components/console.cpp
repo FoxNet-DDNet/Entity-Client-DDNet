@@ -1589,7 +1589,7 @@ void CGameConsole::ConConsolePageTop(IConsole::IResult *pResult, void *pUserData
 void CGameConsole::ConConsolePageBottom(IConsole::IResult *pResult, void *pUserData)
 {
 	CInstance *pConsole = ((CGameConsole *)pUserData)->CurrentConsole();
-	pConsole->m_BacklogCurLine = -1; // Using Commands adds another Line
+	pConsole->m_BacklogCurLine = 0;
 	pConsole->m_HasSelection = false;
 }
 
