@@ -144,8 +144,8 @@ public:
 	void RestoreSkin();
 	void OnlineInfo(bool Integrate = false);
 
-	// Get ClientId per name
-	int IdWithName(const char *pName);
+	// Get ClientId with Their Name
+	int GetClientId(const char *pName);
 
 	// Temporary War Entries
 	std::vector<CTempEntry> m_TempEntries;

@@ -724,6 +724,9 @@ public:
 	void OnJoinInfo() override;
 	void SetLastMovementTime(int Delay) override;
 
+	// Get ClientId with Their Name
+	int GetClientId(const char *pName);
+
 
 	CNetObjHandler *GetNetObjHandler() override;
 	protocol7::CNetObjHandler *GetNetObjHandler7() override;

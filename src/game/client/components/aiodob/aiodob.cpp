@@ -18,20 +18,6 @@ void CAiodob::OnNewSnapshot()
 	UpdateTempPlayers();
 }
 
-int CAiodob::IdWithName(const char *pName)
-{
-	int ClientId;
-
-	for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
-	{
-		if(!str_comp(pName, GameClient()->m_aClients[ClientId].m_aName))
-		{
-			return ClientId;
-		}
-	}
-	return -1;
-}
-
 bool CAiodob::LineShouldHighlight(const char *pLine, const char *pName)
 {
 	const char *pHL = str_utf8_find_nocase(pLine, pName);
