@@ -1792,17 +1792,6 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_Predicted.ReadDDNet(pCharacterData);
 
 					m_Teams.SetSolo(Item.m_Id, pClient->m_Solo);
-					
-					// Warlist
-					pClient->m_IsWar = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[1] || m_Aiodob.m_TempPlayers[Item.m_Id].IsTempWar;
-					pClient->m_IsTeam = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[2];
-					pClient->m_IsHelper = m_WarList.GetWarData(Item.m_Id).m_WarGroupMatches[3] || m_Aiodob.m_TempPlayers[Item.m_Id].IsTempHelper;
-
-					pClient->m_Id = Item.m_Id;
-
-					pClient->m_IsMute = m_Aiodob.m_TempPlayers[Item.m_Id].IsTempMute || m_WarList.m_WarPlayers[Item.m_Id].IsMuted;
-
-					pClient->m_IsAnyList = m_WarList.m_WarPlayers[Item.m_Id].IsWarName;
 				}
 			}
 			else if(Item.m_Type == NETOBJTYPE_SPECCHAR)

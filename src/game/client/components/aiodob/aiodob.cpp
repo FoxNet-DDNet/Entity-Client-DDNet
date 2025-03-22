@@ -24,7 +24,7 @@ int CAiodob::IdWithName(const char *pName)
 
 	for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
-		if(str_comp(pName, GameClient()->m_aClients[ClientId].m_aName) == 0)
+		if(!str_comp(pName, GameClient()->m_aClients[ClientId].m_aName))
 		{
 			return ClientId;
 		}
@@ -115,8 +115,8 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	// ignore duplicated messages
 	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
 		return;
-
-	if(g_Config.m_ClReplyMuted && (GameClient()->m_aClients[ClientId].m_IsMute || (GameClient()->m_aClients[ClientId].m_IsWar && g_Config.m_ClHideEnemyChat)))
+	
+	if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
@@ -136,7 +136,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 			GameClient()->m_Chat.SendChat(0, Text);
 		}
 	}
-	if(g_Config.m_ClTabbedOutMsg && !GameClient()->m_aClients[ClientId].m_IsMute)
+	else if(g_Config.m_ClTabbedOutMsg)
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
@@ -187,43 +187,41 @@ void CAiodob::AutoJoinTeam()
 
 	int Local = m_pClient->m_Snap.m_LocalClientId;
 
-	for(int i = 0; i < MAX_CLIENTS; i++)
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
-		if(m_pClient->m_Teams.Team(i))
+		if(m_pClient->m_Teams.Team(ClientId))
 		{
-			if(str_comp(m_pClient->m_aClients[i].m_aName, g_Config.m_ClAutoJoinTeamName) == 0)
+			if(str_comp(m_pClient->m_aClients [ClientId].m_aName, g_Config.m_ClAutoJoinTeamName) == 0)
 			{
 				int LocalTeam = -1;
 
 
-				if(i == Local)
+				if(ClientId == Local)
 					return;
 
-				
-
-				int Team = GameClient()->m_Teams.Team(i);
+				int Team = GameClient()->m_Teams.Team(ClientId);
 				char TeamChar[256];
 				str_format(TeamChar, sizeof(TeamChar), "%d", Team);
 
 				int PrevTeam = -1;
 
-				if(!m_pClient->m_Teams.SameTeam(Local, i) && (Team > 0) && !m_JoinedTeam)
+				if(!m_pClient->m_Teams.SameTeam(Local, ClientId) && (Team > 0) && !m_JoinedTeam)
 				{
 					char aBuf[2048] = "/team ";
 					str_append(aBuf, TeamChar);
 					m_pClient->m_Chat.SendChat(0, aBuf);
 
 					char Joined[2048] = "attempting to auto Join ";
-					str_append(Joined, m_pClient->m_aClients[i].m_aName);
+					str_append(Joined, m_pClient->m_aClients[ClientId].m_aName);
 					m_pClient->m_Chat.AddLine(-3, 0, Joined);
 
 					m_JoinedTeam = true;
 					m_AttempedJoinTeam = true;
 				}
-				if(m_pClient->m_Teams.SameTeam(Local, i) && m_JoinedTeam)
+				if(m_pClient->m_Teams.SameTeam(Local, ClientId) && m_JoinedTeam)
 				{
 					char Joined[2048] = "Successfully Joined The Team of ";
-					str_append(Joined, m_pClient->m_aClients[i].m_aName);
+					str_append(Joined, m_pClient->m_aClients[ClientId].m_aName);
 					m_pClient->m_Chat.AddLine(-3, 0, Joined);
 
 					LocalTeam = GameClient()->m_Teams.Team(Local);
@@ -232,10 +230,10 @@ void CAiodob::AutoJoinTeam()
 
 					m_JoinedTeam = false;
 				}
-				if(!m_pClient->m_Teams.SameTeam(Local, i) && m_AttempedJoinTeam)
+				if(!m_pClient->m_Teams.SameTeam(Local, ClientId) && m_AttempedJoinTeam)
 				{
 					char Joined[2048] = "Couldn't Join The Team of ";
-					str_append(Joined, m_pClient->m_aClients[i].m_aName);
+					str_append(Joined, m_pClient->m_aClients[ClientId].m_aName);
 					m_pClient->m_Chat.AddLine(-3, 0, Joined);
 
 					m_AttempedJoinTeam = false;
@@ -484,6 +482,7 @@ void CAiodob::RemoveWarEntryDuplicates(const char *pName)
 		else
 			++it;
 	}
+	UpdateTempPlayers();
 }
 
 void CAiodob::RemoveWarEntry(const char *pNameW, const char *pNameH, const char *pNameM)
@@ -492,6 +491,8 @@ void CAiodob::RemoveWarEntry(const char *pNameW, const char *pNameH, const char 
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
 		m_TempEntries.erase(it);
+
+	UpdateTempPlayers();
 }
 
 void CAiodob::UpdateTempPlayers()
@@ -507,11 +508,11 @@ void CAiodob::UpdateTempPlayers()
 
 		for(CTempEntry &Entry : m_TempEntries)
 		{
-			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempWar) == 0 && str_comp(Entry.m_aTempWar, "") != 0)
+			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempWar) && str_comp(Entry.m_aTempWar, "") != 0)
 				m_TempPlayers[i].IsTempWar = true;
-			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempHelper) == 0 && str_comp(Entry.m_aTempHelper, "") != 0)
+			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempHelper) && str_comp(Entry.m_aTempHelper, "") != 0)
 				m_TempPlayers[i].IsTempHelper = true;
-			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempMute) == 0 && str_comp(Entry.m_aTempMute, "") != 0)
+			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempMute) && str_comp(Entry.m_aTempMute, "") != 0)
 				m_TempPlayers[i].IsTempMute = true;
 		}
 	}

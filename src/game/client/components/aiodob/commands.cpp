@@ -171,6 +171,7 @@ void CAiodob::Votekick(const char *pName, const char *pReason)
 	}
 }
 
+// Temp War Commands
 void CAiodob::ConTempWar(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
@@ -182,6 +183,7 @@ void CAiodob::ConUnTempWar(IConsole::IResult *pResult, void *pUserData)
 	pSelf->UnTempWar(pResult->GetString(0));
 }
 
+// Temp Helper Commands
 void CAiodob::ConTempHelper(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
@@ -193,6 +195,7 @@ void CAiodob::ConUnTempHelper(IConsole::IResult *pResult, void *pUserData)
 	pSelf->UnTempHelper(pResult->GetString(0));
 }
 
+// Mute Commands
 void CAiodob::ConTempMute(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
@@ -204,6 +207,7 @@ void CAiodob::ConUnTempMute(IConsole::IResult *pResult, void *pUserData)
 	pSelf->UnTempMute(pResult->GetString(0));
 }
 
+// Saving and Restoring Skins
 void CAiodob::ConSaveSkin(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
@@ -220,13 +224,11 @@ void CAiodob::ConOnlineInfo(IConsole::IResult *pResult, void *pUserData)
 	CAiodob *pSelf = (CAiodob *)pUserData;
 	pSelf->OnlineInfo();
 }
-
 void CAiodob::ConPlayerInfo(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
 	pSelf->PlayerInfo(pResult->GetString(0));
 }
-
 void CAiodob::ConViewLink(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
@@ -244,8 +246,9 @@ void CAiodob::TempWar(const char *pName)
 
 	m_TempEntries.push_back(Entry);
 	UnTempHelper(pName, true);
-}
 
+	UpdateTempPlayers();
+}
 void CAiodob::UnTempWar(const char *pName, bool Silent)
 {
 	if(str_comp(pName, "") == 0)
@@ -285,8 +288,9 @@ void CAiodob::TempHelper(const char *pName)
 	GameClient()->aMessage(aBuf);
 	m_TempEntries.push_back(Entry);
 	UnTempWar(pName, true);
-}
 
+	UpdateTempPlayers();
+}
 void CAiodob::UnTempHelper(const char *pName, bool Silent)
 {
 	if(str_comp(pName, "") == 0)
@@ -325,8 +329,9 @@ void CAiodob::TempMute(const char *pName)
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Mute List", pName);
 	GameClient()->aMessage(aBuf);
 	m_TempEntries.push_back(Entry);
-}
 
+	UpdateTempPlayers();
+}
 void CAiodob::UnTempMute(const char *pName, bool Silent)
 {
 	if(str_comp(pName, "") == 0)
@@ -388,7 +393,6 @@ void CAiodob::RestoreSkin()
 	else
 		GameClient()->aMessage("Can't Restore! Rainbow mode is enabled.");
 }
-
 void CAiodob::SaveSkin()
 {
 	if(!g_Config.m_ClServerRainbow)
@@ -434,10 +438,10 @@ void CAiodob::OnlineInfo(bool Integrate)
 		bool War = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[1];
 		bool TempWar = m_TempPlayers[IdWithName(Client.m_aName)].IsTempWar;
 
-		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
+		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 			continue;
 
-		if(Client.m_Id == m_pClient->m_Snap.m_LocalClientId)
+		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
 		if((War && !TempWar) || (!War && TempWar))
@@ -454,10 +458,10 @@ void CAiodob::OnlineInfo(bool Integrate)
 	{
 		bool Team = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[2];
 
-		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
+		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 			continue;
 
-		if(Client.m_Id == m_pClient->m_Snap.m_LocalClientId)
+		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
 		if(Team)
@@ -475,10 +479,10 @@ void CAiodob::OnlineInfo(bool Integrate)
 		bool Helper = GameClient()->m_WarList.GetWarData(IdWithName(Client.m_aName)).m_WarGroupMatches[3];
 		bool TempHelper = m_TempPlayers[IdWithName(Client.m_aName)].IsTempHelper;
 
-		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.m_Id) == 0)
+		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 			continue;
 
-		if(Client.m_Id == m_pClient->m_Snap.m_LocalClientId)
+		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
 		if((Helper && !TempHelper) || (!Helper && TempHelper))
@@ -493,13 +497,13 @@ void CAiodob::OnlineInfo(bool Integrate)
 	int NumberMutesAfk = 0;
 	for(auto &Client : GameClient()->m_aClients)
 	{
-		bool Mute = GameClient()->m_WarList.m_WarPlayers[Client.m_Id].IsMuted;
+		bool Mute = GameClient()->m_WarList.m_WarPlayers[Client.ClientId()].IsMuted;
 		bool TempMute = m_TempPlayers[IdWithName(Client.m_aName)].IsTempMute;
 
 		if(!Client.m_Active)
 			continue;
 
-		if(Client.m_Id == m_pClient->m_Snap.m_LocalClientId)
+		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
 		if((Mute && !TempMute) || (!Mute && TempMute))
@@ -525,7 +529,6 @@ void CAiodob::OnlineInfo(bool Integrate)
 		GameClient()->aMessage("╰───────────────────────");
 	}
 }
-
 void CAiodob::PlayerInfo(const char *pName)
 {
 	char aBuf[1024];
