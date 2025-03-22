@@ -1283,7 +1283,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				ImprovedAntiSettings.VMargin(Margin, &ImprovedAntiSettings);
 
 				ImprovedAntiSettings.HSplitTop(HeaderHeight, &Button, &ImprovedAntiSettings);
-				Ui()->DoLabel(&Button, Localize("Input"), FontSize, TEXTALIGN_MC);
+				Ui()->DoLabel(&Button, Localize("Imporved Anti Ping"), FontSize, TEXTALIGN_MC);
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiPingImproved, Localize("Use new smoothing algorithm"), &g_Config.m_ClAntiPingImproved, &ImprovedAntiSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiPingStableDirection, Localize("Optimistic prediction along stable direction"), &g_Config.m_ClAntiPingStableDirection, &ImprovedAntiSettings, LineSize);
