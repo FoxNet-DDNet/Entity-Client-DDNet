@@ -725,7 +725,7 @@ public:
 	void SetLastMovementTime(int Delay) override;
 
 	// Get ClientId with Their Name
-	int GetClientId(const char *pName);
+	int GetClientId(const char *pName) override;
 
 
 	CNetObjHandler *GetNetObjHandler() override;
