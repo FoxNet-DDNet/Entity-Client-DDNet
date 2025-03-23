@@ -724,7 +724,7 @@ public:
 	void OnJoinInfo() override;
 	void SetLastMovementTime(int Delay) override;
 
-	// Get ClientId with Their Name
+	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;
 
 
