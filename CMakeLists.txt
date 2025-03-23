@@ -1636,6 +1636,7 @@ set(EXPECTED_DATA
   skins/brownbear.png
   skins/cammo.png
   skins/cammostripes.png
+  skins/catnoa.png
   skins/chinese_by_whis.png
   skins/coala.png
   skins/coala_bluekitty.png
