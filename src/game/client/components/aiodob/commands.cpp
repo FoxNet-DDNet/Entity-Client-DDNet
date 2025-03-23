@@ -533,9 +533,11 @@ void CAiodob::PlayerInfo(const char *pName)
 {
 	char aBuf[1024];
 	str_format(aBuf, sizeof(aBuf), "Couldnt Find a Player With The Name \"%s\"", pName);
-	if(GameClient()->GetClientId(pName) != -1)
+
+	int Id = GameClient()->GetClientId(pName);
+
+	if(Id >= 0)
 	{
-		int Id = GameClient()->GetClientId(pName);
 		GameClient()->aMessage("╭──                  Player Info");
 		GameClient()->aMessage("│");
 

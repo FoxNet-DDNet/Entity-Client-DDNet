@@ -293,7 +293,8 @@ void CAiodob::GoresMode()
 	// actual code lmfao
 
 	bool GoresBind;
-	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
+
+	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
 	if(!str_comp(GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key], "+fire;+prevweapon"))
 		GoresBind = true;
 	else

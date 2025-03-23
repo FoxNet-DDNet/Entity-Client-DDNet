@@ -1636,6 +1636,7 @@ set(EXPECTED_DATA
   skins/brownbear.png
   skins/cammo.png
   skins/cammostripes.png
+  skins/catnoa.png
   skins/chinese_by_whis.png
   skins/coala.png
   skins/coala_bluekitty.png
@@ -2480,6 +2481,7 @@ if(CLIENT)
     sixup_translate_connless.cpp
     sixup_translate_game.cpp
     sixup_translate_snapshot.cpp
+    skin.cpp
     skin.h
     ui.cpp
     ui.h
