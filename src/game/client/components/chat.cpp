@@ -704,43 +704,35 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		return;
 	}
 
-	if(ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted && g_Config.m_ClShowMutedInConsole)
+	if(ClientId >= 0)
 	{
-		char Muted[2048] = "[Muted] ";
-		char MutedWhisper[2048] = "[Muted] ← ";
+		if(ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted && g_Config.m_ClShowMutedInConsole)
+		{
+			char Muted[2048] = "[Muted] ";
+			char MutedWhisper[2048] = "[Muted] ← ";
 
-		const char *Name = m_pClient->m_aClients[ClientId].m_aName;
+			const char *Name = m_pClient->m_aClients[ClientId].m_aName;
 
-		if(g_Config.m_ClMutedConsoleColor)
-			Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
+			if(g_Config.m_ClMutedConsoleColor)
+				Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
 
-		str_append(Muted, Name);
-		str_append(MutedWhisper, Name);
-		if(Team == 3)
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, Colors);
-		else if(Team < 3)
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, Colors);
-	}
-	else if(g_Config.m_ClHideEnemyChat && GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
-	{
-		char War[2048] = "[Enemy] ";
-		char WarWhisper[2048] = "[Enemy] ← ";
+			str_append(Muted, Name);
+			str_append(MutedWhisper, Name);
+			if(Team == 3)
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, Colors);
+			else if(Team < 3)
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, Colors);
 
-		const char *Name = m_pClient->m_aClients[ClientId].m_aName;
-
-		str_append(War, Name);
-		str_append(WarWhisper, Name);
-		if(Team == 3)
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, WarWhisper, pLine, Colors);
-		else if(Team < 3)
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, War, pLine, Colors);
+			return;
+		}
+		else if(ClientId >= 0 && g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar))
+			return;
 	}
 
 	if(*pLine == 0 ||
 		(ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
-					  m_pClient->m_aClients[ClientId].m_ChatIgnore || GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] && g_Config.m_ClHideEnemyChat) ||
-					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
+					  m_pClient->m_aClients[ClientId].m_ChatIgnore || (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
 					  (m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))
 		return;
@@ -813,7 +805,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			pFrom = "whisper";
 		else if(pLine_->m_Team)
 			pFrom = "teamchat";
-		else if(GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId) && !g_Config.m_ClHideEnemyChat && pLine_->m_ClientId >= 0)
+		else if(GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId) && pLine_->m_ClientId >= 0)
 			pFrom = TypeName;
 		else if(pLine_->m_ClientId == SERVER_MSG)
 			pFrom = "server";
