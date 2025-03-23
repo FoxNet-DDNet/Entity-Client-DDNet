@@ -1575,9 +1575,11 @@ void CChat::SendChatQueued(const char *pLine)
 }
 
 // A-Client
-
 void CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 {
+	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
+		return;
+
 	if(ClientId == SERVER_MSG)
 	{
 		if(g_Config.m_ClAutoAddOnNameChange)

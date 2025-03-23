@@ -294,7 +294,10 @@ void CAiodob::GoresMode()
 
 	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
 	if(Key == KEY_UNKNOWN)
+	{
+		g_Config.m_ClGoresMode = 0;
 		dbg_msg("A-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
+	}
 	else
 	{
 		bool GoresBind;
@@ -641,6 +644,9 @@ void CAiodob::OnShutdown()
 
 void CAiodob::OnRender()
 {
+	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
+		return;
+
 	Rainbow();
 	ChangeTileNotifyTick();
 	GoresMode();
