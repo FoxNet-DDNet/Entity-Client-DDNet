@@ -777,7 +777,7 @@ public:
 	EShowTile m_ShowTileInfo;
 	bool m_ShowDetail;
 
-	bool m_Animate;
+	int m_Animate;
 	int64_t m_AnimateStart;
 	float m_AnimateTime;
 	float m_AnimateSpeed;

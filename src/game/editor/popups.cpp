@@ -3079,6 +3079,27 @@ CUi::EPopupMenuFunctionResult CEditor::PopupAnimateSettings(void *pContext, CUIR
 	Row.VSplitLeft(10.0f, &ButtonDecrease, &Row);
 	Row.VSplitRight(10.0f, &EditBox, &ButtonIncrease);
 	View.HSplitBottom(12.0f, &View, &ButtonReset);
+
+	//{
+	//	CUIRect Selector;
+	//	Row.VSplitMid(&Label, &Selector);
+	//	CUIRect No, Yes;
+	//	Selector.VSplitMid(&No, &Yes);
+
+	//	pEditor->Ui()->DoLabel(&Label, "Change Time", 10.0f, TEXTALIGN_ML);
+
+	//	static int s_ButtonNo = 0;
+	//	static int s_ButtonYes = 0;
+	//	if(pEditor->DoButton_Ex(&s_ButtonNo, "No", pEditor->m_Animate == 1, &No, BUTTONFLAG_LEFT, "Normal Quad movement preview", IGraphics::CORNER_L))
+	//	{
+	//		pEditor->m_Animate = 1;
+	//	}
+	//	if(pEditor->DoButton_Ex(&s_ButtonYes, "Yes", pEditor->m_Animate == 2, &Yes, BUTTONFLAG_LEFT, "Change Quad position based on the time you put it as", IGraphics::CORNER_R))
+	//	{
+	//		pEditor->m_Animate = 2;
+	//	}
+	//}
+
 	pEditor->Ui()->DoLabel(&Label, "Speed", 10.0f, TEXTALIGN_ML);
 
 	static char s_DecreaseButton;

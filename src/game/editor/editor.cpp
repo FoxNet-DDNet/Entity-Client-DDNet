@@ -107,8 +107,15 @@ void CEditor::EnvelopeEval(int TimeOffsetMillis, int Env, ColorRGBA &Result, siz
 
 	std::shared_ptr<CEnvelope> pEnv = pThis->m_Map.m_vpEnvelopes[Env];
 	float Time = pThis->m_AnimateTime;
-	Time *= pThis->m_AnimateSpeed;
-	Time += (TimeOffsetMillis / 1000.0f);
+
+	if(pThis->m_Animate == 1)
+	{
+		Time *= pThis->m_AnimateSpeed;
+		Time += (TimeOffsetMillis / 1000.0f);
+	}
+	else if(pThis->m_Animate == 2)
+		Time = pThis->m_AnimateSpeed;
+
 	pEnv->Eval(Time, Result, Channels);
 }
 
