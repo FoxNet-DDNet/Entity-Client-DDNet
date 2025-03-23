@@ -31,7 +31,6 @@ class CMapLayers : public CComponent
 	CLayers *m_pLayers;
 	CMapImages *m_pImages;
 
-	void MapScreenToGroup(float CenterX, float CenterY, CMapItemGroup *pGroup, float Zoom = 1.0f);
 	int m_Type;
 
 	struct STileLayerVisuals
@@ -149,12 +148,13 @@ public:
 	virtual void OnRender() override;
 	virtual void OnMapLoad() override;
 
-	void RenderTileLayer(int LayerIndex, const ColorRGBA &Color, CMapItemLayerTilemap *pTileLayer, CMapItemGroup *pGroup);
-	void RenderTileBorder(int LayerIndex, const ColorRGBA &Color, CMapItemLayerTilemap *pTileLayer, CMapItemGroup *pGroup, int BorderX0, int BorderY0, int BorderX1, int BorderY1);
-	void RenderKillTileBorder(int LayerIndex, const ColorRGBA &Color, CMapItemLayerTilemap *pTileLayer, CMapItemGroup *pGroup);
-	void RenderQuadLayer(int LayerIndex, CMapItemLayerQuads *pQuadLayer, CMapItemGroup *pGroup, bool ForceRender = false);
-
 	static void EnvelopeEval(int TimeOffsetMillis, int Env, ColorRGBA &Result, size_t Channels, void *pUser);
+
+private:
+	void RenderTileLayer(int LayerIndex, const ColorRGBA &Color);
+	void RenderTileBorder(int LayerIndex, const ColorRGBA &Color, int BorderX0, int BorderY0, int BorderX1, int BorderY1);
+	void RenderKillTileBorder(int LayerIndex, const ColorRGBA &Color);
+	void RenderQuadLayer(int LayerIndex, CMapItemLayerQuads *pQuadLayer, bool ForceRender = false);
 };
 
 #endif
