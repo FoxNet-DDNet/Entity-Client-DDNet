@@ -292,22 +292,26 @@ void CAiodob::GoresMode()
 
 	// actual code lmfao
 
-	bool GoresBind;
-
-	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
-	if(!str_comp(GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key], "+fire;+prevweapon"))
-		GoresBind = true;
+	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
+	if(Key == KEY_UNKNOWN)
+		dbg_msg("A-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
 	else
-		GoresBind = false;
-
-	if(g_Config.m_ClGoresMode && GoresBind)
 	{
-		if(m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == 0)
+		bool GoresBind;
+		const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
+		if(!str_comp(GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key], "+fire;+prevweapon"))
+			GoresBind = true;
+		else
+			GoresBind = false;
+
+		if(g_Config.m_ClGoresMode && GoresBind)
 		{
-			GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
+			if(m_pClient->m_Snap.m_pLocalCharacter->m_Weapon == 0)
+			{
+				GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
+			}
 		}
 	}
-
 }
 
 void CAiodob::OnConnect()
@@ -575,17 +579,24 @@ void CAiodob::OnInit()
 	// Dummy Rainbow
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
 
+
 	// Get Bindslot for Mouse1, default shoot bind
-	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot("mouse1");
-	*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
+	if(Key == KEY_UNKNOWN)
+		dbg_msg("A-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
+	else
+	{
+		const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
+		*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
 
-	// Tells you what the bind is
-	char aBuf[1024];
-	str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
-	dbg_msg("A-Client", aBuf);
+		// Tells you what the bind is
+		char aBuf[1024];
+		str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
+		dbg_msg("A-Client", aBuf);
 
-	// Binds the mouse to the saved bind, also doe
-	GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
+		// Binds the mouse to the saved bind, also doe
+		GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
+	}
 
 	// Set Kill Counter
 	m_KillCount = g_Config.m_ClKillCounter;
