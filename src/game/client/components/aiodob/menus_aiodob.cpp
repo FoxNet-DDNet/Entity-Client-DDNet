@@ -1915,7 +1915,7 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 		RenderTools()->RenderTee(pIdleState, &s_vLines[PREVIEW_FRIEND].m_RenderInfo, EMOTE_NORMAL, vec2(1, 0.1f), vec2(X + RealTeeSizeHalved, Y + OffsetTeeY + FullHeightMinusTee / 2.0f + TWSkinUnreliableOffset));
 	if(!g_Config.m_ClShowChatTeamMembersOnly)
 		Y += RenderPreview(PREVIEW_FRIEND, X, Y).y;
-
+	
 	// Normal
 	if(!g_Config.m_ClShowChatFriends && !g_Config.m_ClShowChatTeamMembersOnly)
 	{
@@ -1986,8 +1986,8 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 		}
 		else if(Ui()->MouseButtonClicked(1) && s_SelectedBindIndex >= 0 && HoveringIndex >= 0 && HoveringIndex != s_SelectedBindIndex)
 		{
-			CBindWheel::SBind BindA = GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex];
-			CBindWheel::SBind BindB = GameClient()->m_Bindwheel.m_vBinds[HoveringIndex];
+			CBindWheel::CBind BindA = GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex];
+			CBindWheel::CBind BindB = GameClient()->m_Bindwheel.m_vBinds[HoveringIndex];
 			str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aName, BindB.m_aName);
 			str_copy(GameClient()->m_Bindwheel.m_vBinds[s_SelectedBindIndex].m_aCommand, BindB.m_aCommand);
 			str_copy(GameClient()->m_Bindwheel.m_vBinds[HoveringIndex].m_aName, BindA.m_aName);
@@ -2017,7 +2017,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 		else if(i == HoveringIndex)
 			FontSizes = 14.0f;
 
-		const CBindWheel::SBind Bind = GameClient()->m_Bindwheel.m_vBinds[i];
+		const CBindWheel::CBind Bind = GameClient()->m_Bindwheel.m_vBinds[i];
 		const float Angle = Theta * i;
 		vec2 TextPos = direction(Angle);
 		TextPos *= Radius * 0.75f;
@@ -2052,7 +2052,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
 	if(DoButton_Menu(&s_OverrideButton, Localize("Override Selected"), 0, &Button) && s_SelectedBindIndex >= 0)
 	{
-		CBindWheel::SBind TempBind;
+		CBindWheel::CBind TempBind;
 		if(str_length(s_aBindName) == 0)
 			str_copy(TempBind.m_aName, "*");
 		else
@@ -2067,7 +2067,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	Button.VSplitMid(&ButtonRemove, &ButtonAdd, MarginSmall);
 	if(DoButton_Menu(&s_AddButton, Localize("Add Bind"), 0, &ButtonAdd))
 	{
-		CBindWheel::SBind TempBind;
+		CBindWheel::CBind TempBind;
 		if(str_length(s_aBindName) == 0)
 			str_copy(TempBind.m_aName, "*");
 		else

@@ -583,14 +583,15 @@ void CWarList::GetReason(char *pReason, int ClientId)
 	str_copy(pReason, m_WarPlayers[ClientId].m_aReason, sizeof(m_WarPlayers[ClientId].m_aReason));
 }
 
-CWarDataCache CWarList::GetWarData(int ClientId)
+CWarDataCache &CWarList::GetWarData(int ClientId)
 {
 	return m_WarPlayers[ClientId];
 }
 
 void CWarList::SortWarEntries()
 {
-	// TODO
+	std::sort(m_WarEntries.begin(), m_WarEntries.end(),
+		[](const CWarEntry &a, const CWarEntry &b) { return a.m_pWarType->m_Index < b.m_pWarType->m_Index; });
 }
 
 void CWarList::UpdateWarPlayers()
@@ -673,6 +674,7 @@ void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 	CWarList *pThis = (CWarList *)pUserData;
 	bool Failed = false;
 	pThis->m_WarlistFile = pThis->m_pStorage->OpenFile(WARLIST_FILE, IOFLAG_WRITE, IStorage::TYPE_SAVE);
+	pThis->SortWarEntries();
 
 	if(!pThis->m_WarlistFile)
 	{

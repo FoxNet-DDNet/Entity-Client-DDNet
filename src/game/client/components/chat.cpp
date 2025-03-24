@@ -696,45 +696,38 @@ void CChat::StoreSave(const char *pText)
 
 void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
-	ColorRGBA Colors = g_Config.m_ClMessageColor;
-		
-	if(ReturnChat == true) // Ignore Friends
+	if(ReturnChat == true) 
 	{
 		ReturnChat = false;
 		return;
 	}
 
-	if(ClientId >= 0)
+	ColorRGBA Colors = g_Config.m_ClMessageColor;
+	if(ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted && g_Config.m_ClShowMutedInConsole)
 	{
-		if(ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted && g_Config.m_ClShowMutedInConsole)
-		{
-			char Muted[2048] = "[Muted] ";
-			char MutedWhisper[2048] = "[Muted] ← ";
+		char Muted[2048] = "[Muted] ";
+		char MutedWhisper[2048] = "[Muted] ← ";
 
-			const char *Name = m_pClient->m_aClients[ClientId].m_aName;
+		const char *Name = m_pClient->m_aClients[ClientId].m_aName;
 
-			if(g_Config.m_ClMutedConsoleColor)
-				Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
+		if(g_Config.m_ClMutedConsoleColor)
+			Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
 
-			str_append(Muted, Name);
-			str_append(MutedWhisper, Name);
-			if(Team == 3)
-				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, Colors);
-			else if(Team < 3)
-				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, Colors);
+		str_append(Muted, Name);
+		str_append(MutedWhisper, Name);
+		if(Team == 3)
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, MutedWhisper, pLine, Colors);
+		else if(Team < 3)
+			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Muted, pLine, Colors);
 
-			return;
-		}
-		else if(ClientId >= 0 && g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar))
-			return;
+		return;
 	}
 
-	if(*pLine == 0 ||
-		(ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
+	if(*pLine == 0 || (ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) || 
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
-					  m_pClient->m_aClients[ClientId].m_ChatIgnore || (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend) ||
-					  (m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
-					  (m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))
+		m_pClient->m_aClients[ClientId].m_ChatIgnore || 
+		(m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && m_pClient->IsOtherTeam(ClientId) && m_pClient->m_Teams.Team(m_pClient->m_Snap.m_LocalClientId) != TEAM_FLOCK) || 
+		(m_pClient->m_Snap.m_LocalClientId != ClientId && m_pClient->m_aClients[ClientId].m_Foe))))
 		return;
 
 	// trim right and set maximum length to 256 utf8-characters
@@ -762,9 +755,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	}
 	if(pEnd != nullptr)
 		*(const_cast<char *>(pEnd)) = 0;
-
-	if(*pLine == 0)
-		return;
 
 	bool Highlighted = false;
 
@@ -816,6 +806,11 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, pFrom, aBuf, ChatLogColor);
 	};
+
+	if(ClientId >= 0 && g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar))
+		return;
+	if(m_pClient->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !m_pClient->m_aClients[ClientId].m_Friend)
+		return;
 
 	// Custom color for new line
 	std::optional<ColorRGBA> CustomColor = std::nullopt;
