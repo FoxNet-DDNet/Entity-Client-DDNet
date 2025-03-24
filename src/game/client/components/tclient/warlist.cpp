@@ -590,8 +590,7 @@ CWarDataCache &CWarList::GetWarData(int ClientId)
 
 void CWarList::SortWarEntries()
 {
-	std::sort(m_WarEntries.begin(), m_WarEntries.end(),
-		[](const CWarEntry &a, const CWarEntry &b) { return a.m_pWarType->m_Index < b.m_pWarType->m_Index; });
+	// TODO
 }
 
 void CWarList::UpdateWarPlayers()
@@ -674,7 +673,6 @@ void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 	CWarList *pThis = (CWarList *)pUserData;
 	bool Failed = false;
 	pThis->m_WarlistFile = pThis->m_pStorage->OpenFile(WARLIST_FILE, IOFLAG_WRITE, IStorage::TYPE_SAVE);
-	pThis->SortWarEntries();
 
 	if(!pThis->m_WarlistFile)
 	{
