@@ -34,17 +34,14 @@ FDiscordCreate GetDiscordCreate()
 class CDiscord : public IDiscord
 {
 	DiscordActivity m_Activity;
-	bool m_UpdateActivity = false;
-	int64_t m_LastActivityUpdate = 0;
-
 	IDiscordCore *m_pCore;
 	IDiscordActivityEvents m_ActivityEvents;
 	IDiscordActivityManager *m_pActivityManager;
-	bool m_Enabled;
 	FDiscordCreate m_pfnDiscordCreate;
+	bool m_Enabled;
 
 public:
-	int64_t m_TimeStamp = time_timestamp(); 
+	int64_t m_TimeStamp = time_timestamp();
 	bool Init(FDiscordCreate pfnDiscordCreate)
 	{
 		m_pfnDiscordCreate = pfnDiscordCreate;
@@ -74,21 +71,18 @@ public:
 		Params.flags = EDiscordCreateFlags::DiscordCreateFlags_NoRequireDiscord;
 		Params.event_data = this;
 		Params.activity_events = &m_ActivityEvents;
-
-		int Error = pfnDiscordCreate(DISCORD_VERSION, &Params, &m_pCore);
+		int Error = m_pfnDiscordCreate(DISCORD_VERSION, &Params, &m_pCore);
 		if(Error != DiscordResult_Ok)
 		{
 			dbg_msg("discord", "error initializing discord instance, error=%d", Error);
 			return true;
 		}
 
-		m_pActivityManager = m_pCore->get_activity_manager(m_pCore);
-
+		m_pActivityManager = m_pCore->get_activity_manager(m_pCore); 
+		
 		// which application to launch when joining activity
 		m_pActivityManager->register_command(m_pActivityManager, CONNECTLINK_DOUBLE_SLASH);
 		m_pActivityManager->register_steam(m_pActivityManager, 412220); // steam id
-
-		ClearGameInfo();
 
 		return false;
 	}
@@ -115,8 +109,6 @@ public:
 		m_Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
 		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 		m_Activity.instance = false;
-
-		m_UpdateActivity = true;
 	}
 
 	void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap, bool Registered) override
@@ -135,6 +127,7 @@ public:
 		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
 		if(ShowMap)
 			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
+
 		m_Activity.party.size.current_size = ServerInfo.m_NumClients;
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
 		// private makes it so the game isn't public to join, but there's 'Ask to Join' button instead
@@ -148,8 +141,6 @@ public:
 			str_copy(m_Activity.party.id, aPartyId, sizeof(m_Activity.party.id));
 		}
 		UpdateServerIp(ServerInfo);
-
-		m_UpdateActivity = true;
 	}
 
 	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pMapName)
@@ -162,7 +153,6 @@ public:
 		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
 		str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
-		m_UpdateActivity = true;
 	}
 
 	void UpdatePlayerCount(int Count)
@@ -174,7 +164,6 @@ public:
 			return;
 
 		m_Activity.party.size.current_size = Count;
-		m_UpdateActivity = true;
 	}
 
 	void UpdateServerIp(const CServerInfo &ServerInfo)
@@ -210,6 +199,7 @@ public:
 		IClient *m_pClient = pSelf->Kernel()->RequestInterface<IClient>();
 		m_pClient->Connect(pSecret);
 	}
+
 	~CDiscord()
 	{
 		if(m_pCore)
@@ -243,7 +233,7 @@ class CDiscordStub : public IDiscord
 {
 	void Update(bool RPC) override {}
 	void ClearGameInfo(const char *pDetail) override {}
-	void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap,bool Registered) override {}
+	void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap, bool Registered) override {}
 	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pMapName) override {}
 	void UpdatePlayerCount(int Count) override {}
 };

@@ -467,7 +467,7 @@ void CClient::DiscordRPCchange()
 		CServerInfo CurrentServerInfo;
 		GetServerInfo(&CurrentServerInfo);
 
-		Discord()->SetGameInfo(ServerAddress(), CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);	
+		Discord()->SetGameInfo(CurrentServerInfo, m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);	
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{

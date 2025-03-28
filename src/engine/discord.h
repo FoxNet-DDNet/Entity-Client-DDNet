@@ -11,7 +11,7 @@ class IDiscord : public IInterface
 public:
 	virtual void Update(bool RPC) = 0;
 
-	virtual void ClearGameInfo() = 0;
+	virtual void ClearGameInfo(const char *pDetail) = 0;
 	virtual void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap, bool Registered) = 0;
 	virtual void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pMapName) = 0;
 	virtual void UpdatePlayerCount(int Count) = 0;
