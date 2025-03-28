@@ -440,8 +440,11 @@ void CClient::SetState(EClientState State)
 
 	if(State == IClient::STATE_ONLINE)
 	{
-		const bool AnnounceAddr = m_ServerBrowser.IsRegistered(ServerAddress());
-		Steam()->SetGameInfo(ServerAddress(), m_aCurrentMap, AnnounceAddr);
+		const bool Registered = m_ServerBrowser.IsRegistered(ServerAddress());
+		CServerInfo CurrentServerInfo;
+		GetServerInfo(&CurrentServerInfo);
+
+		Steam()->SetGameInfo(ServerAddress(), m_aCurrentMap, Registered);
 	}
 	else if(OldState == IClient::STATE_ONLINE)
 	{
@@ -460,9 +463,11 @@ void CClient::DiscordRPCchange()
 {
 	if(State() == IClient::STATE_ONLINE)
 	{
-		const bool AnnounceAddr = m_ServerBrowser.IsRegistered(ServerAddress());
+		const bool Registered = m_ServerBrowser.IsRegistered(ServerAddress());
+		CServerInfo CurrentServerInfo;
+		GetServerInfo(&CurrentServerInfo);
 
-		Discord()->SetGameInfo(ServerAddress(), m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, AnnounceAddr);	
+		Discord()->SetGameInfo(ServerAddress(), CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);	
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{
@@ -1412,6 +1417,7 @@ void CClient::ProcessServerInfo(int RawType, NETADDR *pFrom, const void *pData, 
 			{
 				m_CurrentServerInfo = Info;
 				m_CurrentServerInfoRequestTime = -1;
+				Discord()->UpdateServerInfo(Info, m_aCurrentMap);
 			}
 
 			bool ValidPong = false;
@@ -3957,6 +3963,9 @@ const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType)
 	m_CurrentServerInfo.m_MapCrc = pMapInfo->m_Crc;
 	m_CurrentServerInfo.m_MapSize = pMapInfo->m_Size;
 
+	// enter demo playback state
+	SetState(IClient::STATE_DEMOPLAYBACK);
+
 	GameClient()->OnConnected();
 
 	// setup buffers
@@ -3971,9 +3980,6 @@ const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType)
 		m_aapSnapshots[0][SnapshotType]->m_AltSnapSize = 0;
 		m_aapSnapshots[0][SnapshotType]->m_Tick = -1;
 	}
-
-	// enter demo playback state
-	SetState(IClient::STATE_DEMOPLAYBACK);
 
 	m_DemoPlayer.Play();
 	GameClient()->OnEnterGame();
