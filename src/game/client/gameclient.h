@@ -490,6 +490,7 @@ public:
 		CCharacterCore m_Predicted;
 		CCharacterCore m_PrevPredicted;
 
+
 		// TClient
 		vec2 m_ImprovedPredPos = vec2(0, 0);
 		vec2 m_PrevImprovedPredPos = vec2(0, 0);
@@ -498,7 +499,7 @@ public:
 		// vec2 m_DebugVector3 = vec2(0, 0);
 		float m_Uncertainty = 0.0f;
 
-		std::shared_ptr<CManagedTeeRenderInfo> m_pSkinInfo; // this is what the server reports
+		std::shared_ptr<CManagedTeeRenderInfo> m_pSkinInfo = nullptr; // this is what the server reports
 		CTeeRenderInfo m_RenderInfo; // this is what we use
 
 		float m_Angle;
