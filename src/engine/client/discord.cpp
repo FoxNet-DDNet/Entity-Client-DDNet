@@ -1,4 +1,5 @@
 #include <base/system.h>
+#include <engine/client.h>
 #include <engine/discord.h>
 
 #if defined(CONF_DISCORD)
@@ -26,14 +27,15 @@ FDiscordCreate GetDiscordCreate()
 
 class CDiscord : public IDiscord
 {
+	DiscordActivity m_Activity;
 	IDiscordCore *m_pCore;
 	IDiscordActivityEvents m_ActivityEvents;
 	IDiscordActivityManager *m_pActivityManager;
-	bool m_Enabled;
 	FDiscordCreate m_pfnDiscordCreate;
+	bool m_Enabled;
 
 public:
-	int64_t m_TimeStamp = time_timestamp(); 
+	int64_t m_TimeStamp = time_timestamp();
 	bool Init(FDiscordCreate pfnDiscordCreate)
 	{
 		m_pfnDiscordCreate = pfnDiscordCreate;
@@ -52,6 +54,8 @@ public:
 			return false;
 
 		mem_zero(&m_ActivityEvents, sizeof(m_ActivityEvents));
+
+		m_ActivityEvents.on_activity_join = &CDiscord::OnActivityJoin;
 		m_pActivityManager = 0;
 
 		DiscordCreateParams Params;
@@ -68,7 +72,12 @@ public:
 			return true;
 		}
 
-		m_pActivityManager = m_pCore->get_activity_manager(m_pCore);
+		m_pActivityManager = m_pCore->get_activity_manager(m_pCore); 
+		
+		// which application to launch when joining activity
+		m_pActivityManager->register_command(m_pActivityManager, CONNECTLINK_DOUBLE_SLASH);
+		m_pActivityManager->register_steam(m_pActivityManager, 412220); // steam id
+
 		return false;
 	}
 	void Update(bool Enabled) override
@@ -87,29 +96,104 @@ public:
 		if(!m_Enabled || !m_pActivityManager)
 			return;
 
-		DiscordActivity Activity;
-		mem_zero(&Activity, sizeof(DiscordActivity));
-		str_copy(Activity.assets.large_image, "ac_image_b_o", sizeof(Activity.assets.large_image));
-		str_copy(Activity.assets.large_text, "github.com/qxdFox/Aiodob-Client-DDNet", sizeof(Activity.assets.large_text));
-		Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
-		str_copy(Activity.details, pDetail, sizeof(Activity.details));
-		m_pActivityManager->update_activity(m_pActivityManager, &Activity, 0, 0);
+		mem_zero(&m_Activity, sizeof(DiscordActivity));
+
+		str_copy(m_Activity.assets.large_image, "ac_image_b_o", sizeof(m_Activity.assets.large_image));
+		str_copy(m_Activity.assets.large_text, "github.com/qxdFox/Aiodob-Client-DDNet", sizeof(m_Activity.assets.large_text));
+		m_Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
+		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
+		m_Activity.instance = false;
 	}
-	void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, const char *pDetail, bool ShowMap, bool AnnounceAddr) override
+
+	void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap, bool Registered) override
 	{
 		if(!m_Enabled || !m_pActivityManager)
 			return;
 
-		DiscordActivity Activity;
-		mem_zero(&Activity, sizeof(DiscordActivity));
-		str_copy(Activity.assets.large_image, "ac_image_b", sizeof(Activity.assets.large_image));
-		str_copy(Activity.assets.large_text, "github.com/qxdFox/Aiodob-Client-DDNet", sizeof(Activity.assets.large_text));
-		Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
-		str_copy(Activity.details, pDetail, sizeof(Activity.details));
+		mem_zero(&m_Activity, sizeof(DiscordActivity));
+
+		str_copy(m_Activity.assets.large_image, "ac_image_b", sizeof(m_Activity.assets.large_image));
+		str_copy(m_Activity.assets.large_text, "github.com/qxdFox/Aiodob-Client-DDNet", sizeof(m_Activity.assets.large_text));
+		m_Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
+		str_copy(m_Activity.name, pDetail, sizeof(m_Activity.name));
+		m_Activity.instance = true;
+
+		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
 		if(ShowMap)
-			str_copy(Activity.state, pMapName, sizeof(Activity.state));
-		m_pActivityManager->update_activity(m_pActivityManager, &Activity, 0, 0);
+			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
+
+		m_Activity.party.size.current_size = ServerInfo.m_NumClients;
+		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
+		// private makes it so the game isn't public to join, but there's 'Ask to Join' button instead
+		m_Activity.party.privacy = Registered ? DiscordActivityPartyPrivacy_Public : DiscordActivityPartyPrivacy_Private;
+
+		if(!Registered)
+		{
+			// private parties have random id to not leak the server ip
+			char aPartyId[sizeof(m_Activity.party.id)];
+			secure_random_password(aPartyId, sizeof(aPartyId), 64);
+			str_copy(m_Activity.party.id, aPartyId, sizeof(m_Activity.party.id));
+		}
+		UpdateServerIp(ServerInfo);
 	}
+
+	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pMapName) override
+	{
+		if(!m_Activity.instance)
+			return;
+
+		UpdateServerIp(ServerInfo);
+
+		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
+		str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
+		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
+	}
+
+	void UpdatePlayerCount(int Count) override
+	{
+		if(!m_Activity.instance)
+			return;
+
+		if(m_Activity.party.size.current_size == Count)
+			return;
+
+		m_Activity.party.size.current_size = Count;
+	}
+
+    void UpdateServerIp(const CServerInfo &ServerInfo)
+	{
+		if(!m_Activity.instance)
+			return;
+
+		// secret is only shared when player is joining the game, or when he's invited for private games
+		if(str_length(ServerInfo.m_aAddress) < (int)sizeof(m_Activity.secrets.join))
+		{
+			str_copy(m_Activity.secrets.join, ServerInfo.m_aAddress, sizeof(m_Activity.secrets.join));
+		}
+		else
+		{
+			char aAddr[NETADDR_MAXSTRSIZE];
+			net_addr_str(&ServerInfo.m_aAddresses[0], aAddr, sizeof(aAddr), true);
+			str_copy(m_Activity.secrets.join, aAddr, sizeof(m_Activity.secrets.join));
+		}
+
+		if(m_Activity.party.privacy == DiscordActivityPartyPrivacy_Public)
+		{
+			// id is sha256, because it didn't work with the ':' character
+			char aPartyId[SHA256_MAXSTRSIZE];
+			SHA256_DIGEST PartyIdSha256 = sha256(m_Activity.secrets.join, str_length(m_Activity.secrets.join));
+			sha256_str(PartyIdSha256, aPartyId, sizeof(aPartyId));
+			str_copy(m_Activity.party.id, aPartyId, sizeof(m_Activity.party.id));
+		}
+	}
+
+	static void DISCORD_CALLBACK OnActivityJoin(void *pEventData, const char *pSecret)
+	{
+		CDiscord *pSelf = static_cast<CDiscord *>(pEventData);
+		IClient *m_pClient = pSelf->Kernel()->RequestInterface<IClient>();
+		m_pClient->Connect(pSecret);
+	}
+
 	~CDiscord()
 	{
 		if(m_pCore)
@@ -143,7 +227,9 @@ class CDiscordStub : public IDiscord
 {
 	void Update(bool RPC) override {}
 	void ClearGameInfo(const char *pDetail) override {}
-	void SetGameInfo(const NETADDR &ServerAddr, const char *pMapName, const char *pDetail, bool ShowMap,bool AnnounceAddr) override {}
+	void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap, bool Registered) override {}
+	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pMapName) override {}
+	void UpdatePlayerCount(int Count) override {}
 };
 
 IDiscord *CreateDiscord()

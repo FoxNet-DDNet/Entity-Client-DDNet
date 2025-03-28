@@ -76,6 +76,7 @@ MACRO_CONFIG_INT(ClWarListScoreboard, ac_warlist_scoreboard, 1, 0, 1, CFGFLAG_CL
 MACRO_CONFIG_INT(ClWarListAllowDuplicates, ac_warlist_allow_duplicates, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allow duplicate war entries")
 
 MACRO_CONFIG_INT(ClWarListIndicator, ac_warlist_indicator, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use warlist for indicator")
+MACRO_CONFIG_INT(ClWarListIndicatorColors, ac_warlist_indicator_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show warlist colors instead of freeze colors")
 MACRO_CONFIG_INT(ClWarListIndicatorAll, ac_warlist_indicator_all, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show all groups")
 MACRO_CONFIG_INT(ClWarListIndicatorEnemy, ac_warlist_indicator_enemy, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from the first group")
 MACRO_CONFIG_INT(ClWarListIndicatorTeam, ac_warlist_indicator_team, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from second group")
@@ -83,7 +84,7 @@ MACRO_CONFIG_INT(ClWarListIndicatorTeam, ac_warlist_indicator_team, 1, 0, 1, CFG
 MACRO_CONFIG_INT(ClWarListSwitchNameReason, ac_warlist_switch_name_reason, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If a Player has a Reason, their Name will be switched with the Reason")
 
 // Run on Join
-MACRO_CONFIG_INT(ClRunOnJoinConsole, ac_run_on_join_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use run on join in chat or console")
+MACRO_CONFIG_INT(ClRunOnJoinConsole, ac_run_on_join_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use run on join")
 MACRO_CONFIG_INT(ClRunOnJoinDelay, ac_run_on_join_delay, 2, 7, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 MACRO_CONFIG_STR(ClRunOnJoinMsg, ac_run_on_join_console_msg, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 

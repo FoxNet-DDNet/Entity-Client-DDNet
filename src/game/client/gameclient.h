@@ -65,7 +65,6 @@
 #include "components/voting.h"
 
 // Aiodob
-
 #include "components/aiodob/aiodob.h"
 #include "components/aiodob/anti_spawn_block.h"
 #include "components/aiodob/auto_kill.h"
@@ -227,6 +226,7 @@ private:
 	class IEditor *m_pEditor;
 	class IFriends *m_pFriends;
 	class IFriends *m_pFoes;
+	class IDiscord *m_pDiscord;
 #if defined(CONF_AUTOUPDATE)
 	class IUpdater *m_pUpdater;
 #endif
