@@ -765,7 +765,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
 	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
 
-	if(Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
+	if(g_Config.m_ClWarListSwitchNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
 	{
 		Data.m_pReason = Data.m_pName;
 		Data.m_pName = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
