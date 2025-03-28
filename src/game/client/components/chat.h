@@ -202,9 +202,8 @@ public:
 	float MessageRounding() const { return FontSize() * (1 / 2.f); }
 
 	// A-Client
-	void ChatDetection(int ClientId, int Team, const char *pLine);
+	bool ChatDetection(int ClientId, int Team, const char *pLine);
 
-	bool ReturnChat;
 	int m_AdBotId;
 	int64_t m_VoteKickTimer;
 
