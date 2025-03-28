@@ -452,7 +452,7 @@ void CAiodob::ChangeTileNotifyTick()
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 		if(pGraphics && !pGraphics->WindowActive() && Graphics())
 		{
-			Client()->Notify("aiodob", "current tile changed");
+			Client()->Notify("A-Client", "current tile changed");
 			Graphics()->NotifyWindow();
 		}
 		m_LastNotification = time_get();
