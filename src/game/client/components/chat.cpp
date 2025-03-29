@@ -713,10 +713,16 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		}
 		else if(g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar))
 		{
+			char TypeName[512];
+			if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar)
+				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName);
+			else if(GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
+				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.GetWarTypeName(ClientId));
+		
 			char Message[2048];
-			str_format(Message, sizeof(Message), "[%s] %s", GameClient()->m_WarList.GetWarTypeName(ClientId), m_pClient->m_aClients[ClientId].m_aName);
+			str_format(Message, sizeof(Message), "[%s] %s", TypeName, m_pClient->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "[%s] ← %s", GameClient()->m_WarList.GetWarTypeName(ClientId), m_pClient->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "[%s] ← %s", TypeName, m_pClient->m_aClients[ClientId].m_aName);
 
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine);
 			return;
@@ -793,14 +799,28 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		}
 
 		char TypeName[512];
-		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(pLine_->m_ClientId));
+		bool IsWarlist = GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId);
+		if(pLine_->m_ClientId >= 0 && !IsWarlist)
+		{
+			CTempData *pTempData = &GameClient()->m_Aiodob.m_TempPlayers[pLine_->m_ClientId];
+			if(pTempData->IsTempHelper)
+			{
+				IsWarlist = true;
+				str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.m_WarTypes[3]->m_aWarName);
+			}
+			if(pTempData->IsTempWar)
+			{
+				IsWarlist = true;
+				str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName);
+			}
+		}
 
 		const char *pFrom;
 		if(pLine_->m_Whisper)
 			pFrom = "whisper";
 		else if(pLine_->m_Team)
 			pFrom = "teamchat";
-		else if(GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId) && pLine_->m_ClientId >= 0 && g_Config.m_ClWarList)
+		else if(IsWarlist && pLine_->m_ClientId >= 0 && g_Config.m_ClWarList && TypeName != nullptr)
 			pFrom = TypeName;
 		else if(pLine_->m_ClientId == SERVER_MSG)
 			pFrom = "server";
