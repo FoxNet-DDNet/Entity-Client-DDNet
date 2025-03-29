@@ -696,7 +696,7 @@ void CChat::StoreSave(const char *pText)
 void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
 	ColorRGBA Colors = g_Config.m_ClMessageColor;
-	if(ClientId >= 0)
+	if(ClientId >= 0 && g_Config.m_ClWarList)
 	{
 		if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted && g_Config.m_ClShowMutedInConsole)
 		{
@@ -800,7 +800,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			pFrom = "whisper";
 		else if(pLine_->m_Team)
 			pFrom = "teamchat";
-		else if(GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId) && pLine_->m_ClientId >= 0)
+		else if(GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId) && pLine_->m_ClientId >= 0 && g_Config.m_ClWarList)
 			pFrom = TypeName;
 		else if(pLine_->m_ClientId == SERVER_MSG)
 			pFrom = "server";

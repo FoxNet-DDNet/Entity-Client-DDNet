@@ -520,15 +520,14 @@ void CSpectator::OnRender()
 			ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, Alpha);
 			if(g_Config.m_ClSpecMenuColors)
 			{
-				if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar)
+				if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar && g_Config.m_ClWarList)
 					Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-				else if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempHelper)
+				else if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempHelper && g_Config.m_ClWarList)
 					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
-				else if(GameClient()->m_WarList.GetAnyWar(ClientId))
+				else if(GameClient()->m_WarList.GetAnyWar(ClientId) && g_Config.m_ClWarList)
 					Color = GameClient()->m_WarList.GetPriorityColor(ClientId);
 				else if(m_pClient->m_aClients[ClientId].m_Friend)
-					Color =  color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-
+					Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 			}
 			TextRender()->TextColor(Color.WithAlpha(Alpha));
 			TeeAlpha = 1.0f;
