@@ -24,6 +24,7 @@
 #include "aiodob/aiodob.h"
 #include "aiodob/a_enums.h"
 #include "tclient/warlist.h"
+#include <engine/client/client.h>
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = {'\0'};
 
@@ -1627,8 +1628,14 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 					int PlayerCid = GameClient()->GetClientId(CharOname);
 
+					CWarDataCache *pWarData = &GameClient()->m_WarList.m_WarPlayers[PlayerCid];
+					CTempData *pTempData = &GameClient()->m_Aiodob.m_TempPlayers[PlayerCid];
+
 					if(PlayerCid >= 0)
 					{
+						char Reason[128] = "";
+						str_copy(Reason, CharOname);
+
 						if(GameClient()->m_WarList.FindWarTypeWithName(name) == 2)
 						{
 							str_format(aBuf, sizeof(aBuf), "%s changed their name to a Teammates [%s]", CharOname, name);
@@ -1637,31 +1644,45 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						}
 						else
 						{
-							if(GameClient()->m_WarList.m_WarPlayers[PlayerCid].m_WarGroupMatches[1])
+							if(pWarData->m_WarGroupMatches[1])
 							{
-								CTempEntry Entry(name, "", "");
+								GameClient()->m_Aiodob.TempWar(name, Reason);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
-								str_copy(Entry.m_aTempWar, name);
-								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
 									GameClient()->aMessage(aBuf);
 							}
-							else if(GameClient()->m_WarList.m_WarPlayers[PlayerCid].m_WarGroupMatches[3])
+							else if(pWarData->m_WarGroupMatches[3])
 							{
-								CTempEntry Entry("", name, "");
+								GameClient()->m_Aiodob.TempHelper(name, Reason, true);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name);
-								str_copy(Entry.m_aTempHelper, name);
-								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+								if(g_Config.m_ClAutoAddOnNameChange == 2)
+									GameClient()->aMessage(aBuf);
+							}
+							else if(pTempData->IsTempWar)
+							{
+								if(str_comp(pTempData->m_aReason, "") != 0)
+									str_copy(Reason, pTempData->m_aReason);
+
+								GameClient()->m_Aiodob.TempWar(name, Reason, true);
+								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
+								if(g_Config.m_ClAutoAddOnNameChange == 2)
+									GameClient()->aMessage(aBuf);
+							}
+							else if(pTempData->IsTempHelper)
+							{
+								if(str_comp(pTempData->m_aReason, "") != 0)
+									str_copy(Reason, pTempData->m_aReason);
+
+								GameClient()->m_Aiodob.TempHelper(name, Reason, true);
+								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
 									GameClient()->aMessage(aBuf);
 							}
 						}
-						if(GameClient()->m_WarList.m_WarPlayers[PlayerCid].IsMuted)
+						if(pWarData->IsMuted)
 						{
-							CTempEntry Entry("", "", name);
+							GameClient()->m_Aiodob.TempMute(name);
 							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name);
-							str_copy(Entry.m_aTempMute, name);
-							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->aMessage(aBuf);
 						}

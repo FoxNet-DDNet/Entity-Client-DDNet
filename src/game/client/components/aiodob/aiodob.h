@@ -12,20 +12,32 @@ public:
 	char m_aTempWar[16] = "";
 	char m_aTempHelper[16] = "";
 	char m_aTempMute[16] = "";
+	char m_aReason[128] = "";
 
-	CTempEntry(const char *pTempWar, const char *pTempHelper, const char *pTempMute)
+	/*
+	* Type = 0 -> TempWar
+	* Type = 1 -> TempHelper
+	* type = 2 -> TempMute
+	*/
+	CTempEntry(int Type, const char *pName, const char *pReason)
 	{
-		if(!str_comp(pTempWar, ""))
-			str_copy(m_aTempWar, pTempWar);
-		if(!str_comp(pTempHelper, ""))
-			str_copy(m_aTempHelper, pTempHelper);
-		if(!str_comp(pTempMute, ""))
-			str_copy(m_aTempMute, pTempMute);
+		if(Type == 0)
+			str_copy(m_aTempWar, pName);
+		else if(Type == 1)
+			str_copy(m_aTempHelper, pName);
+		else if(Type == 2)
+			str_copy(m_aTempMute, pName);
+
+		if(!str_comp(pReason, ""))
+			str_copy(m_aReason, pReason);
 	}
 
 	bool operator==(const CTempEntry &Other) const
 	{
-		return !str_comp(m_aTempWar, Other.m_aTempWar) || !str_comp(m_aTempHelper, Other.m_aTempHelper) || !str_comp(m_aTempMute, Other.m_aTempMute);
+		bool TempWarMatch = str_comp(m_aTempWar, Other.m_aTempWar) == 0 && str_comp(m_aTempWar, "") != 0;
+		bool TempHelperMatch = str_comp(m_aTempHelper, Other.m_aTempHelper) == 0 && str_comp(m_aTempHelper, "") != 0;
+		bool TempHelperMute = str_comp(m_aTempMute, Other.m_aTempMute) == 0 && str_comp(m_aTempHelper, "") != 0;
+		return (TempWarMatch || TempHelperMatch || TempHelperMute);
 	}
 };
 
@@ -35,6 +47,8 @@ public:
 	bool IsTempWar = false;
 	bool IsTempHelper = false;
 	bool IsTempMute = false;
+
+	char m_aReason[128] = "";
 };
 
 class CAiodob : public CComponent
@@ -127,13 +141,13 @@ public:
 	bool m_SentKill;
 	int m_KillCount;
 
-	void TempWar(const char *pName);
+	void TempWar(const char *pName, const char *pReason, bool Silent = false);
 	void UnTempWar(const char *pName, bool Silent = false);
 
-	void TempHelper(const char *pName);
+	void TempHelper(const char *pName, const char *pReason, bool Silent = false);
 	void UnTempHelper(const char *pName, bool Silent = false);
 
-	void TempMute(const char *pName);
+	void TempMute(const char *pName, bool Silent = false);
 	void UnTempMute(const char *pName, bool Silent = false);
 
 	void Votekick(const char *pName, const char *pReason);
@@ -149,7 +163,7 @@ public:
 	CTempData m_TempPlayers[MAX_CLIENTS];
 	void UpdateTempPlayers();
 	void RemoveWarEntryDuplicates(const char *pName);
-	void RemoveWarEntry(const char *pNameW, const char *pNameH, const char *pNameM);
+	void RemoveWarEntry(int Type, const char *pName);
 
 	// Movement Notification if tabbed out
 	int64_t m_LastNotification;

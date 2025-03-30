@@ -199,21 +199,9 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 	{
 		str_copy(Entry.m_aName, pName);
 		str_format(aBuf, sizeof(aBuf), "added \"%s\" to '%s' list ", pName, pWarType->m_aWarName);
-		CTempEntry TempEntry(pName, pName, "");
 
-		auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), TempEntry);
-		if(it != GameClient()->m_Aiodob.m_TempEntries.end())
-		{
-			for(auto it2 = GameClient()->m_Aiodob.m_TempEntries.begin(); it2 != GameClient()->m_Aiodob.m_TempEntries.end();)
-			{
-				bool IsDuplicate = !str_comp(it2->m_aTempWar, pName) || !str_comp(it2->m_aTempHelper, pName);
-
-				if(IsDuplicate)
-					it2 = GameClient()->m_Aiodob.m_TempEntries.erase(it2);
-				else
-					++it2;
-			}
-		}
+		GameClient()->m_Aiodob.UnTempWar(pName, true);
+		GameClient()->m_Aiodob.UnTempHelper(pName, true);
 	}
 	if(!g_Config.m_ClWarListAllowDuplicates)
 		RemoveWarEntryDuplicates(Entry.m_aName, Entry.m_aClan);
@@ -265,21 +253,8 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 		str_copy(Entry.m_aName, pName);
 		str_format(aBuf, sizeof(aBuf), "removed \"%s\" from the %s list", pName, pWarType->m_aWarName);
 		{
-			CTempEntry TempEntry(pName, pName, "");
-
-			auto it = std::find(GameClient()->m_Aiodob.m_TempEntries.begin(), GameClient()->m_Aiodob.m_TempEntries.end(), TempEntry);
-			if(it != GameClient()->m_Aiodob.m_TempEntries.end())
-			{
-				for(auto it2 = GameClient()->m_Aiodob.m_TempEntries.begin(); it2 != GameClient()->m_Aiodob.m_TempEntries.end();)
-				{
-					bool IsDuplicate = !str_comp(it2->m_aTempWar, pName) || !str_comp(it2->m_aTempHelper, pName);
-
-					if(IsDuplicate)
-						it2 = GameClient()->m_Aiodob.m_TempEntries.erase(it2);
-					else
-						++it2;
-				}
-			}
+			GameClient()->m_Aiodob.UnTempWar(pName, true);
+			GameClient()->m_Aiodob.UnTempHelper(pName, true);
 		}
 	}
 	GameClient()->aMessage(aBuf);

@@ -752,7 +752,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || ClanPlateOverride;
 	bool ShowClanWarInName = g_Config.m_ClWarList && !ShowClanPlate && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarClan && !GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarName;
 	Data.m_ShowClanWarInName = ShowClanWarInName;
-	
+
 	Data.m_InGame = true;
 	Data.m_Position = Position - vec2(0.0f, (float)g_Config.m_ClNamePlatesOffset);
 	Data.m_ShowName = pPlayerInfo->m_Local ? g_Config.m_ClNamePlatesOwn : g_Config.m_ClNamePlates;
@@ -767,10 +767,16 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
 	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
 
+	CTempData TempData = GameClient()->m_Aiodob.m_TempPlayers[pPlayerInfo->m_ClientId];
+
+	if((TempData.IsTempWar || TempData.IsTempHelper))
+		Data.m_pReason = TempData.m_aReason;
+
 	if(g_Config.m_ClWarListSwitchNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
 	{
+		const char *pReason = Data.m_pReason;
 		Data.m_pReason = Data.m_pName;
-		Data.m_pName = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
+		Data.m_pName = pReason;
 	}
 
 	Data.m_ClientId = pPlayerInfo->m_ClientId;
