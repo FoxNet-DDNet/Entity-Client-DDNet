@@ -820,7 +820,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			pFrom = "whisper";
 		else if(pLine_->m_Team)
 			pFrom = "teamchat";
-		else if(IsWarlist && pLine_->m_ClientId >= 0 && g_Config.m_ClWarList && TypeName != nullptr)
+		else if(IsWarlist && pLine_->m_ClientId >= 0 && g_Config.m_ClWarList)
 			pFrom = TypeName;
 		else if(pLine_->m_ClientId == SERVER_MSG)
 			pFrom = "server";
