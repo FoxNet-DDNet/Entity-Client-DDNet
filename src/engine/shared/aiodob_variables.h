@@ -263,7 +263,6 @@ MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG
 MACRO_CONFIG_INT(ClCornerRoundness, ac_corner_roundness, 70, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How round corners are in scrollable menus")
 MACRO_CONFIG_INT(ClFpsSpoofer, ac_fps_spoofer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spoof Da Fps counter")
 MACRO_CONFIG_INT(ClFpsSpoofPercentage, ac_fps_spoofer_percentage, 100, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fps Spoofer Percentage")
-MACRO_CONFIG_INT(ClAidsPingDetection, ac_aids_ping_detection, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "shows ping range 76-77 in black (ping of a weirdo)")
 
 // Gores Mode
 MACRO_CONFIG_INT(ClGoresMode, ac_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
