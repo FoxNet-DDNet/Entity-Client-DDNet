@@ -695,6 +695,9 @@ void CChat::StoreSave(const char *pText)
 
 void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
+	if(ChatDetection(ClientId, Team, pLine))
+		return;
+
 	ColorRGBA Colors = g_Config.m_ClMessageColor;
 	if(ClientId >= 0 && g_Config.m_ClWarList)
 	{
@@ -728,9 +731,6 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			return;
 		}
 	}
-
-	if(ChatDetection(ClientId, Team, pLine))
-		return;
 
 	if(*pLine == 0 || (ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) || 
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
