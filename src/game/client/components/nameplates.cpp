@@ -143,16 +143,17 @@ protected:
 	IGraphics::CTextureHandle m_Texture;
 	float m_Rotation = 0.0f;
 	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-	void Create(CGameClient &This) {}
+	CNamePlatePartCircle(CGameClient &This) :
+		CNamePlatePart(This) {}
 
 public:
-	void Render(CGameClient &This, float X, float Y) const override
+	void Render(CGameClient &This, vec2 Pos) const 
 	{
 		This.Graphics()->TextureClear();
 		This.Graphics()->QuadsBegin();
 		This.Graphics()->SetColor(m_Color);
 		This.Graphics()->QuadsSetRotation(m_Rotation);
-		This.Graphics()->DrawCircle(X, Y + 2.0f, m_Size.x, m_Size.y);
+		This.Graphics()->DrawCircle(Pos.x, Pos.y + 2.0f, m_Size.x, m_Size.y);
 		This.Graphics()->QuadsEnd();
 		This.Graphics()->QuadsSetRotation(0.0f);
 	}
@@ -277,13 +278,13 @@ protected:
 		{
 			switch(Data.m_HookStrongWeak)
 			{
-			case CNamePlateRenderData::HOOKSTRONGWEAK_STRONG:
+			case CNamePlateData::HOOKSTRONGWEAK_STRONG:
 				m_Color = color_cast<ColorRGBA>(ColorHSLA(6401973));
 				break;
-			case CNamePlateRenderData::HOOKSTRONGWEAK_UNKNOWN:
+			case CNamePlateData::HOOKSTRONGWEAK_UNKNOWN:
 				m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 				break;
-			case CNamePlateRenderData::HOOKSTRONGWEAK_WEAK:
+			case CNamePlateData::HOOKSTRONGWEAK_WEAK:
 				m_Color = color_cast<ColorRGBA>(ColorHSLA(41131));
 				break;
 			}
@@ -443,7 +444,7 @@ private:
 	float m_FontSize = -INFINITY;
 
 protected:
-	bool UpdateNeeded(CGameClient &This, const CNamePlateRenderData &Data) override
+	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowReason;
 		if(!m_Visible)
@@ -452,7 +453,7 @@ protected:
 		m_Color = ColorRGBA(0.7f, 0.7f, 0.7f, Data.m_Color.a);
 		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, Data.m_pReason) != 0;
 	}
-	void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) override
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSizeClan;
 		str_copy(m_aText, Data.m_pReason);
@@ -462,23 +463,21 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
-	{
-		CNamePlatePartText::Create(This);
-	}
+	CNamePlatePartReason(CGameClient &This) :
+		CNamePlatePartText(This) {}
 };
 
 class CNamePlatePartPingCircle : public CNamePlatePartCircle
 {
 protected:
-	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_PingCircle;
 		if(!m_Visible)
 			return;
 
-		if((This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency == 77 || This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency == 76) && g_Config.m_ClAidsPingDetection)
-			m_Color = ColorRGBA(0.f, 0.f, 0.f, 0.5f);
+		m_Size = vec2(Data.m_FontSize, Data.m_FontSize) * 1.2f;
+
 		m_Color = color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f)).WithAlpha(Data.m_Color.a);
 		float CircleSize = 7.0f;
 		m_Size = vec2(CircleSize, 24);
@@ -487,16 +486,14 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
-	{
-		CNamePlatePartCircle::Create(This);
-	}
+	CNamePlatePartPingCircle(CGameClient &This) :
+		CNamePlatePartCircle(This) {}
 };
 
 class CNamePlatePartMutedIcon : public CNamePlatePartSprite
 {
 protected:
-	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_IsMuted;
 		if(!m_Visible)
@@ -511,9 +508,9 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
+	CNamePlatePartMutedIcon(CGameClient &This) :
+		CNamePlatePartSprite(This)
 	{
-		CNamePlatePartSprite::Create(This);
 		m_Texture = g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id;
 	}
 };
