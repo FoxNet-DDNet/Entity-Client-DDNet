@@ -281,7 +281,7 @@ protected:
 			case CNamePlateData::HOOKSTRONGWEAK_STRONG:
 				m_Color = color_cast<ColorRGBA>(ColorHSLA(6401973));
 				break;
-			case CNamePlateData::HOOKSTRONGWEAK_UNKNOWN:
+			case CNamePlateData::HOOKSTRONGWEAK_NEUTRAL:
 				m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 				break;
 			case CNamePlateData::HOOKSTRONGWEAK_WEAK:
