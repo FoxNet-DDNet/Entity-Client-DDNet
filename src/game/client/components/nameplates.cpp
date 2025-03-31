@@ -147,7 +147,7 @@ protected:
 		CNamePlatePart(This) {}
 
 public:
-	void Render(CGameClient &This, vec2 Pos) const 
+	void Render(CGameClient &This, vec2 Pos) const override
 	{
 		This.Graphics()->TextureClear();
 		This.Graphics()->QuadsBegin();
