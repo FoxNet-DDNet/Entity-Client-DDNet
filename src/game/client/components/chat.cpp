@@ -477,7 +477,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 				// quote the name
 				char aQuoted[128];
-				if((m_Input.GetString()[0] == '/' || m_pClient->m_Bindchat.CheckBindChat(m_Input.GetString())) && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"")))
+				if((m_Input.GetString()[0] == '/' || m_pClient->m_Bindchat.CheckBindChat(m_Input.GetString())) && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"") || str_startswith(pCompletionString, "#")))
 				{
 					// escape the name
 					str_copy(aQuoted, "\"");
@@ -1644,7 +1644,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						{
 							if(pWarData->m_WarGroupMatches[1])
 							{
-								GameClient()->m_Aiodob.TempWar(name, Reason);
+								GameClient()->m_Aiodob.TempWar(name, Reason, true);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
 									GameClient()->aMessage(aBuf);
