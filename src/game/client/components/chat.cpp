@@ -800,6 +800,8 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		}
 
 		char TypeName[512];
+		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(pLine_->m_ClientId));
+
 		bool IsWarlist = GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId);
 		if(pLine_->m_ClientId >= 0 && !IsWarlist)
 		{
@@ -1036,21 +1038,17 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if(Now - m_aLastSoundPlayed[CHAT_CLIENT] >= time_freq() * 3 / 10)
 		{
 			bool PlaySound = m_aLines[m_CurrentLine].m_Team ? g_Config.m_SndTeamChat : g_Config.m_SndChat;
-			bool PlaySoundFriend = m_aLines[m_CurrentLine].m_Team ? g_Config.m_SndTeamChat : g_Config.m_SndFriendChat;
 
 #if defined(CONF_VIDEORECORDER)
 			if(IVideo::Current())
-			{
 				PlaySound &= (bool)g_Config.m_ClVideoShowChat;
-				PlaySoundFriend &= (bool)g_Config.m_ClVideoShowChat;
-			}
 #endif
 			if(PlaySound)
 			{
 				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 1.0f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 			}
-			if(!PlaySound && PlaySoundFriend && (GameClient()->Friends()->IsFriend(m_aLines[m_CurrentLine].m_aName, "\0", true)))
+			else if(g_Config.m_SndFriendChat && (GameClient()->Friends()->IsFriend(m_aLines[m_CurrentLine].m_aName, "\0", true)))
 			{
 				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 1.0f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
@@ -1755,7 +1753,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						{
 							GameClient()->aMessage(g_Config.m_ClAutoNotifyMsg);
 
-							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 1.0f);
+							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.5f);
 						}
 					}
 				}
