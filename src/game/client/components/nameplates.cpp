@@ -213,7 +213,6 @@ public:
 		CNamePlatePartIcon(This)
 	{
 		m_Texture = g_pData->m_aImages[IMAGE_ARROW].m_Id;
-		m_ShiftOnInvis = true;
 		m_Direction = Dir;
 		switch(m_Direction)
 		{
@@ -232,10 +231,11 @@ public:
 	{
 		if(!Data.m_ShowDirection)
 		{
-			m_Size = vec2(0.0f, 0.0f);
+			m_ShiftOnInvis = false;
 			m_Visible = false;
 			return;
 		}
+		m_ShiftOnInvis = true; // Only shift (horizontally) the other parts if directions as a whole is visible
 		m_Size = vec2(Data.m_FontSizeDirection, Data.m_FontSizeDirection);
 		m_Padding.y = m_Size.y / 2.0f;
 		switch(m_Direction)
@@ -530,7 +530,7 @@ protected:
 			m_Sprite = SPRITE_HOOK_STRONG;
 			m_Color = color_cast<ColorRGBA>(ColorHSLA(6401973));
 			break;
-		case CNamePlateData::HOOKSTRONGWEAK_UNKNOWN:
+		case CNamePlateData::HOOKSTRONGWEAK_NEUTRAL:
 			m_Sprite = SPRITE_HOOK_ICON;
 			m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 			break;
@@ -564,19 +564,12 @@ protected:
 		m_Visible = Data.m_ShowHookStrongWeakId;
 		if(!m_Visible)
 			return false;
-		m_Color.a = Data.m_Color.a;
-		return m_FontSize != Data.m_FontSizeHookStrongWeak || m_StrongWeakId != Data.m_HookStrongWeakId;
-	}
-	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
-	{
-		m_FontSize = Data.m_FontSizeHookStrongWeak;
-		m_StrongWeakId = Data.m_HookStrongWeakId;
 		switch(Data.m_HookStrongWeak)
 		{
 		case CNamePlateData::HOOKSTRONGWEAK_STRONG:
 			m_Color = color_cast<ColorRGBA>(ColorHSLA(6401973));
 			break;
-		case CNamePlateData::HOOKSTRONGWEAK_UNKNOWN:
+		case CNamePlateData::HOOKSTRONGWEAK_NEUTRAL:
 			m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 			break;
 		case CNamePlateData::HOOKSTRONGWEAK_WEAK:
@@ -584,6 +577,12 @@ protected:
 			break;
 		}
 		m_Color.a = Data.m_Color.a;
+		return m_FontSize != Data.m_FontSizeHookStrongWeak || m_StrongWeakId != Data.m_HookStrongWeakId;
+	}
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
+	{
+		m_FontSize = Data.m_FontSizeHookStrongWeak;
+		m_StrongWeakId = Data.m_HookStrongWeakId;
 		str_format(m_aText, sizeof(m_aText), "%d", m_StrongWeakId);
 		CTextCursor Cursor;
 		This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, m_FontSize, TEXTFLAG_RENDER);
@@ -887,7 +886,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	}
 
 	Data.m_ShowHookStrongWeak = false;
-	Data.m_HookStrongWeak = CNamePlateData::HOOKSTRONGWEAK_UNKNOWN;
+	Data.m_HookStrongWeak = CNamePlateData::HOOKSTRONGWEAK_NEUTRAL;
 	Data.m_ShowHookStrongWeakId = false;
 	Data.m_HookStrongWeakId = 0;
 
@@ -1011,7 +1010,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	Data.m_ShowHookStrongWeakId = g_Config.m_ClNamePlatesStrong == 2;
 	if(Dummy == g_Config.m_ClDummy)
 	{
-		Data.m_HookStrongWeak = CNamePlateData::HOOKSTRONGWEAK_UNKNOWN;
+		Data.m_HookStrongWeak = CNamePlateData::HOOKSTRONGWEAK_NEUTRAL;
 		Data.m_ShowHookStrongWeak = Data.m_ShowHookStrongWeakId;
 	}
 	else
