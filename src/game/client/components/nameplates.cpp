@@ -19,23 +19,25 @@
 class CNamePlatePart
 {
 protected:
-	vec2 m_Size = vec2();
+	vec2 m_Size = vec2(0.0f, 0.0f);
 	vec2 m_Padding = vec2(5.0f, 5.0f);
-	vec2 m_Offset = vec2(); // Offset to rendered X and Y not effecting layout
+	vec2 m_Offset = vec2(0.0f, 0.0f); // Offset to rendered X and Y not effecting layout
 	bool m_NewLine = false; // Whether this part is a new line (doesn't do anything else)
 	bool m_Visible = true; // Whether this part is visible
 	bool m_ShiftOnInvis = false; // Whether when not visible will still take up space
+	CNamePlatePart(CGameClient &This) {}
 
 public:
-	virtual void Update(CGameClient &This, const CNamePlateRenderData &Data) {}
+	virtual void Update(CGameClient &This, const CNamePlateData &Data) {}
 	virtual void Reset(CGameClient &This) {}
-	virtual void Render(CGameClient &This, float X, float Y) const {}
+	virtual void Render(CGameClient &This, vec2 Pos) const {}
 	vec2 Size() const { return m_Size; }
 	vec2 Padding() const { return m_Padding; }
 	vec2 Offset() const { return m_Offset; }
 	bool NewLine() const { return m_NewLine; }
 	bool Visible() const { return m_Visible; }
 	bool ShiftOnInvis() const { return m_ShiftOnInvis; }
+	CNamePlatePart() = delete;
 	virtual ~CNamePlatePart() = default;
 };
 
@@ -47,23 +49,30 @@ class CNamePlatePartText : public CNamePlatePart
 {
 protected:
 	STextContainerIndex m_TextContainerIndex;
-	virtual bool UpdateNeeded(CGameClient &This, const CNamePlateRenderData &Data) { return true; }
-	virtual void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) = 0;
+	virtual bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) { return true; }
+	virtual void UpdateText(CGameClient &This, const CNamePlateData &Data) = 0;
 	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-	void Create(CGameClient &This)
+	CNamePlatePartText(CGameClient &This) :
+		CNamePlatePart(This)
 	{
 		Reset(This);
 	}
 
 public:
-	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
 		if(!UpdateNeeded(This, Data) && m_TextContainerIndex.Valid())
 			return;
 
+		// Set flags
+		unsigned int Flags = ETextRenderFlags::TEXT_RENDER_FLAG_NO_FIRST_CHARACTER_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_LAST_CHARACTER_ADVANCE;
+		if(Data.m_InGame)
+			Flags |= ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT; // Prevent jittering from rounding
+		This.TextRender()->SetRenderFlags(Flags);
+
 		if(Data.m_InGame)
 		{
-			// create text at standard zoom
+			// Create text at standard zoom
 			float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 			This.Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
 			This.RenderTools()->MapScreenToInterface(This.m_Camera.m_Center.x, This.m_Camera.m_Center.y);
@@ -72,30 +81,36 @@ public:
 			This.Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 		}
 		else
-			UpdateText(This, Data);
-
-		if(m_TextContainerIndex.Valid())
 		{
-			auto Container = This.TextRender()->GetBoundingBoxTextContainer(m_TextContainerIndex);
-			m_Size = vec2(Container.m_W, Container.m_H);
+			UpdateText(This, Data);
 		}
-		else
+
+		This.TextRender()->SetRenderFlags(0);
+
+		if(!m_TextContainerIndex.Valid())
+		{
 			m_Visible = false;
+			return;
+		}
+
+		const STextBoundingBox Container = This.TextRender()->GetBoundingBoxTextContainer(m_TextContainerIndex);
+		m_Size = vec2(Container.m_W, Container.m_H);
 	}
 	void Reset(CGameClient &This) override
 	{
 		This.TextRender()->DeleteTextContainer(m_TextContainerIndex);
 	}
-	void Render(CGameClient &This, float X, float Y) const override
+	void Render(CGameClient &This, vec2 Pos) const override
 	{
 		if(!m_TextContainerIndex.Valid())
 			return;
 
-		ColorRGBA OutlineColor = s_OutlineColor.WithMultipliedAlpha(m_Color.a);
-
+		ColorRGBA OutlineColor, Color;
+		Color = m_Color;
+		OutlineColor = s_OutlineColor.WithMultipliedAlpha(m_Color.a);
 		This.TextRender()->RenderTextContainer(m_TextContainerIndex,
-			m_Color, OutlineColor,
-			X - Size().x / 2.0f, Y - Size().y / 2.0f);
+			Color, OutlineColor,
+			Pos.x - Size().x / 2.0f, Pos.y - Size().y / 2.0f);
 	}
 };
 
@@ -105,12 +120,13 @@ protected:
 	IGraphics::CTextureHandle m_Texture;
 	float m_Rotation = 0.0f;
 	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-	void Create(CGameClient &This) {}
+	CNamePlatePartIcon(CGameClient &This) :
+		CNamePlatePart(This) {}
 
 public:
-	void Render(CGameClient &This, float X, float Y) const override
+	void Render(CGameClient &This, vec2 Pos) const override
 	{
-		IGraphics::CQuadItem QuadItem(X - Size().x / 2.0f, Y - Size().y / 2.0f, Size().x, Size().y);
+		IGraphics::CQuadItem QuadItem(Pos.x - Size().x / 2.0f, Pos.y - Size().y / 2.0f, Size().x, Size().y);
 		This.Graphics()->TextureSet(m_Texture);
 		This.Graphics()->QuadsBegin();
 		This.Graphics()->SetColor(m_Color);
@@ -127,16 +143,17 @@ protected:
 	IGraphics::CTextureHandle m_Texture;
 	float m_Rotation = 0.0f;
 	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-	void Create(CGameClient &This) {}
+	CNamePlatePartCircle(CGameClient &This) :
+		CNamePlatePart(This) {}
 
 public:
-	void Render(CGameClient &This, float X, float Y) const override
+	void Render(CGameClient &This, vec2 Pos) const override
 	{
 		This.Graphics()->TextureClear();
 		This.Graphics()->QuadsBegin();
 		This.Graphics()->SetColor(m_Color);
 		This.Graphics()->QuadsSetRotation(m_Rotation);
-		This.Graphics()->DrawCircle(X, Y + 2.0f, m_Size.x, m_Size.y);
+		This.Graphics()->DrawCircle(Pos.x, Pos.y + 2.0f, m_Size.x, m_Size.y);
 		This.Graphics()->QuadsEnd();
 		This.Graphics()->QuadsSetRotation(0.0f);
 	}
@@ -150,17 +167,18 @@ protected:
 	int m_SpriteFlags = 0;
 	float m_Rotation = 0.0f;
 	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-	void Create(CGameClient &This) {}
+	CNamePlatePartSprite(CGameClient &This) :
+		CNamePlatePart(This) {}
 
 public:
-	void Render(CGameClient &This, float X, float Y) const override
+	void Render(CGameClient &This, vec2 Pos) const override
 	{
 		This.Graphics()->TextureSet(m_Texture);
 		This.Graphics()->QuadsSetRotation(m_Rotation);
 		This.Graphics()->QuadsBegin();
 		This.Graphics()->SetColor(m_Color);
 		This.RenderTools()->SelectSprite(m_Sprite, m_SpriteFlags);
-		This.RenderTools()->DrawSprite(X, Y, Size().x, Size().y);
+		This.RenderTools()->DrawSprite(Pos.x, Pos.y, Size().x, Size().y);
 		This.Graphics()->QuadsEnd();
 		This.Graphics()->QuadsSetRotation(0.0f);
 	}
@@ -171,8 +189,8 @@ public:
 class CNamePlatePartNewLine : public CNamePlatePart
 {
 public:
-	void Create(CGameClient &This) {}
-	CNamePlatePartNewLine()
+	CNamePlatePartNewLine(CGameClient &This) :
+		CNamePlatePart(This)
 	{
 		m_NewLine = true;
 	}
@@ -191,11 +209,10 @@ private:
 	int m_Direction;
 
 public:
-	void Create(CGameClient &This, Direction Dir)
+	CNamePlatePartDirection(CGameClient &This, Direction Dir) :
+		CNamePlatePartIcon(This)
 	{
-		CNamePlatePartIcon::Create(This);
 		m_Texture = g_pData->m_aImages[IMAGE_ARROW].m_Id;
-		m_ShiftOnInvis = true;
 		m_Direction = Dir;
 		switch(m_Direction)
 		{
@@ -210,14 +227,15 @@ public:
 			break;
 		}
 	}
-	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
 		if(!Data.m_ShowDirection)
 		{
-			m_Size = vec2();
+			m_ShiftOnInvis = false;
 			m_Visible = false;
 			return;
 		}
+		m_ShiftOnInvis = true; // Only shift (horizontally) the other parts if directions as a whole is visible
 		m_Size = vec2(Data.m_FontSizeDirection, Data.m_FontSizeDirection);
 		m_Padding.y = m_Size.y / 2.0f;
 		switch(m_Direction)
@@ -249,7 +267,7 @@ private:
 	bool m_ClientIdSeperateLine = false;
 
 protected:
-	bool UpdateNeeded(CGameClient &This, const CNamePlateRenderData &Data) override
+	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowClientId && (Data.m_ClientIdSeperateLine == m_ClientIdSeperateLine);
 		if(!m_Visible)
@@ -260,13 +278,13 @@ protected:
 		{
 			switch(Data.m_HookStrongWeak)
 			{
-			case CNamePlateRenderData::HOOKSTRONGWEAK_STRONG:
+			case CNamePlateData::HOOKSTRONGWEAK_STRONG:
 				m_Color = color_cast<ColorRGBA>(ColorHSLA(6401973));
 				break;
-			case CNamePlateRenderData::HOOKSTRONGWEAK_UNKNOWN:
+			case CNamePlateData::HOOKSTRONGWEAK_NEUTRAL:
 				m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 				break;
-			case CNamePlateRenderData::HOOKSTRONGWEAK_WEAK:
+			case CNamePlateData::HOOKSTRONGWEAK_WEAK:
 				m_Color = color_cast<ColorRGBA>(ColorHSLA(41131));
 				break;
 			}
@@ -277,20 +295,23 @@ protected:
 
 		return m_FontSize != Data.m_FontSizeClientId || m_ClientId != Data.m_ClientId;
 	}
-	void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) override
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSizeClientId;
 		m_ClientId = Data.m_ClientId;
-		str_format(m_aText, sizeof(m_aText), m_ClientIdSeperateLine ? "%d" : "%d:", m_ClientId);
+		if(m_ClientIdSeperateLine)
+			str_format(m_aText, sizeof(m_aText), "%d", m_ClientId);
+		else
+			str_format(m_aText, sizeof(m_aText), "%d:", m_ClientId);
 		CTextCursor Cursor;
 		This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, m_FontSize, TEXTFLAG_RENDER);
 		This.TextRender()->CreateOrAppendTextContainer(m_TextContainerIndex, &Cursor, m_aText);
 	}
 
 public:
-	void Create(CGameClient &This, bool ClientIdSeperateLine)
+	CNamePlatePartClientId(CGameClient &This, bool ClientIdSeperateLine) :
+		CNamePlatePartText(This)
 	{
-		CNamePlatePartText::Create(This);
 		m_ClientIdSeperateLine = ClientIdSeperateLine;
 	}
 };
@@ -301,7 +322,7 @@ private:
 	float m_FontSize = -INFINITY;
 
 protected:
-	bool UpdateNeeded(CGameClient &This, const CNamePlateRenderData &Data) override
+	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowFriendMark;
 		if(!m_Visible)
@@ -309,7 +330,7 @@ protected:
 		m_Color.a = Data.m_Color.a;
 		return m_FontSize != Data.m_FontSize;
 	}
-	void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) override
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSize;
 		CTextCursor Cursor;
@@ -320,10 +341,10 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
+	CNamePlatePartFriendMark(CGameClient &This) :
+		CNamePlatePartText(This)
 	{
 		m_Color = ColorRGBA(1.0f, 0.0f, 0.0f);
-		CNamePlatePartText::Create(This);
 	}
 };
 
@@ -334,7 +355,7 @@ private:
 	float m_FontSize = -INFINITY;
 
 protected:
-	bool UpdateNeeded(CGameClient &This, const CNamePlateRenderData &Data) override
+	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowName;
 		if(!m_Visible)
@@ -343,26 +364,29 @@ protected:
 		// A-Client
 		ColorRGBA Color = Data.m_Color;
 
-		if(This.m_aClients[Data.m_ClientId].m_Friend && g_Config.m_ClDoFriendColors)
-			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-		if(This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
-			Color = This.m_WarList.GetClanColor(Data.m_ClientId);
+		if(g_Config.m_ClWarList)
+		{
+			if(This.m_aClients[Data.m_ClientId].m_Friend && g_Config.m_ClDoFriendColors)
+				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+			if(This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
+				Color = This.m_WarList.GetClanColor(Data.m_ClientId);
 
-		if(!Data.m_ShowClanWarInName && This.m_WarList.GetWarData(Data.m_ClientId).IsWarName)
-			Color = This.m_WarList.GetNameplateColor(Data.m_ClientId);
-		else if(Data.m_ShowClanWarInName && This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
-			Color = This.m_WarList.GetClanColor(Data.m_ClientId);
+			if(!Data.m_ShowClanWarInName && This.m_WarList.GetWarData(Data.m_ClientId).IsWarName)
+				Color = This.m_WarList.GetNameplateColor(Data.m_ClientId);
+			else if(Data.m_ShowClanWarInName && This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
+				Color = This.m_WarList.GetClanColor(Data.m_ClientId);
 
-		if(This.m_Aiodob.m_TempPlayers[Data.m_ClientId].IsTempWar)
-			Color = This.m_WarList.m_WarTypes[1]->m_Color;
-		else if(This.m_Aiodob.m_TempPlayers[Data.m_ClientId].IsTempHelper)
-			Color = This.m_WarList.m_WarTypes[3]->m_Color;
+			if(This.m_Aiodob.m_TempPlayers[Data.m_ClientId].IsTempWar)
+				Color = This.m_WarList.m_WarTypes[1]->m_Color;
+			else if(This.m_Aiodob.m_TempPlayers[Data.m_ClientId].IsTempHelper)
+				Color = This.m_WarList.m_WarTypes[3]->m_Color;
+		}
 
 		m_Color = Color.WithAlpha(Data.m_Color.a);
 
 		return m_FontSize != Data.m_FontSize || str_comp(m_aText, Data.m_pName) != 0;
 	}
-	void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) override
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSize;
 		str_copy(m_aText, Data.m_pName, sizeof(m_aText));
@@ -372,10 +396,8 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
-	{
-		CNamePlatePartText::Create(This);
-	}
+	CNamePlatePartName(CGameClient &This) :
+		CNamePlatePartText(This) {}
 };
 
 class CNamePlatePartClan : public CNamePlatePartText
@@ -385,7 +407,7 @@ private:
 	float m_FontSize = -INFINITY;
 
 protected:
-	bool UpdateNeeded(CGameClient &This, const CNamePlateRenderData &Data) override
+	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowClan;
 		if(!m_Visible)
@@ -400,7 +422,7 @@ protected:
 		m_Color = Color.WithAlpha(Data.m_Color.a);
 		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, Data.m_pClan) != 0;
 	}
-	void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) override
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSizeClan;
 		str_copy(m_aText, Data.m_pClan, sizeof(m_aText));
@@ -410,10 +432,8 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
-	{
-		CNamePlatePartText::Create(This);
-	}
+	CNamePlatePartClan(CGameClient &This) :
+		CNamePlatePartText(This) {}
 };
 
 // A-Client
@@ -424,7 +444,7 @@ private:
 	float m_FontSize = -INFINITY;
 
 protected:
-	bool UpdateNeeded(CGameClient &This, const CNamePlateRenderData &Data) override
+	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowReason;
 		if(!m_Visible)
@@ -433,7 +453,7 @@ protected:
 		m_Color = ColorRGBA(0.7f, 0.7f, 0.7f, Data.m_Color.a);
 		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, Data.m_pReason) != 0;
 	}
-	void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) override
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_FontSize = Data.m_FontSizeClan;
 		str_copy(m_aText, Data.m_pReason);
@@ -443,23 +463,21 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
-	{
-		CNamePlatePartText::Create(This);
-	}
+	CNamePlatePartReason(CGameClient &This) :
+		CNamePlatePartText(This) {}
 };
 
 class CNamePlatePartPingCircle : public CNamePlatePartCircle
 {
 protected:
-	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_PingCircle;
 		if(!m_Visible)
 			return;
 
-		if((This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency == 77 || This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency == 76) && g_Config.m_ClAidsPingDetection)
-			m_Color = ColorRGBA(0.f, 0.f, 0.f, 0.5f);
+		m_Size = vec2(Data.m_FontSize, Data.m_FontSize) * 1.2f;
+
 		m_Color = color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f)).WithAlpha(Data.m_Color.a);
 		float CircleSize = 7.0f;
 		m_Size = vec2(CircleSize, 24);
@@ -468,16 +486,14 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
-	{
-		CNamePlatePartCircle::Create(This);
-	}
+	CNamePlatePartPingCircle(CGameClient &This) :
+		CNamePlatePartCircle(This) {}
 };
 
 class CNamePlatePartMutedIcon : public CNamePlatePartSprite
 {
 protected:
-	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_IsMuted;
 		if(!m_Visible)
@@ -492,9 +508,9 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
+	CNamePlatePartMutedIcon(CGameClient &This) :
+		CNamePlatePartSprite(This)
 	{
-		CNamePlatePartSprite::Create(This);
 		m_Texture = g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id;
 	}
 };
@@ -502,7 +518,7 @@ public:
 class CNamePlatePartHookStrongWeak : public CNamePlatePartSprite
 {
 protected:
-	void Update(CGameClient &This, const CNamePlateRenderData &Data) override
+	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowHookStrongWeak;
 		if(!m_Visible)
@@ -510,15 +526,15 @@ protected:
 		m_Size = vec2(Data.m_FontSizeHookStrongWeak, Data.m_FontSizeHookStrongWeak) * 1.5f;
 		switch(Data.m_HookStrongWeak)
 		{
-		case CNamePlateRenderData::HOOKSTRONGWEAK_STRONG:
+		case CNamePlateData::HOOKSTRONGWEAK_STRONG:
 			m_Sprite = SPRITE_HOOK_STRONG;
 			m_Color = color_cast<ColorRGBA>(ColorHSLA(6401973));
 			break;
-		case CNamePlateRenderData::HOOKSTRONGWEAK_UNKNOWN:
+		case CNamePlateData::HOOKSTRONGWEAK_NEUTRAL:
 			m_Sprite = SPRITE_HOOK_ICON;
 			m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 			break;
-		case CNamePlateRenderData::HOOKSTRONGWEAK_WEAK:
+		case CNamePlateData::HOOKSTRONGWEAK_WEAK:
 			m_Sprite = SPRITE_HOOK_WEAK;
 			m_Color = color_cast<ColorRGBA>(ColorHSLA(41131));
 			break;
@@ -527,9 +543,9 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
+	CNamePlatePartHookStrongWeak(CGameClient &This) :
+		CNamePlatePartSprite(This)
 	{
-		CNamePlatePartSprite::Create(This);
 		m_Texture = g_pData->m_aImages[IMAGE_STRONGWEAK].m_Id;
 	}
 };
@@ -543,31 +559,30 @@ private:
 	float m_FontSize = -INFINITY;
 
 protected:
-	bool UpdateNeeded(CGameClient &This, const CNamePlateRenderData &Data) override
+	bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) override
 	{
 		m_Visible = Data.m_ShowHookStrongWeakId;
 		if(!m_Visible)
 			return false;
-		m_Color.a = Data.m_Color.a;
-		return m_FontSize != Data.m_FontSizeHookStrongWeak || m_StrongWeakId != Data.m_HookStrongWeakId;
-	}
-	void UpdateText(CGameClient &This, const CNamePlateRenderData &Data) override
-	{
-		m_FontSize = Data.m_FontSizeHookStrongWeak;
-		m_StrongWeakId = Data.m_HookStrongWeakId;
 		switch(Data.m_HookStrongWeak)
 		{
-		case CNamePlateRenderData::HOOKSTRONGWEAK_STRONG:
+		case CNamePlateData::HOOKSTRONGWEAK_STRONG:
 			m_Color = color_cast<ColorRGBA>(ColorHSLA(6401973));
 			break;
-		case CNamePlateRenderData::HOOKSTRONGWEAK_UNKNOWN:
+		case CNamePlateData::HOOKSTRONGWEAK_NEUTRAL:
 			m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 			break;
-		case CNamePlateRenderData::HOOKSTRONGWEAK_WEAK:
+		case CNamePlateData::HOOKSTRONGWEAK_WEAK:
 			m_Color = color_cast<ColorRGBA>(ColorHSLA(41131));
 			break;
 		}
 		m_Color.a = Data.m_Color.a;
+		return m_FontSize != Data.m_FontSizeHookStrongWeak || m_StrongWeakId != Data.m_HookStrongWeakId;
+	}
+	void UpdateText(CGameClient &This, const CNamePlateData &Data) override
+	{
+		m_FontSize = Data.m_FontSizeHookStrongWeak;
+		m_StrongWeakId = Data.m_HookStrongWeakId;
 		str_format(m_aText, sizeof(m_aText), "%d", m_StrongWeakId);
 		CTextCursor Cursor;
 		This.TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, m_FontSize, TEXTFLAG_RENDER);
@@ -575,43 +590,41 @@ protected:
 	}
 
 public:
-	void Create(CGameClient &This)
-	{
-		CNamePlatePartText::Create(This);
-	}
+	CNamePlatePartHookStrongWeakId(CGameClient &This) :
+		CNamePlatePartText(This) {}
 };
+
+// Name Plates
 
 class CNamePlate
 {
 private:
 	bool m_Inited = false;
 	bool m_InGame = false;
-	vec2 m_Position = vec2();
+	vec2 m_Position = vec2(0.0f, 0.0f);
 	PartsVector m_vpParts;
 	void RenderLine(CGameClient &This,
-		float X, float Y, float W, float H,
+		vec2 Pos, vec2 Size,
 		PartsVector::iterator Start, PartsVector::iterator End)
 	{
-		X -= W / 2.0f;
+		Pos.x -= Size.x / 2.0f;
 		for(auto PartIt = Start; PartIt != End; ++PartIt)
 		{
 			const CNamePlatePart &Part = **PartIt;
 			if(Part.Visible())
 			{
-				float PartX = X + (Part.Padding().x + Part.Size().x) / 2.0f + Part.Offset().x;
-				float PartY = Y - std::max(H, Part.Padding().y + Part.Size().y) / 2.0f + Part.Offset().y;
-				Part.Render(This, PartX, PartY);
+				Part.Render(This, vec2(
+							  Pos.x + (Part.Padding().x + Part.Size().x) / 2.0f + Part.Offset().x,
+							  Pos.y - std::max(Size.y, Part.Padding().y + Part.Size().y) / 2.0f + Part.Offset().y));
 			}
 			if(Part.Visible() || Part.ShiftOnInvis())
-				X += Part.Size().x + Part.Padding().x;
+				Pos.x += Part.Size().x + Part.Padding().x;
 		}
 	}
 	template<typename PartType, typename... ArgsType>
 	void AddPart(CGameClient &This, ArgsType &&... Args)
 	{
-		std::unique_ptr<PartType> Part = std::make_unique<PartType>();
-		Part->Create(This, std::forward<ArgsType>(Args)...);
-		m_vpParts.push_back(std::unique_ptr<CNamePlatePart>(std::move(Part)));
+		m_vpParts.push_back(std::make_unique<PartType>(This, std::forward<ArgsType>(Args)...));
 	}
 	void Init(CGameClient &This)
 	{
@@ -624,15 +637,14 @@ private:
 		AddPart<CNamePlatePartDirection>(This, DIRECTION_RIGHT);
 		AddPart<CNamePlatePartNewLine>(This);
 
-		AddPart<CNamePlatePartPingCircle>(This);
-		AddPart<CNamePlatePartClientId>(This, false);
+		AddPart<CNamePlatePartPingCircle>(This); // A-Client
 		AddPart<CNamePlatePartFriendMark>(This);
+		AddPart<CNamePlatePartClientId>(This, false);
 		AddPart<CNamePlatePartName>(This);
-		AddPart<CNamePlatePartMutedIcon>(This);
+		AddPart<CNamePlatePartMutedIcon>(This); // A-Client
 		AddPart<CNamePlatePartNewLine>(This);
 
-		// A-Client
-		AddPart<CNamePlatePartReason>(This);
+		AddPart<CNamePlatePartReason>(This); // TClient
 		AddPart<CNamePlatePartNewLine>(This);
 
 		AddPart<CNamePlatePartClan>(This);
@@ -644,7 +656,7 @@ private:
 		AddPart<CNamePlatePartHookStrongWeak>(This);
 		AddPart<CNamePlatePartHookStrongWeakId>(This);
 	}
-	void Update(CGameClient &This, const CNamePlateRenderData *pData)
+	void Update(CGameClient &This, const CNamePlateData *pData)
 	{
 		Init(This);
 		if(pData)
@@ -660,17 +672,12 @@ public:
 		for(auto &Part : m_vpParts)
 			Part->Reset(This);
 	}
-	void Render(CGameClient &This, const CNamePlateRenderData *pData)
+	void Render(CGameClient &This, const CNamePlateData *pData)
 	{
 		Update(This, pData);
-		int Flags = ETextRenderFlags::TEXT_RENDER_FLAG_NO_FIRST_CHARACTER_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_LAST_CHARACTER_ADVANCE;
-		if(m_InGame)
-			Flags |= ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT;
-		This.TextRender()->SetRenderFlags(Flags);
-		float X = m_Position.x;
-		float Y = m_Position.y;
-		float W = 0.0f; // Total width including padding of line
-		float H = 0.0f; // Max height of line parts
+		vec2 Pos = m_Position;
+		// X: Total width including padding of line, Y: Max height of line parts
+		vec2 Size = vec2(0.0f, 0.0f);
 		bool Empty = true;
 		auto Start = m_vpParts.begin();
 		for(auto PartIt = m_vpParts.begin(); PartIt != m_vpParts.end(); ++PartIt)
@@ -682,29 +689,27 @@ public:
 			{
 				if(!Empty)
 				{
-					RenderLine(This, X, Y, W, H, Start, std::next(PartIt));
-					Y -= H;
+					RenderLine(This, Pos, Size, Start, std::next(PartIt));
+					Pos.y -= Size.y;
 				}
 				Start = std::next(PartIt);
-				W = 0.0f;
-				H = 0.0f;
+				Size = vec2(0.0f, 0.0f);
 			}
 			else if(Part.Visible() || Part.ShiftOnInvis())
 			{
 				Empty = false;
-				W += Part.Size().x + Part.Padding().x;
-				H = std::max(H, Part.Size().y + Part.Padding().y);
+				Size.x += Part.Size().x + Part.Padding().x;
+				Size.y = std::max(Size.y, Part.Size().y + Part.Padding().y);
 			}
 		}
-		RenderLine(This, X, Y, W, H, Start, m_vpParts.end());
-		This.TextRender()->SetRenderFlags(0);
+		RenderLine(This, Pos, Size, Start, m_vpParts.end());
 		This.Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
-	vec2 Size(CGameClient &This, const CNamePlateRenderData *pData)
+	vec2 Size(CGameClient &This, const CNamePlateData *pData)
 	{
 		Update(This, pData);
-		float W = 0.0f; // Total width including padding of line
-		float H = 0.0f; // Max height of line parts
+		// X: Total width including padding of line, Y: Max height of line parts
+		vec2 Size = vec2(0.0f, 0.0f);
 		float WMax = 0.0f;
 		float HTotal = 0.0f;
 		bool Empty = true;
@@ -717,30 +722,46 @@ public:
 			{
 				if(!Empty)
 				{
-					if(W > WMax)
-						WMax = W;
-					HTotal += H;
+					if(Size.x > WMax)
+						WMax = Size.x;
+					HTotal += Size.y;
 				}
-				W = 0.0f;
-				H = 0.0f;
+				Size = vec2(0.0f, 0.0f);
 			}
 			else if(Part.Visible() || Part.ShiftOnInvis())
 			{
 				Empty = false;
-				W += Part.Size().x + Part.Padding().x;
-				H = std::max(H, Part.Size().y + Part.Padding().y);
+				Size.x += Part.Size().x + Part.Padding().x;
+				Size.y = std::max(Size.y, Part.Size().y + Part.Padding().y);
 			}
 		}
-		if(W > WMax)
-			WMax = W;
-		HTotal += H;
+		if(Size.x > WMax)
+			WMax = Size.x;
+		HTotal += Size.y;
 		return vec2(WMax, HTotal);
 	}
 };
 
+class CNamePlates::CNamePlatesData
+{
+public:
+	CNamePlate m_aNamePlates[MAX_CLIENTS];
+};
+
 void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha)
 {
-	CNamePlateRenderData Data;
+	// Get screen edges to avoid rendering offscreen
+	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
+	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+
+	// Assume that the name plate fits into a 800x800 box placed directly above the tee
+	ScreenX0 -= 400;
+	ScreenX1 += 400;
+	ScreenY1 += 800;
+	if(!(in_range(Position.x, ScreenX0, ScreenX1) && in_range(Position.y, ScreenY0, ScreenY1)))
+		return;
+
+	CNamePlateData Data;
 
 	const auto &ClientData = GameClient()->m_aClients[pPlayerInfo->m_ClientId];
 	const bool OtherTeam = GameClient()->IsOtherTeam(pPlayerInfo->m_ClientId);
@@ -750,7 +771,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || ClanPlateOverride;
 	bool ShowClanWarInName = g_Config.m_ClWarList && !ShowClanPlate && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarClan && !GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).IsWarName;
 	Data.m_ShowClanWarInName = ShowClanWarInName;
-	
+
 	Data.m_InGame = true;
 	Data.m_Position = Position - vec2(0.0f, (float)g_Config.m_ClNamePlatesOffset);
 	Data.m_ShowName = pPlayerInfo->m_Local ? g_Config.m_ClNamePlatesOwn : g_Config.m_ClNamePlates;
@@ -765,10 +786,16 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
 	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
 
-	if(Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
+	CTempData TempData = GameClient()->m_Aiodob.m_TempPlayers[pPlayerInfo->m_ClientId];
+
+	if((TempData.IsTempWar || TempData.IsTempHelper))
+		Data.m_pReason = TempData.m_aReason;
+
+	if(g_Config.m_ClWarListSwitchNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
 	{
+		const char *pReason = Data.m_pReason;
 		Data.m_pReason = Data.m_pName;
-		Data.m_pName = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
+		Data.m_pName = pReason;
 	}
 
 	Data.m_ClientId = pPlayerInfo->m_ClientId;
@@ -816,16 +843,16 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_DirLeft = Data.m_DirJump = Data.m_DirRight = false;
 	switch(ShowDirectionConfig)
 	{
-	case 0: // off
+	case 0: // Off
 		Data.m_ShowDirection = false;
 		break;
-	case 1: // others
+	case 1: // Others
 		Data.m_ShowDirection = !pPlayerInfo->m_Local;
 		break;
-	case 2: // everyone
+	case 2: // Everyone
 		Data.m_ShowDirection = true;
 		break;
-	case 3: // only self
+	case 3: // Only self
 		Data.m_ShowDirection = pPlayerInfo->m_Local;
 		break;
 	default:
@@ -842,7 +869,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 			Data.m_DirJump = InputData.m_Jump == 1;
 			Data.m_DirRight = InputData.m_Direction == 1;
 		}
-		else if(Client()->State() != IClient::STATE_DEMOPLAYBACK && pPlayerInfo->m_Local) // always render local input when not in demo playback
+		else if(Client()->State() != IClient::STATE_DEMOPLAYBACK && pPlayerInfo->m_Local) // Always render local input when not in demo playback
 		{
 			const auto &InputData = GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy];
 			Data.m_DirLeft = InputData.m_Direction == -1;
@@ -859,7 +886,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	}
 
 	Data.m_ShowHookStrongWeak = false;
-	Data.m_HookStrongWeak = CNamePlateRenderData::HOOKSTRONGWEAK_UNKNOWN;
+	Data.m_HookStrongWeak = CNamePlateData::HOOKSTRONGWEAK_NEUTRAL;
 	Data.m_ShowHookStrongWeakId = false;
 	Data.m_HookStrongWeakId = 0;
 
@@ -877,13 +904,21 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 				Data.m_ShowHookStrongWeak = Data.m_ShowHookStrongWeakId;
 			else
 			{
-				Data.m_HookStrongWeak = Selected.m_ExtendedData.m_StrongWeakId > Other.m_ExtendedData.m_StrongWeakId ? CNamePlateRenderData::HOOKSTRONGWEAK_STRONG : CNamePlateRenderData::HOOKSTRONGWEAK_WEAK;
+				Data.m_HookStrongWeak = Selected.m_ExtendedData.m_StrongWeakId > Other.m_ExtendedData.m_StrongWeakId ? CNamePlateData::HOOKSTRONGWEAK_STRONG : CNamePlateData::HOOKSTRONGWEAK_WEAK;
 				Data.m_ShowHookStrongWeak = g_Config.m_Debug || g_Config.m_ClNamePlatesStrong > 0;
 			}
 		}
 	}
 
-	m_pNamePlates[pPlayerInfo->m_ClientId].Render(*GameClient(), &Data);
+	// Check if the nameplate is actually on screen
+	vec2 NamePlateSize = m_pData->m_aNamePlates[pPlayerInfo->m_ClientId].Size(*GameClient(), &Data);
+	ScreenX0 -= NamePlateSize.x / 2.0f;
+	ScreenX1 += NamePlateSize.x / 2.0f;
+	ScreenY1 += NamePlateSize.y;
+	if(!(in_range(Position.x, ScreenX0, ScreenX1) && in_range(Position.y, ScreenY0, ScreenY1)))
+		return;
+
+	m_pData->m_aNamePlates[pPlayerInfo->m_ClientId].Render(*GameClient(), nullptr); // Give no Data, as to not update twice
 }
 
 void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
@@ -894,7 +929,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	const float FontSizeDirection = 18.0f + 20.0f * g_Config.m_ClDirectionSize / 100.0f;
 	const float FontSizeHookStrongWeak = 18.0f + 20.0f * g_Config.m_ClNamePlatesStrongSize / 100.0f;
 
-	CNamePlateRenderData Data;
+	CNamePlateData Data;
 
 	// A-Client
 	Data.m_pReason = "Reason";
@@ -906,7 +941,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	static int64_t SwitchDelay = time_get() + time_freq() * 1.75f;
 	static char Reason[16] = "Reason";
 
-	if(SwitchDelay < time_get())
+	if(SwitchDelay < time_get() && g_Config.m_ClWarList)
 	{
 		static int Type = 1;
 		int Amount = GameClient()->m_WarList.m_WarTypes.size();
@@ -931,6 +966,19 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 		Type++;
 		SwitchDelay = time_get() + time_freq() * 1.5f;
 	}
+	else if(SwitchDelay < time_get())
+	{
+		static int Count = 1;
+
+		Colors = g_Config.m_ClNamePlatesTeamcolors ? GameClient()->GetDDTeamColor(Count, 0.75f) : TextRender()->DefaultTextColor();
+		str_format(Reason, sizeof(Reason), "In Team %d", Count);
+		Count++;
+		if(Count > 63)
+			Count = 1;
+
+		SwitchDelay = time_get() + time_freq() * 0.5f;
+	}
+
 	Data.m_pReason = Reason;
 
 	Data.m_Color = Colors;
@@ -962,12 +1010,12 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	Data.m_ShowHookStrongWeakId = g_Config.m_ClNamePlatesStrong == 2;
 	if(Dummy == g_Config.m_ClDummy)
 	{
-		Data.m_HookStrongWeak = CNamePlateRenderData::HOOKSTRONGWEAK_UNKNOWN;
+		Data.m_HookStrongWeak = CNamePlateData::HOOKSTRONGWEAK_NEUTRAL;
 		Data.m_ShowHookStrongWeak = Data.m_ShowHookStrongWeakId;
 	}
 	else
 	{
-		Data.m_HookStrongWeak = Data.m_HookStrongWeakId == 2 ? CNamePlateRenderData::HOOKSTRONGWEAK_STRONG : CNamePlateRenderData::HOOKSTRONGWEAK_WEAK;
+		Data.m_HookStrongWeak = Data.m_HookStrongWeakId == 2 ? CNamePlateData::HOOKSTRONGWEAK_STRONG : CNamePlateData::HOOKSTRONGWEAK_WEAK;
 		Data.m_ShowHookStrongWeak = g_Config.m_ClNamePlatesStrong > 0;
 	}
 
@@ -1001,8 +1049,8 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 
 void CNamePlates::ResetNamePlates()
 {
-	for(int i = 0; i < MAX_CLIENTS; ++i)
-		m_pNamePlates[i].Reset(*GameClient());
+	for(CNamePlate &NamePlate : m_pData->m_aNamePlates)
+		NamePlate.Reset(*GameClient());
 }
 
 void CNamePlates::OnRender()
@@ -1018,42 +1066,27 @@ void CNamePlates::OnRender()
 	if(!g_Config.m_ClNamePlates && ShowDirection == 0)
 		return;
 
-	// get screen edges to avoid rendering offscreen
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	// expand the edges to prevent popping in/out onscreen
-	// it is assumed that the name plate and all its components fit into a 800x800 box placed directly above the tee
-	// this may need to be changed or calculated differently in the future
-	ScreenX0 -= 400;
-	ScreenX1 += 400;
-	// ScreenY0 -= 0;
-	ScreenY1 += 800;
-
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
 		const CNetObj_PlayerInfo *pInfo = GameClient()->m_Snap.m_apPlayerInfos[i];
 		if(!pInfo)
 			continue;
 
+		// Each player can also have a spectator char whose name plate is displayed independently
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
 			if(m_pClient->m_aClients[i].m_Solo && i != m_pClient->m_Snap.m_LocalClientId)
 				continue;
 
 		if(GameClient()->m_aClients[i].m_SpecCharPresent)
 		{
-			// Each player can also have a spec char whose name plate is displayed independently
 			const vec2 RenderPos = GameClient()->m_aClients[i].m_SpecChar;
-			// don't render offscreen
-			if(in_range(RenderPos.x, ScreenX0, ScreenX1) && in_range(RenderPos.y, ScreenY0, ScreenY1))
-				RenderNamePlateGame(RenderPos, pInfo, 0.4f);
+			RenderNamePlateGame(RenderPos, pInfo, 0.4f);
 		}
+		// Only render name plates for active characters
 		if(GameClient()->m_Snap.m_aCharacters[i].m_Active)
 		{
-			// Only render name plates for active characters
 			const vec2 RenderPos = GameClient()->m_aClients[i].m_RenderPos;
-			// don't render offscreen
-			if(in_range(RenderPos.x, ScreenX0, ScreenX1) && in_range(RenderPos.y, ScreenY0, ScreenY1))
-				RenderNamePlateGame(RenderPos, pInfo, 1.0f);
+			RenderNamePlateGame(RenderPos, pInfo, 1.0f);
 		}
 	}
 }
@@ -1063,12 +1096,10 @@ void CNamePlates::OnWindowResize()
 	ResetNamePlates();
 }
 
-CNamePlates::CNamePlates()
-{
-	m_pNamePlates = new CNamePlate[MAX_CLIENTS];
-}
+CNamePlates::CNamePlates() :
+	m_pData(new CNamePlates::CNamePlatesData()) {}
 
 CNamePlates::~CNamePlates()
 {
-	delete[] m_pNamePlates;
+	delete m_pData;
 }

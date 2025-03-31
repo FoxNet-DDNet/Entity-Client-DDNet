@@ -479,9 +479,9 @@ void CAiodob::RemoveWarEntryDuplicates(const char *pName)
 	UpdateTempPlayers();
 }
 
-void CAiodob::RemoveWarEntry(const char *pNameW, const char *pNameH, const char *pNameM)
+void CAiodob::RemoveWarEntry(int Type, const char *pName)
 {
-	CTempEntry Entry(pNameW, pNameH, pNameM);
+	CTempEntry Entry(Type, pName, "");
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
 		m_TempEntries.erase(it);
@@ -499,15 +499,25 @@ void CAiodob::UpdateTempPlayers()
 		m_TempPlayers[i].IsTempWar = false;
 		m_TempPlayers[i].IsTempHelper = false;
 		m_TempPlayers[i].IsTempMute = false;
+		memset(m_TempPlayers[i].m_aReason, 0, sizeof(m_TempPlayers[i].m_aReason));
 
 		for(CTempEntry &Entry : m_TempEntries)
 		{
 			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempWar) && str_comp(Entry.m_aTempWar, "") != 0)
+			{
+				str_copy(m_TempPlayers[i].m_aReason, Entry.m_aReason);
 				m_TempPlayers[i].IsTempWar = true;
+			}
 			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempHelper) && str_comp(Entry.m_aTempHelper, "") != 0)
+			{
+				str_copy(m_TempPlayers[i].m_aReason, Entry.m_aReason);
 				m_TempPlayers[i].IsTempHelper = true;
+			}
 			if(!str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aTempMute) && str_comp(Entry.m_aTempMute, "") != 0)
+			{
+				str_copy(m_TempPlayers[i].m_aReason, Entry.m_aReason);
 				m_TempPlayers[i].IsTempMute = true;
+			}
 		}
 	}
 }

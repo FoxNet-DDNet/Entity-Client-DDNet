@@ -24,6 +24,7 @@
 #include "aiodob/aiodob.h"
 #include "aiodob/a_enums.h"
 #include "tclient/warlist.h"
+#include <engine/client/client.h>
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = {'\0'};
 
@@ -695,8 +696,11 @@ void CChat::StoreSave(const char *pText)
 
 void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
+	if(ChatDetection(ClientId, Team, pLine))
+		return;
+
 	ColorRGBA Colors = g_Config.m_ClMessageColor;
-	if(ClientId >= 0)
+	if(ClientId >= 0 && g_Config.m_ClWarList)
 	{
 		if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted && g_Config.m_ClShowMutedInConsole)
 		{
@@ -713,18 +717,21 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		}
 		else if(g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar))
 		{
+			char TypeName[512];
+			if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar)
+				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName);
+			else if(GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
+				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.GetWarTypeName(ClientId));
+		
 			char Message[2048];
-			str_format(Message, sizeof(Message), "[%s] %s", GameClient()->m_WarList.GetWarTypeName(ClientId), m_pClient->m_aClients[ClientId].m_aName);
+			str_format(Message, sizeof(Message), "[%s] %s", TypeName, m_pClient->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "[%s] ← %s", GameClient()->m_WarList.GetWarTypeName(ClientId), m_pClient->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "[%s] ← %s", TypeName, m_pClient->m_aClients[ClientId].m_aName);
 
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine);
 			return;
 		}
 	}
-
-	if(ChatDetection(ClientId, Team, pLine))
-		return;
 
 	if(*pLine == 0 || (ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) || 
 		(ClientId >= 0 && (m_pClient->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
@@ -795,12 +802,28 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		char TypeName[512];
 		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(pLine_->m_ClientId));
 
+		bool IsWarlist = GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId);
+		if(pLine_->m_ClientId >= 0 && !IsWarlist)
+		{
+			CTempData *pTempData = &GameClient()->m_Aiodob.m_TempPlayers[pLine_->m_ClientId];
+			if(pTempData->IsTempHelper)
+			{
+				IsWarlist = true;
+				str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.m_WarTypes[3]->m_aWarName);
+			}
+			if(pTempData->IsTempWar)
+			{
+				IsWarlist = true;
+				str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName);
+			}
+		}
+
 		const char *pFrom;
 		if(pLine_->m_Whisper)
 			pFrom = "whisper";
 		else if(pLine_->m_Team)
 			pFrom = "teamchat";
-		else if(GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId) && pLine_->m_ClientId >= 0)
+		else if(IsWarlist && pLine_->m_ClientId >= 0 && g_Config.m_ClWarList)
 			pFrom = TypeName;
 		else if(pLine_->m_ClientId == SERVER_MSG)
 			pFrom = "server";
@@ -1015,21 +1038,17 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if(Now - m_aLastSoundPlayed[CHAT_CLIENT] >= time_freq() * 3 / 10)
 		{
 			bool PlaySound = m_aLines[m_CurrentLine].m_Team ? g_Config.m_SndTeamChat : g_Config.m_SndChat;
-			bool PlaySoundFriend = m_aLines[m_CurrentLine].m_Team ? g_Config.m_SndTeamChat : g_Config.m_SndFriendChat;
 
 #if defined(CONF_VIDEORECORDER)
 			if(IVideo::Current())
-			{
 				PlaySound &= (bool)g_Config.m_ClVideoShowChat;
-				PlaySoundFriend &= (bool)g_Config.m_ClVideoShowChat;
-			}
 #endif
 			if(PlaySound)
 			{
 				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 1.0f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 			}
-			if(!PlaySound && PlaySoundFriend && (GameClient()->Friends()->IsFriend(m_aLines[m_CurrentLine].m_aName, "\0", true)))
+			else if(g_Config.m_SndFriendChat && (GameClient()->Friends()->IsFriend(m_aLines[m_CurrentLine].m_aName, "\0", true)))
 			{
 				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 1.0f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
@@ -1607,8 +1626,14 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 					int PlayerCid = GameClient()->GetClientId(CharOname);
 
+					CWarDataCache *pWarData = &GameClient()->m_WarList.m_WarPlayers[PlayerCid];
+					CTempData *pTempData = &GameClient()->m_Aiodob.m_TempPlayers[PlayerCid];
+
 					if(PlayerCid >= 0)
 					{
+						char Reason[128] = "";
+						str_copy(Reason, CharOname);
+
 						if(GameClient()->m_WarList.FindWarTypeWithName(name) == 2)
 						{
 							str_format(aBuf, sizeof(aBuf), "%s changed their name to a Teammates [%s]", CharOname, name);
@@ -1617,31 +1642,45 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						}
 						else
 						{
-							if(GameClient()->m_WarList.m_WarPlayers[PlayerCid].m_WarGroupMatches[1])
+							if(pWarData->m_WarGroupMatches[1])
 							{
-								CTempEntry Entry(name, "", "");
+								GameClient()->m_Aiodob.TempWar(name, Reason);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
-								str_copy(Entry.m_aTempWar, name);
-								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
 									GameClient()->aMessage(aBuf);
 							}
-							else if(GameClient()->m_WarList.m_WarPlayers[PlayerCid].m_WarGroupMatches[3])
+							else if(pWarData->m_WarGroupMatches[3])
 							{
-								CTempEntry Entry("", name, "");
+								GameClient()->m_Aiodob.TempHelper(name, Reason, true);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name);
-								str_copy(Entry.m_aTempHelper, name);
-								GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
+								if(g_Config.m_ClAutoAddOnNameChange == 2)
+									GameClient()->aMessage(aBuf);
+							}
+							else if(pTempData->IsTempWar)
+							{
+								if(str_comp(pTempData->m_aReason, "") != 0)
+									str_copy(Reason, pTempData->m_aReason);
+
+								GameClient()->m_Aiodob.TempWar(name, Reason, true);
+								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
+								if(g_Config.m_ClAutoAddOnNameChange == 2)
+									GameClient()->aMessage(aBuf);
+							}
+							else if(pTempData->IsTempHelper)
+							{
+								if(str_comp(pTempData->m_aReason, "") != 0)
+									str_copy(Reason, pTempData->m_aReason);
+
+								GameClient()->m_Aiodob.TempHelper(name, Reason, true);
+								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
 									GameClient()->aMessage(aBuf);
 							}
 						}
-						if(GameClient()->m_WarList.m_WarPlayers[PlayerCid].IsMuted)
+						if(pWarData->IsMuted)
 						{
-							CTempEntry Entry("", "", name);
+							GameClient()->m_Aiodob.TempMute(name);
 							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name);
-							str_copy(Entry.m_aTempMute, name);
-							GameClient()->m_Aiodob.m_TempEntries.push_back(Entry);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->aMessage(aBuf);
 						}
@@ -1714,7 +1753,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						{
 							GameClient()->aMessage(g_Config.m_ClAutoNotifyMsg);
 
-							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 1.0f);
+							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.5f);
 						}
 					}
 				}

@@ -175,7 +175,7 @@ void CAiodob::Votekick(const char *pName, const char *pReason)
 void CAiodob::ConTempWar(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->TempWar(pResult->GetString(0));
+	pSelf->TempWar(pResult->GetString(0), pResult->GetString(1));
 }
 void CAiodob::ConUnTempWar(IConsole::IResult *pResult, void *pUserData)
 {
@@ -187,7 +187,7 @@ void CAiodob::ConUnTempWar(IConsole::IResult *pResult, void *pUserData)
 void CAiodob::ConTempHelper(IConsole::IResult *pResult, void *pUserData)
 {
 	CAiodob *pSelf = (CAiodob *)pUserData;
-	pSelf->TempHelper(pResult->GetString(0));
+	pSelf->TempHelper(pResult->GetString(0), pResult->GetString(1));
 }
 void CAiodob::ConUnTempHelper(IConsole::IResult *pResult, void *pUserData)
 {
@@ -235,17 +235,21 @@ void CAiodob::ConViewLink(IConsole::IResult *pResult, void *pUserData)
 	pSelf->Client()->ViewLink(pResult->GetString(0));
 }
 
-void CAiodob::TempWar(const char *pName)
+void CAiodob::TempWar(const char *pName, const char *pReason, bool Silent)
 {
-	CTempEntry Entry(pName, "", "");
-	str_copy(Entry.m_aTempWar, pName);
+	UnTempWar(pName, true); // Remove previous Reason
 
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp War List", pName);
-	GameClient()->aMessage(aBuf);
+	CTempEntry Entry(0, pName, pReason);
+	str_copy(Entry.m_aTempWar, pName);
+	str_copy(Entry.m_aReason, pReason);
 
 	m_TempEntries.push_back(Entry);
 	UnTempHelper(pName, true);
+
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp War List", pName, pReason);
+	if(!Silent)
+		GameClient()->aMessage(aBuf);
 
 	UpdateTempPlayers();
 }
@@ -256,7 +260,7 @@ void CAiodob::UnTempWar(const char *pName, bool Silent)
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp War List", pName);
-	CTempEntry Entry("", "", pName);
+	CTempEntry Entry(0, pName, "");
 
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
@@ -278,16 +282,21 @@ void CAiodob::UnTempWar(const char *pName, bool Silent)
 		GameClient()->aMessage(aBuf);
 }
 
-void CAiodob::TempHelper(const char *pName)
+void CAiodob::TempHelper(const char *pName, const char *pReason, bool Silent)
 {
-	CTempEntry Entry("", pName, "");
+	UnTempHelper(pName, true); // Remove previous Reason
+
+	CTempEntry Entry(1, pName, pReason);
 	str_copy(Entry.m_aTempHelper, pName);
+	str_copy(Entry.m_aReason, pReason);
+
+	m_TempEntries.push_back(Entry);
+	UnTempWar(pName, true);
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Helper List", pName);
-	GameClient()->aMessage(aBuf);
-	m_TempEntries.push_back(Entry);
-	UnTempWar(pName, true);
+	if(!Silent)
+		GameClient()->aMessage(aBuf);
 
 	UpdateTempPlayers();
 }
@@ -298,7 +307,7 @@ void CAiodob::UnTempHelper(const char *pName, bool Silent)
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Helper List", pName);
-	CTempEntry Entry("", "", pName);
+	CTempEntry Entry(1, pName, "");
 
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
@@ -320,15 +329,17 @@ void CAiodob::UnTempHelper(const char *pName, bool Silent)
 		GameClient()->aMessage(aBuf);
 }
 
-void CAiodob::TempMute(const char *pName)
+void CAiodob::TempMute(const char *pName, bool Silent)
 {
-	CTempEntry Entry("", "", pName);
+	CTempEntry Entry(2, pName, "");
 	str_copy(Entry.m_aTempMute, pName);
+
+	m_TempEntries.push_back(Entry);
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Mute List", pName);
-	GameClient()->aMessage(aBuf);
-	m_TempEntries.push_back(Entry);
+	if(!Silent)
+		GameClient()->aMessage(aBuf);
 
 	UpdateTempPlayers();
 }
@@ -339,7 +350,7 @@ void CAiodob::UnTempMute(const char *pName, bool Silent)
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Mute List", pName);
-	CTempEntry Entry("", "", pName);
+	CTempEntry Entry(2, pName, "");
 
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
 	if(it != m_TempEntries.end())
@@ -598,7 +609,7 @@ void CAiodob::OnConsoleInit()
 	Console()->Register("addtemphelper", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempHelper, this, "temporary Helper");
 	Console()->Register("deltemphelper", "s[name]", CFGFLAG_CLIENT, ConUnTempHelper, this, "remove temporary Helper");
 
-	Console()->Register("addtempmute", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempMute, this, "temporary Mute");
+	Console()->Register("addtempmute", "s[name]", CFGFLAG_CLIENT, ConTempMute, this, "temporary Mute");
 	Console()->Register("deltempmute", "s[name]", CFGFLAG_CLIENT, ConUnTempMute, this, "remove temporary Mute");
 
 	// Skin Saving/Restoing

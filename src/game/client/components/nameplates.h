@@ -8,7 +8,7 @@
 #include <game/client/component.h>
 #include "tclient/warlist.h"
 
-class CNamePlateRenderData
+class CNamePlateData
 {
 public:
 	bool m_InGame;
@@ -34,7 +34,7 @@ public:
 	enum
 	{
 		HOOKSTRONGWEAK_WEAK,
-		HOOKSTRONGWEAK_UNKNOWN,
+		HOOKSTRONGWEAK_NEUTRAL,
 		HOOKSTRONGWEAK_STRONG
 	} m_HookStrongWeak;
 	bool m_ShowHookStrongWeakId;
@@ -51,12 +51,11 @@ public:
 	bool m_ShowClanWarInName = false;
 };
 
-class CNamePlate;
-
 class CNamePlates : public CComponent
 {
 private:
-	CNamePlate *m_pNamePlates;
+	class CNamePlatesData;
+	CNamePlatesData *m_pData;
 
 public:
 	void RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *pPlayerInfo, float Alpha);
