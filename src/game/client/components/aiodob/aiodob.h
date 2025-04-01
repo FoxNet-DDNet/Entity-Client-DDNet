@@ -142,13 +142,13 @@ public:
 	int m_KillCount;
 
 	void TempWar(const char *pName, const char *pReason, bool Silent = false);
-	void UnTempWar(const char *pName, bool Silent = false);
-
 	void TempHelper(const char *pName, const char *pReason, bool Silent = false);
-	void UnTempHelper(const char *pName, bool Silent = false);
-
 	void TempMute(const char *pName, bool Silent = false);
-	void UnTempMute(const char *pName, bool Silent = false);
+
+	bool UnTempHelper(const char *pName, bool Silent = false);
+	bool UnTempWar(const char *pName, bool Silent = false);
+	bool UnTempMute(const char *pName, bool Silent = false);
+
 
 	void Votekick(const char *pName, const char *pReason);
 

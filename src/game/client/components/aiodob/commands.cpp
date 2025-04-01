@@ -253,8 +253,10 @@ void CAiodob::TempWar(const char *pName, const char *pReason, bool Silent)
 
 	UpdateTempPlayers();
 }
-void CAiodob::UnTempWar(const char *pName, bool Silent)
+bool CAiodob::UnTempWar(const char *pName, bool Silent)
 {
+	bool Removed = false;
+
 	if(str_comp(pName, "") == 0)
 		return;
 
@@ -275,11 +277,15 @@ void CAiodob::UnTempWar(const char *pName, bool Silent)
 				++it2;
 
 			if(!str_comp(it2->m_aTempWar, pName))
+			{
 				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp War List", pName);
+				Removed = true;
+			}
 		}
 	}
 	if(!Silent)
 		GameClient()->aMessage(aBuf);
+	return Removed;
 }
 
 void CAiodob::TempHelper(const char *pName, const char *pReason, bool Silent)
@@ -300,8 +306,9 @@ void CAiodob::TempHelper(const char *pName, const char *pReason, bool Silent)
 
 	UpdateTempPlayers();
 }
-void CAiodob::UnTempHelper(const char *pName, bool Silent)
+bool CAiodob::UnTempHelper(const char *pName, bool Silent)
 {
+	bool Removed = false;
 	if(str_comp(pName, "") == 0)
 		return;
 
@@ -322,11 +329,15 @@ void CAiodob::UnTempHelper(const char *pName, bool Silent)
 				++it2;
 
 			if(!str_comp(it2->m_aTempHelper, pName))
+			{
 				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Helper List", pName);
+				Removed = true;
+			}
 		}
 	}
 	if(!Silent)
 		GameClient()->aMessage(aBuf);
+	return Removed;
 }
 
 void CAiodob::TempMute(const char *pName, bool Silent)
@@ -343,8 +354,10 @@ void CAiodob::TempMute(const char *pName, bool Silent)
 
 	UpdateTempPlayers();
 }
-void CAiodob::UnTempMute(const char *pName, bool Silent)
+bool CAiodob::UnTempMute(const char *pName, bool Silent)
 {
+	bool Removed = false;
+
 	if(str_comp(pName, "") == 0)
 		return;
 
@@ -365,11 +378,15 @@ void CAiodob::UnTempMute(const char *pName, bool Silent)
 				++it2;
 
 			if(!str_comp(it2->m_aTempMute, pName))
+			{
 				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
+				Removed = true;
+			}
 		}
 	}
 	if(!Silent)
 		GameClient()->aMessage(aBuf);
+	return Removed;
 }
 
 void CAiodob::RestoreSkin()

@@ -215,15 +215,15 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 
 void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 {
-	if(str_comp(pName, "") == 0)
+	if(!str_comp(pName, ""))
 		return;
+
 	if(WarType >= (int)m_WarTypes.size())
 		return;
 
 	CWarType *pWarType = m_WarTypes[WarType];
 	CWarEntry Entry(pWarType);
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "If you See this then %s", "something went really wrong");
 
 	if(IsClan)
 	{
@@ -252,10 +252,8 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 	{
 		str_copy(Entry.m_aName, pName);
 		str_format(aBuf, sizeof(aBuf), "removed \"%s\" from the %s list", pName, pWarType->m_aWarName);
-		{
-			GameClient()->m_Aiodob.UnTempWar(pName, true);
-			GameClient()->m_Aiodob.UnTempHelper(pName, true);
-		}
+		GameClient()->m_Aiodob.UnTempWar(pName, true);
+		GameClient()->m_Aiodob.UnTempHelper(pName, true);
 	}
 	GameClient()->aMessage(aBuf);
 	RemoveWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_pWarType->m_aWarName);
@@ -318,7 +316,8 @@ void CWarList::DelMute(const char *pName, bool Silent)
 			}
 		}
 	}
-	GameClient()->m_Aiodob.UnTempMute(pName, true);
+	if(GameClient()->m_Aiodob.UnTempMute(pName, true))
+		str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Mute List", pName);
 
 	if(!Silent)
 		GameClient()->aMessage(aBuf);
