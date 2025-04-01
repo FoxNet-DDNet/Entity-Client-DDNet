@@ -520,7 +520,11 @@ void CHud::RenderTextInfo()
 	if(Showfps)
 	{
 		char aBuf[16];
-		const int FramesPerSecond = round_to_int(1.0f / Client()->FrameTimeAverage()) *  g_Config.m_ClFpsSpoofer ? g_Config.m_ClFpsSpoofPercentage * 0.1 : 1 ;
+		float Percentage = 1.0f;
+		if(g_Config.m_ClFpsSpoofer)
+			Percentage = g_Config.m_ClFpsSpoofPercentage * 0.0787f;
+
+		const int FramesPerSecond = round_to_int(1.0f / Client()->FrameTimeAverage()) * Percentage;
 		str_format(aBuf, sizeof(aBuf), "%d", FramesPerSecond);
 
 		static float s_TextWidth0 = TextRender()->TextWidth(12.f, "0", -1, -1.0f);
