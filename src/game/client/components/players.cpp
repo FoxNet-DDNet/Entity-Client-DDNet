@@ -1499,9 +1499,8 @@ void CPlayers::OnRender()
 	{
 		if(!Client.m_SpecCharPresent)
 			continue;
-		// don't render offscreen
-		if(!in_range(Client.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Client.m_RenderPos.y, ScreenY0, ScreenY1))
-			continue;
+		}
+
 		const int ClientId = Client.ClientId();
 		float Alpha = (m_pClient->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
 		if(ClientId == -2) // ghost
