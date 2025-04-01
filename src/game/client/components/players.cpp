@@ -1499,7 +1499,6 @@ void CPlayers::OnRender()
 	{
 		if(!Client.m_SpecCharPresent)
 			continue;
-		}
 
 		const int ClientId = Client.ClientId();
 		float Alpha = (m_pClient->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;

@@ -257,8 +257,8 @@ bool CAiodob::UnTempWar(const char *pName, bool Silent)
 {
 	bool Removed = false;
 
-	if(str_comp(pName, "") == 0)
-		return;
+	if(!str_comp(pName, ""))
+		return Removed;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp War List", pName);
@@ -309,8 +309,8 @@ void CAiodob::TempHelper(const char *pName, const char *pReason, bool Silent)
 bool CAiodob::UnTempHelper(const char *pName, bool Silent)
 {
 	bool Removed = false;
-	if(str_comp(pName, "") == 0)
-		return;
+	if(!str_comp(pName, ""))
+		return Removed;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Helper List", pName);
@@ -358,8 +358,8 @@ bool CAiodob::UnTempMute(const char *pName, bool Silent)
 {
 	bool Removed = false;
 
-	if(str_comp(pName, "") == 0)
-		return;
+	if(!str_comp(pName, ""))
+		return Removed;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Mute List", pName);
