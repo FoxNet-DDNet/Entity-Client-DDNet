@@ -1,5 +1,4 @@
-
-#ifndef GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
+﻿#ifndef GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
 #define GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
 #include <game/client/component.h>
 
@@ -14,7 +13,7 @@ enum
 	BINDCHAT_MAX_BINDS = 256,
 };
 
-class CBindchat : public CComponent
+class CBindChat : public CComponent
 {
 	static void ConAddBindchat(IConsole::IResult *pResult, void *pUserData);
 	static void ConBindchats(IConsole::IResult *pResult, void *pUserData);
@@ -45,7 +44,7 @@ public:
 
 	std::vector<CBind> m_vBinds;
 
-	CBindchat();
+	CBindChat();
 	virtual int Sizeof() const override { return sizeof(*this); }
 
 	virtual void OnConsoleInit() override;

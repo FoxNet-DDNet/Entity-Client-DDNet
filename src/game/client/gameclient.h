@@ -197,7 +197,7 @@ public:
 
 	// T-Client
 	CSkinProfiles m_SkinProfiles;
-	CBindchat m_Bindchat;
+	CBindChat m_Bindchat;
 	CBindWheel m_Bindwheel;
 	CPlayerIndicator m_PlayerIndicator;
 	COutlines m_Outlines;

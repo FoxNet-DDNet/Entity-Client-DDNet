@@ -1397,7 +1397,7 @@ void CChat::OnRender()
 
 		//str_copy(GameClient()->m_NamePlates.InputText, m_Input.GetString());
 
-		CBindchat pBindchat = m_pClient->m_Bindchat;
+		CBindChat pBindchat = m_pClient->m_Bindchat;
 
 		if(pBindchat.CheckBindChat(m_Input.GetString()) && m_Input.GetString()[0] != '\0')
 		{
