@@ -190,7 +190,7 @@ void CBindChat::OnConsoleInit()
 	AddBindDefault(".extra", "exec data/aiodob/binds/.extra.cfg");
 	AddBindDefault(".kick", "votekick");
 	AddBindDefault(".votekick", "votekick");
-	AddBindDefault(".info", "OnlineInfo");
+	AddBindDefault(".onlineinfo", "OnlineInfo");
 	AddBindDefault(".playerinfo", "PlayerInfo");
 	AddBindDefault(".github", "view_link https://github.com/qxdFox/Aiodob-Client");
 
@@ -253,7 +253,7 @@ void CBindChat::OnConsoleInit()
 	AddBindDefault("!extra", "exec data/aiodob/binds/.extra.cfg");
 	AddBindDefault("!kick", "votekick");
 	AddBindDefault("!votekick", "votekick");
-	AddBindDefault("!info", "OnlineInfo");
+	AddBindDefault("!onlineinfo", "OnlineInfo");
 	AddBindDefault("!playerinfo", "PlayerInfo");
 
 	AddBindDefault("!friend", "add_friend");
