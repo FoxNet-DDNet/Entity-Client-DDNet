@@ -2411,7 +2411,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListScoreboard, Localize("Colors in scoreboard"), &g_Config.m_ClWarListScoreboard, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Colors in specmenu"), &g_Config.m_ClSpecMenuColors, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListShowClan, Localize("Show clan if war"), &g_Config.m_ClWarListShowClan, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSwitchNameReason, Localize("Switch Reason with Name"), &g_Config.m_ClWarListSwitchNameReason, &Column2, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSwapNameReason, Localize("Switch Reason with Name"), &g_Config.m_ClWarListSwapNameReason, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListAllowDuplicates, Localize("Allow Duplicate Entries"), &g_Config.m_ClWarListAllowDuplicates, &Column2, LineSize);
 
 	// ======WAR TYPE EDITING======

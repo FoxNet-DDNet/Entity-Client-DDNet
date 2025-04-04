@@ -791,7 +791,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	if((TempData.IsTempWar || TempData.IsTempHelper))
 		Data.m_pReason = TempData.m_aReason;
 
-	if(g_Config.m_ClWarListSwitchNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
+	if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
 	{
 		const char *pReason = Data.m_pReason;
 		Data.m_pReason = Data.m_pName;
