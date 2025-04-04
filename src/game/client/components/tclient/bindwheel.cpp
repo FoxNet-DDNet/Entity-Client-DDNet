@@ -159,9 +159,9 @@ void CBindWheel::OnRender()
 				m_SelectorMouse = vec2(0.0f, 0.0f);
 			if(m_WasActive && m_SelectedBind != -1)
 				ExecuteBind(m_SelectedBind);
+		}
 			m_WasActive = false;
 			return;
-		}
 	}
 	m_WasActive = true;
 
