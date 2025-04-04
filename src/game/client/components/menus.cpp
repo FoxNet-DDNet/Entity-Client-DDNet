@@ -620,7 +620,14 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitRight(33.0f, &Box, &Button);
 		static CButtonContainer s_AClientButton;
-		if(DoButton_MenuTab(&s_AClientButton, FONT_ICON_INFO, ActivePage == PAGE_ACLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ACLIENT]))
+		ColorRGBA Inactive = ms_ColorTabbarInactive;
+		ColorRGBA Active = ms_ColorTabbarActive;
+		if(str_comp(GameClient()->m_Aiodob.m_aVersionStr, "0") != 0)
+		{
+			Inactive = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
+			Active = ColorRGBA(0.3f, 0.8f, 0.6, 0.5f);
+		}
+		if(DoButton_MenuTab(&s_AClientButton, FONT_ICON_INFO, ActivePage == PAGE_ACLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ACLIENT], &Inactive, nullptr, &Active))
 		{
 			NewPage = PAGE_ACLIENT;
 			ResetTeePos = true;

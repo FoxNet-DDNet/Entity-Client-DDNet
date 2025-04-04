@@ -1503,10 +1503,14 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	MainView.HSplitBottom(Margin, 0, &LeftBottom);
 	LeftBottom.HSplitBottom(Margin, &LeftView, &LeftBottom);
 	LeftBottom.HSplitBottom(LineSize * 2.0f, 0, &LeftBottom);
-	LeftBottom.VSplitLeft(10.0f, &LeftView, &LeftBottom);
+	LeftBottom.VSplitLeft(5.0f, &LeftView, &LeftBottom);
 	LeftBottom.VSplitLeft(LineSize * 6.0f, &LeftBottom, &Button);
 	static CButtonContainer s_NewestRelGithub;
-	if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
+	if(str_comp(GameClient()->m_Aiodob.m_aVersionStr, "0") != 0)
+		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.25f);
+
+	if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, Color))
 	{
 		open_link("https://github.com/qxdFox/Aiodob-Client-DDNet/releases");
 	}

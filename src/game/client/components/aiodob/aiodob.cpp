@@ -2,16 +2,23 @@
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
-#include <game/gamecore.h>
+#include <engine/serverbrowser.h>
+#include <engine/shared/json.h>
+
 #include <game/client/components/chat.h>
 #include <game/client/components/controls.h>
 #include <game/client/gameclient.h>
 #include <game/generated/protocol.h>
-#include "aiodob.h"
+#include <game/gamecore.h>
+#include <game/version.h>
+
 #include <base/system.h>
 #include <base/math.h>
+
 #include <cmath>
-#include <engine/serverbrowser.h>
+#include "aiodob.h"
+#include <string.h>
+#include <tuple>
 
 void CAiodob::OnNewSnapshot()
 {
@@ -571,16 +578,43 @@ void CAiodob::Rainbow()
 	}
 }
 
+void CAiodob::OnShutdown()
+{
+	// str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
+	// str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
+	// str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
+	// g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
+	// g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
+	if(g_Config.m_ClServerRainbow)
+	{
+		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
+		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
+	}
+
+	// str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
+	// str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
+	// str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
+	// g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
+	// g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
+	if(g_Config.m_ClServerRainbow)
+	{
+		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
+		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
+	}
+
+	if(g_Config.m_ClDisableGoresOnShutdown)
+		g_Config.m_ClGoresMode = 0;
+
+	g_Config.m_ClKillCounter = m_KillCount;
+}
+
+
 void CAiodob::OnInit()
 {
 	// On client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 	
-	m_ServersideDelay[g_Config.m_ClDummy] = 0;
 	m_LastMovement = 0;
-	m_KillCount = 0;
-	m_LastTile = -1;
-	m_JoinTeam = 0;
 
 	m_JoinedTeam = false;
 	m_KogModeRebound = false;
@@ -591,7 +625,6 @@ void CAiodob::OnInit()
 
 	// Dummy Rainbow
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
-
 
 	// Get Bindslot for Mouse1, default shoot bind
 	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
@@ -620,36 +653,7 @@ void CAiodob::OnInit()
 		m_FirstLaunch = true;
 		g_Config.m_ClFirstLaunch = 0;
 	}
-}
-
-void CAiodob::OnShutdown()
-{
-	//str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
-	//str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
-	//str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
-	//g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
-	//g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
-	if(g_Config.m_ClServerRainbow)
-	{
-		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
-		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
-	}
-	
-	//str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
-	//str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
-	//str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
-	//g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
-	//g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
-	if(g_Config.m_ClServerRainbow)
-	{
-		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
-		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
-	}
-
-	if(g_Config.m_ClDisableGoresOnShutdown)
-		g_Config.m_ClGoresMode = 0;
-
-	g_Config.m_ClKillCounter = m_KillCount;
+	FetchAClientInfo();
 }
 
 void CAiodob::OnRender()
@@ -661,6 +665,16 @@ void CAiodob::OnRender()
 	ChangeTileNotifyTick();
 	GoresMode();
 	AutoJoinTeam();
+
+	
+ 	if(m_pAClientVerTask)
+	{
+		if(m_pAClientVerTask->State() == EHttpState::DONE)
+		{
+			FinishAClientInfo();
+			ResetAClientInfoTask();
+		}
+	}
 
 	// Set Offline RPC on Client start
 	if(g_Config.m_ClDiscordRPC)
@@ -695,4 +709,78 @@ void CAiodob::OnRender()
 		Client()->DiscordRPCchange();
 		GameClient()->m_Menus.m_RPC_Ratelimit = -2;
 	}
+}
+
+// Stole Taters Update Stuff
+static constexpr const char *ACLIENT_VER_URL = "https://qxdfox.github.io/Aiodob/version.json";
+void CAiodob::ResetAClientInfoTask()
+{
+	if(m_pAClientVerTask)
+	{
+		m_pAClientVerTask->Abort();
+		m_pAClientVerTask = NULL;
+	}
+}
+
+void CAiodob::FetchAClientInfo()
+{
+	if(m_pAClientVerTask && !m_pAClientVerTask->Done())
+		return;
+	char aUrl[256];
+	str_copy(aUrl, ACLIENT_VER_URL);
+	m_pAClientVerTask = HttpGet(aUrl);
+	m_pAClientVerTask->Timeout(CTimeout{10000, 0, 500, 10});
+	m_pAClientVerTask->IpResolve(IPRESOLVE::V4);
+	Http()->Run(m_pAClientVerTask);
+}
+
+typedef std::tuple<int, int, int> AVersion;
+static const AVersion gs_InvalidACVersion = std::make_tuple(-1, -1, -1);
+
+AVersion ToACVersion(char *pStr)
+{
+	int aVersion[3] = {0, 0, 0};
+	const char *p = strtok(pStr, ".");
+
+	for(int i = 0; i < 3 && p; ++i)
+	{
+		if(!str_isallnum(p))
+			return gs_InvalidACVersion;
+
+		aVersion[i] = str_toint(p);
+		p = strtok(NULL, ".");
+	}
+
+	if(p)
+		return gs_InvalidACVersion;
+
+	return std::make_tuple(aVersion[0], aVersion[1], aVersion[2]);
+}
+
+void CAiodob::FinishAClientInfo()
+{
+	json_value *pJson = m_pAClientVerTask->ResultJson();
+	if(!pJson)
+		return;
+	const json_value &Json = *pJson;
+	const json_value &CurrentVersion = Json["version"];
+
+	if(CurrentVersion.type == json_string)
+	{
+		char aNewVersionStr[64];
+		str_copy(aNewVersionStr, CurrentVersion);
+		char aCurVersionStr[64];
+		str_copy(aCurVersionStr, ACLIENT_VERSION);
+		if(ToACVersion(aNewVersionStr) > ToACVersion(aCurVersionStr))
+		{
+			str_copy(m_aVersionStr, CurrentVersion);
+		}
+		else
+		{
+			m_aVersionStr[0] = '0';
+			m_aVersionStr[1] = '\0';
+		}
+	}
+
+	json_value_free(pJson);
 }

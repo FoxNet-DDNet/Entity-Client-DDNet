@@ -4,6 +4,8 @@
 #include <engine/console.h>
 #include <base/system.h>
 #include <vector>
+#include <engine/shared/http.h>
+#include <memory>
 
 class CTempEntry
 {
@@ -213,6 +215,14 @@ public:
 	int64_t m_LastMovement = 10.0f;
 
 	bool m_FirstLaunch = false;
+
+	
+ 	std::shared_ptr<CHttpRequest> m_pAClientVerTask = nullptr;
+	void FetchAClientInfo();
+	void FinishAClientInfo();
+	void ResetAClientInfoTask();
+
+	char m_aVersionStr[10] = "0";
 
 private:
 	virtual int Sizeof() const override { return sizeof(*this); }

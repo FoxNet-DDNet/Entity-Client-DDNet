@@ -340,6 +340,9 @@ MACRO_CONFIG_COL(ClSilentColor, ac_silent_color, 8924078, CFGFLAG_CLIENT | CFGFL
 MACRO_CONFIG_INT(ClRenderNameplateSpec, ac_render_nameplate_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render nameplates when spectating")
 MACRO_CONFIG_INT(ClStrongWeakColorId, ac_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
 
+// Inform Update
+MACRO_CONFIG_INT(ClInformUpdate, ac_inform_update, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Inform you if a new version of A-Client is available")
+
 // Custom Vairiables from My Server for the editor
 // You can use these if you get my server from https://github.com/qxdFoxs/FoxNet-DDNet
 

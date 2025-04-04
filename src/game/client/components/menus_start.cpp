@@ -196,7 +196,7 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 	AClientVersion.VSplitRight(5.0f, &AClientVersion, nullptr);
 	AClientVersion.VSplitRight(100.0f, &AClientVersion, &AClientVersion);
 	static CButtonContainer s_AClient;
-	if(DoButton_Menu(&s_AClient, Localize("A-Client " ACLIENT_VERSION), 0, &AClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 10.0f))
+	if(DoButton_Menu(&s_AClient, Localize("A-Client v" ACLIENT_VERSION), 0, &AClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 10.0f))
 	{
 		NewPage = PAGE_ACLIENT;
 	}
@@ -271,15 +271,14 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 	}
 	Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
-#elif defined(CONF_INFORM_UPDATE)
-	if(str_comp(Client()->LatestVersion(), "0") != 0)
+#endif
+	if(str_comp(GameClient()->m_Aiodob.m_aVersionStr, "0") != 0)
 	{
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), Localize("DDNet %s is out!"), Client()->LatestVersion());
+		str_format(aBuf, sizeof(aBuf), Localize("A-Client v%s is out!"), GameClient()->m_Aiodob.m_aVersionStr);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 		Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_MC);
 	}
-#endif
 
 	if(NewPage != -1)
 	{
