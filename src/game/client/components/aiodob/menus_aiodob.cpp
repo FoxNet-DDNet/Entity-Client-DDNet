@@ -2399,7 +2399,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
-	Column2.HSplitBottom(170.0f, nullptr, &Column2);
+	Column2.HSplitBottom(180.0f, nullptr, &Column2);
 
 	Column2.HSplitTop(HeadlineHeight, &Label, &Column2);
 	Ui()->DoLabel(&Label, Localize("Settings"), HeadlineFontSize, TEXTALIGN_ML);
