@@ -3,22 +3,18 @@
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
 #include <engine/serverbrowser.h>
-#include <engine/shared/json.h>
 
 #include <game/client/components/chat.h>
 #include <game/client/components/controls.h>
 #include <game/client/gameclient.h>
 #include <game/generated/protocol.h>
 #include <game/gamecore.h>
-#include <game/version.h>
 
 #include <base/system.h>
 #include <base/math.h>
 
 #include <cmath>
 #include "aiodob.h"
-#include <string.h>
-#include <tuple>
 
 void CAiodob::OnNewSnapshot()
 {
@@ -104,10 +100,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(Client()->DummyConnected() && !str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName))
 		return;
 
-	// could iterate over ping history and also ignore older duplicates
-	// ignore duplicated messages
-	if(!str_comp(m_aLastPings[0].m_aMessage, pMsg))
-		return;
+	str_copy(m_aLastName, aName);
 	
 	if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
 	{
@@ -653,7 +646,6 @@ void CAiodob::OnInit()
 		m_FirstLaunch = true;
 		g_Config.m_ClFirstLaunch = 0;
 	}
-	FetchAClientInfo();
 }
 
 void CAiodob::OnRender()
@@ -661,20 +653,12 @@ void CAiodob::OnRender()
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return;
 
+	GameClient()->aMessage(m_aLastName);
+
 	Rainbow();
 	ChangeTileNotifyTick();
 	GoresMode();
 	AutoJoinTeam();
-
-	
- 	if(m_pAClientVerTask)
-	{
-		if(m_pAClientVerTask->State() == EHttpState::DONE)
-		{
-			FinishAClientInfo();
-			ResetAClientInfoTask();
-		}
-	}
 
 	// Set Offline RPC on Client start
 	if(g_Config.m_ClDiscordRPC)
@@ -709,78 +693,4 @@ void CAiodob::OnRender()
 		Client()->DiscordRPCchange();
 		GameClient()->m_Menus.m_RPC_Ratelimit = -2;
 	}
-}
-
-// Stole Taters Update Stuff
-static constexpr const char *ACLIENT_VER_URL = "https://qxdfox.github.io/Aiodob/version.json";
-void CAiodob::ResetAClientInfoTask()
-{
-	if(m_pAClientVerTask)
-	{
-		m_pAClientVerTask->Abort();
-		m_pAClientVerTask = NULL;
-	}
-}
-
-void CAiodob::FetchAClientInfo()
-{
-	if(m_pAClientVerTask && !m_pAClientVerTask->Done())
-		return;
-	char aUrl[256];
-	str_copy(aUrl, ACLIENT_VER_URL);
-	m_pAClientVerTask = HttpGet(aUrl);
-	m_pAClientVerTask->Timeout(CTimeout{10000, 0, 500, 10});
-	m_pAClientVerTask->IpResolve(IPRESOLVE::V4);
-	Http()->Run(m_pAClientVerTask);
-}
-
-typedef std::tuple<int, int, int> AVersion;
-static const AVersion gs_InvalidACVersion = std::make_tuple(-1, -1, -1);
-
-AVersion ToACVersion(char *pStr)
-{
-	int aVersion[3] = {0, 0, 0};
-	const char *p = strtok(pStr, ".");
-
-	for(int i = 0; i < 3 && p; ++i)
-	{
-		if(!str_isallnum(p))
-			return gs_InvalidACVersion;
-
-		aVersion[i] = str_toint(p);
-		p = strtok(NULL, ".");
-	}
-
-	if(p)
-		return gs_InvalidACVersion;
-
-	return std::make_tuple(aVersion[0], aVersion[1], aVersion[2]);
-}
-
-void CAiodob::FinishAClientInfo()
-{
-	json_value *pJson = m_pAClientVerTask->ResultJson();
-	if(!pJson)
-		return;
-	const json_value &Json = *pJson;
-	const json_value &CurrentVersion = Json["version"];
-
-	if(CurrentVersion.type == json_string)
-	{
-		char aNewVersionStr[64];
-		str_copy(aNewVersionStr, CurrentVersion);
-		char aCurVersionStr[64];
-		str_copy(aCurVersionStr, ACLIENT_VERSION);
-		if(ToACVersion(aNewVersionStr) > ToACVersion(aCurVersionStr))
-		{
-			str_copy(m_aVersionStr, CurrentVersion);
-		}
-		else
-		{
-			m_aVersionStr[0] = '0';
-			m_aVersionStr[1] = '\0';
-		}
-	}
-
-	json_value_free(pJson);
 }

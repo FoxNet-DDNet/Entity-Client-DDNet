@@ -4,8 +4,6 @@
 #include <engine/console.h>
 #include <base/system.h>
 #include <vector>
-#include <engine/shared/http.h>
-#include <memory>
 
 class CTempEntry
 {
@@ -63,45 +61,8 @@ class CAiodob : public CComponent
 	bool m_GoresModeWasOn;
 	bool m_GoresServer;
 
-	// Reply to Ping
-	struct CLastPing
-	{
-		void Reset()
-		{
-			m_aName[0] = '\0';
-			m_aClan[0] = '\0';
-			m_aMessage[0] = '\0';
-			m_ReciveTime = 0;
-			m_Team = 0;
-		}
-
-		CLastPing()
-		{
-			Reset();
-		}
-
-		char m_aName[32];
-		char m_aClan[32];
-		char m_aMessage[2048];
-		int m_Team;
-		int64_t m_ReciveTime;
-	};
-
-	enum
-	{
-		PING_QUEUE_SIZE = 16
-	};
-
-	/*
-		m_aLastPings
-
-		A stack holding the most recent 16 pings in chat.
-		Index 0 will be the latest message.
-		Popping of the stack will always give you the most recent message.
-	*/
-	CLastPing m_aLastPings[PING_QUEUE_SIZE];
-
-	// Chat Message Stuff
+	// Chat Message Stuffc
+	char m_aLastName[MAX_NAME_LENGTH] = "";
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 	int Get128Name(const char *pMsg, char *pName);
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
@@ -215,14 +176,6 @@ public:
 	int64_t m_LastMovement = 10.0f;
 
 	bool m_FirstLaunch = false;
-
-	
- 	std::shared_ptr<CHttpRequest> m_pAClientVerTask = nullptr;
-	void FetchAClientInfo();
-	void FinishAClientInfo();
-	void ResetAClientInfoTask();
-
-	char m_aVersionStr[10] = "0";
 
 private:
 	virtual int Sizeof() const override { return sizeof(*this); }

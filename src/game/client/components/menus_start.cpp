@@ -272,10 +272,10 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 	Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 #endif
-	if(str_comp(GameClient()->m_Aiodob.m_aVersionStr, "0") != 0)
+	if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
 	{
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), Localize("A-Client v%s is out!"), GameClient()->m_Aiodob.m_aVersionStr);
+		str_format(aBuf, sizeof(aBuf), Localize("A-Client v%s is out!"), GameClient()->m_AcUpdate.m_aVersionStr);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 		Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_MC);
 	}

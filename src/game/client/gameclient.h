@@ -69,6 +69,7 @@
 #include "components/aiodob/anti_spawn_block.h"
 #include "components/aiodob/auto_kill.h"
 #include "components/aiodob/freeze_kill.h"
+#include "components/aiodob/update.h"
 
 // Tater
 #include "components/tclient/bindchat.h"
@@ -194,6 +195,7 @@ public:
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CAutoKill m_AutoKill;
+	CUpdate m_AcUpdate;
 
 	// T-Client
 	CSkinProfiles m_SkinProfiles;

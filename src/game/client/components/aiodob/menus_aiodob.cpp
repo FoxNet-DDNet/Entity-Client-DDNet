@@ -1507,7 +1507,7 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	LeftBottom.VSplitLeft(LineSize * 6.0f, &LeftBottom, &Button);
 	static CButtonContainer s_NewestRelGithub;
 	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
-	if(str_comp(GameClient()->m_Aiodob.m_aVersionStr, "0") != 0)
+	if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
 		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.25f);
 
 	if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, Color))

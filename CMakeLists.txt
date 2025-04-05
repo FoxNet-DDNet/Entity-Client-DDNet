@@ -2347,7 +2347,9 @@ if(CLIENT)
     components/aiodob/commands.cpp
     components/aiodob/freeze_kill.cpp
     components/aiodob/freeze_kill.h
-    components/aiodob/menus_aiodob.cpp
+    components/aiodob/menus_aiodob.cpp 
+    components/aiodob/update.cpp
+    components/aiodob/update.h
     components/background.cpp
     components/background.h
     components/binds.cpp
