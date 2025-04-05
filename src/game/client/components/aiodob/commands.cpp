@@ -650,7 +650,7 @@ void CAiodob::OnConsoleInit()
 	Console()->Register("server_rainbow_body", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
 	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
 
-	Console()->Register("reply_last", "?s[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
+	Console()->Register("reply_last", "?r[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
 }
 
 void CAiodob::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
