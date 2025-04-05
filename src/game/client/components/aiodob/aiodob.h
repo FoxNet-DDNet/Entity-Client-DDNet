@@ -74,8 +74,8 @@ class CAiodob : public CComponent
 			m_Team = 0;
 		}
 
-		char m_aName[MAX_NAME_LENGTH];
-		char m_aMessage[256];
+		char m_aName[MAX_NAME_LENGTH] = "";
+		char m_aMessage[256] = "";
 		int m_Team;
 	};
 	CLastPing m_aLastPing;

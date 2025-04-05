@@ -88,9 +88,17 @@ void CBindChat::AddBindDefault(const char *pName, const char *pCommand)
 
 	CBind Bind;
 	Bind.m_Default = true;
-	str_copy(Bind.m_aName, pName);
-	str_copy(Bind.m_aCommand, pCommand);
-	m_vBinds.push_back(Bind);
+	for(int i = 0; i < 1; i++)
+	{
+		char Prefix[8] = ".";
+		if(i == 1)
+			str_copy(Prefix, "!");
+
+		str_append(Bind.m_aName, Prefix);
+		str_copy(Bind.m_aName, pName);
+		str_copy(Bind.m_aCommand, pCommand);
+		m_vBinds.push_back(Bind);
+	}
 }
 
 void CBindChat::RemoveBindCommand(const char *pCommand)
@@ -193,6 +201,7 @@ void CBindChat::OnConsoleInit()
 	AddBindDefault(".onlineinfo", "OnlineInfo");
 	AddBindDefault(".playerinfo", "PlayerInfo");
 	AddBindDefault(".github", "view_link https://github.com/qxdFox/Aiodob-Client");
+	AddBindDefault(".reply", "reply_last");
 
 	AddBindDefault(".friend", "add_friend");
 	AddBindDefault(".unfriend", "remove_friend");
@@ -255,6 +264,7 @@ void CBindChat::OnConsoleInit()
 	AddBindDefault("!votekick", "votekick");
 	AddBindDefault("!onlineinfo", "OnlineInfo");
 	AddBindDefault("!playerinfo", "PlayerInfo");
+	AddBindDefault("!reply", "reply_last");
 
 	AddBindDefault("!friend", "add_friend");
 	AddBindDefault("!unfriend", "remove_friend");
@@ -341,12 +351,14 @@ bool CBindChat::ChatDoBinds(const char *pText)
 		return false;
 
 	const bool IsExclemataion = str_startswith(pText, "!") && g_Config.m_ClSendExclamation;
-
+	
 	CChat &Chat = GameClient()->m_Chat;
 	const char *pSpace = str_find(pText, " ");
 	size_t SpaceIndex = pSpace ? pSpace - pText : strlen(pText);
 	for(const CBind &Bind : m_vBinds)
 	{
+		const bool SendsMessage = str_find(Bind.m_aCommand, "say") || 
+			str_find(Bind.m_aCommand, "say_team") || str_find(Bind.m_aCommand, "reply_last");
 		if(str_startswith_nocase(pText, Bind.m_aName) &&
 			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{
@@ -356,7 +368,7 @@ bool CBindChat::ChatDoBinds(const char *pText)
 			CChat::CHistoryEntry *pEntry = Chat.m_History.Allocate(sizeof(CChat::CHistoryEntry) + Length);
 			pEntry->m_Team = 0; // All
 			str_copy(pEntry->m_aText, pText, Length + 1);
-			if(IsExclemataion)
+			if(IsExclemataion && !SendsMessage)
 				return false;
 			return true;
 		}

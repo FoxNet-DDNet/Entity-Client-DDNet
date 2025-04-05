@@ -8,6 +8,7 @@
 
 #include <base/log.h>
 #include "aiodob.h"
+#include <game/generated/protocol.h>
 
 void CAiodob::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 {
@@ -579,6 +580,39 @@ void CAiodob::PlayerInfo(const char *pName)
 		GameClient()->aMessage(aBuf);
 }
 
+void CAiodob::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
+{
+	CAiodob *pSelf = (CAiodob *)pUserData;
+	
+	CLastPing LastPing = pSelf->m_aLastPing;
+
+	if(!str_comp(LastPing.m_aName, "") || LastPing.m_aName[0] == '\0')
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "A-Client", "No one pinged you yet");
+		return;
+	}
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		if(!str_comp(LastPing.m_aName, pSelf->GameClient()->m_aClients[ClientId].m_aName))
+		{
+			break;
+		}
+		if(ClientId == MAX_CLIENTS)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "A-Client", "Player with that Name doesn't exist");
+			return;
+		}
+	}
+	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "A-Client", "a");
+
+	char Text[2048];
+	if(LastPing.m_Team == TEAM_WHISPER_RECV)
+		str_format(Text, sizeof(Text), "/w %s %s", LastPing.m_aName, pResult->GetString(0));
+	else
+		str_format(Text, sizeof(Text), "%s: %s", LastPing.m_aName, pResult->GetString(0));
+	pSelf->GameClient()->m_Chat.SendChat(0, Text);
+}
+
 void CAiodob::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
@@ -616,6 +650,8 @@ void CAiodob::OnConsoleInit()
 
 	Console()->Register("server_rainbow_body", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
 	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
+
+	Console()->Register("reply_last", "?s[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
 }
 
 void CAiodob::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
