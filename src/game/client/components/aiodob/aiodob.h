@@ -34,9 +34,9 @@ public:
 
 	bool operator==(const CTempEntry &Other) const
 	{
-		bool TempWarMatch = str_comp(m_aTempWar, Other.m_aTempWar) == 0 && str_comp(m_aTempWar, "") != 0;
-		bool TempHelperMatch = str_comp(m_aTempHelper, Other.m_aTempHelper) == 0 && str_comp(m_aTempHelper, "") != 0;
-		bool TempHelperMute = str_comp(m_aTempMute, Other.m_aTempMute) == 0 && str_comp(m_aTempHelper, "") != 0;
+		bool TempWarMatch = !str_comp(m_aTempWar, Other.m_aTempWar) && str_comp(m_aTempWar, "") != 0;
+		bool TempHelperMatch = !str_comp(m_aTempHelper, Other.m_aTempHelper) && str_comp(m_aTempHelper, "") != 0;
+		bool TempHelperMute = !str_comp(m_aTempMute, Other.m_aTempMute) && str_comp(m_aTempHelper, "") != 0;
 		return (TempWarMatch || TempHelperMatch || TempHelperMute);
 	}
 };
@@ -62,7 +62,24 @@ class CAiodob : public CComponent
 	bool m_GoresServer;
 
 	// Chat Message Stuffc
-	char m_aLastName[MAX_NAME_LENGTH] = "";
+
+	
+	// Reply to Ping
+	struct CLastPing
+	{
+		void Reset()
+		{
+			m_aName[0] = '\0';
+			m_aMessage[0] = '\0';
+			m_Team = 0;
+		}
+
+		char m_aName[MAX_NAME_LENGTH];
+		char m_aMessage[256];
+		int m_Team;
+	};
+	CLastPing m_aLastPing;
+
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 	int Get128Name(const char *pMsg, char *pName);
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
@@ -99,6 +116,8 @@ class CAiodob : public CComponent
 
 	static void ConSaveSkin(IConsole::IResult *pResult, void *pUserData);
 	static void ConRestoreSkin(IConsole::IResult *pResult, void *pUserData);
+
+	static void ConReplyLast(IConsole::IResult *pResult, void *pUserData);
 
 public:
 	bool m_SentKill;
