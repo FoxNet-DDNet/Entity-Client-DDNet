@@ -460,81 +460,53 @@ void CAiodob::OnlineInfo(bool Integrate)
 	char active[512];
 
 	int NumberWars = 0;
+	int NumberHelpers = 0;
+	int NumberTeams = 0;
+	int NumberMutes = 0;
+
+	int NumberHelpersAfk = 0;
+	int NumberTeamsAfk = 0;
+	int NumberMutesAfk = 0;
 	int NumberWarsAfk = 0;
+
 	for(auto &Client : GameClient()->m_aClients)
 	{
 		bool War = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[1];
 		bool TempWar = m_TempPlayers[Client.ClientId()].IsTempWar;
 
+		bool Team = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[2];
+
+		bool Helper = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[3];
+		bool TempHelper = m_TempPlayers[Client.ClientId()].IsTempHelper;
+
+		bool Mute = GameClient()->m_WarList.m_WarPlayers[Client.ClientId()].IsMuted;
+		bool TempMute = m_TempPlayers[Client.ClientId()].IsTempMute;
+
 		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 			continue;
 
 		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
-		if((War && !TempWar) || (!War && TempWar))
+		if(War || TempWar)
 		{
 			NumberWars++;
 			if(Client.m_Afk)
 				NumberWarsAfk++;
 		}
-	}
-
-	int NumberTeams = 0;
-	int NumberTeamsAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		bool Team = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[2];
-
-		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
-			continue;
-
-		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
-			continue;
-
-		if(Team)
+		else if(Team)
 		{
 			NumberTeams++;
 			if(Client.m_Afk)
 				NumberTeamsAfk++;
 		}
-	}
-
-	int NumberHelpers = 0;
-	int NumberHelpersAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		bool Helper = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[3];
-		bool TempHelper = m_TempPlayers[Client.ClientId()].IsTempHelper;
-
-		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
-			continue;
-
-		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
-			continue;
-
-		if((Helper && !TempHelper) || (!Helper && TempHelper))
+		else if(Helper || TempHelper)
 		{
 			NumberHelpers++;
 			if(Client.m_Afk)
 				NumberHelpersAfk++;
 		}
-	}
-
-	int NumberMutes = 0;
-	int NumberMutesAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		bool Mute = GameClient()->m_WarList.m_WarPlayers[Client.ClientId()].IsMuted;
-		bool TempMute = m_TempPlayers[Client.ClientId()].IsTempMute;
-
-		if(!Client.m_Active)
-			continue;
-
-		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
-			continue;
-
-		if((Mute && !TempMute) || (!Mute && TempMute))
+		if(Mute ||TempMute)
 		{
 			NumberMutes++;
 			if(Client.m_Afk)
