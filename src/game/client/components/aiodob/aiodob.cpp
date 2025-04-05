@@ -101,7 +101,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		return;
 
 	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted ||
-		 g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar);
+		 (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar));
 
 	if(!HiddenMessage)
 	{
