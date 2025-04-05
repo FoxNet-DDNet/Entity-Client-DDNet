@@ -201,7 +201,7 @@ void CBindChat::OnConsoleInit()
 	AddBindDefault(".onlineinfo", "OnlineInfo");
 	AddBindDefault(".playerinfo", "PlayerInfo");
 	AddBindDefault(".github", "view_link https://github.com/qxdFox/Aiodob-Client");
-	AddBindDefault(".reply", "reply_last");
+	AddBindDefault(".r", "reply_last");
 
 	AddBindDefault(".friend", "add_friend");
 	AddBindDefault(".unfriend", "remove_friend");
@@ -264,7 +264,7 @@ void CBindChat::OnConsoleInit()
 	AddBindDefault("!votekick", "votekick");
 	AddBindDefault("!onlineinfo", "OnlineInfo");
 	AddBindDefault("!playerinfo", "PlayerInfo");
-	AddBindDefault("!reply", "reply_last");
+	AddBindDefault("!r", "reply_last");
 
 	AddBindDefault("!friend", "add_friend");
 	AddBindDefault("!unfriend", "remove_friend");
