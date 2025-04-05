@@ -100,9 +100,15 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(Client()->DummyConnected() && !str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName))
 		return;
 
-	str_copy(m_aLastPing.m_aName, aName);
-	str_copy(m_aLastPing.m_aMessage, pMsg);
-	m_aLastPing.m_Team = Team;
+	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted ||
+		 g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar);
+
+	if(!HiddenMessage)
+	{
+		str_copy(m_aLastPing.m_aName, aName);
+		str_copy(m_aLastPing.m_aMessage, pMsg);
+		m_aLastPing.m_Team = Team;
+	}
 	
 	if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
 	{
