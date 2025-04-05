@@ -601,9 +601,8 @@ void CAiodob::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 		{
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "A-Client", "Player with that Name doesn't exist");
 			return;
-		}
+		}                     
 	}
-	pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "A-Client", "a");
 
 	char Text[2048];
 	if(LastPing.m_Team == TEAM_WHISPER_RECV)
