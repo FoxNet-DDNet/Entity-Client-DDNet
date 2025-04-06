@@ -41,7 +41,7 @@ public:
 	int m_HookStrongWeakId;
 	float m_FontSizeHookStrongWeak;
 
-	// A-Client
+	// E-Client
 	bool m_PingCircle = false;
 	bool m_IsMuted = false;
 	const char *m_pReason = "";

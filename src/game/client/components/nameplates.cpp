@@ -273,7 +273,7 @@ protected:
 		if(!m_Visible)
 			return false;
 
-		// A-Client
+		// E-Client
 		if(g_Config.m_ClStrongWeakColorId)
 		{
 			switch(Data.m_HookStrongWeak)
@@ -361,7 +361,7 @@ protected:
 		if(!m_Visible)
 			return false;
 
-		// A-Client
+		// E-Client
 		ColorRGBA Color = Data.m_Color;
 
 		if(g_Config.m_ClWarList)
@@ -376,9 +376,9 @@ protected:
 			else if(Data.m_ShowClanWarInName && This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
 				Color = This.m_WarList.GetClanColor(Data.m_ClientId);
 
-			if(This.m_Aiodob.m_TempPlayers[Data.m_ClientId].IsTempWar)
+			if(This.m_EClient.m_TempPlayers[Data.m_ClientId].IsTempWar)
 				Color = This.m_WarList.m_WarTypes[1]->m_Color;
-			else if(This.m_Aiodob.m_TempPlayers[Data.m_ClientId].IsTempHelper)
+			else if(This.m_EClient.m_TempPlayers[Data.m_ClientId].IsTempHelper)
 				Color = This.m_WarList.m_WarTypes[3]->m_Color;
 		}
 
@@ -413,7 +413,7 @@ protected:
 		if(!m_Visible)
 			return false;
 
-		// A-Client
+		// E-Client
 		ColorRGBA Color = Data.m_Color;
 
 		if(g_Config.m_ClWarList && Data.m_ClientId >= 0 && This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
@@ -436,7 +436,7 @@ public:
 		CNamePlatePartText(This) {}
 };
 
-// A-Client
+// E-Client
 class CNamePlatePartReason : public CNamePlatePartText
 {
 private:
@@ -637,11 +637,11 @@ private:
 		AddPart<CNamePlatePartDirection>(This, DIRECTION_RIGHT);
 		AddPart<CNamePlatePartNewLine>(This);
 
-		AddPart<CNamePlatePartPingCircle>(This); // A-Client
+		AddPart<CNamePlatePartPingCircle>(This); // E-Client
 		AddPart<CNamePlatePartFriendMark>(This);
 		AddPart<CNamePlatePartClientId>(This, false);
 		AddPart<CNamePlatePartName>(This);
-		AddPart<CNamePlatePartMutedIcon>(This); // A-Client
+		AddPart<CNamePlatePartMutedIcon>(This); // E-Client
 		AddPart<CNamePlatePartNewLine>(This);
 
 		AddPart<CNamePlatePartReason>(This); // TClient
@@ -780,13 +780,13 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_ShowClientId = Data.m_ShowName && (g_Config.m_Debug || g_Config.m_ClNamePlatesIds);
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
 
-	// A-Client
+	// E-Client
 	Data.m_IsMuted = Data.m_ShowName && GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].IsMuted;
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
 	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
 
-	CTempData TempData = GameClient()->m_Aiodob.m_TempPlayers[pPlayerInfo->m_ClientId];
+	CTempData TempData = GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId];
 
 	if((TempData.IsTempWar || TempData.IsTempHelper))
 		Data.m_pReason = TempData.m_aReason;
@@ -931,7 +931,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 
 	CNamePlateData Data;
 
-	// A-Client
+	// E-Client
 	Data.m_pReason = "Reason";
 	Data.m_ShowReason = g_Config.m_ClWarListReason;
 

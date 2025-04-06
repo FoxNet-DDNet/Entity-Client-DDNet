@@ -520,9 +520,9 @@ void CSpectator::OnRender()
 			ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, Alpha);
 			if(g_Config.m_ClSpecMenuColors)
 			{
-				if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar && g_Config.m_ClWarList)
+				if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar && g_Config.m_ClWarList)
 					Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-				else if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempHelper && g_Config.m_ClWarList)
+				else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper && g_Config.m_ClWarList)
 					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
 				else if(GameClient()->m_WarList.GetAnyWar(ClientId) && g_Config.m_ClWarList)
 					Color = GameClient()->m_WarList.GetPriorityColor(ClientId);
@@ -592,7 +592,7 @@ void CSpectator::OnRender()
 			TextRender()->TextColor(rgb.WithAlpha(1.f));
 			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, "♥", 220.0f);
 		}
-		else if(g_Config.m_ClWarlistPrefixes && g_Config.m_ClWarList && GameClient()->m_WarList.GetAnyWar(ClientId)) // A-Client
+		else if(g_Config.m_ClWarlistPrefixes && g_Config.m_ClWarList && GameClient()->m_WarList.GetAnyWar(ClientId)) // E-Client
 		{
 			TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(ClientId));
 			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClWarlistPrefix, 220.0f);

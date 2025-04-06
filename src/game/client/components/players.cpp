@@ -28,7 +28,7 @@
 #include <base/color.h>
 #include <base/math.h>
 #include <cstdlib>
-#include "aiodob/a_enums.h"
+#include "entity/e_enums.h"
 
 void CPlayers::RenderHand(const CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset, float Alpha)
 {
@@ -1448,9 +1448,9 @@ void CPlayers::OnRender()
 			else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
 				Color = GameClient()->m_WarList.GetClanColor(ClientId);
 
-			if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar)
+			if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar)
 				Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-			else if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempHelper)
+			else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper)
 				Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
 				
 			if(g_Config.m_ClSweatModeSelfColor && Local)
@@ -1626,7 +1626,7 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 
 	if(g_Config.m_ClSpecialEffect && !Frozen && Local)
 	{
-		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
+		if(GameClient()->m_EClient.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
 		{
 			GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x + 100 * cos(Time / time_freq() * 2), BodyPos.y + 100 * sin(Time / time_freq() * 2)), Alpha);
 

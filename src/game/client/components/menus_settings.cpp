@@ -1886,7 +1886,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("Sound"),
 		Localize("DDNet"),
 		Localize("Assets"),
-		("A-Client"),
+		("E-Client"),
 		("Skin Profiles")};
 
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
@@ -1955,10 +1955,10 @@ void CMenus::RenderSettings(CUIRect MainView)
 		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_ASSETS);
 		RenderSettingsCustom(MainView);
 	}
-	else if(g_Config.m_UiSettingsPage == SETTINGS_AIODOB)
+	else if(g_Config.m_UiSettingsPage == SETTINGS_ENTITY)
 	{
-		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_AIODOB);
-		RenderSettingsAiodob(MainView);
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_ENTITY);
+		RenderSettingsEntity(MainView);
 	}
 	else if(g_Config.m_UiSettingsPage == SETTINGS_SKINPROFILES)
 	{

@@ -14,14 +14,14 @@
 #include <base/math.h>
 
 #include <cmath>
-#include "aiodob.h"
+#include "entity.h"
 
-void CAiodob::OnNewSnapshot()
+void CEClient::OnNewSnapshot()
 {
 	UpdateTempPlayers();
 }
 
-bool CAiodob::LineShouldHighlight(const char *pLine, const char *pName)
+bool CEClient::LineShouldHighlight(const char *pLine, const char *pName)
 {
 	const char *pHL = str_utf8_find_nocase(pLine, pName);
 
@@ -36,7 +36,7 @@ bool CAiodob::LineShouldHighlight(const char *pLine, const char *pName)
 	return false;
 }
 
-int CAiodob::Get128Name(const char *pMsg, char *pName)
+int CEClient::Get128Name(const char *pMsg, char *pName)
 {
 	int i = 0;
 	for(i = 0; pMsg[i] && i < 17; i++)
@@ -51,7 +51,7 @@ int CAiodob::Get128Name(const char *pMsg, char *pName)
 	return -1;
 }
 
-void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
+void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {
 	if(ClientId < 0 || ClientId > MAX_CLIENTS)
 		return;
@@ -92,7 +92,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(ClientId == 63 && !str_comp_num(m_pClient->m_aClients[ClientId].m_aName, " ", 2))
 	{
 		Get128Name(pMsg, aName);
-		// dbg_msg("aiodob", "fixname 128 player '%s' -> '%s'", m_pClient->m_aClients[ClientId].m_aName, aName);
+		// dbg_msg("E-Client", "fixname 128 player '%s' -> '%s'", m_pClient->m_aClients[ClientId].m_aName, aName);
 	}
 	// ignore own and dummys messages
 	if(!str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[0]].m_aName))
@@ -101,7 +101,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		return;
 
 	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted ||
-		 (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar));
+		 (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar));
 
 	if(!HiddenMessage)
 	{
@@ -115,20 +115,13 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
 
+		char Text[2048];
+		str_format(Text, sizeof(Text), "%s: %s", aName, g_Config.m_ClAutoReplyMutedMsg);
+
 		if(Team == 3) // whisper recv
-		{
-			char Text[2048];
-			str_format(Text, sizeof(Text), "/w %s ", aName);
-			str_append(Text, g_Config.m_ClAutoReplyMutedMsg);
-			GameClient()->m_Chat.SendChat(0, Text);
-		}
-		else
-		{
-			char Text[2048];
-			str_format(Text, sizeof(Text), "%s: ", aName);
-			str_append(Text, g_Config.m_ClAutoReplyMutedMsg);
-			GameClient()->m_Chat.SendChat(0, Text);
-		}
+			str_format(Text, sizeof(Text), "/w %s %s", aName, g_Config.m_ClAutoReplyMutedMsg);
+
+		GameClient()->m_Chat.SendChat(0, Text);
 	}
 	else if(g_Config.m_ClTabbedOutMsg)
 	{
@@ -156,7 +149,7 @@ void CAiodob::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	}
 }
 
-void CAiodob::OnMessage(int MsgType, void *pRawMsg)
+void CEClient::OnMessage(int MsgType, void *pRawMsg)
 {
 	if(MsgType == NETMSGTYPE_SV_CHAT)
 	{
@@ -165,7 +158,7 @@ void CAiodob::OnMessage(int MsgType, void *pRawMsg)
 	}
 }
 
-void CAiodob::AutoJoinTeam()
+void CEClient::AutoJoinTeam()
 {
 	if(m_JoinTeam > time_get())
 		return;
@@ -207,7 +200,7 @@ void CAiodob::AutoJoinTeam()
 
 					char Joined[2048] = "attempting to auto Join ";
 					str_append(Joined, m_pClient->m_aClients[ClientId].m_aName);
-					m_pClient->m_Chat.AddLine(-3, 0, Joined);
+					GameClient()->ClientMessage(Joined);
 
 					m_JoinedTeam = true;
 					m_AttempedJoinTeam = true;
@@ -216,7 +209,7 @@ void CAiodob::AutoJoinTeam()
 				{
 					char Joined[2048] = "Successfully Joined The Team of ";
 					str_append(Joined, m_pClient->m_aClients[ClientId].m_aName);
-					m_pClient->m_Chat.AddLine(-3, 0, Joined);
+					GameClient()->ClientMessage(Joined);
 
 					LocalTeam = GameClient()->m_Teams.Team(Local);
 
@@ -228,18 +221,18 @@ void CAiodob::AutoJoinTeam()
 				{
 					char Joined[2048] = "Couldn't Join The Team of ";
 					str_append(Joined, m_pClient->m_aClients[ClientId].m_aName);
-					m_pClient->m_Chat.AddLine(-3, 0, Joined);
+					GameClient()->ClientMessage(Joined);
 
 					m_AttempedJoinTeam = false;
 				}
 				if(PrevTeam != Team && m_AttempedJoinTeam)
 				{
-					m_pClient->m_Chat.AddLine(-3, 0, "team has changed");
+					GameClient()->ClientMessage("team has changed");
 					m_JoinedTeam = false;
 				}
 				if(LocalTeam > 0)
 				{
-					m_pClient->m_Chat.AddLine(-3, 0, "self team is bigger than 0");
+					GameClient()->ClientMessage("self team is bigger than 0");
 					m_JoinedTeam = false;
 					LocalTeam = GameClient()->m_Teams.Team(Local);
 				}
@@ -256,7 +249,7 @@ void CAiodob::AutoJoinTeam()
 	}
 }
 
-void CAiodob::GoresMode()
+void CEClient::GoresMode()
 {
 	// if turning off kog mode and it was on before, rebind to previous bind
 
@@ -304,7 +297,7 @@ void CAiodob::GoresMode()
 	if(Key == KEY_UNKNOWN)
 	{
 		g_Config.m_ClGoresMode = 0;
-		dbg_msg("A-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
+		dbg_msg("E-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
 	}
 	else
 	{
@@ -325,14 +318,14 @@ void CAiodob::GoresMode()
 	}
 }
 
-void CAiodob::OnConnect()
+void CEClient::OnConnect()
 {
 	// if dummy, return, so it doesnt display the info when joining with dummy
 
 	if(g_Config.m_ClDummy)
 		return;
 
-	GameClient()->m_Aiodob.m_LastMovement = time_get() + time_freq() * 60;
+	GameClient()->m_EClient.m_LastMovement = time_get() + time_freq() * 60;
 
 	// if current server is type "Gores", turn the config on, else turn it off
 
@@ -341,19 +334,19 @@ void CAiodob::OnConnect()
 	static bool SentInfoMessage = false;
 	if(m_FirstLaunch && SentInfoMessage)
 	{
-		GameClient()->aMessage("╭──                  Aiodob Info");
-		GameClient()->aMessage("│");
-		GameClient()->aMessage("│ Seems like it's your first time running the client!");
-		GameClient()->aMessage("│");
-		GameClient()->aMessage("│ To view a list of Default Chat Commands do \".help\"");
-		GameClient()->aMessage("│");
-		GameClient()->aMessage("│ If you find a bug or have a Feature Request do \".github\"");
-		GameClient()->aMessage("│");
-		GameClient()->aMessage("│ Chat Commands that start with \".\" are silent by default,");
-		GameClient()->aMessage("│ which means no one will see them.");
-		GameClient()->aMessage("│ Messages that start with \"!\" will be sent");
-		GameClient()->aMessage("│");
-		GameClient()->aMessage("╰───────────────────────");
+		GameClient()->ClientMessage("╭──                 E-Client Info");
+		GameClient()->ClientMessage("│");
+		GameClient()->ClientMessage("│ Seems like it's your first time running the client!");
+		GameClient()->ClientMessage("│");
+		GameClient()->ClientMessage("│ To view a list of Default Chat Commands do \".help\"");
+		GameClient()->ClientMessage("│");
+		GameClient()->ClientMessage("│ If you find a bug or have a Feature Request do \".github\"");
+		GameClient()->ClientMessage("│");
+		GameClient()->ClientMessage("│ Chat Commands that start with \".\" are silent by default,");
+		GameClient()->ClientMessage("│ which means no one will see them.");
+		GameClient()->ClientMessage("│ Messages that start with \"!\" will be sent");
+		GameClient()->ClientMessage("│");
+		GameClient()->ClientMessage("╰───────────────────────");
 		SentInfoMessage = true;
 	}
 	else
@@ -376,76 +369,76 @@ void CAiodob::OnConnect()
 
 		if(g_Config.m_ClEnabledInfo || g_Config.m_ClListsInfo)
 		{
-			GameClient()->aMessage("╭──                  Aiodob Info");
-			GameClient()->aMessage("│");
+			GameClient()->ClientMessage("╭──               E-Client Info");
+			GameClient()->ClientMessage("│");
 
 			if(g_Config.m_ClListsInfo)
 			{
 				OnlineInfo(true);
-				GameClient()->aMessage("│");
+				GameClient()->ClientMessage("│");
 			}
 			if(g_Config.m_ClEnabledInfo)
 			{
 				if((g_Config.m_ClAutoKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
 				{
-					GameClient()->aMessage("│ Auto Kill Enabled!");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Auto Kill Enabled!");
+					GameClient()->ClientMessage("│");
 				}
 				else if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
 				{
-					GameClient()->aMessage("│ Auto Kill Disabled, Not on Mult!");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Auto Kill Disabled, Not on Mult!");
+					GameClient()->ClientMessage("│");
 				}
 				else if(!g_Config.m_ClAutoKill)
 				{
-					GameClient()->aMessage("│ Auto Kill Disabled!");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Auto Kill Disabled!");
+					GameClient()->ClientMessage("│");
 				}
 
 				// Freeze Kill
 
 				if((g_Config.m_ClFreezeKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
 				{
-					GameClient()->aMessage("│ Freeze Kill Enabled!");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Freeze Kill Enabled!");
+					GameClient()->ClientMessage("│");
 				}
 				else if(g_Config.m_ClFreezeKill && (g_Config.m_ClFreezeKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
 				{
-					GameClient()->aMessage("│ Freeze Kill Disabled, Not on Mult!");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Freeze Kill Disabled, Not on Mult!");
+					GameClient()->ClientMessage("│");
 				}
 				if(!g_Config.m_ClFreezeKill)
 				{
-					GameClient()->aMessage("│ Freeze Kill Disabled!");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Freeze Kill Disabled!");
+					GameClient()->ClientMessage("│");
 				}
 				if(g_Config.m_ClGoresMode)
 				{
-					GameClient()->aMessage("│ Gores Mode: ON");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Gores Mode: ON");
+					GameClient()->ClientMessage("│");
 				}
 				else
 				{
-					GameClient()->aMessage("│ Gores Mode: OFF");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Gores Mode: OFF");
+					GameClient()->ClientMessage("│");
 				}
 				if(g_Config.m_ClChatBubble)
 				{
-					GameClient()->aMessage("│ Chat Bubble is Currently: ON");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Chat Bubble is Currently: ON");
+					GameClient()->ClientMessage("│");
 				}
 				else
 				{
-					GameClient()->aMessage("│ Chat Bubble is Currently: OFF");
-					GameClient()->aMessage("│");
+					GameClient()->ClientMessage("│ Chat Bubble is Currently: OFF");
+					GameClient()->ClientMessage("│");
 				}
 			}
-			GameClient()->aMessage("╰───────────────────────");
+			GameClient()->ClientMessage("╰───────────────────────");
 		}
 	}
 }
 
-void CAiodob::ChangeTileNotifyTick()
+void CEClient::ChangeTileNotifyTick()
 {
 	if(!g_Config.m_ClChangeTileNotification)
 		return;
@@ -460,7 +453,7 @@ void CAiodob::ChangeTileNotifyTick()
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 		if(pGraphics && !pGraphics->WindowActive() && Graphics())
 		{
-			Client()->Notify("A-Client", "current tile changed");
+			Client()->Notify("E-Client", "current tile changed");
 			Graphics()->NotifyWindow();
 		}
 		m_LastNotification = time_get();
@@ -468,7 +461,7 @@ void CAiodob::ChangeTileNotifyTick()
 	m_LastTile = CurrentTile;
 }
 
-void CAiodob::RemoveWarEntryDuplicates(const char *pName)
+void CEClient::RemoveWarEntryDuplicates(const char *pName)
 {
 	if(!str_comp(pName, ""))
 		return;
@@ -487,7 +480,7 @@ void CAiodob::RemoveWarEntryDuplicates(const char *pName)
 	UpdateTempPlayers();
 }
 
-void CAiodob::RemoveWarEntry(int Type, const char *pName)
+void CEClient::RemoveWarEntry(int Type, const char *pName)
 {
 	CTempEntry Entry(Type, pName, "");
 	auto it = std::find(m_TempEntries.begin(), m_TempEntries.end(), Entry);
@@ -497,7 +490,7 @@ void CAiodob::RemoveWarEntry(int Type, const char *pName)
 	UpdateTempPlayers();
 }
 
-void CAiodob::UpdateTempPlayers()
+void CEClient::UpdateTempPlayers()
 {
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
@@ -530,7 +523,7 @@ void CAiodob::UpdateTempPlayers()
 	}
 }
 
-void CAiodob::Rainbow()
+void CEClient::Rainbow()
 {
 	static bool m_RainbowWasOn = false; 
 
@@ -579,7 +572,7 @@ void CAiodob::Rainbow()
 	}
 }
 
-void CAiodob::OnShutdown()
+void CEClient::OnShutdown()
 {
 	// str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
 	// str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
@@ -610,7 +603,7 @@ void CAiodob::OnShutdown()
 }
 
 
-void CAiodob::OnInit()
+void CEClient::OnInit()
 {
 	// On client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
@@ -630,7 +623,7 @@ void CAiodob::OnInit()
 	// Get Bindslot for Mouse1, default shoot bind
 	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
 	if(Key == KEY_UNKNOWN)
-		dbg_msg("A-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
+		dbg_msg("E-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
 	else
 	{
 		const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
@@ -639,7 +632,7 @@ void CAiodob::OnInit()
 		// Tells you what the bind is
 		char aBuf[1024];
 		str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
-		dbg_msg("A-Client", aBuf);
+		dbg_msg("E-Client", aBuf);
 
 		// Binds the mouse to the saved bind, also doe
 		GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
@@ -656,7 +649,7 @@ void CAiodob::OnInit()
 	}
 }
 
-void CAiodob::OnRender()
+void CEClient::OnRender()
 {
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return;

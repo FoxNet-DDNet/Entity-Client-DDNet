@@ -999,20 +999,6 @@ endif()
 ########################################################################
 
 set(EXPECTED_DATA
-  aiodob/binds/.extra.cfg
-  aiodob/binds/.help.cfg
-  aiodob/fonts/Cabin-Regular.ttf
-  aiodob/fonts/ComicSansMS.ttf
-  aiodob/fonts/GoogleSans-Regular.ttf
-  aiodob/fonts/Inter_24pt-Regular.ttf
-  aiodob/fonts/Inter_24pt-SemiBold.ttf
-  aiodob/fonts/Minecraft_font.ttf
-  aiodob/fonts/Montserrat-Regular.ttf
-  aiodob/fonts/Nunito-Black.ttf
-  aiodob/fonts/Rubik-Regular.ttf
-  aiodob/icons/aiodob_flag.png
-  aiodob/icons/muted_icon.png
-  aiodob/icons/settings_icon.png
   announcement.txt
   arrow.png
   assets/entities/comfort/ddnet.png
@@ -1449,6 +1435,20 @@ set(EXPECTED_DATA
   editor/tele.png
   editor/tune.png
   emoticons.png
+  entity/binds/.extra.cfg
+  entity/binds/.help.cfg
+  entity/fonts/Cabin-Regular.ttf
+  entity/fonts/ComicSansMS.ttf
+  entity/fonts/GoogleSans-Regular.ttf
+  entity/fonts/Inter_24pt-Regular.ttf
+  entity/fonts/Inter_24pt-SemiBold.ttf
+  entity/fonts/Minecraft_font.ttf
+  entity/fonts/Montserrat-Regular.ttf
+  entity/fonts/Nunito-Black.ttf
+  entity/fonts/Rubik-Regular.ttf
+  entity/icons/entity_flag.png
+  entity/icons/muted_icon.png
+  entity/icons/settings_icon.png
   extras.png
   fonts/DejaVuSans.ttf
   fonts/Font_Awesome_6_Free-Solid-900.otf
@@ -2064,7 +2064,6 @@ set_src(ENGINE_INTERFACE GLOB src/engine
   warning.h
 )
 set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
-  aiodob_variables.h
   assertion_logger.cpp
   assertion_logger.h
   compression.cpp
@@ -2083,6 +2082,7 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   econ.cpp
   econ.h
   engine.cpp
+  entity_variables.h
   fifo.cpp
   fifo.h
   filecollection.cpp
@@ -2337,19 +2337,6 @@ if(CLIENT)
     animstate.h
     component.cpp
     component.h
-    components/aiodob/a_enums.h
-    components/aiodob/aiodob.cpp
-    components/aiodob/aiodob.h 
-    components/aiodob/anti_spawn_block.cpp
-    components/aiodob/anti_spawn_block.h
-    components/aiodob/auto_kill.cpp
-    components/aiodob/auto_kill.h
-    components/aiodob/commands.cpp
-    components/aiodob/freeze_kill.cpp
-    components/aiodob/freeze_kill.h
-    components/aiodob/menus_aiodob.cpp 
-    components/aiodob/update.cpp
-    components/aiodob/update.h
     components/background.cpp
     components/background.h
     components/binds.cpp
@@ -2374,6 +2361,19 @@ if(CLIENT)
     components/effects.h
     components/emoticon.cpp
     components/emoticon.h
+    components/entity/anti_spawn_block.cpp
+    components/entity/anti_spawn_block.h
+    components/entity/auto_kill.cpp
+    components/entity/auto_kill.h
+    components/entity/commands.cpp
+    components/entity/e_enums.h
+    components/entity/entity.cpp
+    components/entity/entity.h 
+    components/entity/freeze_kill.cpp
+    components/entity/freeze_kill.h
+    components/entity/menus_entity.cpp 
+    components/entity/update.cpp
+    components/entity/update.h
     components/flow.cpp
     components/flow.h
     components/freezebars.cpp

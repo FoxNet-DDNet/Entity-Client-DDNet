@@ -349,7 +349,7 @@ public:
 	virtual void GetGpuInfoString(char (&aGpuInfo)[256]) = 0;
 
 	
-	// A-Client
+	// E-Client
 	virtual void DiscordRPCchange() = 0;
 };
 
@@ -391,8 +391,8 @@ public:
 	virtual void DummyResetInput() = 0;
 	virtual void Echo(const char *pString) = 0;
 
-	// A-Client
-	virtual void aMessage(const char *pString) = 0;
+	// E-Client
+	virtual void ClientMessage(const char *pString) = 0;
 	virtual void OnJoinInfo() = 0;
 	virtual void SetLastMovementTime(int Delay) = 0;
 	virtual int GetClientId(const char *pName) = 0;

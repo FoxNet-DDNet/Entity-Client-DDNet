@@ -281,10 +281,9 @@ void CMapLayers::OnMapLoad()
 	if(!Graphics()->IsTileBufferingEnabled() && !Graphics()->IsQuadBufferingEnabled())
 		return;
 
-	const char *pLoadingTitle = LoadingTitle();
 	const char *pLoadingMessage = Localize("Uploading map data to GPU");
 	auto &&RenderLoading = [&]() {
-		GameClient()->m_Menus.RenderLoading(pLoadingTitle, pLoadingMessage, 0);
+		GameClient()->m_Menus.RenderLoading("Loading E-Client", pLoadingMessage, 0);
 	};
 
 	// clear everything and destroy all buffers

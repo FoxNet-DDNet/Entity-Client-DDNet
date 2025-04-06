@@ -79,7 +79,7 @@
 #include "prediction/entities/character.h"
 #include "prediction/entities/projectile.h"
 
-#include "components/aiodob/a_enums.h"
+#include "components/entity/e_enums.h"
 
 using namespace std::chrono_literals;
 
@@ -165,9 +165,9 @@ void CGameClient::OnConsoleInit()
 						  &m_Tooltips,
 						  &CMenus::m_Binder,
 						  &m_GameConsole,
-						  // A-Client
+						  // E-Client
 						  &m_MenuBackground,
-						  &m_Aiodob,
+						  &m_EClient,
 						  &m_AntiSpawnBlock,
 						  &m_FreezeKill,
 					      &m_AutoKill,
@@ -369,7 +369,7 @@ void CGameClient::OnInit()
 	// update and swap after font loading, they are quite huge
 	Client()->UpdateAndSwap();
 
-	const char *pLoadingDDNetCaption = Localize("Loading A-Client");
+	const char *pLoadingDDNetCaption = Localize("Loading E-Client");
 	const char *pLoadingMessageComponents = Localize("Initializing components");
 	const char *pLoadingMessageComponentsSpecial = Localize("Why are you slowmo replaying to read this?");
 	char aLoadingMessage[256];
@@ -3203,11 +3203,11 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
 		if(g_Config.m_ClServerRainbow)
 		{
-			if(m_Aiodob.m_RainbowBody[0])
-				Msg.m_ColorBody = m_Aiodob.m_RainbowColor[0];
-			if(m_Aiodob.m_RainbowFeet[0])
-				Msg.m_ColorFeet = m_Aiodob.m_RainbowColor[0];
-			if(m_Aiodob.m_RainbowBody[0] || m_Aiodob.m_RainbowFeet[0])
+			if(m_EClient.m_RainbowBody[0])
+				Msg.m_ColorBody = m_EClient.m_RainbowColor[0];
+			if(m_EClient.m_RainbowFeet[0])
+				Msg.m_ColorFeet = m_EClient.m_RainbowColor[0];
+			if(m_EClient.m_RainbowBody[0] || m_EClient.m_RainbowFeet[0])
 				Msg.m_UseCustomColor = true;
 		}
 		CMsgPacker Packer(&Msg);
@@ -3254,11 +3254,11 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
 		if(g_Config.m_ClServerRainbow)
 		{
-			if(m_Aiodob.m_RainbowBody[1])
-				Msg.m_ColorBody = m_Aiodob.m_RainbowColor[1];
-			if(m_Aiodob.m_RainbowFeet[1])
-				Msg.m_ColorFeet = m_Aiodob.m_RainbowColor[1];
-			if(m_Aiodob.m_RainbowBody[1] || m_Aiodob.m_RainbowFeet[1])
+			if(m_EClient.m_RainbowBody[1])
+				Msg.m_ColorBody = m_EClient.m_RainbowColor[1];
+			if(m_EClient.m_RainbowFeet[1])
+				Msg.m_ColorFeet = m_EClient.m_RainbowColor[1];
+			if(m_EClient.m_RainbowBody[1] || m_EClient.m_RainbowFeet[1])
 				Msg.m_UseCustomColor = true;
 		}
 		CMsgPacker Packer(&Msg);
@@ -5167,19 +5167,19 @@ bool CGameClient::CheckNewInput()
 	return m_Controls.CheckNewInput();
 }
 
-void CGameClient::aMessage(const char *pString)
+void CGameClient::ClientMessage(const char *pString)
 {
 	m_Chat.AddLine(TEAM_MESSAGE, 0, pString);
 }
 
 void CGameClient::OnJoinInfo()
 {
-	m_Aiodob.OnConnect();
+	m_EClient.OnConnect();
 }
 
 void CGameClient::SetLastMovementTime(int Delay)
 {
-	m_Aiodob.m_LastMovement = time_get() + time_freq() * Delay;
+	m_EClient.m_LastMovement = time_get() + time_freq() * Delay;
 }
 
 int CGameClient::GetClientId(const char *pName)

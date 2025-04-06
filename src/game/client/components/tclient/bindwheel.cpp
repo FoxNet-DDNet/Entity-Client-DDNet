@@ -153,7 +153,7 @@ void CBindWheel::OnRender()
 
 	if(!m_Active)
 	{
-		if(!BindsEmpty) // A-Client -> Fixes a Crash
+		if(!BindsEmpty) // E-Client -> Fixes a Crash
 		{
 			if(g_Config.m_ClResetBindWheelMouse)
 				m_SelectorMouse = vec2(0.0f, 0.0f);
@@ -191,7 +191,7 @@ void CBindWheel::OnRender()
 	Graphics()->QuadsEnd();
 	Graphics()->WrapClamp();
 
-	if(BindsEmpty) // A-Client
+	if(BindsEmpty) // E-Client
 	{
 		TextRender()->Text(Screen.w / 2.0f - 30.0f, Screen.h / 2.0f - 10.0f, 20.0f, "Empty");
 	}

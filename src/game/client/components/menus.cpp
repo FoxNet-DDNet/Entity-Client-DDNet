@@ -615,7 +615,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 	}
 
 
-	// A-Client
+	// E-Client
 	{
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitRight(33.0f, &Box, &Button);
@@ -632,7 +632,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			NewPage = PAGE_ACLIENT;
 			ResetTeePos = true;
 		}
-		GameClient()->m_Tooltips.DoToolTip(&s_AClientButton, &Button, Localize("A-Client"));
+		GameClient()->m_Tooltips.DoToolTip(&s_AClientButton, &Button, Localize("E-Client"));
 	}
 
 	Box.VSplitRight(10.0f, &Box, nullptr);
@@ -977,7 +977,7 @@ void CMenus::OnInit()
 	RenderTools()->QuadContainerAddSprite(m_DirectionQuadContainerIndex, 0.f, 0.f, 22.f);
 	Graphics()->QuadContainerUpload(m_DirectionQuadContainerIndex);
 
-	// A-Client
+	// E-Client
 
 	// Rainbow Color again for the preview..
 	m_MenusRainbowColor = g_Config.m_ClPlayerColorBody;
@@ -2506,7 +2506,7 @@ int CMenus::MenuImageScan(const char *pName, int IsDir, int DirType, void *pUser
 	str_truncate(MenuImage.m_aName, sizeof(MenuImage.m_aName), pName, str_length(pName) - str_length(pExtension));
 	pSelf->m_vMenuImages.push_back(MenuImage);
 
-	pSelf->RenderLoading(Localize("Loading DDNet Client"), Localize("Loading menu images"), 0);
+	pSelf->RenderLoading(Localize("Loading E-Client"), Localize("Loading menu images"), 0);
 
 	return 0;
 }

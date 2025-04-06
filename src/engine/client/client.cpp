@@ -473,7 +473,7 @@ void CClient::DiscordRPCchange()
 	{
 		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus);
 	}
-	dbg_msg("A-Client", "Discord RPC reloaded");
+	dbg_msg("E-Client", "Discord RPC reloaded");
 }
 
 // called when the map is loaded and we should init for a new round
@@ -4564,7 +4564,7 @@ void CClient::RegisterCommands()
 	m_pConsole->Chain("loglevel", ConchainLoglevel, this);
 	m_pConsole->Chain("stdout_output_level", ConchainStdoutOutputLevel, this);
 
-	// A-Client
+	// E-Client
 	m_pConsole->Register("discord_rpc_reload", "", CFGFLAG_CLIENT, ConDiscordRPCchange, this, "Reloads The Discord RPC");
 }
 
@@ -4919,7 +4919,7 @@ int main(int argc, const char **argv)
 		pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
 	}
 
-	// execute A-Client config file
+	// execute E-Client config file
 	IOHANDLE File = pStorage->OpenFile(ACONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
 	if(File)
 	{

@@ -723,7 +723,7 @@ public:
 		SETTINGS_SOUND,
 		SETTINGS_DDNET,
 		SETTINGS_ASSETS,
-		SETTINGS_AIODOB,
+		SETTINGS_ENTITY,
 		SETTINGS_SKINPROFILES,
 
 		SETTINGS_LENGTH,
@@ -856,7 +856,7 @@ private:
 
 	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
 
-	// A-Client
+	// E-Client
 public:
 	int m_MenusRainbowColor;
 	int64_t m_RPC_Ratelimit;
@@ -872,7 +872,7 @@ public:
 	bool ResetTeePos;
 
 	void RenderChatPreview(CUIRect MainView);
-	void RenderSettingsAiodob(CUIRect MainView);
+	void RenderSettingsEntity(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);

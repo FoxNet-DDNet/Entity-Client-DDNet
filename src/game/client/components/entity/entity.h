@@ -51,7 +51,7 @@ public:
 	char m_aReason[128] = "";
 };
 
-class CAiodob : public CComponent
+class CEClient : public CComponent
 {
 	bool m_AttempedJoinTeam;
 	bool m_JoinedTeam;

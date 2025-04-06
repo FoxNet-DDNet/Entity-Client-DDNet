@@ -473,7 +473,7 @@ bool CConfigManager::ASave()
 		WriteLine(aLineBuf); \
 	}
 
-#include "aiodob_variables.h"
+#include "entity_variables.h"
 
 #undef MACRO_CONFIG_INT
 #undef MACRO_CONFIG_COL

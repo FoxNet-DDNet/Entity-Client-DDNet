@@ -379,7 +379,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 					Button.Margin(2.0f, &FoxServerIcon);
 
 					Graphics()->TextureClear();
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_AIODOB_FLAG].m_Id);
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ENTITY_FLAG].m_Id);
 					Graphics()->SetColor(ColorRGBA(1.0f,1.0f,1.0f,1.0f));
 					Graphics()->QuadsSetRotation(0);
 		

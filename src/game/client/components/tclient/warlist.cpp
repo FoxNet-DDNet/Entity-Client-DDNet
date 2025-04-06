@@ -6,7 +6,7 @@
 #include <game/generated/client_data.h>
 #include <game/generated/protocol.h>
 
-#include <game/client/components/aiodob/aiodob.h>
+#include <game/client/components/entity/entity.h>
 #include <game/client/gameclient.h>
 
 #include "warlist.h"
@@ -24,7 +24,7 @@ void CWarList::OnConsoleInit()
 
 	Console()->Register("update_war_group", "i[group_index] s[name] i[color]", CFGFLAG_CLIENT, ConUpsertWarType, this, "Update or add a specific war group");
 	Console()->Register("add_war_entry", "s[group] s[name] s[clan] r[reason]", CFGFLAG_CLIENT, ConAddWarEntry, this, "Adds a specific war entry");
-	Console()->Register("add_mute", "s[name]", CFGFLAG_CLIENT, ConAddMuteEntry, this, "Remove a clan war entry"); // A-Client [Mutes]
+	Console()->Register("add_mute", "s[name]", CFGFLAG_CLIENT, ConAddMuteEntry, this, "Remove a clan war entry"); // E-Client [Mutes]
 
 	Console()->Register("war_name", "s[group] s[name] ?r[reason]", CFGFLAG_CLIENT, ConName, this, "Add a name war entry");
 	Console()->Register("war_clan", "s[group] s[clan] ?r[reason]", CFGFLAG_CLIENT, ConClan, this, "Add a clan war entry");
@@ -37,7 +37,7 @@ void CWarList::OnConsoleInit()
 	Console()->Register("remove_war_name_index", "i[group_index] s[name]", CFGFLAG_CLIENT, ConRemoveNameIndex, this, "Remove a clan war entry");
 	Console()->Register("remove_war_clan_index", "s[group_index] s[name]", CFGFLAG_CLIENT, ConRemoveClanIndex, this, "Remove a clan war entry");
 
-	// A-Client [Mutes]
+	// E-Client [Mutes]
 	Console()->Register("addmute", "s[name]", CFGFLAG_CLIENT, ConAddMute, this, "Remove a clan war entry");
 	Console()->Register("delmute", "s[name]", CFGFLAG_CLIENT, ConDelMute, this, "Removes a Muted Name");
 
@@ -141,7 +141,7 @@ void CWarList::ConUpsertWarType(IConsole::IResult *pResult, void *pUserData)
 	pThis->UpsertWarType(Index, pType, Color);
 }
 
-// A-Client [Mutes]
+// E-Client [Mutes]
 void CWarList::ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *pName = pResult->GetString(0);
@@ -200,13 +200,13 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 		str_copy(Entry.m_aName, pName);
 		str_format(aBuf, sizeof(aBuf), "added \"%s\" to '%s' list ", pName, pWarType->m_aWarName);
 
-		GameClient()->m_Aiodob.UnTempWar(pName, true);
-		GameClient()->m_Aiodob.UnTempHelper(pName, true);
+		GameClient()->m_EClient.UnTempWar(pName, true);
+		GameClient()->m_EClient.UnTempHelper(pName, true);
 	}
 	if(!g_Config.m_ClWarListAllowDuplicates)
 		RemoveWarEntryDuplicates(Entry.m_aName, Entry.m_aClan);
 
-	GameClient()->aMessage(aBuf);
+	GameClient()->ClientMessage(aBuf);
 
 	AddWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_aReason, Entry.m_pWarType->m_aWarName);
 	// if(str_comp(Entry.m_aClan, "") != 0 || str_comp(Entry.m_aName, "") != 0)
@@ -252,10 +252,10 @@ void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
 	{
 		str_copy(Entry.m_aName, pName);
 		str_format(aBuf, sizeof(aBuf), "removed \"%s\" from the %s list", pName, pWarType->m_aWarName);
-		GameClient()->m_Aiodob.UnTempWar(pName, true);
-		GameClient()->m_Aiodob.UnTempHelper(pName, true);
+		GameClient()->m_EClient.UnTempWar(pName, true);
+		GameClient()->m_EClient.UnTempHelper(pName, true);
 	}
-	GameClient()->aMessage(aBuf);
+	GameClient()->ClientMessage(aBuf);
 	RemoveWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_pWarType->m_aWarName);
 }
 
@@ -280,12 +280,12 @@ void CWarList::AddMute(const char *pName)
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Mute List", pName);
-	GameClient()->aMessage(aBuf);
+	GameClient()->ClientMessage(aBuf);
 	DelMute(pName, true);
 
 	m_MuteEntries.push_back(Entry);
 
-	GameClient()->m_Aiodob.UnTempMute(pName, true);
+	GameClient()->m_EClient.UnTempMute(pName, true);
 }
 
 void CWarList::DelMute(const char *pName, bool Silent)
@@ -316,11 +316,11 @@ void CWarList::DelMute(const char *pName, bool Silent)
 			}
 		}
 	}
-	if(GameClient()->m_Aiodob.UnTempMute(pName, true))
+	if(GameClient()->m_EClient.UnTempMute(pName, true))
 		str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Mute List", pName);
 
 	if(!Silent)
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
 }
 
 void CWarList::UpdateWarEntry(int Index, const char *pName, const char *pClan, const char *pReason, CWarType *pType)
@@ -577,7 +577,7 @@ void CWarList::UpdateWarPlayers()
 		if(!GameClient()->m_aClients[i].m_Active)
 			continue;
 
-		m_WarPlayers[i].IsMuted = false; // A-Client [Mutes]
+		m_WarPlayers[i].IsMuted = false; // E-Client [Mutes]
 
 		m_WarPlayers[i].IsWarName = false;
 		m_WarPlayers[i].IsWarClan = false;
@@ -608,7 +608,7 @@ void CWarList::UpdateWarPlayers()
 			}
 		}
 
-		for(CMuteEntry &Entry : m_MuteEntries) // A-Client [Mutes]
+		for(CMuteEntry &Entry : m_MuteEntries) // E-Client [Mutes]
 		{
 			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aMutedName) == 0 && str_comp(Entry.m_aMutedName, "") != 0)
 			{

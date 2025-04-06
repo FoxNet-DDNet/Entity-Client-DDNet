@@ -21,8 +21,8 @@
 #include <string.h>
 #include "chat.h"
 
-#include "aiodob/aiodob.h"
-#include "aiodob/a_enums.h"
+#include "entity/entity.h"
+#include "entity/e_enums.h"
 #include "tclient/warlist.h"
 #include <engine/client/client.h>
 
@@ -192,7 +192,7 @@ void CChat::ConShowChat(IConsole::IResult *pResult, void *pUserData)
 	((CChat *)pUserData)->m_Show = pResult->GetInteger(0) != 0;
 }
 
-void CChat::ConaMessage(IConsole::IResult *pResult, void *pUserData)
+void CChat::ConClientMessage(IConsole::IResult *pResult, void *pUserData)
 {
 	((CChat *)pUserData)->AddLine(TEAM_MESSAGE, TEAM_ALL, pResult->GetString(0));
 }
@@ -241,7 +241,7 @@ void CChat::OnConsoleInit()
 	Console()->Register("chat", "s['team'|'all'|'silent'] ?r[message]", CFGFLAG_CLIENT, ConChat, this, "Enable chat with all/team mode");
 	Console()->Register("+show_chat", "", CFGFLAG_CLIENT, ConShowChat, this, "Show chat");
 	Console()->Register("echo", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConEcho, this, "Echo the text in chat window");
-	Console()->Register("message", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConaMessage, this, "Echo the text in chat window");
+	Console()->Register("message", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClientMessage, this, "Echo the text in chat window");
 	Console()->Register("clear_chat", "", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClearChat, this, "Clear chat messages");
 }
 
@@ -307,7 +307,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			static bool SilentMessageInfo = false;
 			if(g_Config.m_ClSilentMessages)
 				AddLine(TEAM_SILENT, TEAM_ALL, m_Input.GetString());
-			if(GameClient()->m_Aiodob.m_FirstLaunch && !SilentMessageInfo)
+			if(GameClient()->m_EClient.m_FirstLaunch && !SilentMessageInfo)
 			{
 				AddLine(TEAM_MESSAGE, TEAM_ALL, "This Message was a Silent Message, no one else can see it!");
 				SilentMessageInfo = true;
@@ -715,10 +715,10 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Colors);
 			return;
 		}
-		else if(g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar))
+		else if(g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar))
 		{
 			char TypeName[512];
-			if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar)
+			if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar)
 				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName);
 			else if(GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
 				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.GetWarTypeName(ClientId));
@@ -805,7 +805,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		bool IsWarlist = GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId);
 		if(pLine_->m_ClientId >= 0 && !IsWarlist)
 		{
-			CTempData *pTempData = &GameClient()->m_Aiodob.m_TempPlayers[pLine_->m_ClientId];
+			CTempData *pTempData = &GameClient()->m_EClient.m_TempPlayers[pLine_->m_ClientId];
 			if(pTempData->IsTempHelper)
 			{
 				IsWarlist = true;
@@ -1147,7 +1147,7 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
 
-				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].IsMuted) // A-Client
+				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].IsMuted) // E-Client
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClWarlistPrefix);
 				}
@@ -1588,7 +1588,7 @@ void CChat::SendChatQueued(const char *pLine)
 	}
 }
 
-// A-Client
+// E-Client
 bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 {
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
@@ -1627,7 +1627,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					int PlayerCid = GameClient()->GetClientId(CharOname);
 
 					CWarDataCache *pWarData = &GameClient()->m_WarList.m_WarPlayers[PlayerCid];
-					CTempData *pTempData = &GameClient()->m_Aiodob.m_TempPlayers[PlayerCid];
+					CTempData *pTempData = &GameClient()->m_EClient.m_TempPlayers[PlayerCid];
 
 					if(PlayerCid >= 0)
 					{
@@ -1638,51 +1638,51 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						{
 							str_format(aBuf, sizeof(aBuf), "%s changed their name to a Teammates [%s]", CharOname, name);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
-								GameClient()->aMessage(aBuf);
+								GameClient()->ClientMessage(aBuf);
 						}
 						else
 						{
 							if(pWarData->m_WarGroupMatches[1])
 							{
-								GameClient()->m_Aiodob.TempWar(name, Reason, true);
+								GameClient()->m_EClient.TempWar(name, Reason, true);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
-									GameClient()->aMessage(aBuf);
+									GameClient()->ClientMessage(aBuf);
 							}
 							else if(pWarData->m_WarGroupMatches[3])
 							{
-								GameClient()->m_Aiodob.TempHelper(name, Reason, true);
+								GameClient()->m_EClient.TempHelper(name, Reason, true);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
-									GameClient()->aMessage(aBuf);
+									GameClient()->ClientMessage(aBuf);
 							}
 							else if(pTempData->IsTempWar)
 							{
 								if(str_comp(pTempData->m_aReason, "") != 0)
 									str_copy(Reason, pTempData->m_aReason);
 
-								GameClient()->m_Aiodob.TempWar(name, Reason, true);
+								GameClient()->m_EClient.TempWar(name, Reason, true);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp War list", name);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
-									GameClient()->aMessage(aBuf);
+									GameClient()->ClientMessage(aBuf);
 							}
 							else if(pTempData->IsTempHelper)
 							{
 								if(str_comp(pTempData->m_aReason, "") != 0)
 									str_copy(Reason, pTempData->m_aReason);
 
-								GameClient()->m_Aiodob.TempHelper(name, Reason, true);
+								GameClient()->m_EClient.TempHelper(name, Reason, true);
 								str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Helper list", name);
 								if(g_Config.m_ClAutoAddOnNameChange == 2)
-									GameClient()->aMessage(aBuf);
+									GameClient()->ClientMessage(aBuf);
 							}
 						}
 						if(pWarData->IsMuted)
 						{
-							GameClient()->m_Aiodob.TempMute(name);
+							GameClient()->m_EClient.TempMute(name);
 							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
-								GameClient()->aMessage(aBuf);
+								GameClient()->ClientMessage(aBuf);
 						}
 					}
 				}
@@ -1723,7 +1723,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						char Joined[2048] = "Auto Joined ";
 						str_append(Joined, PlayerName);
 
-						GameClient()->aMessage(Joined);
+						GameClient()->ClientMessage(Joined);
 					}
 				}
 			}
@@ -1751,7 +1751,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						int NameToJoin = str_comp(g_Config.m_ClAutoNotifyName, PlayerName);
 						if(NameToJoin == 0)
 						{
-							GameClient()->aMessage(g_Config.m_ClAutoNotifyMsg);
+							GameClient()->ClientMessage(g_Config.m_ClAutoNotifyMsg);
 
 							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.5f);
 						}
@@ -1776,7 +1776,8 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				// try to not remove their message if they are just trying to be funny
 				if(!str_find_nocase(pLine, "github.com")
 					&& !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") // TClient
-					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") // AClient
+					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") // 
+					&& !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") // E-Client (rebranded AClient)
 					&& !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus")) // Other
 					AdBotFound = true;
 				if(str_find(pLine, " ")) // This is the little white space it uses between some letters
@@ -1796,7 +1797,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					str_copy(Text, "← ");
 
 				str_format(Text, sizeof(Text), "%s%s%s", GameClient()->m_aClients[ClientId].m_aName, ClientId >= 0 ? ": " : "", pLine);
-				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "A-Client", Text, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor)));
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "E-Client", Text, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor)));
 
 				// Chat Response
 				if(g_Config.m_ClDismissAdBots == 1)
@@ -1806,16 +1807,16 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					char AdBotInfo[256];
 					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Dismissed message of \"%s\" (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
 
-					GameClient()->aMessage("╭──                  Aiodob Alert");
-					GameClient()->aMessage("│");
-					GameClient()->aMessage(AdBotInfo);
-					GameClient()->aMessage("│");
-					GameClient()->aMessage("│ If you want to start a Vote Kick Type \"Yes\"");
-					GameClient()->aMessage("│");
-					GameClient()->aMessage("│ This Option will last for one Minute,");
-					GameClient()->aMessage("│ unless you type \"No\"");
-					GameClient()->aMessage("│");
-					GameClient()->aMessage("╰───────────────────────");
+					GameClient()->ClientMessage("╭──                  Aiodob Alert");
+					GameClient()->ClientMessage("│");
+					GameClient()->ClientMessage(AdBotInfo);
+					GameClient()->ClientMessage("│");
+					GameClient()->ClientMessage("│ If you want to start a Vote Kick Type \"Yes\"");
+					GameClient()->ClientMessage("│");
+					GameClient()->ClientMessage("│ This Option will last for one Minute,");
+					GameClient()->ClientMessage("│ unless you type \"No\"");
+					GameClient()->ClientMessage("│");
+					GameClient()->ClientMessage("╰───────────────────────");
 				
 					m_AdBotId = ClientId;
 					m_VoteKickTimer = time_get() + time_freq() * 60;
@@ -1826,13 +1827,13 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					char AdBotInfo[256];
 					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Player \"%s\" has been Auto Voted (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
 
-					GameClient()->aMessage("╭──                  Aiodob Alert");
-					GameClient()->aMessage("│");
-					GameClient()->aMessage(AdBotInfo);
-					GameClient()->aMessage("│");
-					GameClient()->aMessage("│ Press F4 (Vote No) to cancel the vote");
-					GameClient()->aMessage("│");
-					GameClient()->aMessage("╰───────────────────────");
+					GameClient()->ClientMessage("╭──                  Aiodob Alert");
+					GameClient()->ClientMessage("│");
+					GameClient()->ClientMessage(AdBotInfo);
+					GameClient()->ClientMessage("│");
+					GameClient()->ClientMessage("│ Press F4 (Vote No) to cancel the vote");
+					GameClient()->ClientMessage("│");
+					GameClient()->ClientMessage("╰───────────────────────");
 
 					char Id[8];
 					str_format(Id, sizeof(Id), "%d", ClientId);
