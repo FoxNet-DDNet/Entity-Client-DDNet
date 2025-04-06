@@ -303,7 +303,7 @@ public:
 	int SendMsgActive(CMsgPacker *pMsg, int Flags) override;
 
 	// send client info
-	void SendAiodobInfo(int Conn);
+	void SendqxdInfo(int Conn);
 
 	void SendInfo(int Conn);
 	void SendEnterGame(int Conn);

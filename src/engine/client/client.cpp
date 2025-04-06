@@ -209,16 +209,16 @@ int CClient::SendMsgActive(CMsgPacker *pMsg, int Flags)
 	return SendMsg(g_Config.m_ClDummy, pMsg, Flags);
 }
 
-void CClient::SendAiodobInfo(int Conn)
+void CClient::SendqxdInfo(int Conn)
 {
-	CMsgPacker Msg(NETMSG_IAMAIODOB, true);
+	CMsgPacker Msg(NETMSG_IAMQXD, true);
 	Msg.AddString("Built on " __DATE__ ", " __TIME__);
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
 void CClient::SendInfo(int Conn)
 {
-	SendAiodobInfo(CONN_MAIN);
+	SendqxdInfo(CONN_MAIN);
 
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
@@ -3242,7 +3242,7 @@ void CClient::Run()
 			m_DummySendConnInfo = false;
 
 			// send client info
-			SendAiodobInfo(CONN_DUMMY);
+			SendqxdInfo(CONN_DUMMY);
 
 			SendInfo(CONN_DUMMY);
 			m_aNetClient[CONN_DUMMY].Update();
