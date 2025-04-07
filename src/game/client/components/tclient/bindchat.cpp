@@ -88,17 +88,9 @@ void CBindChat::AddBindDefault(const char *pName, const char *pCommand)
 
 	CBind Bind;
 	Bind.m_Default = true;
-	for(int i = 0; i < 1; i++)
-	{
-		char Prefix[8] = ".";
-		if(i == 1)
-			str_copy(Prefix, "!");
-
-		str_append(Bind.m_aName, Prefix);
-		str_copy(Bind.m_aName, pName);
-		str_copy(Bind.m_aCommand, pCommand);
-		m_vBinds.push_back(Bind);
-	}
+	str_copy(Bind.m_aName, pName);
+	str_copy(Bind.m_aCommand, pCommand);
+	m_vBinds.push_back(Bind);
 }
 
 void CBindChat::RemoveBindCommand(const char *pCommand)
