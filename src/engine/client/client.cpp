@@ -4920,11 +4920,21 @@ int main(int argc, const char **argv)
 	}
 
 	// execute E-Client config file
-	IOHANDLE File = pStorage->OpenFile(ACONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
+	IOHANDLE File = pStorage->OpenFile(ECONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
 	if(File)
 	{
 		io_close(File);
-		pConsole->ExecuteFile(ACONFIG_FILE);
+		pConsole->ExecuteFile(ECONFIG_FILE);
+	}
+
+	if(pStorage->FileExists(LEGACYACONFIG_FILE, IStorage::TYPE_ALL) && g_Config.m_ClFirstLaunch)
+	{
+		if(pConsole->ExecuteLegacyFile())
+		{
+			dbg_msg("E-Client", "migrated legacy config file to new format");
+			pStorage->RemoveFile(LEGACYACONFIG_FILE, IStorage::TYPE_SAVE);
+		}
+		g_Config.m_ClFirstLaunch = 0;
 	}
 
 	// execute autoexec file

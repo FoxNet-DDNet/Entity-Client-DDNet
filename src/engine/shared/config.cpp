@@ -440,7 +440,7 @@ bool CConfigManager::ASave()
 		return true;
 
 	char aConfigFileTmp[IO_MAX_PATH_LENGTH];
-	m_ConfigFile = m_pStorage->OpenFile(IStorage::FormatTmpPath(aConfigFileTmp, sizeof(aConfigFileTmp), ACONFIG_FILE), IOFLAG_WRITE, IStorage::TYPE_SAVE);
+	m_ConfigFile = m_pStorage->OpenFile(IStorage::FormatTmpPath(aConfigFileTmp, sizeof(aConfigFileTmp), ECONFIG_FILE), IOFLAG_WRITE, IStorage::TYPE_SAVE);
 
 	if(!m_ConfigFile)
 	{
@@ -500,9 +500,9 @@ bool CConfigManager::ASave()
 		return false;
 	}
 
-	if(!m_pStorage->RenameFile(aConfigFileTmp, ACONFIG_FILE, IStorage::TYPE_SAVE))
+	if(!m_pStorage->RenameFile(aConfigFileTmp, ECONFIG_FILE, IStorage::TYPE_SAVE))
 	{
-		dbg_msg("config", "ERROR: renaming %s to " ACONFIG_FILE " failed", aConfigFileTmp);
+		dbg_msg("config", "ERROR: renaming %s to " ECONFIG_FILE " failed", aConfigFileTmp);
 		return false;
 	}
 

@@ -18,7 +18,8 @@
 #define AUTOEXEC_FILE "autoexec.cfg"
 #define AUTOEXEC_CLIENT_FILE "autoexec_client.cfg"
 #define AUTOEXEC_SERVER_FILE "autoexec_server.cfg"
-#define ACONFIG_FILE "settings_aiodob.cfg"
+#define LEGACYACONFIG_FILE "settings_aiodob.cfg"
+#define ECONFIG_FILE "settings_entity.cfg"
 #define MAX_CALLBACKS 64;
 
 class CConfig

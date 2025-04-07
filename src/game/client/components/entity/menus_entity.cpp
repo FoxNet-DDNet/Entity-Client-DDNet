@@ -1533,7 +1533,7 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	static CButtonContainer s_AClientConfig, s_Config, s_Warlist, s_Profiles, s_Chatbinds, s_FontFolder;
 	if(DoButtonLineSize_Menu(&s_AClientConfig, Localize("E-Client Setting File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Storage()->GetCompletePath(IStorage::TYPE_SAVE, ACONFIG_FILE, aBuf, sizeof(aBuf));
+		Storage()->GetCompletePath(IStorage::TYPE_SAVE, ECONFIG_FILE, aBuf, sizeof(aBuf));
 		Client()->ViewFile(aBuf);
 	}
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
