@@ -8,7 +8,7 @@
 #include <tuple>
 
 // Stole Taters Update Stuff
-static constexpr const char *ACLIENT_VER_URL = "https://qxdfox.github.io/Aiodob/version.json";
+static constexpr const char *ACLIENT_VER_URL = "https://www.entityclient.net/version.json";
 
 void CUpdate::OnInit()
 {
