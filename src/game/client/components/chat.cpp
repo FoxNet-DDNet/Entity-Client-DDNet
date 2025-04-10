@@ -1631,8 +1631,10 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 					if(PlayerCid >= 0)
 					{
-						char Reason[128] = "";
+						char Reason[128];
 						str_copy(Reason, CharOname);
+						if(str_comp(pTempData->m_aReason, "") != 0)
+							str_copy(Reason, pTempData->m_aReason);
 
 						if(GameClient()->m_WarList.FindWarTypeWithName(name) == 2)
 						{
