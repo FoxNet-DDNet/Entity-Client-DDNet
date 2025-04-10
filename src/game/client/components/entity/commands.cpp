@@ -568,7 +568,7 @@ void CEClient::PlayerInfo(const char *pName)
 		GameClient()->ClientMessage("│");
 
 		if(GameClient()->m_aClients[Id].m_AuthLevel > 0)
-			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes, Auth Level %s", GameClient()->m_aClients[Id].m_AuthLevel);
+			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes, Auth Level %d", GameClient()->m_aClients[Id].m_AuthLevel);
 		else
 			str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
 		GameClient()->ClientMessage(aBuf);
