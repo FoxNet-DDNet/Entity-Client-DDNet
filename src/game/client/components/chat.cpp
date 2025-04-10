@@ -1399,7 +1399,7 @@ void CChat::OnRender()
 
 		CBindChat pBindchat = m_pClient->m_Bindchat;
 
-		if(pBindchat.CheckBindChat(m_Input.GetString()) && m_Input.GetString()[0] != '\0')
+		if(pBindchat.CheckBindChat(m_Input.GetString()) && m_Input.GetString()[1] != '\0')
 		{
 			for(int i = 0; i < (int)pBindchat.m_vBinds.size(); i++)
 			{
