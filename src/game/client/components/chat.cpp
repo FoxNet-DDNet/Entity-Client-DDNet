@@ -1626,15 +1626,17 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 					int PlayerCid = GameClient()->GetClientId(CharOname);
 
-					CWarDataCache *pWarData = &GameClient()->m_WarList.m_WarPlayers[PlayerCid];
-					CTempData *pTempData = &GameClient()->m_EClient.m_TempPlayers[PlayerCid];
-
 					if(PlayerCid >= 0)
 					{
+						CWarDataCache *pWarData = &GameClient()->m_WarList.m_WarPlayers[PlayerCid];
+						CTempData *pTempData = &GameClient()->m_EClient.m_TempPlayers[PlayerCid];
+
 						char Reason[128];
 						str_copy(Reason, CharOname);
 						if(str_comp(pTempData->m_aReason, "") != 0)
 							str_copy(Reason, pTempData->m_aReason);
+						else if(str_comp(pTempData->m_aReason, Reason))
+							str_copy(Reason, "");
 
 						if(GameClient()->m_WarList.FindWarTypeWithName(name) == 2)
 						{
