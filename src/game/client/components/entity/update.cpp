@@ -8,7 +8,7 @@
 #include <tuple>
 
 // Stole Taters Update Stuff
-static constexpr const char *ACLIENT_VER_URL = "https://www.entityclient.net/version.json";
+static constexpr const char *ECLIENT_VER_URL = "https://www.entityclient.net/version.json";
 
 void CUpdate::OnInit()
 {
@@ -40,7 +40,7 @@ void CUpdate::FetchAClientInfo()
 	if(m_pAClientVerTask && !m_pAClientVerTask->Done())
 		return;
 	char aUrl[256];
-	str_copy(aUrl, ACLIENT_VER_URL);
+	str_copy(aUrl, ECLIENT_VER_URL);
 	m_pAClientVerTask = HttpGet(aUrl);
 	m_pAClientVerTask->Timeout(CTimeout{10000, 0, 500, 10});
 	m_pAClientVerTask->IpResolve(IPRESOLVE::V4);
@@ -83,7 +83,7 @@ void CUpdate::FinishAClientInfo()
 		char aNewVersionStr[64];
 		str_copy(aNewVersionStr, CurrentVersion);
 		char aCurVersionStr[64];
-		str_copy(aCurVersionStr, ACLIENT_VERSION);
+		str_copy(aCurVersionStr, ECLIENT_VERSION);
 		if(ToACVersion(aNewVersionStr) > ToACVersion(aCurVersionStr))
 		{
 			str_copy(m_aVersionStr, CurrentVersion);

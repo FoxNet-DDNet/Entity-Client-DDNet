@@ -709,7 +709,7 @@ public:
 		PAGE_SETTINGS,
 		PAGE_NETWORK,
 		PAGE_GHOST,
-		PAGE_ACLIENT,
+		PAGE_ECLIENT,
 
 		PAGE_LENGTH,
 
@@ -750,7 +750,7 @@ public:
 		SMALL_TAB_BROWSER_FILTER,
 		SMALL_TAB_BROWSER_INFO,
 		SMALL_TAB_BROWSER_FRIENDS,
-		SMALL_TAB_ACLIENT,
+		SMALL_TAB_ECLIENT,
 
 		SMALL_TAB_LENGTH,
 	};
@@ -876,7 +876,7 @@ public:
 	void RenderSettingsWarList(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
-	void RenderAClientVersionPage(CUIRect MainView);
+	void RenderEClientVersionPage(CUIRect MainView);
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();

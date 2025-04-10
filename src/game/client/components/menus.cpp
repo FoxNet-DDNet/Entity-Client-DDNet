@@ -619,7 +619,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 	{
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitRight(33.0f, &Box, &Button);
-		static CButtonContainer s_AClientButton;
+		static CButtonContainer s_EClientButton;
 		ColorRGBA Inactive = ms_ColorTabbarInactive;
 		ColorRGBA Active = ms_ColorTabbarActive;
 		if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
@@ -627,12 +627,12 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			Inactive = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
 			Active = ColorRGBA(0.3f, 0.8f, 0.6, 0.5f);
 		}
-		if(DoButton_MenuTab(&s_AClientButton, FONT_ICON_INFO, ActivePage == PAGE_ACLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ACLIENT], &Inactive, nullptr, &Active))
+		if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, nullptr, &Active))
 		{
-			NewPage = PAGE_ACLIENT;
+			NewPage = PAGE_ECLIENT;
 			ResetTeePos = true;
 		}
-		GameClient()->m_Tooltips.DoToolTip(&s_AClientButton, &Button, Localize("E-Client"));
+		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("E-Client"));
 	}
 
 	Box.VSplitRight(10.0f, &Box, nullptr);
@@ -1190,9 +1190,9 @@ void CMenus::Render()
 			{
 				RenderSettings(MainView);
 			}
-			else if(m_MenuPage == PAGE_ACLIENT)
+			else if(m_MenuPage == PAGE_ECLIENT)
 			{
-				RenderAClientVersionPage(MainView);
+				RenderEClientVersionPage(MainView);
 			}
 			else
 			{
@@ -1242,9 +1242,9 @@ void CMenus::Render()
 			{
 				RenderSettings(MainView);
 			}
-			else if(m_GamePage == PAGE_ACLIENT)
+			else if(m_GamePage == PAGE_ECLIENT)
 			{
-				RenderAClientVersionPage(MainView);
+				RenderEClientVersionPage(MainView);
 			}
 			else
 			{

@@ -1427,7 +1427,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	}
 }
 
-void CMenus::RenderAClientVersionPage(CUIRect MainView)
+void CMenus::RenderEClientVersionPage(CUIRect MainView)
 {
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
 
