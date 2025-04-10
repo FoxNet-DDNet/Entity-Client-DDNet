@@ -339,7 +339,7 @@ void CGameClient::OnInit()
 
 	// propagate pointers
 	m_UI.Init(Kernel());
-	m_RenderTools.Init(Graphics(), TextRender(), this);
+	m_RenderTools.Init(Graphics(), TextRender());
 
 	if(GIT_SHORTREV_HASH)
 	{

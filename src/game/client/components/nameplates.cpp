@@ -276,15 +276,15 @@ protected:
 		// E-Client
 		if(g_Config.m_ClStrongWeakColorId)
 		{
-			switch(Data.m_HookStrongWeak)
+			switch(Data.m_HookStrongWeakState)
 			{
-			case CNamePlateData::HOOKSTRONGWEAK_STRONG:
+			case EHookStrongWeakState::STRONG:
 				m_Color = color_cast<ColorRGBA>(ColorHSLA(6401973));
 				break;
-			case CNamePlateData::HOOKSTRONGWEAK_NEUTRAL:
+			case EHookStrongWeakState::NEUTRAL:
 				m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 				break;
-			case CNamePlateData::HOOKSTRONGWEAK_WEAK:
+			case EHookStrongWeakState::WEAK:
 				m_Color = color_cast<ColorRGBA>(ColorHSLA(41131));
 				break;
 			}

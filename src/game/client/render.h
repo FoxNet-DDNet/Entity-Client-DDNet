@@ -271,7 +271,7 @@ public:
 	class ITextRender *TextRender() const { return m_pTextRender; }
 	class CGameClient *GameClient() const { return m_pGameClient; }
 
-	void Init(class IGraphics *pGraphics, class ITextRender *pTextRender, class CGameClient *pGameClient);
+	void Init(class IGraphics *pGraphics, class ITextRender *pTextRender);
 
 	void SelectSprite(int Id, int Flags = 0);
 	void SelectSprite7(int Id, int Flags = 0);
