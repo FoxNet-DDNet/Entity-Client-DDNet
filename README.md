@@ -1,7 +1,7 @@
 
 ![gui_logo](https://github.com/user-attachments/assets/76f93b08-3efa-40a8-96b9-b64b17c14b3f)
 
-ox's client which mostly consists of stolen code
+Fox's client which mostly consists of stolen code
 If you find any bugs or have an Idea for a *simple* Feature then create a new Issue
 
 # Setting Pages:
