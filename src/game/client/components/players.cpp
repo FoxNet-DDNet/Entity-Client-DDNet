@@ -818,6 +818,11 @@ void CPlayers::RenderPlayer(
 	if(Frozen)
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32), Alpha);
 
+	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_SPARKLE && g_Config.m_ClEffect != EFFECT_SPARKLE)
+	{
+		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
+	}
+
 	RenderEffects(Frozen, Local, BodyPos, Vel, Alpha);
 
 	if(ClientId < 0)
@@ -1263,6 +1268,10 @@ void CPlayers::RenderPlayerGhost(
 	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN)
 	{
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32));
+	}
+	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_SPARKLE)
+	{
+		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
 	}
 
 	int QuadOffsetToEmoticon = NUM_WEAPONS * 2 + 2 + 2;
