@@ -3285,12 +3285,12 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 
 		{
 			CUIRect TeeRect;
-			AllPlayerSettings.HSplitTop(Margin, nullptr, &AllPlayerSettings);
+			AllPlayerSettings.VMargin(5.0f, &AllPlayerSettings);
 			AllPlayerSettings.HSplitTop(Margin, nullptr, &TeeRect);
 			AllPlayerSettings.HSplitTop(235.0f, &AllPlayerSettings, 0);
 			if(s_ScrollRegion.AddRect(AllPlayerSettings))
 			{
-				AllPlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				AllPlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				AllPlayerSettings.VMargin(Margin, &AllPlayerSettings);
 
 				AllPlayerSettings.HSplitTop(HeaderHeight, &Button, &AllPlayerSettings);
@@ -3369,17 +3369,17 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 		}
 
 		{
-			DemoSettings.HSplitTop(Margin, nullptr, &DemoSettings);
-			DemoSettings.HSplitTop(120.0f, &DemoSettings, 0);
+			DemoSettings.VMargin(5.0f, &DemoSettings);
+			DemoSettings.HSplitTop(80.0f, &DemoSettings, 0);
 			if(s_ScrollRegion.AddRect(DemoSettings))
 			{
-				DemoSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				DemoSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				DemoSettings.VMargin(Margin, &DemoSettings);
 
 				DemoSettings.HSplitTop(HeaderHeight, &Button, &DemoSettings);
 				Ui()->DoLabel(&Button, Localize("Demo Settings"), FontSize, TEXTALIGN_MC);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDemoHideIfSolo, Localize("Hide Solo Players in Demos"), &g_Config.m_ClDemoHideIfSolo, &AllPlayerSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDemoHideIfSolo, Localize("Hide Solo Players in Demos"), &g_Config.m_ClDemoHideIfSolo, &DemoSettings, LineSize);
 			}
 		}
 

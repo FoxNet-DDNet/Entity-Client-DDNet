@@ -1525,14 +1525,16 @@ void CPlayers::OnRender()
 	{
 		if(!Clients.m_SpecCharPresent)
 			continue;
-			if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
-				if(Clients.m_Solo && Clients.ClientId() != LocalClientId)
-					continue;
+
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
+			if(Clients.m_Solo && Clients.ClientId() != LocalClientId)
+				continue;
 		
-			// don't render offscreen
-		if(!in_range(Client.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Client.m_RenderPos.y, ScreenY0, ScreenY1))
+		// don't render offscreen
+		if(!in_range(Clients.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Clients.m_RenderPos.y, ScreenY0, ScreenY1))
 			continue;
-		const int ClientId = Client.ClientId();
+
+		const int ClientId = Clients.ClientId();
 		float Alpha = (m_pClient->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
 		if(ClientId == -2) // ghost
 			Alpha = g_Config.m_ClRaceGhostAlpha / 100.f;

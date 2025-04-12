@@ -1968,7 +1968,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 	}
 	else if(g_Config.m_UiSettingsPage == SETTINGS_PROGAMING)
 	{
-		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_AIODOB);
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_ENTITY);
 		RenderSettingsProGaming(MainView);
 	}
 	else
