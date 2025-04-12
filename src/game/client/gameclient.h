@@ -64,11 +64,12 @@
 #include "components/touch_controls.h"
 #include "components/voting.h"
 
-// Aiodob
-#include "components/aiodob/aiodob.h"
-#include "components/aiodob/anti_spawn_block.h"
-#include "components/aiodob/auto_kill.h"
-#include "components/aiodob/freeze_kill.h"
+// Entity
+#include "components/entity/entity.h"
+#include "components/entity/anti_spawn_block.h"
+#include "components/entity/auto_kill.h"
+#include "components/entity/freeze_kill.h"
+#include "components/entity/update.h"
 
 // Tater
 #include "components/tclient/bindchat.h"
@@ -189,15 +190,16 @@ public:
 
 	CTooltips m_Tooltips;
 
-	// Aiodob
-	CAiodob m_Aiodob;
+	// Entity
+	CEClient m_EClient;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CAutoKill m_AutoKill;
+	CUpdate m_AcUpdate;
 
 	// T-Client
 	CSkinProfiles m_SkinProfiles;
-	CBindchat m_Bindchat;
+	CBindChat m_Bindchat;
 	CBindWheel m_Bindwheel;
 	CPlayerIndicator m_PlayerIndicator;
 	COutlines m_Outlines;
@@ -719,8 +721,8 @@ public:
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
 
-	// A-Client	
-	void aMessage(const char *pString) override;
+	// E-Client	
+	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;
 	void SetLastMovementTime(int Delay) override;
 

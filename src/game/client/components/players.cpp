@@ -28,7 +28,7 @@
 #include <base/color.h>
 #include <base/math.h>
 #include <cstdlib>
-#include "aiodob/a_enums.h"
+#include "entity/e_enums.h"
 
 void CPlayers::RenderHand(const CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir, float AngleOffset, vec2 PostRotOffset, float Alpha)
 {
@@ -108,17 +108,6 @@ void CPlayers::RenderHand6(const CTeeRenderInfo *pInfo, vec2 CenterPos, vec2 Dir
 		Graphics()->TextureSet(i == 0 ? pSkinTextures->m_HandsOutline : pSkinTextures->m_Hands);
 		Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, HandPos.x, HandPos.y);
 	}
-}
-
-inline float AngularMixDirection(float Src, float Dst) { return std::sin(Dst - Src) > 0 ? 1 : -1; }
-
-inline float AngularApproach(float Src, float Dst, float Amount)
-{
-	float d = AngularMixDirection(Src, Dst);
-	float n = Src + Amount * d;
-	if(AngularMixDirection(n, Dst) != d)
-		return Dst;
-	return n;
 }
 
 float CPlayers::GetPlayerTargetAngle(
@@ -1481,9 +1470,9 @@ void CPlayers::OnRender()
 			else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
 				Color = GameClient()->m_WarList.GetClanColor(ClientId);
 
-			if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempWar)
+			if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar)
 				Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-			else if(GameClient()->m_Aiodob.m_TempPlayers[ClientId].IsTempHelper)
+			else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper)
 				Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
 				
 			if(g_Config.m_ClSweatModeSelfColor && Local)
@@ -1536,15 +1525,14 @@ void CPlayers::OnRender()
 	{
 		if(!Clients.m_SpecCharPresent)
 			continue;
-
-		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
-			if(Clients.m_Solo && Clients.ClientId() != LocalClientId)
-				continue;
-
-		// don't render offscreen
-		if(!in_range(Clients.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Clients.m_RenderPos.y, ScreenY0, ScreenY1))
+			if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
+				if(Clients.m_Solo && Clients.ClientId() != LocalClientId)
+					continue;
+		
+			// don't render offscreen
+		if(!in_range(Client.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Client.m_RenderPos.y, ScreenY0, ScreenY1))
 			continue;
-		const int ClientId = Clients.ClientId();
+		const int ClientId = Client.ClientId();
 		float Alpha = (m_pClient->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
 		if(ClientId == -2) // ghost
 			Alpha = g_Config.m_ClRaceGhostAlpha / 100.f;
@@ -1674,7 +1662,7 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 
 	if(g_Config.m_ClSpecialEffect && !Frozen && Local)
 	{
-		if(GameClient()->m_Aiodob.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
+		if(GameClient()->m_EClient.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
 		{
 			GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x + 100 * cos(Time / time_freq() * 2), BodyPos.y + 100 * sin(Time / time_freq() * 2)), Alpha);
 

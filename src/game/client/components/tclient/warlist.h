@@ -73,7 +73,7 @@ public:
 	}
 };
 
-// A-Client [Mutes]
+// E-Client [Mutes]
 class CMuteEntry
 {
 public:
@@ -98,7 +98,7 @@ public:
 	bool IsWarName = false;
 	bool IsWarClan = false;
 
-	bool IsMuted = false; // A-Client [Mutes]
+	bool IsMuted = false; // E-Client [Mutes]
 
 	std::vector<char> m_WarGroupMatches = {false, false, false, false};
 
@@ -148,7 +148,7 @@ class CWarList : public CComponent
 	static void ConRemoveName(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveClan(IConsole::IResult *pResult, void *pUserData);
 
-	// A-Client
+	// E-Client
 	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
 	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
 
@@ -156,7 +156,7 @@ class CWarList : public CComponent
 	static void ConAddWarEntry(IConsole::IResult *pResult, void *pUserData);
 	static void ConUpsertWarType(IConsole::IResult *pResult, void *pUserData);
 
-	// A-Client
+	// E-Client
 	static void ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
@@ -183,7 +183,7 @@ public:
 		new CWarType("helper", ColorRGBA(0.9f, 0.87f, 0.2f, 1.0f), false), // 3
 	};
 
-	// A-Client [Mutes]
+	// E-Client [Mutes]
 	std::vector<CMuteEntry> m_MuteEntries;
 
 	// None type war entries will float to the top of the list, so they can be assigned a type
@@ -210,8 +210,8 @@ public:
 	void AddWarEntryInGame(int WarType, const char *pName, const char *pReason, bool IsClan);
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
 
-	// A-Client
-	void AddMuteEntry(const char *pName); // A-Client [Mutes]
+	// E-Client
+	void AddMuteEntry(const char *pName); // E-Client [Mutes]
 	void AddMute(const char *pName);
 	void DelMute(const char *pName, bool Silent = false);
 

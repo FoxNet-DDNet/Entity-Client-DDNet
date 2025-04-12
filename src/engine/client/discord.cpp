@@ -61,7 +61,7 @@ public:
 		DiscordCreateParams Params;
 		DiscordCreateParamsSetDefault(&Params);
 
-		Params.client_id = 1325507236331524116; // A-Client
+		Params.client_id = 1325507236331524116; // E-Client
 		Params.flags = EDiscordCreateFlags::DiscordCreateFlags_NoRequireDiscord;
 		Params.event_data = this;
 		Params.activity_events = &m_ActivityEvents;
@@ -99,7 +99,7 @@ public:
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
 		str_copy(m_Activity.assets.large_image, "ac_image_b_o", sizeof(m_Activity.assets.large_image));
-		str_copy(m_Activity.assets.large_text, "github.com/qxdFox/Aiodob-Client-DDNet", sizeof(m_Activity.assets.large_text));
+		str_copy(m_Activity.assets.large_text, "github.com/qxdFox/Entity-Client", sizeof(m_Activity.assets.large_text));
 		m_Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
 		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 		m_Activity.instance = false;
@@ -113,7 +113,7 @@ public:
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
 		str_copy(m_Activity.assets.large_image, "ac_image_b", sizeof(m_Activity.assets.large_image));
-		str_copy(m_Activity.assets.large_text, "github.com/qxdFox/Aiodob-Client-DDNet", sizeof(m_Activity.assets.large_text));
+		str_copy(m_Activity.assets.large_text, "github.com/qxdFox/Entity-Client", sizeof(m_Activity.assets.large_text));
 		m_Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
 		str_copy(m_Activity.name, pDetail, sizeof(m_Activity.name));
 		m_Activity.instance = true;

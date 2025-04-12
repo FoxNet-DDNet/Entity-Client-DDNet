@@ -34,10 +34,10 @@ public:
 
 	bool operator==(const CTempEntry &Other) const
 	{
-		bool TempWarMatch = str_comp(m_aTempWar, Other.m_aTempWar) == 0 && str_comp(m_aTempWar, "") != 0;
-		bool TempHelperMatch = str_comp(m_aTempHelper, Other.m_aTempHelper) == 0 && str_comp(m_aTempHelper, "") != 0;
-		bool TempHelperMute = str_comp(m_aTempMute, Other.m_aTempMute) == 0 && str_comp(m_aTempHelper, "") != 0;
-		return (TempWarMatch || TempHelperMatch || TempHelperMute);
+		bool TempWarMatch = !str_comp(m_aTempWar, Other.m_aTempWar) && str_comp(m_aTempWar, "") != 0;
+		bool TempHelperMatch = !str_comp(m_aTempHelper, Other.m_aTempHelper) && str_comp(m_aTempHelper, "") != 0;
+		bool TempMuteMatch = !str_comp(m_aTempMute, Other.m_aTempMute) && str_comp(m_aTempHelper, "") != 0;
+		return (TempWarMatch || TempHelperMatch || TempMuteMatch);
 	}
 };
 
@@ -51,7 +51,7 @@ public:
 	char m_aReason[128] = "";
 };
 
-class CAiodob : public CComponent
+class CEClient : public CComponent
 {
 	bool m_AttempedJoinTeam;
 	bool m_JoinedTeam;
@@ -61,45 +61,25 @@ class CAiodob : public CComponent
 	bool m_GoresModeWasOn;
 	bool m_GoresServer;
 
+	// Chat Message Stuffc
+
+	
 	// Reply to Ping
 	struct CLastPing
 	{
 		void Reset()
 		{
 			m_aName[0] = '\0';
-			m_aClan[0] = '\0';
 			m_aMessage[0] = '\0';
-			m_ReciveTime = 0;
 			m_Team = 0;
 		}
 
-		CLastPing()
-		{
-			Reset();
-		}
-
-		char m_aName[32];
-		char m_aClan[32];
-		char m_aMessage[2048];
+		char m_aName[MAX_NAME_LENGTH] = "";
+		char m_aMessage[256] = "";
 		int m_Team;
-		int64_t m_ReciveTime;
 	};
+	CLastPing m_aLastPing;
 
-	enum
-	{
-		PING_QUEUE_SIZE = 16
-	};
-
-	/*
-		m_aLastPings
-
-		A stack holding the most recent 16 pings in chat.
-		Index 0 will be the latest message.
-		Popping of the stack will always give you the most recent message.
-	*/
-	CLastPing m_aLastPings[PING_QUEUE_SIZE];
-
-	// Chat Message Stuff
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 	int Get128Name(const char *pMsg, char *pName);
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
@@ -137,18 +117,20 @@ class CAiodob : public CComponent
 	static void ConSaveSkin(IConsole::IResult *pResult, void *pUserData);
 	static void ConRestoreSkin(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConReplyLast(IConsole::IResult *pResult, void *pUserData);
+
 public:
 	bool m_SentKill;
 	int m_KillCount;
 
 	void TempWar(const char *pName, const char *pReason, bool Silent = false);
-	void UnTempWar(const char *pName, bool Silent = false);
-
 	void TempHelper(const char *pName, const char *pReason, bool Silent = false);
-	void UnTempHelper(const char *pName, bool Silent = false);
-
 	void TempMute(const char *pName, bool Silent = false);
-	void UnTempMute(const char *pName, bool Silent = false);
+
+	bool UnTempHelper(const char *pName, bool Silent = false);
+	bool UnTempWar(const char *pName, bool Silent = false);
+	bool UnTempMute(const char *pName, bool Silent = false);
+
 
 	void Votekick(const char *pName, const char *pReason);
 

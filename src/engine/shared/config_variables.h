@@ -400,7 +400,7 @@ MACRO_CONFIG_INT(GfxDesktopWidth, gfx_desktop_width, 0, 0, 0, CFGFLAG_SAVE | CFG
 MACRO_CONFIG_INT(GfxDesktopHeight, gfx_desktop_height, 0, 0, 0, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Desktop resolution height for detecting display changes (not recommended to change manually)")
 #if !defined(CONF_PLATFORM_MACOS)
 MACRO_CONFIG_INT(GfxBorderless, gfx_borderless, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Borderless window (not to be used with fullscreen)")
-#if !defined(CONF_WEBASM)
+#if !defined(CONF_PLATFORM_EMSCRIPTEN)
 MACRO_CONFIG_INT(GfxFullscreen, gfx_fullscreen, 1, 0, 3, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Set fullscreen mode: 0=no fullscreen, 1=pure fullscreen, 2=desktop fullscreen, 3=windowed fullscreen")
 #else
 MACRO_CONFIG_INT(GfxFullscreen, gfx_fullscreen, 0, 0, 3, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Set fullscreen mode: 0=no fullscreen, 1=pure fullscreen, 2=desktop fullscreen, 3=windowed fullscreen")
@@ -599,6 +599,9 @@ MACRO_CONFIG_COL(ClLaserDoorInnerColor, cl_laser_door_inner_color, 7701379, CFGF
 MACRO_CONFIG_COL(ClLaserDoorOutlineColor, cl_laser_door_outline_color, 7667473, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser outline color for doors")
 MACRO_CONFIG_COL(ClLaserFreezeInnerColor, cl_laser_freeze_inner_color, 12001153, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser inner color for freezes")
 MACRO_CONFIG_COL(ClLaserFreezeOutlineColor, cl_laser_freeze_outline_color, 11613223, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser outline color for freezes")
+MACRO_CONFIG_COL(ClLaserGrabberInnerColor, cl_laser_grabber_inner_color, 65437, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser inner color for grabbers")
+MACRO_CONFIG_COL(ClLaserGrabberOutlineColor, cl_laser_grabber_outline_color, 57618, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Laser outline color for grabbers")
+
 MACRO_CONFIG_COL(ClKillMessageNormalColor, cl_kill_message_normal_color, 255, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Kill message normal color")
 MACRO_CONFIG_COL(ClKillMessageHighlightColor, cl_kill_message_highlight_color, 255, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Kill message highlight color")
 
@@ -760,4 +763,4 @@ MACRO_CONFIG_INT(ClVideoRecorderFPS, cl_video_recorder_fps, 60, 1, 1000, CFGFLAG
  * Add config variables for mods below this comment to avoid merge conflicts.
  */
 
-#include "aiodob_variables.h"
+#include "entity_variables.h"

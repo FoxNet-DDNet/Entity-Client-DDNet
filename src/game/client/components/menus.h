@@ -709,7 +709,7 @@ public:
 		PAGE_SETTINGS,
 		PAGE_NETWORK,
 		PAGE_GHOST,
-		PAGE_ACLIENT,
+		PAGE_ECLIENT,
 
 		PAGE_LENGTH,
 
@@ -723,7 +723,7 @@ public:
 		SETTINGS_SOUND,
 		SETTINGS_DDNET,
 		SETTINGS_ASSETS,
-		SETTINGS_AIODOB,
+		SETTINGS_ENTITY,
 		SETTINGS_SKINPROFILES,
 		SETTINGS_PROGAMING,
 
@@ -751,7 +751,7 @@ public:
 		SMALL_TAB_BROWSER_FILTER,
 		SMALL_TAB_BROWSER_INFO,
 		SMALL_TAB_BROWSER_FRIENDS,
-		SMALL_TAB_ACLIENT,
+		SMALL_TAB_ECLIENT,
 
 		SMALL_TAB_LENGTH,
 	};
@@ -857,7 +857,7 @@ private:
 
 	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
 
-	// A-Client
+	// E-Client
 public:
 	int m_MenusRainbowColor;
 	int64_t m_RPC_Ratelimit;
@@ -873,11 +873,11 @@ public:
 	bool ResetTeePos;
 
 	void RenderChatPreview(CUIRect MainView);
-	void RenderSettingsAiodob(CUIRect MainView);
+	void RenderSettingsEntity(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
-	void RenderAClientVersionPage(CUIRect MainView);
+	void RenderEClientVersionPage(CUIRect MainView);
 
 	void RenderSettingsProGaming(CUIRect MainView);
 

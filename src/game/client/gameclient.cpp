@@ -79,7 +79,7 @@
 #include "prediction/entities/character.h"
 #include "prediction/entities/projectile.h"
 
-#include "components/aiodob/a_enums.h"
+#include "components/entity/e_enums.h"
 
 using namespace std::chrono_literals;
 
@@ -116,61 +116,63 @@ void CGameClient::OnConsoleInit()
 
 	// make a list of all the systems, make sure to add them in the correct render order
 	m_vpAll.insert(m_vpAll.end(), {&m_Skins,
-					      &m_Skins7,
-					      &m_CountryFlags,
-					      &m_MapImages,
-					      &m_Effects, // doesn't render anything, just updates effects
-					      &m_Binds,
-					      &m_Binds.m_SpecialBinds,
-					      &m_Controls,
-					      &m_Camera,
-					      &m_Sounds,
-					      &m_Voting,
-					      &m_Particles, // doesn't render anything, just updates all the particles
-					      &m_SkinProfiles,
-					      &m_RaceDemo,
-					      &m_Rainbow,
-					      &m_MapSounds,
-					      &m_Background, // render instead of m_MapLayersBackground when g_Config.m_ClOverlayEntities == 100
-					      &m_MapLayersBackground, // first to render
-					      &m_Particles.m_RenderTrail,
-					      &m_Particles.m_RenderTrailExtra,
-					      &m_Items,
-					      &m_Ghost,
-					      &m_Players,
-					      &m_MapLayersForeground,
-					      &m_Outlines,
-					      &m_Particles.m_RenderExplosions,
-					      &m_NamePlates,
-					      &m_Particles.m_RenderExtra,
-					      &m_Particles.m_RenderGeneral,
-					      &m_FreezeBars,
-					      &m_DamageInd,
-					      &m_PlayerIndicator,
-					      &m_Hud,
-					      &m_Spectator,
-					      &m_Emoticon,
-					      &m_Bindchat,
-					      &m_Bindwheel,
-					      &m_WarList,
-					      &m_InfoMessages,
-					      &m_Chat,
-					      &m_Broadcast,
-					      &m_DebugHud,
-					      &m_TouchControls,
-					      &m_Scoreboard,
-					      &m_Statboard,
-					      &m_Motd,
-					      &m_Menus,
-					      &m_Tooltips,
-					      &CMenus::m_Binder,
-					      &m_GameConsole,
-						  // A-Client
-					      &m_Aiodob,
-					      &m_AntiSpawnBlock,
+						  &m_Skins7,
+						  &m_CountryFlags,
+						  &m_MapImages,
+						  &m_Effects, // doesn't render anything, just updates effects
+						  &m_Binds,
+						  &m_Binds.m_SpecialBinds,
+						  &m_Controls,
+						  &m_Camera,
+						  &m_Sounds,
+						  &m_Voting,
+						  &m_Particles, // doesn't render anything, just updates all the particles
+						  &m_SkinProfiles,
+						  &m_RaceDemo,
+						  &m_Rainbow,
+						  &m_MapSounds,
+						  &m_Background, // render instead of m_MapLayersBackground when g_Config.m_ClOverlayEntities == 100
+						  &m_MapLayersBackground, // first to render
+						  &m_Particles.m_RenderTrail,
+						  &m_Particles.m_RenderTrailExtra,
+						  &m_Items,
+						  &m_Ghost,
+						  &m_Players,
+						  &m_MapLayersForeground,
+						  &m_Outlines,
+						  &m_Particles.m_RenderExplosions,
+						  &m_NamePlates,
+						  &m_Particles.m_RenderExtra,
+						  &m_Particles.m_RenderGeneral,
+						  &m_FreezeBars,
+						  &m_DamageInd,
+						  &m_PlayerIndicator,
+						  &m_Hud,
+						  &m_Spectator,
+						  &m_Emoticon,
+						  &m_Bindchat,
+						  &m_Bindwheel,
+						  &m_WarList,
+						  &m_InfoMessages,
+						  &m_Chat,
+						  &m_Broadcast,
+						  &m_DebugHud,
+						  &m_TouchControls,
+						  &m_Scoreboard,
+						  &m_Statboard,
+						  &m_Motd,
+						  &m_Menus,
+						  &m_Tooltips,
+						  &CMenus::m_Binder,
+						  &m_GameConsole,
+						  // E-Client
+						  &m_MenuBackground,
+						  &m_EClient,
+						  &m_AntiSpawnBlock,
 						  &m_FreezeKill,
-						  &m_AutoKill,
-					      &m_MenuBackground});
+					      &m_AutoKill,
+					      &m_AcUpdate,
+	});
 
 	// build the input stack
 	m_vpInput.insert(m_vpInput.end(), {&CMenus::m_Binder, // this will take over all input when we want to bind a key
@@ -337,7 +339,7 @@ void CGameClient::OnInit()
 
 	// propagate pointers
 	m_UI.Init(Kernel());
-	m_RenderTools.Init(Graphics(), TextRender(), this);
+	m_RenderTools.Init(Graphics(), TextRender());
 
 	if(GIT_SHORTREV_HASH)
 	{
@@ -367,7 +369,7 @@ void CGameClient::OnInit()
 	// update and swap after font loading, they are quite huge
 	Client()->UpdateAndSwap();
 
-	const char *pLoadingDDNetCaption = Localize("Loading A-Client");
+	const char *pLoadingDDNetCaption = Localize("Loading E-Client");
 	const char *pLoadingMessageComponents = Localize("Initializing components");
 	const char *pLoadingMessageComponentsSpecial = Localize("Why are you slowmo replaying to read this?");
 	char aLoadingMessage[256];
@@ -3201,11 +3203,11 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
 		if(g_Config.m_ClServerRainbow)
 		{
-			if(m_Aiodob.m_RainbowBody[0])
-				Msg.m_ColorBody = m_Aiodob.m_RainbowColor[0];
-			if(m_Aiodob.m_RainbowFeet[0])
-				Msg.m_ColorFeet = m_Aiodob.m_RainbowColor[0];
-			if(m_Aiodob.m_RainbowBody[0] || m_Aiodob.m_RainbowFeet[0])
+			if(m_EClient.m_RainbowBody[0])
+				Msg.m_ColorBody = m_EClient.m_RainbowColor[0];
+			if(m_EClient.m_RainbowFeet[0])
+				Msg.m_ColorFeet = m_EClient.m_RainbowColor[0];
+			if(m_EClient.m_RainbowBody[0] || m_EClient.m_RainbowFeet[0])
 				Msg.m_UseCustomColor = true;
 		}
 		CMsgPacker Packer(&Msg);
@@ -3252,11 +3254,11 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
 		if(g_Config.m_ClServerRainbow)
 		{
-			if(m_Aiodob.m_RainbowBody[1])
-				Msg.m_ColorBody = m_Aiodob.m_RainbowColor[1];
-			if(m_Aiodob.m_RainbowFeet[1])
-				Msg.m_ColorFeet = m_Aiodob.m_RainbowColor[1];
-			if(m_Aiodob.m_RainbowBody[1] || m_Aiodob.m_RainbowFeet[1])
+			if(m_EClient.m_RainbowBody[1])
+				Msg.m_ColorBody = m_EClient.m_RainbowColor[1];
+			if(m_EClient.m_RainbowFeet[1])
+				Msg.m_ColorFeet = m_EClient.m_RainbowColor[1];
+			if(m_EClient.m_RainbowBody[1] || m_EClient.m_RainbowFeet[1])
 				Msg.m_UseCustomColor = true;
 		}
 		CMsgPacker Packer(&Msg);
@@ -5165,19 +5167,19 @@ bool CGameClient::CheckNewInput()
 	return m_Controls.CheckNewInput();
 }
 
-void CGameClient::aMessage(const char *pString)
+void CGameClient::ClientMessage(const char *pString)
 {
 	m_Chat.AddLine(TEAM_MESSAGE, 0, pString);
 }
 
 void CGameClient::OnJoinInfo()
 {
-	m_Aiodob.OnConnect();
+	m_EClient.OnConnect();
 }
 
 void CGameClient::SetLastMovementTime(int Delay)
 {
-	m_Aiodob.m_LastMovement = time_get() + time_freq() * Delay;
+	m_EClient.m_LastMovement = time_get() + time_freq() * Delay;
 }
 
 int CGameClient::GetClientId(const char *pName)

@@ -3,11 +3,8 @@
 #ifndef ENGINE_CLIENT_CLIENT_H
 #define ENGINE_CLIENT_CLIENT_H
 
-#include <deque>
-#include <memory>
-#include <mutex>
-
 #include <base/hash.h>
+#include <base/types.h>
 
 #include <engine/client.h>
 #include <engine/client/checksum.h>
@@ -27,6 +24,11 @@
 
 #include "graph.h"
 #include "smooth_time.h"
+
+#include <chrono>
+#include <deque>
+#include <memory>
+#include <mutex>
 
 class CDemoEdit;
 class IDemoRecorder;
@@ -138,7 +140,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	bool m_aInfoDisplay[NUM_DUMMIES] = {false, false};
 	bool m_GenerateTimeoutSeed = true;
 
-	// A-Client
+	// E-Client
 	static void ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData);
 	void DiscordRPCchange() override;
 	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
@@ -269,6 +271,11 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	std::shared_ptr<ILogger> m_pFileLogger = nullptr;
 	std::shared_ptr<ILogger> m_pStdoutLogger = nullptr;
 
+	// For RenderDebug function
+	NETSTATS m_NetstatsPrev = {};
+	NETSTATS m_NetstatsCurrent = {};
+	std::chrono::nanoseconds m_NetstatsLastUpdate = std::chrono::nanoseconds(0);
+
 	// For DummyName function
 	char m_aAutomaticDummyName[MAX_NAME_LENGTH];
 
@@ -296,7 +303,7 @@ public:
 	int SendMsgActive(CMsgPacker *pMsg, int Flags) override;
 
 	// send client info
-	void SendAiodobInfo(int Conn);
+	void SendqxdInfo(int Conn);
 
 	void SendInfo(int Conn);
 	void SendEnterGame(int Conn);

@@ -190,15 +190,15 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 	ConsoleButton.VSplitRight(40.0f, nullptr, &ConsoleButton);
 	Ui()->DoLabel(&CurVersion, GAME_RELEASE_VERSION, 14.0f, TEXTALIGN_MR);
 
-	CUIRect AClientVersion;
-	MainView.HSplitTop(15.0f, &AClientVersion, nullptr);
-	MainView.HSplitTop(25.0f, &AClientVersion, nullptr);
-	AClientVersion.VSplitRight(5.0f, &AClientVersion, nullptr);
-	AClientVersion.VSplitRight(100.0f, &AClientVersion, &AClientVersion);
+	CUIRect EClientVersion;
+	MainView.HSplitTop(15.0f, &EClientVersion, nullptr);
+	MainView.HSplitTop(25.0f, &EClientVersion, nullptr);
+	EClientVersion.VSplitRight(5.0f, &EClientVersion, nullptr);
+	EClientVersion.VSplitRight(100.0f, &EClientVersion, &EClientVersion);
 	static CButtonContainer s_AClient;
-	if(DoButton_Menu(&s_AClient, Localize("A-Client " ACLIENT_VERSION), 0, &AClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 10.0f))
+	if(DoButton_Menu(&s_AClient, Localize("E-Client v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 10.0f))
 	{
-		NewPage = PAGE_ACLIENT;
+		NewPage = PAGE_ECLIENT;
 	}
 
 	static CButtonContainer s_ConsoleButton;
@@ -271,15 +271,14 @@ void CMenus::RenderStartMenu(CUIRect MainView)
 	}
 	Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
-#elif defined(CONF_INFORM_UPDATE)
-	if(str_comp(Client()->LatestVersion(), "0") != 0)
+#endif
+	if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
 	{
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), Localize("DDNet %s is out!"), Client()->LatestVersion());
+		str_format(aBuf, sizeof(aBuf), Localize("E-Client v%s is out!"), GameClient()->m_AcUpdate.m_aVersionStr);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 		Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_MC);
 	}
-#endif
 
 	if(NewPage != -1)
 	{

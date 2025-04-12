@@ -16,6 +16,6 @@
 #define DDNET_VERSION_NUMBER 19020
 extern const char *GIT_SHORTREV_HASH;
 #define GAME_NAME "DDNet"
-#define CLIENT_NAME "A-Client"
-#define ACLIENT_VERSION "v1.2.0"
+#define CLIENT_NAME "E-Client"
+#define ECLIENT_VERSION "1.2.0"
 #endif

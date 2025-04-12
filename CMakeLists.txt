@@ -58,7 +58,7 @@ endif()
 
 if(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   set(TARGET_OS "windows")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux" OR CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
   set(TARGET_OS "linux")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
   set(TARGET_OS "mac")
@@ -66,6 +66,8 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
   set(TARGET_OS "haiku")
 elseif(CMAKE_SYSTEM_NAME STREQUAL "Android")
   set(TARGET_OS "android")
+elseif(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  set(TARGET_OS "emscripten")
 endif()
 
 include(CheckCCompilerFlag)
@@ -74,7 +76,7 @@ if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.18)
   include(CheckLinkerFlag)
 endif()
 include(CheckSymbolExists)
-if(NOT (CMAKE_SYSTEM_NAME STREQUAL "Emscripten"))
+if(NOT (TARGET_OS STREQUAL "emscripten"))
   include(CheckAtomic)
 endif()
 
@@ -435,7 +437,7 @@ endif()
 
 if(FAT)
   set(LIB_DIR "${TARGET_OS}/libfat")
-elseif(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+elseif(TARGET_OS STREQUAL "emscripten")
   set(LIB_DIR "webasm/libwasm")
 elseif(TARGET_CPU_ARCHITECTURE STREQUAL "arm" OR TARGET_CPU_ARCHITECTURE STREQUAL "arm64")
   set(LIB_DIR "${TARGET_OS}/lib${TARGET_CPU_ARCHITECTURE}")
@@ -464,7 +466,7 @@ function(set_extra_dirs_include VARIABLE NAME LIBRARY)
   is_bundled(IS_BUNDLED "${LIBRARY}")
   if(IS_BUNDLED)
     set(TMP_TARGET_OS ${TARGET_OS})
-    if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+    if(TARGET_OS STREQUAL "emscripten")
      set(TMP_TARGET_OS webasm)
     endif()
     set("HINTS_${VARIABLE}_INCLUDEDIR" "ddnet-libs/${NAME}/include" "ddnet-libs/${NAME}/include/${TMP_TARGET_OS}" PARENT_SCOPE)
@@ -472,7 +474,7 @@ function(set_extra_dirs_include VARIABLE NAME LIBRARY)
 endfunction()
 
 if(CMAKE_CROSSCOMPILING)
-  if(TARGET_OS STREQUAL "android" OR CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+  if(TARGET_OS STREQUAL "android" OR TARGET_OS STREQUAL "emscripten")
     # be more aggressive with android toolchain
     set(CROSSCOMPILING_NO_CMAKE_SYSTEM_PATH NO_CMAKE_SYSTEM_PATH NO_DEFAULT_PATH NO_CMAKE_FIND_ROOT_PATH)
   else()
@@ -745,6 +747,15 @@ elseif(TARGET_OS STREQUAL "android")
     set(PLATFORM_LIBS ${TW_ANDROID_LIBS})
     set(PLATFORM_CLIENT_LIBS ${TW_ANDROID_LIBS_CLIENT})
     set(PLATFORM_CLIENT_INCLUDE_DIRS)
+elseif(TARGET_OS STREQUAL "emscripten")
+  find_package(OpenGL)
+  set(PLATFORM_CLIENT_LIBS GL)
+  set(PLATFORM_CLIENT_INCLUDE_DIRS "")
+  set(CMAKE_EXECUTABLE_SUFFIX ".html")
+  set(PLATFORM_CLIENT)
+  set(PLATFORM_LIBS)
+  list(APPEND PLATFORM_LIBS rt) # clock_gettime for glibc < 2.17
+  list(APPEND PLATFORM_LIBS dl) # for Rust
 else()
   find_package(Notify)
   find_package(OpenGL)
@@ -758,12 +769,6 @@ else()
   else()
     set(PLATFORM_LIBS)
   endif()
-endif()
-
-if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-  set(PLATFORM_CLIENT_LIBS GL)
-  set(PLATFORM_CLIENT_INCLUDE_DIRS "")
-  set(CMAKE_EXECUTABLE_SUFFIX ".html")
 endif()
 
 ########################################################################
@@ -999,20 +1004,6 @@ endif()
 ########################################################################
 
 set(EXPECTED_DATA
-  aiodob/binds/.extra.cfg
-  aiodob/binds/.help.cfg
-  aiodob/fonts/Cabin-Regular.ttf
-  aiodob/fonts/ComicSansMS.ttf
-  aiodob/fonts/GoogleSans-Regular.ttf
-  aiodob/fonts/Inter_24pt-Regular.ttf
-  aiodob/fonts/Inter_24pt-SemiBold.ttf
-  aiodob/fonts/Minecraft_font.ttf
-  aiodob/fonts/Montserrat-Regular.ttf
-  aiodob/fonts/Nunito-Black.ttf
-  aiodob/fonts/Rubik-Regular.ttf
-  aiodob/icons/aiodob_flag.png
-  aiodob/icons/muted_icon.png
-  aiodob/icons/settings_icon.png
   announcement.txt
   arrow.png
   assets/entities/comfort/ddnet.png
@@ -1449,6 +1440,20 @@ set(EXPECTED_DATA
   editor/tele.png
   editor/tune.png
   emoticons.png
+  entity/binds/.extra.cfg
+  entity/binds/.help.cfg
+  entity/fonts/Cabin-Regular.ttf
+  entity/fonts/ComicSansMS.ttf
+  entity/fonts/GoogleSans-Regular.ttf
+  entity/fonts/Inter_24pt-Regular.ttf
+  entity/fonts/Inter_24pt-SemiBold.ttf
+  entity/fonts/Minecraft_font.ttf
+  entity/fonts/Montserrat-Regular.ttf
+  entity/fonts/Nunito-Black.ttf
+  entity/fonts/Rubik-Regular.ttf
+  entity/icons/entity_flag.png
+  entity/icons/muted_icon.png
+  entity/icons/settings_icon.png
   extras.png
   fonts/DejaVuSans.ttf
   fonts/Font_Awesome_6_Free-Solid-900.otf
@@ -2064,7 +2069,6 @@ set_src(ENGINE_INTERFACE GLOB src/engine
   warning.h
 )
 set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
-  aiodob_variables.h
   assertion_logger.cpp
   assertion_logger.h
   compression.cpp
@@ -2083,6 +2087,7 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   econ.cpp
   econ.h
   engine.cpp
+  entity_variables.h
   fifo.cpp
   fifo.h
   filecollection.cpp
@@ -2337,17 +2342,6 @@ if(CLIENT)
     animstate.h
     component.cpp
     component.h
-    components/aiodob/a_enums.h
-    components/aiodob/aiodob.cpp
-    components/aiodob/aiodob.h 
-    components/aiodob/anti_spawn_block.cpp
-    components/aiodob/anti_spawn_block.h
-    components/aiodob/auto_kill.cpp
-    components/aiodob/auto_kill.h
-    components/aiodob/commands.cpp
-    components/aiodob/freeze_kill.cpp
-    components/aiodob/freeze_kill.h
-    components/aiodob/menus_aiodob.cpp
     components/background.cpp
     components/background.h
     components/binds.cpp
@@ -2372,6 +2366,19 @@ if(CLIENT)
     components/effects.h
     components/emoticon.cpp
     components/emoticon.h
+    components/entity/anti_spawn_block.cpp
+    components/entity/anti_spawn_block.h
+    components/entity/auto_kill.cpp
+    components/entity/auto_kill.h
+    components/entity/commands.cpp
+    components/entity/e_enums.h
+    components/entity/entity.cpp
+    components/entity/entity.h 
+    components/entity/freeze_kill.cpp
+    components/entity/freeze_kill.h
+    components/entity/menus_entity.cpp 
+    components/entity/update.cpp
+    components/entity/update.h
     components/flow.cpp
     components/flow.h
     components/freezebars.cpp
@@ -3654,9 +3661,6 @@ foreach(target ${TARGETS_OWN})
   endif()
   if(VERSION)
     target_compile_definitions(${target} PRIVATE GAME_RELEASE_VERSION="${VERSION}")
-  endif()
-  if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
-   target_compile_definitions(${target} PRIVATE CONF_WEBASM)
   endif()
   if(TARGET_OS STREQUAL "android")
     if(ANDROID_PACKAGE_NAME)

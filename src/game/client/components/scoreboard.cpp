@@ -635,9 +635,9 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)
 				{
-					if(GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempWar)
+					if(GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempWar)
 						TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[1]->m_Color.WithAlpha(Alpha));
-					else if(GameClient()->m_Aiodob.m_TempPlayers[pInfo->m_ClientId].IsTempHelper)
+					else if(GameClient()->m_EClient.m_TempPlayers[pInfo->m_ClientId].IsTempHelper)
 						TextRender()->TextColor(GameClient()->m_WarList.m_WarTypes[3]->m_Color.WithAlpha(Alpha));
 					else if(GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
 						TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId).WithAlpha(Alpha));

@@ -7,17 +7,18 @@
 #include <base/system.h>
 
 #include <base/log.h>
-#include "aiodob.h"
+#include "entity.h"
+#include <game/generated/protocol.h>
 
-void CAiodob::ConVotekick(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->Votekick(pResult->GetString(0), pResult->NumArguments() > 1 ? pResult->GetString(1) : "");
 }
 
-void CAiodob::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 
 	char aBuf[8];
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSpeed);
@@ -27,12 +28,12 @@ void CAiodob::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData)
 		pSelf->m_RainbowSpeed = pResult->GetInteger(0);
 	}
 	else
-		log_info("A-Client", aBuf);
+		log_info("E-Client", aBuf);
 }
 
-void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 
 	char aBuf[8];
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSat[g_Config.m_ClDummy]);
@@ -51,12 +52,12 @@ void CAiodob::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUser
 		pSelf->m_RainbowSat[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("A-Client", aBuf);
+		log_info("E-Client", aBuf);
 }
 
-void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 
 	char aBuf[8];
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowLht[g_Config.m_ClDummy]);
@@ -75,12 +76,12 @@ void CAiodob::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserD
 		pSelf->m_RainbowLht[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("A-Client", aBuf);
+		log_info("E-Client", aBuf);
 }
 
-void CAiodob::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 
 	char aBuf[8];
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowBody[g_Config.m_ClDummy]);
@@ -102,12 +103,12 @@ void CAiodob::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
 			pSelf->m_RainbowBody[Dummy] = 1;
 	}
 	else
-		log_info("A-Client", aBuf);
+		log_info("E-Client", aBuf);
 }
 
-void CAiodob::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 
 	char aBuf[8];
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowFeet[g_Config.m_ClDummy]);
@@ -129,12 +130,12 @@ void CAiodob::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
 			pSelf->m_RainbowFeet[Dummy] = 1;
 	}
 	else
-		log_info("A-Client", aBuf);
+		log_info("E-Client", aBuf);
 }
 
-void CAiodob::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 
 	char aBuf[8];
 	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_BothPlayers);
@@ -147,10 +148,10 @@ void CAiodob::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUse
 			pSelf->m_BothPlayers = 1;
 	}
 	else
-		log_info("A-Client", aBuf);
+		log_info("E-Client", aBuf);
 }
 
-void CAiodob::Votekick(const char *pName, const char *pReason)
+void CEClient::Votekick(const char *pName, const char *pReason)
 {
 	int ClientId;
 	char Id[8];
@@ -166,76 +167,76 @@ void CAiodob::Votekick(const char *pName, const char *pReason)
 	}
 	if(ClientId == MAX_CLIENTS)
 	{
-		GameClient()->aMessage("No player with this name found.");
+		GameClient()->ClientMessage("No player with this name found.");
 		return;
 	}
 }
 
 // Temp War Commands
-void CAiodob::ConTempWar(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConTempWar(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->TempWar(pResult->GetString(0), pResult->GetString(1));
 }
-void CAiodob::ConUnTempWar(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConUnTempWar(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->UnTempWar(pResult->GetString(0));
 }
 
 // Temp Helper Commands
-void CAiodob::ConTempHelper(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConTempHelper(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->TempHelper(pResult->GetString(0), pResult->GetString(1));
 }
-void CAiodob::ConUnTempHelper(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConUnTempHelper(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->UnTempHelper(pResult->GetString(0));
 }
 
 // Mute Commands
-void CAiodob::ConTempMute(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConTempMute(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->TempMute(pResult->GetString(0));
 }
-void CAiodob::ConUnTempMute(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConUnTempMute(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->UnTempMute(pResult->GetString(0));
 }
 
 // Saving and Restoring Skins
-void CAiodob::ConSaveSkin(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConSaveSkin(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->SaveSkin();
 }
-void CAiodob::ConRestoreSkin(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConRestoreSkin(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->RestoreSkin();
 }
 
-void CAiodob::ConOnlineInfo(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConOnlineInfo(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->OnlineInfo();
 }
-void CAiodob::ConPlayerInfo(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConPlayerInfo(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->PlayerInfo(pResult->GetString(0));
 }
-void CAiodob::ConViewLink(IConsole::IResult *pResult, void *pUserData)
+void CEClient::ConViewLink(IConsole::IResult *pResult, void *pUserData)
 {
-	CAiodob *pSelf = (CAiodob *)pUserData;
+	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->Client()->ViewLink(pResult->GetString(0));
 }
 
-void CAiodob::TempWar(const char *pName, const char *pReason, bool Silent)
+void CEClient::TempWar(const char *pName, const char *pReason, bool Silent)
 {
 	UnTempWar(pName, true); // Remove previous Reason
 
@@ -249,14 +250,16 @@ void CAiodob::TempWar(const char *pName, const char *pReason, bool Silent)
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp War List", pName, pReason);
 	if(!Silent)
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
 
 	UpdateTempPlayers();
 }
-void CAiodob::UnTempWar(const char *pName, bool Silent)
+bool CEClient::UnTempWar(const char *pName, bool Silent)
 {
-	if(str_comp(pName, "") == 0)
-		return;
+	bool Removed = false;
+
+	if(!str_comp(pName, ""))
+		return Removed;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp War List", pName);
@@ -275,14 +278,18 @@ void CAiodob::UnTempWar(const char *pName, bool Silent)
 				++it2;
 
 			if(!str_comp(it2->m_aTempWar, pName))
+			{
 				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp War List", pName);
+				Removed = true;
+			}
 		}
 	}
 	if(!Silent)
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
+	return Removed;
 }
 
-void CAiodob::TempHelper(const char *pName, const char *pReason, bool Silent)
+void CEClient::TempHelper(const char *pName, const char *pReason, bool Silent)
 {
 	UnTempHelper(pName, true); // Remove previous Reason
 
@@ -296,14 +303,15 @@ void CAiodob::TempHelper(const char *pName, const char *pReason, bool Silent)
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Helper List", pName);
 	if(!Silent)
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
 
 	UpdateTempPlayers();
 }
-void CAiodob::UnTempHelper(const char *pName, bool Silent)
+bool CEClient::UnTempHelper(const char *pName, bool Silent)
 {
-	if(str_comp(pName, "") == 0)
-		return;
+	bool Removed = false;
+	if(!str_comp(pName, ""))
+		return Removed;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Helper List", pName);
@@ -322,14 +330,18 @@ void CAiodob::UnTempHelper(const char *pName, bool Silent)
 				++it2;
 
 			if(!str_comp(it2->m_aTempHelper, pName))
+			{
 				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Helper List", pName);
+				Removed = true;
+			}
 		}
 	}
 	if(!Silent)
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
+	return Removed;
 }
 
-void CAiodob::TempMute(const char *pName, bool Silent)
+void CEClient::TempMute(const char *pName, bool Silent)
 {
 	CTempEntry Entry(2, pName, "");
 	str_copy(Entry.m_aTempMute, pName);
@@ -339,14 +351,16 @@ void CAiodob::TempMute(const char *pName, bool Silent)
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp Mute List", pName);
 	if(!Silent)
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
 
 	UpdateTempPlayers();
 }
-void CAiodob::UnTempMute(const char *pName, bool Silent)
+bool CEClient::UnTempMute(const char *pName, bool Silent)
 {
-	if(str_comp(pName, "") == 0)
-		return;
+	bool Removed = false;
+
+	if(!str_comp(pName, ""))
+		return Removed;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "couldn't find \"%s\" on the Temp Mute List", pName);
@@ -365,14 +379,18 @@ void CAiodob::UnTempMute(const char *pName, bool Silent)
 				++it2;
 
 			if(!str_comp(it2->m_aTempMute, pName))
+			{
 				str_format(aBuf, sizeof(aBuf), "Removed \"%s\" from the Temp Mute List", pName);
+				Removed = true;
+			}
 		}
 	}
 	if(!Silent)
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
+	return Removed;
 }
 
-void CAiodob::RestoreSkin()
+void CEClient::RestoreSkin()
 {
 	if(!g_Config.m_ClServerRainbow)
 	{
@@ -385,7 +403,7 @@ void CAiodob::RestoreSkin()
 			g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
 			g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
 			g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
-			GameClient()->aMessage("Restored Dummy Skin");
+			GameClient()->ClientMessage("Restored Dummy Skin");
 			m_pClient->SendDummyInfo(false);
 		}
 		else
@@ -397,14 +415,14 @@ void CAiodob::RestoreSkin()
 			g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
 			g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 			g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
-			GameClient()->aMessage("Restored Main Skin");
+			GameClient()->ClientMessage("Restored Main Skin");
 			m_pClient->SendInfo(false);
 		}
 	}
 	else
-		GameClient()->aMessage("Can't Restore! Rainbow mode is enabled.");
+		GameClient()->ClientMessage("Can't Restore! Rainbow mode is enabled.");
 }
-void CAiodob::SaveSkin()
+void CEClient::SaveSkin()
 {
 	if(!g_Config.m_ClServerRainbow)
 	{
@@ -417,7 +435,7 @@ void CAiodob::SaveSkin()
 			g_Config.m_ClSavedDummyUseCustomColor = g_Config.m_ClDummyUseCustomColor;
 			g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
 			g_Config.m_ClSavedDummyColorFeet = g_Config.m_ClDummyColorFeet;
-			GameClient()->aMessage("Saved Dummy Skin");
+			GameClient()->ClientMessage("Saved Dummy Skin");
 			m_pClient->SendDummyInfo(false);
 		}
 		else
@@ -429,95 +447,67 @@ void CAiodob::SaveSkin()
 			g_Config.m_ClSavedPlayerUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 			g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
 			g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
-			GameClient()->aMessage("Saved Main Skin");
+			GameClient()->ClientMessage("Saved Main Skin");
 			m_pClient->SendInfo(false);
 		}
 	}
 	else 
-		GameClient()->aMessage("Can't Save! Rainbow mode is enabled.");
+		GameClient()->ClientMessage("Can't Save! Rainbow mode is enabled.");
 }
 
-void CAiodob::OnlineInfo(bool Integrate)
+void CEClient::OnlineInfo(bool Integrate)
 {
 	char aBuf[512];
 	char active[512];
 
 	int NumberWars = 0;
+	int NumberHelpers = 0;
+	int NumberTeams = 0;
+	int NumberMutes = 0;
+
+	int NumberHelpersAfk = 0;
+	int NumberTeamsAfk = 0;
+	int NumberMutesAfk = 0;
 	int NumberWarsAfk = 0;
+
 	for(auto &Client : GameClient()->m_aClients)
 	{
 		bool War = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[1];
 		bool TempWar = m_TempPlayers[Client.ClientId()].IsTempWar;
 
+		bool Team = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[2];
+
+		bool Helper = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[3];
+		bool TempHelper = m_TempPlayers[Client.ClientId()].IsTempHelper;
+
+		bool Mute = GameClient()->m_WarList.m_WarPlayers[Client.ClientId()].IsMuted;
+		bool TempMute = m_TempPlayers[Client.ClientId()].IsTempMute;
+
 		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 			continue;
 
 		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
 			continue;
 
-		if((War && !TempWar) || (!War && TempWar))
+		if(War || TempWar)
 		{
 			NumberWars++;
 			if(Client.m_Afk)
 				NumberWarsAfk++;
 		}
-	}
-
-	int NumberTeams = 0;
-	int NumberTeamsAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		bool Team = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[2];
-
-		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
-			continue;
-
-		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
-			continue;
-
-		if(Team)
+		else if(Team)
 		{
 			NumberTeams++;
 			if(Client.m_Afk)
 				NumberTeamsAfk++;
 		}
-	}
-
-	int NumberHelpers = 0;
-	int NumberHelpersAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		bool Helper = GameClient()->m_WarList.GetWarData(Client.ClientId()).m_WarGroupMatches[3];
-		bool TempHelper = m_TempPlayers[Client.ClientId()].IsTempHelper;
-
-		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
-			continue;
-
-		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
-			continue;
-
-		if((Helper && !TempHelper) || (!Helper && TempHelper))
+		else if(Helper || TempHelper)
 		{
 			NumberHelpers++;
 			if(Client.m_Afk)
 				NumberHelpersAfk++;
 		}
-	}
-
-	int NumberMutes = 0;
-	int NumberMutesAfk = 0;
-	for(auto &Client : GameClient()->m_aClients)
-	{
-		bool Mute = GameClient()->m_WarList.m_WarPlayers[Client.ClientId()].IsMuted;
-		bool TempMute = m_TempPlayers[Client.ClientId()].IsTempMute;
-
-		if(!Client.m_Active)
-			continue;
-
-		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
-			continue;
-
-		if((Mute && !TempMute) || (!Mute && TempMute))
+		if(Mute ||TempMute)
 		{
 			NumberMutes++;
 			if(Client.m_Afk)
@@ -529,18 +519,18 @@ void CAiodob::OnlineInfo(bool Integrate)
 	str_format(active, sizeof(active), "│ [active] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams - NumberTeamsAfk, NumberWars - NumberWarsAfk, NumberHelpers - NumberHelpersAfk, NumberMutes - NumberMutesAfk);
 	if(!Integrate)
 	{
-		GameClient()->aMessage("╭──                  Aiodob Info");
-		GameClient()->aMessage("│");
+		GameClient()->ClientMessage("╭──                  Aiodob Info");
+		GameClient()->ClientMessage("│");
 	}
-	GameClient()->aMessage(aBuf);
-	GameClient()->aMessage(active);
+	GameClient()->ClientMessage(aBuf);
+	GameClient()->ClientMessage(active);
 	if(!Integrate)
 	{
-		GameClient()->aMessage("│");
-		GameClient()->aMessage("╰───────────────────────");
+		GameClient()->ClientMessage("│");
+		GameClient()->ClientMessage("╰───────────────────────");
 	}
 }
-void CAiodob::PlayerInfo(const char *pName)
+void CEClient::PlayerInfo(const char *pName)
 {
 	char aBuf[1024];
 	str_format(aBuf, sizeof(aBuf), "Couldnt Find a Player With The Name \"%s\"", pName);
@@ -549,48 +539,80 @@ void CAiodob::PlayerInfo(const char *pName)
 
 	if(Id >= 0)
 	{
-		GameClient()->aMessage("╭──                  Player Info");
-		GameClient()->aMessage("│");
+		GameClient()->ClientMessage("╭──                  Player Info");
+		GameClient()->ClientMessage("│");
 
 		str_format(aBuf, sizeof(aBuf), "│ Name: %s", pName);
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
 		str_format(aBuf, sizeof(aBuf), "│ Clan: %s", GameClient()->m_aClients[Id].m_aClan);
-		GameClient()->aMessage(aBuf);
-		GameClient()->aMessage("│");
+		GameClient()->ClientMessage(aBuf);
+		GameClient()->ClientMessage("│");
 		if(!GameClient()->m_aClients[Id].m_UseCustomColor)
 		{
 			str_format(aBuf, sizeof(aBuf), "│ Custom Color: %s", "No");
-			GameClient()->aMessage(aBuf);
-			GameClient()->aMessage("│");
+			GameClient()->ClientMessage(aBuf);
+			GameClient()->ClientMessage("│");
 		}
 		else
 		{
 			str_format(aBuf, sizeof(aBuf), "│ Custom Color: %s", "Yes");
-			GameClient()->aMessage(aBuf);
+			GameClient()->ClientMessage(aBuf);
 			str_format(aBuf, sizeof(aBuf), "│ Body Color: %d", GameClient()->m_aClients[Id].m_ColorBody);
-			GameClient()->aMessage(aBuf);
+			GameClient()->ClientMessage(aBuf);
 			str_format(aBuf, sizeof(aBuf), "│ Feet Color: %d", GameClient()->m_aClients[Id].m_ColorFeet);
-			GameClient()->aMessage(aBuf);
-			GameClient()->aMessage("│");
+			GameClient()->ClientMessage(aBuf);
+			GameClient()->ClientMessage("│");
 		}
 		str_format(aBuf, sizeof(aBuf), "│ Skin Name: %s", GameClient()->m_aClients[Id].m_aSkinName);
-		GameClient()->aMessage(aBuf);
-		GameClient()->aMessage("│");
+		GameClient()->ClientMessage(aBuf);
+		GameClient()->ClientMessage("│");
 
 		if(GameClient()->m_aClients[Id].m_AuthLevel > 0)
-			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes, Auth Level %s", GameClient()->m_aClients[Id].m_AuthLevel);
+			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes, Auth Level %d", GameClient()->m_aClients[Id].m_AuthLevel);
 		else
 			str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
 
-		GameClient()->aMessage("│");
-		GameClient()->aMessage("╰───────────────────────");
+		GameClient()->ClientMessage("│");
+		GameClient()->ClientMessage("╰───────────────────────");
 	}
 	else
-		GameClient()->aMessage(aBuf);
+		GameClient()->ClientMessage(aBuf);
 }
 
-void CAiodob::OnConsoleInit()
+void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+	
+	CLastPing LastPing = pSelf->m_aLastPing;
+
+	if(!str_comp(LastPing.m_aName, "") || LastPing.m_aName[0] == '\0')
+	{
+		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "E-Client", "No one pinged you yet");
+		return;
+	}
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		if(!str_comp(LastPing.m_aName, pSelf->GameClient()->m_aClients[ClientId].m_aName))
+		{
+			break;
+		}
+		if(ClientId == MAX_CLIENTS)
+		{
+			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "E-Client", "Player with that Name doesn't exist");
+			return;
+		}                     
+	}
+
+	char Text[2048];
+	if(LastPing.m_Team == TEAM_WHISPER_RECV)
+		str_format(Text, sizeof(Text), "/w %s %s", LastPing.m_aName, pResult->GetString(0));
+	else
+		str_format(Text, sizeof(Text), "%s: %s", LastPing.m_aName, pResult->GetString(0));
+	pSelf->GameClient()->m_Chat.SendChat(0, Text);
+}
+
+void CEClient::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 
@@ -627,11 +649,13 @@ void CAiodob::OnConsoleInit()
 
 	Console()->Register("server_rainbow_body", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
 	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
+
+	Console()->Register("reply_last", "?r[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
 }
 
-void CAiodob::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
+void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
 {
-	CAiodob *pThis = (CAiodob *)pUserData;
+	CEClient *pThis = (CEClient *)pUserData;
 
 	char aBuf[128];
 

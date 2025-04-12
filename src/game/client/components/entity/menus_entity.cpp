@@ -26,18 +26,19 @@
 
 #include <string>
 #include <vector>
-#include "a_enums.h"
+#include "e_enums.h"
+#include <base/color.h>
 
 using namespace FontIcons;
 using namespace std::chrono_literals;
 
 enum {
-	AIODOB_TAB_SETTINGS = 0,
-	AIODOB_TAB_VISUAL = 1,
-	AIODOB_TAB_TCLIENT = 2,
-	AIODOB_TAB_WARLIST = 3,
-	AIODOB_TAB_BINDWHEEL = 4,
-	NUMBER_OF_AIODOB_TABS = 5,
+	ENTITY_TAB_SETTINGS = 0,
+	ENTITY_TAB_VISUAL = 1,
+	ENTITY_TAB_TCLIENT = 2,
+	ENTITY_TAB_WARLIST = 3,
+	ENTITY_TAB_BINDWHEEL = 4,
+	NUMBER_OF_ENTITY_TABS = 5,
 };
 
 typedef struct
@@ -71,6 +72,7 @@ const float ColorPickerLineSize = 25.0f;
 const float ColorPickerLabelSize = 13.0f;
 const float ColorPickerLineSpacing = 5.0f;
 
+
 void SetFlag(int32_t &Flags, int n, bool Value)
 {
 	if(Value)
@@ -83,7 +85,7 @@ bool IsFlagSet(int32_t Flags, int n)
 	return (Flags & (1 << n)) != 0;
 }
 
-void CMenus::RenderSettingsAiodob(CUIRect MainView)
+void CMenus::RenderSettingsEntity(CUIRect MainView)
 {
 	s_Time += Client()->RenderFrameTime() * (1.0f / 100.0f);
 	if(!s_StartedTime)
@@ -96,8 +98,8 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 	CUIRect TabBar, Button, Label;
 
-	int TabCount = NUMBER_OF_AIODOB_TABS;
-	for(int Tab = 0; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
+	int TabCount = NUMBER_OF_ENTITY_TABS;
+	for(int Tab = 0; Tab < NUMBER_OF_ENTITY_TABS; ++Tab)
 	{
 		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
 		{
@@ -109,52 +111,52 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 	MainView.HSplitTop(LineSize * 1.1f, &TabBar, &MainView);
 	const float TabWidth = TabBar.w / TabCount;
-	static CButtonContainer s_aPageTabs[NUMBER_OF_AIODOB_TABS] = {};
-	const char *apTabNames[NUMBER_OF_AIODOB_TABS] = {
-		Localize("A-Client Settings"),
+	static CButtonContainer s_aPageTabs[NUMBER_OF_ENTITY_TABS] = {};
+	const char *apTabNames[NUMBER_OF_ENTITY_TABS] = {
+		Localize("E-Client Settings"),
 		Localize("Visual Settings"),
 		Localize("T-Client Settings"),
 		Localize("Warlist"),
 		Localize("Bindwheel"),
 	};
 
-	for(int Tab = 0; Tab < NUMBER_OF_AIODOB_TABS; ++Tab)
+	for(int Tab = 0; Tab < NUMBER_OF_ENTITY_TABS; ++Tab)
 	{
 		int LeftTab = 0;
-		int RightTab = NUMBER_OF_AIODOB_TABS - 1;
+		int RightTab = NUMBER_OF_ENTITY_TABS - 1;
 
 		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
 			continue;
 
-		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_SETTINGS))
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_SETTINGS))
 		{
-			LeftTab = AIODOB_TAB_VISUAL;
-			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_VISUAL))
+			LeftTab = ENTITY_TAB_VISUAL;
+			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_VISUAL))
 			{
-				LeftTab = AIODOB_TAB_TCLIENT;
-				if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_TCLIENT))
+				LeftTab = ENTITY_TAB_TCLIENT;
+				if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_TCLIENT))
 				{
-					LeftTab = AIODOB_TAB_WARLIST;
-					if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_WARLIST))
+					LeftTab = ENTITY_TAB_WARLIST;
+					if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_WARLIST))
 					{
-						LeftTab = AIODOB_TAB_BINDWHEEL;
+						LeftTab = ENTITY_TAB_BINDWHEEL;
 					}
 				}
 			}
 		}
 
-		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_BINDWHEEL))
+		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_BINDWHEEL))
 		{
-			RightTab = AIODOB_TAB_WARLIST;
-			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_WARLIST))
+			RightTab = ENTITY_TAB_WARLIST;
+			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_WARLIST))
 			{
-				RightTab = AIODOB_TAB_TCLIENT;
-				if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_TCLIENT))
+				RightTab = ENTITY_TAB_TCLIENT;
+				if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_TCLIENT))
 				{
-					RightTab = AIODOB_TAB_VISUAL;
-					if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_VISUAL))
+					RightTab = ENTITY_TAB_VISUAL;
+					if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_VISUAL))
 					{
-						RightTab = AIODOB_TAB_SETTINGS;
+						RightTab = ENTITY_TAB_SETTINGS;
 					}
 				}
 			}
@@ -177,7 +179,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 	// Client Page 1
 
-	if(s_CurTab == AIODOB_TAB_SETTINGS)
+	if(s_CurTab == ENTITY_TAB_SETTINGS)
 	{
 		static CScrollRegion s_ScrollRegion;
 		vec2 ScrollOffset(0.0f, 0.0f);
@@ -189,7 +191,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect OtherSettings, ColorSettings, FreezeKillSettings, ChatSettings, AutoKillOntopSettings, GoresModeSettings, MenuSettings, AiodobSettings;
+		CUIRect OtherSettings, ColorSettings, FreezeKillSettings, ChatSettings, AutoKillOntopSettings, GoresModeSettings, MenuSettings, EntitySettings;
 		MainView.VSplitMid(&OtherSettings, &GoresModeSettings);
 
 		{
@@ -201,7 +203,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			{
 				Offset = 0.0f;
 
-				OtherSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				OtherSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				OtherSettings.VMargin(Margin, &OtherSettings);
 
 				OtherSettings.HSplitTop(HeaderHeight, &Button, &OtherSettings);
@@ -388,7 +390,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			{
 				Offset = 0.0f;
 
-				FreezeKillSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				FreezeKillSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				FreezeKillSettings.VMargin(Margin, &FreezeKillSettings);
 
 				FreezeKillSettings.HSplitTop(HeaderHeight, &Button, &FreezeKillSettings);
@@ -427,7 +429,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			ChatSettings.HSplitTop(395.0f, &ChatSettings, 0);
 			if(s_ScrollRegion.AddRect(ChatSettings))
 			{
-				ChatSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				ChatSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				ChatSettings.VMargin(Margin, &ChatSettings);
 
 				ChatSettings.HSplitTop(HeaderHeight, &Button, &ChatSettings);
@@ -557,7 +559,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			GoresModeSettings.HSplitTop(120.0f, &GoresModeSettings, &MenuSettings);
 			if(s_ScrollRegion.AddRect(GoresModeSettings))
 			{
-				GoresModeSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				GoresModeSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				GoresModeSettings.VMargin(Margin, &GoresModeSettings);
 
 				GoresModeSettings.HSplitTop(HeaderHeight, &Button, &GoresModeSettings);
@@ -575,7 +577,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			MenuSettings.HSplitTop(100.0f, &MenuSettings, &AutoKillOntopSettings);
 			if(s_ScrollRegion.AddRect(MenuSettings))
 			{
-				MenuSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				MenuSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				MenuSettings.VMargin(Margin, &MenuSettings);
 
 				MenuSettings.HSplitTop(HeaderHeight, &Button, &MenuSettings);
@@ -593,12 +595,12 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		{
 			static float Offset = 0.0f;
 			AutoKillOntopSettings.HSplitTop(Margin, nullptr, &AutoKillOntopSettings);
-			AutoKillOntopSettings.HSplitTop(75.0f + Offset, &AutoKillOntopSettings, &AiodobSettings);
+			AutoKillOntopSettings.HSplitTop(75.0f + Offset, &AutoKillOntopSettings, &EntitySettings);
 			if(s_ScrollRegion.AddRect(AutoKillOntopSettings))
 			{
 				Offset = 0.0f;
 
-				AutoKillOntopSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				AutoKillOntopSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				AutoKillOntopSettings.VMargin(Margin, &AutoKillOntopSettings);
 
 				AutoKillOntopSettings.HSplitTop(HeaderHeight, &Button, &AutoKillOntopSettings);
@@ -624,21 +626,21 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		}
 
 		{
-			AiodobSettings.HSplitTop(Margin, nullptr, &AiodobSettings);
-			AiodobSettings.HSplitTop(90.0f, &AiodobSettings, &ColorSettings);
-			if(s_ScrollRegion.AddRect(AiodobSettings))
+			EntitySettings.HSplitTop(Margin, nullptr, &EntitySettings);
+			EntitySettings.HSplitTop(90.0f, &EntitySettings, &ColorSettings);
+			if(s_ScrollRegion.AddRect(EntitySettings))
 			{
-				AiodobSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				AiodobSettings.VMargin(Margin, &AiodobSettings);
+				EntitySettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				EntitySettings.VMargin(Margin, &EntitySettings);
 
-				AiodobSettings.HSplitTop(HeaderHeight, &Button, &AiodobSettings);
-				Ui()->DoLabel(&Button, Localize("Aiodob Info"), FontSize, TEXTALIGN_MC);
+				EntitySettings.HSplitTop(HeaderHeight, &Button, &EntitySettings);
+				Ui()->DoLabel(&Button, Localize("Entity Info"), FontSize, TEXTALIGN_MC);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEnabledInfo, ("Display What Features Are On/Off on Join"), &g_Config.m_ClEnabledInfo, &AiodobSettings, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEnabledInfo, ("Display What Features Are On/Off on Join"), &g_Config.m_ClEnabledInfo, &EntitySettings, LineMargin);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClListsInfo, ("Tells You How Many People of Default Lists Are Online"), &g_Config.m_ClListsInfo, &AiodobSettings, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClListsInfo, ("Tells You How Many People of Default Lists Are Online"), &g_Config.m_ClListsInfo, &EntitySettings, LineMargin);
 
-				// DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoAfkColors, Localize("Afk Name Colors"), &g_Config.m_ClDoAfkColors, &AiodobSettings, LineSize);
+				// DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDoAfkColors, Localize("Afk Name Colors"), &g_Config.m_ClDoAfkColors, &EntitySettings, LineSize);
 			}
 		}
 
@@ -647,7 +649,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			ColorSettings.HSplitTop(160.0f, &ColorSettings, 0);
 			if(s_ScrollRegion.AddRect(ColorSettings))
 			{
-				ColorSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				ColorSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				ColorSettings.VMargin(Margin, &ColorSettings);
 
 				ColorSettings.HSplitTop(HeaderHeight, &Button, &ColorSettings);
@@ -669,7 +671,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		s_ScrollRegion.End();
 	}
 
-	if(s_CurTab == AIODOB_TAB_VISUAL)
+	if(s_CurTab == ENTITY_TAB_VISUAL)
 	{
 		static CScrollRegion s_ScrollRegion;
 		vec2 ScrollOffset(0.0f, 0.0f);
@@ -691,7 +693,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				Offset = 0.0f;
-				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				PlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				PlayerSettings.VMargin(Margin, &PlayerSettings);
 
 				PlayerSettings.HSplitTop(HeaderHeight, &Button, &PlayerSettings);
@@ -718,7 +720,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				{
 					g_Config.m_ClEffect = EffectSelectedNew;
 					EffectSelectedOld = EffectSelectedNew;
-					dbg_msg("A-Client", "Effect changed to %d", g_Config.m_ClEffect);
+					dbg_msg("E-Client", "Effect changed to %d", g_Config.m_ClEffect);
 
 					if(g_Config.m_ClEffectSpeedOverride)
 					{
@@ -795,7 +797,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			RainbowSettings.HSplitTop(260.0f, &RainbowSettings, 0);
 			if(s_ScrollRegion.AddRect(RainbowSettings))
 			{
-				RainbowSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				RainbowSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				RainbowSettings.VMargin(Margin, &RainbowSettings);
 
 				RainbowSettings.HSplitTop(HeaderHeight, &Button, &RainbowSettings);
@@ -804,17 +806,17 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, Localize("Enable Serverside Rainbow"), &g_Config.m_ClServerRainbow, &RainbowSettings, LineSize);
 
 				RainbowSettings.HSplitTop(2 * LineSize, &Button, &RainbowSettings);
-				Ui()->DoScrollbarOption(&GameClient()->m_Aiodob.m_RainbowSpeed, &GameClient()->m_Aiodob.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 5000, &CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
+				Ui()->DoScrollbarOption(&GameClient()->m_EClient.m_RainbowSpeed, &GameClient()->m_EClient.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 5000, &CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
 				RainbowSettings.VSplitLeft(52, &Button, &RainbowSettings);
-				RenderHslaScrollbars(&RainbowSettings, &GameClient()->m_Aiodob.m_PreviewRainbowColor[g_Config.m_ClDummy], false, ColorHSLA::DARKEST_LGT, false);
+				RenderHslaScrollbars(&RainbowSettings, &GameClient()->m_EClient.m_PreviewRainbowColor[g_Config.m_ClDummy], false, ColorHSLA::DARKEST_LGT, false);
 				RainbowSettings.VSplitLeft(-140, &Button, &RainbowSettings);
 
 				RainbowSettings.HSplitTop(-54, &Button, &RainbowSettings);
 				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
-				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_RainbowSat[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_RainbowSat[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
+				Ui()->DoScrollbarOptionRender(&GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy], &GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
 				RainbowSettings.HSplitTop(-3, &Button, &RainbowSettings);
 				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
-				Ui()->DoScrollbarOptionRender(&GameClient()->m_Aiodob.m_RainbowLht[g_Config.m_ClDummy], &GameClient()->m_Aiodob.m_RainbowLht[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
+				Ui()->DoScrollbarOptionRender(&GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy], &GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
 				{
 					TeeRect.HSplitTop(80.0f, nullptr, &TeeRect);
 					TeeRect.HSplitTop(80.0f, &TeeRect, nullptr);
@@ -830,23 +832,23 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					int DBodyColor = g_Config.m_ClDummyColorBody;
 					int DFeetColor = g_Config.m_ClDummyColorFeet;
 
-					if(GameClient()->m_Aiodob.m_ServersideDelay[g_Config.m_ClDummy] < time_get() && GameClient()->m_Aiodob.m_ShowServerSide)
+					if(GameClient()->m_EClient.m_ServersideDelay[g_Config.m_ClDummy] < time_get() && GameClient()->m_EClient.m_ShowServerSide)
 					{
 						int Delay = g_Config.m_SvInfoChangeDelay;
 						if(Client()->State() != IClient::STATE_ONLINE)
 							Delay = 5.0f;
 
-						m_MenusRainbowColor = GameClient()->m_Aiodob.m_PreviewRainbowColor[g_Config.m_ClDummy];
-						GameClient()->m_Aiodob.m_ServersideDelay[g_Config.m_ClDummy] = time_get() + time_freq() * Delay;
+						m_MenusRainbowColor = GameClient()->m_EClient.m_PreviewRainbowColor[g_Config.m_ClDummy];
+						GameClient()->m_EClient.m_ServersideDelay[g_Config.m_ClDummy] = time_get() + time_freq() * Delay;
 					}
-					else if(!GameClient()->m_Aiodob.m_ShowServerSide)
-						m_MenusRainbowColor = GameClient()->m_Aiodob.m_PreviewRainbowColor[g_Config.m_ClDummy];
+					else if(!GameClient()->m_EClient.m_ShowServerSide)
+						m_MenusRainbowColor = GameClient()->m_EClient.m_PreviewRainbowColor[g_Config.m_ClDummy];
 
 					if(g_Config.m_ClServerRainbow)
 					{
-						if(GameClient()->m_Aiodob.m_RainbowBody[g_Config.m_ClDummy])
+						if(GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy])
 							PBodyColor = DBodyColor = m_MenusRainbowColor;
-						if(GameClient()->m_Aiodob.m_RainbowFeet[g_Config.m_ClDummy])
+						if(GameClient()->m_EClient.m_RainbowFeet[g_Config.m_ClDummy])
 							PFeetColor = DFeetColor = m_MenusRainbowColor;
 						PUseCustomColor = DUseCustomColor = true;
 					}
@@ -862,10 +864,10 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 					RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
 				}
 				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_Aiodob.m_RainbowBody[g_Config.m_ClDummy], &RainbowSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_RainbowFeet[g_Config.m_ClDummy], "Rainbow Feet", &GameClient()->m_Aiodob.m_RainbowFeet[g_Config.m_ClDummy], &RainbowSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_BothPlayers, "Do Dummy and Main Player at the same time", &GameClient()->m_Aiodob.m_BothPlayers, &RainbowSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_Aiodob.m_ShowServerSide, "Show what it'll look like Server-side", &GameClient()->m_Aiodob.m_ShowServerSide, &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowFeet[g_Config.m_ClDummy], "Rainbow Feet", &GameClient()->m_EClient.m_RainbowFeet[g_Config.m_ClDummy], &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_BothPlayers, "Do Dummy and Main Player at the same time", &GameClient()->m_EClient.m_BothPlayers, &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_ShowServerSide, "Show what it'll look like Server-side", &GameClient()->m_EClient.m_ShowServerSide, &RainbowSettings, LineSize);
 			}
 		}
 
@@ -882,7 +884,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			if(s_ScrollRegion.AddRect(UiSettings))
 			{
 				Offset = 0.0f;
-				UiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				UiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				UiSettings.VMargin(10.0f, &UiSettings);
 
 				UiSettings.HSplitTop(HeaderHeight, &Button, &UiSettings);
@@ -893,7 +895,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 
 				static CButtonContainer s_UiColor;
 
-				DoLine_ColorPicker(&s_UiColor, 25.0f, 13.0f, 2.0f, &UiSettings, Localize("Background Color"), &g_Config.m_AiodobColor, color_cast<ColorRGBA>(ColorHSLA(654311494, true)), false, nullptr, true);
+				DoLine_ColorPicker(&s_UiColor, 25.0f, 13.0f, 2.0f, &UiSettings, Localize("Background Color"), &g_Config.m_ClScrollMenuColor, color_cast<ColorRGBA>(ColorHSLA(654311494, true)), false, nullptr, true);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFpsSpoofer, Localize("Fps Spoofer"), &g_Config.m_ClFpsSpoofer, &UiSettings, LineSize);
 				if(g_Config.m_ClFpsSpoofer)
@@ -912,7 +914,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			if(s_ScrollRegion.AddRect(MiscSettings))
 			{
 				Offset = 0.0f;
-				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				MiscSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				MiscSettings.VMargin(Margin, &MiscSettings);
 
 				MiscSettings.HSplitTop(HeaderHeight, &Button, &MiscSettings);
@@ -962,9 +964,9 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 						static CButtonContainer s_FontDirectoryId;
 						if(DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, IGraphics::CORNER_ALL))
 						{
-							Storage()->CreateFolder("data/aiodob", IStorage::TYPE_ABSOLUTE);
-							Storage()->CreateFolder("data/aiodob/fonts", IStorage::TYPE_ABSOLUTE);
-							Client()->ViewFile("data/aiodob/fonts");
+							Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
+							Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);
+							Client()->ViewFile("data/entity/fonts");
 						}
 					}
 
@@ -988,7 +990,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			DiscordSettings.HSplitTop(125.0f, &DiscordSettings, &WarVisual);
 			if(s_ScrollRegion.AddRect(DiscordSettings))
 			{
-				DiscordSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				DiscordSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				DiscordSettings.VMargin(Margin, &DiscordSettings);
 
 				DiscordSettings.HSplitTop(HeaderHeight, &Button, &DiscordSettings);
@@ -1080,7 +1082,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			WarVisual.HSplitTop(130.0f, &WarVisual, 0);
 			if(s_ScrollRegion.AddRect(WarVisual))
 			{
-				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				WarVisual.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				WarVisual.VMargin(Margin, &WarVisual);
 
 				WarVisual.HSplitTop(HeaderHeight, &Button, &WarVisual);
@@ -1114,7 +1116,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		s_ScrollRegion.End();
 	}
 
-	if(s_CurTab == AIODOB_TAB_TCLIENT)
+	if(s_CurTab == ENTITY_TAB_TCLIENT)
 	{
 		static CScrollRegion s_ScrollRegion;
 		vec2 ScrollOffset(0.0f, 0.0f);
@@ -1134,7 +1136,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			OutlineSettings.HSplitTop(395.0f, &OutlineSettings, &FrozenTeeHudSettings);
 			if(s_ScrollRegion.AddRect(OutlineSettings))
 			{
-				OutlineSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				OutlineSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				OutlineSettings.VMargin(Margin, &OutlineSettings);
 
 				OutlineSettings.HSplitTop(HeaderHeight, &Button, &OutlineSettings);
@@ -1202,7 +1204,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			FrozenTeeHudSettings.HSplitTop(165.0f, &FrozenTeeHudSettings, &FastInputSettings);
 			if(s_ScrollRegion.AddRect(FrozenTeeHudSettings))
 			{
-				FrozenTeeHudSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				FrozenTeeHudSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				FrozenTeeHudSettings.VMargin(Margin, &FrozenTeeHudSettings);
 
 				FrozenTeeHudSettings.HSplitTop(HeaderHeight, &Button, &FrozenTeeHudSettings);
@@ -1257,7 +1259,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			FastInputSettings.HSplitTop(105.0f, &FastInputSettings, &ImprovedAntiSettings);
 			if(s_ScrollRegion.AddRect(FastInputSettings))
 			{
-				FastInputSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				FastInputSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				FastInputSettings.VMargin(Margin, &FastInputSettings);
 
 				FastInputSettings.HSplitTop(HeaderHeight, &Button, &FastInputSettings);
@@ -1279,7 +1281,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			ImprovedAntiSettings.HSplitTop(140.0f, &ImprovedAntiSettings, 0);
 			if(s_ScrollRegion.AddRect(ImprovedAntiSettings))
 			{
-				ImprovedAntiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				ImprovedAntiSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				ImprovedAntiSettings.VMargin(Margin, &ImprovedAntiSettings);
 
 				ImprovedAntiSettings.HSplitTop(HeaderHeight, &Button, &ImprovedAntiSettings);
@@ -1300,7 +1302,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			PlayerIndicatorSettings.HSplitTop(365.0f, &PlayerIndicatorSettings, &LatencySettings);
 			if(s_ScrollRegion.AddRect(PlayerIndicatorSettings))
 			{
-				PlayerIndicatorSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				PlayerIndicatorSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				PlayerIndicatorSettings.VMargin(Margin, &PlayerIndicatorSettings);
 
 				PlayerIndicatorSettings.HSplitTop(HeaderHeight, &Button, &PlayerIndicatorSettings);
@@ -1360,7 +1362,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			LatencySettings.HSplitTop(190.0f, &LatencySettings, &GhostSettings);
 			if(s_ScrollRegion.AddRect(LatencySettings))
 			{
-				LatencySettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				LatencySettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				LatencySettings.VMargin(Margin, &LatencySettings);
 
 				LatencySettings.HSplitTop(HeaderHeight, &Button, &LatencySettings);
@@ -1394,7 +1396,7 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 			GhostSettings.HSplitTop(160.0f, &GhostSettings, 0);
 			if(s_ScrollRegion.AddRect(GhostSettings))
 			{
-				GhostSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_AiodobColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				GhostSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
 				GhostSettings.VMargin(Margin, &GhostSettings);
 
 				GhostSettings.HSplitTop(HeaderHeight, &Button, &GhostSettings);
@@ -1414,18 +1416,18 @@ void CMenus::RenderSettingsAiodob(CUIRect MainView)
 		s_ScrollRegion.End();
 	}
 
-	if(s_CurTab == AIODOB_TAB_BINDWHEEL)
+	if(s_CurTab == ENTITY_TAB_BINDWHEEL)
 	{
 		RenderSettingsBindwheel(MainView);
 	}
 
-	if(s_CurTab == AIODOB_TAB_WARLIST)
+	if(s_CurTab == ENTITY_TAB_WARLIST)
 	{
 		RenderSettingsWarList(MainView);
 	}
 }
 
-void CMenus::RenderAClientVersionPage(CUIRect MainView)
+void CMenus::RenderEClientVersionPage(CUIRect MainView)
 {
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
 
@@ -1470,32 +1472,32 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	Ui()->DoLabel(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
 
-	static int s_ShowSettings = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_SETTINGS);
+	static int s_ShowSettings = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_SETTINGS);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettings, Localize("Settings"), &s_ShowSettings, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_SETTINGS, s_ShowSettings);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_SETTINGS, s_ShowSettings);
 
-	static int s_ShowBindWheel = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_VISUAL);
+	static int s_ShowBindWheel = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_VISUAL);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindWheel, Localize("Visual"), &s_ShowBindWheel, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_VISUAL, s_ShowBindWheel);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_VISUAL, s_ShowBindWheel);
 
-	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_TCLIENT);
+	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_TCLIENT);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowWarlist, Localize("TClient"), &s_ShowWarlist, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_TCLIENT, s_ShowWarlist);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_TCLIENT, s_ShowWarlist);
 
-	static int s_ShowBindChat = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_WARLIST);
+	static int s_ShowBindChat = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_WARLIST);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindChat, Localize("Warlist"), &s_ShowBindChat, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_WARLIST, s_ShowBindChat);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_WARLIST, s_ShowBindChat);
 
-	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_BINDWHEEL);
+	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_BINDWHEEL);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, Localize("BindWheel"), &s_ShowStatusBar, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, AIODOB_TAB_BINDWHEEL, s_ShowStatusBar);
+	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_BINDWHEEL, s_ShowStatusBar);
 
 	// Make this Saveable and somewhere hidden in roaming
 	char DeathCounter[32];
-	if(GameClient()->m_Aiodob.m_KillCount > 1 || GameClient()->m_Aiodob.m_KillCount == 0)
-		str_format(DeathCounter, sizeof(DeathCounter), "%d deaths (all time)", GameClient()->m_Aiodob.m_KillCount);
+	if(GameClient()->m_EClient.m_KillCount > 1 || GameClient()->m_EClient.m_KillCount == 0)
+		str_format(DeathCounter, sizeof(DeathCounter), "%d deaths (all time)", GameClient()->m_EClient.m_KillCount);
 	else
-		str_format(DeathCounter, sizeof(DeathCounter), "%d death (all time)", GameClient()->m_Aiodob.m_KillCount);
+		str_format(DeathCounter, sizeof(DeathCounter), "%d death (all time)", GameClient()->m_EClient.m_KillCount);
 	LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
 	Ui()->DoLabel(&LeftView, DeathCounter, FontSize, TEXTALIGN_ML);
 
@@ -1503,12 +1505,16 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	MainView.HSplitBottom(Margin, 0, &LeftBottom);
 	LeftBottom.HSplitBottom(Margin, &LeftView, &LeftBottom);
 	LeftBottom.HSplitBottom(LineSize * 2.0f, 0, &LeftBottom);
-	LeftBottom.VSplitLeft(10.0f, &LeftView, &LeftBottom);
+	LeftBottom.VSplitLeft(5.0f, &LeftView, &LeftBottom);
 	LeftBottom.VSplitLeft(LineSize * 6.0f, &LeftBottom, &Button);
 	static CButtonContainer s_NewestRelGithub;
-	if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
+	if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
+		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.25f);
+
+	if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, Color))
 	{
-		open_link("https://github.com/qxdFox/Aiodob-Client-DDNet/releases");
+		open_link("https://github.com/qxdFox/Entity-Client-DDNet/releases");
 	}
 
 	// Right Side
@@ -1525,9 +1531,9 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	Button.VSplitMid(&FilesLeft, &FilesRight, MarginSmall);
 
 	static CButtonContainer s_AClientConfig, s_Config, s_Warlist, s_Profiles, s_Chatbinds, s_FontFolder;
-	if(DoButtonLineSize_Menu(&s_AClientConfig, Localize("A-Client Setting File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	if(DoButtonLineSize_Menu(&s_AClientConfig, Localize("E-Client Setting File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Storage()->GetCompletePath(IStorage::TYPE_SAVE, ACONFIG_FILE, aBuf, sizeof(aBuf));
+		Storage()->GetCompletePath(IStorage::TYPE_SAVE, ECONFIG_FILE, aBuf, sizeof(aBuf));
 		Client()->ViewFile(aBuf);
 	}
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
@@ -1570,9 +1576,9 @@ void CMenus::RenderAClientVersionPage(CUIRect MainView)
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
 	if(DoButtonLineSize_Menu(&s_FontFolder, Localize("Fonts Folder"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Storage()->CreateFolder("data/aiodob", IStorage::TYPE_ABSOLUTE);
-		Storage()->CreateFolder("data/aiodob/fonts", IStorage::TYPE_ABSOLUTE);
-		Client()->ViewFile("data/aiodob/fonts");
+		Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
+		Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);
+		Client()->ViewFile("data/entity/fonts");
 	}
 
 	// Render Tee Above everything else
@@ -1964,7 +1970,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	int HoveringIndex = -1;
 
 	float MouseDist = distance(Pos, Ui()->MousePos());
-	if(GameClient()->m_Bindwheel.m_vBinds.empty()) // A-Client -> Fixes a Crash
+	if(GameClient()->m_Bindwheel.m_vBinds.empty()) // E-Client -> Fixes a Crash
 	{
 		TextRender()->Text(Pos.x - 30.0f, Pos.y - 10.0f, 20.0f, "Empty");
 	}
@@ -2395,7 +2401,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
-	Column2.HSplitBottom(170.0f, nullptr, &Column2);
+	Column2.HSplitBottom(180.0f, nullptr, &Column2);
 
 	Column2.HSplitTop(HeadlineHeight, &Label, &Column2);
 	Ui()->DoLabel(&Label, Localize("Settings"), HeadlineFontSize, TEXTALIGN_ML);
@@ -2407,7 +2413,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListScoreboard, Localize("Colors in scoreboard"), &g_Config.m_ClWarListScoreboard, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Colors in specmenu"), &g_Config.m_ClSpecMenuColors, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListShowClan, Localize("Show clan if war"), &g_Config.m_ClWarListShowClan, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSwitchNameReason, Localize("Switch Reason with Name"), &g_Config.m_ClWarListSwitchNameReason, &Column2, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSwapNameReason, Localize("Switch Reason with Name"), &g_Config.m_ClWarListSwapNameReason, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListAllowDuplicates, Localize("Allow Duplicate Entries"), &g_Config.m_ClWarListAllowDuplicates, &Column2, LineSize);
 
 	// ======WAR TYPE EDITING======

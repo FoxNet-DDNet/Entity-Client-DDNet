@@ -152,7 +152,7 @@ class CChat : public CComponent
 	static void ConChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConShowChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConEcho(IConsole::IResult *pResult, void *pUserData);
-	static void ConaMessage(IConsole::IResult *pResult, void *pUserData);
+	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client
 	static void ConClearChat(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainChatOld(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -162,7 +162,7 @@ class CChat : public CComponent
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 	void StoreSave(const char *pText);
 
-	friend class CBindchat;
+	friend class CBindChat;
 
 public:
 	CChat();
@@ -201,7 +201,7 @@ public:
 	float MessageTeeSize() const { return FontSize() * (7 / 6.f); }
 	float MessageRounding() const { return FontSize() * (1 / 2.f); }
 
-	// A-Client
+	// E-Client
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
 
 	int m_AdBotId;

@@ -27,6 +27,7 @@
 
 #include <engine/client/updater.h>
 
+#include <game/client/animstate.h>
 #include <game/client/components/binds.h>
 #include <game/client/components/console.h>
 #include <game/client/components/menu_background.h>
@@ -307,7 +308,7 @@ int CMenus::DoButton_CheckBox_Common(const void *pId, const char *pText, const c
 void CMenus::DoLaserPreview(const CUIRect *pRect, const ColorHSLA LaserOutlineColor, const ColorHSLA LaserInnerColor, const int LaserType)
 {
 	CUIRect Section = *pRect;
-	vec2 From = vec2(Section.x + 50.0f, Section.y + Section.h / 2.0f);
+	vec2 From = vec2(Section.x + 30.0f, Section.y + Section.h / 2.0f);
 	vec2 Pos = vec2(Section.x + Section.w - 10.0f, Section.y + Section.h / 2.0f);
 
 	const ColorRGBA OuterColor = color_cast<ColorRGBA>(ColorHSLA(LaserOutlineColor));
@@ -335,6 +336,30 @@ void CMenus::DoLaserPreview(const CUIRect *pRect, const ColorHSLA LaserOutlineCo
 		RenderTools()->DrawSprite(Section.x + 30.0f, Section.y + Section.h / 2.0f, 60.0f);
 		Graphics()->QuadsEnd();
 		break;
+	case LASERTYPE_DRAGGER:
+	{
+		CTeeRenderInfo TeeRenderInfo;
+		TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClPlayerSkin));
+		TeeRenderInfo.ApplyColors(g_Config.m_ClPlayerUseCustomColor, g_Config.m_ClPlayerColorBody, g_Config.m_ClPlayerColorFeet);
+		TeeRenderInfo.m_Size = 64.0f;
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, EMOTE_NORMAL, vec2(1, 0), From);
+		break;
+	}
+	case LASERTYPE_FREEZE:
+	{
+		CTeeRenderInfo TeeRenderInfo;
+		if(g_Config.m_ClShowNinja)
+			TeeRenderInfo.Apply(m_pClient->m_Skins.Find("x_ninja"));
+		else
+			TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClPlayerSkin));
+		TeeRenderInfo.m_TeeRenderFlags = TEE_EFFECT_FROZEN;
+		TeeRenderInfo.m_Size = 64.0f;
+		TeeRenderInfo.m_ColorBody = ColorRGBA(1, 1, 1);
+		TeeRenderInfo.m_ColorFeet = ColorRGBA(1, 1, 1);
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, EMOTE_PAIN, vec2(1, 0), From);
+		GameClient()->m_Effects.FreezingFlakes(From, vec2(32, 32));
+		break;
+	}
 	default:
 		GameClient()->m_Items.RenderLaser(From, From, OuterColor, InnerColor, 4.0f, TicksHead, LaserType);
 	}
@@ -590,17 +615,24 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 	}
 
 
-	// A-Client
+	// E-Client
 	{
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitRight(33.0f, &Box, &Button);
-		static CButtonContainer s_AClientButton;
-		if(DoButton_MenuTab(&s_AClientButton, FONT_ICON_INFO, ActivePage == PAGE_ACLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ACLIENT]))
+		static CButtonContainer s_EClientButton;
+		ColorRGBA Inactive = ms_ColorTabbarInactive;
+		ColorRGBA Active = ms_ColorTabbarActive;
+		if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
 		{
-			NewPage = PAGE_ACLIENT;
+			Inactive = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
+			Active = ColorRGBA(0.3f, 0.8f, 0.6, 0.5f);
+		}
+		if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, nullptr, &Active))
+		{
+			NewPage = PAGE_ECLIENT;
 			ResetTeePos = true;
 		}
-		GameClient()->m_Tooltips.DoToolTip(&s_AClientButton, &Button, Localize("A-Client"));
+		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("E-Client"));
 	}
 
 	Box.VSplitRight(10.0f, &Box, nullptr);
@@ -945,7 +977,7 @@ void CMenus::OnInit()
 	RenderTools()->QuadContainerAddSprite(m_DirectionQuadContainerIndex, 0.f, 0.f, 22.f);
 	Graphics()->QuadContainerUpload(m_DirectionQuadContainerIndex);
 
-	// A-Client
+	// E-Client
 
 	// Rainbow Color again for the preview..
 	m_MenusRainbowColor = g_Config.m_ClPlayerColorBody;
@@ -1158,9 +1190,9 @@ void CMenus::Render()
 			{
 				RenderSettings(MainView);
 			}
-			else if(m_MenuPage == PAGE_ACLIENT)
+			else if(m_MenuPage == PAGE_ECLIENT)
 			{
-				RenderAClientVersionPage(MainView);
+				RenderEClientVersionPage(MainView);
 			}
 			else
 			{
@@ -1210,9 +1242,9 @@ void CMenus::Render()
 			{
 				RenderSettings(MainView);
 			}
-			else if(m_GamePage == PAGE_ACLIENT)
+			else if(m_GamePage == PAGE_ECLIENT)
 			{
-				RenderAClientVersionPage(MainView);
+				RenderEClientVersionPage(MainView);
 			}
 			else
 			{
@@ -2007,7 +2039,7 @@ void CMenus::RenderPopupLoading(CUIRect Screen)
 	}
 	else
 	{
-		str_copy(aTitle, Localize("Loading A-Client - Connected"));
+		str_copy(aTitle, Localize("Connected"));
 		switch(Client()->LoadingStateDetail())
 		{
 		case IClient::LOADING_STATE_DETAIL_INITIAL:
@@ -2474,7 +2506,7 @@ int CMenus::MenuImageScan(const char *pName, int IsDir, int DirType, void *pUser
 	str_truncate(MenuImage.m_aName, sizeof(MenuImage.m_aName), pName, str_length(pName) - str_length(pExtension));
 	pSelf->m_vMenuImages.push_back(MenuImage);
 
-	pSelf->RenderLoading(Localize("Loading DDNet Client"), Localize("Loading menu images"), 0);
+	pSelf->RenderLoading(Localize("Loading E-Client"), Localize("Loading menu images"), 0);
 
 	return 0;
 }
