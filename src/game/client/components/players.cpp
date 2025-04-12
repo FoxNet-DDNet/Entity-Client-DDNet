@@ -1529,10 +1529,6 @@ void CPlayers::OnRender()
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
 			if(Clients.m_Solo && Clients.ClientId() != LocalClientId)
 				continue;
-		
-		// don't render offscreen
-		if(!in_range(Clients.m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(Clients.m_RenderPos.y, ScreenY0, ScreenY1))
-			continue;
 
 		const int ClientId = Clients.ClientId();
 		float Alpha = (m_pClient->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
