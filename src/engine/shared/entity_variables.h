@@ -343,7 +343,7 @@ MACRO_CONFIG_INT(ClStrongWeakColorId, ec_strong_weak_color_id, 0, 0, 1, CFGFLAG_
 MACRO_CONFIG_INT(ClInformUpdate, ec_inform_update, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Inform you if a new version of E-Client is available")
 
 // Custom Vairiables from My Server for the editor
-// You can use these if you get my server from https://github.com/qxdFoxs/FoxNet-DDNet
+// You can use these if you get my server from https://github.com/FoxNetw/FoxNet-DDNet
 
 MACRO_CONFIG_INT(SvAutoHammer, fs_auto_hammer, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
 MACRO_CONFIG_INT(SvAutoGun, fs_auto_gun, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
@@ -357,3 +357,5 @@ MACRO_CONFIG_INT(SvExplGun, fs_explgun, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, 
 
 MACRO_CONFIG_INT(SvFakeGrenade, fs_fake_grenade, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "Grenade doesnt explode")
 MACRO_CONFIG_INT(SvDisableFreeze, fs_disable_freeze, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "fake freeze?")
+
+MACRO_CONFIG_INT(SvFinishXPAmount, fs_finish_xp_amount, 0, 0, 5000, CFGFLAG_SERVER | CFGFLAG_GAME, "How much xp a players should get for a map finish (0 = disabled)")
