@@ -43,7 +43,7 @@ public:
 	float GetProximityRadius() const { return m_ProximityRadius; }
 	virtual bool CanCollide(int ClientId) { return true; }
 
-	void Destroy() { delete this; }
+	virtual void Destroy() { delete this; }
 	virtual void PreTick() {}
 	virtual void Tick() {}
 	virtual void TickDeferred() {}
