@@ -3186,6 +3186,15 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
+		if(g_Config.m_ClServerRainbow)
+		{
+			if(m_EClient.m_RainbowBody[0])
+				Msg.m_ColorBody = m_EClient.m_RainbowColor[0];
+			if(m_EClient.m_RainbowFeet[0])
+				Msg.m_ColorFeet = m_EClient.m_RainbowColor[0];
+			if(m_EClient.m_RainbowBody[0] || m_EClient.m_RainbowFeet[0])
+				Msg.m_UseCustomColor = true;
+		}
 		CMsgPacker Packer(&Msg);
 		Msg.Pack(&Packer);
 		Client()->SendMsg(IClient::CONN_MAIN, &Packer, MSGFLAG_VITAL | MSGFLAG_FLUSH);
@@ -3237,6 +3246,15 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_UseCustomColor = g_Config.m_ClDummyUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClDummyColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
+		if(g_Config.m_ClServerRainbow)
+		{
+			if(m_EClient.m_RainbowBody[1])
+				Msg.m_ColorBody = m_EClient.m_RainbowColor[1];
+			if(m_EClient.m_RainbowFeet[1])
+				Msg.m_ColorFeet = m_EClient.m_RainbowColor[1];
+			if(m_EClient.m_RainbowBody[1] || m_EClient.m_RainbowFeet[1])
+				Msg.m_UseCustomColor = true;
+		}
 		CMsgPacker Packer(&Msg);
 		Msg.Pack(&Packer);
 		Client()->SendMsg(IClient::CONN_DUMMY, &Packer, MSGFLAG_VITAL);
