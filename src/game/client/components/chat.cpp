@@ -702,7 +702,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	ColorRGBA Colors = g_Config.m_ClMessageColor;
 	if(ClientId >= 0 && g_Config.m_ClWarList)
 	{
-		if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted && g_Config.m_ClShowMutedInConsole)
+		if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
 		{
 			char Message[2048];
 			str_format(Message, sizeof(Message), "[Muted] %s", m_pClient->m_aClients[ClientId].m_aName);
@@ -1147,7 +1147,7 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
 
-				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].IsMuted) // E-Client
+				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].IsMuted && !GameClient()->m_EClient.m_TempPlayers[Line.m_ClientId].IsTempMute) // E-Client
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClWarlistPrefix);
 				}
@@ -1679,7 +1679,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 									GameClient()->ClientMessage(aBuf);
 							}
 						}
-						if(pWarData->IsMuted)
+						if(pWarData->IsMuted || pTempData->IsTempMute)
 						{
 							GameClient()->m_EClient.TempMute(name);
 							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name);
