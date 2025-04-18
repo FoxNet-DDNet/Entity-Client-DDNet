@@ -903,9 +903,10 @@ void CPlayers::OnRender()
 		const bool Frozen = CharacterInfo.m_HasExtendedData && CharacterInfo.m_ExtendedData.m_FreezeEnd != 0;
 
 		const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
+		const bool Dummy = ClientId == m_pClient->m_aLocalIds[!g_Config.m_ClDummy];
 
 		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
-		if(g_Config.m_ClOwnTeeSkin && Local)
+		if(g_Config.m_ClOwnTeeSkin && (Local || Dummy))
 		{
 			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClOwnTeeSkinName);
 
