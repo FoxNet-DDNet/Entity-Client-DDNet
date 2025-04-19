@@ -784,7 +784,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	Data.m_FontSize = 18.0f + 20.0f * g_Config.m_ClNamePlatesSize / 100.0f;
 
 	// E-Client
-	Data.m_IsMuted = Data.m_ShowName && GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].IsMuted;
+	Data.m_IsMuted = Data.m_ShowName && (GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId].IsTempMute);
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
 	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;

@@ -1695,19 +1695,11 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 		{
 			if(str_find_nocase(pLine, "' joined team "))
 			{
-				const char *FindTeam = str_find_nocase(pLine, "m ");
 				const char *PName = str_find_nocase(pLine, "'");
 				const char *NameLength = str_find_nocase(pLine, "' ");
 				using namespace std;
 				if(str_find_nocase(pLine, g_Config.m_ClAutoJoinTeamName))
 				{
-					string s(FindTeam);
-					s.erase(s.begin());
-					s.erase(s.begin());
-
-					char p_Team[16];
-					strcpy(p_Team, s.c_str());
-
 					int nLength = str_length(PName) - str_length(NameLength);
 					string Name(PName);
 					Name.erase(nLength);
@@ -1715,12 +1707,10 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 					char PlayerName[16];
 					strcpy(PlayerName, Name.c_str());
-
-					int NameToJoin = str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName);
-					if(str_comp(p_Team, "0") != 0 && NameToJoin == 0)
+					if(!str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName))
 					{
-						char aBuf[2048] = "/team ";
-						str_append(aBuf, p_Team);
+						char aBuf[2048] = "/Join ";
+						str_append(aBuf, PlayerName);
 						m_pClient->m_Chat.SendChat(0, aBuf);
 						char Joined[2048] = "Auto Joined ";
 						str_append(Joined, PlayerName);
