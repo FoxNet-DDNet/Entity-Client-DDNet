@@ -128,7 +128,7 @@ ac_custom_font
 ac_afk_color
 ac_spec_color
 ac_friend_color
-ac_aiodob_color
+ac_entity_color
 ac_chatbubble
 ac_show_others_in_menu
 ac_show_self_in_menu

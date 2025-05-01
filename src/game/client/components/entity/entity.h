@@ -1,5 +1,5 @@
-#ifndef GAME_CLIENT_COMPONENTS_AIODOB_H
-#define GAME_CLIENT_COMPONENTS_AIODOB_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_H
 #include <game/client/component.h>
 #include <engine/console.h>
 #include <base/system.h>
