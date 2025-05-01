@@ -70,6 +70,7 @@
 #include "components/entity/auto_kill.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/update.h"
+#include "components/entity/mapconfig.h"
 
 // Tater
 #include "components/tclient/bindchat.h"
@@ -196,6 +197,7 @@ public:
 	CFreezeKill m_FreezeKill;
 	CAutoKill m_AutoKill;
 	CUpdate m_AcUpdate;
+	CMapConfig m_MapConfig;
 
 	// T-Client
 	CSkinProfiles m_SkinProfiles;

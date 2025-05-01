@@ -172,6 +172,7 @@ void CGameClient::OnConsoleInit()
 						  &m_FreezeKill,
 					      &m_AutoKill,
 					      &m_AcUpdate,
+					      &m_MapConfig,
 	});
 
 	// build the input stack

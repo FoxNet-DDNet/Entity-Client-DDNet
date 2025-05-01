@@ -2375,7 +2375,9 @@ if(CLIENT)
     components/entity/entity.cpp
     components/entity/entity.h 
     components/entity/freeze_kill.cpp
-    components/entity/freeze_kill.h
+    components/entity/freeze_kill.h 
+    components/entity/mapconfig.cpp
+    components/entity/mapconfig.h
     components/entity/menus_entity.cpp 
     components/entity/update.cpp
     components/entity/update.h

@@ -101,6 +101,12 @@ public:
 		Success &= CreateFolder("ghosts", TYPE_SAVE);
 		Success &= CreateFolder("teehistorian", TYPE_SAVE);
 
+		Success &= CreateFolder("Entity", TYPE_SAVE);
+		Success &= CreateFolder("Entity/MapConfigs", TYPE_SAVE);
+
+		IOHANDLE File = OpenFile("Entity/MapConfigs/default.dflt", IOFLAG_WRITE, IStorage::TYPE_SAVE);
+		io_close(File);
+
 		if(!Success)
 		{
 			log_error("storage", "failed to create default folders in the user directory");
@@ -872,7 +878,7 @@ public:
 
 		char aBuffer[IO_MAX_PATH_LENGTH];
 		GetPath(Type, pFoldername, aBuffer, sizeof(aBuffer));
-
+		
 		bool Success = !fs_makedir(aBuffer);
 		if(!Success)
 			dbg_msg("storage", "failed to create folder: %s", aBuffer);
