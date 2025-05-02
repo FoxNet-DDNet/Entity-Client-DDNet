@@ -1226,12 +1226,12 @@ public:
 	{
 		CheckDefaultFaces();
 		std::vector<std::string> vCustomFonts;
-		Storage()->ListDirectory(IStorage::TYPE_ALL, "aiodob/fonts", LaziestFileCallback, &vCustomFonts);
+		Storage()->ListDirectory(IStorage::TYPE_ALL, "entity/fonts", LaziestFileCallback, &vCustomFonts);
 		std::sort(vCustomFonts.begin(), vCustomFonts.end());
 		for(std::string sFile : vCustomFonts)
 		{
 			char aFontName[IO_MAX_PATH_LENGTH];
-			str_format(aFontName, sizeof(aFontName), "aiodob/fonts/%s", sFile.c_str());
+			str_format(aFontName, sizeof(aFontName), "entity/fonts/%s", sFile.c_str());
 			void *pFontData;
 			unsigned FontDataSize;
 			if(Storage()->ReadFile(aFontName, IStorage::TYPE_ALL, &pFontData, &FontDataSize))

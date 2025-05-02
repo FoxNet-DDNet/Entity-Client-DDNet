@@ -899,10 +899,10 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(CurrentLine.m_ClientId == SERVER_MSG)
 	{
 		str_copy(CurrentLine.m_aName, "*** ");
-		if(g_Config.m_ClChatClientPrefix)
-			str_copy(CurrentLine.m_aName, g_Config.m_ClClientPrefix);
+		if(g_Config.m_ClChatServerPrefix)
+			str_copy(CurrentLine.m_aName, g_Config.m_ClServerPrefix);
 	}
-	else if(CurrentLine.m_ClientId == CLIENT_MSG)
+	else if(CurrentLine.m_ClientId == CLIENT_MSG || CurrentLine.m_ClientId == ECLIENT_MSG)
 	{
 		str_copy(CurrentLine.m_aName, "— ");
 		if(g_Config.m_ClChatClientPrefix)
@@ -1780,7 +1780,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					char AdBotInfo[256];
 					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Dismissed message of \"%s\" (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
 
-					GameClient()->ClientMessage("╭──                  Aiodob Alert");
+					GameClient()->ClientMessage("╭──                  Entity Alert");
 					GameClient()->ClientMessage("│");
 					GameClient()->ClientMessage(AdBotInfo);
 					GameClient()->ClientMessage("│");
@@ -1800,7 +1800,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					char AdBotInfo[256];
 					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Player \"%s\" has been Auto Voted (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
 
-					GameClient()->ClientMessage("╭──                  Aiodob Alert");
+					GameClient()->ClientMessage("╭──                  Entity Alert");
 					GameClient()->ClientMessage("│");
 					GameClient()->ClientMessage(AdBotInfo);
 					GameClient()->ClientMessage("│");

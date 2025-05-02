@@ -519,7 +519,7 @@ void CEClient::OnlineInfo(bool Integrate)
 	str_format(active, sizeof(active), "│ [active] %d Teams | %d Wars | %d Helpers | %d Mutes", NumberTeams - NumberTeamsAfk, NumberWars - NumberWarsAfk, NumberHelpers - NumberHelpersAfk, NumberMutes - NumberMutesAfk);
 	if(!Integrate)
 	{
-		GameClient()->ClientMessage("╭──                  Aiodob Info");
+		GameClient()->ClientMessage("╭──                  Entity Info");
 		GameClient()->ClientMessage("│");
 	}
 	GameClient()->ClientMessage(aBuf);
