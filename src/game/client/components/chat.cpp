@@ -195,7 +195,7 @@ void CChat::ConShowChat(IConsole::IResult *pResult, void *pUserData)
 
 void CChat::ConClientMessage(IConsole::IResult *pResult, void *pUserData)
 {
-	((CChat *)pUserData)->AddLine(TEAM_MESSAGE, TEAM_ALL, pResult->GetString(0));
+	((CChat *)pUserData)->AddLine(ECLIENT_MSG, TEAM_ALL, pResult->GetString(0));
 }
 
 void CChat::ConEcho(IConsole::IResult *pResult, void *pUserData)
@@ -307,10 +307,10 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		{
 			static bool SilentMessageInfo = false;
 			if(g_Config.m_ClSilentMessages)
-				AddLine(TEAM_SILENT, TEAM_ALL, m_Input.GetString());
+				AddLine(SILENT_MSG, TEAM_ALL, m_Input.GetString());
 			if(GameClient()->m_EClient.m_FirstLaunch && !SilentMessageInfo)
 			{
-				AddLine(TEAM_MESSAGE, TEAM_ALL, "This Message was a Silent Message, no one else can see it!");
+				AddLine(ECLIENT_MSG, TEAM_ALL, "This Message was a Silent Message, no one else can see it!");
 				SilentMessageInfo = true;
 			}
 		}
@@ -803,12 +803,12 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		}
 
 		char TypeName[512];
-		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(pLine_->m_ClientId));
+		str_format(TypeName, sizeof(TypeName), "[%s]", GameClient()->m_WarList.GetWarTypeName(Line.m_ClientId));
 
-		bool IsWarlist = GameClient()->m_WarList.GetAnyWar(pLine_->m_ClientId);
-		if(pLine_->m_ClientId >= 0 && !IsWarlist)
+		bool IsWarlist = GameClient()->m_WarList.GetAnyWar(Line.m_ClientId);
+		if(Line.m_ClientId >= 0 && !IsWarlist)
 		{
-			CTempData *pTempData = &GameClient()->m_EClient.m_TempPlayers[pLine_->m_ClientId];
+			CTempData *pTempData = &GameClient()->m_EClient.m_TempPlayers[Line.m_ClientId];
 			if(pTempData->IsTempHelper)
 			{
 				IsWarlist = true;
@@ -827,9 +827,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		else if(Line.m_Team)
 			pFrom = "teamchat";
 		else if(Line.m_ClientId == SERVER_MSG)
-			pFrom = "erver";
+			pFrom = "server";
 		else if(Line.m_ClientId == CLIENT_MSG)
-			pFrom = "lient";
+			pFrom = "client";
 		else
 			pFrom = "chat";
 
@@ -899,10 +899,21 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(CurrentLine.m_ClientId == SERVER_MSG)
 	{
 		str_copy(CurrentLine.m_aName, "*** ");
+		if(g_Config.m_ClChatClientPrefix)
+			str_copy(CurrentLine.m_aName, g_Config.m_ClClientPrefix);
 	}
 	else if(CurrentLine.m_ClientId == CLIENT_MSG)
 	{
-		str_copy(pCurrentLine->m_aName, "— ");
+		str_copy(CurrentLine.m_aName, "— ");
+		if(g_Config.m_ClChatClientPrefix)
+			str_copy(CurrentLine.m_aName, g_Config.m_ClClientPrefix);
+	}
+	else if(CurrentLine.m_ClientId == SILENT_MSG)
+	{
+		auto &LineAuthor = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId];
+
+		str_copy(CurrentLine.m_aName, LineAuthor.m_aName);
+		str_append(CurrentLine.m_aName, ": ");
 	}
 	else
 	{
@@ -1185,6 +1196,10 @@ void CChat::OnPrepareLines(float y)
 		ColorRGBA NameColor;
 		if(Line.m_CustomColor)
 			NameColor = *Line.m_CustomColor;
+		else if(Line.m_ClientId == SILENT_MSG)
+			NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSilentColor));
+		else if(Line.m_ClientId == ECLIENT_MSG)
+			NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClECMessageColor));
 		else if(Line.m_ClientId == SERVER_MSG)
 			NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageSystemColor));
 		else if(Line.m_ClientId == CLIENT_MSG)
@@ -1195,6 +1210,10 @@ void CChat::OnPrepareLines(float y)
 			NameColor = ColorRGBA(1.0f, 0.5f, 0.5f, 1.0f);
 		else if(Line.m_NameColor == TEAM_BLUE)
 			NameColor = ColorRGBA(0.7f, 0.7f, 1.0f, 1.0f);
+		else if(g_Config.m_ClWarList && g_Config.m_ClWarListChat && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId)) // TClient
+			NameColor = GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId);
+		else if(Line.m_Friend && g_Config.m_ClDoFriendColors)
+			NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 		else if(Line.m_NameColor == TEAM_SPECTATORS)
 			NameColor = ColorRGBA(0.75f, 0.5f, 0.75f, 1.0f);
 		else if(Line.m_ClientId >= 0 && g_Config.m_ClChatTeamColors && m_pClient->m_Teams.Team(Line.m_ClientId))
@@ -1221,6 +1240,10 @@ void CChat::OnPrepareLines(float y)
 		ColorRGBA Color;
 		if(Line.m_CustomColor)
 			Color = *Line.m_CustomColor;
+		else if(Line.m_ClientId == SILENT_MSG)
+			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSilentColor));
+		else if(Line.m_ClientId == ECLIENT_MSG)
+			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClECMessageColor));
 		else if(Line.m_ClientId == SERVER_MSG)
 			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageSystemColor));
 		else if(Line.m_ClientId == CLIENT_MSG)
