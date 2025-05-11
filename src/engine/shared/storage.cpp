@@ -104,9 +104,6 @@ public:
 		Success &= CreateFolder("Entity", TYPE_SAVE);
 		Success &= CreateFolder("Entity/MapConfigs", TYPE_SAVE);
 
-		IOHANDLE File = OpenFile("Entity/MapConfigs/default.dflt", IOFLAG_WRITE, IStorage::TYPE_SAVE);
-		io_close(File);
-
 		if(!Success)
 		{
 			log_error("storage", "failed to create default folders in the user directory");
