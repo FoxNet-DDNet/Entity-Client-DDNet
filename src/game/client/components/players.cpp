@@ -971,18 +971,21 @@ void CPlayers::OnRender()
 
 			if(GameClient()->m_aClients[ClientId].m_Friend && g_Config.m_ClDoFriendColors)
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-			if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
-				Color = GameClient()->m_WarList.GetClanColor(ClientId);
+			if(g_Config.m_ClWarList)
+			{
+				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
+					Color = GameClient()->m_WarList.GetClanColor(ClientId);
 
-			if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
-				Color = GameClient()->m_WarList.GetNameplateColor(ClientId);
-			else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
-				Color = GameClient()->m_WarList.GetClanColor(ClientId);
+				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
+					Color = GameClient()->m_WarList.GetNameplateColor(ClientId);
+				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
+					Color = GameClient()->m_WarList.GetClanColor(ClientId);
 
-			if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar)
-				Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-			else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper)
-				Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
+				if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar)
+					Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
+				else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper)
+					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
+			}
 
 			if(g_Config.m_ClSweatModeSelfColor && Local)
 				continue;
