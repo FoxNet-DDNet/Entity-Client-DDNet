@@ -1662,7 +1662,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						}
 						if(pWarData->IsMuted || pTempData->IsTempMute)
 						{
-							GameClient()->m_EClient.TempMute(name);
+							GameClient()->m_EClient.TempMute(name, true);
 							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", name);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->ClientMessage(aBuf);
