@@ -67,7 +67,6 @@
 // Entity
 #include "components/entity/entity.h"
 #include "components/entity/anti_spawn_block.h"
-#include "components/entity/auto_kill.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/update.h"
 #include "components/entity/mapconfig.h"
@@ -195,7 +194,6 @@ public:
 	CEClient m_EClient;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
-	CAutoKill m_AutoKill;
 	CUpdate m_AcUpdate;
 	CMapConfig m_MapConfig;
 

@@ -379,24 +379,7 @@ void CEClient::OnConnect()
 			}
 			if(g_Config.m_ClEnabledInfo)
 			{
-				if((g_Config.m_ClAutoKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
-				{
-					GameClient()->ClientMessage("│ Auto Kill Enabled!");
-					GameClient()->ClientMessage("│");
-				}
-				else if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
-				{
-					GameClient()->ClientMessage("│ Auto Kill Disabled, Not on Mult!");
-					GameClient()->ClientMessage("│");
-				}
-				else if(!g_Config.m_ClAutoKill)
-				{
-					GameClient()->ClientMessage("│ Auto Kill Disabled!");
-					GameClient()->ClientMessage("│");
-				}
-
 				// Freeze Kill
-
 				if((g_Config.m_ClFreezeKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
 				{
 					GameClient()->ClientMessage("│ Freeze Kill Enabled!");

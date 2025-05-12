@@ -170,7 +170,6 @@ void CGameClient::OnConsoleInit()
 						  &m_EClient,
 						  &m_AntiSpawnBlock,
 						  &m_FreezeKill,
-					      &m_AutoKill,
 					      &m_AcUpdate,
 					      &m_MapConfig,
 	});

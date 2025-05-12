@@ -267,15 +267,6 @@ MACRO_CONFIG_INT(ClAutoEnableGoresMode, ec_auto_enable_gores_mode, 0, 0, 1, CFGF
 MACRO_CONFIG_INT(ClDisableGoresOnShutdown, ec_disable_gores_on_shutdown, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "disables it on shutdown")
 MACRO_CONFIG_STR(ClGoresModeSaved, ec_gores_mode_saved, 128, "+fire", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Edit This")
 
-// auto kill if player is sitting ontop of you
-MACRO_CONFIG_INT(ClAutoKill, ec_autokill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
-MACRO_CONFIG_INT(ClAutoKillIgnoreKillProt, ec_autokill_ignore_kill_prot, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Kill if Frozen")
-MACRO_CONFIG_INT(ClAutoKillMultOnly, ec_autokill_mult_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
-MACRO_CONFIG_INT(ClAutoKillWarOnly, ec_autokill_war_only, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto kills if an enemy player is sitting on you while you are freezed")
-MACRO_CONFIG_INT(ClAutoKillRangeX, ec_autokill_range_x, 35, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "x coordinate range to autokill in ↔")
-MACRO_CONFIG_INT(ClAutoKillRangeY, ec_autokill_range_y, 10, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "y coordinate range to autokill in ↕")
-MACRO_CONFIG_INT(ClAutoKillDebug, ec_auto_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "test")
-
 // Tee
 MACRO_CONFIG_INT(ClOwnTeeSkin, ec_own_tee_skin, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")
 MACRO_CONFIG_INT(ClOwnTeeSkinCustomColor, ec_own_tee_custom_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders your own skin differently for yourself")

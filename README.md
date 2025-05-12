@@ -184,12 +184,6 @@ ac_gores_mode_disable_weapons
 ac_auto_enable_gores_mode
 ac_disable_gores_on_shutdown
 ac_gores_mode_saved
-ac_autokill
-ac_autokill_ignore_kill_prot
-ac_autokill_mult_only
-ac_autokill_war_only
-ac_autokill_range_x
-ac_autokill_range_y
 ac_sweat_mode
 ac_sweat_mode_skin
 ac_sweat_mode_only_others

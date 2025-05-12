@@ -2368,8 +2368,6 @@ if(CLIENT)
     components/emoticon.h
     components/entity/anti_spawn_block.cpp
     components/entity/anti_spawn_block.h
-    components/entity/auto_kill.cpp
-    components/entity/auto_kill.h
     components/entity/commands.cpp
     components/entity/e_enums.h
     components/entity/entity.cpp
