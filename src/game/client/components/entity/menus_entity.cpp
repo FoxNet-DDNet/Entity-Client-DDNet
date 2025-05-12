@@ -1972,7 +1972,8 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	float MouseDist = distance(Pos, Ui()->MousePos());
 	if(GameClient()->m_Bindwheel.m_vBinds.empty()) // E-Client -> Fixes a Crash
 	{
-		TextRender()->Text(Pos.x - 30.0f, Pos.y - 10.0f, 20.0f, "Empty");
+		float Size = 20.0f;
+		TextRender()->Text(Pos.x - TextRender()->TextWidth(Size, "Empty") / 2.0f, Pos.y - Size / 2, Size, "Empty");
 	}
 	else if(MouseDist < Radius && MouseDist > Radius * 0.25f)
 	{
