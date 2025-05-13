@@ -1069,7 +1069,7 @@ void CPlayers::OnRender()
 	// render spectating players
 	for(const auto &Clients : m_pClient->m_aClients)
 	{
-		if(!Client.m_SpecCharPresent)
+		if(!Clients.m_SpecCharPresent)
 		{
 			continue;
 		}
@@ -1078,13 +1078,13 @@ void CPlayers::OnRender()
 			if(Clients.m_Solo && Clients.ClientId() != LocalClientId)
 				continue;
 
-		const int ClientId = Client.ClientId();
+		const int ClientId = Clients.ClientId();
 		float Alpha = (m_pClient->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
 		if(ClientId == -2) // ghost
 		{
 			Alpha = g_Config.m_ClRaceGhostAlpha / 100.f;
 		}
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &RenderInfoSpec, EMOTE_BLINK, vec2(1, 0), Client.m_SpecChar, Alpha);
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &RenderInfoSpec, EMOTE_BLINK, vec2(1, 0), Clients.m_SpecChar, Alpha);
 	}
 
 	// render everyone else's tee, then either our own or the tee we are spectating.
