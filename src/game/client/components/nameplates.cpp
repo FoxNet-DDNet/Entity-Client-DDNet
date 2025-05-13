@@ -361,10 +361,12 @@ protected:
 		// E-Client
 		ColorRGBA Color = Data.m_Color;
 
+
+		if(This.m_aClients[Data.m_ClientId].m_Friend && g_Config.m_ClDoFriendColors)
+			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+
 		if(g_Config.m_ClWarList)
 		{
-			if(This.m_aClients[Data.m_ClientId].m_Friend && g_Config.m_ClDoFriendColors)
-				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 			if(This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
 				Color = This.m_WarList.GetClanColor(Data.m_ClientId);
 
