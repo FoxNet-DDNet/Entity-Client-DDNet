@@ -5323,13 +5323,12 @@ bool CGameClient::IsMultiViewIdSet()
 
 int CGameClient::FindFirstMultiViewId()
 {
-	int ClientId = -1;
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(m_aMultiViewId[ClientId] && !m_MultiView.m_aVanish[ClientId])
 			return ClientId;
 	}
-	return ClientId;
+	return -1;
 }
 
 bool CGameClient::CheckNewInput()
