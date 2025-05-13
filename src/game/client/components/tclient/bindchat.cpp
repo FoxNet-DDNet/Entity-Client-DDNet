@@ -186,13 +186,13 @@ void CBindChat::OnConsoleInit()
 	}
 
 	// Default Binds (.)
-	AddBindDefault(".help", "exec data/aiodob/binds/.help.cfg");
-	AddBindDefault(".extra", "exec data/aiodob/binds/.extra.cfg");
+	AddBindDefault(".help", "exec data/entity/binds/.help.cfg");
+	AddBindDefault(".extra", "exec data/entity/binds/.extra.cfg");
 	AddBindDefault(".kick", "votekick");
 	AddBindDefault(".votekick", "votekick");
 	AddBindDefault(".onlineinfo", "OnlineInfo");
 	AddBindDefault(".playerinfo", "PlayerInfo");
-	AddBindDefault(".github", "view_link https://github.com/qxdFox/Aiodob-Client");
+	AddBindDefault(".github", "view_link https://github.com/qxdFox/Entity-Client");
 	AddBindDefault(".r", "reply_last");
 
 	AddBindDefault(".friend", "add_friend");
@@ -250,8 +250,8 @@ void CBindChat::OnConsoleInit()
 	AddBindDefault(".unclanteam", "remove_war_clan_index 2");
 
 	// Default Binds (!)
-	AddBindDefault("!help", "exec data/aiodob/binds/.help.cfg");
-	AddBindDefault("!extra", "exec data/aiodob/binds/.extra.cfg");
+	AddBindDefault("!help", "exec data/entity/binds/.help.cfg");
+	AddBindDefault("!extra", "exec data/entity/binds/.extra.cfg");
 	AddBindDefault("!kick", "votekick");
 	AddBindDefault("!votekick", "votekick");
 	AddBindDefault("!onlineinfo", "OnlineInfo");

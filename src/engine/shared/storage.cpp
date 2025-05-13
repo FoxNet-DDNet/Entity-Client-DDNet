@@ -101,6 +101,9 @@ public:
 		Success &= CreateFolder("ghosts", TYPE_SAVE);
 		Success &= CreateFolder("teehistorian", TYPE_SAVE);
 
+		Success &= CreateFolder("Entity", TYPE_SAVE);
+		Success &= CreateFolder("Entity/MapConfigs", TYPE_SAVE);
+
 		if(!Success)
 		{
 			log_error("storage", "failed to create default folders in the user directory");
@@ -872,7 +875,7 @@ public:
 
 		char aBuffer[IO_MAX_PATH_LENGTH];
 		GetPath(Type, pFoldername, aBuffer, sizeof(aBuffer));
-
+		
 		bool Success = !fs_makedir(aBuffer);
 		if(!Success)
 			dbg_msg("storage", "failed to create folder: %s", aBuffer);
@@ -895,7 +898,7 @@ public:
 	const char *GetBinaryPathAbsolute(const char *pFilename, char *pBuffer, unsigned BufferSize) override
 	{
 		char aBinaryPath[IO_MAX_PATH_LENGTH];
-		GetBinaryPath(PLAT_CLIENT_EXEC, aBinaryPath, sizeof(aBinaryPath));
+		GetBinaryPath(pFilename, aBinaryPath, sizeof(aBinaryPath));
 		if(fs_is_relative_path(aBinaryPath))
 		{
 			if(fs_getcwd(pBuffer, BufferSize))

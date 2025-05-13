@@ -191,14 +191,14 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect OtherSettings, ColorSettings, FreezeKillSettings, ChatSettings, AutoKillOntopSettings, GoresModeSettings, MenuSettings, EntitySettings;
+		CUIRect OtherSettings, ColorSettings, FreezeKillSettings, ChatSettings, GoresModeSettings, MenuSettings, EntitySettings;
 		MainView.VSplitMid(&OtherSettings, &GoresModeSettings);
 
 		{
 			static float Offset = 0.0f;
 
 			OtherSettings.VMargin(5.0f, &OtherSettings);
-			OtherSettings.HSplitTop(225.0f + Offset, &OtherSettings, &FreezeKillSettings);
+			OtherSettings.HSplitTop(225.0f + Offset, &OtherSettings, &ChatSettings);
 			if(s_ScrollRegion.AddRect(OtherSettings))
 			{
 				Offset = 0.0f;
@@ -381,48 +381,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				}
 			}
 		}
-		
-		{
-			static float Offset = 0.0f;
-			FreezeKillSettings.HSplitTop(Margin, nullptr, &FreezeKillSettings);
-			FreezeKillSettings.HSplitTop(75.0f + Offset, &FreezeKillSettings, &ChatSettings);
-			if(s_ScrollRegion.AddRect(FreezeKillSettings))
-			{
-				Offset = 0.0f;
-
-				FreezeKillSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				FreezeKillSettings.VMargin(Margin, &FreezeKillSettings);
-
-				FreezeKillSettings.HSplitTop(HeaderHeight, &Button, &FreezeKillSettings);
-				Ui()->DoLabel(&Button, Localize("Freeze Kill"), FontSize, TEXTALIGN_MC);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKill, Localize("Kill on Freeze"), &g_Config.m_ClFreezeKill, &FreezeKillSettings, LineSize);
-
-				if(g_Config.m_ClFreezeKill)
-				{
-					Offset = Offset + 105.0f;
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillMultOnly, Localize("Only Enable on Multeasymap"), &g_Config.m_ClFreezeKillMultOnly, &FreezeKillSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, Localize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &FreezeKillSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKillSettings, LineSize);
-
-					if(g_Config.m_ClFreezeKillTeamClose)
-					{
-						FreezeKillSettings.HSplitTop(20.0f, &Button, &FreezeKillSettings);
-						Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillTeamDistance, &g_Config.m_ClFreezeKillTeamDistance, &Button, Localize("Team Max Distance"), 1, 25, &CUi::ms_LinearScrollbarScale, 0u, "");
-					}
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, Localize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &FreezeKillSettings, LineSize);
-					if(g_Config.m_ClFreezeKillWaitMs)
-					{
-						Offset = Offset + 35.0f;
-						FreezeKillSettings.HSplitTop(2 * LineSize, &Button, &FreezeKillSettings);
-						Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, Localize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
-					}
-				}
-			}
-		}
 		// chat settings
 		{
 			ChatSettings.HSplitTop(Margin, nullptr, &ChatSettings);
@@ -552,7 +510,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				}
 			}
 		}
-
 		// right side
 		{
 			GoresModeSettings.VMargin(5.0f, &GoresModeSettings);
@@ -574,7 +531,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 		{
 			MenuSettings.HSplitTop(Margin, nullptr, &MenuSettings);
-			MenuSettings.HSplitTop(100.0f, &MenuSettings, &AutoKillOntopSettings);
+			MenuSettings.HSplitTop(100.0f, &MenuSettings, &FreezeKillSettings);
 			if(s_ScrollRegion.AddRect(MenuSettings))
 			{
 				MenuSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
@@ -594,33 +551,42 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 		{
 			static float Offset = 0.0f;
-			AutoKillOntopSettings.HSplitTop(Margin, nullptr, &AutoKillOntopSettings);
-			AutoKillOntopSettings.HSplitTop(75.0f + Offset, &AutoKillOntopSettings, &EntitySettings);
-			if(s_ScrollRegion.AddRect(AutoKillOntopSettings))
+			FreezeKillSettings.HSplitTop(Margin, nullptr, &FreezeKillSettings);
+			FreezeKillSettings.HSplitTop(75.0f + Offset, &FreezeKillSettings, &EntitySettings);
+			if(s_ScrollRegion.AddRect(FreezeKillSettings))
 			{
 				Offset = 0.0f;
 
-				AutoKillOntopSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
-				AutoKillOntopSettings.VMargin(Margin, &AutoKillOntopSettings);
+				FreezeKillSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				FreezeKillSettings.VMargin(Margin, &FreezeKillSettings);
 
-				AutoKillOntopSettings.HSplitTop(HeaderHeight, &Button, &AutoKillOntopSettings);
-				Ui()->DoLabel(&Button, Localize("Auto Kill"), FontSize, TEXTALIGN_MC);
+				FreezeKillSettings.HSplitTop(HeaderHeight, &Button, &FreezeKillSettings);
+				Ui()->DoLabel(&Button, Localize("Freeze Kill"), FontSize, TEXTALIGN_MC);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKill, Localize("Kill on Freeze"), &g_Config.m_ClFreezeKill, &FreezeKillSettings, LineSize);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKill, ("Auto Kill if Frozen And You're Below a Player"), &g_Config.m_ClAutoKill, &AutoKillOntopSettings, LineMargin);
-				if(g_Config.m_ClAutoKill)
+				if(g_Config.m_ClFreezeKill)
 				{
-					Offset = Offset + 130.0f;
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillMultOnly, ("Only Enable on Multeasymap"), &g_Config.m_ClAutoKillMultOnly, &AutoKillOntopSettings, LineMargin);
+					Offset = Offset + 105.0f;
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillIgnoreKillProt, ("Ignore Kill Protection"), &g_Config.m_ClAutoKillIgnoreKillProt, &AutoKillOntopSettings, LineMargin);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillMultOnly, Localize("Only Enable on Multeasymap"), &g_Config.m_ClFreezeKillMultOnly, &FreezeKillSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, Localize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &FreezeKillSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeDontKillMoving, Localize("Don't Kill if Moving"), &g_Config.m_ClFreezeDontKillMoving, &FreezeKillSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, Localize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &FreezeKillSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamClose, Localize("Dont Kill if Teammate is Close"), &g_Config.m_ClFreezeKillTeamClose, &FreezeKillSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoKillWarOnly, ("Only Kill if The Player is an Enemy"), &g_Config.m_ClAutoKillWarOnly, &AutoKillOntopSettings, LineMargin);
+					if(g_Config.m_ClFreezeKillTeamClose)
+					{
+						FreezeKillSettings.HSplitTop(20.0f, &Button, &FreezeKillSettings);
+						Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillTeamDistance, &g_Config.m_ClFreezeKillTeamDistance, &Button, Localize("Team Max Distance"), 1, 25, &CUi::ms_LinearScrollbarScale, 0u, "");
+					}
 
-					AutoKillOntopSettings.HSplitTop(2 * LineSize, &Button, &AutoKillOntopSettings);
-					Ui()->DoScrollbarOption(&g_Config.m_ClAutoKillRangeX, &g_Config.m_ClAutoKillRangeX, &Button, Localize("x Axis ↔ Auto Kill Range"), 1, 100, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
-
-					AutoKillOntopSettings.HSplitTop(2 * LineSize, &Button, &AutoKillOntopSettings);
-					Ui()->DoScrollbarOption(&g_Config.m_ClAutoKillRangeY, &g_Config.m_ClAutoKillRangeY, &Button, Localize("y Axis ↕ Auto Kill Range"), 1, 100, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, Localize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &FreezeKillSettings, LineSize);
+					if(g_Config.m_ClFreezeKillWaitMs)
+					{
+						Offset = Offset + 35.0f;
+						FreezeKillSettings.HSplitTop(2 * LineSize, &Button, &FreezeKillSettings);
+						Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, Localize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
+					}
 				}
 			}
 		}
@@ -1972,7 +1938,8 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	float MouseDist = distance(Pos, Ui()->MousePos());
 	if(GameClient()->m_Bindwheel.m_vBinds.empty()) // E-Client -> Fixes a Crash
 	{
-		TextRender()->Text(Pos.x - 30.0f, Pos.y - 10.0f, 20.0f, "Empty");
+		float Size = 20.0f;
+		TextRender()->Text(Pos.x - TextRender()->TextWidth(Size, "Empty") / 2.0f, Pos.y - Size / 2, Size, "Empty");
 	}
 	else if(MouseDist < Radius && MouseDist > Radius * 0.25f)
 	{

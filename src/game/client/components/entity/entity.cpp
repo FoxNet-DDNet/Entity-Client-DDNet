@@ -100,7 +100,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(Client()->DummyConnected() && !str_comp(aName, m_pClient->m_aClients[m_pClient->m_aLocalIds[1]].m_aName))
 		return;
 
-	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted ||
+	bool HiddenMessage = (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute) || 
 		 (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar));
 
 	if(!HiddenMessage)
@@ -110,7 +110,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		m_aLastPing.m_Team = Team;
 	}
 	
-	if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
+	if(g_Config.m_ClReplyMuted && (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute))
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
 			return;
@@ -379,24 +379,7 @@ void CEClient::OnConnect()
 			}
 			if(g_Config.m_ClEnabledInfo)
 			{
-				if((g_Config.m_ClAutoKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClAutoKillMultOnly) || (!g_Config.m_ClAutoKillMultOnly && g_Config.m_ClAutoKill))
-				{
-					GameClient()->ClientMessage("│ Auto Kill Enabled!");
-					GameClient()->ClientMessage("│");
-				}
-				else if(g_Config.m_ClAutoKill && (g_Config.m_ClAutoKillMultOnly && str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0))
-				{
-					GameClient()->ClientMessage("│ Auto Kill Disabled, Not on Mult!");
-					GameClient()->ClientMessage("│");
-				}
-				else if(!g_Config.m_ClAutoKill)
-				{
-					GameClient()->ClientMessage("│ Auto Kill Disabled!");
-					GameClient()->ClientMessage("│");
-				}
-
 				// Freeze Kill
-
 				if((g_Config.m_ClFreezeKill && str_comp(Client()->GetCurrentMap(), "Multeasymap") == 0 && g_Config.m_ClFreezeKillMultOnly) || (!g_Config.m_ClFreezeKillMultOnly && g_Config.m_ClFreezeKill))
 				{
 					GameClient()->ClientMessage("│ Freeze Kill Enabled!");
@@ -552,7 +535,7 @@ void CEClient::Rainbow()
 
 	if(Client()->State() == IClient::STATE_ONLINE)
 	{
-		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
+		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && m_LastMovement < time_get() + time_freq() * 60 && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 		{
 			if(m_RainbowBody[g_Config.m_ClDummy] || m_RainbowFeet[g_Config.m_ClDummy])
 			{

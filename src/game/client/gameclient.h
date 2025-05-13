@@ -67,9 +67,9 @@
 // Entity
 #include "components/entity/entity.h"
 #include "components/entity/anti_spawn_block.h"
-#include "components/entity/auto_kill.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/update.h"
+#include "components/entity/mapconfig.h"
 
 // Tater
 #include "components/tclient/bindchat.h"
@@ -194,8 +194,8 @@ public:
 	CEClient m_EClient;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
-	CAutoKill m_AutoKill;
 	CUpdate m_AcUpdate;
+	CMapConfig m_MapConfig;
 
 	// T-Client
 	CSkinProfiles m_SkinProfiles;
@@ -268,6 +268,7 @@ private:
 	static void ConchainRefreshSkins(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainSpecialDummy(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
+	static void ConTuneParam(IConsole::IResult *pResult, void *pUserData);
 	static void ConTuneZone(IConsole::IResult *pResult, void *pUserData);
 	static void ConMapbug(IConsole::IResult *pResult, void *pUserData);
 
@@ -650,6 +651,7 @@ public:
 	void OnSkinUpdate(const char *pSkinName);
 	std::shared_ptr<CManagedTeeRenderInfo> CreateManagedTeeRenderInfo(const CTeeRenderInfo &TeeRenderInfo, const CSkinDescriptor &SkinDescriptor);
 	std::shared_ptr<CManagedTeeRenderInfo> CreateManagedTeeRenderInfo(const CClientData &Client);
+	void CollectManagedTeeRenderInfos(const std::function<void(const char *pSkinName)> &ActiveSkinAcceptor);
 
 	void RenderShutdownMessage() override;
 
@@ -896,7 +898,8 @@ public:
 	{
 		IGraphics::CTextureHandle m_SpriteParticleSnowflake;
 		IGraphics::CTextureHandle m_SpriteParticleSparkle;
-		IGraphics::CTextureHandle m_aSpriteParticles[2];
+		IGraphics::CTextureHandle m_SpritePulley;
+		IGraphics::CTextureHandle m_aSpriteParticles[3];
 	};
 
 	SClientExtrasSkin m_ExtrasSkin;

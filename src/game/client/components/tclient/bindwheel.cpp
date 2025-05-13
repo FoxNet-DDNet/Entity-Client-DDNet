@@ -193,7 +193,8 @@ void CBindWheel::OnRender()
 
 	if(BindsEmpty) // E-Client
 	{
-		TextRender()->Text(Screen.w / 2.0f - 30.0f, Screen.h / 2.0f - 10.0f, 20.0f, "Empty");
+		float Size = 20.0f;
+		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(Size, "Empty") / 2.0f, Screen.h / 2.0f - Size / 2, Size, "Empty");
 	}
 
 	const float Theta = pi * 2.0f / m_vBinds.size();
