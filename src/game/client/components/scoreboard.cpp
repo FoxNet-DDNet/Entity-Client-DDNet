@@ -626,9 +626,11 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					//TextRender()->TextEx(&Cursor, FontIcons::FONT_ICON_EYE);
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 					//TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
-					TextRender()->TextColor(1.f, 1.f, 1.f, Alpha);
+					TextRender()->TextColor(1.0f, 1.0f, 1.0f, Alpha);
 
 				}
+
+				TextRender()->TextColor(1.0f, 1.0f, 1.0f, Alpha);
 
 				if(g_Config.m_ClDoFriendColors && ClientData.m_Friend)
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
@@ -642,8 +644,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					else if(GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
 						TextRender()->TextColor(GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId).WithAlpha(Alpha));
 				}
-				else
-					TextRender()->TextColor(1.f, 1.f, 1.f, Alpha);
 
 				TextRender()->TextEx(&Cursor, ClientData.m_aName);
 
