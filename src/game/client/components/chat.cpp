@@ -1732,6 +1732,21 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				}
 			}
 		}
+
+		if(g_Config.m_ClAntiSpawnBlock)
+		{
+			char aBuf[255];
+			str_format(aBuf, sizeof(aBuf), "'%s' joined team", g_Config.m_ClDummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName);
+			if(str_find_nocase(pLine, aBuf))
+			{
+				return true;
+			}
+			str_format(aBuf, sizeof(aBuf), "'%s' locked your team. After the race starts, killing will kill everyone in your team.", g_Config.m_ClDummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName);
+			if(str_find_nocase(pLine, aBuf))
+			{
+				return true;
+			}
+		}
 	}
 	else if(ClientId >= 0) // Player Message
 	{
