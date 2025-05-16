@@ -701,7 +701,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		return;
 
 	ColorRGBA Colors = g_Config.m_ClMessageColor;
-	if(ClientId >= 0 && g_Config.m_ClWarList)
+	if(ClientId >= 0)
 	{
 		if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
 		{
@@ -716,7 +716,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Colors);
 			return;
 		}
-		else if(g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar))
+		else if(g_Config.m_ClWarList && g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar))
 		{
 			char TypeName[512];
 			if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar)

@@ -782,19 +782,22 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	// E-Client
 	Data.m_IsMuted = Data.m_ShowName && (GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId].IsTempMute);
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
-	Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
-	Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
-
-	CTempData TempData = GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId];
-
-	if((TempData.IsTempWar || TempData.IsTempHelper))
-		Data.m_pReason = TempData.m_aReason;
-
-	if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
+	if(g_Config.m_ClWarList)
 	{
-		const char *pReason = Data.m_pReason;
-		Data.m_pReason = Data.m_pName;
-		Data.m_pName = pReason;
+		Data.m_pReason = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_aReason;
+		Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
+
+		CTempData TempData = GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId];
+
+		if((TempData.IsTempWar || TempData.IsTempHelper))
+			Data.m_pReason = TempData.m_aReason;
+
+		if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_pReason, "") != 0)
+		{
+			const char *pReason = Data.m_pReason;
+			Data.m_pReason = Data.m_pName;
+			Data.m_pName = pReason;
+		}
 	}
 
 	Data.m_ClientId = pPlayerInfo->m_ClientId;
