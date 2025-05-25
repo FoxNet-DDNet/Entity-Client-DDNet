@@ -95,7 +95,6 @@ ec_frozen_tees_hud_skins
 ec_frozen_tees_size
 ec_frozen_tees_max_rows
 ec_frozen_tees_only_inteam
-ec_auto_reply_msg
 ec_tabbed_out_msg
 ec_last_notify
 ec_last_notify_text

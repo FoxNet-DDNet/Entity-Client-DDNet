@@ -6,6 +6,8 @@ class CAntiSpawnBlock : public CComponent
 {
 public:
 	bool m_SentKill;
+	bool m_SentTeamRequest;
+	bool m_Team0Request;
 
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;
