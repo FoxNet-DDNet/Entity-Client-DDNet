@@ -29,11 +29,14 @@ CHud::CHud()
 	m_FPSTextContainerIndex.Reset();
 	m_DDRaceEffectsTextContainerIndex.Reset();
 	m_PlayerAngleTextContainerIndex.Reset();
+	m_PlayerPrevAngle = -INFINITY;
 
 	for(int i = 0; i < 2; i++)
 	{
 		m_aPlayerSpeedTextContainers[i].Reset();
+		m_aPlayerPrevSpeed[i] = -INFINITY;
 		m_aPlayerPositionContainers[i].Reset();
+		m_aPlayerPrevPosition[i] = -INFINITY;
 	}
 }
 
@@ -52,10 +55,13 @@ void CHud::ResetHudContainers()
 	TextRender()->DeleteTextContainer(m_FPSTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_DDRaceEffectsTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_PlayerAngleTextContainerIndex);
+	m_PlayerPrevAngle = -INFINITY;
 	for(int i = 0; i < 2; i++)
 	{
 		TextRender()->DeleteTextContainer(m_aPlayerSpeedTextContainers[i]);
+		m_aPlayerPrevSpeed[i] = -INFINITY;
 		TextRender()->DeleteTextContainer(m_aPlayerPositionContainers[i]);
+		m_aPlayerPrevPosition[i] = -INFINITY;
 	}
 }
 
@@ -1528,18 +1534,19 @@ inline float CHud::GetMovementInformationBoxHeight()
 	return BoxHeight;
 }
 
-void CHud::UpdateMovementInformationTextContainer(STextContainerIndex &TextContainer, float FontSize, float Value, char *pPrevValue, size_t Size)
+void CHud::UpdateMovementInformationTextContainer(STextContainerIndex &TextContainer, float FontSize, float Value, float &PrevValue)
 {
+	Value = std::round(Value * 100.0f) / 100.0f; // Round to 2dp
+	if(TextContainer.Valid() && PrevValue == Value)
+		return;
+	PrevValue = Value;
+
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "%.2f", Value);
 
-	if(!TextContainer.Valid() || str_comp(pPrevValue, aBuf) != 0)
-	{
-		CTextCursor Cursor;
-		TextRender()->SetCursor(&Cursor, 0, 0, FontSize, TEXTFLAG_RENDER);
-		TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
-		str_copy(pPrevValue, aBuf, Size);
-	}
+	CTextCursor Cursor;
+	TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
 }
 
 void CHud::RenderMovementInformationTextContainer(STextContainerIndex &TextContainer, const ColorRGBA &Color, float X, float Y)
@@ -1550,7 +1557,7 @@ void CHud::RenderMovementInformationTextContainer(STextContainerIndex &TextConta
 	}
 }
 
-CHud::CMovementInformation CHud::GetMovementInformation(int ClientId) const
+CHud::CMovementInformation CHud::GetMovementInformation(int ClientId, int Conn) const
 {
 	CMovementInformation Out;
 	if(ClientId == SPEC_FREEVIEW)
@@ -1565,7 +1572,7 @@ CHud::CMovementInformation CHud::GetMovementInformation(int ClientId) const
 	{
 		const CNetObj_Character *pPrevChar = &m_pClient->m_Snap.m_aCharacters[ClientId].m_Prev;
 		const CNetObj_Character *pCurChar = &m_pClient->m_Snap.m_aCharacters[ClientId].m_Cur;
-		const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
+		const float IntraTick = Client()->IntraGameTick(Conn);
 
 		// To make the player position relative to blocks we need to divide by the block size
 		Out.m_Pos = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pCurChar->m_X, pCurChar->m_Y), IntraTick) / 32.0f;
@@ -1587,7 +1594,7 @@ CHud::CMovementInformation CHud::GetMovementInformation(int ClientId) const
 		float VelspeedLength = length(vec2(Vel.x, Vel.y) / 256.0f) * Client()->GameTickSpeed();
 		// Todo: Use Velramp tuning of each individual player
 		// Since these tuning parameters are almost never changed, the default values are sufficient in most cases
-		float Ramp = VelocityRamp(VelspeedLength, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampStart, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampRange, m_pClient->m_aTuning[g_Config.m_ClDummy].m_VelrampCurvature);
+		float Ramp = VelocityRamp(VelspeedLength, m_pClient->m_aTuning[Conn].m_VelrampStart, m_pClient->m_aTuning[Conn].m_VelrampRange, m_pClient->m_aTuning[Conn].m_VelrampCurvature);
 		Out.m_Speed.x *= Ramp;
 		Out.m_Speed.y = VelspeedY / 32.0f;
 
@@ -1626,7 +1633,7 @@ void CHud::RenderMovementInformation()
 
 	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_L, 5.0f);
 
-	const CMovementInformation Info = GetMovementInformation(ClientId);
+	const CMovementInformation Info = GetMovementInformation(ClientId, g_Config.m_ClDummy);
 
 	float y = StartY + LineSpacer * 2.0f;
 	float xl = StartX + 2.0f;
@@ -1638,12 +1645,12 @@ void CHud::RenderMovementInformation()
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		TextRender()->Text(xl, y, Fontsize, "X:", -1.0f);
-		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[0], Fontsize, Info.m_Pos.x, m_aaPlayerPositionText[0], sizeof(m_aaPlayerPositionText[0]));
+		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[0], Fontsize, Info.m_Pos.x, m_aPlayerPrevPosition[0]);
 		RenderMovementInformationTextContainer(m_aPlayerPositionContainers[0], TextRender()->DefaultTextColor(), xr, y);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		TextRender()->Text(xl, y, Fontsize, "Y:", -1.0f);
-		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[1], Fontsize, Info.m_Pos.y, m_aaPlayerPositionText[1], sizeof(m_aaPlayerPositionText[1]));
+		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[1], Fontsize, Info.m_Pos.y, m_aPlayerPrevPosition[1]);
 		RenderMovementInformationTextContainer(m_aPlayerPositionContainers[1], TextRender()->DefaultTextColor(), xr, y);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 	}
@@ -1665,7 +1672,7 @@ void CHud::RenderMovementInformation()
 			if(m_aLastPlayerSpeedChange[i] == ESpeedChange::DECREASE)
 				Color = ColorRGBA(1.0f, 0.5f, 0.5f, 1.0f);
 			TextRender()->Text(xl, y, Fontsize, aaCoordinates[i], -1.0f);
-			UpdateMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Fontsize, i == 0 ? Info.m_Speed.x : Info.m_Speed.y, m_aaPlayerSpeedText[i], sizeof(m_aaPlayerSpeedText[i]));
+			UpdateMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Fontsize, i == 0 ? Info.m_Speed.x : Info.m_Speed.y, m_aPlayerPrevSpeed[i]);
 			RenderMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Color, xr, y);
 			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 		}
@@ -1678,7 +1685,7 @@ void CHud::RenderMovementInformation()
 		TextRender()->Text(xl, y, Fontsize, Localize("Angle:"), -1.0f);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
-		UpdateMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, Fontsize, Info.m_Angle, m_aPlayerAngleText, sizeof(m_aPlayerAngleText));
+		UpdateMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, Fontsize, Info.m_Angle, m_PlayerPrevAngle);
 		RenderMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, TextRender()->DefaultTextColor(), xr, y);
 	}
 }
@@ -1696,7 +1703,11 @@ void CHud::RenderSpectatorHud()
 	}
 	else if(m_pClient->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW)
 	{
-		str_format(aBuf, sizeof(aBuf), Localize("Following %s", "Spectating"), m_pClient->m_aClients[m_pClient->m_Snap.m_SpecInfo.m_SpectatorId].m_aName);
+		const auto &Player = m_pClient->m_aClients[m_pClient->m_Snap.m_SpecInfo.m_SpectatorId];
+		if(g_Config.m_ClShowIds)
+			str_format(aBuf, sizeof(aBuf), Localize("Following %d: %s", "Spectating"), Player.ClientId(), Player.m_aName);
+		else
+			str_format(aBuf, sizeof(aBuf), Localize("Following %s", "Spectating"), Player.m_aName);
 	}
 	else
 	{

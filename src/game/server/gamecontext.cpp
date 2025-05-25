@@ -1188,7 +1188,7 @@ void CGameContext::OnTick()
 
 							if(m_apPlayers[j] && !m_apPlayers[j]->IsAfk() && m_apPlayers[j]->GetTeam() != TEAM_SPECTATORS &&
 								((Server()->Tick() - m_apPlayers[j]->m_JoinTick) / (Server()->TickSpeed() * 60) > g_Config.m_SvVoteVetoTime ||
-									(m_apPlayers[j]->GetCharacter() && m_apPlayers[j]->GetCharacter()->m_DDRaceState == DDRACE_STARTED &&
+									(m_apPlayers[j]->GetCharacter() && m_apPlayers[j]->GetCharacter()->m_DDRaceState == ERaceState::STARTED &&
 										(Server()->Tick() - m_apPlayers[j]->GetCharacter()->m_StartTime) / (Server()->TickSpeed() * 60) > g_Config.m_SvVoteVetoTime)))
 							{
 								if(CurVote == 0)
@@ -1726,10 +1726,10 @@ void CGameContext::OnClientConnected(int ClientId, void *pData)
 
 	if(m_apPlayers[ClientId])
 		delete m_apPlayers[ClientId];
-	m_apPlayers[ClientId] = new(ClientId) CPlayer(this, NextUniqueClientId, ClientId, StartTeam);
+	m_apPlayers[ClientId] = new(ClientId) CPlayer(this, m_NextUniqueClientId, ClientId, StartTeam);
 	m_apPlayers[ClientId]->SetInitialAfk(Afk);
 	m_apPlayers[ClientId]->m_LastWhisperTo = LastWhisperTo;
-	NextUniqueClientId += 1;
+	m_NextUniqueClientId += 1;
 
 	SendMotd(ClientId);
 	SendSettings(ClientId);
@@ -1892,11 +1892,6 @@ bool CGameContext::OnClientDDNetVersionKnown(int ClientId)
 	return false;
 }
 
-bool CheckClientId2(int ClientId)
-{
-	return ClientId >= 0 && ClientId < MAX_CLIENTS;
-}
-
 void *CGameContext::PreProcessMsg(int *pMsgId, CUnpacker *pUnpacker, int ClientId)
 {
 	if(Server()->IsSixup(ClientId) && *pMsgId < OFFSET_UUID)
@@ -1916,7 +1911,7 @@ void *CGameContext::PreProcessMsg(int *pMsgId, CUnpacker *pUnpacker, int ClientI
 
 			if(pMsg7->m_Mode == protocol7::CHAT_WHISPER)
 			{
-				if(!CheckClientId2(pMsg7->m_Target) || !Server()->ClientIngame(pMsg7->m_Target))
+				if(!CheckClientId(pMsg7->m_Target) || !Server()->ClientIngame(pMsg7->m_Target))
 					return nullptr;
 				if(ProcessSpamProtection(ClientId))
 					return nullptr;
@@ -2544,7 +2539,7 @@ void CGameContext::OnSetTeamNetMessage(const CNetMsg_Cl_SetTeam *pMsg, int Clien
 	if(pChr)
 	{
 		int CurrTime = (Server()->Tick() - pChr->m_StartTime) / Server()->TickSpeed();
-		if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == DDRACE_STARTED)
+		if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == ERaceState::STARTED)
 		{
 			SendChatTarget(ClientId, "Kill Protection enabled. If you really want to join the spectators, first type /kill");
 			return;
@@ -2851,7 +2846,7 @@ void CGameContext::OnKillNetMessage(const CNetMsg_Cl_Kill *pMsg, int ClientId)
 
 	// Kill Protection
 	int CurrTime = (Server()->Tick() - pChr->m_StartTime) / Server()->TickSpeed();
-	if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == DDRACE_STARTED)
+	if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == ERaceState::STARTED)
 	{
 		SendChatTarget(ClientId, "Kill Protection enabled. If you really want to kill, type /kill");
 		return;
@@ -4522,6 +4517,50 @@ void CGameContext::SendRecord(int ClientId)
 	}
 }
 
+void CGameContext::SendFinish(int ClientId, float Time, float PreviousBestTime)
+{
+	int ClientVersion = m_apPlayers[ClientId]->GetClientVersion();
+
+	if(!Server()->IsSixup(ClientId))
+	{
+		CNetMsg_Sv_DDRaceTime Msg;
+		CNetMsg_Sv_DDRaceTimeLegacy MsgLegacy;
+		MsgLegacy.m_Time = Msg.m_Time = (int)(Time * 100.0f);
+		MsgLegacy.m_Check = Msg.m_Check = 0;
+		MsgLegacy.m_Finish = Msg.m_Finish = 1;
+
+		if(PreviousBestTime)
+		{
+			float Diff100 = (Time - PreviousBestTime) * 100;
+			MsgLegacy.m_Check = Msg.m_Check = (int)Diff100;
+		}
+		if(VERSION_DDRACE <= ClientVersion)
+		{
+			if(ClientVersion < VERSION_DDNET_MSG_LEGACY)
+			{
+				Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, ClientId);
+			}
+			else
+			{
+				Server()->SendPackMsg(&MsgLegacy, MSGFLAG_VITAL, ClientId);
+			}
+		}
+	}
+
+	CNetMsg_Sv_RaceFinish RaceFinishMsg;
+	RaceFinishMsg.m_ClientId = ClientId;
+	RaceFinishMsg.m_Time = Time * 1000;
+	RaceFinishMsg.m_Diff = 0;
+	if(PreviousBestTime)
+	{
+		float Diff = absolute(Time - PreviousBestTime);
+		RaceFinishMsg.m_Diff = Diff * 1000 * (Time < PreviousBestTime ? -1 : 1);
+	}
+	RaceFinishMsg.m_RecordPersonal = (Time < PreviousBestTime || !PreviousBestTime);
+	RaceFinishMsg.m_RecordServer = Time < m_pController->m_CurrentRecord;
+	Server()->SendPackMsg(&RaceFinishMsg, MSGFLAG_VITAL | MSGFLAG_NORECORD, -1);
+}
+
 bool CGameContext::ProcessSpamProtection(int ClientId, bool RespectChatInitialDelay)
 {
 	if(!m_apPlayers[ClientId])
@@ -4689,7 +4728,7 @@ void CGameContext::Whisper(int ClientId, char *pStr)
 		return;
 	}
 
-	if(!CheckClientId2(Victim))
+	if(!CheckClientId(Victim))
 	{
 		char aBuf[256];
 		str_format(aBuf, sizeof(aBuf), "No player with name \"%s\" found", pName);
@@ -4702,8 +4741,8 @@ void CGameContext::Whisper(int ClientId, char *pStr)
 
 void CGameContext::WhisperId(int ClientId, int VictimId, const char *pMessage)
 {
-	dbg_assert(CheckClientId2(ClientId) && m_apPlayers[ClientId] != nullptr, "ClientId invalid");
-	dbg_assert(CheckClientId2(VictimId) && m_apPlayers[VictimId] != nullptr, "VictimId invalid");
+	dbg_assert(CheckClientId(ClientId) && m_apPlayers[ClientId] != nullptr, "ClientId invalid");
+	dbg_assert(CheckClientId(VictimId) && m_apPlayers[VictimId] != nullptr, "VictimId invalid");
 
 	m_apPlayers[ClientId]->m_LastWhisperTo = VictimId;
 
