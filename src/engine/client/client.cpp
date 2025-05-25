@@ -2999,7 +2999,10 @@ void CClient::Update()
 	else
 		GameClient()->OnUpdate();
 
+	// Discord RPC Update
 	Discord()->Update(g_Config.m_ClDiscordRPC);
+
+	// Steam Presence Update
 	Steam()->Update();
 	if(Steam()->GetConnectAddress())
 	{
