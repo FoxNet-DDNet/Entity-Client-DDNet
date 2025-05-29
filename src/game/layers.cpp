@@ -5,6 +5,7 @@
 #include "mapitems.h"
 
 #include <engine/map.h>
+#include "gamecore.h"
 
 CLayers::CLayers()
 {
@@ -26,7 +27,25 @@ void CLayers::Init(IMap *pMap, bool GameOnly)
 		{
 			CMapItemLayer *pLayer = GetLayer(pGroup->m_StartLayer + LayerIndex);
 			if(pLayer->m_Type != LAYERTYPE_TILES)
+			{
+				if(pLayer->m_Type == LAYERTYPE_QUADS)
+				{
+					char aBuf[30] = {0}; // for now
+
+					CMapItemLayerQuads *pTilemap = reinterpret_cast<CMapItemLayerQuads *>(pLayer);
+					IntsToStr(pTilemap->m_aName, std::size(pTilemap->m_aName), aBuf, std::size(aBuf));
+
+					for(int i = 0; i < (int)std::size(ValidQuadNames); i++)
+					{
+						if(!str_comp(ValidQuadNames[i], aBuf))
+						{
+							m_vQuadLayers.push_back(pTilemap);
+							break;
+						}
+					}
+				}
 				continue;
+			}
 
 			CMapItemLayerTilemap *pTilemap = reinterpret_cast<CMapItemLayerTilemap *>(pLayer);
 			bool IsEntities = false;
@@ -134,6 +153,8 @@ void CLayers::Unload()
 	m_pFrontLayer = nullptr;
 	m_pSwitchLayer = nullptr;
 	m_pTuneLayer = nullptr;
+
+	m_vQuadLayers.clear();
 }
 
 void CLayers::InitTilemapSkip()

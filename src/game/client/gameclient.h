@@ -245,7 +245,6 @@ private:
 	int m_EditorMovementDelay = 5;
 	void UpdateEditorIngameMoved();
 
-	int m_PredictedTick;
 	int m_aLastNewPredictedTick[NUM_DUMMIES];
 
 	int m_LastRoundStartTick;
@@ -284,6 +283,7 @@ private:
 	int m_PrevLocalId = -1;
 
 public:
+	int m_PredictedTick;
 	IKernel *Kernel() { return IInterface::Kernel(); }
 	IEngine *Engine() const { return m_pEngine; }
 	class IGraphics *Graphics() const { return m_pGraphics; }
@@ -724,6 +724,10 @@ public:
 	bool CanDisplayWarning() const override;
 
 	// E-Client	
+
+	int m_InsideQFreeze;
+	int m_InsideQUnfreeze;
+
 	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;
 	void SetLastMovementTime(int Delay) override;

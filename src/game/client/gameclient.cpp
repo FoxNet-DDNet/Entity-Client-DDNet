@@ -1791,6 +1791,7 @@ void CGameClient::OnNewSnapshot()
 
 					// Freeze
 					pClient->m_FreezeEnd = pCharacterData->m_FreezeEnd;
+
 					pClient->m_DeepFrozen = pCharacterData->m_FreezeEnd == -1;
 					pClient->m_LiveFrozen = (pCharacterData->m_Flags & CHARACTERFLAG_MOVEMENTS_DISABLED) != 0;
 
@@ -2889,8 +2890,45 @@ void CGameClient::OnPredict()
 			}
 		}
 	}
-
 	m_PredictedTick = FinalTickSelf;
+
+	Collision()->m_Time = (float)(Client()->GameTick(g_Config.m_ClDummy) + g_Config.m_ClPredictionMargin / 20) / Client()->GameTickSpeed();
+	m_InsideQFreeze = 0;
+	m_InsideQUnfreeze = 0;
+	for(const auto *pQuadLayer : Collision()->QuadLayers())
+	{
+		if(!pQuadLayer)
+			continue;
+
+		char QuadName[30] = "";
+
+		IntsToStr(pQuadLayer->m_aName, std::size(pQuadLayer->m_aName), QuadName, std::size(QuadName));
+
+		int StartNum = 0;
+		while(StartNum < pQuadLayer->m_NumQuads)
+		{
+			CQuad *pQuad = nullptr;
+			int FoundNum = Collision()->GetQuadAt(m_aClients[m_Snap.m_LocalClientId].m_Predicted.m_Pos.x, m_aClients[m_Snap.m_LocalClientId].m_Predicted.m_Pos.y, &pQuad, StartNum, pQuadLayer);
+			if(!pQuad || FoundNum < 0 || FoundNum >= pQuadLayer->m_NumQuads)
+				break;
+
+			int Number = pQuad->m_aColors[0].r;
+			if(Number == 0)
+				Number++;
+			int Delay = pQuad->m_aColors[0].g;
+
+			bool FreezeQuad = pQuad->m_ColorEnvOffset == TILE_FREEZE || !str_comp("QFr", QuadName);
+			bool UnFreezeQuad = pQuad->m_ColorEnvOffset == TILE_UNFREEZE || !str_comp("QUnFr", QuadName);
+			bool DeathQuad = pQuad->m_ColorEnvOffset == TILE_DEATH || !str_comp("QDeath", QuadName);
+
+			if(FreezeQuad)
+				m_InsideQFreeze = Collision()->m_Time;
+			if(FreezeQuad)
+				m_InsideQUnfreeze = Collision()->m_Time;
+
+			break;
+		}
+	}
 
 	if(m_NewPredictedTick)
 	{

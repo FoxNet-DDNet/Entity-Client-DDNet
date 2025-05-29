@@ -892,7 +892,7 @@ void CPlayers::OnRender()
 	{
 		aRenderInfo[ClientId] = m_pClient->m_aClients[ClientId].m_RenderInfo;
 		aRenderInfo[ClientId].m_TeeRenderFlags = 0;
-		if(m_pClient->m_aClients[ClientId].m_FreezeEnd != 0)
+		if(m_pClient->m_aClients[ClientId].m_FreezeEnd != 0 || (m_pClient->m_InsideQFreeze && ClientId == LocalClientId))
 			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
 		if(m_pClient->m_aClients[ClientId].m_LiveFrozen)
 			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
@@ -900,7 +900,7 @@ void CPlayers::OnRender()
 			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
 		const CGameClient::CSnapState::CCharacterInfo &CharacterInfo = m_pClient->m_Snap.m_aCharacters[ClientId];
-		const bool Frozen = CharacterInfo.m_HasExtendedData && CharacterInfo.m_ExtendedData.m_FreezeEnd != 0;
+		const bool Frozen = CharacterInfo.m_HasExtendedData && CharacterInfo.m_ExtendedData.m_FreezeEnd != 0 || (m_pClient->m_InsideQFreeze && ClientId == LocalClientId);
 
 		const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
 		const bool Dummy = ClientId == m_pClient->m_aLocalIds[!g_Config.m_ClDummy];

@@ -9,6 +9,7 @@
 
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
+#include <game/collision.h>
 
 #include <game/layers.h>
 #include <game/mapitems.h>
@@ -75,8 +76,14 @@ void CMapLayers::EnvelopeEval(int TimeOffsetMillis, int Env, ColorRGBA &Result, 
 		{
 			// get the lerp of the current tick and prev
 			const auto TickToNanoSeconds = std::chrono::nanoseconds(1s) / (int64_t)pThis->Client()->GameTickSpeed();
-			const int MinTick = pThis->Client()->PrevGameTick(g_Config.m_ClDummy) - pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick;
-			const int CurTick = pThis->Client()->GameTick(g_Config.m_ClDummy) - pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick;
+			int MinTick = pThis->Client()->PrevGameTick(g_Config.m_ClDummy) - pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick;
+			int CurTick = pThis->Client()->GameTick(g_Config.m_ClDummy) - pThis->m_pClient->m_Snap.m_pGameInfoObj->m_RoundStartTick;
+			if(!pThis->Collision()->QuadLayers().empty())
+			{
+				MinTick = pThis->Client()->PrevGameTick(g_Config.m_ClDummy) + g_Config.m_ClPredictionMargin / 20;
+				CurTick = pThis->Client()->GameTick(g_Config.m_ClDummy) + g_Config.m_ClPredictionMargin / 20;
+			}
+
 			s_Time = std::chrono::nanoseconds((int64_t)(mix<double>(
 									    0,
 									    (CurTick - MinTick),

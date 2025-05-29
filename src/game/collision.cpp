@@ -14,6 +14,7 @@
 #include <game/mapitems.h>
 
 #include <engine/shared/config.h>
+#include "client/render.h"
 
 vec2 ClampVel(int MoveRestriction, vec2 Vel)
 {
@@ -94,6 +95,8 @@ void CCollision::Init(class CLayers *pLayers)
 			m_pFront = static_cast<CTile *>(m_pLayers->Map()->GetData(m_pLayers->FrontLayer()->m_Front));
 	}
 
+	m_vQuadLayers = m_pLayers->QuadLayers();
+
 	for(int i = 0; i < m_Width * m_Height; i++)
 	{
 		int Index;
@@ -169,6 +172,7 @@ void CCollision::Unload()
 	m_pTune = nullptr;
 	delete[] m_pDoor;
 	m_pDoor = nullptr;
+	m_vQuadLayers.clear();
 }
 
 void CCollision::FillAntibot(CAntibotMapData *pMapData) const
@@ -1293,4 +1297,237 @@ size_t CCollision::TeleAllSize(int Number)
 	if(m_TeleOthers.count(Number) > 0)
 		Total += m_TeleOthers[Number].size();
 	return Total;
+}
+int CCollision::GetQuadAt(float x, float y, CQuad **pOut, int StartNum, const CMapItemLayerQuads *pQuadLayer, vec2 *QuadCurPos, float *QuadCurAngle) const
+{
+	if(!pQuadLayer)
+		return 0;
+
+	int Num;
+	CQuad *pQuad = nullptr;
+	SAnimationTransformCache AnimationCache;
+
+	CQuad *pQuads = (CQuad *)m_pLayers->Map()->GetDataSwapped(pQuadLayer->m_Data);
+	vec2 Pos(0.0f, 0.0f);
+	float Ang = 0.0f;
+	for(Num = StartNum; Num < pQuadLayer->m_NumQuads; Num++)
+	{
+		for(Num = StartNum; Num < pQuadLayer->m_NumQuads; Num++)
+		{
+			vec2 Position(0.0f, 0.0f);
+			float Angle = 0.0f;
+			if(pQuads[Num].m_PosEnv >= 0)
+			{
+				if(pQuads[Num].m_PosEnv != AnimationCache.PosEnv || AnimationCache.PosEnvOffset != pQuads[Num].m_PosEnvOffset)
+				{
+					AnimationCache.PosEnv = pQuads[Num].m_PosEnv;
+					AnimationCache.PosEnvOffset = pQuads[Num].m_PosEnvOffset;
+					GetAnimationTransform(m_Time + (AnimationCache.PosEnvOffset / 1000.0), AnimationCache.PosEnv, m_pLayers, AnimationCache.Position, AnimationCache.Angle);
+				}
+				Position = AnimationCache.Position;
+				Angle = AnimationCache.Angle;
+			}
+
+			vec2 p0 = Position + vec2(fx2f(pQuads[Num].m_aPoints[0].x), fx2f(pQuads[Num].m_aPoints[0].y));
+			vec2 p1 = Position + vec2(fx2f(pQuads[Num].m_aPoints[1].x), fx2f(pQuads[Num].m_aPoints[1].y));
+			vec2 p2 = Position + vec2(fx2f(pQuads[Num].m_aPoints[2].x), fx2f(pQuads[Num].m_aPoints[2].y));
+			vec2 p3 = Position + vec2(fx2f(pQuads[Num].m_aPoints[3].x), fx2f(pQuads[Num].m_aPoints[3].y));
+
+			if(Angle != 0)
+			{
+				vec2 center(fx2f(pQuads[Num].m_aPoints[4].x), fx2f(pQuads[Num].m_aPoints[4].y));
+				Rotate(center, &p0, Angle);
+				Rotate(center, &p1, Angle);
+				Rotate(center, &p2, Angle);
+				Rotate(center, &p3, Angle);
+			}
+			if(OutOfRange(x, p0.x, p1.x, p2.x, p3.x))
+				continue;
+			if(OutOfRange(y, p0.y, p1.y, p2.y, p3.y))
+				continue;
+
+			if(InsideQuad(p0, p1, p2, p3, vec2(x, y)))
+			{
+				pQuad = &pQuads[Num];
+				Pos = Position;
+				Ang = Angle;
+				break;
+			}
+		}
+
+		if(pOut)
+			*pOut = pQuad;
+		if(QuadCurPos)
+			*QuadCurPos = Pos;
+		if(QuadCurAngle)
+			*QuadCurAngle = Ang;
+
+		return Num;
+	}
+	return 0;
+}
+
+void CCollision::Rotate(vec2 Center, vec2 *pPoint, float Rotation) const
+{
+	float x = pPoint->x - Center.x;
+	float y = pPoint->y - Center.y;
+	pPoint->x = (x * cosf(Rotation) - y * sinf(Rotation) + Center.x);
+	pPoint->y = (x * sinf(Rotation) + y * cosf(Rotation) + Center.y);
+}
+
+bool CCollision::OutOfRange(double value, double q0, double q1, double q2, double q3) const
+{
+	if(q0 > q1)
+	{
+		if(q2 > q3)
+		{
+			const double Min = minimum(q1, q3);
+			if(value < Min)
+				return true;
+			const double Max = maximum(q0, q2);
+			if(value > Max)
+				return true;
+		}
+		else
+		{
+			const double Min = minimum(q1, q2);
+			if(value < Min)
+				return true;
+			const double Max = maximum(q0, q3);
+			if(value > Max)
+				return true;
+		}
+	}
+	else
+	{
+		// q1 is bigger than q0
+		if(q2 > q3)
+		{
+			const double Min = minimum(q0, q3);
+			if(value < Min)
+				return true;
+			const double Max = maximum(q1, q2);
+			if(value > Max)
+				return true;
+		}
+		else
+		{
+			// q3 is bigger than q2
+			const double Min = minimum(q0, q2);
+			if(value < Min)
+				return true;
+			const double Max = maximum(q1, q3);
+			if(value > Max)
+				return true;
+		}
+	}
+	return false;
+}
+
+// q0, q1, q2 and q3 are position of quad vertices
+bool CCollision::InsideQuad(const vec2 &q0, const vec2 &q1, const vec2 &q2, const vec2 &q3, const vec2 &p) const
+{
+	return InsideTriangle(q0, q1, q2, p) || InsideTriangle(q1, q2, q3, p);
+}
+// t0, t1 and t2 are position of triangle vertices
+bool CCollision::InsideTriangle(const vec2 &t0, const vec2 &t1, const vec2 &t2, const vec2 &p) const
+{
+	vec3 bary = BarycentricCoordinates(t0, t1, t2, p);
+	return (bary.x >= 0.0f && bary.y >= 0.0f && bary.x + bary.y < 1.0f);
+}
+
+vec3 CCollision::BarycentricCoordinates(const vec2 &t0, const vec2 &t1, const vec2 &t2, const vec2 &p) const
+{
+	vec2 e0 = t1 - t0;
+	vec2 e1 = t2 - t0;
+	vec2 e2 = p - t0;
+
+	float d00 = dot(e0, e0);
+	float d01 = dot(e0, e1);
+	float d11 = dot(e1, e1);
+	float d20 = dot(e2, e0);
+	float d21 = dot(e2, e1);
+	float denom = d00 * d11 - d01 * d01;
+
+	vec3 bary;
+	bary.x = (d11 * d20 - d01 * d21) / denom;
+	bary.y = (d00 * d21 - d01 * d20) / denom;
+	bary.z = 1.0f - bary.x - bary.y;
+
+	return bary;
+}
+
+void CCollision::GetAnimationTransform(float GlobalTime, int Env, CLayers *pLayers, vec2 &Position, float &Angle) const
+{
+	Position.x = 0.0f;
+	Position.y = 0.0f;
+	Angle = 0.0f;
+
+	int Start, Num;
+	pLayers->Map()->GetType(MAPITEMTYPE_ENVELOPE, &Start, &Num);
+	if(Env >= Num)
+		return;
+	CMapItemEnvelope *pItem = (CMapItemEnvelope *)pLayers->Map()->GetItem(Start + Env, 0, 0);
+
+	if(pItem->m_NumPoints == 0)
+		return;
+
+	IMap *pMap = pLayers->Map();
+	CMapBasedEnvelopePointAccess EnvelopePoints(pMap);
+	EnvelopePoints.SetPointsRange(pItem->m_StartPoint, pItem->m_NumPoints);
+
+	if(EnvelopePoints.NumPoints() == 0)
+		return;
+
+	if(EnvelopePoints.NumPoints() == 1)
+	{
+		Position.x = fx2f(EnvelopePoints.GetPoint(0)->m_aValues[0]);
+		Position.y = fx2f(EnvelopePoints.GetPoint(0)->m_aValues[1]);
+		Angle = fx2f(EnvelopePoints.GetPoint(0)->m_aValues[2]) / 360.0f * pi * 2.0f;
+		return;
+	}
+
+	int NumPoints = EnvelopePoints.NumPoints();
+	const CEnvPoint *pLastPoint = EnvelopePoints.GetPoint(NumPoints - 1);
+	float Time = std::fmod(GlobalTime, pLastPoint->m_Time / 1000.0f) * 1000.0f;
+	for(int i = 0; i < NumPoints - 1; i++)
+	{
+		const CEnvPoint *pCurrentPoint = EnvelopePoints.GetPoint(i);
+		const CEnvPoint *pNextPoint = EnvelopePoints.GetPoint(i + 1);
+
+		if(Time >= pCurrentPoint->m_Time && Time <= pNextPoint->m_Time)
+		{
+			float Delta = pNextPoint->m_Time - pCurrentPoint->m_Time;
+			float a = (Time - pCurrentPoint->m_Time) / Delta;
+			switch(pCurrentPoint->m_Curvetype)
+			{
+			case CURVETYPE_SMOOTH:
+				a = -2 * a * a * a + 3 * a * a; // Hermite basis
+				break;
+			case CURVETYPE_SLOW:
+				a = a * a * a;
+				break;
+			case CURVETYPE_FAST:
+				a = 1 - a;
+				a = 1 - a * a * a;
+				break;
+			case CURVETYPE_STEP:
+				a = 0;
+				break;
+			default:
+				// Linear interpolation
+				break;
+			}
+
+			Position.x = fx2f(pCurrentPoint->m_aValues[0]) + (fx2f(pNextPoint->m_aValues[0]) - fx2f(pCurrentPoint->m_aValues[0])) * a;
+			Position.y = fx2f(pCurrentPoint->m_aValues[1]) + (fx2f(pNextPoint->m_aValues[1]) - fx2f(pCurrentPoint->m_aValues[1])) * a;
+			Angle = (fx2f(pCurrentPoint->m_aValues[2]) + (fx2f(pNextPoint->m_aValues[2]) - fx2f(pCurrentPoint->m_aValues[2])) * a) / 360.0f * pi * 2.0f;
+
+			return;
+		}
+	}
+	Position.x = fx2f(pLastPoint->m_aValues[0]);
+	Position.y = fx2f(pLastPoint->m_aValues[1]);
+	Angle = fx2f(pLastPoint->m_aValues[2]) / 360.0f * pi * 2.0f;
+	return;
 }

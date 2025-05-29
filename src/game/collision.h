@@ -16,6 +16,8 @@ class CSpeedupTile;
 class CSwitchTile;
 class CTuneTile;
 class CDoorTile;
+class CQuad;
+class CMapItemLayerQuads;
 
 enum
 {
@@ -69,6 +71,27 @@ public:
 	{
 		return GetMoveRestrictions(nullptr, nullptr, Pos, Distance);
 	}
+
+	
+	const std::vector<CMapItemLayerQuads *> &QuadLayers() const { return m_vQuadLayers; }
+
+	int GetQuadAt(float x, float y, CQuad **pOut, int StartNum, const CMapItemLayerQuads *pQuadLayer, vec2 *QuadCurPos = nullptr, float *QuadCurAngle = nullptr) const;
+
+	void GetAnimationTransform(float GlobalTime, int Env, class CLayers *pLayers, vec2 &Position, float &Angle) const;
+	float m_Time;
+	void SetTime(double Time) { m_Time = Time; }
+	bool OutOfRange(double value, double q0, double q1, double q2, double q3) const;
+	bool InsideTriangle(const vec2 &t0, const vec2 &t1, const vec2 &t2, const vec2 &p) const;
+	bool InsideQuad(const vec2 &q0, const vec2 &q1, const vec2 &q2, const vec2 &q3, const vec2 &p) const;
+	vec3 BarycentricCoordinates(const vec2 &t0, const vec2 &t1, const vec2 &t2, const vec2 &p) const;
+	void Rotate(vec2 Center, vec2 *pPoint, float Rotation) const;
+	struct SAnimationTransformCache
+	{
+		vec2 Position = vec2(0.0f, 0.f);
+		float Angle = 0;
+		int PosEnv = -1;
+		int PosEnvOffset = 0;
+	};
 
 	int GetTile(int x, int y) const;
 	int GetFrontTile(int x, int y) const;
@@ -156,6 +179,7 @@ private:
 	CSwitchTile *m_pSwitch;
 	CTuneTile *m_pTune;
 	CDoorTile *m_pDoor;
+	std::vector<CMapItemLayerQuads *> m_vQuadLayers;
 
 	// TILE_TELEIN
 	std::map<int, std::vector<vec2>> m_TeleIns;

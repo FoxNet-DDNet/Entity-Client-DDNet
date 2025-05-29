@@ -2,12 +2,15 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_LAYERS_H
 #define GAME_LAYERS_H
+#include <base/system.h>
+#include <vector>
 
 class IMap;
 
 class CMapItemGroup;
 class CMapItemLayer;
 class CMapItemLayerTilemap;
+class CMapItemLayerQuads;
 
 class CLayers
 {
@@ -31,6 +34,8 @@ public:
 	CMapItemLayerTilemap *FrontLayer() const { return m_pFrontLayer; }
 	CMapItemLayerTilemap *SwitchLayer() const { return m_pSwitchLayer; }
 	CMapItemLayerTilemap *TuneLayer() const { return m_pTuneLayer; }
+	const std::vector<CMapItemLayerQuads *> &QuadLayers() const { return m_vQuadLayers; }
+	char ValidQuadNames[5][30] = {"GameQuads", "QFr", "QUnFr", "QDeath", "QStopa"};
 
 private:
 	int m_GroupsNum;
@@ -47,6 +52,7 @@ private:
 	CMapItemLayerTilemap *m_pFrontLayer;
 	CMapItemLayerTilemap *m_pSwitchLayer;
 	CMapItemLayerTilemap *m_pTuneLayer;
+	std::vector<CMapItemLayerQuads *> m_vQuadLayers;
 
 	void InitTilemapSkip();
 };

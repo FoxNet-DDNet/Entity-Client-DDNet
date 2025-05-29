@@ -120,6 +120,7 @@ class CEClient : public CComponent
 	static void ConReplyLast(IConsole::IResult *pResult, void *pUserData);
 
 public:
+
 	bool m_SentKill;
 	int m_KillCount;
 
