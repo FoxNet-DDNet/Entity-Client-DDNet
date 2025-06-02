@@ -2,6 +2,8 @@
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 
+#include <engine/shared/protocol7.h>
+
 #include <game/generated/client_data.h>
 
 #include <game/client/animstate.h>
@@ -348,7 +350,7 @@ public:
 class CNamePlatePartName : public CNamePlatePartText
 {
 private:
-	char m_aText[MAX_NAME_LENGTH] = "";
+	char m_aText[std::max<size_t>(MAX_NAME_LENGTH, protocol7::MAX_NAME_ARRAY_SIZE)] = "";
 	float m_FontSize = -INFINITY;
 
 protected:
@@ -402,7 +404,7 @@ public:
 class CNamePlatePartClan : public CNamePlatePartText
 {
 private:
-	char m_aText[MAX_CLAN_LENGTH] = "";
+	char m_aText[std::max<size_t>(MAX_CLAN_LENGTH, protocol7::MAX_CLAN_ARRAY_SIZE)] = "";
 	float m_FontSize = -INFINITY;
 
 protected:
@@ -898,16 +900,38 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		const int SelectedId = Following ? GameClient()->m_Snap.m_SpecInfo.m_SpectatorId : GameClient()->m_Snap.m_LocalClientId;
 		const CGameClient::CSnapState::CCharacterInfo &Selected = GameClient()->m_Snap.m_aCharacters[SelectedId];
 		const CGameClient::CSnapState::CCharacterInfo &Other = GameClient()->m_Snap.m_aCharacters[pPlayerInfo->m_ClientId];
-		if(Selected.m_HasExtendedData && Other.m_HasExtendedData)
+
+		const bool ShouldShowIndicator = Other.m_HasExtendedData && (GameClient()->m_Snap.m_pLocalInfo && (GameClient()->m_Snap.m_pLocalInfo->m_Team != TEAM_SPECTATORS || Following));
+
+		if(ShouldShowIndicator)
 		{
 			Data.m_HookStrongWeakId = Other.m_ExtendedData.m_StrongWeakId;
 			Data.m_ShowHookStrongWeakId = g_Config.m_Debug || g_Config.m_ClNamePlatesStrong == 2;
-			if(SelectedId == pPlayerInfo->m_ClientId)
-				Data.m_ShowHookStrongWeak = Data.m_ShowHookStrongWeakId;
-			else
+
+			// Get selected player's StrongWeakId from snap data or saved local data
+			int SelectedStrongWeakId = 0;
+			bool HasSelectedId = false;
+
+			if(Selected.m_HasExtendedData)
 			{
-				Data.m_HookStrongWeakState = Selected.m_ExtendedData.m_StrongWeakId > Other.m_ExtendedData.m_StrongWeakId ? EHookStrongWeakState::STRONG : EHookStrongWeakState::WEAK;
-				Data.m_ShowHookStrongWeak = g_Config.m_Debug || g_Config.m_ClNamePlatesStrong > 0;
+				SelectedStrongWeakId = Selected.m_ExtendedData.m_StrongWeakId;
+				HasSelectedId = true;
+			}
+			else if(!Following && GameClient()->LocalStrongWeakId(g_Config.m_ClDummy) != -1)
+			{
+				SelectedStrongWeakId = GameClient()->LocalStrongWeakId(g_Config.m_ClDummy);
+				HasSelectedId = true;
+			}
+
+			if(HasSelectedId)
+			{
+				if(SelectedId == pPlayerInfo->m_ClientId)
+					Data.m_ShowHookStrongWeak = Data.m_ShowHookStrongWeakId;
+				else
+				{
+					Data.m_HookStrongWeakState = SelectedStrongWeakId > Other.m_ExtendedData.m_StrongWeakId ? EHookStrongWeakState::STRONG : EHookStrongWeakState::WEAK;
+					Data.m_ShowHookStrongWeak = g_Config.m_Debug || g_Config.m_ClNamePlatesStrong > 0;
+				}
 			}
 		}
 	}
