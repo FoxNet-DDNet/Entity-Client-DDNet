@@ -899,7 +899,7 @@ void CPlayers::OnRender()
 		if(m_pClient->m_aClients[ClientId].m_Predicted.m_Invincible)
 			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
-		const bool Frozen = m_pClient->m_aClients[i].m_Predicted.m_FreezeEnd != 0;
+		const bool Frozen = m_pClient->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0;
 
 		const bool Local = ClientId == m_pClient->m_Snap.m_LocalClientId;
 		const bool Dummy = ClientId == m_pClient->m_aLocalIds[!g_Config.m_ClDummy];
@@ -930,7 +930,7 @@ void CPlayers::OnRender()
 			}
 		}
 
-		if(((m_pClient->m_aClients[i].m_RenderCur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja) || (g_Config.m_ClAmIFrozen && g_Config.m_ClFreezeUpdateFix && m_pClient->m_Snap.m_LocalClientId == ClientId && g_Config.m_ClShowNinja) || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen && g_Config.m_ClShowNinja))
+		if(((m_pClient->m_aClients[ClientId].m_RenderCur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja) || (g_Config.m_ClAmIFrozen && g_Config.m_ClFreezeUpdateFix && m_pClient->m_Snap.m_LocalClientId == ClientId && g_Config.m_ClShowNinja) || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen && g_Config.m_ClShowNinja))
 		{
 			// change the skin for the player to the ninja
 			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr("x_ninja");
