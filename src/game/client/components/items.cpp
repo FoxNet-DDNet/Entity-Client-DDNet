@@ -25,7 +25,7 @@
 
 void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId)
 {
-	int CurWeapon = clamp(pCurrent->m_Type, 0, NUM_WEAPONS - 1);
+	int CurWeapon = std::clamp(pCurrent->m_Type, 0, NUM_WEAPONS - 1);
 
 	// get positions
 	float Curvature = 0;
@@ -103,7 +103,7 @@ void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId)
 	// don't check for validity of the projectile for the current weapon here, so particle effects are rendered for mod compatibility
 	if(CurWeapon == WEAPON_GRENADE)
 	{
-		m_pClient->m_Effects.SmokeTrail(Pos, Vel * -1, Alpha);
+		m_pClient->m_Effects.SmokeTrail(Pos, Vel * -1, Alpha, 0.0f);
 		static float s_Time = 0.0f;
 		static float s_LastLocalTime = LocalTime();
 
@@ -124,7 +124,7 @@ void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId)
 	}
 	else
 	{
-		m_pClient->m_Effects.BulletTrail(Pos, Alpha);
+		m_pClient->m_Effects.BulletTrail(Pos, Alpha, 0.0f);
 
 		if(length(Vel) > 0.00001f)
 			Graphics()->QuadsSetRotation(angle(Vel));
@@ -142,7 +142,7 @@ void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId)
 
 void CItems::RenderPickup(const CNetObj_Pickup *pPrev, const CNetObj_Pickup *pCurrent, bool IsPredicted)
 {
-	int CurWeapon = clamp(pCurrent->m_Subtype, 0, NUM_WEAPONS - 1);
+	int CurWeapon = std::clamp(pCurrent->m_Subtype, 0, NUM_WEAPONS - 1);
 	int QuadOffset = 2;
 	float Angle = 0.0f;
 	float IntraTick = IsPredicted ? Client()->PredIntraGameTick(g_Config.m_ClDummy) : Client()->IntraGameTick(g_Config.m_ClDummy);
@@ -242,7 +242,7 @@ void CItems::RenderFlag(const CNetObj_Flag *pPrev, const CNetObj_Flag *pCurrent,
 
 void CItems::RenderLaser(const CLaserData *pCurrent, bool IsPredicted)
 {
-	int Type = clamp(pCurrent->m_Type, -1, NUM_LASERTYPES - 1);
+	int Type = std::clamp(pCurrent->m_Type, -1, NUM_LASERTYPES - 1);
 	int ColorIn, ColorOut;
 	switch(Type)
 	{
@@ -324,13 +324,13 @@ void CItems::RenderLaser(vec2 From, vec2 Pos, ColorRGBA OuterColor, ColorRGBA In
 		{
 			// rubber band effect
 			float Thickness = std::sqrt(Len) / 5.f;
-			TicksBody = clamp(Thickness, 1.0f, 5.0f);
+			TicksBody = std::clamp(Thickness, 1.0f, 5.0f);
 		}
 		vec2 Dir = normalize_pre_length(Pos - From, Len);
 
 		float Ms = TicksBody * 1000.0f / Client()->GameTickSpeed();
 		float a = Ms / m_pClient->GetTuning(TuneZone)->m_LaserBounceDelay;
-		a = clamp(a, 0.0f, 1.0f);
+		a = std::clamp(a, 0.0f, 1.0f);
 		float Ia = 1 - a;
 
 		Graphics()->TextureClear();

@@ -68,7 +68,7 @@ void CFreezeBars::RenderFreezeBar(const int ClientId)
 	}
 
 	const int Max = pCharacter->m_FreezeEnd - pCharacter->m_FreezeStart;
-	float FreezeProgress = clamp(Max - (Client()->GameTick(g_Config.m_ClDummy) - pCharacter->m_FreezeStart), 0, Max) / (float)Max;
+	float FreezeProgress = std::clamp(Max - (Client()->GameTick(g_Config.m_ClDummy) - pCharacter->m_FreezeStart), 0, Max) / (float)Max;
 	if(FreezeProgress <= 0.0f)
 	{
 		return;
@@ -89,7 +89,7 @@ void CFreezeBars::RenderFreezeBar(const int ClientId)
 
 void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float width, const float height, float Progress, const float R, const float G, const float B, const float Alpha)
 {
-	Progress = clamp(Progress, 0.0f, 1.0f);
+	Progress = std::clamp(Progress, 0.0f, 1.0f);
 
 	// what percentage of the end pieces is used for the progress indicator and how much is the rest
 	// half of the ends are used for the progress display
