@@ -1023,7 +1023,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			}
 			else if(g_Config.m_SndFriendChat && (GameClient()->Friends()->IsFriend(m_aLines[m_CurrentLine].m_aName, "\0", true)))
 			{
-				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 1.0f);
+				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0.8f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 			}
 
@@ -1726,7 +1726,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						{
 							GameClient()->ClientMessage(g_Config.m_ClAutoNotifyMsg);
 
-							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.5f);
+							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.3f);
 						}
 					}
 				}
