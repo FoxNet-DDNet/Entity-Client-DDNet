@@ -479,7 +479,7 @@ protected:
 
 		m_Size = vec2(Data.m_FontSize, Data.m_FontSize) * 1.2f;
 
-		m_Color = color_cast<ColorRGBA>(ColorHSLA((300.0f - clamp(This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f)).WithAlpha(Data.m_Color.a);
+		m_Color = color_cast<ColorRGBA>(ColorHSLA((300.0f - std::clamp(This.m_Snap.m_apPlayerInfos[Data.m_ClientId]->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f, 0.8f)).WithAlpha(Data.m_Color.a);
 		float CircleSize = 7.0f;
 		m_Size = vec2(CircleSize, 24);
 

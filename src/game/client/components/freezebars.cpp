@@ -34,7 +34,7 @@ void CFreezeBars::RenderKillBar()
 
 	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
 	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
-	float FreezeProgress = clamp(Time / time_freq(), 0.0f, Max) / Max;
+	float FreezeProgress = std::clamp(Time / time_freq(), 0.0f, Max) / Max;
 	if(FreezeProgress <= 0.0f)
 	{
 		return;
@@ -249,7 +249,7 @@ void CFreezeBars::OnRender()
 {
 	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
 	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
-	float FreezeProgress = clamp(Time / time_freq(), 0.0f, Max) / Max;
+	float FreezeProgress = std::clamp(Time / time_freq(), 0.0f, Max) / Max;
 
 	int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
 

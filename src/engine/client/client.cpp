@@ -5170,9 +5170,9 @@ void CClient::GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, flo
 	int64_t PredTime = m_PredictedTime.Get(time_get());
 	GameTime = std::min(GameTime, PredTime);
 
-	int64_t UpperPredTime = clamp(PredTime - (time_freq() / 50) * g_Config.m_ClUnfreezeLagTicks, GameTime, PredTime);
-	int64_t LowestPredTime = clamp(PredTime, GameTime, UpperPredTime);
-	int64_t SmoothTime = clamp(LowestPredTime + (int64_t)(MixAmount * (PredTime - LowestPredTime)), LowestPredTime, PredTime);
+	int64_t UpperPredTime = std::clamp(PredTime - (time_freq() / 50) * g_Config.m_ClUnfreezeLagTicks, GameTime, PredTime);
+	int64_t LowestPredTime = std::clamp(PredTime, GameTime, UpperPredTime);
+	int64_t SmoothTime = std::clamp(LowestPredTime + (int64_t)(MixAmount * (PredTime - LowestPredTime)), LowestPredTime, PredTime);
 
 	*pSmoothTick = (int)(SmoothTime * 50 / time_freq()) + 1;
 	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1) * time_freq() / 50) / (float)(time_freq() / 50);

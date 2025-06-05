@@ -1508,22 +1508,22 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && MouseInside(pRect))
 	{
 		Value += Increment;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && MouseInside(pRect))
 	{
 		Value -= Increment;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 	if(Input()->KeyPress(KEY_A) && MouseInside(pRect))
 	{
 		Value -= Input()->ModifierIsPressed() ? 5 : 1;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 	if(Input()->KeyPress(KEY_D) && MouseInside(pRect))
 	{
 		Value += Input()->ModifierIsPressed() ? 5 : 1;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 
 	char aBuf[256];
@@ -1585,18 +1585,18 @@ bool CUi::DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && MouseInside(pRect))
 	{
 		Value += Increment;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && MouseInside(pRect))
 	{
 		Value -= Increment;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 
 	if(NoClampValue)
 	{
 		// clamp the value internally for the scrollbar
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 
 	CUIRect Label, ScrollBar;

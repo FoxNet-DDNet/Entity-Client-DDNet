@@ -156,17 +156,17 @@ bool CRaceHelper::IsNearStart(vec2 Pos, int RadiusInTiles) const
 	vec2 BL = Pos;
 	vec2 BR = Pos;
 	// top left
-	TL.x = clamp(TL.x - d, 0.0f, (float)(pCollision->GetWidth() * 32));
-	TL.y = clamp(TL.y - d, 0.0f, (float)(pCollision->GetHeight() * 32));
+	TL.x = std::clamp(TL.x - d, 0.0f, (float)(pCollision->GetWidth() * 32));
+	TL.y = std::clamp(TL.y - d, 0.0f, (float)(pCollision->GetHeight() * 32));
 	// top right
-	TR.x = clamp(TR.x + d, 0.0f, (float)(pCollision->GetWidth() * 32));
-	TR.y = clamp(TR.y - d, 0.0f, (float)(pCollision->GetHeight() * 32));
+	TR.x = std::clamp(TR.x + d, 0.0f, (float)(pCollision->GetWidth() * 32));
+	TR.y = std::clamp(TR.y - d, 0.0f, (float)(pCollision->GetHeight() * 32));
 	// bottom left
-	BL.x = clamp(BL.x - d, 0.0f, (float)(pCollision->GetWidth() * 32));
-	BL.y = clamp(BL.y + d, 0.0f, (float)(pCollision->GetHeight() * 32));
+	BL.x = std::clamp(BL.x - d, 0.0f, (float)(pCollision->GetWidth() * 32));
+	BL.y = std::clamp(BL.y + d, 0.0f, (float)(pCollision->GetHeight() * 32));
 	// bottom right
-	BR.x = clamp(BR.x + d, 0.0f, (float)(pCollision->GetWidth() * 32));
-	BR.y = clamp(BR.y + d, 0.0f, (float)(pCollision->GetHeight() * 32));
+	BR.x = std::clamp(BR.x + d, 0.0f, (float)(pCollision->GetWidth() * 32));
+	BR.y = std::clamp(BR.y + d, 0.0f, (float)(pCollision->GetHeight() * 32));
 	if(IsStart(TL, TR))
 		return true;
 	if(IsStart(BL, BR))
@@ -187,17 +187,17 @@ bool CRaceHelper::IsNearFinish(vec2 Pos, int RadiusInTiles) const
 	vec2 BL = Pos;
 	vec2 BR = Pos;
 	// top left
-	TL.x = clamp(TL.x - d, 0.0f, (float)(pCollision->GetWidth() * 32));
-	TL.y = clamp(TL.y - d, 0.0f, (float)(pCollision->GetHeight() * 32));
+	TL.x = std::clamp(TL.x - d, 0.0f, (float)(pCollision->GetWidth() * 32));
+	TL.y = std::clamp(TL.y - d, 0.0f, (float)(pCollision->GetHeight() * 32));
 	// top right
-	TR.x = clamp(TR.x + d, 0.0f, (float)(pCollision->GetWidth() * 32));
-	TR.y = clamp(TR.y - d, 0.0f, (float)(pCollision->GetHeight() * 32));
+	TR.x = std::clamp(TR.x + d, 0.0f, (float)(pCollision->GetWidth() * 32));
+	TR.y = std::clamp(TR.y - d, 0.0f, (float)(pCollision->GetHeight() * 32));
 	// bottom left
-	BL.x = clamp(BL.x - d, 0.0f, (float)(pCollision->GetWidth() * 32));
-	BL.y = clamp(BL.y + d, 0.0f, (float)(pCollision->GetHeight() * 32));
+	BL.x = std::clamp(BL.x - d, 0.0f, (float)(pCollision->GetWidth() * 32));
+	BL.y = std::clamp(BL.y + d, 0.0f, (float)(pCollision->GetHeight() * 32));
 	// bottom right
-	BR.x = clamp(BR.x + d, 0.0f, (float)(pCollision->GetWidth() * 32));
-	BR.y = clamp(BR.y + d, 0.0f, (float)(pCollision->GetHeight() * 32));
+	BR.x = std::clamp(BR.x + d, 0.0f, (float)(pCollision->GetWidth() * 32));
+	BR.y = std::clamp(BR.y + d, 0.0f, (float)(pCollision->GetHeight() * 32));
 	if(IsFinish(TL, TR))
 		return true;
 	if(IsFinish(BL, BR))

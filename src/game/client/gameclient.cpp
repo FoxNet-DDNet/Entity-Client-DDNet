@@ -2646,7 +2646,7 @@ void CGameClient::OnPredict()
 		pSmoothLocalChar &&
 		RealPredTick && m_PredictedTick >= MIN_TICK)
 	{
-		int PredTime = clamp(Client()->GetPredictionTime(), 0, 8000); // Milliseconds for some reason?? TODO: Use more precision
+		int PredTime = std::clamp(Client()->GetPredictionTime(), 0, 8000); // Milliseconds for some reason?? TODO: Use more precision
 
 		// Nightmare: in order to get 100% accurate comparison to detect mispredictions we must
 		// tick the PREVIOUS predicted world with our CURRENT predicted inputs

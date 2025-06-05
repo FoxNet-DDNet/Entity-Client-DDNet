@@ -928,7 +928,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 						}
 
 						static CButtonContainer s_FontDirectoryId;
-						if(DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, IGraphics::CORNER_ALL))
+						 if(DoButtonNoRect_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, IGraphics::CORNER_ALL))
 						{
 							Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
 							Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);
@@ -1430,7 +1430,7 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 		Button.VSplitLeft(MarginSmall, nullptr, &Button);
 		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
 		Ui()->DoLabel(&Label, "qxdFox", LineSize, TEXTALIGN_ML);
-		if(DoButton_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, IGraphics::CORNER_ALL))
+		if(DoButtonNoRect_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, IGraphics::CORNER_ALL))
 			Client()->ViewLink("https://github.com/qxdFox");
 	}
 
@@ -2140,7 +2140,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	static CButtonContainer s_ReverseEntries;
 	static bool s_Reversed = true;
-	if(DoButton_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, IGraphics::CORNER_ALL))
+	if(DoButtonNoRect_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, IGraphics::CORNER_ALL))
 	{
 		s_Reversed = !s_Reversed;
 	}
@@ -2206,7 +2206,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		DeleteButton.VSplitLeft(MarginSmall, nullptr, &DeleteButton);
 		DeleteButton.VSplitRight(MarginExtraSmall, &DeleteButton, nullptr);
 
-		if(DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
+		if(DoButtonNoRect_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
 			GameClient()->m_WarList.RemoveWarEntry(pEntry);
 
 		bool IsClan = false;
@@ -3076,12 +3076,12 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && Ui()->MouseInside(pRect))
 	{
 		Value += Increment;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && Ui()->MouseInside(pRect))
 	{
 		Value -= Increment;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 
 	char aBuf[256];
@@ -3090,7 +3090,7 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 	if(NoClampValue)
 	{
 		// clamp the value internally for the scrollbar
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 
 	CUIRect Label, ScrollBar;
