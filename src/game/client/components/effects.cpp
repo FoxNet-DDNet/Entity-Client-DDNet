@@ -481,31 +481,6 @@ void CEffects::SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha)
 	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
-void CEffects::CirclingPlayerEffect(vec2 Pos, float Alpha)
-{
-	if(!m_Add100hz)
-		return;
-
-	CParticle p;
-	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SPARKLE; 
-	p.m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor));
-	p.m_Pos = Pos;
-	p.m_Vel = vec2(0, 0);
-	p.m_LifeSpan = 0.8f;
-	p.m_StartSize = 1.0f;
-	p.m_Rot = random_angle();
-	p.m_Rotspeed = 6;
-	p.m_EndSize = 25.0f;
-	p.m_FlowAffected = true;
-	p.m_Vel = vec2(random_float(10.0f, 100.0f), random_float(10.0f, 100.0f));
-	p.m_UseAlphaFading = true;
-	p.m_StartAlpha = Alpha;
-	p.m_EndAlpha = std::min(0.2f, Alpha);
-	p.m_Collides = false;
-	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
-}
-
 void CEffects::OnRender()
 {
 	static int64_t s_LastUpdate = 0;

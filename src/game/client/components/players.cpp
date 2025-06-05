@@ -974,7 +974,7 @@ void CPlayers::OnRender()
 					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
 			}
 
-			if(g_Config.m_ClSweatModeSelfColor && Local)
+			if(g_Config.m_ClSweatModeSelfColor && (Local || Dummy))
 				continue;
 
 			if(!(m_pClient->m_aClients[ClientId].m_FreezeEnd > 0))
@@ -1136,16 +1136,6 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 	const bool ShowEffectSelf = g_Config.m_ClEffect ? true : false;
 	const bool ShowEffectOthers = g_Config.m_ClEffectOthers;
 	const float Time = time_get();
-
-	if(g_Config.m_ClSpecialEffect && !Frozen && Local)
-	{
-		if(GameClient()->m_EClient.m_LastMovement < time_get() && !m_pClient->m_aClients[Local].m_Afk)
-		{
-			GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x + 100 * cos(Time / time_freq() * 2), BodyPos.y + 100 * sin(Time / time_freq() * 2)), Alpha);
-
-			GameClient()->m_Effects.CirclingPlayerEffect(vec2(BodyPos.x - 100 * cos(Time / time_freq() * 2), BodyPos.y - 100 * sin(Time / time_freq() * 2)), Alpha);
-		}
-	}
 
 	int ShowFor = 0;
 

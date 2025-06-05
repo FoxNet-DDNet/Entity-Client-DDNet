@@ -15,20 +15,14 @@
 void CFreezeKill::OnRender()
 {
 	int Local = m_pClient->m_Snap.m_LocalClientId;
-	
 	float Time = g_Config.m_ClFreezeKillMs / 1000.0f;
-
 	float TimeReset = time_get() + time_freq() * Time;
-
-	// if freeze kill isnt turned on, stop
 
 	if(!g_Config.m_ClFreezeKill)
 	{
 		m_LastFreeze = TimeReset;
 		return;
 	}
-
-	// if player hasnt started the race, stop
 
 	if(!GameClient()->CurrentRaceTime())
 	{
@@ -38,7 +32,6 @@ void CFreezeKill::OnRender()
 	}
 
 	// if map name isnt "Multeasymap", stop
-
 	if(g_Config.m_ClFreezeKillMultOnly)
 		if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 			return;

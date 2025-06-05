@@ -655,7 +655,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 			static float Offset = 0.0f;
 
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			PlayerSettings.HSplitTop(285.0f + Offset, &PlayerSettings, &RainbowSettings);
+			PlayerSettings.HSplitTop(265.0f + Offset, &PlayerSettings, &RainbowSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				Offset = 0.0f;
@@ -666,12 +666,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Cosmetic Settings"), FontSize, TEXTALIGN_MC);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
-
-				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecialEffect, ("Secret Effect"), &g_Config.m_ClSpecialEffect, &PlayerSettings, LineMargin);
-
-				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
 
 				static std::vector<const char *> s_EffectDropDownNames;
 				s_EffectDropDownNames = {Localize("Off"), Localize("Sparkle effect"), Localize("Fire Trail"), Localize("Switch Effect")};
@@ -926,9 +920,8 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 							GameClient()->m_MapImages.SetTextureScale(101);
 							GameClient()->m_MapImages.SetTextureScale(g_Config.m_ClTextEntitiesSize);
 						}
-
 						static CButtonContainer s_FontDirectoryId;
-						 if(DoButtonNoRect_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, IGraphics::CORNER_ALL))
+						if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, 0))
 						{
 							Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
 							Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);
@@ -964,7 +957,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
-					//DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordTimestamp, "Show Timestamp", &g_Config.m_ClDiscordTimestamp, &DiscordSettings, LineSize); -> Discord made it always have a timestamp?
 					static int DiscordRPC = g_Config.m_ClDiscordRPC;
 					static int DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
 					static char DiscordRPCOnlineMsg[25];
@@ -1430,7 +1422,7 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 		Button.VSplitLeft(MarginSmall, nullptr, &Button);
 		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
 		Ui()->DoLabel(&Label, "qxdFox", LineSize, TEXTALIGN_ML);
-		if(DoButtonNoRect_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, IGraphics::CORNER_ALL))
+		if(Ui()->DoButton_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, 0))
 			Client()->ViewLink("https://github.com/qxdFox");
 	}
 
@@ -1595,19 +1587,19 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 
 	struct SPreviewLine
 	{
-		int m_ClShowIdsChat;
-		bool m_Team;
-		char m_aName[64];
-		char m_aText[256];
-		bool m_Spec;
-		bool m_Enemy;
-		bool m_Helper;
-		bool m_Teammate;
-		bool m_Friend;
-		bool m_Player;
-		bool m_Client;
-		bool m_Highlighted;
-		int m_TimesRepeated;
+		int m_ClShowIdsChat = 0;
+		bool m_Team = false;
+		char m_aName[64] = "";
+		char m_aText[256] = "";
+		bool m_Spec = false;
+		bool m_Enemy = false;
+		bool m_Helper = false;
+		bool m_Teammate = false;
+		bool m_Friend = false;
+		bool m_Player = false;
+		bool m_Client = false;
+		bool m_Highlighted = false;
+		int m_TimesRepeated = 0;
 
 		CTeeRenderInfo m_RenderInfo;
 	};
@@ -2140,7 +2132,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	static CButtonContainer s_ReverseEntries;
 	static bool s_Reversed = true;
-	if(DoButtonNoRect_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, IGraphics::CORNER_ALL))
+	if(Ui()->DoButton_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, 0))
 	{
 		s_Reversed = !s_Reversed;
 	}
@@ -2206,7 +2198,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		DeleteButton.VSplitLeft(MarginSmall, nullptr, &DeleteButton);
 		DeleteButton.VSplitRight(MarginExtraSmall, &DeleteButton, nullptr);
 
-		if(DoButtonNoRect_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
+		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, 0))
 			GameClient()->m_WarList.RemoveWarEntry(pEntry);
 
 		bool IsClan = false;

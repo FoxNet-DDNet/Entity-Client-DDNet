@@ -47,7 +47,6 @@ public:
 	void FireTrailEffet(vec2 Pos, float Alpha = 1.0f);
 	void SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha = 1.0f);
 	void SparkleEffect(vec2 Pos, float Alpha = 1.0f);
-	void CirclingPlayerEffect(vec2 Pos, float Alpha = 1.0f);
 
 	void Update();
 };

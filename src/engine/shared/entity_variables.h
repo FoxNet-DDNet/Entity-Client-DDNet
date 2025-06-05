@@ -290,7 +290,6 @@ MACRO_CONFIG_INT(ClEffectColors, ec_effect_colors, 0, 0, 1, CFGFLAG_CLIENT | CFG
 
 MACRO_CONFIG_INT(ClEffect, ec_effect, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on  Effect Client Side")
 MACRO_CONFIG_INT(ClEffectOthers, ec_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Effect Client Side")
-MACRO_CONFIG_INT(ClSpecialEffect, ec_special_effect, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
 MACRO_CONFIG_INT(ClSmallSkins, ec_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
 
 // Serverside Rainbow

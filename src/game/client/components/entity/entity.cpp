@@ -16,11 +16,6 @@
 #include <cmath>
 #include "entity.h"
 
-void CEClient::OnNewSnapshot()
-{
-	UpdateTempPlayers();
-}
-
 bool CEClient::LineShouldHighlight(const char *pLine, const char *pName)
 {
 	const char *pHL = str_utf8_find_nocase(pLine, pName);
@@ -632,15 +627,20 @@ void CEClient::OnInit()
 	}
 }
 
+void CEClient::OnNewSnapshot()
+{
+	ChangeTileNotifyTick();
+	UpdateTempPlayers();
+	// AutoJoinTeam();
+}
+
 void CEClient::OnRender()
 {
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return;
 
 	Rainbow();
-	ChangeTileNotifyTick();
 	GoresMode();
-	AutoJoinTeam();
 
 	// Set Offline RPC on Client start
 	if(g_Config.m_ClDiscordRPC)
