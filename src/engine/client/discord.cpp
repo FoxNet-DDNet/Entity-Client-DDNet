@@ -29,7 +29,6 @@ class CDiscord : public IDiscord
 {
 	DiscordActivity m_Activity;
 	bool m_UpdateActivity = false;
-	int64_t m_LastActivityUpdate = 0;
 	IDiscordCore *m_pCore;
 	IDiscordActivityEvents m_ActivityEvents;
 	IDiscordActivityManager *m_pActivityManager;
