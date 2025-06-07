@@ -530,7 +530,7 @@ void CEClient::Rainbow()
 
 	if(Client()->State() == IClient::STATE_ONLINE)
 	{
-		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && m_LastMovement < time_get() + time_freq() * 60 && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
+		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && m_LastMovement > time_get() && !m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId].m_Afk)
 		{
 			if(m_RainbowBody[g_Config.m_ClDummy] || m_RainbowFeet[g_Config.m_ClDummy])
 			{
