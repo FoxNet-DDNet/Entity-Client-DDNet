@@ -456,7 +456,7 @@ void CPlayers::RenderPlayer(
 	else if(g_Config.m_ClShowOthersGhosts && !Local && !Spec)
 		Alpha = g_Config.m_ClPredGhostsAlpha / 100.0f;
 
-	if(!OtherTeam && g_Config.m_ClShowOthersGhosts && !Local && g_Config.m_ClUnpredOthersInFreeze && g_Config.m_ClAmIFrozen && !Spec)
+	if(!OtherTeam && g_Config.m_ClShowOthersGhosts && !Local && g_Config.m_ClUnpredOthersInFreeze && Client()->m_IsLocalFrozen && !Spec)
 		Alpha = 1.0f;
 
 	if(ClientId == -2) // ghost
@@ -918,7 +918,7 @@ void CPlayers::OnRender()
 			}
 		}
 
-		if(((m_pClient->m_aClients[ClientId].m_RenderCur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja) || (g_Config.m_ClAmIFrozen && g_Config.m_ClFreezeUpdateFix && m_pClient->m_Snap.m_LocalClientId == ClientId && g_Config.m_ClShowNinja) || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen && g_Config.m_ClShowNinja))
+		if(((m_pClient->m_aClients[ClientId].m_RenderCur.m_Weapon == WEAPON_NINJA || Frozen) && g_Config.m_ClShowNinja) || (Client()->m_IsLocalFrozen && g_Config.m_ClFreezeUpdateFix && m_pClient->m_Snap.m_LocalClientId == ClientId && g_Config.m_ClShowNinja) || (Frozen && !m_pClient->m_GameInfo.m_NoSkinChangeForFrozen && g_Config.m_ClShowNinja))
 		{
 			// change the skin for the player to the ninja
 			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr("x_ninja");

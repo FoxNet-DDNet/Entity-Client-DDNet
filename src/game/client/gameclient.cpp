@@ -3884,14 +3884,9 @@ void CGameClient::UpdateRenderedCharacters()
 		vec2 Pos = UnpredPos;
 
 		CCharacter *pChar = m_PredictedWorld.GetCharacterById(ClientId);
-		// TODO: @Tater remove this garbage
-		if(ClientId == m_Snap.m_LocalClientId)
-		{
-			if(pChar && pChar->m_FreezeTime > 0)
-				g_Config.m_ClAmIFrozen = 1;
-			else
-				g_Config.m_ClAmIFrozen = 0;
-		}
+
+		// TClient
+		Client()->m_IsLocalFrozen = pChar && pChar->m_FreezeTime > 0;
 
 		if(Predict() && (ClientId == m_Snap.m_LocalClientId || (AntiPingPlayers() && !IsOtherTeam(ClientId))) && pChar)
 		{
@@ -3930,13 +3925,13 @@ void CGameClient::UpdateRenderedCharacters()
 				if(g_Config.m_ClAntiPingImproved)
 					Pos = mix(m_aClients[ClientId].m_PrevImprovedPredPos, m_aClients[ClientId].m_ImprovedPredPos, Client()->PredIntraGameTick(g_Config.m_ClDummy));
 
-				if(g_Config.m_ClRemoveAnti && g_Config.m_ClAmIFrozen)
+				if(g_Config.m_ClRemoveAnti && Client()->m_IsLocalFrozen)
 					Pos = GetFreezePos(ClientId);
 
 				if(g_Config.m_ClShowOthersGhosts && g_Config.m_ClSwapGhosts && !(m_aClients[ClientId].m_FreezeEnd > 0 && g_Config.m_ClHideFrozenGhosts))
 					Pos = UnpredPos;
 
-				if(g_Config.m_ClUnpredOthersInFreeze && g_Config.m_ClAmIFrozen)
+				if(g_Config.m_ClUnpredOthersInFreeze && Client()->m_IsLocalFrozen)
 					Pos = UnpredPos;
 			}
 		}

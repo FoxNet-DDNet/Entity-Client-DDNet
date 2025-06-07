@@ -137,9 +137,6 @@ MACRO_CONFIG_INT(ClApplyProfileFlag, ec_profile_flag, 0, 0, 1, CFGFLAG_CLIENT | 
 MACRO_CONFIG_INT(ClApplyProfileColors, ec_profile_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply colors in profiles")
 MACRO_CONFIG_INT(ClApplyProfileEmote, ec_profile_emote, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply emote in profiles")
 
-// AAAAAAA
-MACRO_CONFIG_INT(ClAmIFrozen, EEEfrz, 0, 0, 1, CFGFLAG_CLIENT, "")
-
 // Font
 MACRO_CONFIG_STR(ClCustomFont, ec_custom_font, 255, "DejaVu Sans", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom font face")
 
