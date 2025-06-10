@@ -358,7 +358,6 @@ void CEClient::TempMute(const char *pName, bool Silent)
 bool CEClient::UnTempMute(const char *pName, bool Silent)
 {
 	bool Removed = false;
-
 	if(!str_comp(pName, ""))
 		return Removed;
 

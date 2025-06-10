@@ -36,7 +36,7 @@ public:
 	{
 		bool TempWarMatch = !str_comp(m_aTempWar, Other.m_aTempWar) && str_comp(m_aTempWar, "") != 0;
 		bool TempHelperMatch = !str_comp(m_aTempHelper, Other.m_aTempHelper) && str_comp(m_aTempHelper, "") != 0;
-		bool TempMuteMatch = !str_comp(m_aTempMute, Other.m_aTempMute) && str_comp(m_aTempHelper, "") != 0;
+		bool TempMuteMatch = !str_comp(m_aTempMute, Other.m_aTempMute) && str_comp(m_aTempMute, "") != 0;
 		return (TempWarMatch || TempHelperMatch || TempMuteMatch);
 	}
 };
