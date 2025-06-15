@@ -198,7 +198,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 			static float Offset = 0.0f;
 
 			OtherSettings.VMargin(5.0f, &OtherSettings);
-			OtherSettings.HSplitTop(225.0f + Offset, &OtherSettings, &ChatSettings);
+			OtherSettings.HSplitTop(245.0f + Offset, &OtherSettings, &ChatSettings);
 			if(s_ScrollRegion.AddRect(OtherSettings))
 			{
 				Offset = 0.0f;
@@ -370,14 +370,21 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					{
 						OtherSettings.HSplitTop(LineSize, &Button, &OtherSettings);
 						static int s_NamePlatesStrong = 0;
-						if(DoButton_CheckBox(&s_NamePlatesStrong, Localize("Notify you everytime someone gets auto added"), g_Config.m_ClAutoAddOnNameChange == 2, &Button))
+						if(DoButton_CheckBox(&s_NamePlatesStrong, "Notify you everytime someone gets auto added", g_Config.m_ClAutoAddOnNameChange == 2, &Button))
 							g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange != 2 ? 2 : 1;
 						Offset = Offset + 20.0f;
 					}
 					OtherSettings.HSplitTop(2.5f, &Button, &OtherSettings);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, Localize("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, Localize("Anti Mult Spawn Block", "Puts you into a random Team when you Kill and get frozen"), &g_Config.m_ClAntiSpawnBlock, &OtherSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, "Notify When Player is Being Moved", &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock,"Anti Mult Spawn Block", &g_Config.m_ClAntiSpawnBlock, &OtherSettings, LineSize);
+					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you Kill and get frozen");
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoWhisper, "Auto Whisper", &g_Config.m_ClAutoWhisper, &OtherSettings, LineSize);
+					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAutoWhisper, &Button, "Automatically puts \"/c\" in the chat if your last message was a whisper");
+				
+					
 				}
 			}
 		}
