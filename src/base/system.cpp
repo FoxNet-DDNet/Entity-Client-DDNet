@@ -851,7 +851,21 @@ void *thread_init(void (*threadfunc)(void *), void *u, const char *name)
 #elif defined(CONF_FAMILY_WINDOWS)
 	HANDLE thread = CreateThread(nullptr, 0, thread_run, data, 0, nullptr);
 	dbg_assert(thread != nullptr, "CreateThread failure");
-	// TODO: Set thread name using SetThreadDescription (would require minimum Windows 10 version 1607)
+	HMODULE kernel_base_handle;
+	if(GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_PIN, L"KernelBase.dll", &kernel_base_handle))
+	{
+		// Intentional
+#ifdef __MINGW32__
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wcast-function-type"
+#endif
+		auto set_thread_description_function = reinterpret_cast<HRESULT(WINAPI *)(HANDLE, PCWSTR)>(GetProcAddress(kernel_base_handle, "SetThreadDescription"));
+#ifdef __MINGW32__
+#pragma GCC diagnostic pop
+#endif
+		if(set_thread_description_function)
+			set_thread_description_function(thread, windows_utf8_to_wide(name).c_str());
+	}
 	return thread;
 #else
 #error not implemented
@@ -1483,7 +1497,7 @@ static void priv_net_close_socket(int sock)
 #endif
 }
 
-static int priv_net_close_all_sockets(NETSOCKET sock)
+static void priv_net_close_all_sockets(NETSOCKET sock)
 {
 	/* close down ipv4 */
 	if(sock->ipv4sock >= 0)
@@ -1512,7 +1526,6 @@ static int priv_net_close_all_sockets(NETSOCKET sock)
 	}
 
 	free(sock);
-	return 0;
 }
 
 #if defined(CONF_FAMILY_WINDOWS)
@@ -1878,9 +1891,9 @@ int net_udp_recv(NETSOCKET sock, NETADDR *addr, unsigned char **data)
 	return -1; /* error */
 }
 
-int net_udp_close(NETSOCKET sock)
+void net_udp_close(NETSOCKET sock)
 {
-	return priv_net_close_all_sockets(sock);
+	priv_net_close_all_sockets(sock);
 }
 
 NETSOCKET net_tcp_create(NETADDR bindaddr)
@@ -2070,9 +2083,9 @@ int net_tcp_recv(NETSOCKET sock, void *data, int maxsize)
 	return bytes;
 }
 
-int net_tcp_close(NETSOCKET sock)
+void net_tcp_close(NETSOCKET sock)
 {
-	return priv_net_close_all_sockets(sock);
+	priv_net_close_all_sockets(sock);
 }
 
 int net_errno()
