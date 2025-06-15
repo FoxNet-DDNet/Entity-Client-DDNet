@@ -326,6 +326,8 @@ MACRO_CONFIG_INT(ClStrongWeakColorId, ec_strong_weak_color_id, 0, 0, 1, CFGFLAG_
 // Inform Update
 MACRO_CONFIG_INT(ClInformUpdate, ec_inform_update, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Inform you if a new version of E-Client is available")
 
+MACRO_CONFIG_INT(ClAutoWhisper, ec_auto_whisper, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds \"/c \" to your message if the last one was a whisper")
+
 // Custom Vairiables from My Server for the editor
 // You can use these if you get my server from https://github.com/FoxNetw/FoxNet-DDNet
 

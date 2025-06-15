@@ -207,6 +207,8 @@ public:
 	float MessageRounding() const { return FontSize() * (1 / 2.f); }
 
 	// E-Client
+	bool m_SetConverse = false;
+
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
 
 	int m_AdBotId;

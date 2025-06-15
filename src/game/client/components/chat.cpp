@@ -259,6 +259,9 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 	if(m_Mode == MODE_NONE)
 		return false;
 
+	if(g_Config.m_ClAutoWhisper && m_SetConverse && !str_comp(m_Input.GetString(), "/c ") && Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_BACKSPACE)
+		m_Input.Clear();
+
 	if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_ESCAPE)
 	{
 		DisableMode();
@@ -1293,6 +1296,22 @@ void CChat::OnRender()
 {
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
+
+	if(g_Config.m_ClAutoWhisper)
+	{
+		CHistoryEntry *pEntry = m_History.Last();
+		if(pEntry && (str_startswith(pEntry->m_aText, "/c ") || str_startswith(pEntry->m_aText, "/w ") || str_startswith(pEntry->m_aText, "/converse ") || str_startswith(pEntry->m_aText, "/whisper ")))
+		{
+			if(!m_Input.IsActive())
+				m_SetConverse = false;
+
+			if(m_Input.IsActive() && !str_startswith(m_Input.GetString(), "/c ") && !m_SetConverse)
+			{
+				m_Input.Set("/c ");
+				m_SetConverse = true;
+			}
+		}
+	}
 
 	// send pending chat messages
 	if(m_PendingChatCounter > 0 && m_LastChatSend + time_freq() < time())
