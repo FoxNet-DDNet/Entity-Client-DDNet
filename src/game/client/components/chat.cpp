@@ -1744,8 +1744,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						if(NameToJoin == 0)
 						{
 							GameClient()->ClientMessage(g_Config.m_ClAutoNotifyMsg);
-
-							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.3f);
+							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.6f);
 						}
 					}
 				}
