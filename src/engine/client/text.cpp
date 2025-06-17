@@ -2466,6 +2466,137 @@ public:
 
 		dbg_assert(!HasNonEmptyTextContainer, "text container was not empty");
 	}
+
+	
+	ColorRGBA HSVtoRGB(float h, float s, float v) override
+	{
+		float r = 0, g = 0, b = 0;
+		int i = int(h * 6);
+		float f = h * 6 - i;
+		float p = v * (1 - s);
+		float q = v * (1 - f * s);
+		float t = v * (1 - (1 - f) * s);
+		switch(i % 6)
+		{
+		case 0: r = v, g = t, b = p; break;
+		case 1: r = q, g = v, b = p; break;
+		case 2: r = p, g = v, b = t; break;
+		case 3: r = p, g = q, b = v; break;
+		case 4: r = t, g = p, b = v; break;
+		case 5: r = v, g = p, b = q; break;
+		}
+		return ColorRGBA(r, g, b, 1.0f);
+	}
+	void ColorParsing(const char *pText, CTextCursor *pCursor, ColorRGBA OriginalCol, STextContainerIndex *pTextContainerIndex) override
+	{
+		if(!pText[0])
+			return;
+
+		bool RemoveCodes = pTextContainerIndex == nullptr ? false : true;
+
+		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>> {
+
+			if(isdigit(p[0]) && isdigit(p[1]))
+			{
+				int code = (p[0] - '0') * 10 + (p[1] - '0');
+				float sat = 1.0f;
+				int Length = 2;
+				if(isdigit(p[2]))
+				{
+					sat = (p[2] - '0') / 10.0f;
+					Length = 3;
+				}
+
+				if(code >= 0 && code <= 99)
+				{
+					float hue = code / 100.0f;
+					return std::make_pair(HSVtoRGB(hue, sat, 1.0f), Length);
+				}
+			}
+
+			switch(p[0])
+			{
+			case 'a': return std::make_pair(ColorRGBA(0.33f, 1.0f, 0.33f, 1.0f), 1);
+			case 'b': return std::make_pair(ColorRGBA(0.33f, 1.0f, 1.0f, 1.0f), 1);
+			case 'c': return std::make_pair(ColorRGBA(1.0f, 0.33f, 0.33f, 1.0f), 1);
+			case 'd': return std::make_pair(ColorRGBA(1.0f, 0.33f, 1.0f, 1.0f), 1);
+			case 'e': return std::make_pair(ColorRGBA(1.0f, 1.0f, 0.33f, 1.0f), 1);
+			case 'f': return std::make_pair(ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f), 1);
+			case 'p': return std::make_pair(ColorRGBA(01.00f, 0.77f, 1.0f, 0.88f), 1);
+			default: return std::nullopt;
+			}
+		};
+
+		const char *p = pText;
+		ColorRGBA CurColor = OriginalCol;
+		const char *SegStart = p;
+
+		while(*p)
+		{
+			if(*p == '&' && *(p + 1))
+			{
+				// Check for reset code
+				if(*(p + 1) == 'x')
+				{
+					if(p > SegStart)
+					{
+						TextColor(CurColor);
+						if(RemoveCodes)
+							CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
+						else
+							TextEx(pCursor, SegStart, p - SegStart);
+					}
+					if(RemoveCodes)
+						p += 2;
+					else
+						p += 0;
+
+					CurColor = OriginalCol;
+					SegStart = p;
+					if(!RemoveCodes)
+						p++;
+					continue;
+				}
+
+				auto ColorResult = GetColorFromCode(p + 1);
+				if(ColorResult)
+				{
+					if(p > SegStart)
+					{
+						TextColor(CurColor);
+						if(RemoveCodes)
+							CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
+						else
+							TextEx(pCursor, SegStart, p - SegStart);
+					}
+					if(RemoveCodes)
+						p += 1 + ColorResult->second; // & + code length
+					else
+						p += 0;
+					CurColor = ColorResult->first;
+					SegStart = p;
+					if(!RemoveCodes)
+						p++;
+				}
+				else
+				{
+					++p;
+				}
+			}
+			else
+			{
+				++p;
+			}
+		}
+		if(p > SegStart)
+		{
+			TextColor(CurColor);
+			if(RemoveCodes)
+				CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
+			else
+				TextEx(pCursor, SegStart, p - SegStart);
+		}
+	}
 };
 
 IEngineTextRender *CreateEngineTextRender() { return new CTextRender; }

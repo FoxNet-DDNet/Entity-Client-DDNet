@@ -5395,4 +5395,3 @@ int CGameClient::GetClientId(const char *pName)
 	}
 	return -1;
 }
-

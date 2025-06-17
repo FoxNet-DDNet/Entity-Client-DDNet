@@ -1175,7 +1175,8 @@ void CChat::OnPrepareLines(float y)
 				AppendCursor.m_LineWidth -= Cursor.m_LongestLineWidth;
 			}
 
-			TextRender()->TextEx(&AppendCursor, pText);
+			// This is here so that the background has the correct size
+			TextRender()->ColorParsing(Line.m_aText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
 
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
 		}
@@ -1283,6 +1284,8 @@ void CChat::OnPrepareLines(float y)
 			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 		TextRender()->TextColor(Color);
 
+		TextRender()->ColorParsing(Line.m_aText, &Cursor, Color, &Line.m_TextContainerIndex);
+
 		CTextCursor AppendCursor = Cursor;
 		AppendCursor.m_LongestLineWidth = 0.0f;
 		if(!IsScoreBoardOpen && !g_Config.m_ClChatOld)
@@ -1290,8 +1293,6 @@ void CChat::OnPrepareLines(float y)
 			AppendCursor.m_StartX = Cursor.m_X;
 			AppendCursor.m_LineWidth -= Cursor.m_LongestLineWidth;
 		}
-
-		TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
 
 		if(!g_Config.m_ClChatOld && (Line.m_aText[0] != '\0' || Line.m_aName[0] != '\0'))
 		{
@@ -1419,8 +1420,6 @@ void CChat::OnRender()
 
 		m_Input.SetScrollOffset(ScrollOffset);
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
-
-		//str_copy(GameClient()->m_NamePlates.InputText, m_Input.GetString());
 
 		CBindChat pBindchat = m_pClient->m_Bindchat;
 
@@ -1836,16 +1835,16 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				else if(g_Config.m_ClDismissAdBots == 2)
 				{
 					char AdBotInfo[256];
-					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Dismissed message of \"%s\" (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
+					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Dismissed message of &10\"%s\"&x (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
 
 					GameClient()->ClientMessage("╭──                  Entity Alert");
 					GameClient()->ClientMessage("│");
 					GameClient()->ClientMessage(AdBotInfo);
 					GameClient()->ClientMessage("│");
-					GameClient()->ClientMessage("│ If you want to start a Vote Kick Type \"Yes\"");
+					GameClient()->ClientMessage("│ If you want to start a Vote Kick Type &35\"Yes\"&x");
 					GameClient()->ClientMessage("│");
 					GameClient()->ClientMessage("│ This Option will last for one Minute,");
-					GameClient()->ClientMessage("│ unless you type \"No\"");
+					GameClient()->ClientMessage("│ unless you type &00\"No\"&x");
 					GameClient()->ClientMessage("│");
 					GameClient()->ClientMessage("╰───────────────────────");
 				
