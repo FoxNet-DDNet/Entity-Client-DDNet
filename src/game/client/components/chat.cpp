@@ -280,6 +280,30 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 			m_ServerCommandsNeedSorting = false;
 		}
 
+		if(g_Config.m_ClAutoWhisper)
+		{
+			CBindChat pBindchat = m_pClient->m_Bindchat;
+			if(!m_CheckedCommand)
+			{
+				bool NormalCommand = false;
+				for(int i = 0; i < (int)pBindchat.m_vBinds.size(); i++)
+				{
+					if(str_startswith_nocase(m_Input.GetString() + str_length("/c "), pBindchat.m_vBinds.at(i).m_aName))
+						NormalCommand = true;
+				}
+				for(const auto &Command : m_vServerCommands)
+				{
+					if(str_startswith_nocase(m_Input.GetString() + str_length("/c /"), Command.m_aName))
+						NormalCommand = true;
+				}
+				if(NormalCommand)
+				{
+					m_Input.Set(m_Input.GetString() + str_length("/c "));
+					m_CheckedCommand = true;
+				}
+			}
+		}
+
 		bool SilentMessage = false;
 
 		if(m_VoteKickTimer > time_freq())
@@ -1309,6 +1333,7 @@ void CChat::OnRender()
 			{
 				m_Input.Set("/c ");
 				m_SetConverse = true;
+				m_CheckedCommand = false;
 			}
 		}
 	}
