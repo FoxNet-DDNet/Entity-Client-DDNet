@@ -606,6 +606,12 @@ void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 	pSelf->GameClient()->m_Chat.SendChat(0, Text);
 }
 
+void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
+{
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "%s", 1);
+}
+
 void CEClient::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
@@ -645,6 +651,7 @@ void CEClient::OnConsoleInit()
 	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
 
 	Console()->Register("reply_last", "?r[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
+	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Reply to the last ping");
 }
 
 void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
