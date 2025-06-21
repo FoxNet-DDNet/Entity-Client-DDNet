@@ -2494,8 +2494,8 @@ public:
 
 		bool RemoveCodes = pTextContainerIndex == nullptr ? false : true;
 
-		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>> {
-
+		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>>
+		{
 			if(isdigit(p[0]) && isdigit(p[1]))
 			{
 				int code = (p[0] - '0') * 10 + (p[1] - '0');
@@ -2513,18 +2513,7 @@ public:
 					return std::make_pair(HSVtoRGB(hue, sat, 1.0f), Length);
 				}
 			}
-
-			switch(p[0])
-			{
-			case 'a': return std::make_pair(ColorRGBA(0.33f, 1.0f, 0.33f, 1.0f), 1);
-			case 'b': return std::make_pair(ColorRGBA(0.33f, 1.0f, 1.0f, 1.0f), 1);
-			case 'c': return std::make_pair(ColorRGBA(1.0f, 0.33f, 0.33f, 1.0f), 1);
-			case 'd': return std::make_pair(ColorRGBA(1.0f, 0.33f, 1.0f, 1.0f), 1);
-			case 'e': return std::make_pair(ColorRGBA(1.0f, 1.0f, 0.33f, 1.0f), 1);
-			case 'f': return std::make_pair(ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f), 1);
-			case 'p': return std::make_pair(ColorRGBA(01.00f, 0.77f, 1.0f, 0.88f), 1);
-			default: return std::nullopt;
-			}
+			return std::nullopt;
 		};
 
 		const char *p = pText;
@@ -2559,7 +2548,7 @@ public:
 				}
 
 				auto ColorResult = GetColorFromCode(p + 1);
-				if(ColorResult)
+				if(ColorResult && *(p + 2))
 				{
 					if(p > SegStart)
 					{

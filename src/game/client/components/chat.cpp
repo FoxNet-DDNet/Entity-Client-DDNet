@@ -1176,7 +1176,10 @@ void CChat::OnPrepareLines(float y)
 			}
 
 			// This is here so that the background has the correct size
-			TextRender()->ColorParsing(Line.m_aText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
+			if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
+				TextRender()->ColorParsing(Line.m_aText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
+			else 
+				TextRender()->TextEx(&AppendCursor, pText);
 
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
 		}
@@ -1284,8 +1287,6 @@ void CChat::OnPrepareLines(float y)
 			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 		TextRender()->TextColor(Color);
 
-		TextRender()->ColorParsing(Line.m_aText, &Cursor, Color, &Line.m_TextContainerIndex);
-
 		CTextCursor AppendCursor = Cursor;
 		AppendCursor.m_LongestLineWidth = 0.0f;
 		if(!IsScoreBoardOpen && !g_Config.m_ClChatOld)
@@ -1293,6 +1294,12 @@ void CChat::OnPrepareLines(float y)
 			AppendCursor.m_StartX = Cursor.m_X;
 			AppendCursor.m_LineWidth -= Cursor.m_LongestLineWidth;
 		}
+
+		if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
+			TextRender()->ColorParsing(Line.m_aText, &Cursor, Color, &Line.m_TextContainerIndex);
+		else
+			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
+
 
 		if(!g_Config.m_ClChatOld && (Line.m_aText[0] != '\0' || Line.m_aName[0] != '\0'))
 		{
