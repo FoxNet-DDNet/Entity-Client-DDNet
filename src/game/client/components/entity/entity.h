@@ -121,6 +121,8 @@ class CEClient : public CComponent
 
 	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConSpectateId(IConsole::IResult *pResult, void *pUserData);
+
 public:
 	bool m_SentKill;
 	int m_KillCount;

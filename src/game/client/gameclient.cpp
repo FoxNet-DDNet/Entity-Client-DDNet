@@ -5395,3 +5395,8 @@ int CGameClient::GetClientId(const char *pName)
 	}
 	return -1;
 }
+
+const char *CGameClient::GetClientName(int ClientId)
+{
+	return m_aClients[ClientId].m_aName == '\0' ? g_Config.m_PlayerName : m_aClients[ClientId].m_aName;
+}

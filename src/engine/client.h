@@ -402,6 +402,7 @@ public:
 	virtual void OnJoinInfo() = 0;
 	virtual void SetLastMovementTime(int Delay) = 0;
 	virtual int GetClientId(const char *pName) = 0;
+	virtual const char *GetClientName(int Id) = 0;
 
 	virtual bool CanDisplayWarning() const = 0;
 	virtual void RenderShutdownMessage() = 0;

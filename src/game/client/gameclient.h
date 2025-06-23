@@ -734,6 +734,7 @@ public:
 
 	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;
+	const char *GetClientName(int ClientId) override;
 
 
 	CNetObjHandler *GetNetObjHandler() override;

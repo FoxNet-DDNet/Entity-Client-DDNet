@@ -612,6 +612,16 @@ void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
 	str_format(aBuf, sizeof(aBuf), "%s", 1);
 }
 
+void CEClient::ConSpectateId(IConsole::IResult *pResult, void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+	const char *pName = pSelf->GameClient()->GetClientName(pResult->GetInteger(0));
+
+	char pCmd[64];
+	str_format(pCmd, sizeof(pCmd), "/spec %s", pName);
+	pSelf->GameClient()->m_Chat.SendChat(0, pCmd);
+}
+
 void CEClient::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
@@ -651,6 +661,7 @@ void CEClient::OnConsoleInit()
 	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
 
 	Console()->Register("reply_last", "?r[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
+	Console()->Register("specid", "i[Id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
 	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Reply to the last ping");
 }
 
