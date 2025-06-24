@@ -11,7 +11,7 @@ CharacterFlags = ["SOLO", "JETPACK", "COLLISION_DISABLED", "ENDLESS_HOOK", "ENDL
                   "HAMMER_HIT_DISABLED", "SHOTGUN_HIT_DISABLED", "GRENADE_HIT_DISABLED", "LASER_HIT_DISABLED", "HOOK_HIT_DISABLED",
                   "TELEGUN_GUN", "TELEGUN_GRENADE", "TELEGUN_LASER",
                   "WEAPON_HAMMER", "WEAPON_GUN", "WEAPON_SHOTGUN", "WEAPON_GRENADE", "WEAPON_LASER", "WEAPON_NINJA",
-				  "MOVEMENTS_DISABLED", "IN_FREEZE", "PRACTICE_MODE", "LOCK_MODE", "TEAM0_MODE", "INVINCIBLE", "EXPLOSIONGUN", "SHORTEXPLOSIONGUN"]
+				  "MOVEMENTS_DISABLED", "IN_FREEZE", "PRACTICE_MODE", "LOCK_MODE", "TEAM0_MODE", "INVINCIBLE"]
 GameInfoFlags = [
 	"TIMESCORE", "GAMETYPE_RACE", "GAMETYPE_FASTCAP", "GAMETYPE_FNG",
 	"GAMETYPE_DDRACE", "GAMETYPE_DDNET", "GAMETYPE_BLOCK_WORLDS",
@@ -615,8 +615,21 @@ Messages = [
 	NetMessageEx("Sv_MapSoundGlobal", "map-sound-global@netmsg.ddnet.org", [
 		NetIntAny("m_SoundId"),
 	]),
+    
+	NetMessageEx("Sv_PreInput", "preinput@netmsg.ddnet.org", [
+		NetIntAny("m_Direction"),
+		NetIntAny("m_TargetX"),
+		NetIntAny("m_TargetY"),
 
-	NetMessageEx("Cl_ReceivePoints", "receive-points@netmsg.ddnet.org", [
-		NetBool("m_ReceivePoints"),
+		NetIntAny("m_Jump"),
+		NetIntAny("m_Fire"),
+		NetIntAny("m_Hook"),
+		
+		NetIntAny("m_WantedWeapon"),
+		NetIntAny("m_NextWeapon"),
+		NetIntAny("m_PrevWeapon"),
+        
+		NetIntRange("m_Owner", 0, 'MAX_CLIENTS-1'),
+		NetTick("m_IntendedTick"),
 	]),
 ]
