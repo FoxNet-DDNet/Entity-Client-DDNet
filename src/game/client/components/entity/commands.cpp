@@ -401,7 +401,7 @@ void CEClient::RestoreSkin()
 		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
 		g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
 		GameClient()->ClientMessage("Restored Dummy Skin");
-		m_pClient->SendDummyInfo(false);
+		 GameClient()->SendDummyInfo(false);
 	}
 	else
 	{
@@ -413,7 +413,7 @@ void CEClient::RestoreSkin()
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 		g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
 		GameClient()->ClientMessage("Restored Main Skin");
-		m_pClient->SendInfo(false);
+		 GameClient()->SendInfo(false);
 	}
 }
 void CEClient::SaveSkin()
@@ -430,7 +430,7 @@ void CEClient::SaveSkin()
 			g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
 			g_Config.m_ClSavedDummyColorFeet = g_Config.m_ClDummyColorFeet;
 			GameClient()->ClientMessage("Saved Dummy Skin");
-			m_pClient->SendDummyInfo(false);
+			 GameClient()->SendDummyInfo(false);
 		}
 		else
 		{
@@ -442,7 +442,7 @@ void CEClient::SaveSkin()
 			g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
 			g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
 			GameClient()->ClientMessage("Saved Main Skin");
-			m_pClient->SendInfo(false);
+			 GameClient()->SendInfo(false);
 		}
 	}
 	else 
@@ -480,7 +480,7 @@ void CEClient::OnlineInfo(bool Integrate)
 		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 			continue;
 
-		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
+		if(Client.ClientId() ==  GameClient()->m_Snap.m_LocalClientId)
 			continue;
 
 		if(War || TempWar)

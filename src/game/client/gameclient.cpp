@@ -1179,7 +1179,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 		{
 			if(m_Teams.Team(ClientId) == pMsg->m_Team)
 			{
-				if(CCharacter *pChar = m_GameWorld.GetCharacterById(i))
+				if(CCharacter *pChar = m_GameWorld.GetCharacterById(ClientId))
 				{
 					pChar->ResetPrediction();
 					vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChar ? pChar->GetStrongWeakId() : 0);
@@ -1783,7 +1783,6 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_Jetpack = pCharacterData->m_Flags & CHARACTERFLAG_JETPACK;
 
 					pClient->m_ExplosionGun = pCharacterData->m_Flags & CHARACTERFLAG_EXPLOSIONGUN;
-					pClient->m_ShortExplosionGun = pCharacterData->m_Flags & CHARACTERFLAG_SHORTEXPLOSIONGUN;
 
 					pClient->m_CollisionDisabled = pCharacterData->m_Flags & CHARACTERFLAG_COLLISION_DISABLED;
 					pClient->m_HammerHitDisabled = pCharacterData->m_Flags & CHARACTERFLAG_HAMMER_HIT_DISABLED;

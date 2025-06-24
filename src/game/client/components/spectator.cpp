@@ -505,7 +505,7 @@ void CSpectator::OnRender()
 			}
 		}
 
-		int ClientId = m_pClient->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
+		int ClientId = GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
 		float TeeAlpha;
 		float Alpha = 0.5f;
 		if(PlayerSelected)
@@ -519,7 +519,7 @@ void CSpectator::OnRender()
 		{
 			ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, Alpha);
 
-			if(m_pClient->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuFriendColor)
+			if(GameClient()->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuFriendColor)
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 			if(g_Config.m_ClWarListSpecMenu)
 			{

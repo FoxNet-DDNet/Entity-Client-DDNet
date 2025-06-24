@@ -430,7 +430,7 @@ void CEffects::SparkleEffect(vec2 Pos, float Alpha)
 	p.m_StartAlpha = Alpha;
 	p.m_EndAlpha = std::min(0.2f, Alpha);
 	p.m_Collides = false;
-	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
 }
 
 void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
@@ -457,7 +457,7 @@ void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
 	p.m_UseAlphaFading = true;
 	p.m_StartAlpha = Alpha - 0.2f;
 	p.m_EndAlpha = 0.0f;
-	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
 void CEffects::SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha)
@@ -478,76 +478,7 @@ void CEffects::SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha)
 	p.m_UseAlphaFading = true;
 	p.m_StartAlpha = Alpha;
 	p.m_EndAlpha = 0.0f;
-	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
-}
-
-void CEffects::SparkleEffect(vec2 Pos, float Alpha)
-{
-	if(!m_AddXhz)
-		return;
-
-	CParticle p;
-	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SPARKLE;
-	p.m_Pos = Pos + random_direction() * random_float(40.0f);
-	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f, 1.0f, 1.0f);
-	p.m_Vel = vec2(0, 0);
-	p.m_LifeSpan = 0.5f;
-	p.m_StartSize = 0.0f;
-	p.m_EndSize = random_float(20.0f, 30.0f);
-	p.m_UseAlphaFading = true;
-	p.m_StartAlpha = Alpha;
-	p.m_EndAlpha = std::min(0.2f, Alpha);
-	p.m_Collides = false;
-	m_pClient->m_Particles.Add(CParticles::GROUP_TRAIL_EXTRA, &p);
-}
-
-void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
-{
-	if(!m_AddXhz)
-		return;
-
-	const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 100) % 1000 / 100.f);
-	
-	float RotSpeed = 5.0f + Changer;
-	if(Changer > 5.0f)
-		RotSpeed = 5.0f + (10 - Changer);
-
-	CParticle p;
-	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SMOKE;
-	p.m_Pos = Pos;
-	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f,1.0f,1.0f);
-	p.m_Vel = vec2(0, 0);
-	p.m_LifeSpan = 0.5f;
-	p.m_StartSize = 35.0f;
-	p.m_EndSize = 25.0f;
-	p.m_Rotspeed = RotSpeed;
-	p.m_UseAlphaFading = true;
-	p.m_StartAlpha = Alpha - 0.2f;
-	p.m_EndAlpha = 0.0f;
-	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
-}
-
-void CEffects::SwitchEffet(vec2 Pos, ColorRGBA Color, float Alpha)
-{
-	if(!m_AddXhz)
-		return;
-
-	CParticle p;
-	p.SetDefault();
-	p.m_Spr = SPRITE_PART_SPLAT02;
-	p.m_Pos = Pos;
-	p.m_Color = Color;
-	p.m_Vel = vec2(0, 0);
-	p.m_LifeSpan = 0.5f;
-	p.m_StartSize = 27.5f;
-	p.m_EndSize = 17.5f;
-	p.m_Rotspeed = 25.0f;
-	p.m_UseAlphaFading = true;
-	p.m_StartAlpha = Alpha;
-	p.m_EndAlpha = 0.0f;
-	m_pClient->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
+	GameClient()->m_Particles.Add(CParticles::GROUP_PROJECTILE_TRAIL, &p);
 }
 
 void CEffects::OnRender()

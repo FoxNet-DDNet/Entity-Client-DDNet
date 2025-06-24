@@ -14,12 +14,12 @@
 
 void CAntiSpawnBlock::OnRender()
 {
-	int Local = m_pClient->m_Snap.m_LocalClientId;
+	int Local = GameClient()->m_Snap.m_LocalClientId;
 
 	// if Anti Spawn Block isnt turned on, stop
 	if(!g_Config.m_ClAntiSpawnBlock)
 	{
-		if(m_pClient->m_Teams.Team(Local) != 0 && !m_Team0Request && m_SentTeamRequest) 
+		if(GameClient()->m_Teams.Team(Local) != 0 && !m_Team0Request && m_SentTeamRequest) 
 		{
 			GameClient()->m_Chat.SendChat(0, "/team 0");
 			m_Team0Request = true;
@@ -29,7 +29,7 @@ void CAntiSpawnBlock::OnRender()
 	}
 
 	// if Can't find Player or player STARTED the race, stop
-	if(!m_pClient || !m_pClient->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
+	if(!GameClient()->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
 		return;
 
 	// if map name isnt "Multeasymap", stop
@@ -38,7 +38,7 @@ void CAntiSpawnBlock::OnRender()
 
 	if(m_SentKill) // So it resets the state
 	{
-		if(m_pClient->m_Teams.Team(Local) != 0)
+		if(GameClient()->m_Teams.Team(Local) != 0)
 		{
 			GameClient()->m_Chat.SendChat(0, "/team 0");
 		}
@@ -48,13 +48,13 @@ void CAntiSpawnBlock::OnRender()
 	}
 
 	{
-		vec2 Pos = m_pClient->m_PredictedChar.m_Pos;
+		vec2 Pos = GameClient()->m_PredictedChar.m_Pos;
 
 		static int64_t Delay = time_get() + time_freq();
 
 		if(!GameClient()->CurrentRaceTime() && !m_SentTeamRequest)
 		{
-			if(m_pClient->m_Teams.Team(Local) != 0)
+			if(GameClient()->m_Teams.Team(Local) != 0)
 				m_SentTeamRequest = true;
 			else if(Delay < time_get())
 			{
@@ -64,9 +64,9 @@ void CAntiSpawnBlock::OnRender()
 				m_Team0Request = false;
 			}
 		}
-		else if(m_pClient->RaceHelper()->IsNearStart(Pos, 2) && m_SentTeamRequest && !m_Team0Request)
+		else if(GameClient()->RaceHelper()->IsNearStart(Pos, 2) && m_SentTeamRequest && !m_Team0Request)
 		{
-			if(m_pClient->m_Teams.Team(Local) != 0)
+			if(GameClient()->m_Teams.Team(Local) != 0)
 			{
 				GameClient()->m_Chat.SendChat(0, "/team 0");
 				m_Team0Request = true;

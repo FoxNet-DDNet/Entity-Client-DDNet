@@ -14,7 +14,7 @@
 
 void CFreezeKill::OnRender()
 {
-	int Local = m_pClient->m_Snap.m_LocalClientId;
+	int Local = GameClient()->m_Snap.m_LocalClientId;
 	float Time = g_Config.m_ClFreezeKillMs / 1000.0f;
 	float TimeReset = time_get() + time_freq() * Time;
 
@@ -50,12 +50,12 @@ void CFreezeKill::OnRender()
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		// stuff
-		CCharacterCore *pCharacterOther = &m_pClient->m_aClients[ClientId].m_Predicted;
+		CCharacterCore *pCharacterOther = &GameClient()->m_aClients[ClientId].m_Predicted;
 
-		CCharacterCore *pCharacter = &m_pClient->m_aClients[Local].m_Predicted;
+		CCharacterCore *pCharacter = &GameClient()->m_aClients[Local].m_Predicted;
 
-		vec2 Position = m_pClient->m_aClients[Local].m_RenderPos;
-		CGameClient::CClientData OtherTee = m_pClient->m_aClients[ClientId];
+		vec2 Position = GameClient()->m_aClients[Local].m_RenderPos;
+		CGameClient::CClientData OtherTee = GameClient()->m_aClients[ClientId];
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
 		// if tried to kill, stop
@@ -63,20 +63,20 @@ void CFreezeKill::OnRender()
 			return;
 
 		// stop when spectating
-		if(m_pClient->m_aClients[Local].m_Paused || m_pClient->m_aClients[Local].m_Spec)
+		if(GameClient()->m_aClients[Local].m_Paused || GameClient()->m_aClients[Local].m_Spec)
 			m_LastFreeze = TimeReset;
 
 		// dont kill if moving
-		if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0) && ClientId == Local && g_Config.m_ClFreezeDontKillMoving)
+		if((pCharacter->m_IsInFreeze || GameClient()->m_aClients[Local].m_FreezeEnd > 0) && ClientId == Local && g_Config.m_ClFreezeDontKillMoving)
 		{
-			if(!m_pClient->m_Menus.IsActive() || !m_pClient->m_Chat.IsActive())
+			if(!GameClient()->m_Menus.IsActive() || !GameClient()->m_Chat.IsActive())
 				if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 					m_LastFreeze = TimeReset;
 		}
 
 		// dont kill if teamate is in x * 2 blocks range
 	
-		if(g_Config.m_ClFreezeKillTeamClose && !m_pClient->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2] && !OtherTee.m_Solo && OtherTee.m_Team == m_pClient->m_aClients[Local].m_Team && ClientId != Local)
+		if(g_Config.m_ClFreezeKillTeamClose && !GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2] && !OtherTee.m_Solo && OtherTee.m_Team == GameClient()->m_aClients[Local].m_Team && ClientId != Local)
 		{
 			if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))
 			{
@@ -91,7 +91,7 @@ void CFreezeKill::OnRender()
 		if(g_Config.m_ClFreezeKillWaitMs)
 		{
 			// kill if frozen (without deep and live freeze)
-			if(m_pClient->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
+			if(GameClient()->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
 				m_LastFreeze = TimeReset;
 
 			// only kill if player is in a freeze tile
@@ -113,12 +113,12 @@ void CFreezeKill::OnRender()
 			{
 				if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
 				{
-					m_pClient->m_Chat.SendChat(0, "/kill");
+					GameClient()->m_Chat.SendChat(0, "/kill");
 					m_SentFreezeKill = true;
 					m_LastFreeze = time_get() + time_freq() * 5;
 					return;
 				}
-				else if((pCharacter->m_IsInFreeze || m_pClient->m_aClients[Local].m_FreezeEnd > 0))
+				else if((pCharacter->m_IsInFreeze || GameClient()->m_aClients[Local].m_FreezeEnd > 0))
 				{
 					GameClient()->SendKill();
 					m_SentFreezeKill = true;
@@ -132,7 +132,7 @@ void CFreezeKill::OnRender()
 		{
 			if(GameClient()->CurrentRaceTime() > 60 * g_Config.m_SvKillProtection && g_Config.m_ClFreezeKillIgnoreKillProt)
 			{
-				m_pClient->m_Chat.SendChat(0, "/kill");
+				GameClient()->m_Chat.SendChat(0, "/kill");
 				m_SentFreezeKill = true;
 				m_LastFreeze = time_get() + time_freq() * 5;
 			}

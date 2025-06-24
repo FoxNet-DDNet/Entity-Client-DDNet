@@ -44,6 +44,7 @@ public:
 	int SnapInput(int *pData);
 	void ClampMousePos();
 	void ResetInput(int Dummy);
+	bool CheckNewInput();
 
 private:
 	static void ConKeyInputState(IConsole::IResult *pResult, void *pUserData);

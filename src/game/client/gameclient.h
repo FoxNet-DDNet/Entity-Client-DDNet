@@ -470,8 +470,8 @@ public:
 		float m_EmoticonStartFraction;
 		int m_EmoticonStartTick;
 
+		// FoxNet
 		bool m_ExplosionGun;
-		bool m_ShortExplosionGun;
 
 		bool m_Solo;
 		bool m_Jetpack;

@@ -282,7 +282,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 		if(g_Config.m_ClAutoWhisper)
 		{
-			CBindChat pBindchat = m_pClient->m_Bindchat;
+			CBindChat pBindchat =  GameClient()->m_Bindchat;
 			if(!m_CheckedCommand)
 			{
 				bool NormalCommand = false;
@@ -327,7 +327,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(m_Mode == MODE_SILENT)
 			SilentMessage = true;
 
-		if(m_pClient->m_Bindchat.ChatDoBinds(m_Input.GetString()))
+		if( GameClient()->m_Bindchat.ChatDoBinds(m_Input.GetString()))
 			SilentMessage = true;
 
 		if(SilentMessage)
@@ -393,7 +393,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				});
 		}
 
-		if(m_pClient->m_Bindchat.ChatDoAutocomplete(ShiftPressed))
+		if( GameClient()->m_Bindchat.ChatDoAutocomplete(ShiftPressed))
 		{
 		}
 		else if(m_aCompletionBuffer[0] == '/' && !m_vServerCommands.empty())
@@ -505,7 +505,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 				// quote the name
 				char aQuoted[128];
-				if((m_Input.GetString()[0] == '/' || m_pClient->m_Bindchat.CheckBindChat(m_Input.GetString())) && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"") || str_startswith(pCompletionString, "#")))
+				if((m_Input.GetString()[0] == '/' ||  GameClient()->m_Bindchat.CheckBindChat(m_Input.GetString())) && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"") || str_startswith(pCompletionString, "#")))
 				{
 					// escape the name
 					str_copy(aQuoted, "\"");
@@ -733,9 +733,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
 		{
 			char Message[2048];
-			str_format(Message, sizeof(Message), "[Muted] %s", m_pClient->m_aClients[ClientId].m_aName);
+			str_format(Message, sizeof(Message), "[Muted] %s",  GameClient()->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "[Muted] ← %s", m_pClient->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "[Muted] ← %s",  GameClient()->m_aClients[ClientId].m_aName);
 
 			if(g_Config.m_ClMutedConsoleColor)
 				Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
@@ -752,9 +752,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.GetWarTypeName(ClientId));
 		
 			char Message[2048];
-			str_format(Message, sizeof(Message), "[%s] %s", TypeName, m_pClient->m_aClients[ClientId].m_aName);
+			str_format(Message, sizeof(Message), "[%s] %s", TypeName,  GameClient()->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "[%s] ← %s", TypeName, m_pClient->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "[%s] ← %s", TypeName,  GameClient()->m_aClients[ClientId].m_aName);
 
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine);
 			return;
@@ -937,7 +937,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	}
 	else if(CurrentLine.m_ClientId == SILENT_MSG)
 	{
-		auto &LineAuthor = m_pClient->m_aClients[m_pClient->m_Snap.m_LocalClientId];
+		auto &LineAuthor =  GameClient()->m_aClients[ GameClient()->m_Snap.m_LocalClientId];
 
 		str_copy(CurrentLine.m_aName, LineAuthor.m_aName);
 		str_append(CurrentLine.m_aName, ": ");
@@ -1050,7 +1050,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			}
 			else if(g_Config.m_SndFriendChat && (GameClient()->Friends()->IsFriend(m_aLines[m_CurrentLine].m_aName, "\0", true)))
 			{
-				m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0.8f);
+				 GameClient()->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0.8f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 			}
 
@@ -1428,7 +1428,7 @@ void CChat::OnRender()
 		m_Input.SetScrollOffset(ScrollOffset);
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
 
-		CBindChat pBindchat = m_pClient->m_Bindchat;
+		CBindChat pBindchat =  GameClient()->m_Bindchat;
 
 		if(pBindchat.CheckBindChat(m_Input.GetString()) && m_Input.GetString()[1] != '\0')
 		{
@@ -1742,7 +1742,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					{
 						char aBuf[2048] = "/Join ";
 						str_append(aBuf, PlayerName);
-						m_pClient->m_Chat.SendChat(0, aBuf);
+						 GameClient()->m_Chat.SendChat(0, aBuf);
 						char Joined[2048] = "Auto Joined ";
 						str_append(Joined, PlayerName);
 
@@ -1775,7 +1775,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						if(NameToJoin == 0)
 						{
 							GameClient()->ClientMessage(g_Config.m_ClAutoNotifyMsg);
-							m_pClient->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.6f);
+							 GameClient()->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.6f);
 						}
 					}
 				}

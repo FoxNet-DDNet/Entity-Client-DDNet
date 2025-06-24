@@ -41,7 +41,7 @@ void CFreezeBars::RenderKillBar()
 	}
 
 
-	vec2 Position = m_pClient->m_aClients[ClientId].m_RenderPos;
+	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += 22;
 
@@ -250,8 +250,6 @@ void CFreezeBars::OnRender()
 	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
 	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
 	float FreezeProgress = std::clamp(Time / time_freq(), 0.0f, Max) / Max;
-
-	int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
 
 	if(FreezeProgress < 0.95f)
 		RenderKillBar();

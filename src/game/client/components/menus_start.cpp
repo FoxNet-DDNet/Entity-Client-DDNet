@@ -185,9 +185,9 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	EClientVersion.VSplitRight(5.0f, &EClientVersion, nullptr);
 	EClientVersion.VSplitRight(100.0f, &EClientVersion, &EClientVersion);
 	static CButtonContainer s_AClient;
-	if(DoButton_Menu(&s_AClient, Localize("E-Client v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 10.0f))
+	if(GameClient()->m_Menus.DoButton_Menu(&s_AClient, Localize("E-Client v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 11.0f))
 	{
-		NewPage = PAGE_ECLIENT;
+		NewPage = CMenus::PAGE_ECLIENT;
 	}
 
 	static CButtonContainer s_ConsoleButton;

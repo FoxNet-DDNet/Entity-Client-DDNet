@@ -399,7 +399,7 @@ void CPlayers::RenderHook(
 		int QuadOffset = NUM_WEAPONS * 2 + 2;
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 
-		bool Local = m_pClient->m_Snap.m_LocalClientId == ClientId;
+		bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
 		bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
 		if(g_Config.m_ClRainbowHook && !DontOthers)
 			Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
@@ -500,8 +500,8 @@ void CPlayers::RenderPlayer(
 	if(g_Config.m_ClSwapGhosts && g_Config.m_ClShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		if(ClientId >= 0)
 			Position = mix(
-				vec2(m_pClient->m_Snap.m_aCharacters[ClientId].m_Prev.m_X, m_pClient->m_Snap.m_aCharacters[ClientId].m_Prev.m_Y),
-				vec2(m_pClient->m_Snap.m_aCharacters[ClientId].m_Cur.m_X, m_pClient->m_Snap.m_aCharacters[ClientId].m_Cur.m_Y),
+				vec2(GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_X, GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_Y),
+				vec2( GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_X,  GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_Y),
 				Client()->IntraGameTick(g_Config.m_ClDummy));
 
 	vec2 Vel = mix(vec2(Prev.m_VelX / 256.0f, Prev.m_VelY / 256.0f), vec2(Player.m_VelX / 256.0f, Player.m_VelY / 256.0f), IntraTick);
@@ -769,7 +769,7 @@ void CPlayers::RenderPlayer(
 	float TeeAnimScale, TeeBaseSize;
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
-	const bool Frozen = m_pClient->m_aClients[ClientId].m_FreezeEnd != 0;
+	const bool Frozen =  GameClient()->m_aClients[ClientId].m_FreezeEnd != 0;
 
 	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN)
 	{
@@ -798,7 +798,7 @@ void CPlayers::RenderPlayer(
 		Graphics()->QuadsSetRotation(0);
 	}
 
-	if(g_Config.m_ClAfkEmote && GameClient()->m_aClients[ClientId].m_Afk && !(Client()->DummyConnected() && ClientId == m_pClient->m_aLocalIds[!g_Config.m_ClDummy]))
+	if(g_Config.m_ClAfkEmote && GameClient()->m_aClients[ClientId].m_Afk && !(Client()->DummyConnected() && ClientId ==  GameClient()->m_aLocalIds[!g_Config.m_ClDummy]))
 	{
 		int CurEmoticon = (SPRITE_ZZZ - SPRITE_OOP);
 		Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[CurEmoticon]);
@@ -826,7 +826,7 @@ void CPlayers::RenderPlayer(
 
 	if(g_Config.m_ClShowOthersInMenu)
 	{
-		if((Player.m_PlayerFlags & PLAYERFLAG_IN_MENU) && !m_pClient->m_aClients[ClientId].m_Afk)
+		if((Player.m_PlayerFlags & PLAYERFLAG_IN_MENU) && ! GameClient()->m_aClients[ClientId].m_Afk)
 		{
 			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_SETTINGS_ICON].m_Id);
 
@@ -889,7 +889,8 @@ void CPlayers::OnRender()
 	// update render info for ninja
 	CTeeRenderInfo aRenderInfo[MAX_CLIENTS];
 	const bool IsTeamPlay = GameClient()->IsTeamPlay();
-	const int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
+	const int LocalClientId =  GameClient()->m_Snap.m_LocalClientId;
+
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
 		aRenderInfo[ClientId] = GameClient()->m_aClients[ClientId].m_RenderInfo;
@@ -909,7 +910,7 @@ void CPlayers::OnRender()
 // change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
 		if(g_Config.m_ClOwnTeeSkin && (Local || Dummy))
 		{
-			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClOwnTeeSkinName);
+			const auto *pSkin =  GameClient()->m_Skins.FindOrNullptr(g_Config.m_ClOwnTeeSkinName);
 
 			if(pSkin != nullptr)
 			{
@@ -953,7 +954,7 @@ void CPlayers::OnRender()
 		if(g_Config.m_ClSweatMode)
 		{
 			// find skin in database
-			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClSweatModeSkinName);
+			const auto *pSkin = GameClient()->m_Skins.FindOrNullptr(g_Config.m_ClSweatModeSkinName);
 
 			// if found apply
 			if(pSkin != nullptr)
@@ -990,7 +991,7 @@ void CPlayers::OnRender()
 			if(g_Config.m_ClSweatModeSelfColor && (Local || Dummy))
 				continue;
 
-			if(!(m_pClient->m_aClients[ClientId].m_FreezeEnd > 0))
+			if(!(GameClient()->m_aClients[ClientId].m_FreezeEnd > 0))
 				aRenderInfo[ClientId].m_CustomColoredSkin = 1;
 			aRenderInfo[ClientId].m_ColorBody = Color;
 			aRenderInfo[ClientId].m_ColorFeet = Color;
@@ -1014,7 +1015,6 @@ void CPlayers::OnRender()
 	ScreenY1 += BorderBuffer;
 
 	// render everyone else's hook, then our own
-	const int LocalClientId = GameClient()->m_Snap.m_LocalClientId;
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(ClientId == LocalClientId || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
