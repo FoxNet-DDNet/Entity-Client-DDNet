@@ -24,15 +24,15 @@
 using namespace std::chrono_literals;
 
 // TClient
-static void ReplaceHyphensWithSpaces(char *Str)
+static void ReplaceHyphensWithSpaces(char *pStr)
 {
-	if(Str == nullptr)
+	if(pStr == nullptr)
 		return;
-	while(*Str)
+	while(*pStr)
 	{
-		if(*Str == '-')
-			*Str = ' ';
-		Str++;
+		if(*pStr == '-')
+			*pStr = ' ';
+		pStr++;
 	}
 }
 
@@ -1182,16 +1182,16 @@ public:
 		m_pGraphics = nullptr;
 		m_pStorage = nullptr;
 	}
+
 	// TClient
 	static int LaziestFileCallback(const char *pFilename, int IsDir, int StorageType, void *pUser)
 	{
 		std::vector<std::string> *pVector = static_cast<std::vector<std::string> *>(pUser);
 		if(IsDir)
 			return 0;
-		pVector->push_back(std::string(pFilename));
+		pVector->emplace_back(pFilename);
 		return 0;
 	}
-
 	// TClient
 	void CheckDefaultFaces()
 	{
@@ -1200,26 +1200,26 @@ public:
 			char aBuf[256];
 			str_copy(aBuf, FT_Get_Postscript_Name(CurrentFace));
 			ReplaceHyphensWithSpaces(aBuf);
-			m_DefaultFontFaces.push_back(std::string(aBuf));
+			m_DefaultFontFaces.emplace_back(aBuf);
 		}
 	}
 	// TClient
 	void UpdateCustomFontList()
 	{
-		std::vector<std::string> m_AllFaces;
+		std::vector<std::string> vAllFaces;
 		for(const auto &CurrentFace : *m_pGlyphMap->GetFaces())
 		{
 			char aBuf[256];
 			str_copy(aBuf, FT_Get_Postscript_Name(CurrentFace));
 			ReplaceHyphensWithSpaces(aBuf);
-			m_AllFaces.push_back(std::string(aBuf));
+			vAllFaces.emplace_back(aBuf);
 		}
 
 		m_CustomFontFaces.clear();
-		m_CustomFontFaces.push_back(std::string("DejaVu Sans"));
-		for(const auto &face : m_AllFaces)
-			if(std::find(m_DefaultFontFaces.begin(), m_DefaultFontFaces.end(), face) == m_DefaultFontFaces.end())
-				m_CustomFontFaces.push_back(face);
+		m_CustomFontFaces.emplace_back("DejaVu Sans");
+		for(const auto &Face : vAllFaces)
+			if(std::find(m_DefaultFontFaces.begin(), m_DefaultFontFaces.end(), Face) == m_DefaultFontFaces.end())
+				m_CustomFontFaces.push_back(Face);
 	}
 	// TClient
 	void LoadCustomFonts()
@@ -1228,10 +1228,10 @@ public:
 		std::vector<std::string> vCustomFonts;
 		Storage()->ListDirectory(IStorage::TYPE_ALL, "entity/fonts", LaziestFileCallback, &vCustomFonts);
 		std::sort(vCustomFonts.begin(), vCustomFonts.end());
-		for(std::string sFile : vCustomFonts)
+		for(const std::string &FilePath : vCustomFonts)
 		{
 			char aFontName[IO_MAX_PATH_LENGTH];
-			str_format(aFontName, sizeof(aFontName), "entity/fonts/%s", sFile.c_str());
+			str_format(aFontName, sizeof(aFontName), "entity/fonts/%s", FilePath.c_str());
 			void *pFontData;
 			unsigned FontDataSize;
 			if(Storage()->ReadFile(aFontName, IStorage::TYPE_ALL, &pFontData, &FontDataSize))

@@ -504,12 +504,7 @@ void CSpectator::OnRender()
 				}
 			}
 		}
-
-		int ClientId = GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
 		float TeeAlpha;
-		float Alpha = 0.5f;
-		if(PlayerSelected)
-			Alpha = 1.0f;
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && !GameClient()->m_Snap.m_aCharacters[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Active)
 		{
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.25f);
@@ -517,6 +512,12 @@ void CSpectator::OnRender()
 		}
 		else
 		{
+			int ClientId = GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
+
+			float Alpha = 0.5f;
+			if(PlayerSelected)
+				Alpha = 1.0f;
+
 			ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, Alpha);
 
 			if(GameClient()->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuFriendColor)
@@ -587,16 +588,12 @@ void CSpectator::OnRender()
 
 		RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos, TeeAlpha);
 
-		if(GameClient()->m_aClients[GameClient()->m_Snap.m_apInfoByDDTeamName[ClientId]->m_ClientId].m_Friend)
+		if(GameClient()->m_aClients[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend)
 		{
 			ColorRGBA rgb = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageFriendColor));
 			TextRender()->TextColor(rgb.WithAlpha(1.f));
 			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, "♥", 220.0f);
-		}
-		else if(g_Config.m_ClWarlistPrefixes && g_Config.m_ClWarList && GameClient()->m_WarList.GetAnyWar(ClientId)) // E-Client
-		{
-			TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(ClientId));
-			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClWarlistPrefix, 220.0f);
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}
 
 		y += LineHeight;
