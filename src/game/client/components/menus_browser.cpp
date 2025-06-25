@@ -336,7 +336,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 			const int Id = Col.m_Id;
 
 			char ServerIp[32];
-			bool qxdFoxServer = false;
+			bool FoxNet = false;
 			{
 				using namespace std;
 				const char *aName = str_find_nocase(pItem->m_aAddress, ":");
@@ -348,7 +348,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				strcpy(ServerIp, s.c_str());
 				if (!str_comp(ServerIp, "85.215.138.194"))
 				{
-					qxdFoxServer = true;
+					FoxNet = true;
 				}
 			}
 
@@ -368,7 +368,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 			{
 				if(pItem->m_Favorite != TRISTATE::NONE)
 				{
-					if(qxdFoxServer)
+					if(FoxNet)
 						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(0.25f, 0.55f, 0.85f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
 					else
 						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(1.0f, 0.85f, 0.3f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
@@ -377,17 +377,20 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 			}
 			else if(Id == COL_COMMUNITY)
 			{
-				if(qxdFoxServer)
+				if(FoxNet)
 				{
-					CUIRect FoxServerIcon;
-					Button.Margin(2.0f, &FoxServerIcon);
+					CUIRect FoxRect;
+					Button.Margin(2.0f, &FoxRect);
 
-					Graphics()->TextureClear();
-					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_ENTITY_FLAG].m_Id);
-					Graphics()->SetColor(ColorRGBA(1.0f,1.0f,1.0f,1.0f));
-					Graphics()->QuadsSetRotation(0);
-		
-					Graphics()->RenderQuadContainerAsSprite(m_DirectionQuadContainerIndex, 0, Button.x, Button.y);
+					FoxRect.VMargin(FoxRect.w / 2.0f - FoxRect.h, &FoxRect);
+
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
+					Graphics()->QuadsBegin();
+					Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+					RenderTools()->SelectSprite(SPRITE_FOXNET_FLAG0);
+					IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
+					Graphics()->QuadsDrawTL(&QuadItem, 1);
+					Graphics()->QuadsEnd();
 				}
 				else if(pCommunity != nullptr)
 				{

@@ -1455,7 +1455,7 @@ set(EXPECTED_DATA
   entity/fonts/Montserrat-Regular.ttf
   entity/fonts/Nunito-Black.ttf
   entity/fonts/Rubik-Regular.ttf
-  entity/icons/entity_flag.png
+  entity/icons/foxnet_flags.png
   entity/icons/muted_icon.png
   entity/icons/settings_icon.png
   extras.png
