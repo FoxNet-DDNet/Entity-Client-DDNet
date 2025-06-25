@@ -1456,6 +1456,7 @@ set(EXPECTED_DATA
   entity/fonts/Nunito-Black.ttf
   entity/fonts/Rubik-Regular.ttf
   entity/icons/foxnet_flags.png
+  entity/icons/generic_ghost.png
   entity/icons/muted_icon.png
   entity/icons/settings_icon.png
   extras.png

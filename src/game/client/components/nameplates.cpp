@@ -516,6 +516,31 @@ public:
 	}
 };
 
+class CNamePlatePartEClientIcon : public CNamePlatePartSprite
+{
+protected:
+	void Update(CGameClient &This, const CNamePlateData &Data) override
+	{
+		m_Visible = Data.m_IsEntity;
+		if(!m_Visible)
+			return;
+
+		m_Size = vec2(Data.m_FontSize, Data.m_FontSize) * 1.2f;
+
+		m_Sprite = SPRITE_GENERIC_GHOST;
+		m_Color = ColorRGBA(1, 1, 1);
+
+		m_Color.a = Data.m_Color.a;
+	}
+
+public:
+	CNamePlatePartEClientIcon(CGameClient &This) :
+		CNamePlatePartSprite(This)
+	{
+		m_Texture = g_pData->m_aImages[IMAGE_GENERIC_GHOST].m_Id;
+	}
+};
+
 class CNamePlatePartHookStrongWeak : public CNamePlatePartSprite
 {
 protected:
@@ -644,6 +669,8 @@ private:
 		AddPart<CNamePlatePartName>(This);
 		AddPart<CNamePlatePartMutedIcon>(This); // E-Client
 		AddPart<CNamePlatePartNewLine>(This);
+
+		AddPart<CNamePlatePartEClientIcon>(This); // E-Client
 
 		AddPart<CNamePlatePartReason>(This); // TClient
 		AddPart<CNamePlatePartNewLine>(This);
@@ -783,6 +810,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 
 	// E-Client
 	Data.m_IsMuted = Data.m_ShowName && g_Config.m_ClMutedIcon && (GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId].IsTempMute);
+	Data.m_IsEntity = Data.m_ShowName && g_Config.m_ClDetectOthers && str_isalluppercase(GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_aSkinName);
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	if(g_Config.m_ClWarList)
 	{

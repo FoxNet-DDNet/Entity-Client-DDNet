@@ -566,6 +566,8 @@ void CEClient::PlayerInfo(const char *pName)
 		else
 			str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
 		GameClient()->ClientMessage(aBuf);
+		str_format(aBuf, sizeof(aBuf), "│ E-Client: %s (can be wrong)", str_isalluppercase(GameClient()->m_aClients[Id].m_aSkinName) ? "Yes" : "No");
+		GameClient()->ClientMessage(aBuf);
 
 		GameClient()->ClientMessage("│");
 		GameClient()->ClientMessage("╰───────────────────────");
