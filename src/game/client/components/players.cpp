@@ -817,21 +817,7 @@ void CPlayers::RenderPlayer(
 			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_SETTINGS_ICON].m_Id);
 
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
-			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, 0, Position.x + 24.f, Position.y - 37.25f, 0.85f, 1.125f);
-
-			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-			Graphics()->QuadsSetRotation(0);
-		}
-	}
-
-	if(g_Config.m_ClShowOthersInMenu)
-	{
-		if((Player.m_PlayerFlags & PLAYERFLAG_IN_MENU) && ! GameClient()->m_aClients[ClientId].m_Afk)
-		{
-			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_SETTINGS_ICON].m_Id);
-
-			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
-			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, 0, Position.x + 24.f, Position.y - 37.25f, 0.85f, 1.125f);
+			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffsetToEmoticon, Position.x + 24.f, Position.y - 40.f);
 
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 			Graphics()->QuadsSetRotation(0);
