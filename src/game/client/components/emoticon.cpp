@@ -20,8 +20,7 @@ CEmoticon::CEmoticon()
 void CEmoticon::ConKeyEmoticon(IConsole::IResult *pResult, void *pUserData)
 {
 	CEmoticon *pSelf = (CEmoticon *)pUserData;
-	if(!pSelf->GameClient()->m_Snap.m_SpecInfo.m_Active && pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
-		pSelf->m_Active = pResult->GetInteger(0) != 0;
+	pSelf->m_Active = pResult->GetInteger(0) != 0;
 }
 
 void CEmoticon::ConEmote(IConsole::IResult *pResult, void *pUserData)
@@ -87,13 +86,6 @@ void CEmoticon::OnRender()
 			Emote(m_SelectedEmote);
 		if(m_WasActive && m_SelectedEyeEmote != -1)
 			EyeEmote(m_SelectedEyeEmote);
-		m_WasActive = false;
-		return;
-	}
-
-	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
-	{
-		m_Active = false;
 		m_WasActive = false;
 		return;
 	}
