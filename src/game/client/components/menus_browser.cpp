@@ -335,18 +335,16 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 
 			const int Id = Col.m_Id;
 
-			char ServerIp[32];
 			bool FoxNet = false;
 			{
 				using namespace std;
 				const char *aName = str_find_nocase(pItem->m_aAddress, ":");
 
 				int n = str_length(pItem->m_aAddress) - str_length(aName);
-				string s(pItem->m_aAddress);
-				s.erase(n);
+				string ServerIp(pItem->m_aAddress);
+				ServerIp.erase(n);
 
-				strcpy(ServerIp, s.c_str());
-				if (!str_comp(ServerIp, "85.215.138.194"))
+				if(!str_comp(ServerIp.c_str(), "85.215.138.194"))
 				{
 					FoxNet = true;
 				}
@@ -1603,9 +1601,40 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				// server info
 				if(Friend.ServerInfo())
 				{
+					bool FoxNet = false;
+					{
+						using namespace std;
+						const char *aName = str_find_nocase(Friend.ServerInfo()->m_aAddress, ":");
+
+						int n = str_length(Friend.ServerInfo()->m_aAddress) - str_length(aName);
+						string ServerIp(Friend.ServerInfo()->m_aAddress);
+						ServerIp.erase(n);
+
+						if(!str_comp(ServerIp.c_str(), "85.215.138.194"))
+						{
+							FoxNet = true;
+						}
+					}
+
 					// community icon
 					const CCommunity *pCommunity = ServerBrowser()->Community(Friend.ServerInfo()->m_aCommunityId);
-					if(pCommunity != nullptr)
+					if(FoxNet)
+					{
+						CUIRect FoxRect;
+						InfoLabel.VSplitLeft(21.0f, &FoxRect, &InfoLabel);
+						InfoLabel.VSplitLeft(2.0f, nullptr, &InfoLabel);
+
+						FoxRect.VMargin(FoxRect.w / 2.0f - FoxRect.h, &FoxRect);
+
+						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
+						Graphics()->QuadsBegin();
+						Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+						RenderTools()->SelectSprite(SPRITE_FOXNET_FLAG0);
+						IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
+						Graphics()->QuadsDrawTL(&QuadItem, 1);
+						Graphics()->QuadsEnd();
+					}
+					else if(pCommunity != nullptr)
 					{
 						const CCommunityIcon *pIcon = m_CommunityIcons.Find(pCommunity->Id());
 						if(pIcon != nullptr)
