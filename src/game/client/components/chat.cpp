@@ -1142,11 +1142,10 @@ void CChat::OnPrepareLines(float y)
 			{
 				Cursor.m_X += RealMsgPaddingTee;
 
-				if(Line.m_Paused && g_Config.m_ClSpectatePrefix)
+				if(GameClient()->m_aClients[Line.m_ClientId].m_Paused && g_Config.m_ClSpectatePrefix)
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
-
 				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].IsMuted && !GameClient()->m_EClient.m_TempPlayers[Line.m_ClientId].IsTempMute) // E-Client
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClWarlistPrefix);
@@ -1205,7 +1204,7 @@ void CChat::OnPrepareLines(float y)
 		{
 			Cursor.m_X += RealMsgPaddingTee;
 
-			if(g_Config.m_ClSpectatePrefix &&Line.m_Paused && !Line.m_Whisper)
+			if(g_Config.m_ClSpectatePrefix && GameClient()->m_aClients[Line.m_ClientId].m_Paused && !Line.m_Whisper)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClSpecPrefix);
