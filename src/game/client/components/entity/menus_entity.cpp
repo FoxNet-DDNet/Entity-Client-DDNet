@@ -198,7 +198,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 			static float Offset = 0.0f;
 
 			OtherSettings.VMargin(5.0f, &OtherSettings);
-			OtherSettings.HSplitTop(225.0f + Offset, &OtherSettings, &ChatSettings);
+			OtherSettings.HSplitTop(245.0f + Offset, &OtherSettings, &ChatSettings);
 			if(s_ScrollRegion.AddRect(OtherSettings))
 			{
 				Offset = 0.0f;
@@ -370,14 +370,21 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					{
 						OtherSettings.HSplitTop(LineSize, &Button, &OtherSettings);
 						static int s_NamePlatesStrong = 0;
-						if(DoButton_CheckBox(&s_NamePlatesStrong, Localize("Notify you everytime someone gets auto added"), g_Config.m_ClAutoAddOnNameChange == 2, &Button))
+						if(DoButton_CheckBox(&s_NamePlatesStrong, "Notify you everytime someone gets auto added", g_Config.m_ClAutoAddOnNameChange == 2, &Button))
 							g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange != 2 ? 2 : 1;
 						Offset = Offset + 20.0f;
 					}
 					OtherSettings.HSplitTop(2.5f, &Button, &OtherSettings);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, Localize("Notify When Player is Being Moved"), &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, Localize("Anti Mult Spawn Block", "Puts you into a random Team when you Kill and get frozen"), &g_Config.m_ClAntiSpawnBlock, &OtherSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, "Notify When Player is Being Moved", &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock,"Anti Mult Spawn Block", &g_Config.m_ClAntiSpawnBlock, &OtherSettings, LineSize);
+					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you Kill and get frozen");
+
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoWhisper, "Auto Whisper", &g_Config.m_ClAutoWhisper, &OtherSettings, LineSize);
+					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAutoWhisper, &Button, "Automatically puts \"/c\" in the chat if your last message was a whisper");
+				
+					
 				}
 			}
 		}
@@ -542,7 +549,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, Localize("Show Settigns Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &MenuSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Player Colors in Spectate Menu"), &g_Config.m_ClSpecMenuColors, &MenuSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuFriendColor, Localize("Friend Color i Spectate Menu"), &g_Config.m_ClSpecMenuFriendColor, &MenuSettings, LineSize);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, Localize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &MenuSettings, LineSize);
 				}
@@ -655,7 +662,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 			static float Offset = 0.0f;
 
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			PlayerSettings.HSplitTop(285.0f + Offset, &PlayerSettings, &RainbowSettings);
+			PlayerSettings.HSplitTop(265.0f + Offset, &PlayerSettings, &RainbowSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				Offset = 0.0f;
@@ -666,12 +673,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				Ui()->DoLabel(&Button, Localize("Cosmetic Settings"), FontSize, TEXTALIGN_MC);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
-
-				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecialEffect, ("Secret Effect"), &g_Config.m_ClSpecialEffect, &PlayerSettings, LineMargin);
-
-				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
 
 				static std::vector<const char *> s_EffectDropDownNames;
 				s_EffectDropDownNames = {Localize("Off"), Localize("Sparkle effect"), Localize("Fire Trail"), Localize("Switch Effect")};
@@ -819,12 +820,12 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 						PUseCustomColor = DUseCustomColor = true;
 					}
 
-					TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClPlayerSkin));
+					TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClPlayerSkin));
 					TeeRenderInfo.ApplyColors(PUseCustomColor, PBodyColor, PFeetColor);
 
 					if(g_Config.m_ClDummy)
 					{
-						TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClDummySkin));
+						TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClDummySkin));
 						TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 					}
 					RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
@@ -926,9 +927,8 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 							GameClient()->m_MapImages.SetTextureScale(101);
 							GameClient()->m_MapImages.SetTextureScale(g_Config.m_ClTextEntitiesSize);
 						}
-
 						static CButtonContainer s_FontDirectoryId;
-						if(DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, IGraphics::CORNER_ALL))
+						if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, 0))
 						{
 							Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
 							Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);
@@ -964,7 +964,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
-					//DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordTimestamp, "Show Timestamp", &g_Config.m_ClDiscordTimestamp, &DiscordSettings, LineSize); -> Discord made it always have a timestamp?
 					static int DiscordRPC = g_Config.m_ClDiscordRPC;
 					static int DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
 					static char DiscordRPCOnlineMsg[25];
@@ -1430,7 +1429,7 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 		Button.VSplitLeft(MarginSmall, nullptr, &Button);
 		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
 		Ui()->DoLabel(&Label, "qxdFox", LineSize, TEXTALIGN_ML);
-		if(DoButton_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, IGraphics::CORNER_ALL))
+		if(Ui()->DoButton_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, 0))
 			Client()->ViewLink("https://github.com/qxdFox");
 	}
 
@@ -1550,7 +1549,7 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 	// Render Tee Above everything else
 	{
 		CTeeRenderInfo TeeRenderInfo;
-		TeeRenderInfo.Apply(m_pClient->m_Skins.Find("Catnoa"));
+		TeeRenderInfo.Apply(GameClient()->m_Skins.Find("Catnoa"));
 		TeeRenderInfo.ApplyColors(true, 5374207, 12767844);
 
 		RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo, 2);
@@ -1595,19 +1594,19 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 
 	struct SPreviewLine
 	{
-		int m_ClShowIdsChat;
-		bool m_Team;
-		char m_aName[64];
-		char m_aText[256];
-		bool m_Spec;
-		bool m_Enemy;
-		bool m_Helper;
-		bool m_Teammate;
-		bool m_Friend;
-		bool m_Player;
-		bool m_Client;
-		bool m_Highlighted;
-		int m_TimesRepeated;
+		int m_ClShowIdsChat = 0;
+		bool m_Team = false;
+		char m_aName[64] = "";
+		char m_aText[256] = "";
+		bool m_Spec = false;
+		bool m_Enemy = false;
+		bool m_Helper = false;
+		bool m_Teammate = false;
+		bool m_Friend = false;
+		bool m_Player = false;
+		bool m_Client = false;
+		bool m_Highlighted = false;
+		int m_TimesRepeated = 0;
 
 		CTeeRenderInfo m_RenderInfo;
 	};
@@ -2069,7 +2068,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	{
 		for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
 		{
-			const char *pBind = m_pClient->m_Binds.Get(KeyId, Mod);
+			const char *pBind = GameClient()->m_Binds.Get(KeyId, Mod);
 			if(!pBind[0])
 				continue;
 
@@ -2095,9 +2094,9 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	if(NewId != OldId || NewModifierCombination != OldModifierCombination)
 	{
 		if(OldId != 0 || NewId == 0)
-			m_pClient->m_Binds.Bind(OldId, "", false, OldModifierCombination);
+			GameClient()->m_Binds.Bind(OldId, "", false, OldModifierCombination);
 		if(NewId != 0)
-			m_pClient->m_Binds.Bind(NewId, Key.m_pCommand, false, NewModifierCombination);
+			GameClient()->m_Binds.Bind(NewId, Key.m_pCommand, false, NewModifierCombination);
 	}
 	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
 
@@ -2140,7 +2139,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	static CButtonContainer s_ReverseEntries;
 	static bool s_Reversed = true;
-	if(DoButton_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, IGraphics::CORNER_ALL))
+	if(Ui()->DoButton_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, 0))
 	{
 		s_Reversed = !s_Reversed;
 	}
@@ -2206,7 +2205,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		DeleteButton.VSplitLeft(MarginSmall, nullptr, &DeleteButton);
 		DeleteButton.VSplitRight(MarginExtraSmall, &DeleteButton, nullptr);
 
-		if(DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
+		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, 0))
 			GameClient()->m_WarList.RemoveWarEntry(pEntry);
 
 		bool IsClan = false;
@@ -2272,7 +2271,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		}
 	}
 
-	Ui()->DoEditBox_Search(&s_EntriesFilterInput, &EntriesSearch, 14.0f, !Ui()->IsPopupOpen() && !m_pClient->m_GameConsole.IsActive());
+	Ui()->DoEditBox_Search(&s_EntriesFilterInput, &EntriesSearch, 14.0f, !Ui()->IsPopupOpen() && !GameClient()->m_GameConsole.IsActive());
 
 	// ======WAR ENTRY EDITING======
 	Column2.HSplitTop(HeadlineHeight, &Label, &Column2);
@@ -2378,7 +2377,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistPrefixes, Localize("Warlist Prefixes"), &g_Config.m_ClWarlistPrefixes, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListChat, Localize("Colors in chat"), &g_Config.m_ClWarListChat, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListScoreboard, Localize("Colors in scoreboard"), &g_Config.m_ClWarListScoreboard, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuColors, Localize("Colors in specmenu"), &g_Config.m_ClSpecMenuColors, &Column2, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSpecMenu, Localize("Colors in specmenu"), &g_Config.m_ClWarListSpecMenu, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListShowClan, Localize("Show clan if war"), &g_Config.m_ClWarListShowClan, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSwapNameReason, Localize("Switch Reason with Name"), &g_Config.m_ClWarListSwapNameReason, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListAllowDuplicates, Localize("Allow Duplicate Entries"), &g_Config.m_ClWarListAllowDuplicates, &Column2, LineSize);
@@ -2506,10 +2505,10 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(!m_pClient->m_Snap.m_apPlayerInfos[i])
+		if(!GameClient()->m_Snap.m_apPlayerInfos[i])
 			continue;
 
-		CTeeRenderInfo TeeInfo = m_pClient->m_aClients[i].m_RenderInfo;
+		CTeeRenderInfo TeeInfo = GameClient()->m_aClients[i].m_RenderInfo;
 
 		const CListboxItem Item = s_PlayerListBox.DoNextItem(&s_vPlayerItemIds[i], false);
 		if(!Item.m_Visible)
@@ -2576,7 +2575,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 
 	// skin info
 	CTeeRenderInfo OwnSkinInfo;
-	const CSkin *pSkin = m_pClient->m_Skins.Find(pSkinName);
+	const CSkin *pSkin = GameClient()->m_Skins.Find(pSkinName);
 	OwnSkinInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
 	OwnSkinInfo.m_ColorableRenderSkin = pSkin->m_ColorableSkin;
 	OwnSkinInfo.m_SkinMetrics = pSkin->m_Metrics;
@@ -2633,7 +2632,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 	FlagRect.HSplitBottom(25.0f, nullptr, &FlagRect);
 	FlagRect.y -= 10.0f;
 	ColorRGBA Color(1.0f, 1.0f, 1.0f, 1.0f);
-	m_pClient->m_CountryFlags.Render(m_Dummy ? g_Config.m_ClDummyCountry : g_Config.m_PlayerCountry, Color, FlagRect.x, FlagRect.y, FlagRect.w, FlagRect.h);
+	GameClient()->m_CountryFlags.Render(m_Dummy ? g_Config.m_ClDummyCountry : g_Config.m_PlayerCountry, Color, FlagRect.x, FlagRect.y, FlagRect.w, FlagRect.h);
 
 	bool DoSkin = g_Config.m_ClApplyProfileSkin;
 	bool DoColors = g_Config.m_ClApplyProfileColors;
@@ -2656,7 +2655,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 
 		if(DoSkin && strlen(LoadProfile.SkinName) != 0)
 		{
-			const CSkin *pLoadSkin = m_pClient->m_Skins.Find(LoadProfile.SkinName);
+			const CSkin *pLoadSkin = GameClient()->m_Skins.Find(LoadProfile.SkinName);
 			OwnSkinInfo.m_OriginalRenderSkin = pLoadSkin->m_OriginalSkin;
 			OwnSkinInfo.m_ColorableRenderSkin = pLoadSkin->m_ColorableSkin;
 			OwnSkinInfo.m_SkinMetrics = pLoadSkin->m_Metrics;
@@ -2699,7 +2698,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 		int RenderFlag = m_Dummy ? g_Config.m_ClDummyCountry : g_Config.m_PlayerCountry;
 		if(DoFlag && LoadProfile.CountryFlag != -2)
 			RenderFlag = LoadProfile.CountryFlag;
-		m_pClient->m_CountryFlags.Render(RenderFlag, Color, FlagRect.x, FlagRect.y, FlagRect.w, FlagRect.h);
+		GameClient()->m_CountryFlags.Render(RenderFlag, Color, FlagRect.x, FlagRect.y, FlagRect.w, FlagRect.h);
 
 		str_format(aName, sizeof(aName), "%s", m_Dummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName);
 		str_format(aClan, sizeof(aClan), "%s", m_Dummy ? g_Config.m_ClDummyClan : g_Config.m_PlayerClan);
@@ -2866,7 +2865,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 		else
 			str_copy(RenderSkin, CurrentProfile.SkinName, sizeof(RenderSkin));
 
-		const CSkin *pSkinToBeDraw = m_pClient->m_Skins.Find(RenderSkin);
+		const CSkin *pSkinToBeDraw = GameClient()->m_Skins.Find(RenderSkin);
 
 		CListboxItem Item = s_ListBox.DoNextItem(&s_Indexs[i], s_SelectedProfile >= 0 && (size_t)s_SelectedProfile == i);
 
@@ -2914,7 +2913,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 			SLabelProperties Props;
 			Props.m_MaxWidth = Item.m_Rect.w;
 			if(CurrentProfile.CountryFlag != -2)
-				m_pClient->m_CountryFlags.Render(CurrentProfile.CountryFlag, Color, FlagRect.x, FlagRect.y, FlagRect.w, FlagRect.h);
+				GameClient()->m_CountryFlags.Render(CurrentProfile.CountryFlag, Color, FlagRect.x, FlagRect.y, FlagRect.w, FlagRect.h);
 
 			if(CurrentProfile.BodyColor != -1 && CurrentProfile.FeetColor != -1)
 			{
@@ -2999,9 +2998,9 @@ void CMenus::RenderDevSkin(vec2 RenderPos, float Size, const char *pSkinName, co
 	float DefTick = std::fmod(s_Time, 1.0f);
 
 	CTeeRenderInfo SkinInfo;
-	const CSkin *pSkin = m_pClient->m_Skins.Find(pSkinName);
+	const CSkin *pSkin = GameClient()->m_Skins.Find(pSkinName);
 	if(str_comp(pSkin->GetName(), pSkinName) != 0)
-		pSkin = m_pClient->m_Skins.Find(pBackupSkin);
+		pSkin = GameClient()->m_Skins.Find(pBackupSkin);
 
 	SkinInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
 	SkinInfo.m_ColorableRenderSkin = pSkin->m_ColorableSkin;
@@ -3076,12 +3075,12 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && Ui()->MouseInside(pRect))
 	{
 		Value += Increment;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && Ui()->MouseInside(pRect))
 	{
 		Value -= Increment;
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 
 	char aBuf[256];
@@ -3090,7 +3089,7 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 	if(NoClampValue)
 	{
 		// clamp the value internally for the scrollbar
-		Value = clamp(Value, Min, Max);
+		Value = std::clamp(Value, Min, Max);
 	}
 
 	CUIRect Label, ScrollBar;

@@ -423,7 +423,7 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 		// TODO: figure out if the command would accept an extra param
 		// char commandBuf[128];
 		// str_next_token(pCompletionBind->m_aCommand, " ", commandBuf, sizeof(commandBuf));
-		// CCommandInfo *pInfo = m_pClient->Console()->GetCommandInfo(commandBuf, CFGFLAG_CLIENT, false);
+		// CCommandInfo *pInfo = GameClient()->Console()->GetCommandInfo(commandBuf, CFGFLAG_CLIENT, false);
 		// if(pInfo && pInfo->m_pParams != '\0')
 		const char *pSeperator = " ";
 		str_append(aBuf, pSeperator);

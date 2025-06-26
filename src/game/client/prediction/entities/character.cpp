@@ -58,7 +58,7 @@ void CCharacter::HandleJetpack()
 	bool FullAuto = false;
 	if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
 		FullAuto = true;
-	if((m_Core.m_Jetpack || m_Core.m_ExplosionGun || m_Core.m_ShortExplosionGun) && m_Core.m_ActiveWeapon == WEAPON_GUN)
+	if((m_Core.m_Jetpack || m_Core.m_ExplosionGun) && m_Core.m_ActiveWeapon == WEAPON_GUN)
 		FullAuto = true;
 
 	// check if we gonna fire
@@ -263,7 +263,7 @@ void CCharacter::FireWeapon()
 	bool FullAuto = false;
 	if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
 		FullAuto = true;
-	if((m_Core.m_Jetpack || m_Core.m_ExplosionGun || m_Core.m_ShortExplosionGun) && m_Core.m_ActiveWeapon == WEAPON_GUN)
+	if((m_Core.m_Jetpack || m_Core.m_ExplosionGun) && m_Core.m_ActiveWeapon == WEAPON_GUN)
 		FullAuto = true;
 	if(m_FrozenLastTick)
 		FullAuto = true;
@@ -374,13 +374,6 @@ void CCharacter::FireWeapon()
 			{
 				Explosive = true;
 				Sound = SOUND_GRENADE_FIRE;
-			}
-
-			if(m_Core.m_ShortExplosionGun)
-			{
-				Explosive = true;
-				Sound = SOUND_GRENADE_FIRE;
-				Lifetime = (int)(GameWorld()->GameTickSpeed() * 0.015f);
 			}
 
 			new CProjectile(
@@ -1115,6 +1108,7 @@ bool CCharacter::Freeze(int Seconds)
 	{
 		m_FreezeTime = Seconds * GameWorld()->GameTickSpeed();
 		m_Core.m_FreezeStart = GameWorld()->GameTick();
+		m_Core.m_FreezeEnd = m_Core.m_DeepFrozen ? -1 : m_FreezeTime == 0 ? 0 : GameWorld()->GameTick() + m_FreezeTime;
 		return true;
 	}
 	return false;
@@ -1133,7 +1127,9 @@ bool CCharacter::UnFreeze()
 			m_Core.m_ActiveWeapon = WEAPON_GUN;
 		m_FreezeTime = 0;
 		m_Core.m_FreezeStart = 0;
-		m_FrozenLastTick = true;
+		m_Core.m_FreezeEnd = m_Core.m_DeepFrozen ? -1 : 0;
+		if(GameWorld()->m_WorldConfig.m_PredictDDRace)
+			m_FrozenLastTick = true;
 		return true;
 	}
 	return false;
@@ -1249,7 +1245,6 @@ void CCharacter::ResetPrediction()
 	m_Core.m_Jetpack = false;
 
 	m_Core.m_ExplosionGun = false;
-	m_Core.m_ShortExplosionGun = false;
 
 	m_NinjaJetpack = false;
 	m_Core.m_Jumps = 2;

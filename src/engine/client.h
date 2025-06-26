@@ -188,9 +188,6 @@ public:
 	virtual void ServerBrowserUpdate() = 0;
 
 	// gfx
-	virtual void SwitchWindowScreen(int Index) = 0;
-	virtual void SetWindowParams(int FullscreenMode, bool IsBorderless) = 0;
-	virtual void ToggleWindowVSync() = 0;
 	virtual void Notify(const char *pTitle, const char *pMessage) = 0;
 	virtual void OnWindowResize() = 0;
 
@@ -297,6 +294,13 @@ public:
 	virtual void DemoSliceEnd() = 0;
 	virtual void DemoSlice(const char *pDstPath, CLIENTFUNC_FILTER pfnFilter, void *pUser) = 0;
 
+	enum class EInfoState
+	{
+		LOADING,
+		SUCCESS,
+		ERROR,
+	};
+	virtual EInfoState InfoState() const = 0;
 	virtual void RequestDDNetInfo() = 0;
 	virtual bool EditorHasUnsavedData() const = 0;
 
@@ -348,7 +352,9 @@ public:
 	virtual void ShowMessageBox(const char *pTitle, const char *pMessage, EMessageBoxType Type = MESSAGE_BOX_TYPE_ERROR) = 0;
 	virtual void GetGpuInfoString(char (&aGpuInfo)[256]) = 0;
 
-	
+	// TClientAdd commentMore actions
+	bool m_IsLocalFrozen = false;
+
 	// E-Client
 	virtual void DiscordRPCchange() = 0;
 };
@@ -396,6 +402,7 @@ public:
 	virtual void OnJoinInfo() = 0;
 	virtual void SetLastMovementTime(int Delay) = 0;
 	virtual int GetClientId(const char *pName) = 0;
+	virtual const char *GetClientName(int Id) = 0;
 
 	virtual bool CanDisplayWarning() const = 0;
 	virtual void RenderShutdownMessage() = 0;

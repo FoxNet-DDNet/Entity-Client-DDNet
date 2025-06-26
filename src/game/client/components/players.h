@@ -47,10 +47,14 @@ class CPlayers : public CComponent
 	int m_WeaponEmoteQuadContainerIndex;
 	int m_aWeaponSpriteMuzzleQuadContainerIndex[NUM_WEAPONS];
 
-	int64_t m_SkidSoundTime = 0;
-
 	//E-Client
 	void RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha);
+
+	void CreateNinjaTeeRenderInfo();
+	void CreateSpectatorTeeRenderInfo();
+
+	std::shared_ptr<CManagedTeeRenderInfo> m_pNinjaTeeRenderInfo;
+	std::shared_ptr<CManagedTeeRenderInfo> m_pSpectatorTeeRenderInfo;
 
 public:
 	float GetPlayerTargetAngle(
@@ -62,6 +66,9 @@ public:
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnInit() override;
 	virtual void OnRender() override;
+
+	const std::shared_ptr<CManagedTeeRenderInfo> &NinjaTeeRenderInfo() const { return m_pNinjaTeeRenderInfo; }
+	const std::shared_ptr<CManagedTeeRenderInfo> &SpectatorTeeRenderInfo() const { return m_pSpectatorTeeRenderInfo; }
 };
 
 #endif

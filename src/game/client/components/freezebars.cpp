@@ -18,30 +18,30 @@ void CFreezeBars::RenderKillBar()
 	float G = 1.0f;
 	float B = 0.6f;
 
-	int ClientId = m_pClient->m_Snap.m_LocalClientId;
+	int ClientId = GameClient()->m_Snap.m_LocalClientId;
 
 	const float FreezeBarWidth = 64.0f;
 	const float FreezeBarHalfWidth = 32.0f;
 	const float FreezeBarHight = 16.0f;
 
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
-	CCharacterCore *pCharacter = &m_pClient->m_aClients[ClientId].m_Predicted;
+	CCharacterCore *pCharacter = &GameClient()->m_aClients[ClientId].m_Predicted;
 
-	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !m_pClient->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
+	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
 	{
 		return;
 	}
 
 	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
 	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
-	float FreezeProgress = clamp(Time / time_freq(), 0.0f, Max) / Max;
+	float FreezeProgress = std::clamp(Time / time_freq(), 0.0f, Max) / Max;
 	if(FreezeProgress <= 0.0f)
 	{
 		return;
 	}
 
 
-	vec2 Position = m_pClient->m_aClients[ClientId].m_RenderPos;
+	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += 22;
 
@@ -60,25 +60,25 @@ void CFreezeBars::RenderFreezeBar(const int ClientId)
 	const float FreezeBarHight = 16.0f;
 
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
-	CCharacterCore *pCharacter = &m_pClient->m_aClients[ClientId].m_Predicted;
+	CCharacterCore *pCharacter = &GameClient()->m_aClients[ClientId].m_Predicted;
 
-	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !m_pClient->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo || (pCharacter->m_IsInFreeze && g_Config.m_ClFreezeBarsAlphaInsideFreeze == 0))
+	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo || (pCharacter->m_IsInFreeze && g_Config.m_ClFreezeBarsAlphaInsideFreeze == 0))
 	{
 		return;
 	}
 
 	const int Max = pCharacter->m_FreezeEnd - pCharacter->m_FreezeStart;
-	float FreezeProgress = clamp(Max - (Client()->GameTick(g_Config.m_ClDummy) - pCharacter->m_FreezeStart), 0, Max) / (float)Max;
+	float FreezeProgress = std::clamp(Max - (Client()->GameTick(g_Config.m_ClDummy) - pCharacter->m_FreezeStart), 0, Max) / (float)Max;
 	if(FreezeProgress <= 0.0f)
 	{
 		return;
 	}
 
-	vec2 Position = m_pClient->m_aClients[ClientId].m_RenderPos;
+	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += 22;
 
-	float Alpha = m_pClient->IsOtherTeam(ClientId) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+	float Alpha = GameClient()->IsOtherTeam(ClientId) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
 	if(pCharacter->m_IsInFreeze)
 	{
 		Alpha *= g_Config.m_ClFreezeBarsAlphaInsideFreeze / 100.0f;
@@ -89,7 +89,7 @@ void CFreezeBars::RenderFreezeBar(const int ClientId)
 
 void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float width, const float height, float Progress, const float R, const float G, const float B, const float Alpha)
 {
-	Progress = clamp(Progress, 0.0f, 1.0f);
+	Progress = std::clamp(Progress, 0.0f, 1.0f);
 
 	// what percentage of the end pieces is used for the progress indicator and how much is the rest
 	// half of the ends are used for the progress display
@@ -115,7 +115,7 @@ void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float width, 
 
 	// full
 	Graphics()->WrapClamp();
-	Graphics()->TextureSet(m_pClient->m_HudSkin.m_SpriteHudFreezeBarFullLeft);
+	Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudFreezeBarFullLeft);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(R, G, B, Alpha);
 	// Subset: top_l, top_m, btm_m, btm_l
@@ -127,7 +127,7 @@ void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float width, 
 	// empty
 	if(BeginningPieceProgress < 1.0f)
 	{
-		Graphics()->TextureSet(m_pClient->m_HudSkin.m_SpriteHudFreezeBarEmptyRight);
+		Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudFreezeBarEmptyRight);
 		Graphics()->QuadsBegin();
 		Graphics()->SetColor(R, G, B, Alpha);
 		// Subset: top_m, top_l, btm_l, btm_m | it is mirrored on the horizontal axe and rotated 180 degrees
@@ -157,7 +157,7 @@ void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float width, 
 	const float EmptyMiddleBarWidth = MiddleBarWidth - FullMiddleBarWidth;
 
 	// full freeze bar
-	Graphics()->TextureSet(m_pClient->m_HudSkin.m_SpriteHudFreezeBarFull);
+	Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudFreezeBarFull);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(R, G, B, Alpha);
 	// select the middle portion of the sprite so we don't get edge bleeding
@@ -177,7 +177,7 @@ void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float width, 
 	Graphics()->QuadsEnd();
 
 	// empty freeze bar
-	Graphics()->TextureSet(m_pClient->m_HudSkin.m_SpriteHudFreezeBarEmpty);
+	Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudFreezeBarEmpty);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(R, G, B, Alpha);
 	// select the middle portion of the sprite so we don't get edge bleeding
@@ -214,7 +214,7 @@ void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float width, 
 	if(EndingPieceProgress > 0.0f)
 	{
 		// full
-		Graphics()->TextureSet(m_pClient->m_HudSkin.m_SpriteHudFreezeBarFullLeft);
+		Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudFreezeBarFullLeft);
 		Graphics()->QuadsBegin();
 		Graphics()->SetColor(R, G, B, Alpha);
 		// Subset: top_r, top_m, btm_m, btm_r | it is mirrored on the horizontal axe and rotated 180 degrees
@@ -224,7 +224,7 @@ void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float width, 
 		Graphics()->QuadsEnd();
 	}
 	// empty
-	Graphics()->TextureSet(m_pClient->m_HudSkin.m_SpriteHudFreezeBarEmptyRight);
+	Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudFreezeBarEmptyRight);
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(R, G, B, Alpha);
 	// Subset: top_m, top_r, btm_r, btm_m
@@ -249,9 +249,7 @@ void CFreezeBars::OnRender()
 {
 	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
 	float Max = g_Config.m_ClFreezeKillMs / 1000.0f;
-	float FreezeProgress = clamp(Time / time_freq(), 0.0f, Max) / Max;
-
-	int LocalClientId = m_pClient->m_Snap.m_LocalClientId;
+	float FreezeProgress = std::clamp(Time / time_freq(), 0.0f, Max) / Max;
 
 	if(FreezeProgress < 0.95f)
 		RenderKillBar();
@@ -276,23 +274,25 @@ void CFreezeBars::OnRender()
 	ScreenY0 -= BorderBuffer;
 	ScreenY1 += BorderBuffer;
 
+	int LocalClientId = GameClient()->m_Snap.m_LocalClientId;
+
 	// render everyone else's freeze bar, then our own
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
-		if(ClientId == LocalClientId || !m_pClient->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
+		if(ClientId == LocalClientId || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
 		{
 			continue;
 		}
 
 		//don't render if the tee is offscreen
-		vec2 *pRenderPos = &m_pClient->m_aClients[ClientId].m_RenderPos;
+		vec2 *pRenderPos = &GameClient()->m_aClients[ClientId].m_RenderPos;
 		if(pRenderPos->x < ScreenX0 || pRenderPos->x > ScreenX1 || pRenderPos->y < ScreenY0 || pRenderPos->y > ScreenY1)
 		{
 			continue;
 		}
 		RenderFreezeBar(ClientId);
 	}
-	if(LocalClientId != -1 && m_pClient->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
+	if(LocalClientId != -1 && GameClient()->m_Snap.m_aCharacters[LocalClientId].m_Active && IsPlayerInfoAvailable(LocalClientId))
 	{
 		if(FreezeProgress > 0.95f || !g_Config.m_ClFreezeKill)
 			RenderFreezeBar(LocalClientId);

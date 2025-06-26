@@ -46,6 +46,10 @@
 #include "databases/connection_pool.h"
 #include "register.h"
 
+#include <chrono>
+
+using namespace std::chrono_literals;
+
 extern bool IsInterrupted();
 
 #if defined(CONF_PLATFORM_ANDROID)
@@ -146,7 +150,7 @@ void CServerBan::ConBanExt(IConsole::IResult *pResult, void *pUser)
 	CServerBan *pThis = static_cast<CServerBan *>(pUser);
 
 	const char *pStr = pResult->GetString(0);
-	int Minutes = pResult->NumArguments() > 1 ? clamp(pResult->GetInteger(1), 0, 525600) : 10;
+	int Minutes = pResult->NumArguments() > 1 ? std::clamp(pResult->GetInteger(1), 0, 525600) : 10;
 	const char *pReason = pResult->NumArguments() > 2 ? pResult->GetString(2) : "Follow the server rules. Type /rules into the chat.";
 
 	if(str_isallnum(pStr))
@@ -213,6 +217,7 @@ void CServer::CClient::Reset()
 	for(auto &Input : m_aInputs)
 		Input.m_GameTick = -1;
 	m_CurrentInput = 0;
+	mem_zero(&m_LastPreInput, sizeof(m_LastPreInput));
 	mem_zero(&m_LatestInput, sizeof(m_LatestInput));
 
 	m_Snapshots.PurgeAll();
@@ -1138,11 +1143,10 @@ int CServer::NewClientCallback(int ClientId, void *pUser, bool Sixup)
 	pThis->m_aClients[ClientId].m_DDNetVersionSettled = false;
 	mem_zero(&pThis->m_aClients[ClientId].m_Addr, sizeof(NETADDR));
 	pThis->m_aClients[ClientId].Reset();
+	pThis->m_aClients[ClientId].m_Sixup = Sixup;
 
 	pThis->GameServer()->TeehistorianRecordPlayerJoin(ClientId, Sixup);
 	pThis->Antibot()->OnEngineClientJoin(ClientId);
-
-	pThis->m_aClients[ClientId].m_Sixup = Sixup;
 
 #if defined(CONF_FAMILY_UNIX)
 	pThis->SendConnLoggingCommand(OPEN_SESSION, pThis->ClientAddr(ClientId));
@@ -1829,6 +1833,45 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			if(Unpacker.Error())
 			{
 				return;
+			}
+
+			if(g_Config.m_SvPreInput)
+			{
+				// send preinputs of ClientId to valid clients
+				bool aPreInputClients[MAX_CLIENTS] = {};
+				GameServer()->PreInputClients(ClientId, aPreInputClients);
+
+				CNetMsg_Sv_PreInput PreInput = {};
+				mem_zero(&PreInput, sizeof(PreInput));
+				CNetObj_PlayerInput *pInputData = (CNetObj_PlayerInput *)&pInput->m_aData;
+
+				PreInput.m_Direction = pInputData->m_Direction;
+				PreInput.m_Jump = pInputData->m_Jump;
+				PreInput.m_Fire = pInputData->m_Fire;
+				PreInput.m_Hook = pInputData->m_Hook;
+				PreInput.m_WantedWeapon = pInputData->m_WantedWeapon;
+				PreInput.m_NextWeapon = pInputData->m_NextWeapon;
+				PreInput.m_PrevWeapon = pInputData->m_PrevWeapon;
+
+				if(mem_comp(&m_aClients[ClientId].m_LastPreInput, &PreInput, sizeof(CNetMsg_Sv_PreInput)) != 0)
+				{
+					m_aClients[ClientId].m_LastPreInput = PreInput;
+
+					PreInput.m_Owner = ClientId;
+					PreInput.m_IntendedTick = IntendedTick;
+
+					// target angle isn't updated all the time to save bandwidth
+					PreInput.m_TargetX = pInputData->m_TargetX;
+					PreInput.m_TargetY = pInputData->m_TargetY;
+
+					for(int Id = 0; Id < MAX_CLIENTS; Id++)
+					{
+						if(!aPreInputClients[Id])
+							continue;
+
+						SendPackMsg(&PreInput, MSGFLAG_VITAL | MSGFLAG_NORECORD, Id);
+					}
+				}
 			}
 
 			GameServer()->OnClientPrepareInput(ClientId, pInput->m_aData);
@@ -2749,10 +2792,14 @@ int CServer::LoadMap(const char *pMapName)
 
 	char aBuf[IO_MAX_PATH_LENGTH];
 	str_format(aBuf, sizeof(aBuf), "maps/%s.map", pMapName);
-	GameServer()->OnMapChange(aBuf, sizeof(aBuf));
-
-	if(!m_pMap->Load(aBuf))
+	if(!GameServer()->OnMapChange(aBuf, sizeof(aBuf)))
+	{
 		return 0;
+	}
+	if(!m_pMap->Load(aBuf))
+	{
+		return 0;
+	}
 
 	// reinit snapshot ids
 	m_IdPool.TimeoutIds();
@@ -2834,7 +2881,7 @@ void CServer::UpdateDebugDummies(bool ForceDisconnect)
 	if(m_PreviousDebugDummies == g_Config.m_DbgDummies && !ForceDisconnect)
 		return;
 
-	g_Config.m_DbgDummies = clamp(g_Config.m_DbgDummies, 0, MaxClients());
+	g_Config.m_DbgDummies = std::clamp(g_Config.m_DbgDummies, 0, MaxClients());
 	for(int DummyIndex = 0; DummyIndex < maximum(m_PreviousDebugDummies, g_Config.m_DbgDummies); ++DummyIndex)
 	{
 		const bool AddDummy = !ForceDisconnect && DummyIndex < g_Config.m_DbgDummies;
@@ -2971,7 +3018,7 @@ int CServer::Run()
 	}
 
 	m_pEngine = Kernel()->RequestInterface<IEngine>();
-	m_pRegister = CreateRegister(&g_Config, m_pConsole, m_pEngine, &m_Http, this->Port(), m_NetServer.GetGlobalToken());
+	m_pRegister = CreateRegister(&g_Config, m_pConsole, m_pEngine, &m_Http, g_Config.m_SvRegisterPort > 0 ? g_Config.m_SvRegisterPort : this->Port(), m_NetServer.GetGlobalToken());
 
 	m_NetServer.SetCallbacks(NewClientCallback, NewClientNoAuthCallback, ClientRejoinCallback, DelClientCallback, this);
 
@@ -3025,7 +3072,7 @@ int CServer::Run()
 
 			set_new_tick();
 
-			int64_t t = time_get();
+			int64_t LastTime = time_get();
 			int NewTicks = 0;
 
 			// load new map
@@ -3097,7 +3144,7 @@ int CServer::Run()
 				}
 			}
 
-			while(t > TickStartTime(m_CurrentGameTick + 1))
+			while(LastTime > TickStartTime(m_CurrentGameTick + 1))
 			{
 				GameServer()->OnPreTickTeehistorian();
 
@@ -3263,22 +3310,22 @@ int CServer::Run()
 			}
 
 			// wait for incoming data
-			if(NonActive &&
+			if(NonActive && Config()->m_SvShutdownWhenEmpty)
+			{
+				m_RunServer = STOPPING;
+			}
+			else if(NonActive &&
 				!m_aDemoRecorder[RECORDER_MANUAL].IsRecording() &&
 				!m_aDemoRecorder[RECORDER_AUTO].IsRecording())
 			{
-				if(Config()->m_SvShutdownWhenEmpty)
-					m_RunServer = STOPPING;
-				else
-					PacketWaiting = net_socket_read_wait(m_NetServer.Socket(), 1000000);
+				PacketWaiting = net_socket_read_wait(m_NetServer.Socket(), 1s);
 			}
 			else
 			{
 				set_new_tick();
-				t = time_get();
-				int x = (TickStartTime(m_CurrentGameTick + 1) - t) * 1000000 / time_freq() + 1;
-
-				PacketWaiting = x > 0 ? net_socket_read_wait(m_NetServer.Socket(), x) : true;
+				LastTime = time_get();
+				const auto MicrosecondsToWait = std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::nanoseconds(TickStartTime(m_CurrentGameTick + 1) - LastTime)) + 1us;
+				PacketWaiting = MicrosecondsToWait > 0us ? net_socket_read_wait(m_NetServer.Socket(), MicrosecondsToWait) : true;
 			}
 			if(IsInterrupted())
 			{

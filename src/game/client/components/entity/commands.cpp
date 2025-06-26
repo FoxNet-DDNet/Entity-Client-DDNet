@@ -358,7 +358,6 @@ void CEClient::TempMute(const char *pName, bool Silent)
 bool CEClient::UnTempMute(const char *pName, bool Silent)
 {
 	bool Removed = false;
-
 	if(!str_comp(pName, ""))
 		return Removed;
 
@@ -392,35 +391,30 @@ bool CEClient::UnTempMute(const char *pName, bool Silent)
 
 void CEClient::RestoreSkin()
 {
-	if(!g_Config.m_ClServerRainbow)
+	if(g_Config.m_ClDummy)
 	{
-		if(g_Config.m_ClDummy)
-		{
-			str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
-			str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
-			str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
-			g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
-			g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
-			g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
-			g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
-			GameClient()->ClientMessage("Restored Dummy Skin");
-			m_pClient->SendDummyInfo(false);
-		}
-		else
-		{
-			str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
-			str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
-			str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
-			g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
-			g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
-			g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
-			g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
-			GameClient()->ClientMessage("Restored Main Skin");
-			m_pClient->SendInfo(false);
-		}
+		str_copy(g_Config.m_ClDummySkin, g_Config.m_ClSavedDummySkin, sizeof(g_Config.m_ClDummySkin));
+		str_copy(g_Config.m_ClDummyName, g_Config.m_ClSavedDummyName, sizeof(g_Config.m_ClDummyName));
+		str_copy(g_Config.m_ClDummyClan, g_Config.m_ClSavedDummyClan, sizeof(g_Config.m_ClDummyClan));
+		g_Config.m_ClDummyCountry = g_Config.m_ClSavedDummyCountry;
+		g_Config.m_ClDummyUseCustomColor = g_Config.m_ClSavedDummyUseCustomColor;
+		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
+		g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
+		GameClient()->ClientMessage("Restored Dummy Skin");
+		 GameClient()->SendDummyInfo(false);
 	}
 	else
-		GameClient()->ClientMessage("Can't Restore! Rainbow mode is enabled.");
+	{
+		str_copy(g_Config.m_ClPlayerSkin, g_Config.m_ClSavedPlayerSkin, sizeof(g_Config.m_ClPlayerSkin));
+		str_copy(g_Config.m_PlayerName, g_Config.m_ClSavedName, sizeof(g_Config.m_PlayerName));
+		str_copy(g_Config.m_PlayerClan, g_Config.m_ClSavedClan, sizeof(g_Config.m_PlayerClan));
+		g_Config.m_PlayerCountry = g_Config.m_ClSavedCountry;
+		g_Config.m_ClPlayerUseCustomColor = g_Config.m_ClSavedPlayerUseCustomColor;
+		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
+		g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
+		GameClient()->ClientMessage("Restored Main Skin");
+		 GameClient()->SendInfo(false);
+	}
 }
 void CEClient::SaveSkin()
 {
@@ -436,7 +430,7 @@ void CEClient::SaveSkin()
 			g_Config.m_ClSavedDummyColorBody = g_Config.m_ClDummyColorBody;
 			g_Config.m_ClSavedDummyColorFeet = g_Config.m_ClDummyColorFeet;
 			GameClient()->ClientMessage("Saved Dummy Skin");
-			m_pClient->SendDummyInfo(false);
+			 GameClient()->SendDummyInfo(false);
 		}
 		else
 		{
@@ -448,7 +442,7 @@ void CEClient::SaveSkin()
 			g_Config.m_ClSavedPlayerColorBody = g_Config.m_ClPlayerColorBody;
 			g_Config.m_ClSavedPlayerColorFeet = g_Config.m_ClPlayerColorFeet;
 			GameClient()->ClientMessage("Saved Main Skin");
-			m_pClient->SendInfo(false);
+			 GameClient()->SendInfo(false);
 		}
 	}
 	else 
@@ -486,7 +480,7 @@ void CEClient::OnlineInfo(bool Integrate)
 		if(!Client.m_Active && GameClient()->m_Teams.Team(Client.ClientId()) == 0)
 			continue;
 
-		if(Client.ClientId() == m_pClient->m_Snap.m_LocalClientId)
+		if(Client.ClientId() ==  GameClient()->m_Snap.m_LocalClientId)
 			continue;
 
 		if(War || TempWar)
@@ -572,6 +566,8 @@ void CEClient::PlayerInfo(const char *pName)
 		else
 			str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
 		GameClient()->ClientMessage(aBuf);
+		str_format(aBuf, sizeof(aBuf), "│ E-Client: %s (can be wrong)", str_isalluppercase(GameClient()->m_aClients[Id].m_aSkinName) ? "Yes" : "No");
+		GameClient()->ClientMessage(aBuf);
 
 		GameClient()->ClientMessage("│");
 		GameClient()->ClientMessage("╰───────────────────────");
@@ -610,6 +606,22 @@ void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 	else
 		str_format(Text, sizeof(Text), "%s: %s", LastPing.m_aName, pResult->GetString(0));
 	pSelf->GameClient()->m_Chat.SendChat(0, Text);
+}
+
+void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
+{
+	char aBuf[128];
+	str_format(aBuf, sizeof(aBuf), "%s", 1);
+}
+
+void CEClient::ConSpectateId(IConsole::IResult *pResult, void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+	const char *pName = pSelf->GameClient()->GetClientName(pResult->GetInteger(0));
+
+	char pCmd[64];
+	str_format(pCmd, sizeof(pCmd), "/spec %s", pName);
+	pSelf->GameClient()->m_Chat.SendChat(0, pCmd);
 }
 
 void CEClient::OnConsoleInit()
@@ -651,6 +663,8 @@ void CEClient::OnConsoleInit()
 	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
 
 	Console()->Register("reply_last", "?r[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
+	Console()->Register("specid", "i[Id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
+	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Reply to the last ping");
 }
 
 void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)

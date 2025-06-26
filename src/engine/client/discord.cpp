@@ -28,11 +28,15 @@ FDiscordCreate GetDiscordCreate()
 class CDiscord : public IDiscord
 {
 	DiscordActivity m_Activity;
+	bool m_UpdateActivity = false;
 	IDiscordCore *m_pCore;
 	IDiscordActivityEvents m_ActivityEvents;
 	IDiscordActivityManager *m_pActivityManager;
+
 	FDiscordCreate m_pfnDiscordCreate;
 	bool m_Enabled;
+
+	bool m_ShowMap;
 
 public:
 	int64_t m_TimeStamp = time_timestamp();
@@ -65,21 +69,24 @@ public:
 		Params.flags = EDiscordCreateFlags::DiscordCreateFlags_NoRequireDiscord;
 		Params.event_data = this;
 		Params.activity_events = &m_ActivityEvents;
+
 		int Error = m_pfnDiscordCreate(DISCORD_VERSION, &Params, &m_pCore);
+
 		if(Error != DiscordResult_Ok)
 		{
 			dbg_msg("discord", "error initializing discord instance, error=%d", Error);
 			return true;
 		}
 
-		m_pActivityManager = m_pCore->get_activity_manager(m_pCore); 
-		
+		m_pActivityManager = m_pCore->get_activity_manager(m_pCore);
+
 		// which application to launch when joining activity
 		m_pActivityManager->register_command(m_pActivityManager, CONNECTLINK_DOUBLE_SLASH);
 		m_pActivityManager->register_steam(m_pActivityManager, 412220); // steam id
 
 		return false;
 	}
+
 	void Update(bool Enabled) override
 	{
 		bool NeedsUpdate = m_Enabled != Enabled;
@@ -89,7 +96,10 @@ public:
 			InitDiscord();
 
 		if(m_pCore && m_Enabled)
+		{
 			m_pCore->run_callbacks(m_pCore);
+			m_pActivityManager->update_activity(m_pActivityManager, &m_Activity, 0, 0);
+		}
 	}
 	void ClearGameInfo(const char *pDetail) override
 	{
@@ -98,11 +108,14 @@ public:
 
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
-		str_copy(m_Activity.assets.large_image, "ac_image_b_o", sizeof(m_Activity.assets.large_image));
-		str_copy(m_Activity.assets.large_text, "github.com/qxdFox/Entity-Client", sizeof(m_Activity.assets.large_text));
-		m_Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
+		str_copy(m_Activity.assets.large_image, "m_ghost", sizeof(m_Activity.assets.large_image));
+		str_copy(m_Activity.assets.large_text, "entityclient.net", sizeof(m_Activity.assets.large_text));
 		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
+
+		m_Activity.timestamps.start = m_TimeStamp;
+
 		m_Activity.instance = false;
+		m_UpdateActivity = true;
 	}
 
 	void SetGameInfo(const CServerInfo &ServerInfo, const char *pMapName, const char *pDetail, bool ShowMap, bool Registered) override
@@ -112,15 +125,16 @@ public:
 
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
-		str_copy(m_Activity.assets.large_image, "ac_image_b", sizeof(m_Activity.assets.large_image));
-		str_copy(m_Activity.assets.large_text, "github.com/qxdFox/Entity-Client", sizeof(m_Activity.assets.large_text));
-		m_Activity.timestamps.start = m_TimeStamp; // Discord is forcing TimeStamps now?
-		str_copy(m_Activity.name, pDetail, sizeof(m_Activity.name));
+		// E-Client
+		str_copy(m_Activity.assets.large_image, "m_ghost", sizeof(m_Activity.assets.large_image));
+		str_copy(m_Activity.assets.large_text, "entityclient.net", sizeof(m_Activity.assets.large_text));
+		m_ShowMap = ShowMap;
 		m_Activity.instance = true;
-
-		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
-		if(ShowMap)
+		m_Activity.timestamps.start = m_TimeStamp;
+		if(m_ShowMap)
 			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
+		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
+
 
 		m_Activity.party.size.current_size = ServerInfo.m_NumClients;
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
@@ -135,18 +149,22 @@ public:
 			str_copy(m_Activity.party.id, aPartyId, sizeof(m_Activity.party.id));
 		}
 		UpdateServerIp(ServerInfo);
+
+		m_UpdateActivity = true;
 	}
 
 	void UpdateServerInfo(const CServerInfo &ServerInfo, const char *pMapName) override
 	{
 		if(!m_Activity.instance)
 			return;
+		m_UpdateActivity = true;
+		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
 
 		UpdateServerIp(ServerInfo);
 
-		str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
-		str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
-		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
+		// E-Client
+		if(m_ShowMap)
+			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
 	}
 
 	void UpdatePlayerCount(int Count) override
@@ -158,9 +176,10 @@ public:
 			return;
 
 		m_Activity.party.size.current_size = Count;
+		m_UpdateActivity = true;
 	}
 
-    void UpdateServerIp(const CServerInfo &ServerInfo)
+	void UpdateServerIp(const CServerInfo &ServerInfo)
 	{
 		if(!m_Activity.instance)
 			return;

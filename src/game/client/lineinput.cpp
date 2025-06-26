@@ -59,8 +59,8 @@ void CLineInput::SetRange(const char *pString, size_t Begin, size_t End)
 {
 	if(Begin > End)
 		std::swap(Begin, End);
-	Begin = clamp<size_t>(Begin, 0, m_Len);
-	End = clamp<size_t>(End, 0, m_Len);
+	Begin = std::clamp<size_t>(Begin, 0, m_Len);
+	End = std::clamp<size_t>(End, 0, m_Len);
 
 	size_t RemovedCharSize, RemovedCharCount;
 	str_utf8_stats(m_pStr + Begin, End - Begin + 1, m_MaxChars, &RemovedCharSize, &RemovedCharCount);
@@ -158,7 +158,7 @@ void CLineInput::MoveCursor(EMoveDirection Direction, bool MoveWord, const char 
 
 void CLineInput::SetCursorOffset(size_t Offset)
 {
-	m_SelectionStart = m_SelectionEnd = m_LastCompositionCursorPos = m_CursorPos = clamp<size_t>(Offset, 0, m_Len);
+	m_SelectionStart = m_SelectionEnd = m_LastCompositionCursorPos = m_CursorPos = std::clamp<size_t>(Offset, 0, m_Len);
 	m_WasCursorChanged = true;
 }
 
@@ -167,8 +167,8 @@ void CLineInput::SetSelection(size_t Start, size_t End)
 	dbg_assert(m_CursorPos == Start || m_CursorPos == End, "Selection and cursor offset got desynchronized");
 	if(Start > End)
 		std::swap(Start, End);
-	m_SelectionStart = clamp<size_t>(Start, 0, m_Len);
-	m_SelectionEnd = clamp<size_t>(End, 0, m_Len);
+	m_SelectionStart = std::clamp<size_t>(Start, 0, m_Len);
+	m_SelectionEnd = std::clamp<size_t>(End, 0, m_Len);
 	m_WasCursorChanged = true;
 }
 
@@ -473,7 +473,12 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_SelectionStart = str_utf8_offset_bytes_to_chars(pDisplayStr, DisplayCursorOffset);
 			Cursor.m_SelectionEnd = str_utf8_offset_bytes_to_chars(pDisplayStr, DisplayCompositionEnd);
 			TextRender()->TextSelectionColor(1.0f, 1.0f, 1.0f, 0.8f);
-			TextRender()->TextEx(&Cursor, pDisplayStr);
+			// E-Client
+			if(g_Config.m_ClChatColorParsing)
+				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+			else 
+				TextRender()->TextEx(&Cursor, pDisplayStr);
+
 			TextRender()->TextSelectionColor(TextRender()->DefaultTextSelectionColor());
 		}
 		else if(GetSelectionLength())
@@ -485,14 +490,22 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_CalculateSelectionMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_SELECTION_MODE_CALCULATE : TEXT_CURSOR_SELECTION_MODE_SET;
 			Cursor.m_SelectionStart = str_utf8_offset_bytes_to_chars(pDisplayStr, Start);
 			Cursor.m_SelectionEnd = str_utf8_offset_bytes_to_chars(pDisplayStr, End);
-			TextRender()->TextEx(&Cursor, pDisplayStr);
+			// E-Client
+			if(g_Config.m_ClChatColorParsing)
+				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+			else
+				TextRender()->TextEx(&Cursor, pDisplayStr);
 		}
 		else
 		{
 			Cursor.m_CursorMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_CURSOR_MODE_CALCULATE : TEXT_CURSOR_CURSOR_MODE_SET;
 			Cursor.m_CursorCharacter = str_utf8_offset_bytes_to_chars(pDisplayStr, CaretOffset);
 			Cursor.m_CalculateSelectionMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_SELECTION_MODE_CALCULATE : TEXT_CURSOR_SELECTION_MODE_NONE;
-			TextRender()->TextEx(&Cursor, pDisplayStr);
+			// E-Client
+			if(g_Config.m_ClChatColorParsing)
+				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+			else
+				TextRender()->TextEx(&Cursor, pDisplayStr);
 		}
 
 		if(Cursor.m_CursorMode == TEXT_CURSOR_CURSOR_MODE_CALCULATE && Cursor.m_CursorCharacter >= 0)

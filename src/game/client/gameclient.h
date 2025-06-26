@@ -44,6 +44,7 @@
 #include "components/hud.h"
 #include "components/infomessages.h"
 #include "components/items.h"
+#include "components/local_server.h"
 #include "components/mapimages.h"
 #include "components/maplayers.h"
 #include "components/mapsounds.h"
@@ -189,6 +190,8 @@ public:
 	CGhost m_Ghost;
 
 	CTooltips m_Tooltips;
+	
+	CLocalServer m_LocalServer;
 
 	// Entity
 	CEClient m_EClient;
@@ -339,8 +342,6 @@ public:
 	int m_ServerMode;
 	CGameInfo m_GameInfo;
 
-	char m_aSavedLocalRconPassword[sizeof(g_Config.m_SvRconPassword)] = "";
-
 	int m_DemoSpecId;
 
 	vec2 m_LocalCharacterPos;
@@ -411,11 +412,13 @@ public:
 	};
 
 	CSnapState m_Snap;
-	int m_aLocalTuneZone[NUM_DUMMIES];
-	bool m_aReceivedTuning[NUM_DUMMIES];
-	int m_aExpectingTuningForZone[NUM_DUMMIES];
-	int m_aExpectingTuningSince[NUM_DUMMIES];
-	CTuningParams m_aTuning[NUM_DUMMIES];
+	int m_aLocalTuneZone[NUM_DUMMIES]; // current tunezone (0-255)
+	bool m_aReceivedTuning[NUM_DUMMIES]; // was tuning message received after zone change
+	int m_aExpectingTuningForZone[NUM_DUMMIES]; // tunezone changed, waiting for tuning for that zone
+	int m_aExpectingTuningSince[NUM_DUMMIES]; // how many snaps received since tunezone changed
+	CTuningParams m_aTuning[NUM_DUMMIES]; // current local player tuning, only what the player/dummy has
+
+	std::bitset<RECORDER_MAX> m_ActiveRecordings;
 
 	// spectate cursor data
 	class CCursorInfo
@@ -467,8 +470,8 @@ public:
 		float m_EmoticonStartFraction;
 		int m_EmoticonStartTick;
 
+		// FoxNet
 		bool m_ExplosionGun;
-		bool m_ShortExplosionGun;
 
 		bool m_Solo;
 		bool m_Jetpack;
@@ -521,6 +524,8 @@ public:
 
 		CNetObj_Character m_Snapped;
 		CNetObj_Character m_Evolved;
+
+		CNetMsg_Sv_PreInput m_PreInput[200];
 
 		// rendered characters
 		CNetObj_Character m_RenderCur;
@@ -730,6 +735,7 @@ public:
 
 	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;
+	const char *GetClientName(int ClientId) override;
 
 
 	CNetObjHandler *GetNetObjHandler() override;
@@ -899,7 +905,8 @@ public:
 		IGraphics::CTextureHandle m_SpriteParticleSnowflake;
 		IGraphics::CTextureHandle m_SpriteParticleSparkle;
 		IGraphics::CTextureHandle m_SpritePulley;
-		IGraphics::CTextureHandle m_aSpriteParticles[3];
+		IGraphics::CTextureHandle m_SpriteHectagon;
+		IGraphics::CTextureHandle m_aSpriteParticles[4];
 	};
 
 	SClientExtrasSkin m_ExtrasSkin;
@@ -932,6 +939,7 @@ private:
 	std::vector<std::shared_ptr<CManagedTeeRenderInfo>> m_vpManagedTeeRenderInfos;
 	void UpdateManagedTeeRenderInfos();
 
+	void UpdateLocalTuning();
 	void UpdatePrediction();
 	void UpdateSpectatorCursor();
 	void UpdateRenderedCharacters();
@@ -946,6 +954,8 @@ private:
 
 	void LoadMapSettings();
 	CMapBugs m_MapBugs;
+
+	// tunings for every zone on the map, 0 is a global tune
 	CTuningParams m_aTuningList[NUM_TUNEZONES];
 	CTuningParams *TuningList() { return m_aTuningList; }
 

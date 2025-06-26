@@ -163,7 +163,7 @@ void CGameClient::OnConsoleInit()
 						  &m_Motd,
 						  &m_Menus,
 						  &m_Tooltips,
-						  &CMenus::m_Binder,
+						  &m_Menus.m_Binder,
 						  &m_GameConsole,
 						  // E-Client
 						  &m_MenuBackground,
@@ -175,7 +175,7 @@ void CGameClient::OnConsoleInit()
 	});
 
 	// build the input stack
-	m_vpInput.insert(m_vpInput.end(), {&CMenus::m_Binder, // this will take over all input when we want to bind a key
+	m_vpInput.insert(m_vpInput.end(), {&m_Menus.m_Binder, // this will take over all input when we want to bind a key
 						  &m_Binds.m_SpecialBinds,
 						  &m_GameConsole,
 						  &m_Chat, // chat has higher prio, due to that you can quit it by pressing esc
@@ -207,7 +207,9 @@ void CGameClient::OnConsoleInit()
 	Console()->Register("mapbug", "s[mapbug]", CFGFLAG_GAME, ConMapbug, this, "Enable map compatibility mode using the specified bug (example: grenade-doubleexplosion@ddnet.tw)");
 
 	for(auto &pComponent : m_vpAll)
-		pComponent->m_pClient = this;
+		pComponent->OnInterfacesInit(this);
+
+	m_LocalServer.OnInterfacesInit(this);
 
 	// let all the other components register their console commands
 	for(auto &pComponent : m_vpAll)
@@ -615,8 +617,7 @@ void CGameClient::OnConnected()
 		if(g_Config.m_ClAutoDemoOnConnect)
 			Client()->DemoRecorder_HandleAutoStart();
 
-		if(m_Menus.IsServerRunning() && m_aSavedLocalRconPassword[0] != '\0' && net_addr_is_local(&Client()->ServerAddress()))
-			Client()->RconAuth(DEFAULT_SAVED_RCON_USER, m_aSavedLocalRconPassword, g_Config.m_ClDummy);
+		m_LocalServer.RconAuthIfPossible();
 	}
 }
 
@@ -668,6 +669,8 @@ void CGameClient::OnReset()
 	std::fill(std::begin(m_aExpectingTuningForZone), std::end(m_aExpectingTuningForZone), -1);
 	std::fill(std::begin(m_aExpectingTuningSince), std::end(m_aExpectingTuningSince), 0);
 	std::fill(std::begin(m_aTuning), std::end(m_aTuning), CTuningParams());
+
+	m_ActiveRecordings.reset();
 
 	for(auto &Client : m_aClients)
 		Client.Reset();
@@ -1179,8 +1182,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 				if(CCharacter *pChar = m_GameWorld.GetCharacterById(ClientId))
 				{
 					pChar->ResetPrediction();
-					vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChar ? pChar->GetStrongWeakId() :
-														     0);
+					vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChar ? pChar->GetStrongWeakId() : 0);
 				}
 				m_GameWorld.ReleaseHooked(ClientId);
 			}
@@ -1208,6 +1210,11 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 		CNetMsg_Sv_MapSoundGlobal *pMsg = (CNetMsg_Sv_MapSoundGlobal *)pRawMsg;
 		m_MapSounds.Play(CSounds::CHN_GLOBAL, pMsg->m_SoundId);
 	}
+	else if(MsgId == NETMSGTYPE_SV_PREINPUT)
+	{
+		CNetMsg_Sv_PreInput *pMsg = (CNetMsg_Sv_PreInput *)pRawMsg;
+		m_aClients[pMsg->m_Owner].m_PreInput[pMsg->m_IntendedTick % 200] = *pMsg;
+	}
 }
 
 void CGameClient::OnStateChange(int NewState, int OldState)
@@ -1225,6 +1232,8 @@ void CGameClient::OnShutdown()
 {
 	for(auto &pComponent : m_vpAll)
 		pComponent->OnShutdown();
+
+	m_LocalServer.KillServer();
 }
 
 void CGameClient::OnEnterGame()
@@ -1774,7 +1783,6 @@ void CGameClient::OnNewSnapshot()
 					pClient->m_Jetpack = pCharacterData->m_Flags & CHARACTERFLAG_JETPACK;
 
 					pClient->m_ExplosionGun = pCharacterData->m_Flags & CHARACTERFLAG_EXPLOSIONGUN;
-					pClient->m_ShortExplosionGun = pCharacterData->m_Flags & CHARACTERFLAG_SHORTEXPLOSIONGUN;
 
 					pClient->m_CollisionDisabled = pCharacterData->m_Flags & CHARACTERFLAG_COLLISION_DISABLED;
 					pClient->m_HammerHitDisabled = pCharacterData->m_Flags & CHARACTERFLAG_HAMMER_HIT_DISABLED;
@@ -1896,9 +1904,9 @@ void CGameClient::OnNewSnapshot()
 					continue;
 				}
 				const CNetObj_SwitchState *pSwitchStateData = (const CNetObj_SwitchState *)Item.m_pData;
-				int Team = clamp(Item.m_Id, (int)TEAM_FLOCK, (int)TEAM_SUPER - 1);
+				int Team = std::clamp(Item.m_Id, (int)TEAM_FLOCK, (int)TEAM_SUPER - 1);
 
-				int HighestSwitchNumber = clamp(pSwitchStateData->m_HighestSwitchNumber, 0, 255);
+				int HighestSwitchNumber = std::clamp(pSwitchStateData->m_HighestSwitchNumber, 0, 255);
 				if(HighestSwitchNumber != maximum(0, (int)Switchers().size() - 1))
 				{
 					m_GameWorld.m_Core.InitSwitchers(HighestSwitchNumber);
@@ -2085,15 +2093,18 @@ void CGameClient::OnNewSnapshot()
 			m_ServerMode = SERVERMODE_PUREMOD;
 	}
 
-	// add tuning to demo
-	bool AnyRecording = false;
+	// add tuning to demo when new recording was started, because server tune message was already received before
+	std::bitset<RECORDER_MAX> CurrentRecordings;
 	for(int i = 0; i < RECORDER_MAX; i++)
+	{
 		if(DemoRecorder(i)->IsRecording())
 		{
-			AnyRecording = true;
-			break;
+			CurrentRecordings.set(i);
 		}
-	if(AnyRecording && mem_comp(&StandardTuning, &m_aTuning[g_Config.m_ClDummy], sizeof(CTuningParams)) != 0)
+	}
+	const bool HasNewRecordings = (CurrentRecordings & ~m_ActiveRecordings).any();
+	m_ActiveRecordings = CurrentRecordings;
+	if(HasNewRecordings)
 	{
 		CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
 		int *pParams = (int *)&m_aTuning[g_Config.m_ClDummy];
@@ -2270,7 +2281,7 @@ void CGameClient::OnNewSnapshot()
 					for(int j = 0; j < Amount; j++)
 					{
 						float Angle = mix(Min, Max, (j + 1) / (float)(Amount + 2));
-						m_Effects.DamageIndicator(Pos, direction(Angle));
+						m_Effects.DamageIndicator(Pos, direction(Angle), 1.0f);
 					}
 				}
 			}
@@ -2292,11 +2303,11 @@ void CGameClient::OnNewSnapshot()
 	if(m_Snap.m_LocalClientId != m_PrevLocalId)
 		m_PredictedDummyId = m_PrevLocalId;
 	m_PrevLocalId = m_Snap.m_LocalClientId;
-	m_IsDummySwapping = 0;
 
 	SnapCollectEntities(); // creates a collection that associates EntityEx snap items with the entities they belong to
 
-	// update prediction data
+	UpdateLocalTuning();
+	m_IsDummySwapping = 0;
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		UpdatePrediction();
 }
@@ -2440,11 +2451,73 @@ void CGameClient::OnPredict()
 			pLocalChar->OnDirectInput(pInputData);
 		if(pDummyInputData && !DummyFirst)
 			pDummyChar->OnDirectInput(pDummyInputData);
+
+		if(g_Config.m_ClAntiPingPreInput)
+		{
+			for(int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if(CCharacter *pChar = m_PredictedWorld.GetCharacterById(i))
+				{
+					if(pDummyChar == pChar || pLocalChar == pChar)
+						continue;
+
+					const CNetMsg_Sv_PreInput PreInput = m_aClients[i].m_PreInput[Tick % 200];
+					if(PreInput.m_IntendedTick != Tick)
+						continue;
+
+					//convert preinput to input
+					CNetObj_PlayerInput Input = {0};
+					Input.m_Direction = PreInput.m_Direction;
+					Input.m_TargetX = PreInput.m_TargetX;
+					Input.m_TargetY = PreInput.m_TargetY;
+					Input.m_Jump = PreInput.m_Jump;
+					Input.m_Fire = PreInput.m_Fire;
+					Input.m_Hook = PreInput.m_Hook;
+					Input.m_WantedWeapon = PreInput.m_WantedWeapon;
+					Input.m_NextWeapon = PreInput.m_NextWeapon;
+					Input.m_PrevWeapon = PreInput.m_PrevWeapon;
+
+					pChar->OnDirectInput(&Input);
+				}
+			}
+		}
+
 		m_PredictedWorld.m_GameTick = Tick;
 		if(pInputData)
 			pLocalChar->OnPredictedInput(pInputData);
 		if(pDummyInputData)
 			pDummyChar->OnPredictedInput(pDummyInputData);
+
+		if(g_Config.m_ClAntiPingPreInput)
+		{
+			for(int i = 0; i < MAX_CLIENTS; i++)
+			{
+				if(CCharacter *pChar = m_PredictedWorld.GetCharacterById(i))
+				{
+					if(pDummyChar == pChar || pLocalChar == pChar)
+						continue;
+
+					const CNetMsg_Sv_PreInput PreInput = m_aClients[i].m_PreInput[Tick % 200];
+					if(PreInput.m_IntendedTick != Tick)
+						continue;
+
+					//convert preinput to input
+					CNetObj_PlayerInput Input = {0};
+					Input.m_Direction = PreInput.m_Direction;
+					Input.m_TargetX = PreInput.m_TargetX;
+					Input.m_TargetY = PreInput.m_TargetY;
+					Input.m_Jump = PreInput.m_Jump;
+					Input.m_Fire = PreInput.m_Fire;
+					Input.m_Hook = PreInput.m_Hook;
+					Input.m_WantedWeapon = PreInput.m_WantedWeapon;
+					Input.m_NextWeapon = PreInput.m_NextWeapon;
+					Input.m_PrevWeapon = PreInput.m_PrevWeapon;
+
+					pChar->OnPredictedInput(&Input);
+				}
+			}
+		}
+
 		m_PredictedWorld.Tick();
 
 		// fetch the current characters
@@ -2575,7 +2648,7 @@ void CGameClient::OnPredict()
 		absolute(m_PredictedTick - Client()->PredGameTick(g_Config.m_ClDummy)) <= 1 &&
 		absolute(Client()->GameTick(g_Config.m_ClDummy) - Client()->PrevGameTick(g_Config.m_ClDummy)) <= 2)
 	{
-		int PredTime = clamp(Client()->GetPredictionTime(), 0, 800);
+		int PredTime = std::clamp(Client()->GetPredictionTime(), 0, 800);
 		float SmoothPace = 4 - 1.5f * PredTime / 800.f; // smoothing pace (a lower value will make the smoothing quicker)
 		int64_t Len = 1000 * PredTime * SmoothPace;
 
@@ -2604,7 +2677,7 @@ void CGameClient::OnPredict()
 						aMixAmount[j] = 0.0f;
 						if(absolute(RenderDiff[j]) > 0.01f)
 						{
-							aMixAmount[j] = 1.f - clamp(RenderDiff[j] / PredDiff[j], 0.f, 1.f);
+							aMixAmount[j] = 1.f - std::clamp(RenderDiff[j] / PredDiff[j], 0.f, 1.f);
 							aMixAmount[j] = 1.f - std::pow(1.f - aMixAmount[j], 1 / 1.2f);
 						}
 					}
@@ -2637,7 +2710,7 @@ void CGameClient::OnPredict()
 		pSmoothLocalChar &&
 		RealPredTick && m_PredictedTick >= MIN_TICK)
 	{
-		int PredTime = clamp(Client()->GetPredictionTime(), 0, 8000); // Milliseconds for some reason?? TODO: Use more precision
+		int PredTime = std::clamp(Client()->GetPredictionTime(), 0, 8000); // Milliseconds for some reason?? TODO: Use more precision
 
 		// Nightmare: in order to get 100% accurate comparison to detect mispredictions we must
 		// tick the PREVIOUS predicted world with our CURRENT predicted inputs
@@ -3261,7 +3334,7 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_pName = Client()->PlayerName();
 		Msg.m_pClan = g_Config.m_PlayerClan;
 		Msg.m_Country = g_Config.m_PlayerCountry;
-		Msg.m_pSkin = g_Config.m_ClPlayerSkin;
+		Msg.m_pSkin = str_uppercase_str(g_Config.m_ClPlayerSkin);
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
@@ -3285,7 +3358,7 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_pName = Client()->PlayerName();
 		Msg.m_pClan = g_Config.m_PlayerClan;
 		Msg.m_Country = g_Config.m_PlayerCountry;
-		Msg.m_pSkin = g_Config.m_ClPlayerSkin;
+		Msg.m_pSkin = str_uppercase_str(g_Config.m_ClPlayerSkin);
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
@@ -3325,7 +3398,7 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_pName = Client()->DummyName();
 		Msg.m_pClan = g_Config.m_ClDummyClan;
 		Msg.m_Country = g_Config.m_ClDummyCountry;
-		Msg.m_pSkin = g_Config.m_ClDummySkin;
+		Msg.m_pSkin = str_uppercase_str(g_Config.m_ClDummySkin);
 		Msg.m_UseCustomColor = g_Config.m_ClDummyUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClDummyColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;
@@ -3514,18 +3587,9 @@ ColorRGBA CalculateNameColor(ColorHSLA TextColorHSL)
 	return color_cast<ColorRGBA>(ColorHSLA(TextColorHSL.h, TextColorHSL.s * 0.68f, TextColorHSL.l * 0.81f));
 }
 
-void CGameClient::UpdatePrediction()
+void CGameClient::UpdateLocalTuning()
 {
-	m_GameWorld.m_WorldConfig.m_IsVanilla = m_GameInfo.m_PredictVanilla;
-	m_GameWorld.m_WorldConfig.m_IsDDRace = m_GameInfo.m_PredictDDRace;
-	m_GameWorld.m_WorldConfig.m_IsFNG = m_GameInfo.m_PredictFNG;
-	m_GameWorld.m_WorldConfig.m_PredictDDRace = m_GameInfo.m_PredictDDRace;
-	m_GameWorld.m_WorldConfig.m_PredictTiles = m_GameInfo.m_PredictDDRace && m_GameInfo.m_PredictDDRaceTiles;
 	m_GameWorld.m_WorldConfig.m_UseTuneZones = m_GameInfo.m_PredictDDRaceTiles;
-	m_GameWorld.m_WorldConfig.m_PredictFreeze = g_Config.m_ClPredictFreeze;
-	m_GameWorld.m_WorldConfig.m_PredictWeapons = AntiPingWeapons();
-	m_GameWorld.m_WorldConfig.m_BugDDRaceInput = m_GameInfo.m_BugDDRaceInput;
-	m_GameWorld.m_WorldConfig.m_NoWeakHookAndBounce = m_GameInfo.m_NoWeakHookAndBounce;
 
 	// always update default tune zone, even without character
 	if(!m_GameWorld.m_WorldConfig.m_UseTuneZones)
@@ -3533,38 +3597,37 @@ void CGameClient::UpdatePrediction()
 		m_GameWorld.TuningList()[0] = m_aTuning[g_Config.m_ClDummy];
 	}
 
-	if(!m_Snap.m_pLocalCharacter)
-	{
-		if(CCharacter *pLocalChar = m_GameWorld.GetCharacterById(m_Snap.m_LocalClientId))
-		{
-			pLocalChar->Destroy();
-		}
+	if(!m_Snap.m_pLocalCharacter && !m_Snap.m_pSpectatorInfo)
 		return;
-	}
 
-	if(m_Snap.m_pLocalCharacter->m_AmmoCount > 0 && m_Snap.m_pLocalCharacter->m_Weapon != WEAPON_NINJA)
-	{
-		m_GameWorld.m_WorldConfig.m_InfiniteAmmo = false;
-	}
-	m_GameWorld.m_WorldConfig.m_IsSolo = !m_Snap.m_aCharacters[m_Snap.m_LocalClientId].m_HasExtendedData && !m_aTuning[g_Config.m_ClDummy].m_PlayerCollision && !m_aTuning[g_Config.m_ClDummy].m_PlayerHooking;
+	vec2 LocalPos = m_Snap.m_pLocalCharacter ? vec2(m_Snap.m_pLocalCharacter->m_X, m_Snap.m_pLocalCharacter->m_Y) : vec2(m_Snap.m_pSpectatorInfo->m_X, m_Snap.m_pSpectatorInfo->m_Y);
 
-	// update the tuning/tunezone at the local character position with the latest tunings received before the new snapshot
-	vec2 LocalCharPos = vec2(m_Snap.m_pLocalCharacter->m_X, m_Snap.m_pLocalCharacter->m_Y);
 	m_GameWorld.m_Core.m_aTuning[g_Config.m_ClDummy] = m_aTuning[g_Config.m_ClDummy];
 
+	// update the tuning at the local position with the latest tunings received before the new snapshot
 	if(m_GameWorld.m_WorldConfig.m_UseTuneZones)
 	{
 		int TuneZone =
 			m_Snap.m_aCharacters[m_Snap.m_LocalClientId].m_HasExtendedData &&
 					m_Snap.m_aCharacters[m_Snap.m_LocalClientId].m_ExtendedData.m_TuneZoneOverride != -1 ?
 				m_Snap.m_aCharacters[m_Snap.m_LocalClientId].m_ExtendedData.m_TuneZoneOverride :
-				Collision()->IsTune(Collision()->GetMapIndex(LocalCharPos));
+				Collision()->IsTune(Collision()->GetMapIndex(LocalPos));
 
 		if(TuneZone != m_aLocalTuneZone[g_Config.m_ClDummy])
 		{
 			// our tunezone changed, expecting tuning message
 			m_aLocalTuneZone[g_Config.m_ClDummy] = m_aExpectingTuningForZone[g_Config.m_ClDummy] = TuneZone;
 			m_aExpectingTuningSince[g_Config.m_ClDummy] = 0;
+		}
+
+		// tunezone could have changed, send dummy tuning to demo
+		if(m_ActiveRecordings.any() && m_IsDummySwapping && m_aLocalTuneZone[0] != m_aLocalTuneZone[1])
+		{
+			CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+			int *pParams = (int *)&m_aTuning[g_Config.m_ClDummy];
+			for(unsigned i = 0; i < sizeof(m_aTuning[0]) / sizeof(int); i++)
+				Msg.AddInt(pParams[i]);
+			Client()->SendMsgActive(&Msg, MSGFLAG_RECORD | MSGFLAG_NOSEND);
 		}
 
 		if(m_aExpectingTuningForZone[g_Config.m_ClDummy] >= 0)
@@ -3611,6 +3674,30 @@ void CGameClient::UpdatePrediction()
 		m_GameWorld.m_Core.m_aTuning[g_Config.m_ClDummy].m_PlayerCollision = 1;
 		m_GameWorld.m_Core.m_aTuning[g_Config.m_ClDummy].m_PlayerHooking = 1;
 	}
+}
+
+void CGameClient::UpdatePrediction()
+{
+	m_GameWorld.m_WorldConfig.m_IsVanilla = m_GameInfo.m_PredictVanilla;
+	m_GameWorld.m_WorldConfig.m_IsDDRace = m_GameInfo.m_PredictDDRace;
+	m_GameWorld.m_WorldConfig.m_IsFNG = m_GameInfo.m_PredictFNG;
+	m_GameWorld.m_WorldConfig.m_PredictDDRace = m_GameInfo.m_PredictDDRace;
+	m_GameWorld.m_WorldConfig.m_PredictTiles = m_GameInfo.m_PredictDDRace && m_GameInfo.m_PredictDDRaceTiles;
+	m_GameWorld.m_WorldConfig.m_PredictFreeze = g_Config.m_ClPredictFreeze;
+	m_GameWorld.m_WorldConfig.m_PredictWeapons = AntiPingWeapons();
+	m_GameWorld.m_WorldConfig.m_BugDDRaceInput = m_GameInfo.m_BugDDRaceInput;
+	m_GameWorld.m_WorldConfig.m_NoWeakHookAndBounce = m_GameInfo.m_NoWeakHookAndBounce;
+
+	if(!m_Snap.m_pLocalCharacter)
+	{
+		if(CCharacter *pLocalChar = m_GameWorld.GetCharacterById(m_Snap.m_LocalClientId))
+			pLocalChar->Destroy();
+		return;
+	}
+
+	if(m_Snap.m_pLocalCharacter->m_AmmoCount > 0 && m_Snap.m_pLocalCharacter->m_Weapon != WEAPON_NINJA)
+		m_GameWorld.m_WorldConfig.m_InfiniteAmmo = false;
+	m_GameWorld.m_WorldConfig.m_IsSolo = !m_Snap.m_aCharacters[m_Snap.m_LocalClientId].m_HasExtendedData && !m_aTuning[g_Config.m_ClDummy].m_PlayerCollision && !m_aTuning[g_Config.m_ClDummy].m_PlayerHooking;
 
 	CCharacter *pLocalChar = m_GameWorld.GetCharacterById(m_Snap.m_LocalClientId);
 	CCharacter *pDummyChar = nullptr;
@@ -3875,14 +3962,9 @@ void CGameClient::UpdateRenderedCharacters()
 		vec2 Pos = UnpredPos;
 
 		CCharacter *pChar = m_PredictedWorld.GetCharacterById(ClientId);
-		// TODO: @Tater remove this garbage
-		if(ClientId == m_Snap.m_LocalClientId)
-		{
-			if(pChar && pChar->m_FreezeTime > 0)
-				g_Config.m_ClAmIFrozen = 1;
-			else
-				g_Config.m_ClAmIFrozen = 0;
-		}
+
+		// TClient
+		Client()->m_IsLocalFrozen = pChar && pChar->m_FreezeTime > 0;
 
 		if(Predict() && (ClientId == m_Snap.m_LocalClientId || (AntiPingPlayers() && !IsOtherTeam(ClientId))) && pChar)
 		{
@@ -3921,13 +4003,13 @@ void CGameClient::UpdateRenderedCharacters()
 				if(g_Config.m_ClAntiPingImproved)
 					Pos = mix(m_aClients[ClientId].m_PrevImprovedPredPos, m_aClients[ClientId].m_ImprovedPredPos, Client()->PredIntraGameTick(g_Config.m_ClDummy));
 
-				if(g_Config.m_ClRemoveAnti && g_Config.m_ClAmIFrozen)
+				if(g_Config.m_ClRemoveAnti && Client()->m_IsLocalFrozen)
 					Pos = GetFreezePos(ClientId);
 
 				if(g_Config.m_ClShowOthersGhosts && g_Config.m_ClSwapGhosts && !(m_aClients[ClientId].m_FreezeEnd > 0 && g_Config.m_ClHideFrozenGhosts))
 					Pos = UnpredPos;
 
-				if(g_Config.m_ClUnpredOthersInFreeze && g_Config.m_ClAmIFrozen)
+				if(g_Config.m_ClUnpredOthersInFreeze && Client()->m_IsLocalFrozen)
 					Pos = UnpredPos;
 			}
 		}
@@ -4029,7 +4111,7 @@ vec2 CGameClient::GetSmoothPos(int ClientId)
 	int64_t Now = time_get();
 	for(int i = 0; i < 2; i++)
 	{
-		int64_t Len = clamp(m_aClients[ClientId].m_aSmoothLen[i], (int64_t)1, time_freq());
+		int64_t Len = std::clamp(m_aClients[ClientId].m_aSmoothLen[i], (int64_t)1, time_freq());
 		int64_t TimePassed = Now - m_aClients[ClientId].m_aSmoothStart[i];
 		if(in_range(TimePassed, (int64_t)0, Len - 1))
 		{
@@ -4632,6 +4714,7 @@ void CGameClient::LoadExtrasSkin(const char *pPath, bool AsDir)
 		Graphics()->UnloadTexture(&m_ExtrasSkin.m_SpriteParticleSnowflake);
 		Graphics()->UnloadTexture(&m_ExtrasSkin.m_SpriteParticleSparkle);
 		Graphics()->UnloadTexture(&m_ExtrasSkin.m_SpritePulley);
+		Graphics()->UnloadTexture(&m_ExtrasSkin.m_SpriteHectagon);
 
 		for(auto &SpriteParticle : m_ExtrasSkin.m_aSpriteParticles)
 			SpriteParticle = IGraphics::CTextureHandle();
@@ -4668,10 +4751,12 @@ void CGameClient::LoadExtrasSkin(const char *pPath, bool AsDir)
 		m_ExtrasSkin.m_SpriteParticleSnowflake = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_PART_SNOWFLAKE]);
 		m_ExtrasSkin.m_SpriteParticleSparkle = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_PART_SPARKLE]);
 		m_ExtrasSkin.m_SpritePulley = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_PART_PULLEY]);
+		m_ExtrasSkin.m_SpriteHectagon = Graphics()->LoadSpriteTexture(ImgInfo, &g_pData->m_aSprites[SPRITE_PART_HECTAGON]);
 
 		m_ExtrasSkin.m_aSpriteParticles[0] = m_ExtrasSkin.m_SpriteParticleSnowflake;
 		m_ExtrasSkin.m_aSpriteParticles[1] = m_ExtrasSkin.m_SpriteParticleSparkle;
 		m_ExtrasSkin.m_aSpriteParticles[2] = m_ExtrasSkin.m_SpritePulley;
+		m_ExtrasSkin.m_aSpriteParticles[3] = m_ExtrasSkin.m_SpriteHectagon;
 
 		m_ExtrasSkinLoaded = true;
 	}
@@ -5113,7 +5198,7 @@ void CGameClient::HandleMultiView()
 	// dont hide the position hud if its only one player
 	m_MultiViewShowHud = AmountPlayers == 1;
 	// get the average velocity
-	float AvgVel = clamp(SumVel / AmountPlayers ? SumVel / (float)AmountPlayers : 0.0f, 0.0f, 1000.0f);
+	float AvgVel = std::clamp(SumVel / AmountPlayers ? SumVel / (float)AmountPlayers : 0.0f, 0.0f, 1000.0f);
 
 	if(m_MultiView.m_OldPersonalZoom == m_MultiViewPersonalZoom)
 		m_Camera.SetZoom(CalculateMultiViewZoom(MinPos, MaxPos, AvgVel), g_Config.m_ClMultiViewZoomSmoothness, false);
@@ -5254,7 +5339,7 @@ float CGameClient::CalculateMultiViewMultiplier(vec2 TargetPos)
 	}
 	m_MultiView.m_OldCameraDistance = CurrentCameraDistance;
 
-	return clamp(MapValue(MaxCameraDist, MinCameraDist, MaxVel, MinVel, CurrentCameraDistance), MinVel, UpperLimit);
+	return std::clamp(MapValue(MaxCameraDist, MinCameraDist, MaxVel, MinVel, CurrentCameraDistance), MinVel, UpperLimit);
 }
 
 float CGameClient::CalculateMultiViewZoom(vec2 MinPos, vec2 MaxPos, float Vel)
@@ -5271,9 +5356,9 @@ float CGameClient::CalculateMultiViewZoom(vec2 MinPos, vec2 MaxPos, float Vel)
 	// choose the highest zoom
 	float Zoom = std::max(ZoomX, ZoomY);
 	// zoom out to maximum 10 percent of the current zoom for 70 velocity
-	float Diff = clamp(MapValue(70.0f, 15.0f, Zoom * 0.10f, 0.0f, Vel), 0.0f, Zoom * 0.10f);
+	float Diff = std::clamp(MapValue(70.0f, 15.0f, Zoom * 0.10f, 0.0f, Vel), 0.0f, Zoom * 0.10f);
 	// zoom should stay between 1.1 and 20.0
-	Zoom = clamp(Zoom + Diff, 1.1f, 20.0f);
+	Zoom = std::clamp(Zoom + Diff, 1.1f, 20.0f);
 	// dont go below default zoom
 	Zoom = std::max(CCamera::ZoomStepsToValue(g_Config.m_ClDefaultZoom - 10), Zoom);
 	// add the user preference
@@ -5323,13 +5408,12 @@ bool CGameClient::IsMultiViewIdSet()
 
 int CGameClient::FindFirstMultiViewId()
 {
-	int ClientId = -1;
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(m_aMultiViewId[ClientId] && !m_MultiView.m_aVanish[ClientId])
 			return ClientId;
 	}
-	return ClientId;
+	return -1;
 }
 
 bool CGameClient::CheckNewInput()
@@ -5366,3 +5450,7 @@ int CGameClient::GetClientId(const char *pName)
 	return -1;
 }
 
+const char *CGameClient::GetClientName(int ClientId)
+{
+	return m_aClients[ClientId].m_aName;
+}

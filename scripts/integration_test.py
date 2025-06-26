@@ -97,7 +97,7 @@ class TestRunner:
 		self.ddnet_server = ddnet_server
 		self.ddnet_mastersrv = ddnet_mastersrv
 		self.repo_dir = repo_dir
-		self.data_dir = os.path.join(repo_dir, "data")
+		self.data_dir = os.path.join(dir, "data")
 		self.dir = dir
 		self.extra_env_vars = {}
 		self.keep_tmpdirs = keep_tmpdirs
@@ -601,7 +601,7 @@ def smoke_test(test_env):
 		rcon unban_all
 		rcon say the end
 	""".strip().split("\n")))
-	client1.wait_for_log_exact("chat/server: *** the end")
+	client1.wait_for_log_exact("server: *** the end")
 
 	server.command("stoprecord")
 	client1.command("stoprecord")
@@ -619,8 +619,8 @@ def smoke_test(test_env):
 	client1.command("play demos/server.demo")
 	client2.command("play demos/client1.demo")
 
-	client1.wait_for_log_prefix("chat/server: *** client1 finished in:", timeout=20)
-	client2.wait_for_log_prefix("chat/server: *** client1 finished in:", timeout=20)
+	client1.wait_for_log_prefix("server: *** client1 finished in:", timeout=20)
+	client2.wait_for_log_prefix("server: *** client1 finished in:", timeout=20)
 
 	client1.exit()
 	client2.exit()
@@ -752,7 +752,7 @@ def main():
 	if args.test is not None:
 		tests = [test for test in tests if args.test in test.name]
 
-	TestRunner(
+	return TestRunner(
 		ddnet=ddnet,
 		ddnet_server=ddnet_server,
 		ddnet_mastersrv=ddnet_mastersrv,

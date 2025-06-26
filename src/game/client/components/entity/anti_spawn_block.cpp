@@ -14,57 +14,62 @@
 
 void CAntiSpawnBlock::OnRender()
 {
-	int Local = m_pClient->m_Snap.m_LocalClientId;
+	int Local = GameClient()->m_Snap.m_LocalClientId;
 
 	// if Anti Spawn Block isnt turned on, stop
 	if(!g_Config.m_ClAntiSpawnBlock)
+	{
+		if(GameClient()->m_Teams.Team(Local) != 0 && !m_Team0Request && m_SentTeamRequest) 
+		{
+			GameClient()->m_Chat.SendChat(0, "/team 0");
+			m_Team0Request = true;
+			m_SentTeamRequest = false;
+		}
 		return;
+	}
 
 	// if Can't find Player or player STARTED the race, stop
-	if(!m_pClient || !m_pClient->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
+	if(!GameClient()->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
 		return;
 
 	// if map name isnt "Multeasymap", stop
 	if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 		return;
 
-	static bool SentTeamRequest;
-	static bool Team0Request;
-
 	if(m_SentKill) // So it resets the state
 	{
-		if(m_pClient->m_Teams.Team(Local) != 0)
+		if(GameClient()->m_Teams.Team(Local) != 0)
 		{
 			GameClient()->m_Chat.SendChat(0, "/team 0");
 		}
-		SentTeamRequest = false;
-		Team0Request = false;
+		m_SentTeamRequest = false;
+		m_Team0Request = false;
 		m_SentKill = false;
 	}
 
 	{
-		vec2 Pos = m_pClient->m_PredictedChar.m_Pos;
+		vec2 Pos = GameClient()->m_PredictedChar.m_Pos;
 
 		static int64_t Delay = time_get() + time_freq();
 
-		if(!GameClient()->CurrentRaceTime() && !SentTeamRequest)
+		if(!GameClient()->CurrentRaceTime() && !m_SentTeamRequest)
 		{
-			if(m_pClient->m_Teams.Team(Local) != 0)
-				SentTeamRequest = true;
+			if(GameClient()->m_Teams.Team(Local) != 0)
+				m_SentTeamRequest = true;
 			else if(Delay < time_get())
 			{
 				GameClient()->m_Chat.SendChat(0, "/team -1");
 				GameClient()->m_Chat.SendChat(0, "/lock");
 				Delay = time_get() + time_freq() * 2.5f;
-				Team0Request = false;
+				m_Team0Request = false;
 			}
 		}
-		else if(m_pClient->RaceHelper()->IsNearStart(Pos, 2) && SentTeamRequest && !Team0Request)
+		else if(GameClient()->RaceHelper()->IsNearStart(Pos, 2) && m_SentTeamRequest && !m_Team0Request)
 		{
-			if(m_pClient->m_Teams.Team(Local) != 0)
+			if(GameClient()->m_Teams.Team(Local) != 0)
 			{
 				GameClient()->m_Chat.SendChat(0, "/team 0");
-				Team0Request = true;
+				m_Team0Request = true;
 			}
 		}
 
