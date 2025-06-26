@@ -26,7 +26,7 @@
 void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId)
 {
 	if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
-		if(GameClient()->m_aClients[pCurrent->m_Owner].m_Solo && pCurrent->m_Owner != m_pClient->m_Snap.m_LocalClientId)
+		if(GameClient()->m_aClients[pCurrent->m_Owner].m_Solo && pCurrent->m_Owner != GameClient()->m_Snap.m_LocalClientId)
 			return;
 
 	int CurWeapon = std::clamp(pCurrent->m_Type, 0, NUM_WEAPONS - 1);

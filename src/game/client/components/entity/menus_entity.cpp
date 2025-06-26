@@ -3310,7 +3310,7 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 					int BodyColor = g_Config.m_ClChangeAllColorBody;
 					int FeetColor = g_Config.m_ClChangeAllColorFeet;
 
-					TeeRenderInfo.Apply(m_pClient->m_Skins.Find(g_Config.m_ClChangeAllSkinName));
+					TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClChangeAllSkinName));
 					TeeRenderInfo.ApplyColors(UseCustomColor, BodyColor, FeetColor);
 
 					RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);

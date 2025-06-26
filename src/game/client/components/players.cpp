@@ -927,10 +927,10 @@ void CPlayers::OnRender()
 		if(g_Config.m_ClChangeAllSkin)
 		{
 			// find skin in database
-			const auto *pSkin = m_pClient->m_Skins.FindOrNullptr(g_Config.m_ClChangeAllSkinName);
+			const auto *pSkin = GameClient()->m_Skins.FindOrNullptr(g_Config.m_ClChangeAllSkinName);
 
 			if(pSkin == nullptr)
-				pSkin = m_pClient->m_Skins.FindOrNullptr("Catnoa");
+				pSkin = GameClient()->m_Skins.FindOrNullptr("Catnoa");
 
 			if(pSkin != nullptr)
 			{
@@ -1083,25 +1083,24 @@ void CPlayers::OnRender()
 	}
 
 	// render spectating players
-	for(const auto &Client :  GameClient()->m_aClients)
+	for(const auto &Clients :  GameClient()->m_aClients)
 	{
 		if(!Clients.m_SpecCharPresent)
 		{
 			continue;
 		}
 
-		const int ClientId = Client.ClientId();
+		const int ClientId = Clients.ClientId();
 		float Alpha = (GameClient()->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
 			if(Clients.m_Solo && Clients.ClientId() != LocalClientId)
 				continue;
 
-		float Alpha = (GameClient()->IsOtherTeam(ClientId) || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.f : 1.f;
 		if(ClientId == -2) // ghost
 		{
 			Alpha = g_Config.m_ClRaceGhostAlpha / 100.f;
 		}
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &SpectatorTeeRenderInfo()->TeeRenderInfo(), EMOTE_BLINK, vec2(1, 0), Client.m_SpecChar, Alpha);
+		RenderTools()->RenderTee(CAnimState::GetIdle(), &SpectatorTeeRenderInfo()->TeeRenderInfo(), EMOTE_BLINK, vec2(1, 0), Clients.m_SpecChar, Alpha);
 	}
 
 	// render everyone else's tee, then either our own or the tee we are spectating.

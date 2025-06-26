@@ -1102,7 +1102,7 @@ void CNamePlates::OnRender()
 
 		// Each player can also have a spectator char whose name plate is displayed independently
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
-			if(m_pClient->m_aClients[i].m_Solo && i != m_pClient->m_Snap.m_LocalClientId)
+			if(GameClient()->m_aClients[i].m_Solo && i != GameClient()->m_Snap.m_LocalClientId)
 				continue;
 
 		if(GameClient()->m_aClients[i].m_SpecCharPresent)
