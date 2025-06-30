@@ -880,30 +880,30 @@ void CPlayers::OnRender()
 
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
-		aRenderInfo[i] = GameClient()->m_aClients[i].m_RenderInfo;
-		aRenderInfo[i].m_TeeRenderFlags = 0;
+		aRenderInfo[ClientId] = GameClient()->m_aClients[ClientId].m_RenderInfo;
+		aRenderInfo[ClientId].m_TeeRenderFlags = 0;
 
 		// predict freeze skin only for local players
 		bool Frozen = false;
 		if(ClientId == GameClient()->m_aLocalIds[0] || ClientId == GameClient()->m_aLocalIds[1])
 		{
 			if(GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
 			if(GameClient()->m_aClients[ClientId].m_Predicted.m_LiveFrozen)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
 			if(GameClient()->m_aClients[ClientId].m_Predicted.m_Invincible)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
 			Frozen = GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0;
 		}
 		else
 		{
 			if(GameClient()->m_aClients[ClientId].m_FreezeEnd != 0)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
 			if(GameClient()->m_aClients[ClientId].m_LiveFrozen)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
 			if(GameClient()->m_aClients[ClientId].m_Invincible)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
 			Frozen = GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_FreezeEnd != 0;
 		}
