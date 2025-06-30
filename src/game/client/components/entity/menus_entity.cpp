@@ -101,7 +101,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	int TabCount = NUMBER_OF_ENTITY_TABS;
 	for(int Tab = 0; Tab < NUMBER_OF_ENTITY_TABS; ++Tab)
 	{
-		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
+		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, Tab))
 		{
 			TabCount--;
 			if(s_CurTab == Tab)
@@ -125,19 +125,19 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		int LeftTab = 0;
 		int RightTab = NUMBER_OF_ENTITY_TABS - 1;
 
-		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
+		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, Tab))
 			continue;
 
-		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_SETTINGS))
+		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_SETTINGS))
 		{
 			LeftTab = ENTITY_TAB_VISUAL;
-			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_VISUAL))
+			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL))
 			{
 				LeftTab = ENTITY_TAB_TCLIENT;
-				if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_TCLIENT))
+				if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_TCLIENT))
 				{
 					LeftTab = ENTITY_TAB_WARLIST;
-					if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_WARLIST))
+					if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST))
 					{
 						LeftTab = ENTITY_TAB_BINDWHEEL;
 					}
@@ -145,16 +145,16 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 			}
 		}
 
-		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_BINDWHEEL))
+		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL))
 		{
 			RightTab = ENTITY_TAB_WARLIST;
-			if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_WARLIST))
+			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST))
 			{
 				RightTab = ENTITY_TAB_TCLIENT;
-				if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_TCLIENT))
+				if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_TCLIENT))
 				{
 					RightTab = ENTITY_TAB_VISUAL;
-					if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_VISUAL))
+					if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL))
 					{
 						RightTab = ENTITY_TAB_SETTINGS;
 					}
@@ -1437,25 +1437,25 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 	Ui()->DoLabel(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
 
-	static int s_ShowSettings = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_SETTINGS);
+	static int s_ShowSettings = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_SETTINGS);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettings, Localize("Settings"), &s_ShowSettings, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_SETTINGS, s_ShowSettings);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_SETTINGS, s_ShowSettings);
 
-	static int s_ShowBindWheel = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_VISUAL);
+	static int s_ShowBindWheel = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindWheel, Localize("Visual"), &s_ShowBindWheel, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_VISUAL, s_ShowBindWheel);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL, s_ShowBindWheel);
 
-	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_TCLIENT);
+	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_TCLIENT);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowWarlist, Localize("TClient"), &s_ShowWarlist, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_TCLIENT, s_ShowWarlist);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_TCLIENT, s_ShowWarlist);
 
-	static int s_ShowBindChat = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_WARLIST);
+	static int s_ShowBindChat = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindChat, Localize("Warlist"), &s_ShowBindChat, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_WARLIST, s_ShowBindChat);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST, s_ShowBindChat);
 
-	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_BINDWHEEL);
+	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, Localize("BindWheel"), &s_ShowStatusBar, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClAClientSettingsTabs, ENTITY_TAB_BINDWHEEL, s_ShowStatusBar);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL, s_ShowStatusBar);
 
 	// Make this Saveable and somewhere hidden in roaming
 	char DeathCounter[32];

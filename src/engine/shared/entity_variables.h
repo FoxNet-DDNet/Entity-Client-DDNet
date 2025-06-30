@@ -156,7 +156,7 @@ MACRO_CONFIG_COL(ClFriendColor, ec_friend_color, 14745554, CFGFLAG_CLIENT | CFGF
 // chatbubble / Menu
 MACRO_CONFIG_INT(ClChatBubble, ec_chatbubble, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Chatbubble on or Off")
 MACRO_CONFIG_INT(ClShowOthersInMenu, ec_show_others_in_menu , 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Settings Emote if Someones in The Menu")
-MACRO_CONFIG_INT(ClShowOwnMenuToOthers, ec_show_self_in_menu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show The Settings Emot to Others When In The Menu")
+MACRO_CONFIG_INT(ClSendMenuFlag, ec_send_menu_flag, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to send the in settings flag to the server or not")
 
 // misc
 MACRO_CONFIG_INT(ClSendDotsChat, ec_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Never send a message if it starts with a '.'")
@@ -308,7 +308,7 @@ MACRO_CONFIG_INT(ClRainbowSpeed, ec_rainbow_speed, 25, 0, 10000, CFGFLAG_CLIENT 
 //MACRO_CONFIG_INT(ClNameplateChatBoxSize, ec_nameplate_chatbox_size, 40, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
 
 // Flags
-MACRO_CONFIG_INT(ClAClientSettingsTabs, ec_aclient_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")
+MACRO_CONFIG_INT(ClEClientSettingsTabs, ec_eclient_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")
 
 // Kill Counter
 MACRO_CONFIG_INT(ClKillCounter, ec_self_murder_count, 0, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "I'f you wish to fake the ammount of deaths then this is the config to edit (it's named that way so its harder to find)")
