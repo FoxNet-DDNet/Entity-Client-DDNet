@@ -257,6 +257,13 @@ void CPlayers::RenderHookCollLine(
 
 				int Tele;
 				int Hit = Collision()->IntersectLineTeleHook(OldPos, NewPos, &FinishPos, nullptr, &Tele);
+
+				if(ClientId >= 0 && GameClient()->IntersectCharacter(OldPos, FinishPos, FinishPos, ClientId) != -1)
+				{
+					HookCollColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorTeeColl));
+					break;
+				}
+
 				if(!DoBreak && Hit == TILE_TELEINHOOK)
 				{
 					if(Collision()->TeleOuts(Tele - 1).size() != 1)
@@ -279,12 +286,6 @@ void CPlayers::RenderHookCollLine(
 					{
 						HookCollColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorHookableColl));
 					}
-				}
-
-				if(ClientId >= 0 && GameClient()->IntersectCharacter(OldPos, FinishPos, FinishPos, ClientId) != -1)
-				{
-					HookCollColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClHookCollColorTeeColl));
-					break;
 				}
 
 				if(Hit && Hit != TILE_TELEINHOOK)
@@ -879,21 +880,41 @@ void CPlayers::OnRender()
 
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
-		aRenderInfo[ClientId] = GameClient()->m_aClients[ClientId].m_RenderInfo;
-		aRenderInfo[ClientId].m_TeeRenderFlags = 0;
-		if(GameClient()->m_aClients[ClientId].m_FreezeEnd != 0)
-			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
-		if(GameClient()->m_aClients[ClientId].m_LiveFrozen)
-			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
-		if(GameClient()->m_aClients[ClientId].m_Invincible)
-			aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+		aRenderInfo[i] = GameClient()->m_aClients[i].m_RenderInfo;
+		aRenderInfo[i].m_TeeRenderFlags = 0;
 
+		// predict freeze skin only for local players
+		bool Frozen = false;
+		if(ClientId == GameClient()->m_aLocalIds[0] || ClientId == GameClient()->m_aLocalIds[1])
+		{
+			if(GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+			if(GameClient()->m_aClients[ClientId].m_Predicted.m_LiveFrozen)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+			if(GameClient()->m_aClients[ClientId].m_Predicted.m_Invincible)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+
+			Frozen = GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0;
+		}
+		else
+		{
+			if(GameClient()->m_aClients[ClientId].m_FreezeEnd != 0)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+			if(GameClient()->m_aClients[ClientId].m_LiveFrozen)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+			if(GameClient()->m_aClients[ClientId].m_Invincible)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+
+			Frozen = GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_FreezeEnd != 0;
+		}
+
+		if((GameClient()->m_aClients[ClientId].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
 		const bool Frozen = GameClient()->m_aClients[ClientId].m_FreezeEnd != 0;
 		
 		const bool Local = ClientId == GameClient()->m_Snap.m_LocalClientId;
 		const bool Dummy = ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
 
-// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
+		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
 		if(g_Config.m_ClOwnTeeSkin && (Local || Dummy))
 		{
 			const auto *pSkin =  GameClient()->m_Skins.FindOrNullptr(g_Config.m_ClOwnTeeSkinName);
