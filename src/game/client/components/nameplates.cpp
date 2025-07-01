@@ -810,7 +810,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 
 	// E-Client
 	Data.m_IsMuted = Data.m_ShowName && g_Config.m_ClMutedIcon && (GameClient()->m_WarList.m_WarPlayers[pPlayerInfo->m_ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[pPlayerInfo->m_ClientId].IsTempMute);
-	Data.m_IsEntity = Data.m_ShowName && g_Config.m_ClDetectOthers && str_isalluppercase(GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_aSkinName);
+	Data.m_IsEntity = Data.m_ShowName && g_Config.m_ClDetectOthers && str_isalluppercase(GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_aSkinName) && !str_isallnum(GameClient()->m_aClients[pPlayerInfo->m_ClientId].m_aSkinName);
 	Data.m_PingCircle = Data.m_ShowName && g_Config.m_ClPingNameCircle;
 	if(g_Config.m_ClWarList)
 	{
