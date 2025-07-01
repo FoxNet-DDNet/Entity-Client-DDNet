@@ -518,7 +518,7 @@ void CEClient::Rainbow()
 	// Makes the slider look smoother
 	static float Speed = 1.0f;
 	Speed = Speed + m_RainbowSpeed * Client()->FrameTimeAverage() * 0.1f;
-
+	
 	if(Speed > 255.f * 10) // Reset if Value gets highish, why? why not :D
 		Speed = 1.0f;
 

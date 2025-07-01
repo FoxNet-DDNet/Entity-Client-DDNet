@@ -869,14 +869,23 @@ void CGameClient::OnRender()
 			}
 			else
 			{
-				if(
-					str_comp(m_aClients[m_aLocalIds[0]].m_aName, Client()->PlayerName()) ||
-					str_comp(m_aClients[m_aLocalIds[0]].m_aClan, g_Config.m_PlayerClan) ||
-					m_aClients[m_aLocalIds[0]].m_Country != g_Config.m_PlayerCountry ||
-					str_comp(m_aClients[m_aLocalIds[0]].m_aSkinName, g_Config.m_ClPlayerSkin) ||
-					m_aClients[m_aLocalIds[0]].m_UseCustomColor != g_Config.m_ClPlayerUseCustomColor ||
-					m_aClients[m_aLocalIds[0]].m_ColorBody != (int)g_Config.m_ClPlayerColorBody ||
-					m_aClients[m_aLocalIds[0]].m_ColorFeet != (int)g_Config.m_ClPlayerColorFeet)
+				bool Resend = false;
+				if(str_comp(m_aClients[m_aLocalIds[0]].m_aName, Client()->PlayerName()))
+					Resend = true;
+				if(str_comp(m_aClients[m_aLocalIds[0]].m_aClan, g_Config.m_PlayerClan))
+					Resend = true;
+				if(m_aClients[m_aLocalIds[0]].m_Country != g_Config.m_PlayerCountry)
+					Resend = true;
+				if(str_comp_nocase(m_aClients[m_aLocalIds[0]].m_aSkinName, g_Config.m_ClPlayerSkin))
+					Resend = true;
+				if(m_aClients[m_aLocalIds[0]].m_UseCustomColor != g_Config.m_ClPlayerUseCustomColor)
+					Resend = true;
+				if(m_aClients[m_aLocalIds[0]].m_ColorBody != (int)g_Config.m_ClPlayerColorBody)
+					Resend = true;
+				if(m_aClients[m_aLocalIds[0]].m_ColorFeet != (int)g_Config.m_ClPlayerColorFeet)
+					Resend = true;
+
+				if(Resend)
 					SendInfo(false);
 				else
 					m_aCheckInfo[0] = -1;
@@ -3316,6 +3325,7 @@ bool CGameClient::GotWantedSkin7(bool Dummy)
 
 void CGameClient::SendInfo(bool Start)
 {
+	dbg_msg("test", "test");
 	if(m_pClient->IsSixup())
 	{
 		if(Start)
