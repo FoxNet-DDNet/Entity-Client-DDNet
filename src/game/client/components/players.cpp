@@ -908,9 +908,6 @@ void CPlayers::OnRender()
 			Frozen = GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_FreezeEnd != 0;
 		}
 
-		if((GameClient()->m_aClients[ClientId].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
-		const bool Frozen = GameClient()->m_aClients[ClientId].m_FreezeEnd != 0;
-		
 		const bool Local = ClientId == GameClient()->m_Snap.m_LocalClientId;
 		const bool Dummy = ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
 
