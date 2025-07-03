@@ -2469,53 +2469,62 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	s_vNameButtons.resize(MAX_CLIENTS);
 	s_vClanButtons.resize(MAX_CLIENTS);
 
+	std::vector<int> vOnlinePlayers;
 	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		if(!GameClient()->m_Snap.m_apPlayerInfos[i])
-			continue;
+		if(GameClient()->m_Snap.m_apPlayerInfos[i])
+			vOnlinePlayers.push_back(i);
+	}
 
-		CTeeRenderInfo TeeInfo = GameClient()->m_aClients[i].m_RenderInfo;
+	std::sort(vOnlinePlayers.begin(), vOnlinePlayers.end(), [&](int a, int b) {
+		return str_comp(GameClient()->m_aClients[a].m_aName, GameClient()->m_aClients[b].m_aName) < 0;
+	});
 
-		const CListboxItem Item = s_PlayerListBox.DoNextItem(&s_vPlayerItemIds[i], false);
+	for(int ClientId : vOnlinePlayers)
+	{
+		CTeeRenderInfo TeeInfo = GameClient()->m_aClients[ClientId].m_RenderInfo;
+
+		const CListboxItem Item = s_PlayerListBox.DoNextItem(&s_vPlayerItemIds[ClientId], false);
 		if(!Item.m_Visible)
 			continue;
 
 		CUIRect PlayerRect, TeeRect, NameRect, ClanRect;
 		Item.m_Rect.Margin(0.0f, &PlayerRect);
 		PlayerRect.VSplitLeft(25.0f, &TeeRect, &PlayerRect);
-		// RenderDevSkin(TeeRect.Center(), 35.0f, TeeInfo., "default", false, 0, 0, 0, false);
 
 		PlayerRect.VSplitMid(&NameRect, &ClanRect, 0);
 		PlayerRect = NameRect;
 		PlayerRect.x = TeeRect.x;
 		PlayerRect.w += TeeRect.w;
-		TextRender()->TextColor(GameClient()->m_WarList.GetWarData(i).m_NameColor);
-		ColorRGBA NameButtonColor = Ui()->CheckActiveItem(&s_vNameButtons[i]) ? ColorRGBA(1, 1, 1, 0.75f) :
-											(Ui()->HotItem() == &s_vNameButtons[i] ? ColorRGBA(1, 1, 1, 0.33f) : ColorRGBA(1, 1, 1, 0.0f));
+		TextRender()->TextColor(GameClient()->m_WarList.GetWarData(ClientId).m_NameColor);
+		ColorRGBA NameButtonColor = Ui()->CheckActiveItem(&s_vNameButtons[ClientId]) ? ColorRGBA(1, 1, 1, 0.75f) :
+											       (Ui()->HotItem() == &s_vNameButtons[ClientId] ? ColorRGBA(1, 1, 1, 0.33f) : ColorRGBA(1, 1, 1, 0.0f));
 		PlayerRect.Draw(NameButtonColor, IGraphics::CORNER_L, 5.0f);
-		Ui()->DoLabel(&NameRect, GameClient()->m_aClients[i].m_aName, StandardFontSize, TEXTALIGN_ML);
-		if(Ui()->DoButtonLogic(&s_vNameButtons[i], false, &PlayerRect, BUTTONFLAG_ALL))
+		Ui()->DoLabel(&NameRect, GameClient()->m_aClients[ClientId].m_aName, StandardFontSize, TEXTALIGN_ML);
+		if(Ui()->DoButtonLogic(&s_vNameButtons[ClientId], false, &PlayerRect, BUTTONFLAG_ALL))
 		{
 			s_IsName = 1;
 			s_IsClan = 0;
-			str_copy(s_aEntryName, GameClient()->m_aClients[i].m_aName);
+			str_copy(s_aEntryName, GameClient()->m_aClients[ClientId].m_aName);
 		}
 
-		TextRender()->TextColor(GameClient()->m_WarList.GetWarData(i).m_ClanColor);
-		ColorRGBA ClanButtonColor = Ui()->CheckActiveItem(&s_vClanButtons[i]) ? ColorRGBA(1, 1, 1, 0.75f) :
-											(Ui()->HotItem() == &s_vClanButtons[i] ? ColorRGBA(1, 1, 1, 0.33f) : ColorRGBA(1, 1, 1, 0.0f));
+		TextRender()->TextColor(GameClient()->m_WarList.GetWarData(ClientId).m_ClanColor);
+		ColorRGBA ClanButtonColor = Ui()->CheckActiveItem(&s_vClanButtons[ClientId]) ? ColorRGBA(1, 1, 1, 0.75f) :
+											       (Ui()->HotItem() == &s_vClanButtons[ClientId] ? ColorRGBA(1, 1, 1, 0.33f) : ColorRGBA(1, 1, 1, 0.0f));
 		ClanRect.Draw(ClanButtonColor, IGraphics::CORNER_R, 5.0f);
-		Ui()->DoLabel(&ClanRect, GameClient()->m_aClients[i].m_aClan, StandardFontSize, TEXTALIGN_ML);
-		if(Ui()->DoButtonLogic(&s_vClanButtons[i], false, &ClanRect, BUTTONFLAG_ALL))
+		Ui()->DoLabel(&ClanRect, GameClient()->m_aClients[ClientId].m_aClan, StandardFontSize, TEXTALIGN_ML);
+		if(Ui()->DoButtonLogic(&s_vClanButtons[ClientId], false, &ClanRect, BUTTONFLAG_ALL))
 		{
 			s_IsName = 0;
 			s_IsClan = 1;
-			str_copy(s_aEntryClan, GameClient()->m_aClients[i].m_aClan);
+			str_copy(s_aEntryClan, GameClient()->m_aClients[ClientId].m_aClan);
 		}
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 		TeeInfo.m_Size = 25.0f;
-		RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, 0, vec2(1.0f, 0.0f), TeeRect.Center() + vec2(-1.0f, 2.5f));
+		bool Paused = GameClient()->m_aClients[ClientId].m_Paused || GameClient()->m_aClients[ClientId].m_Spec;
+		const CAnimState *pAnimState = Paused ? CAnimState::GetSpec() : CAnimState::GetIdle();
+		RenderTools()->RenderTee(pAnimState, &TeeInfo, Paused ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRect.Center() + vec2(-1.0f, 2.5f));
 	}
 	s_PlayerListBox.DoEnd();
 }
