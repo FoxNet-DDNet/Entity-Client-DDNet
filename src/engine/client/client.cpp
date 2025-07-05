@@ -218,6 +218,12 @@ void CClient::SendInfo(int Conn)
 {
 	SendqxdInfo(CONN_MAIN);
 
+	if(!str_comp(g_Config.m_Password, ""))
+	{
+		str_copy(g_Config.m_Password, g_Config.m_ClPermaPassword);
+		str_copy(m_aPassword, g_Config.m_ClPermaPassword);
+	}
+
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
 	MsgVer.AddInt(GameClient()->DDNetVersion());

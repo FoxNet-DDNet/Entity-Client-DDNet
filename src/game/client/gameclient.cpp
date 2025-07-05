@@ -3325,7 +3325,6 @@ bool CGameClient::GotWantedSkin7(bool Dummy)
 
 void CGameClient::SendInfo(bool Start)
 {
-	dbg_msg("test", "test");
 	if(m_pClient->IsSixup())
 	{
 		if(Start)

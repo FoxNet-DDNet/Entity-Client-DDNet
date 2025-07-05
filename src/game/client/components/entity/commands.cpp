@@ -401,7 +401,7 @@ void CEClient::RestoreSkin()
 		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
 		g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
 		GameClient()->ClientMessage("Restored Dummy Skin");
-		 GameClient()->SendDummyInfo(false);
+		GameClient()->SendDummyInfo(false);
 	}
 	else
 	{
@@ -413,7 +413,7 @@ void CEClient::RestoreSkin()
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 		g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
 		GameClient()->ClientMessage("Restored Main Skin");
-		 GameClient()->SendInfo(false);
+		GameClient()->SendInfo(false);
 	}
 }
 void CEClient::SaveSkin()
