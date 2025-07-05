@@ -4,10 +4,11 @@
 
 class CAntiSpawnBlock : public CComponent
 {
+	int64_t m_Delay = 0;
+
 public:
 	bool m_SentKill;
 	bool m_SentTeamRequest;
-	bool m_Team0Request;
 
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;
