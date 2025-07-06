@@ -152,9 +152,8 @@ public:
 	void RemoveWarEntry(int Type, const char *pName);
 
 	// Movement Notification if tabbed out
-	int64_t m_LastNotification;
-	int m_LastTile = -1;
-	void ChangeTileNotifyTick();
+	vec2 m_LastPos = vec2(0 ,0);
+	void NotifyOnMove();
 
 	// Rainbow
 	void Rainbow();

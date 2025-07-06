@@ -46,6 +46,8 @@ class CChat : public CComponent
 		char m_aText[MAX_LINE_LENGTH];
 		bool m_Friend;
 
+		bool m_Paused;
+
 		bool m_Highlighted;
 		std::optional<ColorRGBA> m_CustomColor;
 

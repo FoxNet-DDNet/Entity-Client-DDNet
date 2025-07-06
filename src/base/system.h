@@ -3049,5 +3049,5 @@ void shell_update();
 #endif
 
 // E-Client
-const char *str_uppercase_str(const char *src);
+const char *str_to_uppercase(const char *src);
 bool str_isalluppercase(const char *str);

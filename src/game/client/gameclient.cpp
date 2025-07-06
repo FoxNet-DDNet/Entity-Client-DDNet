@@ -869,14 +869,23 @@ void CGameClient::OnRender()
 			}
 			else
 			{
-				if(
-					str_comp(m_aClients[m_aLocalIds[0]].m_aName, Client()->PlayerName()) ||
-					str_comp(m_aClients[m_aLocalIds[0]].m_aClan, g_Config.m_PlayerClan) ||
-					m_aClients[m_aLocalIds[0]].m_Country != g_Config.m_PlayerCountry ||
-					str_comp(m_aClients[m_aLocalIds[0]].m_aSkinName, g_Config.m_ClPlayerSkin) ||
-					m_aClients[m_aLocalIds[0]].m_UseCustomColor != g_Config.m_ClPlayerUseCustomColor ||
-					m_aClients[m_aLocalIds[0]].m_ColorBody != (int)g_Config.m_ClPlayerColorBody ||
-					m_aClients[m_aLocalIds[0]].m_ColorFeet != (int)g_Config.m_ClPlayerColorFeet)
+				bool Resend = false;
+				if(str_comp(m_aClients[m_aLocalIds[0]].m_aName, Client()->PlayerName()))
+					Resend = true;
+				if(str_comp(m_aClients[m_aLocalIds[0]].m_aClan, g_Config.m_PlayerClan))
+					Resend = true;
+				if(m_aClients[m_aLocalIds[0]].m_Country != g_Config.m_PlayerCountry)
+					Resend = true;
+				if(str_comp_nocase(m_aClients[m_aLocalIds[0]].m_aSkinName, g_Config.m_ClPlayerSkin))
+					Resend = true;
+				if(m_aClients[m_aLocalIds[0]].m_UseCustomColor != g_Config.m_ClPlayerUseCustomColor)
+					Resend = true;
+				if(m_aClients[m_aLocalIds[0]].m_ColorBody != (int)g_Config.m_ClPlayerColorBody)
+					Resend = true;
+				if(m_aClients[m_aLocalIds[0]].m_ColorFeet != (int)g_Config.m_ClPlayerColorFeet)
+					Resend = true;
+
+				if(Resend)
 					SendInfo(false);
 				else
 					m_aCheckInfo[0] = -1;
@@ -3334,7 +3343,7 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_pName = Client()->PlayerName();
 		Msg.m_pClan = g_Config.m_PlayerClan;
 		Msg.m_Country = g_Config.m_PlayerCountry;
-		Msg.m_pSkin = str_uppercase_str(g_Config.m_ClPlayerSkin);
+		Msg.m_pSkin = g_Config.m_ClPlayerSkin;
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
@@ -3358,7 +3367,7 @@ void CGameClient::SendInfo(bool Start)
 		Msg.m_pName = Client()->PlayerName();
 		Msg.m_pClan = g_Config.m_PlayerClan;
 		Msg.m_Country = g_Config.m_PlayerCountry;
-		Msg.m_pSkin = str_uppercase_str(g_Config.m_ClPlayerSkin);
+		Msg.m_pSkin = g_Config.m_ClPlayerSkin;
 		Msg.m_UseCustomColor = g_Config.m_ClPlayerUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClPlayerColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClPlayerColorFeet;
@@ -3398,7 +3407,7 @@ void CGameClient::SendDummyInfo(bool Start)
 		Msg.m_pName = Client()->DummyName();
 		Msg.m_pClan = g_Config.m_ClDummyClan;
 		Msg.m_Country = g_Config.m_ClDummyCountry;
-		Msg.m_pSkin = str_uppercase_str(g_Config.m_ClDummySkin);
+		Msg.m_pSkin = g_Config.m_ClDummySkin;
 		Msg.m_UseCustomColor = g_Config.m_ClDummyUseCustomColor;
 		Msg.m_ColorBody = g_Config.m_ClDummyColorBody;
 		Msg.m_ColorFeet = g_Config.m_ClDummyColorFeet;

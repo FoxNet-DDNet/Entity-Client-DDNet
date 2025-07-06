@@ -12,66 +12,58 @@
 
 #include "anti_spawn_block.h"
 
+void CAntiSpawnBlock::Reset(int State)
+{
+	if(State != -1 && m_State == State && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != 0)
+		GameClient()->m_Chat.SendChat(0, "/team 0");
+
+	m_State = STATE_NONE;
+	m_SentKill = false;
+}
+
 void CAntiSpawnBlock::OnRender()
 {
 	int Local = GameClient()->m_Snap.m_LocalClientId;
 
-	// if Anti Spawn Block isnt turned on, stop
 	if(!g_Config.m_ClAntiSpawnBlock)
 	{
-		if(GameClient()->m_Teams.Team(Local) != 0 && !m_Team0Request && m_SentTeamRequest) 
-		{
-			GameClient()->m_Chat.SendChat(0, "/team 0");
-			m_Team0Request = true;
-			m_SentTeamRequest = false;
-		}
+		Reset(STATE_IN_TEAM);
 		return;
 	}
 
-	// if Can't find Player or player STARTED the race, stop
+	// if Can't find Player or Player STARTED the race, stop
 	if(!GameClient()->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
+	{
+		if(m_State != STATE_NONE)
+			Reset();
 		return;
+	}
+
+	if(m_SentKill)
+		Reset(STATE_IN_TEAM);
 
 	// if map name isnt "Multeasymap", stop
 	if(str_comp(Client()->GetCurrentMap(), "Multeasymap") != 0)
 		return;
 
-	if(m_SentKill) // So it resets the state
+	vec2 Pos = GameClient()->m_PredictedChar.m_Pos;
+
+	if(GameClient()->RaceHelper()->IsNearStart(Pos, 2))
 	{
-		if(GameClient()->m_Teams.Team(Local) != 0)
+		if(GameClient()->m_Teams.Team(Local) != 0 && m_State == STATE_IN_TEAM)
 		{
 			GameClient()->m_Chat.SendChat(0, "/team 0");
+			m_State = STATE_TEAM_ZERO;
 		}
-		m_SentTeamRequest = false;
-		m_Team0Request = false;
-		m_SentKill = false;
 	}
-
+	else if(m_State == STATE_NONE)
 	{
-		vec2 Pos = GameClient()->m_PredictedChar.m_Pos;
-
-		static int64_t Delay = time_get() + time_freq();
-
-		if(!GameClient()->CurrentRaceTime() && !m_SentTeamRequest)
+		if(m_Delay < time_get())
 		{
-			if(GameClient()->m_Teams.Team(Local) != 0)
-				m_SentTeamRequest = true;
-			else if(Delay < time_get())
-			{
-				GameClient()->m_Chat.SendChat(0, "/team -1");
-				GameClient()->m_Chat.SendChat(0, "/lock");
-				Delay = time_get() + time_freq() * 2.5f;
-				m_Team0Request = false;
-			}
+			GameClient()->m_Chat.SendChat(0, "/mc;team -1;lock"); // multi-command
+			m_Delay = time_get() + time_freq() * 2.5f;
 		}
-		else if(GameClient()->RaceHelper()->IsNearStart(Pos, 2) && m_SentTeamRequest && !m_Team0Request)
-		{
-			if(GameClient()->m_Teams.Team(Local) != 0)
-			{
-				GameClient()->m_Chat.SendChat(0, "/team 0");
-				m_Team0Request = true;
-			}
-		}
-
+		if(GameClient()->m_Teams.Team(Local) != 0)
+			m_State = STATE_IN_TEAM;
 	}
 }

@@ -401,7 +401,7 @@ void CEClient::RestoreSkin()
 		g_Config.m_ClDummyColorBody = g_Config.m_ClSavedDummyColorBody;
 		g_Config.m_ClDummyColorFeet = g_Config.m_ClSavedDummyColorFeet;
 		GameClient()->ClientMessage("Restored Dummy Skin");
-		 GameClient()->SendDummyInfo(false);
+		GameClient()->SendDummyInfo(false);
 	}
 	else
 	{
@@ -413,7 +413,7 @@ void CEClient::RestoreSkin()
 		g_Config.m_ClPlayerColorBody = g_Config.m_ClSavedPlayerColorBody;
 		g_Config.m_ClPlayerColorFeet = g_Config.m_ClSavedPlayerColorFeet;
 		GameClient()->ClientMessage("Restored Main Skin");
-		 GameClient()->SendInfo(false);
+		GameClient()->SendInfo(false);
 	}
 }
 void CEClient::SaveSkin()
@@ -565,8 +565,6 @@ void CEClient::PlayerInfo(const char *pName)
 			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes, Auth Level %d", GameClient()->m_aClients[Id].m_AuthLevel);
 		else
 			str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
-		GameClient()->ClientMessage(aBuf);
-		str_format(aBuf, sizeof(aBuf), "│ E-Client: %s (can be wrong)", str_isalluppercase(GameClient()->m_aClients[Id].m_aSkinName) ? "Yes" : "No");
 		GameClient()->ClientMessage(aBuf);
 
 		GameClient()->ClientMessage("│");

@@ -416,7 +416,7 @@ void CEClient::OnConnect()
 	}
 }
 
-void CEClient::ChangeTileNotifyTick()
+void CEClient::NotifyOnMove()
 {
 	if(!g_Config.m_ClChangeTileNotification)
 		return;
@@ -425,8 +425,8 @@ void CEClient::ChangeTileNotifyTick()
 
 	float X = GameClient()->m_Snap.m_aCharacters[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_X;
 	float Y = GameClient()->m_Snap.m_aCharacters[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_Y;
-	int CurrentTile = Collision()->GetTileIndex(Collision()->GetPureMapIndex(X, Y));
-	if(m_LastTile != CurrentTile && m_LastNotification + time_freq() < time_get())
+	vec2 Pos = vec2(round_to_int(X), round_to_int(Y)); // notifying on the smallest bump isnt what we need
+	if(m_LastPos != Pos)
 	{
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 		if(pGraphics && !pGraphics->WindowActive() && Graphics())
@@ -434,9 +434,8 @@ void CEClient::ChangeTileNotifyTick()
 			Client()->Notify("E-Client", "current tile changed");
 			Graphics()->NotifyWindow();
 		}
-		m_LastNotification = time_get();
 	}
-	m_LastTile = CurrentTile;
+	m_LastPos = Pos;
 }
 
 void CEClient::RemoveWarEntryDuplicates(const char *pName)
@@ -518,7 +517,7 @@ void CEClient::Rainbow()
 	// Makes the slider look smoother
 	static float Speed = 1.0f;
 	Speed = Speed + m_RainbowSpeed * Client()->FrameTimeAverage() * 0.1f;
-
+	
 	if(Speed > 255.f * 10) // Reset if Value gets highish, why? why not :D
 		Speed = 1.0f;
 
@@ -629,8 +628,8 @@ void CEClient::OnInit()
 
 void CEClient::OnNewSnapshot()
 {
-	ChangeTileNotifyTick();
 	UpdateTempPlayers();
+	NotifyOnMove();
 	// AutoJoinTeam();
 }
 

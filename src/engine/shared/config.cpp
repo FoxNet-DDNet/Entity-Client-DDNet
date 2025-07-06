@@ -431,11 +431,11 @@ bool CConfigManager::Save()
 		return false;
 	}
 
-	ASave();
+	EClientSave();
 	return true;
 }
 
-bool CConfigManager::ASave()
+bool CConfigManager::EClientSave()
 {
 	if(!m_pStorage || !g_Config.m_ClSaveSettings)
 		return true;

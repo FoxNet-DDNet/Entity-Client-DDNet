@@ -5449,7 +5449,7 @@ void shell_update()
 }
 #endif
 
-void str_uppercase_str(const char *src, char *dst, int dst_size)
+void str_to_uppercase(const char *src, char *dst, int dst_size)
 {
 	int i = 0;
 	for(; src[i] && i < dst_size - 1; ++i)
@@ -5457,7 +5457,7 @@ void str_uppercase_str(const char *src, char *dst, int dst_size)
 	dst[i] = '\0';
 }
 
-const char *str_uppercase_str(const char *src)
+const char *str_to_uppercase(const char *src)
 {
 	int len = str_length(src);
 	char *dst = (char *)malloc(len + 1);

@@ -44,6 +44,8 @@ void CChat::CLine::Reset(CChat &This)
 	m_Friend = false;
 	m_TimesRepeated = 0;
 	m_pManagedTeeRenderInfo = nullptr;
+
+	m_Paused = false; // E-Client
 }
 
 CChat::CChat()
@@ -992,6 +994,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if(LineAuthor.m_Active)
 		{
 			CurrentLine.m_Friend = LineAuthor.m_Friend;
+			CurrentLine.m_Paused = LineAuthor.m_Paused; // E-Client
 			CurrentLine.m_pManagedTeeRenderInfo = GameClient()->CreateManagedTeeRenderInfo(LineAuthor);
 		}
 	}
@@ -1142,7 +1145,7 @@ void CChat::OnPrepareLines(float y)
 			{
 				Cursor.m_X += RealMsgPaddingTee;
 
-				if(GameClient()->m_aClients[Line.m_ClientId].m_Paused && g_Config.m_ClSpectatePrefix)
+				if(Line.m_Paused && g_Config.m_ClSpectatePrefix)
 				{
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
 				}
@@ -1204,7 +1207,7 @@ void CChat::OnPrepareLines(float y)
 		{
 			Cursor.m_X += RealMsgPaddingTee;
 
-			if(g_Config.m_ClSpectatePrefix && GameClient()->m_aClients[Line.m_ClientId].m_Paused && !Line.m_Whisper)
+			if(g_Config.m_ClSpectatePrefix && Line.m_Paused && !Line.m_Whisper)
 			{
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &Cursor, g_Config.m_ClSpecPrefix);
