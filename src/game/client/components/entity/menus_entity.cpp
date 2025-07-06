@@ -24,15 +24,16 @@
 #include <game/client/components/menus.h>
 #include <game/client/components/skins.h>
 
-#include <string>
-#include <vector>
 #include "e_enums.h"
 #include <base/color.h>
+#include <string>
+#include <vector>
 
 using namespace FontIcons;
 using namespace std::chrono_literals;
 
-enum {
+enum
+{
 	ENTITY_TAB_SETTINGS = 0,
 	ENTITY_TAB_VISUAL = 1,
 	ENTITY_TAB_TCLIENT = 2,
@@ -165,7 +166,8 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 		TabBar.VSplitLeft(TabWidth, &Button, &TabBar);
 
-		int Corners = Tab == LeftTab ? IGraphics::CORNER_L : Tab == RightTab ? IGraphics::CORNER_R : IGraphics::CORNER_NONE;
+		int Corners = Tab == LeftTab ? IGraphics::CORNER_L : Tab == RightTab ? IGraphics::CORNER_R :
+										       IGraphics::CORNER_NONE;
 		if(LeftTab == RightTab)
 			Corners = IGraphics::CORNER_ALL;
 
@@ -188,7 +190,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		ScrollParams.m_ScrollUnit = 120.0f;
 		s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
 		MainView.y += ScrollOffset.y;
-
 
 		// left side in settings menu
 
@@ -379,13 +380,11 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, "Notify When Player is Being Moved", &g_Config.m_ClChangeTileNotification, &OtherSettings, LineSize);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock,"Anti Mult Spawn Block", &g_Config.m_ClAntiSpawnBlock, &OtherSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, "Anti Mult Spawn Block", &g_Config.m_ClAntiSpawnBlock, &OtherSettings, LineSize);
 					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you Kill and get frozen");
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoWhisper, "Auto Whisper", &g_Config.m_ClAutoWhisper, &OtherSettings, LineSize);
 					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAutoWhisper, &Button, "Automatically puts \"/c\" in the chat if your last message was a whisper");
-				
-					
 				}
 			}
 		}
@@ -721,9 +720,9 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
 
 				// ***** Rainbow ***** //
-				//PlayerSettings.HSplitTop(HeadlineHeight, &Label, &PlayerSettings);
-				//Ui()->DoLabel(&Label, Localize("Rainbow"), HeadlineFontSize, TEXTALIGN_ML);
-				//PlayerSettings.HSplitTop(MarginSmall, nullptr, &PlayerSettings);
+				// PlayerSettings.HSplitTop(HeadlineHeight, &Label, &PlayerSettings);
+				// Ui()->DoLabel(&Label, Localize("Rainbow"), HeadlineFontSize, TEXTALIGN_ML);
+				// PlayerSettings.HSplitTop(MarginSmall, nullptr, &PlayerSettings);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowTees, Localize("Rainbow Tees"), &g_Config.m_ClRainbowTees, &PlayerSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowWeapon, Localize("Rainbow weapons"), &g_Config.m_ClRainbowWeapon, &PlayerSettings, LineSize);
@@ -789,7 +788,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					TeeRect.HSplitTop(80.0f, nullptr, &TeeRect);
 					TeeRect.HSplitTop(80.0f, &TeeRect, nullptr);
 					TeeRect.VSplitLeft(80.0f, &TeeRect, nullptr);
-					
+
 					CTeeRenderInfo TeeRenderInfo;
 
 					bool PUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
@@ -1246,7 +1245,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, Localize("Only show after joining a team"), &g_Config.m_ClIndicatorTeamOnly, &PlayerIndicatorSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTees, Localize("Render tiny tees instead of circles"), &g_Config.m_ClIndicatorTees, &PlayerIndicatorSettings, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicator, Localize("Use warlist groups for indicator"), &g_Config.m_ClWarListIndicator, &PlayerIndicatorSettings, LineSize);
-		
+
 					PlayerIndicatorSettings.HSplitTop(LineSize, &Button, &PlayerIndicatorSettings);
 					Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorRadius, &g_Config.m_ClIndicatorRadius, &Button, Localize("Indicator size"), 1, 16);
 					PlayerIndicatorSettings.HSplitTop(LineSize, &Button, &PlayerIndicatorSettings);
@@ -1287,7 +1286,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				}
 			}
 		}
-	
+
 		{
 			LatencySettings.HSplitTop(Margin, nullptr, &LatencySettings);
 			LatencySettings.HSplitTop(190.0f, &LatencySettings, &GhostSettings);
@@ -1852,7 +1851,7 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 		RenderTools()->RenderTee(pIdleState, &s_vLines[PREVIEW_FRIEND].m_RenderInfo, EMOTE_NORMAL, vec2(1, 0.1f), vec2(X + RealTeeSizeHalved, Y + OffsetTeeY + FullHeightMinusTee / 2.0f + TWSkinUnreliableOffset));
 	if(!g_Config.m_ClShowChatTeamMembersOnly)
 		Y += RenderPreview(PREVIEW_FRIEND, X, Y).y;
-	
+
 	// Normal
 	if(!g_Config.m_ClShowChatFriends && !g_Config.m_ClShowChatTeamMembersOnly)
 	{

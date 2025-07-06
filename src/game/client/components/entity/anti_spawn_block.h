@@ -7,7 +7,6 @@ class CAntiSpawnBlock : public CComponent
 	int64_t m_Delay = 0;
 
 public:
-
 	enum States
 	{
 		STATE_NONE = 0,

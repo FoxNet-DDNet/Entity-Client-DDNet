@@ -12,7 +12,7 @@ static constexpr const char *ECLIENT_VER_URL = "https://www.entityclient.net/ver
 
 void CUpdate::OnInit()
 {
-	FetchAClientInfo();
+	FetchEClientInfo();
 }
 
 void CUpdate::OnRender()
@@ -21,12 +21,12 @@ void CUpdate::OnRender()
 	{
 		if(m_pAClientVerTask->State() == EHttpState::DONE)
 		{
-			FinishAClientInfo();
-			ResetAClientInfoTask();
+			FinishEClientInfo();
+			ResetEClientInfoTask();
 		}
 	}
 }
-void CUpdate::ResetAClientInfoTask()
+void CUpdate::ResetEClientInfoTask()
 {
 	if(m_pAClientVerTask)
 	{
@@ -35,7 +35,7 @@ void CUpdate::ResetAClientInfoTask()
 	}
 }
 
-void CUpdate::FetchAClientInfo()
+void CUpdate::FetchEClientInfo()
 {
 	if(m_pAClientVerTask && !m_pAClientVerTask->Done())
 		return;
@@ -50,7 +50,7 @@ void CUpdate::FetchAClientInfo()
 typedef std::tuple<int, int, int> AVersion;
 static const AVersion gs_InvalidACVersion = std::make_tuple(-1, -1, -1);
 
-AVersion ToACVersion(char *pStr)
+AVersion ToECVersion(char *pStr)
 {
 	int aVersion[3] = {0, 0, 0};
 	const char *p = strtok(pStr, ".");
@@ -70,7 +70,7 @@ AVersion ToACVersion(char *pStr)
 	return std::make_tuple(aVersion[0], aVersion[1], aVersion[2]);
 }
 
-void CUpdate::FinishAClientInfo()
+void CUpdate::FinishEClientInfo()
 {
 	json_value *pJson = m_pAClientVerTask->ResultJson();
 	if(!pJson)
@@ -84,7 +84,7 @@ void CUpdate::FinishAClientInfo()
 		str_copy(aNewVersionStr, CurrentVersion);
 		char aCurVersionStr[64];
 		str_copy(aCurVersionStr, ECLIENT_VERSION);
-		if(ToACVersion(aNewVersionStr) > ToACVersion(aCurVersionStr))
+		if(ToECVersion(aNewVersionStr) > ToECVersion(aCurVersionStr))
 		{
 			str_copy(m_aVersionStr, CurrentVersion);
 		}

@@ -1,20 +1,20 @@
 ﻿#include <engine/client.h>
+#include <engine/serverbrowser.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
-#include <engine/serverbrowser.h>
 
 #include <game/client/components/chat.h>
 #include <game/client/components/controls.h>
 #include <game/client/gameclient.h>
-#include <game/generated/protocol.h>
 #include <game/gamecore.h>
+#include <game/generated/protocol.h>
 
-#include <base/system.h>
 #include <base/math.h>
+#include <base/system.h>
 
-#include <cmath>
 #include "entity.h"
+#include <cmath>
 
 bool CEClient::LineShouldHighlight(const char *pLine, const char *pName)
 {
@@ -95,8 +95,8 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(Client()->DummyConnected() && !str_comp(aName, GameClient()->m_aClients[GameClient()->m_aLocalIds[1]].m_aName))
 		return;
 
-	bool HiddenMessage = (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute) || 
-		 (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar));
+	bool HiddenMessage = (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute) ||
+			     (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar));
 
 	if(!HiddenMessage)
 	{
@@ -104,7 +104,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		str_copy(m_aLastPing.m_aMessage, pMsg);
 		m_aLastPing.m_Team = Team;
 	}
-	
+
 	if(g_Config.m_ClReplyMuted && (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute))
 	{
 		if(!GameClient()->m_Snap.m_pLocalCharacter)
@@ -173,10 +173,9 @@ void CEClient::AutoJoinTeam()
 	{
 		if(GameClient()->m_Teams.Team(ClientId))
 		{
-			if(str_comp(GameClient()->m_aClients [ClientId].m_aName, g_Config.m_ClAutoJoinTeamName) == 0)
+			if(str_comp(GameClient()->m_aClients[ClientId].m_aName, g_Config.m_ClAutoJoinTeamName) == 0)
 			{
 				int LocalTeam = -1;
-
 
 				if(ClientId == Local)
 					return;
@@ -252,7 +251,6 @@ void CEClient::GoresMode()
 
 	if(g_Config.m_ClGoresModeDisableIfWeapons && g_Config.m_ClGoresMode)
 	{
-
 		if((Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_ExplosionGun || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) && g_Config.m_ClGoresMode)
 		{
 			g_Config.m_ClGoresMode = 0;
@@ -268,7 +266,6 @@ void CEClient::GoresMode()
 
 	if(!g_Config.m_ClGoresMode && m_KogModeRebound)
 	{
-	
 		GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
 		m_KogModeRebound = false;
 	}
@@ -502,7 +499,7 @@ void CEClient::UpdateTempPlayers()
 
 void CEClient::Rainbow()
 {
-	static bool m_RainbowWasOn = false; 
+	static bool m_RainbowWasOn = false;
 
 	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
 	{
@@ -517,7 +514,7 @@ void CEClient::Rainbow()
 	// Makes the slider look smoother
 	static float Speed = 1.0f;
 	Speed = Speed + m_RainbowSpeed * Client()->FrameTimeAverage() * 0.1f;
-	
+
 	if(Speed > 255.f * 10) // Reset if Value gets highish, why? why not :D
 		Speed = 1.0f;
 
@@ -579,12 +576,11 @@ void CEClient::OnShutdown()
 	g_Config.m_ClKillCounter = m_KillCount;
 }
 
-
 void CEClient::OnInit()
 {
 	// On client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
-	
+
 	m_LastMovement = 0;
 
 	m_JoinedTeam = false;
