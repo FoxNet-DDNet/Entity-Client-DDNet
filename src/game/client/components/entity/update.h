@@ -9,9 +9,9 @@ class CUpdate : public CComponent
 {
 public:
 	std::shared_ptr<CHttpRequest> m_pAClientVerTask = nullptr;
-	void FetchAClientInfo();
-	void FinishAClientInfo();
-	void ResetAClientInfoTask();
+	void FetchEClientInfo();
+	void FinishEClientInfo();
+	void ResetEClientInfoTask();
 
 	char m_aVersionStr[10] = "0";
 	virtual int Sizeof() const override { return sizeof(*this); }
