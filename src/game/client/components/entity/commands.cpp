@@ -627,7 +627,7 @@ void CEClient::OnConsoleInit()
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 
 	if(pConfigManager)
-		pConfigManager->RegisterACallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterECallback(ConfigSaveCallback, this);
 
 	// Misc
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");

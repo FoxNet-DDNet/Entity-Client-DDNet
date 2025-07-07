@@ -215,7 +215,7 @@ class CConfigManager : public IConfigManager
 		}
 	};
 	std::vector<SCallback> m_vCallbacks;
-	std::vector<SCallback> m_vACallbacks;
+	std::vector<SCallback> m_vECallbacks;
 
 	std::vector<SConfigVariable *> m_vpAllVariables;
 	std::vector<SConfigVariable *> m_vpGameVariables;
@@ -238,7 +238,7 @@ public:
 	CConfig *Values() override { return &g_Config; }
 
 	void RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
-	void RegisterACallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
+	void RegisterECallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
 
 	void WriteLine(const char *pLine) override;
 

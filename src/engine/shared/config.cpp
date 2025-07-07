@@ -480,7 +480,7 @@ bool CConfigManager::EClientSave()
 #undef MACRO_CONFIG_COL
 #undef MACRO_CONFIG_STR
 
-	for(const auto &Callback : m_vACallbacks)
+	for(const auto &Callback : m_vECallbacks)
 	{
 		Callback.m_pfnFunc(this, Callback.m_pUserData);
 	}
@@ -516,9 +516,9 @@ void CConfigManager::RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
 	m_vCallbacks.emplace_back(pfnFunc, pUserData);
 }
 
-void CConfigManager::RegisterACallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
+void CConfigManager::RegisterECallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
 {
-	m_vACallbacks.emplace_back(pfnFunc, pUserData);
+	m_vECallbacks.emplace_back(pfnFunc, pUserData);
 }
 
 void CConfigManager::WriteLine(const char *pLine)
