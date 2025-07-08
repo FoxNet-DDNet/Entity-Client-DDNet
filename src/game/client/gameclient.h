@@ -81,6 +81,8 @@
 #include "components/tclient/skinprofiles.h"
 #include "components/tclient/warlist.h"
 
+extern CGameClient *g_pClient;
+
 class CGameInfo
 {
 public:
@@ -728,11 +730,7 @@ public:
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
 
-	// E-Client	
-
-	int m_InsideQFreeze;
-	int m_InsideQUnfreeze;
-
+	// E-Client
 	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;
 	void SetLastMovementTime(int Delay) override;

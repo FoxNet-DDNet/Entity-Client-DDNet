@@ -8,6 +8,10 @@
 #include <game/gamecore.h>
 #include <game/generated/protocol.h>
 #include <game/race_state.h>
+#include <base/vmath.h>
+#include <vector>
+
+class CMapItemLayerQuads; 
 
 enum
 {
@@ -185,6 +189,14 @@ private:
 
 	int m_LastWeaponSwitchTick;
 	int m_LastTuneZoneTick;
+
+	// E-Client
+	vec2 GetQuadVelocity(const CMapItemLayerQuads *pQuadLayer, int QuadIndex, float dt);
+	void HandleQuadStopa(const CMapItemLayerQuads *pQuadLayer, int QuadIndex);
+	void MoveOutsideQuad(const CMapItemLayerQuads *pQuadLayer, int QuadIndex);
+	void HandleQuads(const CMapItemLayerQuads *pQuadLayer, int QuadIndex);
+	void SkippedQuadStopa(const CMapItemLayerQuads *pQuadLayer, int QuadIndex);
+	void HandleSkippedQuads(const CMapItemLayerQuads *pQuadLayer, int QuadIndex);
 };
 
 #endif

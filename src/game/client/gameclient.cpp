@@ -81,6 +81,8 @@
 
 #include "components/entity/e_enums.h"
 
+CGameClient *g_pClient = nullptr;
+
 using namespace std::chrono_literals;
 
 const char *CGameClient::Version() const { return GAME_VERSION; }
@@ -2320,6 +2322,9 @@ void CGameClient::OnNewSnapshot()
 	m_IsDummySwapping = 0;
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		UpdatePrediction();
+	
+	// E-Client
+	Collision()->SetTime((double)(Client()->GameTick(g_Config.m_ClDummy) + Client()->GetPredictionTime() / 21) / Client()->GameTickSpeed());
 }
 
 void CGameClient::UpdateEditorIngameMoved()
@@ -2972,46 +2977,7 @@ void CGameClient::OnPredict()
 			}
 		}
 	}
-	m_PredictedTick = FinalTickSelf;
-
-	Collision()->m_Time = (float)(Client()->GameTick(g_Config.m_ClDummy) + g_Config.m_ClPredictionMargin / 20) / Client()->GameTickSpeed();
-	m_InsideQFreeze = 0;
-	m_InsideQUnfreeze = 0;
-	for(const auto *pQuadLayer : Collision()->QuadLayers())
-	{
-		if(!pQuadLayer)
-			continue;
-
-		char QuadName[30] = "";
-
-		IntsToStr(pQuadLayer->m_aName, std::size(pQuadLayer->m_aName), QuadName, std::size(QuadName));
-
-		int StartNum = 0;
-		while(StartNum < pQuadLayer->m_NumQuads)
-		{
-			CQuad *pQuad = nullptr;
-			int FoundNum = Collision()->GetQuadAt(m_aClients[m_Snap.m_LocalClientId].m_Predicted.m_Pos.x, m_aClients[m_Snap.m_LocalClientId].m_Predicted.m_Pos.y, &pQuad, StartNum, pQuadLayer);
-			if(!pQuad || FoundNum < 0 || FoundNum >= pQuadLayer->m_NumQuads)
-				break;
-
-			int Number = pQuad->m_aColors[0].r;
-			if(Number == 0)
-				Number++;
-			int Delay = pQuad->m_aColors[0].g;
-
-			bool FreezeQuad = pQuad->m_ColorEnvOffset == TILE_FREEZE || !str_comp("QFr", QuadName);
-			bool UnFreezeQuad = pQuad->m_ColorEnvOffset == TILE_UNFREEZE || !str_comp("QUnFr", QuadName);
-			bool DeathQuad = pQuad->m_ColorEnvOffset == TILE_DEATH || !str_comp("QDeath", QuadName);
-
-			if(FreezeQuad)
-				m_InsideQFreeze = Collision()->m_Time;
-			if(FreezeQuad)
-				m_InsideQUnfreeze = Collision()->m_Time;
-
-			break;
-		}
-	}
-
+	m_PredictedChar.m_DeepFrozen = true; // or m_LiveFrozen = true;
 	if(m_NewPredictedTick)
 	{
 		m_Ghost.OnNewPredictedSnapshot();
@@ -3574,7 +3540,8 @@ void CGameClient::ConchainSpecialDummy(IConsole::IResult *pResult, void *pUserDa
 
 IGameClient *CreateGameClient()
 {
-	return new CGameClient();
+	g_pClient = new CGameClient();
+	return g_pClient;
 }
 
 int CGameClient::IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 &NewPos2, int OwnId)

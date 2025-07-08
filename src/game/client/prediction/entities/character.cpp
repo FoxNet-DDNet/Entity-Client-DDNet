@@ -8,6 +8,8 @@
 #include "character.h"
 #include "laser.h"
 #include "projectile.h"
+#include <game/client/component.h>
+#include <game/client/gameclient.h>
 
 // Character, "physical" player's part
 
@@ -1132,18 +1134,38 @@ void CCharacter::DDRacePostCoreTick()
 		m_Core.m_Jumped = 1;
 	}
 
+	m_Core.m_IsInFreezeQuad = false;
+
+	if(g_pClient)
+	{
+		for(const auto *pQuadLayer : Collision()->QuadLayers())
+		{
+			for(int QuadIndex = 0; QuadIndex < pQuadLayer->m_NumQuads; QuadIndex++)
+			{
+				HandleQuads(pQuadLayer, QuadIndex);
+			}
+		}
+	}
+
 	int CurrentIndex = Collision()->GetMapIndex(m_Pos);
 	HandleSkippableTiles(CurrentIndex);
 
 	// handle Anti-Skip tiles
 	std::vector<int> vIndices = Collision()->GetMapIndices(m_PrevPos, m_Pos);
 	if(!vIndices.empty())
+	{
 		for(int Index : vIndices)
+		{
 			HandleTiles(Index);
+		}
+	}
 	else
 	{
 		HandleTiles(CurrentIndex);
 	}
+	// Handled after HandleTiles because for some reason it doesn't work correctly if done before
+	if(m_Core.m_IsInFreezeQuad)
+		Freeze();
 }
 
 bool CCharacter::Freeze(int Seconds)
@@ -1532,4 +1554,373 @@ CCharacter::~CCharacter()
 {
 	if(GameWorld())
 		GameWorld()->RemoveCharacter(this);
+}
+
+static float InterpolateY(const vec2 &p0, const vec2 &p1, float x)
+{
+	if(p1.x == p0.x)
+		return (p0.y + p1.y) / 2.0f;
+	return p0.y + (p1.y - p0.y) * (x - p0.x) / (p1.x - p0.x);
+}
+static float InterpolateX(const vec2 &p0, const vec2 &p1, float y)
+{
+	if(p1.y == p0.y)
+		return (p0.x + p1.x) / 2.0f;
+	return p0.x + (p1.x - p0.x) * (y - p0.y) / (p1.y - p0.y);
+}
+
+void CCharacter::HandleQuads(const CMapItemLayerQuads *pQuadLayer, int QuadIndex)
+{
+	if(!pQuadLayer)
+		return;
+
+	char QuadName[30] = "";
+	IntsToStr(pQuadLayer->m_aName, std::size(pQuadLayer->m_aName), QuadName, std::size(QuadName));
+
+	bool FreezeQuad = !str_comp("QFr", QuadName);
+	bool UnFreezeQuad = !str_comp("QUnFr", QuadName);
+	bool DeathQuad = !str_comp("QDeath", QuadName);
+	bool Stopa = !str_comp("QStopa", QuadName);
+	bool Cfrm = !str_comp("QCfrm", QuadName);
+
+	// Special Quad Hitbox
+	if(Stopa)
+		HandleQuadStopa(pQuadLayer, QuadIndex);
+
+	vec2 predictedPos = g_pClient->m_aClients[g_pClient->m_Snap.m_LocalClientId].m_Predicted.m_Pos;
+
+	CQuad *pQuad = nullptr;
+	int FoundNum = Collision()->GetQuadAt(predictedPos.x, predictedPos.y, &pQuad, QuadIndex, pQuadLayer);
+	if(!pQuad || FoundNum < 0 || FoundNum >= pQuadLayer->m_NumQuads)
+		return;
+
+	if(FreezeQuad)
+	{
+		Freeze();
+		m_Core.m_IsInFreezeQuad = true;
+	}
+	else if(UnFreezeQuad)
+	{
+		UnFreeze();
+		m_Core.m_IsInFreezeQuad = false;
+	}
+	else if(DeathQuad)
+	{
+		// Die(GetCid(), WEAPON_WORLD);
+	}
+	else if(Cfrm)
+	{
+		if(m_Core.m_Super || m_Core.m_Invincible)
+			return;
+		// first check if there is a TeleCheckOut for the current recorded checkpoint, if not check previous checkpoints
+		for(int k = m_TeleCheckpoint - 1; k >= 0; k--)
+		{
+			if(!Collision()->TeleCheckOuts(k).empty())
+			{
+				int TeleOut = GameWorld()->m_Core.RandomOr0(Collision()->TeleCheckOuts(k).size());
+				m_Core.m_Pos = Collision()->TeleCheckOuts(k)[TeleOut];
+				m_Core.m_Vel = vec2(0, 0);
+
+				if(!g_Config.m_SvTeleportHoldHook)
+				{
+					ResetHook();
+					GameWorld()->ReleaseHooked(GetCid());
+				}
+
+				return;
+			}
+		}
+	}
+}
+void CCharacter::HandleSkippedQuads(const CMapItemLayerQuads *pQuadLayer, int QuadIndex)
+{
+	char QuadName[30] = "";
+	IntsToStr(pQuadLayer->m_aName, std::size(pQuadLayer->m_aName), QuadName, std::size(QuadName));
+
+	bool FreezeQuad = !str_comp("QFr", QuadName);
+	bool UnFreezeQuad = !str_comp("QUnFr", QuadName);
+	bool DeathQuad = !str_comp("QDeath", QuadName);
+	bool Stopa = !str_comp("QStopa", QuadName);
+	bool Cfrm = !str_comp("QCfrm", QuadName);
+
+	if(FreezeQuad)
+	{
+		Freeze();
+		m_Core.m_IsInFreezeQuad = true;
+	}
+	else if(UnFreezeQuad)
+	{
+		UnFreeze();
+		m_Core.m_IsInFreezeQuad = false;
+	}
+	else if(Stopa)
+		SkippedQuadStopa(pQuadLayer, QuadIndex);
+	else if(DeathQuad)
+	{
+		// Die(m_pPlayer->GetCid(), WEAPON_WORLD);
+		return;
+	}
+	else if(Cfrm)
+	{
+		if(m_Core.m_Super || m_Core.m_Invincible)
+			return;
+		// first check if there is a TeleCheckOut for the current recorded checkpoint, if not check previous checkpoints
+		for(int k = m_TeleCheckpoint - 1; k >= 0; k--)
+		{
+			if(!Collision()->TeleCheckOuts(k).empty())
+			{
+				int TeleOut = GameWorld()->m_Core.RandomOr0(Collision()->TeleCheckOuts(k).size());
+				m_Core.m_Pos = Collision()->TeleCheckOuts(k)[TeleOut];
+				m_Core.m_Vel = vec2(0, 0);
+
+				if(!g_Config.m_SvTeleportHoldHook)
+				{
+					ResetHook();
+					GameWorld()->ReleaseHooked(GetCid());
+				}
+
+				return;
+			}
+		}
+	}
+}
+
+vec2 CCharacter::GetQuadVelocity(const CMapItemLayerQuads *pQuadLayer, int QuadIndex, float dt)
+{
+	CQuad *pQuad = nullptr;
+	vec2 TopL0;
+	vec2 TopL1;
+
+	// Get current corners
+	Collision()->GetQuadCorners(QuadIndex, &pQuad, pQuadLayer, 0.0f, &TopL0);
+	// Get future corners
+	Collision()->GetQuadCorners(QuadIndex, &pQuad, pQuadLayer, dt, &TopL1);
+
+	// Calculate velocities for each corner
+	return (TopL1 - TopL0);
+}
+
+void CCharacter::HandleQuadStopa(const CMapItemLayerQuads *pQuadLayer, int QuadIndex)
+{
+	CQuad *pQuad = nullptr;
+	vec2 TopL, TopR, BottomL, BottomR;
+	int FoundNum = Collision()->GetQuadCorners(QuadIndex, &pQuad, pQuadLayer, 0.00f, &TopL, &TopR, &BottomL, &BottomR);
+
+	if(!pQuad || FoundNum < 0)
+		return;
+
+	MoveOutsideQuad(pQuadLayer, QuadIndex);
+}
+void CCharacter::MoveOutsideQuad(const CMapItemLayerQuads *pQuadLayer, int QuadIndex)
+{
+	CQuad *pQuad = nullptr;
+	vec2 TopL, TopR, BottomL, BottomR;
+	Collision()->GetQuadCorners(QuadIndex, &pQuad, pQuadLayer, 0.00f, &TopL, &TopR, &BottomL, &BottomR);
+
+	vec2 Pos = m_Core.m_Pos + m_Core.m_Vel;
+
+	vec2 NewPos = vec2(0, 0);
+	bool Grounded = false;
+
+	float TopYAtX = InterpolateY(TopL, TopR, Pos.x);
+	float BottomYAtX = InterpolateY(BottomL, BottomR, Pos.x);
+
+	float LeftXAtY = InterpolateX(TopL, BottomL, Pos.y);
+	float RightXAtY = InterpolateX(TopR, BottomR, Pos.y);
+
+	bool AboveQuad = Pos.y < TopYAtX;
+	bool BelowQuad = Pos.y > BottomYAtX;
+
+	bool LeftToQuad = Pos.x < LeftXAtY;
+	bool RightToQuad = Pos.x > RightXAtY;
+
+	constexpr float fPhys = CCharacterCore::PhysicalSize() / 1.75f;
+	bool SetPos = true;
+	float dt = 0.5f / SERVER_TICK_SPEED;
+	vec2 AvgVel = GetQuadVelocity(pQuadLayer, QuadIndex, dt) / 1.75f;
+
+	if(AboveQuad && Collision()->InsideQuad(TopL, TopR, BottomL, BottomR, vec2(Pos.x - 10.0f, Pos.y + fPhys)))
+	{
+		if(m_Core.m_Vel.y > 0.0f)
+			m_Core.m_Vel.y = AvgVel.y;
+
+		NewPos = vec2(m_Core.m_Pos.x, TopYAtX - fPhys);
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(0.0f, Distance)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.y = NewPos.y;
+	}
+	else if(AboveQuad && Collision()->InsideQuad(TopL, TopR, BottomL, BottomR, vec2(Pos.x + 10.0f, Pos.y + fPhys)))
+	{
+		if(m_Core.m_Vel.y > 0.0f)
+			m_Core.m_Vel.y = AvgVel.y;
+
+		NewPos = vec2(m_Core.m_Pos.x, TopYAtX - fPhys);
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(0.0f, Distance)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.y = NewPos.y;
+	}
+	// Bottom collisions
+	else if(BelowQuad && Collision()->InsideQuad(TopL, TopR, BottomL, BottomR, vec2(Pos.x - 10.0f, Pos.y - fPhys)))
+	{
+		if(m_Core.m_Vel.y < 0.0f)
+			m_Core.m_Vel.y = AvgVel.y;
+
+		NewPos = vec2(m_Core.m_Pos.x, BottomYAtX + fPhys);
+
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(0.0f, Distance)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.y = NewPos.y;
+	}
+	else if(BelowQuad && Collision()->InsideQuad(TopL, TopR, BottomL, BottomR, vec2(Pos.x + 10.0f, Pos.y - fPhys)))
+	{
+		if(m_Core.m_Vel.y < 0.0f)
+			m_Core.m_Vel.y = AvgVel.y;
+
+		NewPos = vec2(m_Core.m_Pos.x, BottomYAtX + fPhys);
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(0.0f, Distance)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.y = NewPos.y;
+	}
+	// Left collisions
+	else if(LeftToQuad && Collision()->InsideQuad(TopL, TopR, BottomL, BottomR, vec2(Pos.x + fPhys, Pos.y - 10.0f)))
+	{
+		if(m_Core.m_Vel.x > 0.0f)
+			m_Core.m_Vel.x = AvgVel.x;
+		NewPos = vec2(LeftXAtY - fPhys, m_Core.m_Pos.y);
+
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(Distance, 0.0f)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.x = NewPos.x;
+	}
+	else if(LeftToQuad && Collision()->InsideQuad(TopL, TopR, BottomL, BottomR, vec2(Pos.x + fPhys, Pos.y + 10.0f)))
+	{
+		if(m_Core.m_Vel.x > 0.0f)
+			m_Core.m_Vel.x = AvgVel.x;
+
+		NewPos = vec2(LeftXAtY - fPhys, m_Core.m_Pos.y);
+
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(Distance, 0.0f)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.x = NewPos.x;
+	}
+	// Right collisions
+	else if(RightToQuad && Collision()->InsideQuad(TopL, TopR, BottomL, BottomR, vec2(Pos.x - fPhys, Pos.y - 10.0f)))
+	{
+		if(m_Core.m_Vel.x < 0.0f)
+			m_Core.m_Vel.x = AvgVel.x;
+
+		NewPos = vec2(RightXAtY + fPhys, m_Core.m_Pos.y);
+
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(Distance, 0.0f)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.x = NewPos.x;
+	}
+	else if(RightToQuad && Collision()->InsideQuad(TopL, TopR, BottomL, BottomR, vec2(Pos.x - fPhys, Pos.y + 10.0f)))
+	{
+		if(m_Core.m_Vel.x < 0.0f)
+			m_Core.m_Vel.x = AvgVel.x;
+
+		NewPos = vec2(RightXAtY + fPhys, m_Core.m_Pos.y);
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(Distance, 0.0f)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.x = NewPos.x;
+	}
+
+	if(Grounded)
+	{
+		// m_Core.m_Jumped = 0;
+		// m_Core.m_JumpedTotal = 0;
+	}
+}
+
+void CCharacter::SkippedQuadStopa(const CMapItemLayerQuads *pQuadLayer, int QuadIndex)
+{
+	CQuad *pQuad = nullptr;
+	vec2 TopL, TopR, BottomL, BottomR;
+	int FoundNum = Collision()->GetQuadCorners(QuadIndex, &pQuad, pQuadLayer, 0.0f, &TopL, &TopR, &BottomL, &BottomR);
+
+	if(!pQuad || FoundNum < 0)
+		return;
+
+	vec2 NewPos = vec2(0, 0);
+
+	float TopYAtX = InterpolateY(TopL, TopR, m_PrevPos.x);
+	float BottomYAtX = InterpolateY(BottomL, BottomR, m_PrevPos.x);
+
+	float LeftXAtY = InterpolateX(TopL, BottomL, m_PrevPos.y);
+	float RightXAtY = InterpolateX(TopR, BottomR, m_PrevPos.y);
+
+	bool AboveQuad = m_PrevPos.y < TopYAtX;
+	bool BelowQuad = m_PrevPos.y > BottomYAtX;
+
+	bool LeftToQuad = m_PrevPos.x < LeftXAtY;
+	bool RightToQuad = m_PrevPos.x > RightXAtY;
+
+	constexpr float fPhys = CCharacterCore::PhysicalSize() / 1.75f;
+	bool SetPos = true;
+
+	if(AboveQuad) // touching quads top right
+	{
+		if(m_Core.m_Vel.y > 0.0f)
+			m_Core.m_Vel.y = std::clamp(-m_Core.m_Vel.y, 0.0f, 1.0f);
+
+		NewPos = vec2(m_Core.m_Pos.x, TopYAtX - fPhys);
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(0.0f, Distance)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.y = NewPos.y;
+	}
+	else if(BelowQuad) // touching quads bottom right
+	{
+		if(m_Core.m_Vel.y < 0.0f)
+			m_Core.m_Vel.y = -0.1f;
+
+		NewPos = vec2(m_Core.m_Pos.x, BottomYAtX + fPhys);
+
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(0.0f, Distance)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.y = NewPos.y;
+	}
+	else if(LeftToQuad) // touching quads lower left
+	{
+		NewPos = vec2(LeftXAtY - fPhys, m_Core.m_Pos.y);
+		if(m_Core.m_Vel.x > 0.0f)
+			m_Core.m_Vel.x = 0.0f;
+
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(Distance, 0.0f)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.x = NewPos.x;
+	}
+	else if(RightToQuad) // touching quads lower right
+	{
+		NewPos = vec2(RightXAtY + fPhys, m_Core.m_Pos.y);
+		if(m_Core.m_Vel.x < 0.0f)
+			m_Core.m_Vel.x = 0.0f;
+		for(int Distance = -16; Distance < 16; Distance++)
+			if(Collision()->CheckPoint(NewPos + vec2(Distance, 0.0f)))
+				SetPos = false;
+		if(SetPos)
+			m_Core.m_Pos.x = NewPos.x;
+	}
 }

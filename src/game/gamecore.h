@@ -250,6 +250,7 @@ public:
 	bool m_Jetpack;
 
 	// FoxNet
+	bool m_IsInFreezeQuad;
 	bool m_ExplosionGun;
 
 	bool m_CollisionDisabled;

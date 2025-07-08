@@ -957,6 +957,46 @@ std::vector<int> CCollision::GetMapIndices(vec2 PrevPos, vec2 Pos, unsigned MaxI
 	}
 }
 
+std::vector<std::pair<const CMapItemLayerQuads *, int>> CCollision::GetQuadIndices(vec2 PrevPos, vec2 Pos, unsigned MaxIndices) const
+{
+	std::vector<std::pair<const CMapItemLayerQuads *, int>> vQuadIndices;
+	float d = distance(PrevPos, Pos);
+	int End = static_cast<int>(d * 1.5f) + 1;
+	if(d == 0.0f)
+		End = 1;
+
+	for(int i = 0; i < End; i++)
+	{
+		float a = d == 0.0f ? 0.0f : (float)i / d;
+		vec2 Tmp = mix(PrevPos, Pos, a);
+
+		if(Tmp == PrevPos && Tmp == Pos)
+			continue;
+
+		for(const auto *pQuadLayer : QuadLayers())
+		{
+			for(int QuadIndex = 0; QuadIndex < pQuadLayer->m_NumQuads; QuadIndex++)
+			{
+				CQuad *pQuad = nullptr;
+				int FoundNum = GetQuadAt(Tmp.x, Tmp.y, &pQuad, QuadIndex, pQuadLayer);
+				if(!pQuad || FoundNum < 0 || FoundNum >= pQuadLayer->m_NumQuads)
+					continue;
+
+				auto pair = std::make_pair(pQuadLayer, FoundNum);
+				// Avoid duplicates
+				if(std::find(vQuadIndices.begin(), vQuadIndices.end(), pair) == vQuadIndices.end())
+				{
+					vQuadIndices.push_back(pair);
+					if(MaxIndices && vQuadIndices.size() >= MaxIndices)
+						return vQuadIndices;
+				}
+			}
+		}
+	}
+	return vQuadIndices;
+}
+
+
 vec2 CCollision::GetPos(int Index) const
 {
 	if(Index < 0)
@@ -1298,6 +1338,61 @@ size_t CCollision::TeleAllSize(int Number)
 		Total += m_TeleOthers[Number].size();
 	return Total;
 }
+
+int CCollision::GetQuadCorners(int StartNum, CQuad **pOut, const CMapItemLayerQuads *pQuadLayer, float ExtraTime, vec2 *pTopLCorner, vec2 *pTopRCorner, vec2 *pBottomLCorner, vec2 *pBottomRCorner) const
+{
+	if(!pQuadLayer)
+		return -1;
+
+	int Num = StartNum;
+	CQuad *pQuad = nullptr;
+	SAnimationTransformCache AnimationCache;
+
+	CQuad *pQuads = (CQuad *)m_pLayers->Map()->GetDataSwapped(pQuadLayer->m_Data);
+
+	vec2 Position(0.0f, 0.0f);
+	float Angle = 0.0f;
+	if(pQuads[Num].m_PosEnv >= 0)
+	{
+		if(pQuads[Num].m_PosEnv != AnimationCache.PosEnv || AnimationCache.PosEnvOffset != pQuads[Num].m_PosEnvOffset)
+		{
+			AnimationCache.PosEnv = pQuads[Num].m_PosEnv;
+			AnimationCache.PosEnvOffset = pQuads[Num].m_PosEnvOffset;
+			GetAnimationTransform(m_Time + ExtraTime + (AnimationCache.PosEnvOffset / 1000.0), AnimationCache.PosEnv, m_pLayers, AnimationCache.Position, AnimationCache.Angle);
+		}
+		Position = AnimationCache.Position;
+		Angle = AnimationCache.Angle;
+	}
+
+	vec2 p0 = Position + vec2(fx2f(pQuads[Num].m_aPoints[0].x), fx2f(pQuads[Num].m_aPoints[0].y));
+	vec2 p1 = Position + vec2(fx2f(pQuads[Num].m_aPoints[1].x), fx2f(pQuads[Num].m_aPoints[1].y));
+	vec2 p2 = Position + vec2(fx2f(pQuads[Num].m_aPoints[2].x), fx2f(pQuads[Num].m_aPoints[2].y));
+	vec2 p3 = Position + vec2(fx2f(pQuads[Num].m_aPoints[3].x), fx2f(pQuads[Num].m_aPoints[3].y));
+
+	if(Angle != 0)
+	{
+		vec2 center(fx2f(pQuads[Num].m_aPoints[4].x), fx2f(pQuads[Num].m_aPoints[4].y));
+		Rotate(center, &p0, Angle);
+		Rotate(center, &p1, Angle);
+		Rotate(center, &p2, Angle);
+		Rotate(center, &p3, Angle);
+	}
+	pQuad = &pQuads[Num];
+
+	if(pOut)
+		*pOut = pQuad;
+	if(pTopLCorner)
+		*pTopLCorner = p0;
+	if(pTopRCorner)
+		*pTopRCorner = p1;
+	if(pBottomLCorner)
+		*pBottomLCorner = p2;
+	if(pBottomRCorner)
+		*pBottomRCorner = p3;
+
+	return Num;
+}
+
 int CCollision::GetQuadAt(float x, float y, CQuad **pOut, int StartNum, const CMapItemLayerQuads *pQuadLayer, vec2 *QuadCurPos, float *QuadCurAngle) const
 {
 	if(!pQuadLayer)

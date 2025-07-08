@@ -72,8 +72,12 @@ public:
 		return GetMoveRestrictions(nullptr, nullptr, Pos, Distance);
 	}
 
-	
+	// Quads
 	const std::vector<CMapItemLayerQuads *> &QuadLayers() const { return m_vQuadLayers; }
+
+	std::vector<std::pair<const CMapItemLayerQuads *, int>> GetQuadIndices(vec2 PrevPos, vec2 Pos, unsigned MaxIndices = 0) const;
+	
+	int GetQuadCorners(int StartNum, CQuad **pOut, const CMapItemLayerQuads *pQuadLayer, float ExtraTime = 0.0, vec2 *pTopLCorner = nullptr, vec2 *pTopRCorner = nullptr, vec2 *pBottomLCorner = nullptr, vec2 *pBottomRCorner = nullptr) const;
 
 	int GetQuadAt(float x, float y, CQuad **pOut, int StartNum, const CMapItemLayerQuads *pQuadLayer, vec2 *QuadCurPos = nullptr, float *QuadCurAngle = nullptr) const;
 
