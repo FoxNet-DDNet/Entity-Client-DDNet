@@ -41,12 +41,12 @@ public:
 	bool operator()(int a, int b) { return (g_Config.m_BrSortOrder ? (m_pThis->*m_pfnSort)(b, a) : (m_pThis->*m_pfnSort)(a, b)); }
 };
 
-bool matchesPart(const char *a, const char *b)
+static bool MatchesPart(const char *a, const char *b)
 {
 	return str_utf8_find_nocase(a, b) != nullptr;
 }
 
-bool matchesExactly(const char *a, const char *b)
+static bool MatchesExactly(const char *a, const char *b)
 {
 	return str_comp(a, &b[1]) == 0;
 }
@@ -493,12 +493,12 @@ void CServerBrowser::Filter()
 					{
 						continue;
 					}
-					auto MatchesFn = matchesPart;
+					auto MatchesFn = MatchesPart;
 					const int FilterLen = str_length(aFilterStrTrimmed);
 					if(aFilterStrTrimmed[0] == '"' && aFilterStrTrimmed[FilterLen - 1] == '"')
 					{
 						aFilterStrTrimmed[FilterLen - 1] = '\0';
-						MatchesFn = matchesExactly;
+						MatchesFn = MatchesExactly;
 					}
 
 					// match against server name
@@ -549,12 +549,12 @@ void CServerBrowser::Filter()
 					{
 						continue;
 					}
-					auto MatchesFn = matchesPart;
+					auto MatchesFn = MatchesPart;
 					const int FilterLen = str_length(aExcludeStrTrimmed);
 					if(aExcludeStrTrimmed[0] == '"' && aExcludeStrTrimmed[FilterLen - 1] == '"')
 					{
 						aExcludeStrTrimmed[FilterLen - 1] = '\0';
-						MatchesFn = matchesExactly;
+						MatchesFn = MatchesExactly;
 					}
 
 					// match against server name
@@ -1734,7 +1734,7 @@ CServerInfo::ERankState CCommunity::HasRank(const char *pMap) const
 	if(!HasRanks())
 		return CServerInfo::RANK_UNAVAILABLE;
 	const CCommunityMap Needle(pMap);
-	return m_FinishedMaps.count(Needle) == 0 ? CServerInfo::RANK_UNRANKED : CServerInfo::RANK_RANKED;
+	return !m_FinishedMaps.contains(Needle) ? CServerInfo::RANK_UNRANKED : CServerInfo::RANK_RANKED;
 }
 
 const std::vector<CCommunity> &CServerBrowser::Communities() const
@@ -1954,7 +1954,7 @@ template<typename TNamedElement, typename TElementName>
 static bool IsSubsetEquals(const std::vector<const TNamedElement *> &vpLeft, const std::set<TElementName> &Right)
 {
 	return vpLeft.size() <= Right.size() && std::all_of(vpLeft.begin(), vpLeft.end(), [&](const TNamedElement *pElem) {
-		return Right.count(TElementName(pElem->Name())) > 0;
+		return Right.contains(TElementName(pElem->Name()));
 	});
 }
 
@@ -2037,7 +2037,7 @@ void CExcludedCommunityCountryFilterList::Add(const char *pCountryName)
 void CExcludedCommunityCountryFilterList::Add(const char *pCommunityId, const char *pCountryName)
 {
 	CCommunityId CommunityId(pCommunityId);
-	if(m_Entries.find(CommunityId) == m_Entries.end())
+	if(!m_Entries.contains(CommunityId))
 	{
 		m_Entries[CommunityId] = {};
 	}
@@ -2074,8 +2074,7 @@ bool CExcludedCommunityCountryFilterList::Filtered(const char *pCountryName) con
 		return false;
 
 	const auto &CountryEntries = CommunityEntry->second;
-	return !IsSubsetEquals(m_pCommunityCache->SelectableCountries(), CountryEntries) &&
-	       CountryEntries.find(CCommunityCountryName(pCountryName)) != CountryEntries.end();
+	return !IsSubsetEquals(m_pCommunityCache->SelectableCountries(), CountryEntries) && CountryEntries.contains(CCommunityCountryName(pCountryName));
 }
 
 bool CExcludedCommunityCountryFilterList::Empty() const
@@ -2196,7 +2195,7 @@ void CExcludedCommunityTypeFilterList::Add(const char *pTypeName)
 void CExcludedCommunityTypeFilterList::Add(const char *pCommunityId, const char *pTypeName)
 {
 	CCommunityId CommunityId(pCommunityId);
-	if(m_Entries.find(CommunityId) == m_Entries.end())
+	if(!m_Entries.contains(CommunityId))
 	{
 		m_Entries[CommunityId] = {};
 	}
@@ -2233,8 +2232,7 @@ bool CExcludedCommunityTypeFilterList::Filtered(const char *pTypeName) const
 		return false;
 
 	const auto &TypeEntries = CommunityEntry->second;
-	return !IsSubsetEquals(m_pCommunityCache->SelectableTypes(), TypeEntries) &&
-	       TypeEntries.find(CCommunityTypeName(pTypeName)) != TypeEntries.end();
+	return !IsSubsetEquals(m_pCommunityCache->SelectableTypes(), TypeEntries) && TypeEntries.contains(CCommunityTypeName(pTypeName));
 }
 
 bool CExcludedCommunityTypeFilterList::Empty() const
