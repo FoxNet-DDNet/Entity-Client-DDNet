@@ -20,5 +20,5 @@ extern const char *GIT_SHORTREV_HASH;
 
 // E-Client
 #define CLIENT_NAME "E-Client"
-#define ECLIENT_VERSION "1.2.3"
+#define ECLIENT_VERSION "1.2.4"
 #endif
