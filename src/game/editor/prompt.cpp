@@ -6,7 +6,7 @@
 
 #include "prompt.h"
 
-bool FuzzyMatch(const char *pHaystack, const char *pNeedle)
+static bool FuzzyMatch(const char *pHaystack, const char *pNeedle)
 {
 	if(!pNeedle || !pNeedle[0])
 		return false;
@@ -43,7 +43,9 @@ void CPrompt::SetInactive()
 	m_ResetFilterResults = true;
 	m_PromptInput.Clear();
 	if(Editor()->m_Dialog == DIALOG_QUICK_PROMPT)
-		Editor()->m_Dialog = DIALOG_NONE;
+	{
+		Editor()->OnDialogClose();
+	}
 	CEditorComponent::SetInactive();
 }
 
@@ -75,6 +77,9 @@ void CPrompt::OnRender(CUIRect _)
 		SetInactive();
 		return;
 	}
+
+	// Prevent UI elements below the prompt dialog from being activated.
+	Ui()->SetHotItem(this);
 
 	static CListBox s_ListBox;
 	CUIRect Prompt, PromptBox;

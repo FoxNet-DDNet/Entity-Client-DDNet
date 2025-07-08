@@ -29,7 +29,6 @@ class CDiscord : public IDiscord
 {
 	DiscordActivity m_Activity;
 	bool m_UpdateActivity = false;
-	int64_t m_LastActivityUpdate = 0;
 	IDiscordCore *m_pCore;
 	IDiscordActivityEvents m_ActivityEvents;
 	IDiscordActivityManager *m_pActivityManager;
@@ -52,7 +51,7 @@ public:
 		if(m_pCore)
 		{
 			m_pCore->destroy(m_pCore);
-		m_pCore = 0;
+			m_pCore = 0;
 			m_pActivityManager = 0;
 		}
 		if(!m_Enabled)
@@ -123,23 +122,19 @@ public:
 	{
 		if(!m_Enabled || !m_pActivityManager)
 			return;
-		m_ShowMap = ShowMap;
 
 		mem_zero(&m_Activity, sizeof(DiscordActivity));
 
+		// E-Client
 		str_copy(m_Activity.assets.large_image, "m_ghost", sizeof(m_Activity.assets.large_image));
 		str_copy(m_Activity.assets.large_text, "entityclient.net", sizeof(m_Activity.assets.large_text));
-
-		
+		m_ShowMap = ShowMap;
+		m_Activity.instance = true;
 		m_Activity.timestamps.start = m_TimeStamp;
-		// str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
-		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 		if(m_ShowMap)
 			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
+		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 
-
-
-		m_Activity.instance = true;
 
 		m_Activity.party.size.current_size = ServerInfo.m_NumClients;
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
@@ -162,14 +157,14 @@ public:
 	{
 		if(!m_Activity.instance)
 			return;
+		m_UpdateActivity = true;
+		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
 
 		UpdateServerIp(ServerInfo);
 
-		//str_copy(m_Activity.details, ServerInfo.m_aName, sizeof(m_Activity.details));
+		// E-Client
 		if(m_ShowMap)
 			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
-		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
-		m_UpdateActivity = true;
 	}
 
 	void UpdatePlayerCount(int Count) override
@@ -225,7 +220,7 @@ public:
 	}
 };
 
-IDiscord *CreateDiscordImpl()
+static IDiscord *CreateDiscordImpl()
 {
 	FDiscordCreate pfnDiscordCreate = GetDiscordCreate();
 	if(!pfnDiscordCreate)
@@ -241,7 +236,7 @@ IDiscord *CreateDiscordImpl()
 	return pDiscord;
 }
 #else
-IDiscord *CreateDiscordImpl()
+static IDiscord *CreateDiscordImpl()
 {
 	return nullptr;
 }

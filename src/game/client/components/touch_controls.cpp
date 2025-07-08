@@ -171,8 +171,8 @@ vec2 CTouchControls::CTouchButton::ClampTouchPosition(vec2 TouchPosition) const
 	{
 	case EButtonShape::RECT:
 	{
-		TouchPosition.x = clamp(TouchPosition.x, m_ScreenRect.x, m_ScreenRect.x + m_ScreenRect.w);
-		TouchPosition.y = clamp(TouchPosition.y, m_ScreenRect.y, m_ScreenRect.y + m_ScreenRect.h);
+		TouchPosition.x = std::clamp(TouchPosition.x, m_ScreenRect.x, m_ScreenRect.x + m_ScreenRect.w);
+		TouchPosition.y = std::clamp(TouchPosition.y, m_ScreenRect.y, m_ScreenRect.y + m_ScreenRect.h);
 		break;
 	}
 	case EButtonShape::CIRCLE:
@@ -556,8 +556,8 @@ void CTouchControls::CJoystickTouchButtonBehavior::OnUpdate()
 		vec2 WorldScreenSize;
 		m_pTouchControls->RenderTools()->CalcScreenParams(m_pTouchControls->Graphics()->ScreenAspect(), m_pTouchControls->GameClient()->m_Camera.m_Zoom, &WorldScreenSize.x, &WorldScreenSize.y);
 		Controls.m_aMousePos[g_Config.m_ClDummy] += -m_AccumulatedDelta * WorldScreenSize;
-		Controls.m_aMousePos[g_Config.m_ClDummy].x = clamp(Controls.m_aMousePos[g_Config.m_ClDummy].x, -201.0f * 32, (m_pTouchControls->Collision()->GetWidth() + 201.0f) * 32.0f);
-		Controls.m_aMousePos[g_Config.m_ClDummy].y = clamp(Controls.m_aMousePos[g_Config.m_ClDummy].y, -201.0f * 32, (m_pTouchControls->Collision()->GetHeight() + 201.0f) * 32.0f);
+		Controls.m_aMousePos[g_Config.m_ClDummy].x = std::clamp(Controls.m_aMousePos[g_Config.m_ClDummy].x, -201.0f * 32, (m_pTouchControls->Collision()->GetWidth() + 201.0f) * 32.0f);
+		Controls.m_aMousePos[g_Config.m_ClDummy].y = std::clamp(Controls.m_aMousePos[g_Config.m_ClDummy].y, -201.0f * 32, (m_pTouchControls->Collision()->GetHeight() + 201.0f) * 32.0f);
 		m_AccumulatedDelta = vec2(0.0f, 0.0f);
 	}
 	else
@@ -863,13 +863,13 @@ int CTouchControls::NextActiveAction(int Action) const
 		return ACTION_FIRE;
 	default:
 		dbg_assert(false, "Action invalid for NextActiveAction");
-		return NUM_ACTIONS;
+		dbg_break();
 	}
 }
 
 int CTouchControls::NextDirectTouchAction() const
 {
-	if(m_pClient->m_Snap.m_SpecInfo.m_Active)
+	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
 	{
 		switch(m_DirectTouchSpectate)
 		{
@@ -1024,8 +1024,9 @@ void CTouchControls::UpdateButtons(const std::vector<IInput::CTouchFingerState> 
 				const auto ActiveFinger = std::find_if(vRemainingTouchFingerStates.begin(), vRemainingTouchFingerStates.end(), [&](const IInput::CTouchFingerState &TouchFingerState) {
 					return TouchFingerState.m_Finger == TouchButton.m_pBehavior->m_Finger;
 				});
-				dbg_assert(ActiveFinger != vRemainingTouchFingerStates.end(), "Active button finger not found");
-				vRemainingTouchFingerStates.erase(ActiveFinger);
+				// ActiveFinger could be released during this progress.
+				if(ActiveFinger != vRemainingTouchFingerStates.end())
+					vRemainingTouchFingerStates.erase(ActiveFinger);
 			}
 			TouchButton.m_pBehavior->SetInactive();
 			continue;
@@ -1080,15 +1081,15 @@ void CTouchControls::UpdateButtons(const std::vector<IInput::CTouchFingerState> 
 	// Update mouse position based on the finger responsible for the last active action.
 	if(GotDirectFingerState)
 	{
-		const float Zoom = m_pClient->m_Snap.m_SpecInfo.m_Active ? m_pClient->m_Camera.m_Zoom : 1.0f;
+		const float Zoom = GameClient()->m_Snap.m_SpecInfo.m_Active ? GameClient()->m_Camera.m_Zoom : 1.0f;
 		vec2 WorldScreenSize;
 		RenderTools()->CalcScreenParams(Graphics()->ScreenAspect(), Zoom, &WorldScreenSize.x, &WorldScreenSize.y);
 		CControls &Controls = GameClient()->m_Controls;
-		if(m_pClient->m_Snap.m_SpecInfo.m_Active)
+		if(GameClient()->m_Snap.m_SpecInfo.m_Active)
 		{
 			Controls.m_aMousePos[g_Config.m_ClDummy] += -DirectFingerState.m_Delta * WorldScreenSize;
-			Controls.m_aMousePos[g_Config.m_ClDummy].x = clamp(Controls.m_aMousePos[g_Config.m_ClDummy].x, -201.0f * 32, (Collision()->GetWidth() + 201.0f) * 32.0f);
-			Controls.m_aMousePos[g_Config.m_ClDummy].y = clamp(Controls.m_aMousePos[g_Config.m_ClDummy].y, -201.0f * 32, (Collision()->GetHeight() + 201.0f) * 32.0f);
+			Controls.m_aMousePos[g_Config.m_ClDummy].x = std::clamp(Controls.m_aMousePos[g_Config.m_ClDummy].x, -201.0f * 32, (Collision()->GetWidth() + 201.0f) * 32.0f);
+			Controls.m_aMousePos[g_Config.m_ClDummy].y = std::clamp(Controls.m_aMousePos[g_Config.m_ClDummy].y, -201.0f * 32, (Collision()->GetHeight() + 201.0f) * 32.0f);
 		}
 		else
 		{

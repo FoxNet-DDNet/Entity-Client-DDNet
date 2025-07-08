@@ -14,6 +14,8 @@
 // include protocol for MAX_CLIENT used in config_variables
 #include <engine/shared/protocol.h>
 
+static constexpr const char *DEFAULT_SAVED_RCON_USER = "local-server";
+
 #define CONFIG_FILE "settings_ddnet.cfg"
 #define AUTOEXEC_FILE "autoexec.cfg"
 #define AUTOEXEC_CLIENT_FILE "autoexec_client.cfg"
@@ -215,7 +217,7 @@ class CConfigManager : public IConfigManager
 		}
 	};
 	std::vector<SCallback> m_vCallbacks;
-	std::vector<SCallback> m_vACallbacks;
+	std::vector<SCallback> m_vECallbacks;
 
 	std::vector<SConfigVariable *> m_vpAllVariables;
 	std::vector<SConfigVariable *> m_vpGameVariables;
@@ -234,11 +236,11 @@ public:
 	void ResetGameSettings() override;
 	void SetReadOnly(const char *pScriptName, bool ReadOnly) override;
 	bool Save() override;
-	bool ASave();
+	bool EClientSave();
 	CConfig *Values() override { return &g_Config; }
 
 	void RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
-	void RegisterACallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
+	void RegisterECallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
 
 	void WriteLine(const char *pLine) override;
 

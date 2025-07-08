@@ -376,6 +376,10 @@ public:
 
 	virtual void OnPreWindowResize() = 0;
 	virtual void OnWindowResize() = 0;
+
+	virtual void ColorParsing(const char *pText, CTextCursor *pCursor, ColorRGBA OriginalCol, STextContainerIndex *pTextContainerIndex = nullptr) = 0;
+	virtual ColorRGBA HSVtoRGB(float h, float s, float v) = 0;
+
 };
 
 class IEngineTextRender : public ITextRender
@@ -383,7 +387,7 @@ class IEngineTextRender : public ITextRender
 	MACRO_INTERFACE("enginetextrender")
 public:
 	virtual void Init() = 0;
-	virtual void Shutdown() override = 0;
+	void Shutdown() override = 0;
 };
 
 extern IEngineTextRender *CreateEngineTextRender();

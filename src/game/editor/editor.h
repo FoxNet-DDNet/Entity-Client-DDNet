@@ -36,6 +36,7 @@
 #include "editor_server_settings.h"
 #include "editor_trackers.h"
 #include "editor_ui.h"
+#include "font_typer.h"
 #include "layer_selector.h"
 #include "map_view.h"
 #include "quadart.h"
@@ -66,6 +67,11 @@ enum
 	DIALOG_FILE,
 	DIALOG_MAPSETTINGS_ERROR,
 	DIALOG_QUICK_PROMPT,
+
+	// The font typer component sets m_Dialog
+	// while it is active to make sure no other component
+	// interprets the key presses
+	DIALOG_PSEUDO_FONT_TYPER,
 };
 
 class CEditorImage;
@@ -293,6 +299,7 @@ class CEditor : public IEditor
 	CMapView m_MapView;
 	CLayerSelector m_LayerSelector;
 	CPrompt m_Prompt;
+	CFontTyper m_FontTyper;
 
 	bool m_EditorWasUsedBefore = false;
 
@@ -448,8 +455,6 @@ public:
 
 		m_CursorType = CURSOR_NORMAL;
 
-		ms_pUiGotContext = nullptr;
-
 		// DDRace
 
 		m_TeleNumber = 1;
@@ -497,7 +502,7 @@ public:
 	void OnActivate() override;
 	void OnWindowResize() override;
 	void OnClose() override;
-	void OnDialogClose() override;
+	void OnDialogClose();
 	bool HasUnsavedData() const override { return m_Map.m_Modified; }
 	void UpdateMentions() override { m_Mentions++; }
 	void ResetMentions() override { m_Mentions = 0; }
@@ -506,6 +511,15 @@ public:
 
 	void HandleCursorMovement();
 	void OnMouseMove(vec2 MousePos);
+	void MouseAxisLock(vec2 &CursorRel);
+	vec2 m_MouseAxisInitialPos = vec2(0.0f, 0.0f);
+	enum class EAxisLock
+	{
+		Start,
+		None,
+		Horizontal,
+		Vertical
+	} m_MouseAxisLockState = EAxisLock::Start;
 	void HandleAutosave();
 	bool PerformAutosave();
 	void HandleWriterFinishJobs();
@@ -851,7 +865,7 @@ public:
 	std::shared_ptr<CLayerTiles> m_pTilesetPicker;
 	std::shared_ptr<CLayerQuads> m_pQuadsetPicker;
 
-	static const void *ms_pUiGotContext;
+	const void *m_pUiGotContext = nullptr;
 
 	CEditorMap m_Map;
 	std::deque<std::shared_ptr<CDataFileWriterFinishJob>> m_WriterFinishJobs;

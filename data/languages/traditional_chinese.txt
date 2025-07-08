@@ -1640,12 +1640,12 @@ Go back the specified duration
 == 倒轉指定時長
 
 [Demo player duration]
-%d min.
-== %d 分
+%s min.
+== %s 分
 
 [Demo player duration]
-%d sec.
-== %d 秒
+%s sec.
+== %s 秒
 
 Change the skip duration
 == 變更指定時長
@@ -2023,9 +2023,6 @@ Active: Hook
 "%s" is not compatible with pnglite and cannot be loaded by old DDNet versions:
 == "%s" 與 pnglite 不兼容，無法被舊版本 DDNet 加載
 
-Loading background map
-== 加載背景地圖
-
 [Spectating Camera Mode Icon]
 AUTO
 == 自動
@@ -2209,3 +2206,16 @@ Dragger Outline Color
 
 Dragger Inner Color
 == 光索實心顏色
+
+[Spectating]
+Following %d: %s
+== 正在旁觀 %d: %s
+
+Loading map
+== 加載地圖
+
+Error checking player name
+== 檢查玩家暱稱時出錯
+
+Could not check for existing player with your name. Check your internet connection.
+== 無法驗證是否已存在相同暱稱的玩家。請檢查你的網路連線。

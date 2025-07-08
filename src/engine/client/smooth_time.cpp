@@ -128,7 +128,7 @@ int64_t CSmoothTime::GetMargin(int64_t Now) const
 	int64_t TimePassed = Now - m_SnapMargin;
 	int64_t Diff = m_TargetMargin - m_CurrentMargin;
 
-	float a = clamp(TimePassed / (float)time_freq(), -1.f, 1.f);
+	float a = std::clamp(TimePassed / (float)time_freq(), -1.f, 1.f);
 	int64_t Lim = maximum((int64_t)(a * absolute(Diff)), 1 + TimePassed / 100);
-	return m_CurrentMargin + (int64_t)clamp(Diff, -Lim, Lim);
+	return m_CurrentMargin + (int64_t)std::clamp(Diff, -Lim, Lim);
 }

@@ -20,8 +20,7 @@ CEmoticon::CEmoticon()
 void CEmoticon::ConKeyEmoticon(IConsole::IResult *pResult, void *pUserData)
 {
 	CEmoticon *pSelf = (CEmoticon *)pUserData;
-	if(pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
-		pSelf->m_Active = pResult->GetInteger(0) != 0;
+	pSelf->m_Active = pResult->GetInteger(0) != 0;
 }
 
 void CEmoticon::ConEmote(IConsole::IResult *pResult, void *pUserData)
@@ -160,7 +159,7 @@ void CEmoticon::OnRender()
 	}
 	Graphics()->WrapNormal();
 
-	if(GameClient()->m_GameInfo.m_AllowEyeWheel && g_Config.m_ClEyeWheel && m_pClient->m_aLocalIds[g_Config.m_ClDummy] >= 0)
+	if(GameClient()->m_GameInfo.m_AllowEyeWheel && g_Config.m_ClEyeWheel && GameClient()->m_aLocalIds[g_Config.m_ClDummy] >= 0)
 	{
 		Graphics()->TextureClear();
 		Graphics()->QuadsBegin();
@@ -168,7 +167,7 @@ void CEmoticon::OnRender()
 		Graphics()->DrawCircle(ScreenCenter.x, ScreenCenter.y, 100.0f, 64);
 		Graphics()->QuadsEnd();
 
-		CTeeRenderInfo TeeInfo = m_pClient->m_aClients[m_pClient->m_aLocalIds[g_Config.m_ClDummy]].m_RenderInfo;
+		CTeeRenderInfo TeeInfo = GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_RenderInfo;
 
 		for(int Emote = 0; Emote < NUM_EMOTES; Emote++)
 		{

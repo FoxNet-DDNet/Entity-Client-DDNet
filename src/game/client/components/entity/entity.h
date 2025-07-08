@@ -1,8 +1,8 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_H
-#include <game/client/component.h>
-#include <engine/console.h>
 #include <base/system.h>
+#include <engine/console.h>
+#include <game/client/component.h>
 #include <vector>
 
 class CTempEntry
@@ -15,10 +15,10 @@ public:
 	char m_aReason[128] = "";
 
 	/*
-	* Type = 0 -> TempWar
-	* Type = 1 -> TempHelper
-	* type = 2 -> TempMute
-	*/
+	 * Type = 0 -> TempWar
+	 * Type = 1 -> TempHelper
+	 * type = 2 -> TempMute
+	 */
 	CTempEntry(int Type, const char *pName, const char *pReason)
 	{
 		if(Type == 0)
@@ -36,7 +36,7 @@ public:
 	{
 		bool TempWarMatch = !str_comp(m_aTempWar, Other.m_aTempWar) && str_comp(m_aTempWar, "") != 0;
 		bool TempHelperMatch = !str_comp(m_aTempHelper, Other.m_aTempHelper) && str_comp(m_aTempHelper, "") != 0;
-		bool TempMuteMatch = !str_comp(m_aTempMute, Other.m_aTempMute) && str_comp(m_aTempHelper, "") != 0;
+		bool TempMuteMatch = !str_comp(m_aTempMute, Other.m_aTempMute) && str_comp(m_aTempMute, "") != 0;
 		return (TempWarMatch || TempHelperMatch || TempMuteMatch);
 	}
 };
@@ -55,7 +55,7 @@ class CEClient : public CComponent
 {
 	bool m_AttempedJoinTeam;
 	bool m_JoinedTeam;
-	
+
 	bool m_KogModeRebound;
 	bool m_WeaponsGot;
 	bool m_GoresModeWasOn;
@@ -63,7 +63,6 @@ class CEClient : public CComponent
 
 	// Chat Message Stuffc
 
-	
 	// Reply to Ping
 	struct CLastPing
 	{
@@ -119,6 +118,10 @@ class CEClient : public CComponent
 
 	static void ConReplyLast(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
+
+	static void ConSpectateId(IConsole::IResult *pResult, void *pUserData);
+
 public:
 
 	bool m_SentKill;
@@ -131,7 +134,6 @@ public:
 	bool UnTempHelper(const char *pName, bool Silent = false);
 	bool UnTempWar(const char *pName, bool Silent = false);
 	bool UnTempMute(const char *pName, bool Silent = false);
-
 
 	void Votekick(const char *pName, const char *pReason);
 
@@ -149,9 +151,8 @@ public:
 	void RemoveWarEntry(int Type, const char *pName);
 
 	// Movement Notification if tabbed out
-	int64_t m_LastNotification;
-	int m_LastTile = -1;
-	void ChangeTileNotifyTick();
+	vec2 m_LastPos = vec2(0, 0);
+	void NotifyOnMove();
 
 	// Rainbow
 	void Rainbow();
@@ -189,10 +190,10 @@ public:
 	void OnConnect();
 
 	/* Last Movement
-	*	+left
-	*	+right
-	*	+jump
-	*/
+	 *	+left
+	 *	+right
+	 *	+jump
+	 */
 	int64_t m_LastMovement = 10.0f;
 
 	bool m_FirstLaunch = false;

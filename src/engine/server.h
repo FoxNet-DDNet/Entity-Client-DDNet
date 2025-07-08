@@ -213,7 +213,7 @@ public:
 			return true;
 		if(GetClientVersion(Client) >= VERSION_DDNET_OLD)
 			return true;
-		Target = clamp(Target, 0, VANILLA_MAX_CLIENTS - 1);
+		Target = std::clamp(Target, 0, VANILLA_MAX_CLIENTS - 1);
 		int *pMap = GetIdMap(Client);
 		if(pMap[Target] == -1)
 			return false;
@@ -302,7 +302,8 @@ public:
 	// is instantiated.
 	virtual void OnInit(const void *pPersistentData) = 0;
 	virtual void OnConsoleInit() = 0;
-	virtual void OnMapChange(char *pNewMapName, int MapNameSize) = 0;
+	// Returns `true` if map change accepted.
+	[[nodiscard]] virtual bool OnMapChange(char *pNewMapName, int MapNameSize) = 0;
 	// `pPersistentData` may be null if this is the last time `IGameServer`
 	// is destroyed.
 	virtual void OnShutdown(void *pPersistentData) = 0;
@@ -336,6 +337,8 @@ public:
 	virtual void OnClientDirectInput(int ClientId, void *pInput) = 0;
 	virtual void OnClientPredictedInput(int ClientId, void *pInput) = 0;
 	virtual void OnClientPredictedEarlyInput(int ClientId, void *pInput) = 0;
+
+	virtual void PreInputClients(int ClientId, bool *pClients) = 0;
 
 	virtual bool IsClientReady(int ClientId) const = 0;
 	virtual bool IsClientPlayer(int ClientId) const = 0;

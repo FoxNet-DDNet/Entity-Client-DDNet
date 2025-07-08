@@ -453,7 +453,8 @@ void CEditorActionBulk::Undo()
 {
 	if(m_Reverse)
 	{
-		for(auto pIt = m_vpActions.rbegin(); pIt != m_vpActions.rend(); pIt++)
+		// reverse_view is not supported in gcc 10
+		for(auto pIt = m_vpActions.rbegin(); pIt != m_vpActions.rend(); pIt++) // NOLINT: modernize-loop-convert
 		{
 			auto &pAction = *pIt;
 			pAction->Undo();
@@ -1614,7 +1615,7 @@ void CEditorActionEditEnvelopePointValue::Apply(bool Undo)
 	else
 	{
 		if(pEnvelope->GetChannels() == 1 || pEnvelope->GetChannels() == 4)
-			CurrentValue = clamp(CurrentValue, 0.0f, 1.0f);
+			CurrentValue = std::clamp(CurrentValue, 0.0f, 1.0f);
 		pEnvelope->m_vPoints[m_PtIndex].m_aValues[m_Channel] = f2fx(CurrentValue);
 
 		if(m_PtIndex != 0)

@@ -1,7 +1,7 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_FREEZEKILL_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_FREEZEKILL_H
-#include <game/client/component.h>
 #include <cstdint>
+#include <game/client/component.h>
 
 class CFreezeKill : public CComponent
 {

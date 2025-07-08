@@ -89,10 +89,24 @@ void CLayerTiles::SetTile(int x, int y, CTile Tile)
 
 	if(m_FillGameTile != -1 && m_LiveGameTiles)
 	{
-		std::shared_ptr<CLayerTiles> pGLayer = m_pEditor->m_Map.m_pGameLayer;
+		std::shared_ptr<CLayerTiles> pLayer = m_pEditor->m_Map.m_pGameLayer;
+		if(m_FillGameTile == TILE_TELECHECKIN || m_FillGameTile == TILE_TELECHECKINEVIL)
+		{
+			if(!m_pEditor->m_Map.m_pTeleLayer)
+			{
+				std::shared_ptr<CLayerTele> pLayerTele = std::make_shared<CLayerTele>(m_pEditor, m_Width, m_Height);
+				m_pEditor->m_Map.MakeTeleLayer(pLayerTele);
+				m_pEditor->m_Map.m_pGameGroup->AddLayer(pLayerTele);
+				int GameGroupIndex = std::find(m_pEditor->m_Map.m_vpGroups.begin(), m_pEditor->m_Map.m_vpGroups.end(), m_pEditor->m_Map.m_pGameGroup) - m_pEditor->m_Map.m_vpGroups.begin();
+				int LayerIndex = m_pEditor->m_Map.m_vpGroups[GameGroupIndex]->m_vpLayers.size() - 1;
+				m_pEditor->m_EditorHistory.RecordAction(std::make_shared<CEditorActionAddLayer>(m_pEditor, GameGroupIndex, LayerIndex));
+			}
+
+			pLayer = m_pEditor->m_Map.m_pTeleLayer;
+		}
+
 		bool HasTile = Tile.m_Index != 0;
-		const CTile ResultTile = {(unsigned char)(HasTile ? m_FillGameTile : TILE_AIR)};
-		pGLayer->SetTile(x, y, ResultTile);
+		pLayer->SetTile(x, y, CTile{(unsigned char)(HasTile ? m_FillGameTile : TILE_AIR)});
 	}
 }
 
@@ -277,7 +291,7 @@ void CLayerTiles::BrushSelecting(CUIRect Rect)
 }
 
 template<typename T>
-static void InitGrabbedLayer(std::shared_ptr<T> pLayer, CLayerTiles *pThisLayer)
+static void InitGrabbedLayer(std::shared_ptr<T> &pLayer, CLayerTiles *pThisLayer)
 {
 	pLayer->m_pEditor = pThisLayer->m_pEditor;
 	pLayer->m_Image = pThisLayer->m_Image;
@@ -762,39 +776,27 @@ void CLayerTiles::FillGameTiles(EGameTileOp Fill)
 	if(!CanFillGameTiles())
 		return;
 
-	int Result = (int)Fill;
-	switch(Fill)
-	{
-	case EGameTileOp::HOOKTHROUGH:
-		Result = TILE_THROUGH_CUT;
-		break;
-	case EGameTileOp::FREEZE:
-		Result = TILE_FREEZE;
-		break;
-	case EGameTileOp::UNFREEZE:
-		Result = TILE_UNFREEZE;
-		break;
-	case EGameTileOp::DEEP_FREEZE:
-		Result = TILE_DFREEZE;
-		break;
-	case EGameTileOp::DEEP_UNFREEZE:
-		Result = TILE_DUNFREEZE;
-		break;
-	case EGameTileOp::BLUE_CHECK_TELE:
-		Result = TILE_TELECHECKIN;
-		break;
-	case EGameTileOp::RED_CHECK_TELE:
-		Result = TILE_TELECHECKINEVIL;
-		break;
-	case EGameTileOp::LIVE_FREEZE:
-		Result = TILE_LFREEZE;
-		break;
-	case EGameTileOp::LIVE_UNFREEZE:
-		Result = TILE_LUNFREEZE;
-		break;
-	default:
-		break;
-	}
+	auto GameTileOpToIndex = [](EGameTileOp Op) -> int {
+		switch(Op)
+		{
+		case EGameTileOp::AIR: return TILE_AIR;
+		case EGameTileOp::HOOKABLE: return TILE_SOLID;
+		case EGameTileOp::DEATH: return TILE_DEATH;
+		case EGameTileOp::UNHOOKABLE: return TILE_NOHOOK;
+		case EGameTileOp::HOOKTHROUGH: return TILE_THROUGH_CUT;
+		case EGameTileOp::FREEZE: return TILE_FREEZE;
+		case EGameTileOp::UNFREEZE: return TILE_UNFREEZE;
+		case EGameTileOp::DEEP_FREEZE: return TILE_DFREEZE;
+		case EGameTileOp::DEEP_UNFREEZE: return TILE_DUNFREEZE;
+		case EGameTileOp::BLUE_CHECK_TELE: return TILE_TELECHECKIN;
+		case EGameTileOp::RED_CHECK_TELE: return TILE_TELECHECKINEVIL;
+		case EGameTileOp::LIVE_FREEZE: return TILE_LFREEZE;
+		case EGameTileOp::LIVE_UNFREEZE: return TILE_LUNFREEZE;
+		default: return -1;
+		}
+	};
+
+	int Result = GameTileOpToIndex(Fill);
 	if(Result > -1)
 	{
 		std::shared_ptr<CLayerGroup> pGroup = m_pEditor->m_Map.m_vpGroups[m_pEditor->m_SelectedGroup];
@@ -836,8 +838,7 @@ void CLayerTiles::FillGameTiles(EGameTileOp Fill)
 				{
 					if(GetTile(x, y).m_Index)
 					{
-						const CTile ResultTile = {(unsigned char)Result};
-						pGLayer->SetTile(x + OffsetX, y + OffsetY, ResultTile);
+						pGLayer->SetTile(x + OffsetX, y + OffsetY, CTile{(unsigned char)Result});
 						Changes++;
 					}
 				}
@@ -845,7 +846,7 @@ void CLayerTiles::FillGameTiles(EGameTileOp Fill)
 
 			vpActions.push_back(std::make_shared<CEditorBrushDrawAction>(m_pEditor, GameGroupIndex));
 			char aDisplay[256];
-			str_format(aDisplay, sizeof(aDisplay), "Construct '%s' game tiles (x%d)", g_apGametileOpNames[(int)Fill], Changes);
+			str_format(aDisplay, sizeof(aDisplay), "Construct '%s' game tiles (x%d)", GAME_TILE_OP_NAMES[(int)Fill], Changes);
 			m_pEditor->m_EditorHistory.RecordAction(std::make_shared<CEditorActionBulk>(m_pEditor, vpActions, aDisplay, true));
 		}
 		else
@@ -969,7 +970,35 @@ CUi::EPopupMenuFunctionResult CLayerTiles::RenderProperties(CUIRect *pToolBox)
 	{
 		pToolBox->HSplitBottom(12.0f, pToolBox, &Button);
 		static int s_GameTilesButton = 0;
-		if(m_pEditor->DoButton_Editor(&s_GameTilesButton, "Game tiles", 0, &Button, BUTTONFLAG_LEFT, "Construct game tiles from this layer."))
+
+		auto GameTileToOp = [](int TileIndex) -> EGameTileOp {
+			switch(TileIndex)
+			{
+			case TILE_AIR: return EGameTileOp::AIR;
+			case TILE_SOLID: return EGameTileOp::HOOKABLE;
+			case TILE_DEATH: return EGameTileOp::DEATH;
+			case TILE_NOHOOK: return EGameTileOp::UNHOOKABLE;
+			case TILE_THROUGH_CUT: return EGameTileOp::HOOKTHROUGH;
+			case TILE_FREEZE: return EGameTileOp::FREEZE;
+			case TILE_UNFREEZE: return EGameTileOp::UNFREEZE;
+			case TILE_DFREEZE: return EGameTileOp::DEEP_FREEZE;
+			case TILE_DUNFREEZE: return EGameTileOp::DEEP_UNFREEZE;
+			case TILE_TELECHECKIN: return EGameTileOp::BLUE_CHECK_TELE;
+			case TILE_TELECHECKINEVIL: return EGameTileOp::RED_CHECK_TELE;
+			case TILE_LFREEZE: return EGameTileOp::LIVE_FREEZE;
+			case TILE_LUNFREEZE: return EGameTileOp::LIVE_UNFREEZE;
+			default: return EGameTileOp::AIR;
+			}
+		};
+
+		char aBuf[128] = "Game tiles";
+		if(m_LiveGameTiles)
+		{
+			auto TileOp = GameTileToOp(m_FillGameTile);
+			if(TileOp != EGameTileOp::AIR)
+				str_format(aBuf, sizeof(aBuf), "Game tiles: %s", GAME_TILE_OP_NAMES[(size_t)TileOp]);
+		}
+		if(m_pEditor->DoButton_Editor(&s_GameTilesButton, aBuf, 0, &Button, BUTTONFLAG_LEFT, "Construct game tiles from this layer."))
 			m_pEditor->PopupSelectGametileOpInvoke(m_pEditor->Ui()->MouseX(), m_pEditor->Ui()->MouseY());
 		const int Selected = m_pEditor->PopupSelectGameTileOpResult();
 		FillGameTiles((EGameTileOp)Selected);
@@ -1109,7 +1138,7 @@ CUi::EPopupMenuFunctionResult CLayerTiles::RenderProperties(CUIRect *pToolBox)
 	}
 	else if(Prop == ETilesProp::PROP_COLOR_ENV)
 	{
-		int Index = clamp(NewVal - 1, -1, (int)m_pEditor->m_Map.m_vpEnvelopes.size() - 1);
+		int Index = std::clamp(NewVal - 1, -1, (int)m_pEditor->m_Map.m_vpEnvelopes.size() - 1);
 		const int Step = (Index - m_ColorEnv) % 2;
 		if(Step != 0)
 		{

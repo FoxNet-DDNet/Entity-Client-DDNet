@@ -49,6 +49,7 @@
 
 #include <engine/shared/protocolglue.h>
 
+#include <game/client/projectile_data.h>
 #include <game/localization.h>
 #include <game/version.h>
 
@@ -210,13 +211,18 @@ int CClient::SendMsgActive(CMsgPacker *pMsg, int Flags)
 void CClient::SendqxdInfo(int Conn)
 {
 	CMsgPacker Msg(NETMSG_IAMQXD, true);
-	Msg.AddString("Built on " __DATE__ ", " __TIME__);
+	Msg.AddString("entityclient.net v" ECLIENT_VERSION " built on " __DATE__ ", " __TIME__);
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
 void CClient::SendInfo(int Conn)
 {
 	SendqxdInfo(CONN_MAIN);
+
+	if(!str_comp(g_Config.m_Password, ""))
+		str_copy(g_Config.m_Password, g_Config.m_ClPermaPassword);
+	if(!str_comp(m_aPassword, ""))
+		str_copy(m_aPassword, g_Config.m_ClPermaPassword);
 
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
@@ -323,7 +329,7 @@ float CClient::GotMaplistPercentage() const
 
 bool CClient::ConnectionProblems() const
 {
-	return m_aNetClient[g_Config.m_ClDummy].GotProblems(MaxLatencyTicks() * time_freq() / GameTickSpeed()) != 0;
+	return m_aNetClient[g_Config.m_ClDummy].GotProblems(MaxLatencyTicks() * time_freq() / GameTickSpeed());
 }
 
 void CClient::SendInput()
@@ -534,7 +540,7 @@ void CClient::EnterGame(int Conn)
 	m_CurrentServerNextPingTime = time_get() + time_freq() / 2;
 }
 
-void GenerateTimeoutCode(char *pBuffer, unsigned Size, char *pSeed, const NETADDR *pAddrs, int NumAddrs, bool Dummy)
+static void GenerateTimeoutCode(char *pBuffer, unsigned Size, char *pSeed, const NETADDR *pAddrs, int NumAddrs, bool Dummy)
 {
 	MD5_CTX Md5;
 	md5_init(&Md5);
@@ -1026,6 +1032,9 @@ void CClient::RenderGraphs()
 	float h = Graphics()->ScreenHeight() / 6.0f;
 	float sp = Graphics()->ScreenWidth() / 100.0f;
 	float x = Graphics()->ScreenWidth() - w - sp;
+
+	TextRender()->TextColor(TextRender()->DefaultTextColor());
+	TextRender()->Text(x, sp * 5 - 12.0f - 10.0f, 12.0f, Localize("Press Ctrl+Shift+G to disable debug graphs."));
 
 	m_FpsGraph.Scale(time_freq());
 	m_FpsGraph.Render(Graphics(), TextRender(), x, sp * 5, w, h, "FPS");
@@ -1985,7 +1994,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					m_aSnapshotIncomingDataSize[Conn] = 0;
 				}
 
-				mem_copy((char *)m_aaSnapshotIncomingData[Conn] + Part * MAX_SNAPSHOT_PACKSIZE, pData, clamp(PartSize, 0, (int)sizeof(m_aaSnapshotIncomingData[Conn]) - Part * MAX_SNAPSHOT_PACKSIZE));
+				mem_copy((char *)m_aaSnapshotIncomingData[Conn] + Part * MAX_SNAPSHOT_PACKSIZE, pData, std::clamp(PartSize, 0, (int)sizeof(m_aaSnapshotIncomingData[Conn]) - Part * MAX_SNAPSHOT_PACKSIZE));
 				m_aSnapshotParts[Conn] |= (uint64_t)(1) << Part;
 
 				if(Part == NumParts - 1)
@@ -2453,7 +2462,7 @@ void CClient::ResetDDNetInfoTask()
 typedef std::tuple<int, int, int> TVersion;
 static const TVersion gs_InvalidVersion = std::make_tuple(-1, -1, -1);
 
-TVersion ToVersion(char *pStr)
+static TVersion ToVersion(char *pStr)
 {
 	int aVersion[3] = {0, 0, 0};
 	const char *p = strtok(pStr, ".");
@@ -2478,7 +2487,10 @@ void CClient::LoadDDNetInfo()
 	const json_value *pDDNetInfo = m_ServerBrowser.LoadDDNetInfo();
 
 	if(!pDDNetInfo)
+	{
+		m_InfoState = EInfoState::ERROR;
 		return;
+	}
 
 	const json_value &DDNetInfo = *pDDNetInfo;
 	const json_value &CurrentVersion = DDNetInfo["version"];
@@ -2552,6 +2564,7 @@ void CClient::LoadDDNetInfo()
 	}
 	const json_value &WarnPngliteIncompatibleImages = DDNetInfo["warn-pnglite-incompatible-images"];
 	Graphics()->WarnPngliteIncompatibleImages(WarnPngliteIncompatibleImages.type == json_boolean && (bool)WarnPngliteIncompatibleImages);
+	m_InfoState = EInfoState::SUCCESS;
 }
 
 int CClient::ConnectNetTypes() const
@@ -2947,6 +2960,7 @@ void CClient::Update()
 			if(m_ServerBrowser.DDNetInfoSha256() == m_pDDNetInfoTask->ResultSha256())
 			{
 				log_debug("client/info", "DDNet info already up-to-date");
+				m_InfoState = EInfoState::SUCCESS;
 			}
 			else
 			{
@@ -2959,6 +2973,7 @@ void CClient::Update()
 		else if(m_pDDNetInfoTask->State() == EHttpState::ERROR || m_pDDNetInfoTask->State() == EHttpState::ABORTED)
 		{
 			ResetDDNetInfoTask();
+			m_InfoState = EInfoState::ERROR;
 		}
 	}
 
@@ -3389,7 +3404,7 @@ void CClient::Run()
 			SleepTimeInNanoSeconds = (std::chrono::nanoseconds(1s) / (int64_t)g_Config.m_ClRefreshRate) - (Now - LastTime);
 			auto SleepTimeInNanoSecondsInner = SleepTimeInNanoSeconds;
 			auto NowInner = Now;
-			while((SleepTimeInNanoSecondsInner / std::chrono::nanoseconds(1us).count()) > 0ns)
+			while(std::chrono::duration_cast<std::chrono::microseconds>(SleepTimeInNanoSecondsInner) > 0us)
 			{
 				net_socket_read_wait(m_aNetClient[CONN_MAIN].m_Socket, SleepTimeInNanoSecondsInner);
 				auto NowInnerCalc = time_get_nanoseconds();
@@ -5111,6 +5126,7 @@ void CClient::RequestDDNetInfo()
 	// Use ipv4 so we can know the ingame ip addresses of players before they join game servers
 	m_pDDNetInfoTask->IpResolve(IPRESOLVE::V4);
 	Http()->Run(m_pDDNetInfoTask);
+	m_InfoState = EInfoState::LOADING;
 }
 
 int CClient::GetPredictionTime()
@@ -5152,8 +5168,7 @@ void CClient::GetSmoothTick(int *pSmoothTick, float *pSmoothIntraTick, float Mix
 {
 	int64_t GameTime = m_aGameTime[g_Config.m_ClDummy].Get(time_get());
 	int64_t PredTime = m_PredictedTime.Get(time_get());
-	GameTime = std::min(GameTime, PredTime);
-	int64_t SmoothTime = clamp(GameTime + (int64_t)(MixAmount * (PredTime - GameTime)), GameTime, PredTime);
+	int64_t SmoothTime = std::clamp(GameTime + (int64_t)(MixAmount * (PredTime - GameTime)), GameTime, PredTime);
 
 	*pSmoothTick = (int)(SmoothTime * GameTickSpeed() / time_freq()) + 1;
 	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1) * time_freq() / GameTickSpeed()) / (float)(time_freq() / GameTickSpeed());
@@ -5164,9 +5179,9 @@ void CClient::GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, flo
 	int64_t PredTime = m_PredictedTime.Get(time_get());
 	GameTime = std::min(GameTime, PredTime);
 
-	int64_t UpperPredTime = clamp(PredTime - (time_freq() / 50) * g_Config.m_ClUnfreezeLagTicks, GameTime, PredTime);
-	int64_t LowestPredTime = clamp(PredTime, GameTime, UpperPredTime);
-	int64_t SmoothTime = clamp(LowestPredTime + (int64_t)(MixAmount * (PredTime - LowestPredTime)), LowestPredTime, PredTime);
+	int64_t UpperPredTime = std::clamp(PredTime - (time_freq() / 50) * g_Config.m_ClUnfreezeLagTicks, GameTime, PredTime);
+	int64_t LowestPredTime = std::clamp(PredTime, GameTime, UpperPredTime);
+	int64_t SmoothTime = std::clamp(LowestPredTime + (int64_t)(MixAmount * (PredTime - LowestPredTime)), LowestPredTime, PredTime);
 
 	*pSmoothTick = (int)(SmoothTime * 50 / time_freq()) + 1;
 	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1) * time_freq() / 50) / (float)(time_freq() / 50);
@@ -5199,7 +5214,7 @@ int CClient::MaxLatencyTicks() const
 
 int CClient::PredictionMargin() const
 {
-	if(g_Config.m_ClPredMarginInFreeze && g_Config.m_ClAmIFrozen)
+	if(g_Config.m_ClPredMarginInFreeze && m_IsLocalFrozen)
 	{
 		return g_Config.m_ClPredMarginInFreezeAmount;
 	}

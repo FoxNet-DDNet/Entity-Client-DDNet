@@ -121,6 +121,7 @@ public:
 		CMD_RENDER_TILE_LAYER, // render a tilelayer
 		CMD_RENDER_BORDER_TILE, // render one tile multiple times
 		CMD_RENDER_QUAD_LAYER, // render a quad layer
+		CMD_RENDER_QUAD_LAYER_GROUPED, // render a quad layer in groups meaning they all share the same envelope and offset (which can be none)
 		CMD_RENDER_TEXT, // render text
 		CMD_RENDER_QUAD_CONTAINER, // render a quad buffer container
 		CMD_RENDER_QUAD_CONTAINER_EX, // render a quad buffer container with extended parameters
@@ -391,8 +392,8 @@ public:
 
 	struct SCommand_RenderQuadLayer : public SCommand
 	{
-		SCommand_RenderQuadLayer() :
-			SCommand(CMD_RENDER_QUAD_LAYER) {}
+		SCommand_RenderQuadLayer(bool Grouped) :
+			SCommand(Grouped ? CMD_RENDER_QUAD_LAYER_GROUPED : CMD_RENDER_QUAD_LAYER) {}
 		SState m_State;
 
 		int m_BufferContainerIndex;
@@ -933,7 +934,11 @@ public:
 
 	void LinesBegin() override;
 	void LinesEnd() override;
-	void LinesDraw(const CLineItem *pArray, int Num) override;
+	void LinesDraw(const CLineItem *pArray, size_t Num) override;
+
+	void LinesBatchBegin(CLineItemBatch *pBatch) override;
+	void LinesBatchEnd(CLineItemBatch *pBatch) override;
+	void LinesBatchDraw(CLineItemBatch *pBatch, const CLineItem *pArray, size_t Num) override;
 
 	IGraphics::CTextureHandle FindFreeTextureIndex();
 	void FreeTextureIndex(CTextureHandle *pIndex);
@@ -1170,8 +1175,8 @@ public:
 	void FlushVerticesTex3D() override;
 
 	void RenderTileLayer(int BufferContainerIndex, const ColorRGBA &Color, char **pOffsets, unsigned int *pIndicedVertexDrawNum, size_t NumIndicesOffset) override;
-	virtual void RenderBorderTiles(int BufferContainerIndex, const ColorRGBA &Color, char *pIndexBufferOffset, const vec2 &Offset, const vec2 &Scale, uint32_t DrawNum) override;
-	void RenderQuadLayer(int BufferContainerIndex, SQuadRenderInfo *pQuadInfo, size_t QuadNum, int QuadOffset) override;
+	void RenderBorderTiles(int BufferContainerIndex, const ColorRGBA &Color, char *pIndexBufferOffset, const vec2 &Offset, const vec2 &Scale, uint32_t DrawNum) override;
+	void RenderQuadLayer(int BufferContainerIndex, SQuadRenderInfo *pQuadInfo, size_t QuadNum, int QuadOffset, bool Grouped = false) override;
 	void RenderText(int BufferContainerIndex, int TextQuadNum, int TextureSize, int TextureTextIndex, int TextureTextOutlineIndex, const ColorRGBA &TextColor, const ColorRGBA &TextOutlineColor) override;
 
 	// modern GL functions

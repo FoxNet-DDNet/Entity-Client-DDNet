@@ -146,10 +146,10 @@ void CGraphics_Threaded::ClipEnable(int x, int y, int w, int h)
 	if(y < 0)
 		h += y;
 
-	x = clamp(x, 0, ScreenWidth());
-	y = clamp(y, 0, ScreenHeight());
-	w = clamp(w, 0, ScreenWidth() - x);
-	h = clamp(h, 0, ScreenHeight() - y);
+	x = std::clamp(x, 0, ScreenWidth());
+	y = std::clamp(y, 0, ScreenHeight());
+	w = std::clamp(w, 0, ScreenWidth() - x);
+	h = std::clamp(h, 0, ScreenHeight() - y);
 
 	m_State.m_ClipEnable = true;
 	m_State.m_ClipX = x;
@@ -243,24 +243,59 @@ void CGraphics_Threaded::LinesEnd()
 	m_Drawing = 0;
 }
 
-void CGraphics_Threaded::LinesDraw(const CLineItem *pArray, int Num)
+void CGraphics_Threaded::LinesDraw(const CLineItem *pArray, size_t Num)
 {
 	dbg_assert(m_Drawing == DRAWING_LINES, "called Graphics()->LinesDraw without begin");
 
-	for(int i = 0; i < Num; ++i)
+	size_t VertexIndex = m_NumVertices;
+	for(size_t i = 0; i < Num; ++i)
 	{
-		m_aVertices[m_NumVertices + 2 * i].m_Pos.x = pArray[i].m_X0;
-		m_aVertices[m_NumVertices + 2 * i].m_Pos.y = pArray[i].m_Y0;
-		m_aVertices[m_NumVertices + 2 * i].m_Tex = m_aTexture[0];
-		SetColor(&m_aVertices[m_NumVertices + 2 * i], 0);
+		m_aVertices[VertexIndex].m_Pos.x = pArray[i].m_X0;
+		m_aVertices[VertexIndex].m_Pos.y = pArray[i].m_Y0;
+		m_aVertices[VertexIndex].m_Tex = m_aTexture[0];
+		SetColor(&m_aVertices[VertexIndex], 0);
+		++VertexIndex;
 
-		m_aVertices[m_NumVertices + 2 * i + 1].m_Pos.x = pArray[i].m_X1;
-		m_aVertices[m_NumVertices + 2 * i + 1].m_Pos.y = pArray[i].m_Y1;
-		m_aVertices[m_NumVertices + 2 * i + 1].m_Tex = m_aTexture[1];
-		SetColor(&m_aVertices[m_NumVertices + 2 * i + 1], 1);
+		m_aVertices[VertexIndex].m_Pos.x = pArray[i].m_X1;
+		m_aVertices[VertexIndex].m_Pos.y = pArray[i].m_Y1;
+		m_aVertices[VertexIndex].m_Tex = m_aTexture[1];
+		SetColor(&m_aVertices[VertexIndex], 1);
+		++VertexIndex;
 	}
 
 	AddVertices(2 * Num);
+}
+
+void CGraphics_Threaded::LinesBatchBegin(CLineItemBatch *pBatch)
+{
+	pBatch->m_NumItems = 0;
+	LinesBegin();
+}
+
+void CGraphics_Threaded::LinesBatchEnd(CLineItemBatch *pBatch)
+{
+	if(pBatch->m_NumItems > 0)
+	{
+		LinesDraw(pBatch->m_aItems, pBatch->m_NumItems);
+		pBatch->m_NumItems = 0;
+	}
+	LinesEnd();
+}
+
+void CGraphics_Threaded::LinesBatchDraw(CLineItemBatch *pBatch, const CLineItem *pArray, size_t Num)
+{
+	if(pBatch->m_NumItems + Num >= std::size(pBatch->m_aItems))
+	{
+		LinesDraw(pBatch->m_aItems, pBatch->m_NumItems);
+		pBatch->m_NumItems = 0;
+	}
+	if(Num >= std::size(pBatch->m_aItems))
+	{
+		LinesDraw(pArray, Num);
+		return;
+	}
+	std::copy(pArray, pArray + Num, pBatch->m_aItems + pBatch->m_NumItems);
+	pBatch->m_NumItems += Num;
 }
 
 IGraphics::CTextureHandle CGraphics_Threaded::FindFreeTextureIndex()
@@ -785,7 +820,7 @@ void CGraphics_Threaded::QuadsSetRotation(float Angle)
 
 static unsigned char NormalizeColorComponent(float ColorComponent)
 {
-	return (unsigned char)(clamp(ColorComponent, 0.0f, 1.0f) * 255.0f + 0.5f); // +0.5f to round to nearest
+	return (unsigned char)(std::clamp(ColorComponent, 0.0f, 1.0f) * 255.0f + 0.5f); // +0.5f to round to nearest
 }
 
 void CGraphics_Threaded::SetColorVertex(const CColorVertex *pArray, size_t Num)
@@ -1395,25 +1430,37 @@ void CGraphics_Threaded::RenderBorderTiles(int BufferContainerIndex, const Color
 	m_pCommandBuffer->AddRenderCalls(1);
 }
 
-void CGraphics_Threaded::RenderQuadLayer(int BufferContainerIndex, SQuadRenderInfo *pQuadInfo, size_t QuadNum, int QuadOffset)
+void CGraphics_Threaded::RenderQuadLayer(int BufferContainerIndex, SQuadRenderInfo *pQuadInfo, size_t QuadNum, int QuadOffset, bool Grouped)
 {
 	if(QuadNum == 0)
 		return;
 
 	// add the VertexArrays and draw
-	CCommandBuffer::SCommand_RenderQuadLayer Cmd;
+	CCommandBuffer::SCommand_RenderQuadLayer Cmd(Grouped);
 	Cmd.m_State = m_State;
 	Cmd.m_QuadNum = QuadNum;
 	Cmd.m_QuadOffset = QuadOffset;
 	Cmd.m_BufferContainerIndex = BufferContainerIndex;
-	Cmd.m_pQuadInfo = (SQuadRenderInfo *)AllocCommandBufferData(Cmd.m_QuadNum * sizeof(SQuadRenderInfo));
+	if(!Grouped)
+	{
+		Cmd.m_pQuadInfo = (SQuadRenderInfo *)AllocCommandBufferData(Cmd.m_QuadNum * sizeof(SQuadRenderInfo));
+		AddCmd(Cmd, [&] {
+			Cmd.m_pQuadInfo = (SQuadRenderInfo *)m_pCommandBuffer->AllocData(QuadNum * sizeof(SQuadRenderInfo));
+			return Cmd.m_pQuadInfo != nullptr;
+		});
 
-	AddCmd(Cmd, [&] {
-		Cmd.m_pQuadInfo = (SQuadRenderInfo *)m_pCommandBuffer->AllocData(QuadNum * sizeof(SQuadRenderInfo));
-		return Cmd.m_pQuadInfo != nullptr;
-	});
+		mem_copy(Cmd.m_pQuadInfo, pQuadInfo, sizeof(SQuadRenderInfo) * QuadNum);
+	}
+	else
+	{
+		Cmd.m_pQuadInfo = (SQuadRenderInfo *)AllocCommandBufferData(sizeof(SQuadRenderInfo));
+		AddCmd(Cmd, [&] {
+			Cmd.m_pQuadInfo = (SQuadRenderInfo *)m_pCommandBuffer->AllocData(sizeof(SQuadRenderInfo));
+			return Cmd.m_pQuadInfo != nullptr;
+		});
 
-	mem_copy(Cmd.m_pQuadInfo, pQuadInfo, sizeof(SQuadRenderInfo) * QuadNum);
+		*Cmd.m_pQuadInfo = *pQuadInfo;
+	}
 
 	m_pCommandBuffer->AddRenderCalls(((QuadNum - 1) / gs_GraphicsMaxQuadsRenderCount) + 1);
 }
@@ -2490,7 +2537,7 @@ void CGraphics_Threaded::WarnPngliteIncompatibleImages(bool Warn)
 
 void CGraphics_Threaded::SetWindowParams(int FullscreenMode, bool IsBorderless)
 {
-	g_Config.m_GfxFullscreen = clamp(FullscreenMode, 0, 3);
+	g_Config.m_GfxFullscreen = std::clamp(FullscreenMode, 0, 3);
 	g_Config.m_GfxBorderless = (int)IsBorderless;
 
 	m_pBackend->SetWindowParams(g_Config.m_GfxFullscreen, g_Config.m_GfxBorderless);

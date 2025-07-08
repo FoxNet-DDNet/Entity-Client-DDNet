@@ -227,9 +227,10 @@ container.sounds.Add(SoundSet("ctf_capture", ["audio/sfx_ctf_cap_pl.wv"]))
 container.sounds.Add(SoundSet("menu", ["audio/music_menu.wv"]))
 
 # E-Client
-image_entity_flag = Image("entity_flag", "entity/icons/entity_flag.png")
+image_generic_ghost = Image("generic_ghost", "entity/icons/generic_ghost.png")
 image_muted_icon = Image("muted_icon", "entity/icons/muted_icon.png")
 image_settings_icon = Image("settings_icon", "entity/icons/settings_icon.png")
+image_foxnet_flags = Image("foxnet_flags", "entity/icons/foxnet_flags.png")
 
 image_null = Image("null", "")
 image_particles = Image("particles", "particles.png")
@@ -262,9 +263,10 @@ container.images.Add(image_extras)
 container.images.Add(Image("raceflag", "race_flag.png"))
 
 # E-Client
-container.images.Add(image_entity_flag)
+container.images.Add(image_generic_ghost)
 container.images.Add(image_muted_icon)
 container.images.Add(image_settings_icon)
+container.images.Add(image_foxnet_flags)
 
 container.pickups.Add(Pickup("health"))
 container.pickups.Add(Pickup("armor"))
@@ -288,9 +290,11 @@ set_hud = SpriteSet("hud", image_hud, 16, 16)
 set_extras = SpriteSet("extras", image_extras, 16, 16)
 
 # E-Client
-set_entity_flag = SpriteSet("entity_flag", image_entity_flag, 1, 1)
+set_generic_ghost = SpriteSet("generic_ghost", image_generic_ghost, 1, 1)
 set_muted_icon = SpriteSet("muted_icon", image_muted_icon, 1, 1)
 set_settings_icon = SpriteSet("settings_icon", image_settings_icon, 1, 1)
+set_foxnet_flags = SpriteSet("foxnet_flags", image_foxnet_flags, 4, 2)
+
 
 container.spritesets.Add(set_particles)
 container.spritesets.Add(set_game)
@@ -305,9 +309,10 @@ container.spritesets.Add(set_hud)
 container.spritesets.Add(set_extras)
 
 # E-Client
-container.spritesets.Add(set_entity_flag)
+container.spritesets.Add(set_generic_ghost)
 container.spritesets.Add(set_settings_icon)
 container.spritesets.Add(set_muted_icon)
+container.spritesets.Add(set_foxnet_flags)
 
 container.sprites.Add(Sprite("part_slice", set_particles, 0,0,1,1))
 container.sprites.Add(Sprite("part_ball", set_particles, 1,0,1,1))
@@ -436,9 +441,14 @@ container.sprites.Add(Sprite("guiicon_friend", set_guiicons, 8,0,4,2))
 container.sprites.Add(Sprite("audio_source", set_audio_source, 0,0,1,1))
 
 # E-Client
-container.sprites.Add(Sprite("entity_flag", set_entity_flag, 0,0,1,1))
+container.sprites.Add(Sprite("generic_ghost", set_generic_ghost, 0,0,1,1))
 container.sprites.Add(Sprite("settings_icon", set_settings_icon, 0,0,1,1))
 container.sprites.Add(Sprite("muted_icon", set_muted_icon, 0,0,1,1))
+
+container.sprites.Add(Sprite("foxnet_flag0", set_foxnet_flags, 0,0,2,1))
+container.sprites.Add(Sprite("foxnet_flag1", set_foxnet_flags, 2,0,2,1))
+container.sprites.Add(Sprite("foxnet_flag2", set_foxnet_flags, 0,1,2,1))
+container.sprites.Add(Sprite("foxnet_flag3", set_foxnet_flags, 2,1,2,1))
 
 container.sprites.Add(Sprite("hook_strong", set_strongweak, 0,0,1,1))
 container.sprites.Add(Sprite("hook_weak", set_strongweak, 1,0,1,1))

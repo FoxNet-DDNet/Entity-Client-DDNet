@@ -714,6 +714,7 @@ bool CScoreWorker::SaveTeamScore(IDbConnection *pSqlServer, const ISqlData *pGam
 	{
 		// get the names sorted in a tab separated string
 		std::vector<std::string> vNames;
+		vNames.reserve(pData->m_Size);
 		for(unsigned int i = 0; i < pData->m_Size; i++)
 			vNames.emplace_back(pData->m_aaNames[i]);
 
@@ -1125,10 +1126,14 @@ bool CScoreWorker::ShowTeamTop5(IDbConnection *pSqlServer, const ISqlData *pGame
 		"  FROM (" // teamrank score board
 		"    SELECT RANK() OVER w AS Ranking, COUNT(*) AS Teamsize, Id, Server "
 		"    FROM ("
-		"      SELECT tr.Map, tr.Time, tr.Id, rr.Server FROM %s_teamrace as tr "
-		"      INNER JOIN %s_race as rr ON tr.Map = rr.Map AND tr.Name = rr.Name AND tr.Time = rr.Time"
+		"      SELECT tr.Map, tr.Time, tr.Id, ("
+		"        SELECT rr.Server FROM %s_race AS rr "
+		"        WHERE rr.Map = tr.Map AND rr.Name = tr.Name AND rr.Time = tr.Time "
+		"        LIMIT 1"
+		"      ) AS Server "
+		"      FROM %s_teamrace AS tr "
+		"      WHERE tr.Map = ? "
 		"    ) AS ll "
-		"    WHERE Map = ? "
 		"    GROUP BY ID "
 		"    WINDOW w AS (ORDER BY Min(Time))"
 		"  ) as l1 "

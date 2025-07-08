@@ -43,9 +43,51 @@ TEST(Filesystem, SplitFileExtension)
 	EXPECT_STREQ(aName, "no_dot");
 	EXPECT_STREQ(aExt, "");
 
+	fs_split_file_extension("no_dot", aName, sizeof(aName)); // extension parameter is optional
+	EXPECT_STREQ(aName, "no_dot");
+
+	fs_split_file_extension("no_dot", nullptr, 0, aExt, sizeof(aExt)); // name parameter is optional
+	EXPECT_STREQ(aExt, "");
+
 	fs_split_file_extension(".dot_first", aName, sizeof(aName), aExt, sizeof(aExt));
 	EXPECT_STREQ(aName, ".dot_first");
 	EXPECT_STREQ(aExt, "");
+
+	fs_split_file_extension(".dot_first", aName, sizeof(aName)); // extension parameter is optional
+	EXPECT_STREQ(aName, ".dot_first");
+
+	fs_split_file_extension(".dot_first", nullptr, 0, aExt, sizeof(aExt)); // name parameter is optional
+	EXPECT_STREQ(aExt, "");
+}
+
+static void TestNormalizePath(const char *pInput, const char *pExpectedOutput)
+{
+	char aNormalized[256];
+	str_copy(aNormalized, pInput);
+	fs_normalize_path(aNormalized);
+	EXPECT_STREQ(aNormalized, pExpectedOutput);
+}
+
+TEST(Filesystem, NormalizePath)
+{
+	TestNormalizePath("", "");
+	TestNormalizePath("/", "/");
+	TestNormalizePath("\\", "/");
+	TestNormalizePath("//", "/");
+	TestNormalizePath("/////", "/");
+	TestNormalizePath("\\\\\\\\\\", "/");
+	TestNormalizePath("/a/b/c", "/a/b/c");
+	TestNormalizePath("\\a\\b\\c", "/a/b/c");
+	TestNormalizePath("C:\\Users", "C:/Users");
+	TestNormalizePath("C:\\", "C:");
+}
+
+TEST(Filesystem, StoragePath)
+{
+	char aStoragePath[IO_MAX_PATH_LENGTH];
+	ASSERT_FALSE(fs_storage_path("TestAppName", aStoragePath, sizeof(aStoragePath)));
+	EXPECT_FALSE(fs_is_relative_path(aStoragePath));
+	EXPECT_TRUE(str_endswith_nocase(aStoragePath, "/TestAppName"));
 }
 
 TEST(Filesystem, CreateCloseDelete)

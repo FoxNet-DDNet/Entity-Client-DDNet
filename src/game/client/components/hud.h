@@ -107,18 +107,18 @@ class CHud : public CComponent
 
 public:
 	CHud();
-	virtual int Sizeof() const override { return sizeof(*this); }
+	int Sizeof() const override { return sizeof(*this); }
 
 	void ResetHudContainers();
-	virtual void OnWindowResize() override;
-	virtual void OnReset() override;
-	virtual void OnRender() override;
-	virtual void OnInit() override;
-	virtual void OnNewSnapshot() override;
+	void OnWindowResize() override;
+	void OnReset() override;
+	void OnRender() override;
+	void OnInit() override;
+	void OnNewSnapshot() override;
 
 	// DDRace
 
-	virtual void OnMessage(int MsgType, void *pRawMsg) override;
+	void OnMessage(int MsgType, void *pRawMsg) override;
 	void RenderNinjaBarPos(float x, float y, float Width, float Height, float Progress, float Alpha = 1.0f);
 
 private:
@@ -168,6 +168,9 @@ private:
 	int m_PracticeModeOffset;
 	int m_Team0ModeOffset;
 	int m_LockModeOffset;
+
+	// E-Client
+	void FreezeHelpers();
 };
 
 #endif

@@ -44,6 +44,7 @@ public:
 	// E-Client
 	bool m_PingCircle = false;
 	bool m_IsMuted = false;
+	bool m_IsEntity = false;
 	const char *m_pReason = "";
 	bool m_ShowReason = false;
 

@@ -14,10 +14,44 @@
 #include "console.h"
 #include "linereader.h"
 
+#include <algorithm>
 #include <iterator> // std::size
 #include <new>
 
 // todo: rework this
+
+CConsole::CResult::CResult(int ClientId) :
+	IResult(ClientId)
+{
+	mem_zero(m_aStringStorage, sizeof(m_aStringStorage));
+	m_pArgsStart = nullptr;
+	m_pCommand = nullptr;
+	mem_zero(m_apArgs, sizeof(m_apArgs));
+}
+
+CConsole::CResult::CResult(const CResult &Other) :
+	IResult(Other)
+{
+	mem_copy(m_aStringStorage, Other.m_aStringStorage, sizeof(m_aStringStorage));
+	m_pArgsStart = m_aStringStorage + (Other.m_pArgsStart - Other.m_aStringStorage);
+	m_pCommand = m_aStringStorage + (Other.m_pCommand - Other.m_aStringStorage);
+	for(unsigned i = 0; i < Other.m_NumArgs; ++i)
+		m_apArgs[i] = m_aStringStorage + (Other.m_apArgs[i] - Other.m_aStringStorage);
+}
+
+void CConsole::CResult::AddArgument(const char *pArg)
+{
+	m_apArgs[m_NumArgs++] = pArg;
+}
+
+void CConsole::CResult::RemoveArgument(unsigned Index)
+{
+	dbg_assert(Index < m_NumArgs, "invalid argument index");
+	for(unsigned i = Index; i < m_NumArgs - 1; i++)
+		m_apArgs[i] = m_apArgs[i + 1];
+
+	m_apArgs[m_NumArgs--] = nullptr;
+}
 
 const char *CConsole::CResult::GetString(unsigned Index) const
 {
@@ -44,43 +78,7 @@ std::optional<ColorHSLA> CConsole::CResult::GetColor(unsigned Index, float Darke
 {
 	if(Index >= m_NumArgs)
 		return std::nullopt;
-
-	const char *pStr = m_apArgs[Index];
-	if(str_isallnum(pStr) || ((pStr[0] == '-' || pStr[0] == '+') && str_isallnum(pStr + 1))) // Teeworlds Color (Packed HSL)
-	{
-		unsigned long Value = str_toulong_base(pStr, 10);
-		if(Value == std::numeric_limits<unsigned long>::max())
-			return std::nullopt;
-		return ColorHSLA(Value, true).UnclampLighting(DarkestLighting);
-	}
-	else if(*pStr == '$') // Hex RGB/RGBA
-	{
-		auto ParsedColor = color_parse<ColorRGBA>(pStr + 1);
-		if(ParsedColor)
-			return color_cast<ColorHSLA>(ParsedColor.value());
-		else
-			return std::nullopt;
-	}
-	else if(!str_comp_nocase(pStr, "red"))
-		return ColorHSLA(0.0f / 6.0f, 1, .5f);
-	else if(!str_comp_nocase(pStr, "yellow"))
-		return ColorHSLA(1.0f / 6.0f, 1, .5f);
-	else if(!str_comp_nocase(pStr, "green"))
-		return ColorHSLA(2.0f / 6.0f, 1, .5f);
-	else if(!str_comp_nocase(pStr, "cyan"))
-		return ColorHSLA(3.0f / 6.0f, 1, .5f);
-	else if(!str_comp_nocase(pStr, "blue"))
-		return ColorHSLA(4.0f / 6.0f, 1, .5f);
-	else if(!str_comp_nocase(pStr, "magenta"))
-		return ColorHSLA(5.0f / 6.0f, 1, .5f);
-	else if(!str_comp_nocase(pStr, "white"))
-		return ColorHSLA(0, 0, 1);
-	else if(!str_comp_nocase(pStr, "gray"))
-		return ColorHSLA(0, 0, .5f);
-	else if(!str_comp_nocase(pStr, "black"))
-		return ColorHSLA(0, 0, 0);
-
-	return std::nullopt;
+	return ColorParse(m_apArgs[Index], DarkestLighting);
 }
 
 const IConsole::CCommandInfo *CConsole::CCommand::NextCommandInfo(int AccessLevel, int FlagMask) const
@@ -93,6 +91,11 @@ const IConsole::CCommandInfo *CConsole::CCommand::NextCommandInfo(int AccessLeve
 		pInfo = pInfo->m_pNext;
 	}
 	return pInfo;
+}
+
+void CConsole::CCommand::SetAccessLevel(int AccessLevel)
+{
+	m_AccessLevel = std::clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_USER));
 }
 
 const IConsole::CCommandInfo *CConsole::FirstCommandInfo(int AccessLevel, int FlagMask) const
@@ -317,7 +320,7 @@ int IConsole::ToLogLevelFilter(int Level)
 	return Level + 2;
 }
 
-LOG_COLOR ColorToLogColor(ColorRGBA Color)
+static LOG_COLOR ColorToLogColor(ColorRGBA Color)
 {
 	return LOG_COLOR{
 		(uint8_t)(Color.r * 255.0),
@@ -367,6 +370,11 @@ void CConsole::InitChecksum(CChecksumData *pData) const
 		}
 		pData->m_NumCommands += 1;
 	}
+}
+
+void CConsole::SetAccessLevel(int AccessLevel)
+{
+	m_AccessLevel = std::clamp(AccessLevel, (int)(ACCESS_LEVEL_ADMIN), (int)(ACCESS_LEVEL_USER));
 }
 
 bool CConsole::LineIsValid(const char *pStr)
@@ -787,7 +795,7 @@ void CConsole::ConCommandStatus(IResult *pResult, void *pUser)
 
 	for(CCommand *pCommand = pConsole->m_pFirstCommand; pCommand; pCommand = pCommand->m_pNext)
 	{
-		if(pCommand->m_Flags & pConsole->m_FlagMask && pCommand->GetAccessLevel() >= clamp(pResult->GetInteger(0), (int)ACCESS_LEVEL_ADMIN, (int)ACCESS_LEVEL_USER))
+		if(pCommand->m_Flags & pConsole->m_FlagMask && pCommand->GetAccessLevel() >= std::clamp(pResult->GetInteger(0), (int)ACCESS_LEVEL_ADMIN, (int)ACCESS_LEVEL_USER))
 		{
 			int Length = str_length(pCommand->m_pName);
 			if(Used + Length + 2 < (int)(sizeof(aBuf)))
@@ -1134,7 +1142,7 @@ bool CConsole::CResult::HasVictim() const
 
 void CConsole::CResult::SetVictim(int Victim)
 {
-	m_Victim = clamp<int>(Victim, VICTIM_NONE, MAX_CLIENTS - 1);
+	m_Victim = std::clamp<int>(Victim, VICTIM_NONE, MAX_CLIENTS - 1);
 }
 
 void CConsole::CResult::SetVictim(const char *pVictim)
@@ -1144,5 +1152,44 @@ void CConsole::CResult::SetVictim(const char *pVictim)
 	else if(!str_comp(pVictim, "all"))
 		m_Victim = VICTIM_ALL;
 	else
-		m_Victim = clamp<int>(str_toint(pVictim), 0, MAX_CLIENTS - 1);
+		m_Victim = std::clamp<int>(str_toint(pVictim), 0, MAX_CLIENTS - 1);
+}
+
+std::optional<ColorHSLA> CConsole::ColorParse(const char *pStr, float DarkestLighting)
+{
+	if(str_isallnum(pStr) || ((pStr[0] == '-' || pStr[0] == '+') && str_isallnum(pStr + 1))) // Teeworlds Color (Packed HSL)
+	{
+		unsigned long Value = str_toulong_base(pStr, 10);
+		if(Value == std::numeric_limits<unsigned long>::max())
+			return std::nullopt;
+		return ColorHSLA(Value, true).UnclampLighting(DarkestLighting);
+	}
+	else if(*pStr == '$') // Hex RGB/RGBA
+	{
+		auto ParsedColor = color_parse<ColorRGBA>(pStr + 1);
+		if(ParsedColor)
+			return color_cast<ColorHSLA>(ParsedColor.value());
+		else
+			return std::nullopt;
+	}
+	else if(!str_comp_nocase(pStr, "red"))
+		return ColorHSLA(0.0f / 6.0f, 1.0f, 0.5f);
+	else if(!str_comp_nocase(pStr, "yellow"))
+		return ColorHSLA(1.0f / 6.0f, 1.0f, 0.5f);
+	else if(!str_comp_nocase(pStr, "green"))
+		return ColorHSLA(2.0f / 6.0f, 1.0f, 0.5f);
+	else if(!str_comp_nocase(pStr, "cyan"))
+		return ColorHSLA(3.0f / 6.0f, 1.0f, 0.5f);
+	else if(!str_comp_nocase(pStr, "blue"))
+		return ColorHSLA(4.0f / 6.0f, 1.0f, 0.5f);
+	else if(!str_comp_nocase(pStr, "magenta"))
+		return ColorHSLA(5.0f / 6.0f, 1.0f, 0.5f);
+	else if(!str_comp_nocase(pStr, "white"))
+		return ColorHSLA(0.0f, 0.0f, 1.0f);
+	else if(!str_comp_nocase(pStr, "gray"))
+		return ColorHSLA(0.0f, 0.0f, 0.5f);
+	else if(!str_comp_nocase(pStr, "black"))
+		return ColorHSLA(0.0f, 0.0f, 0.0f);
+
+	return std::nullopt;
 }

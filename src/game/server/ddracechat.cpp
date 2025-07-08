@@ -1,14 +1,15 @@
 /* (c) Shereef Marzouk. See "licence DDRace.txt" and the readme.txt in the root of the distribution for more information. */
-#include "gamecontext.h"
 #include <base/log.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <game/mapitems.h>
+#include <game/server/entities/character.h>
 #include <game/server/gamemodes/DDRace.h>
 #include <game/server/teams.h>
+#include <game/team_state.h>
 #include <game/version.h>
 
-#include "entities/character.h"
+#include "gamecontext.h"
 #include "player.h"
 #include "score.h"
 
@@ -1142,7 +1143,7 @@ void CGameContext::AttemptJoinTeam(int ClientId, int Team)
 	if(!pPlayer)
 		return;
 
-	if(m_VoteCloseTime && m_VoteCreator == ClientId && (IsKickVote() || IsSpecVote()))
+	if(IsRunningKickOrSpecVote(ClientId))
 	{
 		Console()->Print(
 			IConsole::OUTPUT_LEVEL_STANDARD,
@@ -1175,7 +1176,7 @@ void CGameContext::AttemptJoinTeam(int ClientId, int Team)
 		if(Team < 0 || Team >= TEAM_SUPER)
 			Team = m_pController->Teams().GetFirstEmptyTeam();
 
-		if(pPlayer->m_Last_Team + (int64_t)Server()->TickSpeed() * g_Config.m_SvTeamChangeDelay > Server()->Tick())
+		if(pPlayer->m_LastDDRaceTeamChange + (int64_t)Server()->TickSpeed() * g_Config.m_SvTeamChangeDelay > Server()->Tick())
 		{
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
 				"You can\'t change teams that fast!");
@@ -1211,7 +1212,7 @@ void CGameContext::AttemptJoinTeam(int ClientId, int Team)
 				Server()->ClientName(pPlayer->GetCid()),
 				Team);
 			SendChat(-1, TEAM_ALL, aBuf);
-			pPlayer->m_Last_Team = Server()->Tick();
+			pPlayer->m_LastDDRaceTeamChange = Server()->Tick();
 
 			if(m_pController->Teams().IsPractice(Team))
 				SendChatTarget(pPlayer->GetCid(), "Practice mode enabled for your team, happy practicing!");
@@ -1322,7 +1323,7 @@ void CGameContext::ConTeam0Mode(IConsole::IResult *pResult, void *pUserData)
 		return;
 	}
 
-	if(pController->Teams().GetTeamState(Team) != CGameTeams::TEAMSTATE_OPEN)
+	if(pController->Teams().GetTeamState(Team) != ETeamState::OPEN)
 	{
 		pSelf->SendChatTarget(pResult->m_ClientId, "Team mode can't be changed while racing");
 		return;
@@ -1560,7 +1561,7 @@ void CGameContext::ConEyeEmote(IConsole::IResult *pResult, void *pUserData)
 
 		int Duration = 1;
 		if(pResult->NumArguments() > 1)
-			Duration = clamp(pResult->GetInteger(1), 1, 86400);
+			Duration = std::clamp(pResult->GetInteger(1), 1, 86400);
 
 		pPlayer->OverrideDefaultEmote(EmoteType, pSelf->Server()->Tick() + Duration * pSelf->Server()->TickSpeed());
 	}
@@ -1879,6 +1880,23 @@ void CGameContext::ConRescueMode(IConsole::IResult *pResult, void *pUserData)
 	else
 	{
 		pSelf->SendChatTarget(pPlayer->GetCid(), "Unknown argument. Check '/rescuemode list'");
+	}
+}
+
+void CGameContext::ConBack(IConsole::IResult *pResult, void *pUserData)
+{
+	auto *pSelf = static_cast<CGameContext *>(pUserData);
+	if(auto *pChr = pSelf->GetPracticeCharacter(pResult))
+	{
+		auto *pPlayer = pChr->GetPlayer();
+		if(!pPlayer->m_LastDeath.has_value())
+		{
+			pSelf->SendChatTarget(pPlayer->GetCid(), "There is nowhere to go back to.");
+			return;
+		}
+		pChr->GetLastRescueTeeRef(pPlayer->m_RescueMode) = pPlayer->m_LastDeath.value();
+		pChr->Rescue();
+		pChr->UnFreeze();
 	}
 }
 
@@ -2418,6 +2436,7 @@ void CGameContext::ConProtectedKill(IConsole::IResult *pResult, void *pUserData)
 	if(g_Config.m_SvKillProtection != 0 && CurrTime >= (60 * g_Config.m_SvKillProtection) && pChr->m_DDRaceState == ERaceState::STARTED)
 	{
 		pPlayer->KillCharacter(WEAPON_SELF);
+		pPlayer->Respawn();
 	}
 }
 

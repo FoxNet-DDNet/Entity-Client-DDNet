@@ -86,6 +86,10 @@ MACRO_CONFIG_INT(ClRunOnJoinDelay, ec_run_on_join_delay, 2, 7, 50000, CFGFLAG_CL
 MACRO_CONFIG_STR(ClRunOnJoinMsg, ec_run_on_join_console_msg, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 
 MACRO_CONFIG_INT(ClLimitMouseToScreen, ec_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundries")
+MACRO_CONFIG_INT(ClScaleMouseDistance, ec_scale_mouse_distance, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Improve mouse precision by scaling max distance to 1000")
+
+MACRO_CONFIG_INT(ClUiMouseBorderTeleport, ec_ui_mouse_border_teleport, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Teleport Mouse from one border to the other if it goes off screen")
+
 
 // Frozen Tee Display
 MACRO_CONFIG_INT(ClShowFrozenText, ec_frozen_tees_text, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show how many tees in your team are currently frozen. (0 - off, 1 - show alive, 2 - show frozen)")
@@ -129,16 +133,14 @@ MACRO_CONFIG_INT(ClIndicatorTees, ec_indicator_tees, 1, 0, 1, CFGFLAG_CLIENT | C
 // Bind Wheel
 MACRO_CONFIG_INT(ClResetBindWheelMouse, ec_reset_bindwheel_mouse, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reset position of mouse when opening bindwheel")
 
-// Skin Profiles
-MACRO_CONFIG_INT(ClApplyProfileSkin, ec_profile_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply skin in profiles")
-MACRO_CONFIG_INT(ClApplyProfileName, ec_profile_name, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply name in profiles")
-MACRO_CONFIG_INT(ClApplyProfileClan, ec_profile_clan, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply clan in profiles")
-MACRO_CONFIG_INT(ClApplyProfileFlag, ec_profile_flag, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply flag in profiles")
-MACRO_CONFIG_INT(ClApplyProfileColors, ec_profile_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply colors in profiles")
-MACRO_CONFIG_INT(ClApplyProfileEmote, ec_profile_emote, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply emote in profiles")
-
-// AAAAAAA
-MACRO_CONFIG_INT(ClAmIFrozen, EEEfrz, 0, 0, 1, CFGFLAG_CLIENT, "")
+// Profiles
+MACRO_CONFIG_INT(ClProfileSkin, ec_profile_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply skin in profiles")
+MACRO_CONFIG_INT(ClProfileName, ec_profile_name, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply name in profiles")
+MACRO_CONFIG_INT(ClProfileClan, etc_profile_clan, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply clan in profiles")
+MACRO_CONFIG_INT(ClProfileFlag, ec_profile_flag, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply flag in profiles")
+MACRO_CONFIG_INT(ClProfileColors, ec_profile_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply colors in profiles")
+MACRO_CONFIG_INT(ClProfileEmote, ec_profile_emote, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply emote in profiles")
+MACRO_CONFIG_INT(ClProfileOverwriteClanWithEmpty, ec_profile_overwrite_clan_with_empty, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Overwrite clan name even if profile has an empty clan name")
 
 // Font
 MACRO_CONFIG_STR(ClCustomFont, ec_custom_font, 255, "DejaVu Sans", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom font face")
@@ -157,8 +159,8 @@ MACRO_CONFIG_COL(ClFriendColor, ec_friend_color, 14745554, CFGFLAG_CLIENT | CFGF
 
 // chatbubble / Menu
 MACRO_CONFIG_INT(ClChatBubble, ec_chatbubble, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Chatbubble on or Off")
-MACRO_CONFIG_INT(ClShowOthersInMenu, ec_show_others_in_menu , 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Settings Emote if Someones in The Menu")
-MACRO_CONFIG_INT(ClShowOwnMenuToOthers, ec_show_self_in_menu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show The Settings Emot to Others When In The Menu")
+MACRO_CONFIG_INT(ClShowOthersInMenu, ec_show_others_in_menu, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Settings Emote if Someones in The Menu")
+MACRO_CONFIG_INT(ClSendMenuFlag, ec_send_menu_flag, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to send the in settings flag to the server or not")
 
 // misc
 MACRO_CONFIG_INT(ClSendDotsChat, ec_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Never send a message if it starts with a '.'")
@@ -167,7 +169,7 @@ MACRO_CONFIG_INT(ClShowIdsChat, ec_show_ids_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLA
 MACRO_CONFIG_INT(ClDoAfkColors, ec_do_afk_colors, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Makes Names Darker in Scoreboard if Player is afk")
 
 // friend name settings
-MACRO_CONFIG_INT(ClDoFriendColors, ec_do_friend_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors")
+MACRO_CONFIG_INT(ClDoFriendColors, ec_do_friend_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Friend name colors")
 
 // Prefix toggles
 MACRO_CONFIG_INT(ClSpectatePrefix, ec_chat_spectate_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Spectator Prefix Next to Names")
@@ -185,7 +187,6 @@ MACRO_CONFIG_STR(ClSpecPrefix, ec_spec_prefix, 8, "• ", CFGFLAG_CLIENT | CFGFL
 // Mutes
 MACRO_CONFIG_INT(ClReplyMuted, ec_reply_muted, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "replies to muted players if they ping you")
 MACRO_CONFIG_INT(ClShowMutedInConsole, ec_show_muted_in_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows messages of muted people in the console")
-MACRO_CONFIG_INT(ClMutedIcon, ec_muted_icon, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows an Icon Next to Nameplates of Muted Players")
 MACRO_CONFIG_INT(ClHideEnemyChat, ec_hide_enemy_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides Chat Messages of Enemies")
 MACRO_CONFIG_STR(ClAutoReplyMutedMsg, ec_auto_reply_muted_msg, 255, "I can't see your messages, you're muted", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply with then a muted player pings you")
 MACRO_CONFIG_COL(ClMutedColor, ec_muted_color, 12792139, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Muted Icon Color")
@@ -209,8 +210,8 @@ MACRO_CONFIG_STR(ClSavedDummySkin, saved_dummy_skin, 24, "default", CFGFLAG_CLIE
 
 // Discord
 MACRO_CONFIG_INT(ClDiscordRPC, ec_discord_rpc, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Discord Rpc (requires restart)")
-//MACRO_CONFIG_INT(ClDiscordTimestamp, ec_discord_timestamp, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Discord Rpc Time Stamp")
-MACRO_CONFIG_INT(ClDiscordMapStatus, ec_discord_map_status, 1,0,1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show What Map you're on")
+// MACRO_CONFIG_INT(ClDiscordTimestamp, ec_discord_timestamp, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggle Discord Rpc Time Stamp")
+MACRO_CONFIG_INT(ClDiscordMapStatus, ec_discord_map_status, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show What Map you're on")
 MACRO_CONFIG_STR(ClDiscordOnlineStatus, ec_discord_online_status, 25, "Online", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Online Status")
 MACRO_CONFIG_STR(ClDiscordOfflineStatus, ec_discord_offline_status, 25, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status")
 
@@ -232,8 +233,8 @@ MACRO_CONFIG_INT(ClAutoAddOnNameChange, ec_auto_add_on_name_change, 2, 0, 2, CFG
 MACRO_CONFIG_INT(ClAutoJoinTest, ec_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
 
 // Info
-MACRO_CONFIG_INT(ClListsInfo, ec_lists_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed How many wars, teams, helpers and mutes are online on the current server")
-MACRO_CONFIG_INT(ClEnabledInfo, ec_enabled_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
+MACRO_CONFIG_INT(ClListsInfo, ec_lists_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed How many enemies, teams, helpers and mutes are online on the current server")
+MACRO_CONFIG_INT(ClEnabledInfo, ec_enabled_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
 
 // Anti Spawn Block
 MACRO_CONFIG_INT(ClAntiSpawnBlock, ec_anti_spawn_block, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Puts you in a Team before enter Play Ground on Multeasymap")
@@ -253,12 +254,8 @@ MACRO_CONFIG_INT(ClFreezeDontKillMoving, ec_freeze_dont_kill_moving, 1, 0, 1, CF
 MACRO_CONFIG_INT(ClFreezeKillDebug, ec_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "debug")
 
 // Ui/Sound
-
-MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something")// Aiodob Menu color plates
+MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something") // Aiodob Menu color plates
 MACRO_CONFIG_COL(ClScrollMenuColor, ec_scrollmenu_color, 654311494, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Color in Entity Menu")
-MACRO_CONFIG_INT(ClCornerRoundness, ec_corner_roundness, 70, 0, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How round corners are in scrollable menus")
-MACRO_CONFIG_INT(ClFpsSpoofer, ec_fps_spoofer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spoof Da Fps counter")
-MACRO_CONFIG_INT(ClFpsSpoofPercentage, ec_fps_spoofer_percentage, 100, -5000, 5000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fps Spoofer Percentage")
 
 // Gores Mode
 MACRO_CONFIG_INT(ClGoresMode, ec_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
@@ -290,7 +287,6 @@ MACRO_CONFIG_INT(ClEffectColors, ec_effect_colors, 0, 0, 1, CFGFLAG_CLIENT | CFG
 
 MACRO_CONFIG_INT(ClEffect, ec_effect, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on  Effect Client Side")
 MACRO_CONFIG_INT(ClEffectOthers, ec_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Effect Client Side")
-MACRO_CONFIG_INT(ClSpecialEffect, ec_special_effect, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Doesnt do anything")
 MACRO_CONFIG_INT(ClSmallSkins, ec_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
 
 // Serverside Rainbow
@@ -306,12 +302,12 @@ MACRO_CONFIG_INT(ClRainbowMode, ec_rainbow_mode, 1, 1, 4, CFGFLAG_CLIENT | CFGFL
 MACRO_CONFIG_INT(ClRainbowSpeed, ec_rainbow_speed, 25, 0, 10000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Rainbow speed as a percentage (50 = half speed, 200 = double speed)")
 
 // Nameplates Chat Messages
-//MACRO_CONFIG_INT(ClNameplateChatBox, ec_nameplate_chatbox, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
-//MACRO_CONFIG_INT(ClNameplateChatBoxFriends, ec_nameplate_chatbox_friends, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Chat Box for friends only")
-//MACRO_CONFIG_INT(ClNameplateChatBoxSize, ec_nameplate_chatbox_size, 40, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
+// MACRO_CONFIG_INT(ClNameplateChatBox, ec_nameplate_chatbox, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
+// MACRO_CONFIG_INT(ClNameplateChatBoxFriends, ec_nameplate_chatbox_friends, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Chat Box for friends only")
+// MACRO_CONFIG_INT(ClNameplateChatBoxSize, ec_nameplate_chatbox_size, 40, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a Chat Box with the message above the writers Tee")
 
 // Flags
-MACRO_CONFIG_INT(ClAClientSettingsTabs, ec_aclient_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")
+MACRO_CONFIG_INT(ClEClientSettingsTabs, ec_eclient_settings_tabs, 0, 0, 65536, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable settings tabs")
 
 // Kill Counter
 MACRO_CONFIG_INT(ClKillCounter, ec_self_murder_count, 0, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "I'f you wish to fake the ammount of deaths then this is the config to edit (it's named that way so its harder to find)")
@@ -329,6 +325,12 @@ MACRO_CONFIG_INT(ClStrongWeakColorId, ec_strong_weak_color_id, 0, 0, 1, CFGFLAG_
 
 // Inform Update
 MACRO_CONFIG_INT(ClInformUpdate, ec_inform_update, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Inform you if a new version of E-Client is available")
+
+// Chat
+MACRO_CONFIG_INT(ClChatColorParsing, ec_chat_color_parsing, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allows you to use &00-&99 to chang the color of your text, &x marks the end of the color")
+MACRO_CONFIG_INT(ClAutoWhisper, ec_auto_whisper, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds \"/c \" to your message if the last one was a whisper")
+
+MACRO_CONFIG_STR(ClPermaPassword, perma_password, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "password")
 
 // Custom Vairiables from My Server for the editor
 // You can use these if you get my server from https://github.com/FoxNetw/FoxNet-DDNet

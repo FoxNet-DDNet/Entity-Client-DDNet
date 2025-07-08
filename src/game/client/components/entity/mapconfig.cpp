@@ -1,9 +1,8 @@
-#include <engine/client.h>
-#include <base/system.h>
 #include "mapconfig.h"
-#include <engine/storage.h>
+#include <base/system.h>
+#include <engine/client.h>
 #include <engine/shared/config.h>
-
+#include <engine/storage.h>
 
 constexpr char aMapConfigDir[] = "Entity/MapConfigs";
 

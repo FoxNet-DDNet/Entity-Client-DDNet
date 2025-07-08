@@ -89,18 +89,8 @@
  *
  * @ingroup Debug
  */
-#if defined(__cplusplus)
-[[noreturn]]
-#endif
-void
-dbg_assert_imp(const char *filename, int line, const char *fmt, ...)
+[[noreturn]] void dbg_assert_imp(const char *filename, int line, const char *fmt, ...)
 	GNUC_ATTRIBUTE((format(printf, 3, 4)));
-
-#ifdef __clang_analyzer__
-#include <cassert>
-#undef dbg_assert
-#define dbg_assert(test, fmt, ...) assert(test)
-#endif
 
 /**
  * Checks whether the program is currently shutting down due to a failed
@@ -122,10 +112,7 @@ bool dbg_assert_has_failed();
  *
  * @see dbg_assert
  */
-#if defined(__cplusplus)
-[[noreturn]]
-#endif
-void
+[[noreturn]] void
 dbg_break();
 
 typedef std::function<void(const char *message)> DBG_ASSERT_HANDLER;
@@ -989,11 +976,16 @@ std::string net_error_message();
 int net_would_block();
 
 /**
- * @todo document
+ * Waits for a socket to have data available to receive up the specified timeout duration.
  *
  * @ingroup Network-General
+ *
+ * @param sock Socket to wait on.
+ * @param nanoseconds Timeout duration to wait.
+ *
+ * @return `1` if data was received within the timeout duration, `0` otherwise.
  */
-int net_socket_read_wait(NETSOCKET sock, int time);
+int net_socket_read_wait(NETSOCKET sock, std::chrono::nanoseconds nanoseconds);
 
 /**
  * @defgroup Network-UDP
@@ -1008,8 +1000,8 @@ int net_socket_read_wait(NETSOCKET sock, int time);
  *
  * @param sock Socket whose type should be determined.
  *
- * @return The socket type, a bitset of `NETTYPE_IPV4`, `NETTYPE_IPV6` and `NETTYPE_WEBSOCKET_IPV4`,
- *         or `NETTYPE_INVALID` if the socket is invalid.
+ * @return The socket type, a bitset of `NETTYPE_IPV4`, `NETTYPE_IPV6`, `NETTYPE_WEBSOCKET_IPV4`
+ *         and `NETTYPE_WEBSOCKET_IPV6`, or `NETTYPE_INVALID` if the socket is invalid.
  */
 int net_socket_type(NETSOCKET sock);
 
@@ -1057,11 +1049,8 @@ int net_udp_recv(NETSOCKET sock, NETADDR *addr, unsigned char **data);
  * @ingroup Network-UDP
  *
  * @param sock Socket to close.
- *
- * @return `0` on success.
- * @return `-1` on error.
  */
-int net_udp_close(NETSOCKET sock);
+void net_udp_close(NETSOCKET sock);
 
 /**
  * @defgroup Network-TCP
@@ -1163,10 +1152,8 @@ int net_tcp_recv(NETSOCKET sock, void *data, int maxsize);
  * @ingroup Network-TCP
  *
  * @param sock Socket to close.
- *
- * @return `0` on success. Negative value on failure.
  */
-int net_tcp_close(NETSOCKET sock);
+void net_tcp_close(NETSOCKET sock);
 
 #if defined(CONF_FAMILY_UNIX)
 /**
@@ -2166,6 +2153,18 @@ const char *fs_filename(const char *path);
 void fs_split_file_extension(const char *filename, char *name, size_t name_size, char *extension = nullptr, size_t extension_size = 0);
 
 /**
+ * Normalizes the given path: replaces backslashes with regular slashes
+ * and removes trailing slashes.
+ *
+ * @ingroup Filesystem
+ *
+ * @param path Path to normalize.
+ *
+ * @remark The strings are treated as null-terminated strings.
+ */
+void fs_normalize_path(char *path);
+
+/**
  * Get the parent directory of a directory.
  *
  * @ingroup Filesystem
@@ -2638,33 +2637,6 @@ void cmdline_fix(int *argc, const char ***argv);
  */
 void cmdline_free(int argc, const char **argv);
 
-#if defined(CONF_FAMILY_WINDOWS)
-/**
- * A handle for a process.
- *
- * @ingroup Shell
- */
-typedef void *PROCESS;
-/**
- * A handle that denotes an invalid process.
- *
- * @ingroup Shell
- */
-constexpr PROCESS INVALID_PROCESS = nullptr;
-#else
-/**
- * A handle for a process.
- *
- * @ingroup Shell
- */
-typedef pid_t PROCESS;
-/**
- * A handle that denotes an invalid process.
- *
- * @ingroup Shell
- */
-constexpr PROCESS INVALID_PROCESS = 0;
-#endif
 #if !defined(CONF_PLATFORM_ANDROID)
 /**
  * Determines the initial window state when using @link shell_execute @endlink
@@ -2902,8 +2874,6 @@ void crashdump_init_if_available(const char *log_file_path);
  */
 std::chrono::nanoseconds time_get_nanoseconds();
 
-int net_socket_read_wait(NETSOCKET sock, std::chrono::nanoseconds nanoseconds);
-
 /**
  * Fixes the command line arguments to be encoded in UTF-8 on all systems.
  * This is a RAII wrapper for @link cmdline_fix @endlink and @link cmdline_free @endlink.
@@ -3063,10 +3033,8 @@ bool shell_unregister_application(const char *executable, bool *updated);
 void shell_update();
 #endif
 
-template<>
-struct std::hash<NETADDR>
-{
-	size_t operator()(const NETADDR &Addr) const noexcept;
-};
-
 #endif
+
+// E-Client
+const char *str_to_uppercase(const char *src);
+bool str_isalluppercase(const char *str);

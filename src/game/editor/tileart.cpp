@@ -5,7 +5,7 @@
 
 #include <array>
 
-bool operator<(const ColorRGBA &Left, const ColorRGBA &Right)
+static bool operator<(const ColorRGBA &Left, const ColorRGBA &Right) // NOLINT(unused-function)
 {
 	if(Left.r != Right.r)
 		return Left.r < Right.r;
@@ -167,7 +167,7 @@ void CEditor::AddTileart(bool IgnoreHistory)
 
 	m_TileartImageInfo.Free();
 	m_Map.OnModify();
-	m_Dialog = DIALOG_NONE;
+	OnDialogClose();
 }
 
 void CEditor::TileartCheckColors()

@@ -174,7 +174,7 @@ public:
 
 	bool IsPlaying() const;
 	int64_t m_Last_KickVote;
-	int64_t m_Last_Team;
+	int64_t m_LastDDRaceTeamChange;
 	int m_ShowOthers;
 	bool m_ShowAll;
 	vec2 m_ShowDistance;
@@ -235,6 +235,7 @@ public:
 	int m_RescueMode;
 
 	CSaveTee m_LastTeleTee;
+	std::optional<CSaveTee> m_LastDeath;
 };
 
 #endif
