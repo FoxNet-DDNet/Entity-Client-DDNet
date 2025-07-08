@@ -2116,7 +2116,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		DeleteButton.VSplitLeft(MarginSmall, nullptr, &DeleteButton);
 		DeleteButton.VSplitRight(MarginExtraSmall, &DeleteButton, nullptr);
 
-		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, 0))
+		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
 			GameClient()->m_WarList.RemoveWarEntry(pEntry);
 
 		bool IsClan = false;
