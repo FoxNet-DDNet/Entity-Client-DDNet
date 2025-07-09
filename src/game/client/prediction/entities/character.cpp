@@ -58,7 +58,7 @@ void CCharacter::HandleJetpack()
 	bool FullAuto = false;
 	if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
 		FullAuto = true;
-	if(m_Core.m_Jetpack && m_Core.m_ActiveWeapon == WEAPON_GUN)
+	if((m_Core.m_Jetpack || m_Core.m_ExplosionGun) && m_Core.m_ActiveWeapon == WEAPON_GUN)
 		FullAuto = true;
 
 	// check if we gonna fire
@@ -263,7 +263,7 @@ void CCharacter::FireWeapon()
 	bool FullAuto = false;
 	if(m_Core.m_ActiveWeapon == WEAPON_GRENADE || m_Core.m_ActiveWeapon == WEAPON_SHOTGUN || m_Core.m_ActiveWeapon == WEAPON_LASER)
 		FullAuto = true;
-	if(m_Core.m_Jetpack && m_Core.m_ActiveWeapon == WEAPON_GUN)
+	if((m_Core.m_Jetpack || m_Core.m_ExplosionGun) && m_Core.m_ActiveWeapon == WEAPON_GUN)
 		FullAuto = true;
 	if(m_FrozenLastTick)
 		FullAuto = true;
@@ -367,18 +367,27 @@ void CCharacter::FireWeapon()
 		{
 			int Lifetime = (int)(GameWorld()->GameTickSpeed() * GetTuning(GetOverriddenTuneZone())->m_GunLifetime);
 
+			bool Explosive = false;
+			int Sound = -1;
+
+			if(m_Core.m_ExplosionGun)
+			{
+				Explosive = true;
+				Sound = SOUND_GRENADE_FIRE;
+			}
+
 			new CProjectile(
 				GameWorld(),
-				WEAPON_GUN, //Type
-				GetCid(), //Owner
-				ProjStartPos, //Pos
-				Direction, //Dir
-				Lifetime, //Span
-				false, //Freeze
-				false, //Explosive
-				0, //Force
-				-1 //SoundImpact
-			);
+				WEAPON_GUN, // Type
+				GetCid(), // Owner
+				ProjStartPos, // Pos
+				Direction, // Dir
+				Lifetime, // Span
+				false, // Freeze
+				Explosive, // Explosive
+				Sound // SoundImpact
+			); // SoundImpact
+
 		}
 	}
 	break;
@@ -397,14 +406,14 @@ void CCharacter::FireWeapon()
 				float Speed = mix((float)Tuning()->m_ShotgunSpeeddiff, 1.0f, v);
 				new CProjectile(
 					GameWorld(),
-					WEAPON_SHOTGUN, //Type
-					GetCid(), //Owner
-					ProjStartPos, //Pos
-					direction(a) * Speed, //Dir
-					(int)(GameWorld()->GameTickSpeed() * Tuning()->m_ShotgunLifetime), //Span
-					false, //Freeze
-					false, //Explosive
-					-1 //SoundImpact
+					WEAPON_SHOTGUN, // Type
+					GetCid(), // Owner
+					ProjStartPos, // Pos
+					direction(a) * Speed, // Dir
+					(int)(GameWorld()->GameTickSpeed() * Tuning()->m_ShotgunLifetime), // Span
+					false, // Freeze
+					false, // Explosive
+					-1 // SoundImpact
 				);
 			}
 		}
@@ -423,15 +432,15 @@ void CCharacter::FireWeapon()
 
 		new CProjectile(
 			GameWorld(),
-			WEAPON_GRENADE, //Type
-			GetCid(), //Owner
-			ProjStartPos, //Pos
-			Direction, //Dir
-			Lifetime, //Span
-			false, //Freeze
-			true, //Explosive
-			SOUND_GRENADE_EXPLODE //SoundImpact
-		); //SoundImpact
+			WEAPON_GRENADE, // Type
+			GetCid(), // Owner
+			ProjStartPos, // Pos
+			Direction, // Dir
+			Lifetime, // Span
+			false, // Freeze
+			true, // Explosive
+			SOUND_GRENADE_EXPLODE // SoundImpact
+		); // SoundImpact
 	}
 	break;
 
@@ -1032,7 +1041,7 @@ void CCharacter::DDRaceTick()
 	{
 		m_Input.m_Direction = 0;
 		m_Input.m_Jump = 0;
-		//Hook and weapons are possible in live freeze
+		// Hook and weapons are possible in live freeze
 	}
 	if(m_FreezeTime > 0)
 	{
@@ -1045,6 +1054,14 @@ void CCharacter::DDRaceTick()
 		}
 		if(m_FreezeTime == 1)
 			UnFreeze();
+
+		m_AliveAccumulation = std::min(m_AliveAccumulation - 1, 0);
+		m_AliveAccumulation = std::max(m_AliveAccumulation, -g_Config.m_ClUnfreezeLagDelayTicks);
+	}
+	else
+	{
+		m_AliveAccumulation = std::max(m_AliveAccumulation, 1);
+		m_AliveAccumulation = std::min(m_AliveAccumulation + 1, g_Config.m_ClUnfreezeLagDelayTicks);
 	}
 
 	HandleTuneLayer();
@@ -1274,6 +1291,9 @@ void CCharacter::ResetPrediction()
 	m_Core.m_LaserHitDisabled = false;
 	m_Core.m_EndlessJump = false;
 	m_Core.m_Jetpack = false;
+
+	m_Core.m_ExplosionGun = false;
+
 	m_NinjaJetpack = false;
 	m_Core.m_Jumps = 2;
 	m_Core.m_HookHitDisabled = false;

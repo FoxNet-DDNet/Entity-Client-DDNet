@@ -15,6 +15,7 @@ class CEntity
 
 private:
 	friend CGameWorld; // entity list handling
+	friend class CPlayers; // DClient prediction
 	CEntity *m_pPrevTypeEntity;
 	CEntity *m_pNextTypeEntity;
 

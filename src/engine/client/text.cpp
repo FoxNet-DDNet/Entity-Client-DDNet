@@ -23,6 +23,19 @@
 
 using namespace std::chrono_literals;
 
+// TClient
+static void ReplaceHyphensWithSpaces(char *pStr)
+{
+	if(pStr == nullptr)
+		return;
+	while(*pStr)
+	{
+		if(*pStr == '-')
+			*pStr = ' ';
+		pStr++;
+	}
+}
+
 enum
 {
 	FONT_NAME_SIZE = 128,
@@ -351,6 +364,16 @@ private:
 			{
 				FamilyNameMatch = CurrentFace;
 			}
+
+			// TClient
+			// Third best match: match the fucking font name
+			char aBuf[256];
+			str_copy(aBuf, FT_Get_Postscript_Name(CurrentFace));
+			ReplaceHyphensWithSpaces(aBuf);
+			if(!FamilyNameMatch && str_comp(pFamilyName, aBuf) == 0)
+			{
+				FamilyNameMatch = CurrentFace;
+			}
 		}
 
 		return FamilyNameMatch;
@@ -603,6 +626,8 @@ public:
 			delete[] pTextureData;
 		}
 	}
+	// TClient
+	std::vector<FT_Face> *GetFaces() { return &m_vFtFaces; }
 
 	FT_Face DefaultFace() const
 	{
@@ -959,6 +984,10 @@ class CTextRender : public IEngineTextRender
 
 	std::chrono::nanoseconds m_CursorRenderTime;
 
+	// TClient
+	std::vector<std::string> m_CustomFontFaces;
+	std::vector<std::string> m_DefaultFontFaces;
+
 	int GetFreeTextContainerIndex()
 	{
 		if(m_FirstFreeTextContainerIndex == -1)
@@ -1154,6 +1183,86 @@ public:
 		m_pStorage = nullptr;
 	}
 
+	// TClient
+	static int LaziestFileCallback(const char *pFilename, int IsDir, int StorageType, void *pUser)
+	{
+		std::vector<std::string> *pVector = static_cast<std::vector<std::string> *>(pUser);
+		if(IsDir)
+			return 0;
+		pVector->emplace_back(pFilename);
+		return 0;
+	}
+	// TClient
+	void CheckDefaultFaces()
+	{
+		for(const auto &CurrentFace : *m_pGlyphMap->GetFaces())
+		{
+			char aBuf[256];
+			str_copy(aBuf, FT_Get_Postscript_Name(CurrentFace));
+			ReplaceHyphensWithSpaces(aBuf);
+			m_DefaultFontFaces.emplace_back(aBuf);
+		}
+	}
+	// TClient
+	void UpdateCustomFontList()
+	{
+		std::vector<std::string> vAllFaces;
+		for(const auto &CurrentFace : *m_pGlyphMap->GetFaces())
+		{
+			char aBuf[256];
+			str_copy(aBuf, FT_Get_Postscript_Name(CurrentFace));
+			ReplaceHyphensWithSpaces(aBuf);
+			vAllFaces.emplace_back(aBuf);
+		}
+
+		m_CustomFontFaces.clear();
+		m_CustomFontFaces.emplace_back("DejaVu Sans");
+		for(const auto &Face : vAllFaces)
+			if(std::find(m_DefaultFontFaces.begin(), m_DefaultFontFaces.end(), Face) == m_DefaultFontFaces.end())
+				m_CustomFontFaces.push_back(Face);
+	}
+	// TClient
+	void LoadCustomFonts()
+	{
+		CheckDefaultFaces();
+		std::vector<std::string> vCustomFonts;
+		Storage()->ListDirectory(IStorage::TYPE_ALL, "entity/fonts", LaziestFileCallback, &vCustomFonts);
+		std::sort(vCustomFonts.begin(), vCustomFonts.end());
+		for(const std::string &FilePath : vCustomFonts)
+		{
+			char aFontName[IO_MAX_PATH_LENGTH];
+			str_format(aFontName, sizeof(aFontName), "entity/fonts/%s", FilePath.c_str());
+			void *pFontData;
+			unsigned FontDataSize;
+			if(Storage()->ReadFile(aFontName, IStorage::TYPE_ALL, &pFontData, &FontDataSize))
+			{
+				if(LoadFontCollection(aFontName, static_cast<FT_Byte *>(pFontData), (FT_Long)FontDataSize))
+				{
+					m_vpFontData.push_back(pFontData);
+				}
+				else
+				{
+					free(pFontData);
+				}
+			}
+			else
+			{
+				log_error("textrender", "Failed to open/read font file '%s'", aFontName);
+			}
+		}
+		UpdateCustomFontList();
+	}
+	// TClient
+	std::vector<std::string> *GetCustomFaces() override
+	{
+		return &m_CustomFontFaces;
+	}
+	// TClient
+	void SetCustomFace(const char *pFace) override
+	{
+		m_pGlyphMap->SetDefaultFaceByName(pFace);
+	}
+
 	bool LoadFonts() override
 	{
 		// read file data into buffer
@@ -1239,6 +1348,9 @@ public:
 			log_error("textrender", "Font index malformed: 'default' must be a string");
 			Success = false;
 		}
+		// TClient
+		LoadCustomFonts();
+		m_pGlyphMap->AddFallbackFaceByName("DejaVu Sans");
 
 		// extract language variant family names
 		const json_value &Variants = (*pJsonData)["language variants"];
@@ -2353,6 +2465,126 @@ public:
 		}
 
 		dbg_assert(!HasNonEmptyTextContainer, "text container was not empty");
+	}
+
+	
+	ColorRGBA HSVtoRGB(float h, float s, float v) override
+	{
+		float r = 0, g = 0, b = 0;
+		int i = int(h * 6);
+		float f = h * 6 - i;
+		float p = v * (1 - s);
+		float q = v * (1 - f * s);
+		float t = v * (1 - (1 - f) * s);
+		switch(i % 6)
+		{
+		case 0: r = v, g = t, b = p; break;
+		case 1: r = q, g = v, b = p; break;
+		case 2: r = p, g = v, b = t; break;
+		case 3: r = p, g = q, b = v; break;
+		case 4: r = t, g = p, b = v; break;
+		case 5: r = v, g = p, b = q; break;
+		}
+		return ColorRGBA(r, g, b, 1.0f);
+	}
+	void ColorParsing(const char *pText, CTextCursor *pCursor, ColorRGBA OriginalCol, STextContainerIndex *pTextContainerIndex) override
+	{
+		if(!pText[0])
+			return;
+
+		bool RemoveCodes = pTextContainerIndex == nullptr ? false : true;
+
+		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>>
+		{
+			if(isdigit(p[0]) && isdigit(p[1]))
+			{
+				int code = (p[0] - '0') * 10 + (p[1] - '0');
+				float sat = 1.0f;
+				int Length = 2;
+				if(isdigit(p[2]))
+				{
+					sat = (p[2] - '0') / 10.0f;
+					Length = 3;
+				}
+
+				if(code >= 0 && code <= 99)
+				{
+					float hue = code / 100.0f;
+					return std::make_pair(HSVtoRGB(hue, sat, 1.0f), Length);
+				}
+			}
+			return std::nullopt;
+		};
+
+		const char *p = pText;
+		ColorRGBA CurColor = OriginalCol;
+		const char *SegStart = p;
+
+		while(*p)
+		{
+			if(*p == '&' && *(p + 1))
+			{
+				// Check for reset code
+				if(*(p + 1) == 'x')
+				{
+					if(p > SegStart)
+					{
+						TextColor(CurColor);
+						if(RemoveCodes)
+							CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
+						else
+							TextEx(pCursor, SegStart, p - SegStart);
+					}
+					if(RemoveCodes)
+						p += 2;
+					else
+						p += 0;
+
+					CurColor = OriginalCol;
+					SegStart = p;
+					if(!RemoveCodes)
+						p++;
+					continue;
+				}
+
+				auto ColorResult = GetColorFromCode(p + 1);
+				if(ColorResult && *(p + 2))
+				{
+					if(p > SegStart)
+					{
+						TextColor(CurColor);
+						if(RemoveCodes)
+							CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
+						else
+							TextEx(pCursor, SegStart, p - SegStart);
+					}
+					if(RemoveCodes)
+						p += 1 + ColorResult->second; // & + code length
+					else
+						p += 0;
+					CurColor = ColorResult->first;
+					SegStart = p;
+					if(!RemoveCodes)
+						p++;
+				}
+				else
+				{
+					++p;
+				}
+			}
+			else
+			{
+				++p;
+			}
+		}
+		if(p > SegStart)
+		{
+			TextColor(CurColor);
+			if(RemoveCodes)
+				CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
+			else
+				TextEx(pCursor, SegStart, p - SegStart);
+		}
 	}
 };
 

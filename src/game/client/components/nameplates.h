@@ -40,6 +40,16 @@ public:
 	bool m_ShowHookStrongWeakId;
 	int m_HookStrongWeakId;
 	float m_FontSizeHookStrongWeak;
+
+	// E-Client
+	bool m_PingCircle = false;
+	bool m_IsMuted = false;
+	bool m_IsEntity = false;
+	const char *m_pReason = "";
+	bool m_ShowReason = false;
+
+	// TClient
+	bool m_ShowClanWarInName = false;
 };
 
 class CNamePlates : public CComponent

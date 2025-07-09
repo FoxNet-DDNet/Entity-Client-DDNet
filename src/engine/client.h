@@ -309,6 +309,7 @@ public:
 	virtual IFriends *Foes() = 0;
 
 	virtual void GetSmoothTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount) = 0;
+	virtual void GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount) = 0;
 
 	virtual void AddWarning(const SWarning &Warning) = 0;
 	virtual std::optional<SWarning> CurrentWarning() = 0;
@@ -350,6 +351,12 @@ public:
 	};
 	virtual void ShowMessageBox(const char *pTitle, const char *pMessage, EMessageBoxType Type = MESSAGE_BOX_TYPE_ERROR) = 0;
 	virtual void GetGpuInfoString(char (&aGpuInfo)[256]) = 0;
+
+	// TClientAdd commentMore actions
+	bool m_IsLocalFrozen = false;
+
+	// E-Client
+	virtual void DiscordRPCchange() = 0;
 };
 
 class IGameClient : public IInterface
@@ -390,6 +397,13 @@ public:
 	virtual void DummyResetInput() = 0;
 	virtual void Echo(const char *pString) = 0;
 
+	// E-Client
+	virtual void ClientMessage(const char *pString) = 0;
+	virtual void OnJoinInfo() = 0;
+	virtual void SetLastMovementTime(int Delay) = 0;
+	virtual int GetClientId(const char *pName) = 0;
+	virtual const char *GetClientName(int Id) = 0;
+
 	virtual bool CanDisplayWarning() const = 0;
 	virtual void RenderShutdownMessage() = 0;
 
@@ -402,6 +416,7 @@ public:
 	virtual int OnDemoRecSnap7(class CSnapshot *pFrom, class CSnapshot *pTo, int Conn) = 0;
 	virtual int TranslateSnap(class CSnapshot *pSnapDstSix, class CSnapshot *pSnapSrcSeven, int Conn, bool Dummy) = 0;
 
+	virtual bool CheckNewInput() = 0;
 	virtual void InitializeLanguage() = 0;
 };
 

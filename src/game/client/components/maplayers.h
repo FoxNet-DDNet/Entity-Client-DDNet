@@ -38,9 +38,10 @@ class CMapLayers : public CComponent
 	std::shared_ptr<CMapBasedEnvelopePointAccess> m_pEnvelopePoints;
 
 	int m_Type;
-	bool m_OnlineOnly;
 
 public:
+	bool m_OnlineOnly;
+
 	enum
 	{
 		TYPE_BACKGROUND = 0,

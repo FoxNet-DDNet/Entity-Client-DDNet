@@ -21,12 +21,21 @@ class CPlayers : public CComponent
 		const CTeeRenderInfo *pRenderInfo,
 		int ClientId,
 		float Intra = 0.f);
+
+	void RenderPlayerGhost(
+		const CNetObj_Character *pPrevChar,
+		const CNetObj_Character *pPlayerChar,
+		const CTeeRenderInfo *pRenderInfo,
+		int ClientId,
+		float Intra = 0.f);
+
 	void RenderHook(
 		const CNetObj_Character *pPrevChar,
 		const CNetObj_Character *pPlayerChar,
 		const CTeeRenderInfo *pRenderInfo,
 		int ClientId,
 		float Intra = 0.f);
+
 	void RenderHookCollLine(
 		const CNetObj_Character *pPrevChar,
 		const CNetObj_Character *pPlayerChar,
@@ -36,6 +45,9 @@ class CPlayers : public CComponent
 
 	int m_WeaponEmoteQuadContainerIndex;
 	int m_aWeaponSpriteMuzzleQuadContainerIndex[NUM_WEAPONS];
+
+	//E-Client
+	void RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha);
 
 	void CreateNinjaTeeRenderInfo();
 	void CreateSpectatorTeeRenderInfo();

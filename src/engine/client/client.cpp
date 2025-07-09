@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
 #include <base/hash.h>
@@ -208,8 +208,22 @@ int CClient::SendMsgActive(CMsgPacker *pMsg, int Flags)
 	return SendMsg(g_Config.m_ClDummy, pMsg, Flags);
 }
 
+void CClient::SendqxdInfo(int Conn)
+{
+	CMsgPacker Msg(NETMSG_IAMQXD, true);
+	Msg.AddString("entityclient.net v" ECLIENT_VERSION " built on " __DATE__ ", " __TIME__);
+	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
+}
+
 void CClient::SendInfo(int Conn)
 {
+	SendqxdInfo(CONN_MAIN);
+
+	if(!str_comp(g_Config.m_Password, ""))
+		str_copy(g_Config.m_Password, g_Config.m_ClPermaPassword);
+	if(!str_comp(m_aPassword, ""))
+		str_copy(m_aPassword, g_Config.m_ClPermaPassword);
+
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
 	MsgVer.AddInt(GameClient()->DDNetVersion());
@@ -325,7 +339,7 @@ void CClient::SendInput()
 	if(m_aPredTick[g_Config.m_ClDummy] <= 0)
 		return;
 
-	bool Force = false;
+	bool Force = true;
 	// fetch input
 	for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
 	{
@@ -347,9 +361,10 @@ void CClient::SendInput()
 			m_aInputs[i][m_aCurrentInput[i]].m_Tick = m_aPredTick[g_Config.m_ClDummy];
 			m_aInputs[i][m_aCurrentInput[i]].m_PredictedTime = m_PredictedTime.Get(Now);
 			m_aInputs[i][m_aCurrentInput[i]].m_PredictionMargin = PredictionMargin() * time_freq() / 1000;
+			if(g_Config.m_ClSmoothPredictionMargin)
+				m_aInputs[i][m_aCurrentInput[i]].m_PredictionMargin = m_PredictedTime.GetMargin(Now);
 			m_aInputs[i][m_aCurrentInput[i]].m_Time = Now;
 
-			// pack it
 			for(int k = 0; k < Size / 4; k++)
 			{
 				static const int FlagsOffset = offsetof(CNetObj_PlayerInput, m_PlayerFlags) / sizeof(int);
@@ -433,14 +448,36 @@ void CClient::SetState(EClientState State)
 		CServerInfo CurrentServerInfo;
 		GetServerInfo(&CurrentServerInfo);
 
-		Discord()->SetGameInfo(CurrentServerInfo, m_aCurrentMap, Registered);
 		Steam()->SetGameInfo(ServerAddress(), m_aCurrentMap, Registered);
 	}
 	else if(OldState == IClient::STATE_ONLINE)
 	{
-		Discord()->ClearGameInfo();
 		Steam()->ClearGameInfo();
 	}
+	DiscordRPCchange();
+}
+
+void CClient::ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData)
+{
+	CClient *pSelf = (CClient *)pUserData;
+	pSelf->DiscordRPCchange();
+}
+
+void CClient::DiscordRPCchange()
+{
+	if(State() == IClient::STATE_ONLINE)
+	{
+		const bool Registered = m_ServerBrowser.IsRegistered(ServerAddress());
+		CServerInfo CurrentServerInfo;
+		GetServerInfo(&CurrentServerInfo);
+
+		Discord()->SetGameInfo(CurrentServerInfo, m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);	
+	}
+	else if(State() == IClient::STATE_OFFLINE)
+	{
+		Discord()->ClearGameInfo(g_Config.m_ClDiscordOfflineStatus);
+	}
+	dbg_msg("E-Client", "Discord RPC reloaded");
 }
 
 // called when the map is loaded and we should init for a new round
@@ -491,6 +528,8 @@ void CClient::EnterGame(int Conn)
 		return;
 
 	m_aCodeRunAfterJoin[Conn] = false;
+	m_aCodeRunAfterJoinConsole[Conn] = false;
+	m_aOnJoinInfo[CONN_MAIN] = false;
 
 	// now we will wait for two snapshots
 	// to finish the connection
@@ -1438,7 +1477,7 @@ static CServerCapabilities GetServerCapabilities(int Version, int Flags, bool Si
 	Result.m_AnyPlayerFlag = !Sixup;
 	Result.m_PingEx = false;
 	Result.m_AllowDummy = true;
-	Result.m_SyncWeaponInput = false;
+	Result.m_SyncWeaponInput = true;
 	if(Version >= 1)
 	{
 		Result.m_ChatTimeoutCode = Flags & SERVERCAPFLAG_CHATTIMEOUTCODE;
@@ -1457,7 +1496,7 @@ static CServerCapabilities GetServerCapabilities(int Version, int Flags, bool Si
 	}
 	if(Version >= 5)
 	{
-		Result.m_SyncWeaponInput = Flags & SERVERCAPFLAG_SYNCWEAPONINPUT;
+		Result.m_SyncWeaponInput = true;
 	}
 	return Result;
 }
@@ -1901,7 +1940,10 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 				if(m_aInputs[Conn][k].m_Tick == InputPredTick)
 				{
 					Target = m_aInputs[Conn][k].m_PredictedTime + (Now - m_aInputs[Conn][k].m_Time);
-					Target = Target - (int64_t)((TimeLeft / 1000.0f) * time_freq());
+					if(g_Config.m_ClSmoothPredictionMargin)
+						Target = Target - (int64_t)((TimeLeft / 1000.0f) * time_freq()) + m_aInputs[Conn][k].m_PredictionMargin;
+					else
+						Target = Target - (int64_t)((TimeLeft / 1000.0f) * time_freq());
 					break;
 				}
 			}
@@ -2150,7 +2192,20 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 						int64_t TimeLeft = (TickStart - Now) * 1000 / time_freq();
 						m_aGameTime[Conn].Update(&m_aGametimeMarginGraphs[Conn], (GameTick - 1) * time_freq() / GameTickSpeed(), TimeLeft, CSmoothTime::ADJUSTDIRECTION_DOWN);
 					}
-
+					if(g_Config.m_ClRunOnJoinConsole && m_aReceivedSnapshots[Conn] > g_Config.m_ClRunOnJoinDelay && !m_aCodeRunAfterJoinConsole[Conn])
+					{
+						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoin);
+						m_aCodeRunAfterJoinConsole[Conn] = true;
+					}
+					if((g_Config.m_ClEnabledInfo || g_Config.m_ClListsInfo) && !m_aOnJoinInfo[CONN_MAIN])
+					{
+						GameClient()->SetLastMovementTime(59);
+						if(m_aReceivedSnapshots[Conn] > 10)
+						{
+							GameClient()->OnJoinInfo();
+							m_aOnJoinInfo[CONN_MAIN] = true;
+						}
+					}
 					if(m_aReceivedSnapshots[Conn] > GameTickSpeed() && !m_aCodeRunAfterJoin[Conn])
 					{
 						if(m_ServerCapabilities.m_ChatTimeoutCode)
@@ -2162,6 +2217,11 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 							else
 								str_format(aBufMsg, sizeof(aBufMsg), "/mc;timeout %s", m_aTimeoutCodes[Conn]);
 
+							if(g_Config.m_ClRunOnJoin[0])
+							{
+								str_format(aBuf, sizeof(aBuf), ";%s", g_Config.m_ClRunOnJoin);
+								str_append(aBufMsg, aBuf);
+							}
 							if(g_Config.m_ClDummyDefaultEyes || g_Config.m_ClPlayerDefaultEyes)
 							{
 								int Emote = ((g_Config.m_ClDummy) ? !Dummy : Dummy) ? g_Config.m_ClDummyDefaultEyes : g_Config.m_ClPlayerDefaultEyes;
@@ -2192,11 +2252,6 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 									str_format(aBuf, sizeof(aBuf), ";%s", aBufEmote);
 									str_append(aBufMsg, aBuf);
 								}
-							}
-							if(g_Config.m_ClRunOnJoin[0])
-							{
-								str_format(aBuf, sizeof(aBuf), ";%s", g_Config.m_ClRunOnJoin);
-								str_append(aBufMsg, aBuf);
 							}
 							if(IsSixup())
 							{
@@ -2797,6 +2852,11 @@ void CClient::Update()
 					// send input
 					SendInput();
 				}
+
+				if(g_Config.m_ClFastInput && GameClient()->CheckNewInput())
+				{
+					Repredict = true;
+				}
 			}
 
 			// only do sane predictions
@@ -2953,7 +3013,10 @@ void CClient::Update()
 	else
 		GameClient()->OnUpdate();
 
-	Discord()->Update();
+	// Discord RPC Update
+	Discord()->Update(g_Config.m_ClDiscordRPC);
+
+	// Steam Presence Update
 	Steam()->Update();
 	if(Steam()->GetConnectAddress())
 	{
@@ -3190,6 +3253,10 @@ void CClient::Run()
 		if(m_DummySendConnInfo && m_aNetClient[CONN_DUMMY].State() == NETSTATE_ONLINE)
 		{
 			m_DummySendConnInfo = false;
+
+			// send client info
+			SendqxdInfo(CONN_DUMMY);
+
 			SendInfo(CONN_DUMMY);
 			m_aNetClient[CONN_DUMMY].Update();
 			SendReady(CONN_DUMMY);
@@ -3371,6 +3438,7 @@ void CClient::Run()
 
 	GameClient()->RenderShutdownMessage();
 	Disconnect();
+	GameClient()->OnShutdown();
 
 	if(!m_pConfigManager->Save())
 	{
@@ -3384,7 +3452,6 @@ void CClient::Run()
 	Engine()->ShutdownJobs();
 
 	GameClient()->RenderShutdownMessage();
-	GameClient()->OnShutdown();
 	delete m_pEditor;
 
 	// close sockets
@@ -3410,7 +3477,8 @@ bool CClient::InitNetworkClient(char *pError, size_t ErrorSize)
 	BindAddr.type = NETTYPE_ALL;
 	for(unsigned int i = 0; i < std::size(m_aNetClient); i++)
 	{
-		int &PortRef = i == CONN_MAIN ? g_Config.m_ClPort : i == CONN_DUMMY ? g_Config.m_ClDummyPort : g_Config.m_ClContactPort;
+		int &PortRef = i == CONN_MAIN ? g_Config.m_ClPort : i == CONN_DUMMY ? g_Config.m_ClDummyPort :
+										      g_Config.m_ClContactPort;
 		if(PortRef < 1024) // Reject users setting ports that we don't want to use
 		{
 			PortRef = 0;
@@ -4138,7 +4206,7 @@ void CClient::InitChecksum()
 {
 	CChecksumData *pData = &m_Checksum.m_Data;
 	pData->m_SizeofData = sizeof(*pData);
-	str_copy(pData->m_aVersionStr, GAME_NAME " " GAME_RELEASE_VERSION " (" CONF_PLATFORM_STRING "; " CONF_ARCH_STRING ")");
+	str_copy(pData->m_aVersionStr, CLIENT_NAME " " GAME_RELEASE_VERSION " (" CONF_PLATFORM_STRING "; " CONF_ARCH_STRING ")");
 	pData->m_Start = time_get();
 	os_version_str(pData->m_aOsVersion, sizeof(pData->m_aOsVersion));
 	secure_random_fill(&pData->m_Random, sizeof(pData->m_Random));
@@ -4182,7 +4250,7 @@ int CClient::HandleChecksum(int Conn, CUuid Uuid, CUnpacker *pUnpacker)
 	if(Start <= (int)sizeof(m_Checksum.m_aBytes))
 	{
 		mem_zero(&m_Checksum.m_Data.m_Config, sizeof(m_Checksum.m_Data.m_Config));
-#define CHECKSUM_RECORD(Flags) (((Flags)&CFGFLAG_CLIENT) == 0 || ((Flags)&CFGFLAG_INSENSITIVE) != 0)
+#define CHECKSUM_RECORD(Flags) (((Flags) & CFGFLAG_CLIENT) == 0 || ((Flags) & CFGFLAG_INSENSITIVE) != 0)
 #define MACRO_CONFIG_INT(Name, ScriptName, Def, Min, Max, Flags, Desc) \
 	if(CHECKSUM_RECORD(Flags)) \
 	{ \
@@ -4344,7 +4412,7 @@ void CClient::ConchainPassword(IConsole::IResult *pResult, void *pUserData, ICon
 {
 	CClient *pSelf = (CClient *)pUserData;
 	pfnCallback(pResult, pCallbackUserData);
-	if(pResult->NumArguments() && pSelf->m_LocalStartTime) //won't set m_SendPassword before game has started
+	if(pResult->NumArguments() && pSelf->m_LocalStartTime) // won't set m_SendPassword before game has started
 		pSelf->m_SendPassword = true;
 }
 
@@ -4468,6 +4536,9 @@ void CClient::RegisterCommands()
 
 	m_pConsole->Chain("loglevel", ConchainLoglevel, this);
 	m_pConsole->Chain("stdout_output_level", ConchainStdoutOutputLevel, this);
+
+	// E-Client
+	m_pConsole->Register("discord_rpc_reload", "", CFGFLAG_CLIENT, ConDiscordRPCchange, this, "Reloads The Discord RPC");
 }
 
 static CClient *CreateClient()
@@ -4827,6 +4898,24 @@ int main(int argc, const char **argv)
 		pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
 	}
 
+	// execute E-Client config file
+	IOHANDLE File = pStorage->OpenFile(ECONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
+	if(File)
+	{
+		io_close(File);
+		pConsole->ExecuteFile(ECONFIG_FILE);
+	}
+
+	if(pStorage->FileExists(LEGACYACONFIG_FILE, IStorage::TYPE_ALL) && g_Config.m_ClFirstLaunch)
+	{
+		if(pConsole->ExecuteLegacyFile())
+		{
+			dbg_msg("E-Client", "migrated legacy config file to new format");
+			pStorage->RemoveFile(LEGACYACONFIG_FILE, IStorage::TYPE_SAVE);
+		}
+		g_Config.m_ClFirstLaunch = 0;
+	}
+
 	// execute autoexec file
 	if(pStorage->FileExists(AUTOEXEC_CLIENT_FILE, IStorage::TYPE_ALL))
 	{
@@ -5084,7 +5173,19 @@ void CClient::GetSmoothTick(int *pSmoothTick, float *pSmoothIntraTick, float Mix
 	*pSmoothTick = (int)(SmoothTime * GameTickSpeed() / time_freq()) + 1;
 	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1) * time_freq() / GameTickSpeed()) / (float)(time_freq() / GameTickSpeed());
 }
+void CClient::GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, float MixAmount)
+{
+	int64_t GameTime = m_aGameTime[g_Config.m_ClDummy].Get(time_get());
+	int64_t PredTime = m_PredictedTime.Get(time_get());
+	GameTime = std::min(GameTime, PredTime);
 
+	int64_t UpperPredTime = std::clamp(PredTime - (time_freq() / 50) * g_Config.m_ClUnfreezeLagTicks, GameTime, PredTime);
+	int64_t LowestPredTime = std::clamp(PredTime, GameTime, UpperPredTime);
+	int64_t SmoothTime = std::clamp(LowestPredTime + (int64_t)(MixAmount * (PredTime - LowestPredTime)), LowestPredTime, PredTime);
+
+	*pSmoothTick = (int)(SmoothTime * 50 / time_freq()) + 1;
+	*pSmoothIntraTick = (SmoothTime - (*pSmoothTick - 1) * time_freq() / 50) / (float)(time_freq() / 50);
+}
 void CClient::AddWarning(const SWarning &Warning)
 {
 	const std::unique_lock<std::mutex> Lock(m_WarningsMutex);
@@ -5113,7 +5214,11 @@ int CClient::MaxLatencyTicks() const
 
 int CClient::PredictionMargin() const
 {
-	return m_ServerCapabilities.m_SyncWeaponInput ? g_Config.m_ClPredictionMargin : 10;
+	if(g_Config.m_ClPredMarginInFreeze && m_IsLocalFrozen)
+	{
+		return g_Config.m_ClPredMarginInFreezeAmount;
+	}
+	return g_Config.m_ClPredictionMargin;
 }
 
 int CClient::UdpConnectivity(int NetType)

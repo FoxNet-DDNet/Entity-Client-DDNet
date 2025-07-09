@@ -20,6 +20,9 @@ static constexpr const char *DEFAULT_SAVED_RCON_USER = "local-server";
 #define AUTOEXEC_FILE "autoexec.cfg"
 #define AUTOEXEC_CLIENT_FILE "autoexec_client.cfg"
 #define AUTOEXEC_SERVER_FILE "autoexec_server.cfg"
+#define LEGACYACONFIG_FILE "settings_aiodob.cfg"
+#define ECONFIG_FILE "settings_entity.cfg"
+#define MAX_CALLBACKS 64;
 
 class CConfig
 {
@@ -214,6 +217,7 @@ class CConfigManager : public IConfigManager
 		}
 	};
 	std::vector<SCallback> m_vCallbacks;
+	std::vector<SCallback> m_vECallbacks;
 
 	std::vector<SConfigVariable *> m_vpAllVariables;
 	std::vector<SConfigVariable *> m_vpGameVariables;
@@ -232,9 +236,11 @@ public:
 	void ResetGameSettings() override;
 	void SetReadOnly(const char *pScriptName, bool ReadOnly) override;
 	bool Save() override;
+	bool EClientSave();
 	CConfig *Values() override { return &g_Config; }
 
 	void RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
+	void RegisterECallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
 
 	void WriteLine(const char *pLine) override;
 

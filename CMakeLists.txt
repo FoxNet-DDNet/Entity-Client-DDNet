@@ -103,17 +103,17 @@ option(WEBSOCKETS "Enable websockets support" OFF)
 option(MYSQL "Enable mysql support" OFF)
 option(TEST_MYSQL "Test mysql support in unit tests (also sets -DMYSQL=ON)" OFF)
 option(AUTOUPDATE "Enable the autoupdater" OFF)
-option(INFORM_UPDATE "Inform about available updates" ON)
+option(INFORM_UPDATE "Inform about available updates" OFF)
 option(VIDEORECORDER "Enable video recording support via FFmpeg" ON)
 option(UPNP "Enable UPnP support" OFF)
 option(ANTIBOT "Enable support for a dynamic anticheat library (not provided, see src/antibot for interface if you want to implement your own)" OFF)
 option(HEADLESS_CLIENT "Build the client without graphics" OFF)
 option(CLIENT "Compile client" ON)
 option(SERVER "Compile server" ON)
-option(TOOLS "Compile tools" ON)
+option(TOOLS "Compile tools" OFF)
 option(DOWNLOAD_GTEST "Download and compile GTest" ${AUTO_DEPENDENCIES_DEFAULT})
 option(STEAM "Build the Steam release version" OFF)
-option(DISCORD "Enable Discord rich presence support" OFF)
+option(DISCORD "Enable Discord rich presence support" ON)
 option(DISCORD_DYNAMIC "Enable discovering Discord rich presence libraries at runtime (Linux only)" OFF)
 option(PREFER_BUNDLED_LIBS "Prefer bundled libraries over system libraries" ${AUTO_DEPENDENCIES_DEFAULT})
 option(DEV "Don't generate stuff necessary for packaging" OFF)
@@ -124,7 +124,16 @@ option(IPO "Enable interprocedural optimizations" OFF)
 option(FUSE_LD "Linker to use" OFF)
 option(SECURITY_COMPILER_FLAGS "Whether to set security-relevant compiler flags like -D_FORTIFY_SOURCE=2 and -fstack-protector-strong" ON)
 
-if(TARGET_OS STREQUAL "emscripten")
+if(TARGET_OS STREQUAL "mac")
+    set(TOOLS ON)
+endif()
+
+if(TARGET_OS STREQUAL "android")
+    set(CLIENT ON)
+    set(DISCORD OFF)
+endif()
+
+if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
   include(${PROJECT_SOURCE_DIR}/cmake/toolchains/Emscripten.toolchain)
 endif()
 
@@ -1437,6 +1446,21 @@ set(EXPECTED_DATA
   editor/tele.png
   editor/tune.png
   emoticons.png
+  entity/binds/.extra.cfg
+  entity/binds/.help.cfg
+  entity/fonts/Cabin-Regular.ttf
+  entity/fonts/ComicSansMS.ttf
+  entity/fonts/GoogleSans-Regular.ttf
+  entity/fonts/Inter_24pt-Regular.ttf
+  entity/fonts/Inter_24pt-SemiBold.ttf
+  entity/fonts/Minecraft_font.ttf
+  entity/fonts/Montserrat-Regular.ttf
+  entity/fonts/Nunito-Black.ttf
+  entity/fonts/Rubik-Regular.ttf
+  entity/icons/foxnet_flags.png
+  entity/icons/generic_ghost.png
+  entity/icons/muted_icon.png
+  entity/icons/settings_icon.png
   extras.png
   fonts/DejaVuSans.ttf
   fonts/Font_Awesome_6_Free-Solid-900.otf
@@ -1617,6 +1641,7 @@ set(EXPECTED_DATA
   skins/brownbear.png
   skins/cammo.png
   skins/cammostripes.png
+  skins/catnoa.png
   skins/chinese_by_whis.png
   skins/coala.png
   skins/coala_bluekitty.png
@@ -2069,6 +2094,7 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   econ.cpp
   econ.h
   engine.cpp
+  entity_variables.h
   fifo.cpp
   fifo.h
   filecollection.cpp
@@ -2351,6 +2377,19 @@ if(CLIENT)
     components/effects.h
     components/emoticon.cpp
     components/emoticon.h
+    components/entity/anti_spawn_block.cpp
+    components/entity/anti_spawn_block.h
+    components/entity/commands.cpp
+    components/entity/e_enums.h
+    components/entity/entity.cpp
+    components/entity/entity.h 
+    components/entity/freeze_kill.cpp
+    components/entity/freeze_kill.h 
+    components/entity/mapconfig.cpp
+    components/entity/mapconfig.h
+    components/entity/menus_entity.cpp 
+    components/entity/update.cpp
+    components/entity/update.h
     components/flow.cpp
     components/flow.h
     components/freezebars.cpp
@@ -2407,6 +2446,20 @@ if(CLIENT)
     components/spectator.h
     components/statboard.cpp
     components/statboard.h
+    components/tclient/bindchat.cpp
+    components/tclient/bindchat.h
+    components/tclient/bindwheel.cpp
+    components/tclient/bindwheel.h
+    components/tclient/outlines.cpp
+    components/tclient/outlines.h
+    components/tclient/player_indicator.cpp
+    components/tclient/player_indicator.h
+    components/tclient/rainbow.cpp
+    components/tclient/rainbow.h
+    components/tclient/skinprofiles.cpp
+    components/tclient/skinprofiles.h
+    components/tclient/warlist.cpp
+    components/tclient/warlist.h
     components/tooltips.cpp
     components/tooltips.h
     components/touch_controls.cpp
@@ -2740,7 +2793,7 @@ if(SERVER)
     entities/dragger_beam.cpp
     entities/dragger_beam.h
     entities/gun.cpp
-    entities/gun.h
+    entities/gun.h  
     entities/laser.cpp
     entities/laser.h
     entities/light.cpp

@@ -31,7 +31,7 @@ public:
 
 static const char *GetUpdaterUrl(char *pBuf, int BufSize, const char *pFile)
 {
-	str_format(pBuf, BufSize, "https://update.ddnet.org/%s", pFile);
+	str_format(pBuf, BufSize, "https://www.entityclient.net/version.json", pFile);
 	return pBuf;
 }
 
@@ -215,7 +215,7 @@ bool CUpdater::ReplaceServer()
 	bool Success = true;
 	char aPath[IO_MAX_PATH_LENGTH];
 
-	//Replace running executable by renaming twice...
+	// Replace running executable by renaming twice...
 	m_pStorage->RemoveBinaryFile(SERVER_EXEC ".old");
 	Success &= m_pStorage->RenameBinaryFile(PLAT_SERVER_EXEC, SERVER_EXEC ".old");
 	str_format(aPath, sizeof(aPath), "update/%s", m_aServerExecTmp);

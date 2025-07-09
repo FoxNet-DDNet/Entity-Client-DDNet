@@ -276,8 +276,10 @@ class CRenderTools
 	void RenderTee7(const CAnimState *pAnim, const CTeeRenderInfo *pInfo, int Emote, vec2 Dir, vec2 Pos, float Alpha = 1.0f);
 
 public:
+	class CGameClient *m_pGameClient;
 	class IGraphics *Graphics() const { return m_pGraphics; }
 	class ITextRender *TextRender() const { return m_pTextRender; }
+	class CGameClient *GameClient() const { return m_pGameClient; }
 
 	void Init(class IGraphics *pGraphics, class ITextRender *pTextRender);
 
@@ -327,7 +329,6 @@ public:
 	void MapScreenToInterface(float CenterX, float CenterY, float Zoom = 1.0f);
 
 	// DDRace
-
 	void RenderTeleOverlay(CTeleTile *pTele, int w, int h, float Scale, int OverlayRenderFlags, float Alpha = 1.0f) const;
 	void RenderSpeedupOverlay(CSpeedupTile *pSpeedup, int w, int h, float Scale, int OverlayRenderFlags, float Alpha = 1.0f);
 	void RenderSwitchOverlay(CSwitchTile *pSwitch, int w, int h, float Scale, int OverlayRenderFlags, float Alpha = 1.0f) const;
@@ -335,6 +336,10 @@ public:
 	void RenderTelemap(CTeleTile *pTele, int w, int h, float Scale, ColorRGBA Color, int RenderFlags) const;
 	void RenderSwitchmap(CSwitchTile *pSwitch, int w, int h, float Scale, ColorRGBA Color, int RenderFlags) const;
 	void RenderTunemap(CTuneTile *pTune, int w, int h, float Scale, ColorRGBA Color, int RenderFlags) const;
+
+	// TClient
+	void RenderGameTileOutlines(CTile *pTiles, int w, int h, float Scale, int TileType, float Alpha = 1.0f) const;
+	void RenderTeleOutlines(CTile *pTiles, CTeleTile *pTele, int w, int h, float Scale, float Alpha = 1.0f) const;
 };
 
 #endif

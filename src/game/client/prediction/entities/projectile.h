@@ -11,6 +11,7 @@ class CProjectile : public CEntity
 {
 	friend class CGameWorld;
 	friend class CItems;
+	friend class CPlayers; // DClient prediction
 
 public:
 	CProjectile(

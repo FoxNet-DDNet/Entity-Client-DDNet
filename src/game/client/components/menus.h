@@ -24,10 +24,13 @@
 #include <game/client/render.h>
 #include <game/client/ui.h>
 #include <game/voting.h>
+#include <game/localization.h>
 
 #include <game/client/components/community_icons.h>
 #include <game/client/components/menus_start.h>
 #include <game/client/components/skins7.h>
+#include <engine/shared/localization.h>
+#include "tclient/warlist.h"
 
 // component to fetch keypresses, override all other input
 class CMenusKeyBinder : public CComponent
@@ -58,7 +61,7 @@ class CMenus : public CComponent
 
 public:
 	int DoButton_Toggle(const void *pId, int Checked, const CUIRect *pRect, bool Active, unsigned Flags = BUTTONFLAG_LEFT);
-	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags = BUTTONFLAG_LEFT, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
+	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color, float Size);
 	int DoButton_MenuTab(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, int Corners, SUIAnimator *pAnimator = nullptr, const ColorRGBA *pDefaultColor = nullptr, const ColorRGBA *pActiveColor = nullptr, const ColorRGBA *pHoverColor = nullptr, float EdgeRounding = 10.0f, const CCommunityIcon *pCommunityIcon = nullptr);
 
 	int DoButton_CheckBox_Common(const void *pId, const char *pText, const char *pBoxText, const CUIRect *pRect, unsigned Flags);
@@ -635,6 +638,7 @@ public:
 		PAGE_SETTINGS,
 		PAGE_NETWORK,
 		PAGE_GHOST,
+		PAGE_ECLIENT,
 
 		PAGE_LENGTH,
 
@@ -648,6 +652,8 @@ public:
 		SETTINGS_SOUND,
 		SETTINGS_DDNET,
 		SETTINGS_ASSETS,
+		SETTINGS_ENTITY,
+		SETTINGS_SKINPROFILES,
 
 		SETTINGS_LENGTH,
 
@@ -673,6 +679,7 @@ public:
 		SMALL_TAB_BROWSER_FILTER,
 		SMALL_TAB_BROWSER_INFO,
 		SMALL_TAB_BROWSER_FRIENDS,
+		SMALL_TAB_ECLIENT,
 
 		SMALL_TAB_LENGTH,
 	};
@@ -782,6 +789,41 @@ private:
 	// found in menus_settings.cpp
 	void RenderSettingsDDNet(CUIRect MainView);
 	void RenderSettingsAppearance(CUIRect MainView);
-	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight);
+
+	bool RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool Preview = true);
+
+	// E-Client
+public:
+	int m_MenusRainbowColor;
+	int64_t m_RPC_Ratelimit;
+
+	/*
+	* 
+	* If Draggable = 1 the Tee can be dragged to anywhere on the screen
+	* If 2 its limited to the size of the big menu
+	* If 3 its limited to the size of the settings menu (ToDo)
+	* 
+	*/
+	void RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable = 0, float TeeSize = 75.0f, float Alpha = 1.0f);
+	bool ResetTeePos;
+
+	void RenderChatPreview(CUIRect MainView);
+	void RenderSettingsEntity(CUIRect MainView);
+	void RenderSettingsWarList(CUIRect MainView);
+	void RenderSettingsProfiles(CUIRect MainView);
+	void RenderSettingsBindwheel(CUIRect MainView);
+	void RenderEClientVersionPage(CUIRect MainView);
+
+	const CWarType *m_pRemoveWarType = nullptr;
+	void PopupConfirmRemoveWarType();
+	int DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake = false, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
+	void RenderDevSkin(vec2 RenderPos, float Size, const char *pSkinName, const char *pBackupSkin, bool CustomColors, int FeetColor, int BodyColor, int Emote, bool Rainbow,
+		ColorRGBA ColorFeet = ColorRGBA(0, 0, 0, 0), ColorRGBA ColorBody = ColorRGBA(0, 0, 0, 0));
+	void RenderFontIcon(const CUIRect Rect, const char *pText, float Size, int Align);
+
+	int DoButtonNoRect_FontIcon(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, int Corners = IGraphics::CORNER_ALL);
+	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags = BUTTONFLAG_LEFT, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
+
+	bool DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags = 0u, const char *pSuffix = "");
 };
 #endif

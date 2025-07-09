@@ -22,6 +22,7 @@ class CBinds : public CComponent
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
+public:
 	class CBindSlot
 	{
 	public:
@@ -34,9 +35,10 @@ class CBinds : public CComponent
 		{
 		}
 	};
-	CBindSlot GetBindSlot(const char *pBindString) const;
 
 public:
+	CBindSlot GetBindSlot(const char *pBindString) const;
+
 	CBinds();
 	~CBinds();
 	int Sizeof() const override { return sizeof(*this); }
@@ -81,7 +83,7 @@ public:
 
 	void SetDDRaceBinds(bool FreeOnly);
 
-private:
+public:
 	char *m_aapKeyBindings[MODIFIER_COMBINATION_COUNT][KEY_LAST];
 	std::vector<CBindSlot> m_vActiveBinds;
 };

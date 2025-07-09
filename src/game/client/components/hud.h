@@ -168,6 +168,9 @@ private:
 	int m_PracticeModeOffset;
 	int m_Team0ModeOffset;
 	int m_LockModeOffset;
+
+	// E-Client
+	void FreezeHelpers();
 };
 
 #endif

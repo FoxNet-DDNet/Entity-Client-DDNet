@@ -97,6 +97,8 @@ static ColorRGBA GetGametypeTextColor(const char *pGametype)
 		HslaColor = ColorHSLA(0.46f, 1.0f, 0.75f);
 	else if(str_find_nocase(pGametype, "s-ddr"))
 		HslaColor = ColorHSLA(1.0f, 1.0f, 0.7f);
+	else if(str_find_nocase(pGametype, "FoxNetwork"))
+		HslaColor = ColorHSLA(0.72f, 0.68f, 0.73f);
 	else
 		HslaColor = ColorHSLA(1.0f, 1.0f, 1.0f);
 	return color_cast<ColorRGBA>(HslaColor);
@@ -150,6 +152,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 		UI_ELEM_PLAYERS,
 		UI_ELEM_FRIEND_ICON,
 		UI_ELEM_PING,
+		UI_ELEM_KEY_ICON,
 		NUM_UI_ELEMS,
 	};
 
@@ -334,23 +337,63 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 			Button.w = Col.m_Rect.w;
 
 			const int Id = Col.m_Id;
+
+			bool FoxNet = false;
+			{
+				using namespace std;
+				const char *aName = str_find_nocase(pItem->m_aAddress, ":");
+
+				int n = str_length(pItem->m_aAddress) - str_length(aName);
+				string ServerIp(pItem->m_aAddress);
+				ServerIp.erase(n);
+
+				if(!str_comp(ServerIp.c_str(), "85.215.138.194"))
+				{
+					FoxNet = true;
+				}
+			}
+
 			if(Id == COL_FLAG_LOCK)
 			{
 				if(pItem->m_Flags & SERVER_FLAG_PASSWORD)
 				{
 					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_LOCK_ICON), &Button, ColorRGBA(0.75f, 0.75f, 0.75f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_LOCK, TEXTALIGN_MC);
 				}
+				else if(pItem->m_RequiresLogin)
+				{
+					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_KEY_ICON), &Button, ColorRGBA(1.0f, 0.6f, 0.55f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_KEY, TEXTALIGN_MC);
+				}
+
 			}
 			else if(Id == COL_FLAG_FAV)
 			{
 				if(pItem->m_Favorite != TRISTATE::NONE)
 				{
-					RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(1.0f, 0.85f, 0.3f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
+					if(FoxNet)
+						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(0.25f, 0.55f, 0.85f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
+					else
+						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FAVORITE_ICON), &Button, ColorRGBA(1.0f, 0.85f, 0.3f, 1.0f), TextRender()->DefaultTextOutlineColor(), FONT_ICON_STAR, TEXTALIGN_MC);
 				}
+
 			}
 			else if(Id == COL_COMMUNITY)
 			{
-				if(pCommunity != nullptr)
+				if(FoxNet)
+				{
+					CUIRect FoxRect;
+					Button.Margin(2.0f, &FoxRect);
+
+					FoxRect.VMargin(FoxRect.w / 2.0f - FoxRect.h, &FoxRect);
+
+					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
+					Graphics()->QuadsBegin();
+					Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+					RenderTools()->SelectSprite(SPRITE_FOXNET_FLAG0);
+					IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
+					Graphics()->QuadsDrawTL(&QuadItem, 1);
+					Graphics()->QuadsEnd();
+				}
+				else if(pCommunity != nullptr)
 				{
 					const CCommunityIcon *pIcon = m_CommunityIcons.Find(pCommunity->Id());
 					if(pIcon != nullptr)
@@ -600,6 +643,29 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 		Ui()->DoLabel(&PlayersOnline, aBuf, 12.0f, TEXTALIGN_MR);
 	}
 
+	// status box
+	{
+		CUIRect ServersOnline, PlayersOnline;
+		ServersPlayersOnline.HSplitMid(&PlayersOnline, &ServersOnline);
+
+		char aBuf[128];
+		if(ServerBrowser()->NumServers() != 1)
+			str_format(aBuf, sizeof(aBuf), Localize("%d of %d servers"), ServerBrowser()->NumSortedServers(), ServerBrowser()->NumServers());
+		else
+			str_format(aBuf, sizeof(aBuf), Localize("%d of %d server"), ServerBrowser()->NumSortedServers(), ServerBrowser()->NumServers());
+		Ui()->DoLabel(&ServersOnline, aBuf, 12.0f, TEXTALIGN_MR);
+
+		int NumPlayers = 0;
+		for(int i = 0; i < ServerBrowser()->NumSortedServers(); i++)
+			NumPlayers += ServerBrowser()->SortedGet(i)->m_NumFilteredPlayers;
+
+		if(NumPlayers != 1)
+			str_format(aBuf, sizeof(aBuf), Localize("%d players"), NumPlayers);
+		else
+			str_format(aBuf, sizeof(aBuf), Localize("%d player"), NumPlayers);
+		Ui()->DoLabel(&PlayersOnline, aBuf, 12.0f, TEXTALIGN_MR);
+	}
+
 	// address info
 	{
 		CUIRect ServerAddrLabel, ServerAddrEditBox;
@@ -844,7 +910,7 @@ void CMenus::ResetServerbrowserFilters()
 	g_Config.m_BrFilterGametypeStrict = 0;
 	g_Config.m_BrFilterConnectingPlayers = 1;
 	g_Config.m_BrFilterServerAddress[0] = '\0';
-	g_Config.m_BrFilterLogin = true;
+	g_Config.m_BrFilterLogin = false;
 
 	if(g_Config.m_UiPage != PAGE_LAN)
 	{
@@ -1415,7 +1481,6 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 			const CServerInfo::CClient &CurrentClient = pEntry->m_aClients[ClientIndex];
 			if(CurrentClient.m_FriendState == IFriends::FRIEND_NO)
 				continue;
-
 			const int FriendIndex = CurrentClient.m_FriendState == IFriends::FRIEND_PLAYER ? FRIEND_PLAYER_ON : FRIEND_CLAN_ON;
 			m_avFriends[FriendIndex].emplace_back(CurrentClient, pEntry);
 			const auto &&RemovalPredicate = [CurrentClient](const CFriendItem &Friend) {
@@ -1540,9 +1605,40 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				// server info
 				if(Friend.ServerInfo())
 				{
+					bool FoxNet = false;
+					{
+						using namespace std;
+						const char *aName = str_find_nocase(Friend.ServerInfo()->m_aAddress, ":");
+
+						int n = str_length(Friend.ServerInfo()->m_aAddress) - str_length(aName);
+						string ServerIp(Friend.ServerInfo()->m_aAddress);
+						ServerIp.erase(n);
+
+						if(!str_comp(ServerIp.c_str(), "85.215.138.194"))
+						{
+							FoxNet = true;
+						}
+					}
+
 					// community icon
 					const CCommunity *pCommunity = ServerBrowser()->Community(Friend.ServerInfo()->m_aCommunityId);
-					if(pCommunity != nullptr)
+					if(FoxNet)
+					{
+						CUIRect FoxRect;
+						InfoLabel.VSplitLeft(21.0f, &FoxRect, &InfoLabel);
+						InfoLabel.VSplitLeft(2.0f, nullptr, &InfoLabel);
+
+						FoxRect.VMargin(FoxRect.w / 2.0f - FoxRect.h, &FoxRect);
+
+						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
+						Graphics()->QuadsBegin();
+						Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+						RenderTools()->SelectSprite(SPRITE_FOXNET_FLAG0);
+						IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
+						Graphics()->QuadsDrawTL(&QuadItem, 1);
+						Graphics()->QuadsEnd();
+					}
+					else if(pCommunity != nullptr)
 					{
 						const CCommunityIcon *pIcon = m_CommunityIcons.Find(pCommunity->Id());
 						if(pIcon != nullptr)
@@ -1788,7 +1884,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 		|                           | |      tool       |
 		|                           | |      box        |
 		+---------------------------+ |                 |
-		        status box            +-----------------+
+			status box            +-----------------+
 	*/
 
 	CUIRect ServerList, StatusBox, ToolBox, TabBar;

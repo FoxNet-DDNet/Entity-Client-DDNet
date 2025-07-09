@@ -54,7 +54,7 @@ ColorRGBA CMenus::ms_ColorTabbarActiveIngame;
 ColorRGBA CMenus::ms_ColorTabbarHoverIngame;
 
 float CMenus::ms_ButtonHeight = 25.0f;
-float CMenus::ms_ListheaderHeight = 17.0f;
+float CMenus::ms_ListheaderHeight = 18.0f;
 
 CMenus::CMenus()
 {
@@ -152,6 +152,47 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
 	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
 	Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+
+	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, Flags);
+}
+
+
+int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color, float Size)
+{
+	CUIRect Text = *pRect;
+
+	if(Checked)
+		Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
+
+	pRect->Draw(Color, Corners, Rounding);
+
+	if(pImageName)
+	{
+		CUIRect Image;
+		pRect->VSplitRight(pRect->h * 4.0f, &Text, &Image); // always correct ratio for image
+
+		// render image
+		const CMenuImage *pImage = FindMenuImage(pImageName);
+		if(pImage)
+		{
+			Graphics()->TextureSet(Ui()->HotItem() == pButtonContainer ? pImage->m_OrgTexture : pImage->m_GreyTexture);
+			Graphics()->WrapClamp();
+			Graphics()->QuadsBegin();
+			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+			IGraphics::CQuadItem QuadItem(Image.x, Image.y, Image.w, Image.h);
+			Graphics()->QuadsDrawTL(&QuadItem, 1);
+			Graphics()->QuadsEnd();
+			Graphics()->WrapNormal();
+		}
+	}
+
+	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
+	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
+	if(Size == 0.0f)
+		Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+	else
+		Ui()->DoLabel(&Text, pText, Size, TEXTALIGN_MC);
 
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, Flags);
 }
@@ -610,6 +651,27 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
 	}
 
+
+	// E-Client
+	{
+		Box.VSplitRight(10.0f, &Box, nullptr);
+		Box.VSplitRight(33.0f, &Box, &Button);
+		static CButtonContainer s_EClientButton;
+		ColorRGBA Inactive = ms_ColorTabbarInactive;
+		ColorRGBA Active = ms_ColorTabbarActive;
+		if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
+		{
+			Inactive = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
+			Active = ColorRGBA(0.3f, 0.8f, 0.6, 0.5f);
+		}
+		if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, nullptr, &Active))
+		{
+			NewPage = PAGE_ECLIENT;
+			ResetTeePos = true;
+		}
+		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("E-Client"));
+	}
+
 	Box.VSplitRight(10.0f, &Box, nullptr);
 
 	TextRender()->SetRenderFlags(0);
@@ -906,6 +968,7 @@ void CMenus::OnInit()
 	}
 	m_MenuPage = g_Config.m_UiPage;
 
+
 	m_RefreshButton.Init(Ui(), -1);
 	m_ConnectButton.Init(Ui(), -1);
 
@@ -957,6 +1020,11 @@ void CMenus::OnInit()
 	m_DirectionQuadContainerIndex = Graphics()->CreateQuadContainer(false);
 	RenderTools()->QuadContainerAddSprite(m_DirectionQuadContainerIndex, 0.f, 0.f, 22.f);
 	Graphics()->QuadContainerUpload(m_DirectionQuadContainerIndex);
+
+	// E-Client
+
+	// Rainbow Color again for the preview..
+	m_MenusRainbowColor = g_Config.m_ClPlayerColorBody;
 }
 
 void CMenus::ConchainBackgroundEntities(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -1163,9 +1231,13 @@ void CMenus::Render()
 			{
 				RenderSettings(MainView);
 			}
+			else if(m_MenuPage == PAGE_ECLIENT)
+			{
+				RenderEClientVersionPage(MainView);
+			}
 			else
 			{
-				dbg_assert(false, "m_MenuPage invalid");
+				dbg_assert(false, "m_MenuPage invalid STATE_OFFLINE");
 			}
 
 			RenderMenubar(TabBar, ClientState);
@@ -1211,9 +1283,13 @@ void CMenus::Render()
 			{
 				RenderSettings(MainView);
 			}
+			else if(m_GamePage == PAGE_ECLIENT)
+			{
+				RenderEClientVersionPage(MainView);
+			}
 			else
 			{
-				dbg_assert(false, "m_GamePage invalid");
+				dbg_assert(false, "m_GamePage invalid STATE_ONLINE");
 			}
 
 			RenderMenubar(TabBar, ClientState);
@@ -2488,7 +2564,7 @@ int CMenus::MenuImageScan(const char *pName, int IsDir, int DirType, void *pUser
 	str_truncate(MenuImage.m_aName, sizeof(MenuImage.m_aName), pName, str_length(pName) - str_length(pExtension));
 	pSelf->m_vMenuImages.push_back(MenuImage);
 
-	pSelf->RenderLoading(Localize("Loading DDNet Client"), Localize("Loading menu images"), 0);
+	pSelf->RenderLoading(Localize("Loading E-Client"), Localize("Loading menu images"), 0);
 
 	return 0;
 }

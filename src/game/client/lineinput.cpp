@@ -474,7 +474,12 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_SelectionStart = str_utf8_offset_bytes_to_chars(pDisplayStr, DisplayCursorOffset);
 			Cursor.m_SelectionEnd = str_utf8_offset_bytes_to_chars(pDisplayStr, DisplayCompositionEnd);
 			TextRender()->TextSelectionColor(1.0f, 1.0f, 1.0f, 0.8f);
-			TextRender()->TextEx(&Cursor, pDisplayStr);
+			// E-Client
+			if(g_Config.m_ClChatColorParsing)
+				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+			else 
+				TextRender()->TextEx(&Cursor, pDisplayStr);
+
 			TextRender()->TextSelectionColor(TextRender()->DefaultTextSelectionColor());
 		}
 		else if(GetSelectionLength())
@@ -486,14 +491,22 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_CalculateSelectionMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_SELECTION_MODE_CALCULATE : TEXT_CURSOR_SELECTION_MODE_SET;
 			Cursor.m_SelectionStart = str_utf8_offset_bytes_to_chars(pDisplayStr, Start);
 			Cursor.m_SelectionEnd = str_utf8_offset_bytes_to_chars(pDisplayStr, End);
-			TextRender()->TextEx(&Cursor, pDisplayStr);
+			// E-Client
+			if(g_Config.m_ClChatColorParsing)
+				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+			else
+				TextRender()->TextEx(&Cursor, pDisplayStr);
 		}
 		else
 		{
 			Cursor.m_CursorMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_CURSOR_MODE_CALCULATE : TEXT_CURSOR_CURSOR_MODE_SET;
 			Cursor.m_CursorCharacter = str_utf8_offset_bytes_to_chars(pDisplayStr, CaretOffset);
 			Cursor.m_CalculateSelectionMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_SELECTION_MODE_CALCULATE : TEXT_CURSOR_SELECTION_MODE_NONE;
-			TextRender()->TextEx(&Cursor, pDisplayStr);
+			// E-Client
+			if(g_Config.m_ClChatColorParsing)
+				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+			else
+				TextRender()->TextEx(&Cursor, pDisplayStr);
 		}
 
 		if(Cursor.m_CursorMode == TEXT_CURSOR_CURSOR_MODE_CALCULATE && Cursor.m_CursorCharacter >= 0)

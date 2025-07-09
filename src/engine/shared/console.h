@@ -188,6 +188,9 @@ public:
 
 	int FlagMask() const override { return m_FlagMask; }
 	void SetFlagMask(int FlagMask) override { m_FlagMask = FlagMask; }
+
+	// E-Client
+	bool ExecuteLegacyFile() override;
 };
 
 #endif

@@ -181,14 +181,14 @@ void CControls::OnMessage(int Msg, void *pRawMsg)
 int CControls::SnapInput(int *pData)
 {
 	// update player state
-	if(GameClient()->m_Chat.IsActive())
+	if(GameClient()->m_Chat.IsActive() && g_Config.m_ClChatBubble)
 		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_CHATTING;
-	else if(GameClient()->m_Menus.IsActive())
+	else if(GameClient()->m_Menus.IsActive() && g_Config.m_ClSendMenuFlag)
 		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_IN_MENU;
 	else
 		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags = PLAYERFLAG_PLAYING;
 
-	if(GameClient()->m_Scoreboard.IsActive())
+	if(GameClient()->m_Scoreboard.IsActive() || g_Config.m_ClPingNameCircle)
 		m_aInputData[g_Config.m_ClDummy].m_PlayerFlags |= PLAYERFLAG_SCOREBOARD;
 
 	if(Client()->ServerCapAnyPlayerFlag() && GameClient()->m_Controls.m_aShowHookColl[g_Config.m_ClDummy])
@@ -211,29 +211,44 @@ int CControls::SnapInput(int *pData)
 
 		// set the target anyway though so that we can keep seeing our surroundings,
 		// even if chat or menu are activated
-		m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePos[g_Config.m_ClDummy].x;
-		m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePos[g_Config.m_ClDummy].y;
+		vec2 Pos = GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+		if(g_Config.m_ClScaleMouseDistance && !GameClient()->m_Snap.m_SpecInfo.m_Active)
+		{
+			const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
+			if(MaxDistance > 5 && MaxDistance < 1000) // Don't scale if angle bind or reduces precision
+				Pos *= 1000.0f / (float)MaxDistance;
+		}
+		m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)Pos.x;
+		m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)Pos.y;
+
+		if(!m_aInputData[g_Config.m_ClDummy].m_TargetX && !m_aInputData[g_Config.m_ClDummy].m_TargetY)
+			m_aInputData[g_Config.m_ClDummy].m_TargetX = 1;
 
 		// send once a second just to be sure
 		Send = Send || time_get() > m_LastSendTime + time_freq();
 	}
 	else
 	{
-		m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePos[g_Config.m_ClDummy].x;
-		m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePos[g_Config.m_ClDummy].y;
-
+		vec2 Pos;
 		if(g_Config.m_ClSubTickAiming && m_aMousePosOnAction[g_Config.m_ClDummy] != vec2(0.0f, 0.0f))
 		{
-			m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)m_aMousePosOnAction[g_Config.m_ClDummy].x;
-			m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)m_aMousePosOnAction[g_Config.m_ClDummy].y;
+			Pos = GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy];
 			m_aMousePosOnAction[g_Config.m_ClDummy] = vec2(0.0f, 0.0f);
 		}
+		else
+
+			Pos = GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+		if(g_Config.m_ClScaleMouseDistance && !GameClient()->m_Snap.m_SpecInfo.m_Active)
+		{
+			const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
+			if(MaxDistance > 5 && MaxDistance < 1000) // Don't scale if angle bind or reduces precision
+				Pos *= 1000.0f / (float)MaxDistance;
+		}
+		m_aInputData[g_Config.m_ClDummy].m_TargetX = (int)Pos.x;
+		m_aInputData[g_Config.m_ClDummy].m_TargetY = (int)Pos.y;
 
 		if(!m_aInputData[g_Config.m_ClDummy].m_TargetX && !m_aInputData[g_Config.m_ClDummy].m_TargetY)
-		{
 			m_aInputData[g_Config.m_ClDummy].m_TargetX = 1;
-			m_aMousePos[g_Config.m_ClDummy].x = 1;
-		}
 
 		// set direction
 		m_aInputData[g_Config.m_ClDummy].m_Direction = 0;
@@ -428,6 +443,18 @@ void CControls::ClampMousePos()
 		MouseDistance = length(m_aMousePos[g_Config.m_ClDummy]);
 		if(MouseDistance > MouseMax)
 			m_aMousePos[g_Config.m_ClDummy] = normalize_pre_length(m_aMousePos[g_Config.m_ClDummy], MouseDistance) * MouseMax;
+
+		if(g_Config.m_ClLimitMouseToScreen)
+		{
+			float Width, Height;
+			RenderTools()->CalcScreenParams(Graphics()->ScreenAspect(), 1.0f, &Width, &Height);
+			Height /= 2.0f;
+			Width /= 2.0f;
+			if(g_Config.m_ClLimitMouseToScreen == 2)
+				Width = Height;
+			m_aMousePos[g_Config.m_ClDummy].y = std::clamp(m_aMousePos[g_Config.m_ClDummy].y, -Height, Height);
+			m_aMousePos[g_Config.m_ClDummy].x = std::clamp(m_aMousePos[g_Config.m_ClDummy].x, -Width, Width);
+		}
 	}
 }
 
@@ -443,4 +470,40 @@ float CControls::GetMaxMouseDistance() const
 	float DeadZone = g_Config.m_ClDyncam ? g_Config.m_ClDyncamDeadzone : g_Config.m_ClMouseDeadzone;
 	float MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
 	return minimum((FollowFactor != 0 ? CameraMaxDistance / FollowFactor + DeadZone : MaxDistance), MaxDistance);
+}
+
+bool CControls::CheckNewInput()
+{
+	CNetObj_PlayerInput TestInput = m_aInputData[g_Config.m_ClDummy];
+	TestInput.m_Direction = 0;
+	if(m_aInputDirectionLeft[g_Config.m_ClDummy] && !m_aInputDirectionRight[g_Config.m_ClDummy])
+		TestInput.m_Direction = -1;
+	if(!m_aInputDirectionLeft[g_Config.m_ClDummy] && m_aInputDirectionRight[g_Config.m_ClDummy])
+		TestInput.m_Direction = 1;
+
+	bool NewInput = false;
+	if(m_FastInput.m_Direction != TestInput.m_Direction)
+		NewInput = true;
+	if(m_FastInput.m_Hook != TestInput.m_Hook)
+		NewInput = true;
+	if(m_FastInput.m_Fire != TestInput.m_Fire)
+		NewInput = true;
+	if(m_FastInput.m_Jump != TestInput.m_Jump)
+		NewInput = true;
+	if(m_FastInput.m_NextWeapon != TestInput.m_NextWeapon)
+		NewInput = true;
+	if(m_FastInput.m_PrevWeapon != TestInput.m_PrevWeapon)
+		NewInput = true;
+	if(m_FastInput.m_WantedWeapon != TestInput.m_WantedWeapon)
+		NewInput = true;
+
+	if(g_Config.m_ClSubTickAiming)
+	{
+		TestInput.m_TargetX = (int)m_aMousePos[g_Config.m_ClDummy].x;
+		TestInput.m_TargetY = (int)m_aMousePos[g_Config.m_ClDummy].y;
+	}
+
+	m_FastInput = TestInput;
+
+	return NewInput;
 }

@@ -505,15 +505,33 @@ void CSpectator::OnRender()
 			}
 		}
 		float TeeAlpha;
-		if(Client()->State() == IClient::STATE_DEMOPLAYBACK &&
-			!GameClient()->m_Snap.m_aCharacters[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Active)
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && !GameClient()->m_Snap.m_aCharacters[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Active)
 		{
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.25f);
 			TeeAlpha = 0.5f;
 		}
 		else
 		{
-			TextRender()->TextColor(1.0f, 1.0f, 1.0f, PlayerSelected ? 1.0f : 0.5f);
+			int ClientId = GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
+
+			float Alpha = 0.5f;
+			if(PlayerSelected)
+				Alpha = 1.0f;
+
+			ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, Alpha);
+
+			if(GameClient()->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuFriendColor)
+				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+			if(g_Config.m_ClWarListSpecMenu)
+			{
+				if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar && g_Config.m_ClWarList)
+					Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
+				else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper && g_Config.m_ClWarList)
+					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
+				else if(GameClient()->m_WarList.GetAnyWar(ClientId) && g_Config.m_ClWarList)
+					Color = GameClient()->m_WarList.GetPriorityColor(ClientId);
+			}
+			TextRender()->TextColor(Color.WithAlpha(Alpha));
 			TeeAlpha = 1.0f;
 		}
 		CTextCursor NameCursor;

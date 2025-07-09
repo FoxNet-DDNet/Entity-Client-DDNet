@@ -1339,7 +1339,22 @@ void CMenus::RenderSettingsControls(CUIRect MainView)
 			DoSettingsControlsButtons(32, 44, MiscSettings);
 		}
 	}
+	/*
+		{
+		NewSettings.HSplitTop(Margin, nullptr, &NewSettings);
+		NewSettings.HSplitTop(80.0f, &NewSettings, 0);
+		if(s_ScrollRegion.AddRect(NewSettings))
+		{
+			NewSettings.Draw(ColorRGBA(1, 1, 1, 0.25f), IGraphics::CORNER_ALL, 10.0f);
+			NewSettings.VMargin(Margin, &NewSettings);
 
+			NewSettings.HSplitTop(HeaderHeight, &Button, &NewSettings);
+			Ui()->DoLabel(&Button, Localize("New Settings"), FontSize, TEXTALIGN_ML);
+
+			DoSettingsControlsButtons(44, 46, NewSettings);
+		}
+	}
+		*/
 	s_ScrollRegion.End();
 }
 
@@ -1795,8 +1810,15 @@ void CMenus::RenderSettingsSound(CUIRect MainView)
 		g_Config.m_SndServerMessage ^= 1;
 
 	MainView.HSplitTop(20.0f, &Button, &MainView);
-	if(DoButton_CheckBox(&g_Config.m_SndChat, Localize("Enable regular chat sound"), g_Config.m_SndChat, &Button))
-		g_Config.m_SndChat ^= 1;
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_SndChat, ("Enable regular chat sound"), &g_Config.m_SndChat, &Button, 20);
+	if(g_Config.m_SndChat)
+		g_Config.m_SndFriendChat = 0;
+
+	MainView.HSplitTop(20.0f, &Button, &MainView);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_SndFriendChat, ("Chat sound only for friends"), &g_Config.m_SndFriendChat, &Button, 20);
+	if(g_Config.m_SndFriendChat)
+		g_Config.m_SndChat = 0;
+
 
 	MainView.HSplitTop(20.0f, &Button, &MainView);
 	if(DoButton_CheckBox(&g_Config.m_SndTeamChat, Localize("Enable team chat sound"), g_Config.m_SndTeamChat, &Button))
@@ -1961,7 +1983,10 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("Graphics"),
 		Localize("Sound"),
 		Localize("DDNet"),
-		Localize("Assets")};
+		Localize("Assets"),
+		("E-Client"),
+		("Skin Profiles")};
+
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
 
 	for(int i = 0; i < SETTINGS_LENGTH; i++)
@@ -1969,7 +1994,10 @@ void CMenus::RenderSettings(CUIRect MainView)
 		TabBar.HSplitTop(10.0f, nullptr, &TabBar);
 		TabBar.HSplitTop(26.0f, &Button, &TabBar);
 		if(DoButton_MenuTab(&s_aTabButtons[i], apTabs[i], g_Config.m_UiSettingsPage == i, &Button, IGraphics::CORNER_R, &m_aAnimatorsSettingsTab[i]))
+		{
 			g_Config.m_UiSettingsPage = i;
+			ResetTeePos = true;
+		}
 	}
 
 	if(g_Config.m_UiSettingsPage == SETTINGS_LANGUAGE)
@@ -2025,6 +2053,16 @@ void CMenus::RenderSettings(CUIRect MainView)
 		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_ASSETS);
 		RenderSettingsCustom(MainView);
 	}
+	else if(g_Config.m_UiSettingsPage == SETTINGS_ENTITY)
+	{
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_ENTITY);
+		RenderSettingsEntity(MainView);
+	}
+	else if(g_Config.m_UiSettingsPage == SETTINGS_SKINPROFILES)
+	{
+		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_SKINPROFILES);
+		RenderSettingsProfiles(MainView);
+	}
 	else
 	{
 		dbg_assert(false, "ui_settings_page invalid");
@@ -2061,7 +2099,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 	}
 }
 
-bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight)
+bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alpha, float DarkestLight, bool ShowPreview)
 {
 	const unsigned PrevPackedColor = *pColor;
 	ColorHSLA Color(*pColor, Alpha);
@@ -2073,14 +2111,17 @@ bool CMenus::RenderHslaScrollbars(CUIRect *pRect, unsigned int *pColor, bool Alp
 	const float PreviewHeight = 40.0f + 2 * PreviewMargin;
 	const float OffY = (SizePerEntry + MarginPerEntry) * (3 + (Alpha ? 1 : 0)) - PreviewHeight;
 
-	CUIRect Preview;
-	pRect->VSplitLeft(PreviewHeight, &Preview, pRect);
-	Preview.HSplitTop(OffY / 2.0f, nullptr, &Preview);
-	Preview.HSplitTop(PreviewHeight, &Preview, nullptr);
+	if(ShowPreview)
+	{
+		CUIRect Preview;
+		pRect->VSplitLeft(PreviewHeight, &Preview, pRect);
+		Preview.HSplitTop(OffY / 2.0f, nullptr, &Preview);
+		Preview.HSplitTop(PreviewHeight, &Preview, nullptr);
 
-	Preview.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
-	Preview.Margin(PreviewMargin, &Preview);
-	Preview.Draw(color_cast<ColorRGBA>(Color.UnclampLighting(DarkestLight)), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
+		Preview.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
+		Preview.Margin(PreviewMargin, &Preview);
+		Preview.Draw(color_cast<ColorRGBA>(Color.UnclampLighting(DarkestLight)), IGraphics::CORNER_ALL, 4.0f + PreviewMargin);
+	}
 
 	auto &&RenderHueRect = [&](CUIRect *pColorRect) {
 		float CurXOff = pColorRect->x;
@@ -2390,6 +2431,7 @@ void CMenus::RenderSettingsAppearance(CUIRect MainView)
 
 		// Switches of various DDRace HUD elements
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowIds, Localize("Show client IDs (scoreboard, chat, spectator)"), &g_Config.m_ClShowIds, &RightView, LineSize);
+		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreboardPoints, Localize("Show points in scoreboard instead of time"), &g_Config.m_ClScoreboardPoints, &RightView, LineSize);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudDDRace, Localize("Show DDRace HUD"), &g_Config.m_ClShowhudDDRace, &RightView, LineSize);
 		if(g_Config.m_ClShowhudDDRace)
 		{
@@ -2577,7 +2619,6 @@ void CMenus::RenderSettingsAppearance(CUIRect MainView)
 			pLine->m_Player = ClientId >= 0;
 			pLine->m_Highlighted = Flag & FLAG_HIGHLIGHT;
 			pLine->m_Client = Flag & FLAG_CLIENT;
-			pLine->m_TimesRepeated = Repeats;
 			str_copy(pLine->m_aName, pName);
 			str_copy(pLine->m_aText, pText);
 		};

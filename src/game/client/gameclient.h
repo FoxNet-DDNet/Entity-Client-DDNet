@@ -23,6 +23,8 @@
 #include <game/generated/protocol7.h>
 #include <game/generated/protocolglue.h>
 
+#include <vector>
+
 // components
 #include "components/background.h"
 #include "components/binds.h"
@@ -63,7 +65,21 @@
 #include "components/touch_controls.h"
 #include "components/voting.h"
 
-#include <vector>
+// Entity
+#include "components/entity/entity.h"
+#include "components/entity/anti_spawn_block.h"
+#include "components/entity/freeze_kill.h"
+#include "components/entity/update.h"
+#include "components/entity/mapconfig.h"
+
+// Tater
+#include "components/tclient/bindchat.h"
+#include "components/tclient/bindwheel.h"
+#include "components/tclient/outlines.h"
+#include "components/tclient/player_indicator.h"
+#include "components/tclient/rainbow.h"
+#include "components/tclient/skinprofiles.h"
+#include "components/tclient/warlist.h"
 
 class CGameInfo
 {
@@ -174,8 +190,24 @@ public:
 	CGhost m_Ghost;
 
 	CTooltips m_Tooltips;
-
+	
 	CLocalServer m_LocalServer;
+
+	// Entity
+	CEClient m_EClient;
+	CAntiSpawnBlock m_AntiSpawnBlock;
+	CFreezeKill m_FreezeKill;
+	CUpdate m_AcUpdate;
+	CMapConfig m_MapConfig;
+
+	// T-Client
+	CSkinProfiles m_SkinProfiles;
+	CBindChat m_Bindchat;
+	CBindWheel m_Bindwheel;
+	CPlayerIndicator m_PlayerIndicator;
+	COutlines m_Outlines;
+	CRainbow m_Rainbow;
+	CWarList m_WarList;
 
 private:
 	std::vector<class CComponent *> m_vpAll;
@@ -438,6 +470,9 @@ public:
 		float m_EmoticonStartFraction;
 		int m_EmoticonStartTick;
 
+		// FoxNet
+		bool m_ExplosionGun;
+
 		bool m_Solo;
 		bool m_Jetpack;
 		bool m_CollisionDisabled;
@@ -459,6 +494,15 @@ public:
 
 		CCharacterCore m_Predicted;
 		CCharacterCore m_PrevPredicted;
+
+
+		// TClient
+		vec2 m_ImprovedPredPos = vec2(0, 0);
+		vec2 m_PrevImprovedPredPos = vec2(0, 0);
+		// vec2 m_DebugVector = vec2(0, 0);
+		// vec2 m_DebugVector2 = vec2(0, 0);
+		// vec2 m_DebugVector3 = vec2(0, 0);
+		float m_Uncertainty = 0.0f;
 
 		std::shared_ptr<CManagedTeeRenderInfo> m_pSkinInfo = nullptr; // this is what the server reports
 		CTeeRenderInfo m_RenderInfo; // this is what we use
@@ -520,6 +564,10 @@ public:
 	};
 
 	CClientData m_aClients[MAX_CLIENTS];
+
+	// TClient
+	int m_SmoothTick[2] = {};
+	float m_SmoothIntraTick[2] = {};
 
 	class CClientStats
 	{
@@ -666,6 +714,9 @@ public:
 	CGameWorld m_GameWorld;
 	CGameWorld m_PredictedWorld;
 	CGameWorld m_PrevPredictedWorld;
+	// TClient
+	CGameWorld m_ExtraPredictedWorld;
+	CGameWorld m_PredSmoothingWorld;
 
 	std::vector<SSwitchers> &Switchers() { return m_GameWorld.m_Core.m_vSwitchers; }
 	std::vector<SSwitchers> &PredSwitchers() { return m_PredictedWorld.m_Core.m_vSwitchers; }
@@ -676,8 +727,21 @@ public:
 	int SwitchStateTeam() const;
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
+
+	// E-Client	
+	void ClientMessage(const char *pString) override;
+	void OnJoinInfo() override;
+	void SetLastMovementTime(int Delay) override;
+
+	// Get ClientId by Player Name
+	int GetClientId(const char *pName) override;
+	const char *GetClientName(int ClientId) override;
+
+
 	CNetObjHandler *GetNetObjHandler() override;
 	protocol7::CNetObjHandler *GetNetObjHandler7() override;
+
+	bool CheckNewInput() override;
 
 	void LoadGameSkin(const char *pPath, bool AsDir = false);
 	void LoadEmoticonsSkin(const char *pPath, bool AsDir = false);
@@ -850,6 +914,9 @@ public:
 
 	const std::vector<CSnapEntities> &SnapEntities() { return m_vSnapEntities; }
 
+	vec2 GetSmoothPos(int ClientId);
+	vec2 GetFreezePos(int ClientId);
+
 	int m_MultiViewTeam;
 	float m_MultiViewPersonalZoom;
 	bool m_MultiViewShowHud;
@@ -859,6 +926,8 @@ public:
 	void ResetMultiView();
 	int FindFirstMultiViewId();
 	void CleanMultiViewId(int ClientId);
+
+	bool m_CanReceivePoints;
 
 private:
 	std::vector<CSnapEntities> m_vSnapEntities;
@@ -877,8 +946,6 @@ private:
 
 	int m_aLastUpdateTick[MAX_CLIENTS] = {0};
 	void DetectStrongHook();
-
-	vec2 GetSmoothPos(int ClientId);
 
 	int m_PredictedDummyId;
 	int m_IsDummySwapping;

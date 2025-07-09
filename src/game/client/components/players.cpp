@@ -26,6 +26,7 @@
 
 #include <base/color.h>
 #include <base/math.h>
+#include "entity/e_enums.h"
 
 static float CalculateHandAngle(vec2 Dir, float AngleOffset)
 {
@@ -385,6 +386,12 @@ void CPlayers::RenderHook(
 		// render head
 		int QuadOffset = NUM_WEAPONS * 2 + 2;
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+
+		bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
+		bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
+		if(g_Config.m_ClRainbowHook && !DontOthers)
+			Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
+
 		Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, HookPos.x, HookPos.y);
 
 		// render chain
@@ -404,6 +411,9 @@ void CPlayers::RenderHook(
 
 		Graphics()->QuadsSetRotation(0);
 		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+		if(g_Config.m_ClRainbowHook && !DontOthers)
+			Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
 
 		RenderHand(&RenderInfo, Position, normalize(HookPos - Pos), -pi / 2, vec2(20, 0), Alpha);
 	}
@@ -425,7 +435,18 @@ void CPlayers::RenderPlayer(
 
 	bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
 	bool OtherTeam = GameClient()->IsOtherTeam(ClientId);
-	float Alpha = (OtherTeam || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+	// float Alpha = (OtherTeam || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+	bool Spec = GameClient()->m_Snap.m_SpecInfo.m_Active;
+
+	float Alpha = 1.0f;
+	if(OtherTeam || ClientId < 0)
+		Alpha = g_Config.m_ClShowOthersAlpha / 100.0f;
+	else if(g_Config.m_ClShowOthersGhosts && !Local && !Spec)
+		Alpha = g_Config.m_ClPredGhostsAlpha / 100.0f;
+
+	if(!OtherTeam && g_Config.m_ClShowOthersGhosts && !Local && g_Config.m_ClUnpredOthersInFreeze && Client()->m_IsLocalFrozen && !Spec)
+		Alpha = 1.0f;
+
 	if(ClientId == -2) // ghost
 		Alpha = g_Config.m_ClRaceGhostAlpha / 100.0f;
 
@@ -463,6 +484,14 @@ void CPlayers::RenderPlayer(
 		Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	else
 		Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), IntraTick);
+
+	if(g_Config.m_ClSwapGhosts && g_Config.m_ClShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+		if(ClientId >= 0)
+			Position = mix(
+				vec2(GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_X, GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_Y),
+				vec2( GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_X,  GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur.m_Y),
+				Client()->IntraGameTick(g_Config.m_ClDummy));
+
 	vec2 Vel = mix(vec2(Prev.m_VelX / 256.0f, Prev.m_VelY / 256.0f), vec2(Player.m_VelX / 256.0f, Player.m_VelY / 256.0f), IntraTick);
 
 	GameClient()->m_Flow.Add(Position, Vel * 100.0f, 10.0f);
@@ -473,6 +502,8 @@ void CPlayers::RenderPlayer(
 
 	bool Stationary = Player.m_VelX <= 1 && Player.m_VelX >= -1;
 	bool InAir = !Collision()->CheckPoint(Player.m_X, Player.m_Y + 16);
+	if(g_Config.m_ClAntiPingImproved && !Local)
+		InAir = !Collision()->CheckPoint(Position.x, Position.y + 16);
 	bool Running = Player.m_VelX >= 5000 || Player.m_VelX <= -5000;
 	bool WantOtherDir = (Player.m_Direction == -1 && Vel.x > 0) || (Player.m_Direction == 1 && Vel.x < 0);
 	bool Inactive = ClientId >= 0 && (GameClient()->m_aClients[ClientId].m_Afk || GameClient()->m_aClients[ClientId].m_Paused);
@@ -536,6 +567,10 @@ void CPlayers::RenderPlayer(
 			int QuadOffset = CurrentWeapon * 2 + (Direction.x < 0 ? 1 : 0);
 
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+
+			bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
+			if(g_Config.m_ClRainbowWeapon && !DontOthers)
+				Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
 
 			vec2 Dir = Direction;
 			float Recoil = 0.0f;
@@ -694,6 +729,9 @@ void CPlayers::RenderPlayer(
 			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 			Graphics()->QuadsSetRotation(0);
 
+			if(g_Config.m_ClRainbowTees && !DontOthers)
+				Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
+
 			switch(Player.m_Weapon)
 			{
 			case WEAPON_GUN: RenderHand(&RenderInfo, WeaponPosition, Direction, -3 * pi / 4, vec2(-15, 4), Alpha); break;
@@ -715,20 +753,22 @@ void CPlayers::RenderPlayer(
 
 		RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, ShadowPosition, 0.5f); // render ghost
 	}
-
 	RenderTools()->RenderTee(&State, &RenderInfo, Player.m_Emote, Direction, Position, Alpha);
-
 	float TeeAnimScale, TeeBaseSize;
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
+	const bool Frozen =  GameClient()->m_aClients[ClientId].m_FreezeEnd != 0;
+
 	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN)
 	{
 		GameClient()->m_Effects.FreezingFlakes(BodyPos, vec2(32, 32), Alpha);
 	}
-	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_SPARKLE)
+	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_SPARKLE && g_Config.m_ClEffect != EFFECT_SPARKLE)
 	{
 		GameClient()->m_Effects.SparkleTrail(BodyPos, Alpha);
 	}
+
+	RenderEffects(Frozen, Local, BodyPos, Vel, Alpha);
 
 	if(ClientId < 0)
 		return;
@@ -746,7 +786,7 @@ void CPlayers::RenderPlayer(
 		Graphics()->QuadsSetRotation(0);
 	}
 
-	if(g_Config.m_ClAfkEmote && GameClient()->m_aClients[ClientId].m_Afk && ClientId != GameClient()->m_aLocalIds[!g_Config.m_ClDummy])
+	if(g_Config.m_ClAfkEmote && GameClient()->m_aClients[ClientId].m_Afk && !(Client()->DummyConnected() && ClientId ==  GameClient()->m_aLocalIds[!g_Config.m_ClDummy]))
 	{
 		int CurEmoticon = (SPRITE_ZZZ - SPRITE_OOP);
 		Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[CurEmoticon]);
@@ -758,6 +798,20 @@ void CPlayers::RenderPlayer(
 		Graphics()->QuadsSetRotation(0);
 	}
 
+	if(g_Config.m_ClShowOthersInMenu)
+	{
+		if((Player.m_PlayerFlags & PLAYERFLAG_IN_MENU) && !GameClient()->m_aClients[ClientId].m_Afk)
+		{
+			Graphics()->TextureSet(g_pData->m_aImages[IMAGE_SETTINGS_ICON].m_Id);
+
+			Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+			Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffsetToEmoticon, Position.x + 24.f, Position.y - 40.f);
+
+			Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
+			Graphics()->QuadsSetRotation(0);
+		}
+	}
+
 	if(g_Config.m_ClShowEmotes && !GameClient()->m_aClients[ClientId].m_EmoticonIgnore && GameClient()->m_aClients[ClientId].m_EmoticonStartTick != -1)
 	{
 		float SinceStart = (Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_aClients[ClientId].m_EmoticonStartTick) + (Client()->IntraGameTickSincePrev(g_Config.m_ClDummy) - GameClient()->m_aClients[ClientId].m_EmoticonStartFraction);
@@ -767,15 +821,15 @@ void CPlayers::RenderPlayer(
 		{
 			float a = 1;
 
-			if(FromEnd < Client()->GameTickSpeed() / 5)
+			if(FromEnd < Client()->GameTickSpeed() / 5.0f)
 				a = FromEnd / (Client()->GameTickSpeed() / 5.0f);
 
 			float h = 1;
-			if(SinceStart < Client()->GameTickSpeed() / 10)
+			if(SinceStart < Client()->GameTickSpeed() / 10.0f)
 				h = SinceStart / (Client()->GameTickSpeed() / 10.0f);
 
 			float Wiggle = 0;
-			if(SinceStart < Client()->GameTickSpeed() / 5)
+			if(SinceStart < Client()->GameTickSpeed() / 5.0f)
 				Wiggle = SinceStart / (Client()->GameTickSpeed() / 5.0f);
 
 			float WiggleAngle = std::sin(5 * Wiggle);
@@ -809,49 +863,134 @@ void CPlayers::OnRender()
 	// update render info for ninja
 	CTeeRenderInfo aRenderInfo[MAX_CLIENTS];
 	const bool IsTeamPlay = GameClient()->IsTeamPlay();
-	for(int i = 0; i < MAX_CLIENTS; ++i)
+	const int LocalClientId =  GameClient()->m_Snap.m_LocalClientId;
+
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
-		aRenderInfo[i] = GameClient()->m_aClients[i].m_RenderInfo;
-		aRenderInfo[i].m_TeeRenderFlags = 0;
+		aRenderInfo[ClientId] = GameClient()->m_aClients[ClientId].m_RenderInfo;
+		aRenderInfo[ClientId].m_TeeRenderFlags = 0;
 
 		// predict freeze skin only for local players
 		bool Frozen = false;
-		if(i == GameClient()->m_aLocalIds[0] || i == GameClient()->m_aLocalIds[1])
+		if(ClientId == GameClient()->m_aLocalIds[0] || ClientId == GameClient()->m_aLocalIds[1])
 		{
-			if(GameClient()->m_aClients[i].m_Predicted.m_FreezeEnd != 0)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
-			if(GameClient()->m_aClients[i].m_Predicted.m_LiveFrozen)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
-			if(GameClient()->m_aClients[i].m_Predicted.m_Invincible)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+			if(GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0)
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+			if(GameClient()->m_aClients[ClientId].m_Predicted.m_LiveFrozen)
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+			if(GameClient()->m_aClients[ClientId].m_Predicted.m_Invincible)
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
-			Frozen = GameClient()->m_aClients[i].m_Predicted.m_FreezeEnd != 0;
+			Frozen = GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0;
 		}
 		else
 		{
-			if(GameClient()->m_aClients[i].m_FreezeEnd != 0)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
-			if(GameClient()->m_aClients[i].m_LiveFrozen)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
-			if(GameClient()->m_aClients[i].m_Invincible)
-				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+			if(GameClient()->m_aClients[ClientId].m_FreezeEnd != 0)
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+			if(GameClient()->m_aClients[ClientId].m_LiveFrozen)
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+			if(GameClient()->m_aClients[ClientId].m_Invincible)
+				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
-			Frozen = GameClient()->m_Snap.m_aCharacters[i].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[i].m_ExtendedData.m_FreezeEnd != 0;
+			Frozen = GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_FreezeEnd != 0;
 		}
 
-		if((GameClient()->m_aClients[i].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
+		const bool Local = ClientId == GameClient()->m_Snap.m_LocalClientId;
+		const bool Dummy = ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
+
+		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
+		if(g_Config.m_ClOwnTeeSkin && (Local || Dummy))
 		{
-			// change the skin for the player to the ninja
-			aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
-			aRenderInfo[i].ApplySkin(NinjaTeeRenderInfo()->TeeRenderInfo());
-			aRenderInfo[i].m_CustomColoredSkin = IsTeamPlay;
-			if(!IsTeamPlay)
+			const auto *pSkin =  GameClient()->m_Skins.FindOrNullptr(g_Config.m_ClOwnTeeSkinName);
+
+			if(pSkin != nullptr)
 			{
-				aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 1);
-				aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 1);
+				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
+				aRenderInfo[ClientId].Apply(pSkin);
+
+				const bool IsCustomColored = g_Config.m_ClOwnTeeSkinCustomColor;
+				aRenderInfo[ClientId].m_CustomColoredSkin = IsCustomColored;
+
+				if(IsCustomColored)
+				{
+					aRenderInfo[ClientId].m_ColorBody = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorBody)));
+					aRenderInfo[ClientId].m_ColorFeet = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorFeet)));
+				}
+				else
+				{
+					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
+				}
 			}
 		}
+
+		if((GameClient()->m_aClients[ClientId].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
+		{
+			// change the skin for the player to the ninja
+			const auto *pSkin = GameClient()->m_Skins.FindOrNullptr("x_ninja");
+			if(pSkin != nullptr)
+			{
+				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
+
+				aRenderInfo[ClientId].Apply(pSkin);
+				aRenderInfo[ClientId].m_CustomColoredSkin = IsTeamPlay;
+				if(!IsTeamPlay)
+				{
+					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
+				}
+			}
+		}
+		// sweat mode
+		if(g_Config.m_ClSweatMode)
+		{
+			// find skin in database
+			const auto *pSkin = GameClient()->m_Skins.FindOrNullptr(g_Config.m_ClSweatModeSkinName);
+
+			// if found apply
+			if(pSkin != nullptr)
+			{
+				if(Local)
+				{
+					if(!g_Config.m_ClSweatModeOnlyOthers)
+						aRenderInfo[ClientId].Apply(pSkin);
+				}
+				else
+					aRenderInfo[ClientId].Apply(pSkin);
+			}
+
+			ColorRGBA Color = ColorRGBA(0.5f, 0.5f, 0.5f);
+
+			if(GameClient()->m_aClients[ClientId].m_Friend && g_Config.m_ClDoFriendColors)
+				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
+			if(g_Config.m_ClWarList)
+			{
+				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
+					Color = GameClient()->m_WarList.GetClanColor(ClientId);
+
+				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
+					Color = GameClient()->m_WarList.GetNameplateColor(ClientId);
+				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
+					Color = GameClient()->m_WarList.GetClanColor(ClientId);
+
+				if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar)
+					Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
+				else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper)
+					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
+			}
+
+			if(g_Config.m_ClSweatModeSelfColor && (Local || Dummy))
+				continue;
+
+			if(!(GameClient()->m_aClients[ClientId].m_FreezeEnd > 0))
+				aRenderInfo[ClientId].m_CustomColoredSkin = 1;
+			aRenderInfo[ClientId].m_ColorBody = Color;
+			aRenderInfo[ClientId].m_ColorFeet = Color;
+		}
 	}
+	CTeeRenderInfo RenderInfoSpec;
+	RenderInfoSpec.Apply(GameClient()->m_Skins.Find("x_spec"));
+	RenderInfoSpec.m_Size = 64.0f;
 
 	// get screen edges to avoid rendering offscreen
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
@@ -867,7 +1006,6 @@ void CPlayers::OnRender()
 	ScreenY1 += BorderBuffer;
 
 	// render everyone else's hook, then our own
-	const int LocalClientId = GameClient()->m_Snap.m_LocalClientId;
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(ClientId == LocalClientId || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
@@ -1019,4 +1157,56 @@ void CPlayers::OnInit()
 
 	CreateNinjaTeeRenderInfo();
 	CreateSpectatorTeeRenderInfo();
+}
+
+void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha)
+{
+	const bool ShowEffectSelf = g_Config.m_ClEffect ? true : false;
+	const bool ShowEffectOthers = g_Config.m_ClEffectOthers;
+	const float Time = time_get();
+
+	int ShowFor = 0;
+
+	if(ShowEffectSelf)
+	{
+		ShowFor = 1; // Self only
+		if(ShowEffectOthers)
+			ShowFor = 3; // All
+	}
+	else if(ShowEffectOthers)
+		ShowFor = 2; // All but Self | doesn't exist currently but just in case
+
+	if((ShowFor == 1 && Local) || (ShowFor == 2 && !Local) || ShowFor == 3)
+	{
+		if(g_Config.m_ClEffect == EFFECT_SPARKLE && !Frozen)
+		{
+			GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
+		}
+		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
+		{
+			GameClient()->m_Effects.FireTrailEffet(BodyPos, Alpha);
+		}
+		else if(g_Config.m_ClEffect == EFFECT_SWITCH && !Frozen)
+		{
+			static int64_t Change = time_get() + time_freq() * 30;
+			static float Sin = 5;
+
+			const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 750) % 10000 / 100.f);
+
+			float RotSpeed = 50.0f + Changer;
+			if(Changer > 50.0f)
+				RotSpeed = 50.0f + 100.0f - Changer;
+
+			vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / time_freq() + RotSpeed));
+			vec2 EffectPos = BodyPos;
+
+			if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
+			{
+				Sin = round_to_int(random_float(3.0f, 6.0f));
+				Change = time_get() + time_freq() * 15;
+			}
+			GameClient()->m_Effects.SwitchEffet(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
+			GameClient()->m_Effects.SwitchEffet(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
+		}
+	}
 }

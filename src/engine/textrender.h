@@ -78,6 +78,9 @@ MAYBE_UNUSED static const char *FONT_ICON_ARROW_ROTATE_RIGHT = "\xEF\x80\x9E";
 MAYBE_UNUSED static const char *FONT_ICON_FLAG_CHECKERED = "\xEF\x84\x9E";
 MAYBE_UNUSED static const char *FONT_ICON_BAN = "\xEF\x81\x9E";
 MAYBE_UNUSED static const char *FONT_ICON_CIRCLE_CHEVRON_DOWN = "\xEF\x84\xBA";
+MAYBE_UNUSED static const char *FONT_ICON_KEY = "\xEF\x82\x84";
+MAYBE_UNUSED static const char *FONT_ICON_USERS = "\xEF\x83\x80";
+MAYBE_UNUSED static const char *FONT_ICON_COMMENT = "\xEF\x81\xB5";
 MAYBE_UNUSED static const char *FONT_ICON_SQUARE_MINUS = "\xEF\x85\x86";
 MAYBE_UNUSED static const char *FONT_ICON_SQUARE_PLUS = "\xEF\x83\xBE";
 MAYBE_UNUSED static const char *FONT_ICON_SORT_UP = "\xEF\x83\x9E";
@@ -319,6 +322,9 @@ public:
 	virtual void MoveCursor(CTextCursor *pCursor, float x, float y) const = 0;
 	virtual void SetCursorPosition(CTextCursor *pCursor, float x, float y) const = 0;
 
+	virtual std::vector<std::string> *GetCustomFaces() = 0; // TClient
+	virtual void SetCustomFace(const char *pFace) = 0; // TClient
+
 	virtual bool LoadFonts() = 0;
 	virtual void SetFontPreset(EFontPreset FontPreset) = 0;
 	virtual void SetFontLanguageVariant(const char *pLanguageFile) = 0;
@@ -370,6 +376,10 @@ public:
 
 	virtual void OnPreWindowResize() = 0;
 	virtual void OnWindowResize() = 0;
+
+	virtual void ColorParsing(const char *pText, CTextCursor *pCursor, ColorRGBA OriginalCol, STextContainerIndex *pTextContainerIndex = nullptr) = 0;
+	virtual ColorRGBA HSVtoRGB(float h, float s, float v) = 0;
+
 };
 
 class IEngineTextRender : public ITextRender

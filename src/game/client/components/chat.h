@@ -45,6 +45,9 @@ class CChat : public CComponent
 		char m_aName[64];
 		char m_aText[MAX_LINE_LENGTH];
 		bool m_Friend;
+
+		bool m_Paused;
+
 		bool m_Highlighted;
 		std::optional<ColorRGBA> m_CustomColor;
 
@@ -56,6 +59,20 @@ class CChat : public CComponent
 		float m_TextYOffset;
 
 		int m_TimesRepeated;
+
+		class CSixup
+		{
+		public:
+			IGraphics::CTextureHandle m_aTextures[protocol7::NUM_SKINPARTS];
+			IGraphics::CTextureHandle m_HatTexture;
+			IGraphics::CTextureHandle m_BotTexture;
+			int m_HatSpriteIndex;
+			ColorRGBA m_BotColor;
+			ColorRGBA m_aColors[protocol7::NUM_SKINPARTS];
+		};
+
+		// 0.7 Skin
+		CSixup m_Sixup;
 	};
 
 	bool m_PrevScoreBoardShowed;
@@ -73,6 +90,7 @@ class CChat : public CComponent
 		MODE_NONE = 0,
 		MODE_ALL,
 		MODE_TEAM,
+		MODE_SILENT,
 
 		CHAT_SERVER = 0,
 		CHAT_HIGHLIGHT,
@@ -140,6 +158,7 @@ class CChat : public CComponent
 	static void ConChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConShowChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConEcho(IConsole::IResult *pResult, void *pUserData);
+	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client
 	static void ConClearChat(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainChatOld(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -148,6 +167,8 @@ class CChat : public CComponent
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 	void StoreSave(const char *pText);
+
+	friend class CBindChat;
 
 public:
 	CChat();
@@ -185,6 +206,16 @@ public:
 	float MessagePaddingY() const { return FontSize() * (1 / 6.f); }
 	float MessageTeeSize() const { return FontSize() * (7 / 6.f); }
 	float MessageRounding() const { return FontSize() * (1 / 2.f); }
+
+	// E-Client
+	bool m_SetConverse = false;
+	bool m_CheckedCommand = false;
+
+	bool ChatDetection(int ClientId, int Team, const char *pLine);
+
+	int m_AdBotId;
+	int64_t m_VoteKickTimer;
+
 
 	// ----- send functions -----
 
