@@ -99,11 +99,11 @@ void CSkinProfiles::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUs
 {
 	CSkinProfiles *pThis = (CSkinProfiles *)pUserData;
 
-	pThis->m_ProfilesFile = pThis->m_pStorage->OpenFile(WARLIST_FILE, IOFLAG_WRITE, IStorage::TYPE_SAVE);
+	pThis->m_ProfilesFile = pThis->m_pStorage->OpenFile(PROFILES_FILE, IOFLAG_WRITE, IStorage::TYPE_SAVE);
 
 	if(!pThis->m_ProfilesFile)
 	{
-		dbg_msg("config", "ERROR: opening %s failed", WARLIST_FILE);
+		dbg_msg("config", "ERROR: opening %s failed", PROFILES_FILE);
 		return;
 	}
 
@@ -149,5 +149,5 @@ void CSkinProfiles::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUs
 		Failed = true;
 	pThis->m_ProfilesFile = {};
 	if(Failed)
-		dbg_msg("config", "ERROR: writing to %s failed", WARLIST_FILE);
+		dbg_msg("config", "ERROR: writing to %s failed", PROFILES_FILE);
 }
