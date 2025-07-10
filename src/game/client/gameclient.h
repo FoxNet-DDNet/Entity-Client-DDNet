@@ -67,6 +67,7 @@
 
 // Entity
 #include "components/entity/entity.h"
+#include "components/entity/chat_bubbles.h"
 #include "components/entity/anti_spawn_block.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/update.h"
@@ -195,6 +196,7 @@ public:
 
 	// Entity
 	CEClient m_EClient;
+	CChatBubbles m_ChatBubbles;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CUpdate m_AcUpdate;

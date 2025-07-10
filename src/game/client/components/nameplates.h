@@ -67,6 +67,9 @@ public:
 	void OnRender() override;
 	CNamePlates();
 	~CNamePlates();
+
+	// E-Client
+	float GetNamePlateOffset(int ClientId) const;
 };
 
 #endif

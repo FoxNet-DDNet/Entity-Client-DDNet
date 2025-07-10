@@ -169,6 +169,7 @@ class CChat : public CComponent
 	void StoreSave(const char *pText);
 
 	friend class CBindChat;
+	friend class CChatBubbles;
 
 public:
 	CChat();

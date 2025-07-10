@@ -1126,3 +1126,8 @@ CNamePlates::~CNamePlates()
 {
 	delete m_pData;
 }
+
+float CNamePlates::GetNamePlateOffset(int ClientId) const
+{
+	return m_pData->m_aNamePlates[ClientId].Size().y;
+}
