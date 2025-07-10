@@ -16,17 +16,17 @@
 
 constexpr auto SAVES_FILE = "ddnet-saves.txt";
 
+enum
+{
+	MAX_LINES = 64,
+	MAX_LINE_LENGTH = 256
+};
+
 class CChat : public CComponent
 {
 	static constexpr float CHAT_HEIGHT_FULL = 200.0f;
 	static constexpr float CHAT_HEIGHT_MIN = 50.0f;
 	static constexpr float CHAT_FONTSIZE_WIDTH_RATIO = 2.5f;
-
-	enum
-	{
-		MAX_LINES = 64,
-		MAX_LINE_LENGTH = 256
-	};
 
 	CLineInputBuffered<MAX_LINE_LENGTH> m_Input;
 	class CLine
@@ -165,12 +165,14 @@ class CChat : public CComponent
 	static void ConchainChatFontSize(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainChatWidth(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
-	bool LineShouldHighlight(const char *pLine, const char *pName);
 	void StoreSave(const char *pText);
 
 	friend class CBindChat;
+	friend class CChatBubbles;
 
 public:
+	bool LineShouldHighlight(const char *pLine, const char *pName); // E-Client
+
 	CChat();
 	int Sizeof() const override { return sizeof(*this); }
 

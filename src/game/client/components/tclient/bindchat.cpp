@@ -412,7 +412,7 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 	// insert the command
 	if(pCompletionBind)
 	{
-		char aBuf[CChat::MAX_LINE_LENGTH];
+		char aBuf[MAX_LINE_LENGTH];
 		// add part before the name
 		str_truncate(aBuf, sizeof(aBuf), Chat.m_Input.GetString(), Chat.m_PlaceholderOffset);
 

@@ -187,7 +187,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect Automation, FreezeKill, ChatSettings, PlayerIndicator, GoresMode,
+		CUIRect Automation, FreezeKill, ChatSettings, ChatBubbles, PlayerIndicator, GoresMode,
 			MenuSettings, TileOutline, AntiLatency, FrozenTeeHud, EntitySettings,
 			FastInput, AntiPingSmoothing, GhostTools;
 		MainView.VSplitMid(&Automation, &GoresMode);
@@ -385,7 +385,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		// chat settings
 		{
 			ChatSettings.HSplitTop(Margin, nullptr, &ChatSettings);
-			ChatSettings.HSplitTop(395.0f, &ChatSettings, &PlayerIndicator);
+			ChatSettings.HSplitTop(395.0f, &ChatSettings, &ChatBubbles);
 			if(s_ScrollRegion.AddRect(ChatSettings))
 			{
 				ChatSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -508,6 +508,30 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					ChatSettings.HSplitTop(-15.0f, &Button, &ChatSettings);
 
 					RenderChatPreview(ChatSettings);
+				}
+			}
+		}
+		{
+			ChatBubbles.HSplitTop(Margin, nullptr, &ChatBubbles);
+			ChatBubbles.HSplitTop(145.0f, &ChatBubbles, &PlayerIndicator);
+			if(s_ScrollRegion.AddRect(ChatBubbles))
+			{
+				ChatBubbles.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+				ChatBubbles.VMargin(Margin, &ChatBubbles);
+
+				ChatBubbles.HSplitTop(HeaderHeight, &Button, &ChatBubbles);
+				Ui()->DoLabel(&Button, Localize("Chat Bubbles"), HeaderSize, HeaderAlignment);
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubbles, Localize("Show Chatbubbles above players"), &g_Config.m_ClChatBubbles, &ChatBubbles, LineSize);
+					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
+					Ui()->DoScrollbarOption(&g_Config.m_ClChatBubbleSize, &g_Config.m_ClChatBubbleSize, &Button, Localize("Chat Bubble Size"), 20, 30);
+					ChatBubbles.HSplitTop(MarginSmall, &Button, &ChatBubbles);
+					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
+					DoFloatScrollBar(&g_Config.m_ClChatBubbleShowTime, &g_Config.m_ClChatBubbleShowTime, &Button, Localize("Show the Bubbles for"), 200, 1000, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
+					DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeIn, &g_Config.m_ClChatBubbleFadeIn, &Button, Localize("fade in for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
+					DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeOut, &g_Config.m_ClChatBubbleFadeOut, &Button, Localize("fade out for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
 				}
 			}
 		}
@@ -912,7 +936,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 			static float Offset = 0.0f;
 
 			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			PlayerSettings.HSplitTop(265.0f + Offset, &PlayerSettings, &RainbowSettings);
+			PlayerSettings.HSplitTop(245.0f + Offset, &PlayerSettings, &RainbowSettings);
 			if(s_ScrollRegion.AddRect(PlayerSettings))
 			{
 				Offset = 0.0f;
@@ -967,12 +991,8 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectOthers, ("Effect Others"), &g_Config.m_ClEffectOthers, &PlayerSettings, LineMargin);
 
 				PlayerSettings.HSplitTop(MarginSmall, &Button, &PlayerSettings);
-				PlayerSettings.HSplitTop(20.f, &Button, &PlayerSettings);
 
 				// ***** Rainbow ***** //
-				// PlayerSettings.HSplitTop(HeadlineHeight, &Label, &PlayerSettings);
-				// Ui()->DoLabel(&Label, Localize("Rainbow"), HeadlineFontSize, TEXTALIGN_ML);
-				// PlayerSettings.HSplitTop(MarginSmall, nullptr, &PlayerSettings);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowTees, Localize("Rainbow Tees"), &g_Config.m_ClRainbowTees, &PlayerSettings, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowWeapon, Localize("Rainbow weapons"), &g_Config.m_ClRainbowWeapon, &PlayerSettings, LineSize);
@@ -2980,4 +3000,74 @@ void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 	}
 
 	RenderTools()->RenderTee(pAnim, pInfo, TeeEmote, TeeDirection, Pos);
+}
+
+bool CMenus::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
+{
+	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
+	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
+	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
+
+	int Value = *pOption;
+	if(Infinite)
+	{
+		Max += 1;
+		if(Value == 0)
+			Value = Max;
+	}
+
+	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidently adjusting the value)
+	int Increment = std::max(1, (Max - Min) / 35);
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && Ui()->MouseInside(pRect))
+	{
+		Value += Increment;
+		Value = std::clamp(Value, Min, Max);
+	}
+	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && Ui()->MouseInside(pRect))
+	{
+		Value -= Increment;
+		Value = std::clamp(Value, Min, Max);
+	}
+	if(Input()->KeyPress(KEY_A) && Ui()->MouseInside(pRect))
+	{
+		Value -= Input()->ModifierIsPressed() ? 5 : 1;
+		Value = std::clamp(Value, Min, Max);
+	}
+	if(Input()->KeyPress(KEY_D) && Ui()->MouseInside(pRect))
+	{
+		Value += Input()->ModifierIsPressed() ? 5 : 1;
+		Value = std::clamp(Value, Min, Max);
+	}
+
+	char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "%s: %.1f%s", pStr, (float)Value / DivideBy, pSuffix);
+
+	Value = std::clamp(Value, Min, Max);
+
+	CUIRect Label, ScrollBar;
+	if(MultiLine)
+		pRect->HSplitMid(&Label, &ScrollBar);
+	else
+		pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
+
+	const float aFontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
+	Ui()->DoLabel(&Label, aBuf, aFontSize, TEXTALIGN_ML);
+
+	Value = pScale->ToAbsolute(Ui()->DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max)), Min, Max);
+	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
+	{
+		Value = *pOption; // use previous out of range value instead if the scrollbar is at the edge
+	}
+	else if(Infinite)
+	{
+		if(Value == Max)
+			Value = 0;
+	}
+
+	if(*pOption != Value)
+	{
+		*pOption = Value;
+		return true;
+	}
+	return false;
 }
