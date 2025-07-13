@@ -266,14 +266,54 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 			float x = Position.x - (BoundingBox.m_W / 2.0f + g_Config.m_ClChatBubbleSize / 15.0f);
 			float y = BaseY - aBubble.m_OffsetY - BoundingBox.m_H - FontSize;
 
-			Graphics()->DrawRect(x - FontSize / 2.0f, y - FontSize / 2.0f,
+			float PushBubble = ShiftBubbles(ClientId, vec2(x - FontSize / 2.0f, y - FontSize / 2.0f), BoundingBox.m_W + FontSize * 1.20f);
+
+			Graphics()->DrawRect((x - FontSize / 2.0f) + PushBubble, y - FontSize / 2.0f,
 				BoundingBox.m_W + FontSize * 1.20f, BoundingBox.m_H + FontSize,
 				BgColor, IGraphics::CORNER_ALL, g_Config.m_ClChatBubbleSize / 4.5f);
 
-			TextRender()->RenderTextContainer(aBubble.m_TextContainerIndex, TextColor, OutlineColor, x, y);
+			TextRender()->RenderTextContainer(aBubble.m_TextContainerIndex, TextColor, OutlineColor, x + PushBubble, y);
 		}
 	}
 }
+
+float CChatBubbles::ShiftBubbles(int ClientId, vec2 Pos, float w)
+{
+	if(!g_Config.m_ClChatBubblePushOut)
+		return 0.0f;
+
+	for(int i = 0; i < MAX_CLIENTS; ++i)
+	{
+		if(i == ClientId)
+			continue;
+
+		int FontSize = g_Config.m_ClChatBubbleSize;
+		vec2 Position = GameClient()->m_aClients[i].m_RenderPos;
+		float BaseY = Position.y - GetOffset(i) - NameplateOffset;
+
+		for(auto &aBubble : m_ChatBubbles[i])
+		{
+			if(aBubble.m_TextContainerIndex.Valid())
+			{
+				STextBoundingBox BoundingBox = TextRender()->GetBoundingBoxTextContainer(aBubble.m_TextContainerIndex);
+
+				float Posx = Position.x - (BoundingBox.m_W / 2.0f + g_Config.m_ClChatBubbleSize / 15.0f);
+				float Posy = BaseY - aBubble.m_OffsetY - BoundingBox.m_H - FontSize;
+				float PosW = BoundingBox.m_W + FontSize * 1.20f;
+
+				if(Posy + BoundingBox.m_H + FontSize < Pos.y)
+					continue;
+				if(Posy > Pos.y + BoundingBox.m_H + FontSize)
+					continue;
+
+				if(Posx + PosW >= Pos.x && Pos.x + w >= Posx + PosW)
+					return Posx + PosW - Pos.x;
+			}
+		}
+	}
+	return 0.0f;
+}
+
 
 float CChatBubbles::GetAlpha(int64_t Time)
 {
@@ -288,17 +328,9 @@ float CChatBubbles::GetAlpha(int64_t Time)
 	if(LineAge < FadeInTime)
 		return std::clamp(LineAge / FadeInTime, 0.0f, 1.0f);
 
-	if(LineAge < FadeInTime + ShowTime)
-		return 1.0f;
-
-	// Fade out
-	if(LineAge < FadeInTime + ShowTime + FadeOutTime)
-	{
-		float FadeOutProgress = (LineAge - (FadeInTime + ShowTime)) / FadeOutTime;
-		return std::clamp(1.0f - FadeOutProgress, 0.0f, 1.0f);
-	}
-
-	return 0.0f;
+	float FadeOutProgress = (LineAge - (ShowTime - FadeOutTime)) / FadeOutTime;
+	dbg_msg("test", "LineAge: %f, FadeOutProgress: %f", LineAge, 1.0f - FadeOutProgress);
+	return std::clamp(1.0f - FadeOutProgress, 0.0f, 1.0f);
 }
 
 void CChatBubbles::OnRender()
