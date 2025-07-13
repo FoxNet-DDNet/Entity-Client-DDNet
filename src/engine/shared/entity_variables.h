@@ -332,6 +332,15 @@ MACRO_CONFIG_INT(ClAutoWhisper, ec_auto_whisper, 0, 0, 1, CFGFLAG_CLIENT | CFGFL
 
 MACRO_CONFIG_STR(ClPermaPassword, perma_password, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "password")
 
+// Chat Bubbles
+MACRO_CONFIG_INT(ClChatBubbles, ec_chat_bubbles, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Chatbubbles above players")
+
+MACRO_CONFIG_INT(ClChatBubbleSize, ec_chat_bubble_size, 20, 20, 30, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Size of the chat bubble")
+
+MACRO_CONFIG_INT(ClChatBubbleShowTime, ec_chat_bubble_showtime, 200, 200, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long to show the bubble for")
+MACRO_CONFIG_INT(ClChatBubbleFadeOut, ec_chat_bubble_fadeout, 35, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long it fades out")
+MACRO_CONFIG_INT(ClChatBubbleFadeIn, ec_chat_bubble_fadein, 15, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "how long it fades in")
+
 // Custom Vairiables from My Server for the editor
 // You can use these if you get my server from https://github.com/FoxNetw/FoxNet-DDNet
 
