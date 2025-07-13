@@ -156,7 +156,6 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, Flags);
 }
 
-
 int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color, float Size)
 {
 	CUIRect Text = *pRect;
@@ -651,7 +650,6 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
 	}
 
-
 	// E-Client
 	{
 		Box.VSplitRight(10.0f, &Box, nullptr);
@@ -967,7 +965,6 @@ void CMenus::OnInit()
 		m_ShowStart = false;
 	}
 	m_MenuPage = g_Config.m_UiPage;
-
 
 	m_RefreshButton.Init(Ui(), -1);
 	m_ConnectButton.Init(Ui(), -1);

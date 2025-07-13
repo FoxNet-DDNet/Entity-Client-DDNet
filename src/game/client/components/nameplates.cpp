@@ -363,7 +363,6 @@ protected:
 		// E-Client
 		ColorRGBA Color = Data.m_Color;
 
-
 		if(This.m_aClients[Data.m_ClientId].m_Friend && g_Config.m_ClDoFriendColors)
 			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 
@@ -418,7 +417,7 @@ protected:
 		ColorRGBA Color = Data.m_Color;
 
 		if(g_Config.m_ClWarList && Data.m_ClientId >= 0 && This.m_WarList.GetWarData(Data.m_ClientId).IsWarClan)
-				Color = This.m_WarList.GetClanColor(Data.m_ClientId).WithAlpha(Data.m_Color.a);
+			Color = This.m_WarList.GetClanColor(Data.m_ClientId).WithAlpha(Data.m_Color.a);
 
 		m_Color = Color.WithAlpha(Data.m_Color.a);
 		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, Data.m_pClan) != 0;
@@ -450,7 +449,7 @@ protected:
 		m_Visible = Data.m_ShowReason;
 		if(!m_Visible)
 			return false;
-		
+
 		m_Color = ColorRGBA(0.7f, 0.7f, 0.7f, Data.m_Color.a);
 		return m_FontSize != Data.m_FontSizeClan || str_comp(m_aText, Data.m_pReason) != 0;
 	}
@@ -648,7 +647,7 @@ private:
 		}
 	}
 	template<typename PartType, typename... ArgsType>
-	void AddPart(CGameClient &This, ArgsType &&... Args)
+	void AddPart(CGameClient &This, ArgsType &&...Args)
 	{
 		m_vpParts.push_back(std::make_unique<PartType>(This, std::forward<ArgsType>(Args)...));
 	}
@@ -846,7 +845,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	if(OtherTeam)
 		Alpha *= (float)g_Config.m_ClShowOthersAlpha / 100.0f;
 
-	if(Data.m_Color == ColorRGBA(0,0,0,0)) // If It doesn't have a Value -> so it isn't completely black
+	if(Data.m_Color == ColorRGBA(0, 0, 0, 0)) // If It doesn't have a Value -> so it isn't completely black
 		Data.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
 
 	if(g_Config.m_ClNamePlatesTeamcolors) // Override every other color because why not

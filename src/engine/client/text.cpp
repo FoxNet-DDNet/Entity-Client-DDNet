@@ -2467,7 +2467,6 @@ public:
 		dbg_assert(!HasNonEmptyTextContainer, "text container was not empty");
 	}
 
-	
 	ColorRGBA HSVtoRGB(float h, float s, float v) override
 	{
 		float r = 0, g = 0, b = 0;
@@ -2494,8 +2493,7 @@ public:
 
 		bool RemoveCodes = pTextContainerIndex == nullptr ? false : true;
 
-		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>>
-		{
+		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>> {
 			if(isdigit(p[0]) && isdigit(p[1]))
 			{
 				int code = (p[0] - '0') * 10 + (p[1] - '0');

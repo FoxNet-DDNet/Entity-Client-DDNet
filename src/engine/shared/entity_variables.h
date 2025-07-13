@@ -90,7 +90,6 @@ MACRO_CONFIG_INT(ClScaleMouseDistance, ec_scale_mouse_distance, 0, 0, 1, CFGFLAG
 
 MACRO_CONFIG_INT(ClUiMouseBorderTeleport, ec_ui_mouse_border_teleport, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Teleport Mouse from one border to the other if it goes off screen")
 
-
 // Frozen Tee Display
 MACRO_CONFIG_INT(ClShowFrozenText, ec_frozen_tees_text, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show how many tees in your team are currently frozen. (0 - off, 1 - show alive, 2 - show frozen)")
 MACRO_CONFIG_INT(ClShowFrozenHud, ec_frozen_tees_hud, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show frozen tee HUD")

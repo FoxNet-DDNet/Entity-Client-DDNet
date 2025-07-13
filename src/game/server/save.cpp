@@ -309,7 +309,7 @@ char *CSaveTee::GetString(const CSaveTeam *pTeam)
 		"%d\t%d\t%d\t%d\t" // input stuff
 		"%d\t" // m_ReloadTimer
 		"%d\t" // m_TeeStarted
-		"%d\t" //m_LiveFreeze
+		"%d\t" // m_LiveFreeze
 		"%f\t%f\t%d\t%d\t%d", // m_Ninja
 		m_aName, m_Alive, m_Paused, m_NeededFaketuning, m_TeeFinished, m_IsSolo,
 		// weapons

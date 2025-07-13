@@ -181,7 +181,7 @@ void CStatboard::RenderGlobalStats()
 	if(NumPlayers > 32)
 		return;
 
-	//clear motd if it is active
+	// clear motd if it is active
 	if(GameClient()->m_Motd.IsActive())
 		GameClient()->m_Motd.Clear();
 

@@ -1,8 +1,8 @@
 #include <game/client/gameclient.h>
 
-#include <engine/storage.h>
 #include <engine/config.h>
 #include <engine/shared/config.h>
+#include <engine/storage.h>
 
 #include "skinprofiles.h"
 
@@ -37,7 +37,6 @@ void CSkinProfiles::OnConsoleInit()
 		io_close(File);
 		Console()->ExecuteFile(PROFILES_FILE);
 	}
-
 }
 
 void CSkinProfiles::ConAddProfile(IConsole::IResult *pResult, void *pUserData)

@@ -1642,7 +1642,6 @@ bool CUi::DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *
 	return false;
 }
 
-
 void CUi::RenderProgressBar(CUIRect ProgressBar, float Progress)
 {
 	const float Rounding = minimum(5.0f, ProgressBar.h / 2.0f);

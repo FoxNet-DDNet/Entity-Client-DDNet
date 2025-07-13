@@ -3040,7 +3040,7 @@ bool CMenus::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRec
 	}
 
 	char aBuf[256];
-		str_format(aBuf, sizeof(aBuf), "%s: %.1f%s", pStr, (float)Value / DivideBy, pSuffix);
+	str_format(aBuf, sizeof(aBuf), "%s: %.1f%s", pStr, (float)Value / DivideBy, pSuffix);
 
 	Value = std::clamp(Value, Min, Max);
 

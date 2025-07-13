@@ -343,14 +343,14 @@ bool CBindChat::ChatDoBinds(const char *pText)
 		return false;
 
 	const bool IsExclemataion = str_startswith(pText, "!") && g_Config.m_ClSendExclamation;
-	
+
 	CChat &Chat = GameClient()->m_Chat;
 	const char *pSpace = str_find(pText, " ");
 	size_t SpaceIndex = pSpace ? pSpace - pText : strlen(pText);
 	for(const CBind &Bind : m_vBinds)
 	{
-		const bool SendsMessage = str_find(Bind.m_aCommand, "say") || 
-			str_find(Bind.m_aCommand, "say_team") || str_find(Bind.m_aCommand, "reply_last");
+		const bool SendsMessage = str_find(Bind.m_aCommand, "say") ||
+					  str_find(Bind.m_aCommand, "say_team") || str_find(Bind.m_aCommand, "reply_last");
 		if(str_startswith_nocase(pText, Bind.m_aName) &&
 			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{
@@ -443,7 +443,6 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 
 	return pCompletionBind != nullptr;
 }
-
 
 void CBindChat::WriteLine(const char *pLine)
 {

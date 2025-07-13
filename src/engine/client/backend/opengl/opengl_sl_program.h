@@ -1,5 +1,5 @@
 // This file can be included several times.
-#if(!defined(BACKEND_AS_OPENGL_ES) && !defined(ENGINE_CLIENT_BACKEND_OPENGL_OPENGL_SL_PROGRAM_H)) || \
+#if (!defined(BACKEND_AS_OPENGL_ES) && !defined(ENGINE_CLIENT_BACKEND_OPENGL_OPENGL_SL_PROGRAM_H)) || \
 	(defined(BACKEND_AS_OPENGL_ES) && !defined(ENGINE_CLIENT_BACKEND_OPENGL_OPENGL_SL_PROGRAM_H_AS_ES))
 
 #if !defined(BACKEND_AS_OPENGL_ES) && !defined(ENGINE_CLIENT_BACKEND_OPENGL_OPENGL_SL_PROGRAM_H)
@@ -32,7 +32,7 @@ public:
 	void DetachShaderById(TWGLuint ShaderId) const;
 	void DetachAllShaders() const;
 
-	//Support various types
+	// Support various types
 	void SetUniformVec2(int Loc, int Count, const float *pValue);
 	void SetUniformVec4(int Loc, int Count, const float *pValue);
 	void SetUniform(int Loc, int Value);
@@ -40,7 +40,7 @@ public:
 	void SetUniform(int Loc, float Value);
 	void SetUniform(int Loc, int Count, const float *pValues);
 
-	//for performance reason we do not use SetUniform with using strings... save the Locations of the variables instead
+	// for performance reason we do not use SetUniform with using strings... save the Locations of the variables instead
 	int GetUniformLoc(const char *pName) const;
 
 	CGLSLProgram();

@@ -66,12 +66,12 @@
 #include "components/voting.h"
 
 // Entity
-#include "components/entity/entity.h"
-#include "components/entity/chat_bubbles.h"
 #include "components/entity/anti_spawn_block.h"
+#include "components/entity/chat_bubbles.h"
+#include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
-#include "components/entity/update.h"
 #include "components/entity/mapconfig.h"
+#include "components/entity/update.h"
 
 // Tater
 #include "components/tclient/bindchat.h"
@@ -191,7 +191,7 @@ public:
 	CGhost m_Ghost;
 
 	CTooltips m_Tooltips;
-	
+
 	CLocalServer m_LocalServer;
 
 	// Entity
@@ -497,7 +497,6 @@ public:
 		CCharacterCore m_Predicted;
 		CCharacterCore m_PrevPredicted;
 
-
 		// TClient
 		vec2 m_ImprovedPredPos = vec2(0, 0);
 		vec2 m_PrevImprovedPredPos = vec2(0, 0);
@@ -730,7 +729,7 @@ public:
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
 
-	// E-Client	
+	// E-Client
 	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;
 	void SetLastMovementTime(int Delay) override;
@@ -738,7 +737,6 @@ public:
 	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;
 	const char *GetClientName(int ClientId) override;
-
 
 	CNetObjHandler *GetNetObjHandler() override;
 	protocol7::CNetObjHandler *GetNetObjHandler7() override;
