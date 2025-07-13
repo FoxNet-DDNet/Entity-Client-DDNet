@@ -329,7 +329,6 @@ float CChatBubbles::GetAlpha(int64_t Time)
 		return std::clamp(LineAge / FadeInTime, 0.0f, 1.0f);
 
 	float FadeOutProgress = (LineAge - (ShowTime - FadeOutTime)) / FadeOutTime;
-	dbg_msg("test", "LineAge: %f, FadeOutProgress: %f", LineAge, 1.0f - FadeOutProgress);
 	return std::clamp(1.0f - FadeOutProgress, 0.0f, 1.0f);
 }
 
