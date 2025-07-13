@@ -196,7 +196,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 			static float Offset = 0.0f;
 
 			Automation.VMargin(5.0f, &Automation);
-			Automation.HSplitTop(245.0f + Offset, &Automation, &ChatSettings);
+			Automation.HSplitTop(225.0f + Offset, &Automation, &ChatSettings);
 			if(s_ScrollRegion.AddRect(Automation))
 			{
 				Offset = 0.0f;
@@ -376,9 +376,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, "Anti Mult Spawn Block", &g_Config.m_ClAntiSpawnBlock, &Automation, LineSize);
 					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you Kill and get frozen");
-
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoWhisper, "Auto Whisper", &g_Config.m_ClAutoWhisper, &Automation, LineSize);
-					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAutoWhisper, &Button, "Automatically puts \"/c \" in the chat if your last message was a whisper");
 				}
 			}
 		}

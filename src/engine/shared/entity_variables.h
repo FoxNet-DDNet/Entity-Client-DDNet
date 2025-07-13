@@ -327,7 +327,6 @@ MACRO_CONFIG_INT(ClInformUpdate, ec_inform_update, 1, 0, 1, CFGFLAG_CLIENT | CFG
 
 // Chat
 MACRO_CONFIG_INT(ClChatColorParsing, ec_chat_color_parsing, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allows you to use &00-&99 to chang the color of your text, &x marks the end of the color")
-MACRO_CONFIG_INT(ClAutoWhisper, ec_auto_whisper, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds \"/c \" to your message if the last one was a whisper")
 
 MACRO_CONFIG_STR(ClPermaPassword, perma_password, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "password")
 
