@@ -217,6 +217,7 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 	if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
 		return;
 
+	const float ShowTime = g_Config.m_ClChatBubbleShowTime / 100.0f;
 	int FontSize = g_Config.m_ClChatBubbleSize;
 	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	float BaseY = Position.y - GetOffset(ClientId) - NameplateOffset;
@@ -232,7 +233,7 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 
 		Alpha *= GetAlpha(aBubble.m_Time);
 
-		if(aBubble.m_Time + time_freq() * 10.0f < time_get())
+		if(aBubble.m_Time + time_freq() * ShowTime < time_get())
 		{
 			RemoveBubble(ClientId, aBubble);
 			continue;
