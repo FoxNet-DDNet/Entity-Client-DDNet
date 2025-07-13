@@ -477,7 +477,7 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			// E-Client
 			if(g_Config.m_ClChatColorParsing)
 				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
-			else 
+			else
 				TextRender()->TextEx(&Cursor, pDisplayStr);
 
 			TextRender()->TextSelectionColor(TextRender()->DefaultTextSelectionColor());

@@ -342,7 +342,7 @@ private: // Argument constraints
 
 	private:
 		CArgumentConstraintsBuilder(TArgumentConstraints *pContainer) :
-			m_pContainer(pContainer){};
+			m_pContainer(pContainer) {};
 
 		TArgumentConstraints *m_pContainer;
 

@@ -1193,7 +1193,8 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 				if(CCharacter *pChar = m_GameWorld.GetCharacterById(ClientId))
 				{
 					pChar->ResetPrediction();
-					vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChar ? pChar->GetStrongWeakId() : 0);
+					vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChar ? pChar->GetStrongWeakId() :
+																   0);
 				}
 				m_GameWorld.ReleaseHooked(ClientId);
 			}
@@ -1208,7 +1209,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 	{
 		CNetMsg_Sv_ChangeInfoCooldown *pMsg = (CNetMsg_Sv_ChangeInfoCooldown *)pRawMsg;
 		m_NextChangeInfo = pMsg->m_WaitUntil;
-		g_Config.m_SvInfoChangeDelay = (pMsg->m_WaitUntil - Client()->GameTick(g_Config.m_ClDummy) + Client()->GameTickSpeed() - 1) / Client()->GameTickSpeed(); 
+		g_Config.m_SvInfoChangeDelay = (pMsg->m_WaitUntil - Client()->GameTick(g_Config.m_ClDummy) + Client()->GameTickSpeed() - 1) / Client()->GameTickSpeed();
 	}
 	else if(MsgId == NETMSGTYPE_SV_MAPSOUNDGLOBAL)
 	{
@@ -2476,7 +2477,7 @@ void CGameClient::OnPredict()
 					if(PreInput.m_IntendedTick != Tick)
 						continue;
 
-					//convert preinput to input
+					// convert preinput to input
 					CNetObj_PlayerInput Input = {0};
 					Input.m_Direction = PreInput.m_Direction;
 					Input.m_TargetX = PreInput.m_TargetX;
@@ -2512,7 +2513,7 @@ void CGameClient::OnPredict()
 					if(PreInput.m_IntendedTick != Tick)
 						continue;
 
-					//convert preinput to input
+					// convert preinput to input
 					CNetObj_PlayerInput Input = {0};
 					Input.m_Direction = PreInput.m_Direction;
 					Input.m_TargetX = PreInput.m_TargetX;
@@ -4193,7 +4194,7 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 			m_aClients[ClientId].m_aPredTick[(SmoothTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
 			m_aClients[ClientId].m_aPredTick[SmoothTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + g_Config.m_ClFastInput)
 		{
-				Pos[i] = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200][i], m_aClients[ClientId].m_aPredPos[SmoothTick % 200][i], SmoothIntra);
+			Pos[i] = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200][i], m_aClients[ClientId].m_aPredPos[SmoothTick % 200][i], SmoothIntra);
 		}
 	}
 	return Pos;

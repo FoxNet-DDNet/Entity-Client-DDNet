@@ -1156,7 +1156,7 @@ void CServer::InitDnsbl(int ClientId)
 {
 	NETADDR Addr = *ClientAddr(ClientId);
 
-	//TODO: support ipv6
+	// TODO: support ipv6
 	if(Addr.type != NETTYPE_IPV4)
 		return;
 
@@ -1970,8 +1970,8 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					if(!IsSixup(ClientId))
 					{
 						CMsgPacker Msgp(NETMSG_RCON_AUTH_STATUS, true);
-						Msgp.AddInt(1); //authed
-						Msgp.AddInt(1); //cmdlist
+						Msgp.AddInt(1); // authed
+						Msgp.AddInt(1); // cmdlist
 						SendMsg(&Msgp, MSGFLAG_VITAL, ClientId);
 					}
 					else
@@ -3406,8 +3406,9 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			if(pThis->Config()->m_SvDnsbl)
 			{
 				const char *pDnsblStr = pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_WHITELISTED ? "white" :
-																pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_BLACKLISTED ? "black" :
-																									pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_PENDING ? "pending" : "n/a";
+							pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_BLACKLISTED ? "black" :
+							pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_PENDING     ? "pending" :
+																"n/a";
 
 				str_format(aDnsblStr, sizeof(aDnsblStr), " dnsbl=%s", pDnsblStr);
 			}
@@ -3416,9 +3417,10 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			aAuthStr[0] = '\0';
 			if(pThis->m_aClients[i].m_AuthKey >= 0)
 			{
-				const char *pAuthStr = pThis->m_aClients[i].m_Authed == AUTHED_ADMIN ? "(Admin)" :
-												       pThis->m_aClients[i].m_Authed == AUTHED_MOD ? "(Mod)" :
-																		     pThis->m_aClients[i].m_Authed == AUTHED_HELPER ? "(Helper)" : "";
+				const char *pAuthStr = pThis->m_aClients[i].m_Authed == AUTHED_ADMIN  ? "(Admin)" :
+						       pThis->m_aClients[i].m_Authed == AUTHED_MOD    ? "(Mod)" :
+						       pThis->m_aClients[i].m_Authed == AUTHED_HELPER ? "(Helper)" :
+													"";
 
 				str_format(aAuthStr, sizeof(aAuthStr), " key=%s %s", pThis->m_AuthManager.KeyIdent(pThis->m_aClients[i].m_AuthKey), pAuthStr);
 			}
@@ -4003,8 +4005,8 @@ void CServer::LogoutClient(int ClientId, const char *pReason)
 	if(!IsSixup(ClientId))
 	{
 		CMsgPacker Msg(NETMSG_RCON_AUTH_STATUS, true);
-		Msg.AddInt(0); //authed
-		Msg.AddInt(0); //cmdlist
+		Msg.AddInt(0); // authed
+		Msg.AddInt(0); // cmdlist
 		SendMsg(&Msg, MSGFLAG_VITAL, ClientId);
 	}
 	else

@@ -1,9 +1,9 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_UPDATE_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_UPDATE_H
-#include <game/client/component.h>
-#include <engine/shared/http.h>
-#include <memory>
 #include <cstdint>
+#include <engine/shared/http.h>
+#include <game/client/component.h>
+#include <memory>
 
 class CUpdate : public CComponent
 {

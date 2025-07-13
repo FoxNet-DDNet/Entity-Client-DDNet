@@ -23,14 +23,14 @@
 #include <game/client/lineinput.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
-#include <game/voting.h>
 #include <game/localization.h>
+#include <game/voting.h>
 
+#include "tclient/warlist.h"
+#include <engine/shared/localization.h>
 #include <game/client/components/community_icons.h>
 #include <game/client/components/menus_start.h>
 #include <game/client/components/skins7.h>
-#include <engine/shared/localization.h>
-#include "tclient/warlist.h"
 
 // component to fetch keypresses, override all other input
 class CMenusKeyBinder : public CComponent
@@ -798,12 +798,12 @@ public:
 	int64_t m_RPC_Ratelimit;
 
 	/*
-	* 
-	* If Draggable = 1 the Tee can be dragged to anywhere on the screen
-	* If 2 its limited to the size of the big menu
-	* If 3 its limited to the size of the settings menu (ToDo)
-	* 
-	*/
+	 *
+	 * If Draggable = 1 the Tee can be dragged to anywhere on the screen
+	 * If 2 its limited to the size of the big menu
+	 * If 3 its limited to the size of the settings menu (ToDo)
+	 *
+	 */
 	void RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable = 0, float TeeSize = 75.0f, float Alpha = 1.0f);
 	bool ResetTeePos;
 

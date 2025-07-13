@@ -362,7 +362,7 @@ void CNetBase::SendControlMsgWithToken7(NETSOCKET Socket, NETADDR *pAddr, TOKEN 
 	s_aRequestTokenBuf[0] = (MyToken >> 24) & 0xff;
 	s_aRequestTokenBuf[1] = (MyToken >> 16) & 0xff;
 	s_aRequestTokenBuf[2] = (MyToken >> 8) & 0xff;
-	s_aRequestTokenBuf[3] = (MyToken)&0xff;
+	s_aRequestTokenBuf[3] = (MyToken) & 0xff;
 	CNetBase::SendControlMsg(Socket, pAddr, 0, ControlMsg, s_aRequestTokenBuf, Extended ? sizeof(s_aRequestTokenBuf) : 4, Token, true);
 }
 

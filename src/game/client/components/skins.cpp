@@ -520,7 +520,6 @@ void CSkins::OnInit()
 		}
 	}
 
-
 	// load skins
 	Refresh([this]() {
 		GameClient()->m_Menus.RenderLoading(Localize("Loading E-Client"), Localize("Loading skins"), 0);

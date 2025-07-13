@@ -101,10 +101,10 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 		return;
 
 	if(*pText == 0 || (ClientId >= 0 && (GameClient()->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
-					  GameClient()->m_aClients[ClientId].m_ChatIgnore ||
-					  (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend) ||
-					  (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
-					  (GameClient()->m_Snap.m_LocalClientId != ClientId && GameClient()->m_aClients[ClientId].m_Foe))))
+						    GameClient()->m_aClients[ClientId].m_ChatIgnore ||
+						    (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend) ||
+						    (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
+						    (GameClient()->m_Snap.m_LocalClientId != ClientId && GameClient()->m_aClients[ClientId].m_Foe))))
 		return;
 
 	int FontSize = g_Config.m_ClChatBubbleSize;
@@ -139,7 +139,6 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 
 	TextRender()->ColorParsing(pText, &pCursor, Color, &bubble.m_TextContainerIndex);
 
-	
 	m_ChatBubbles[ClientId].insert(m_ChatBubbles[ClientId].begin(), bubble);
 
 	UpdateBubbleOffsets(ClientId);
@@ -181,7 +180,7 @@ void CChatBubbles::RenderCurInput(float y)
 
 	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 
-    if(TextContainerIndex.Valid())
+	if(TextContainerIndex.Valid())
 	{
 		STextBoundingBox BoundingBox = TextRender()->GetBoundingBoxTextContainer(TextContainerIndex);
 
@@ -248,7 +247,6 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 		{
 			if(aBubble.m_TextContainerIndex.Valid())
 				TextRender()->DeleteTextContainer(aBubble.m_TextContainerIndex);
-   
 
 			CTextCursor Cursor;
 			TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);

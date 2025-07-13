@@ -229,7 +229,6 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 			}
 		}
 
-
 		if(GameClient()->m_aClients[pInfo->m_ClientId].m_AuthLevel)
 		{
 			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClAuthedPlayerColor)));
@@ -568,7 +567,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					RenderTools()->RenderTee(CAnimState::GetSpec(), &TeeInfo, EMOTE_BLINK, vec2(1.0f, 0.0f), TeeRenderPos);
 				else
 					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
-
 			}
 
 			// name
@@ -622,12 +620,11 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				if(g_Config.m_ClSpectatePrefix && paused)
 				{
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
-					//TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-					//TextRender()->TextEx(&Cursor, FontIcons::FONT_ICON_EYE);
+					// TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+					// TextRender()->TextEx(&Cursor, FontIcons::FONT_ICON_EYE);
 					TextRender()->TextEx(&Cursor, g_Config.m_ClSpecPrefix);
-					//TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+					// TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 					TextRender()->TextColor(1.0f, 1.0f, 1.0f, Alpha);
-
 				}
 
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, Alpha);
@@ -682,7 +679,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA((300.0f - std::clamp(pInfo->m_Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f)));
 			}
 			else
-			{	
+			{
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
 

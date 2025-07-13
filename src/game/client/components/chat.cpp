@@ -22,8 +22,8 @@
 #include "chat.h"
 #include <string.h>
 
-#include "entity/entity.h"
 #include "entity/e_enums.h"
+#include "entity/entity.h"
 #include "tclient/warlist.h"
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = "";
@@ -284,7 +284,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 		if(g_Config.m_ClAutoWhisper)
 		{
-			CBindChat pBindchat =  GameClient()->m_Bindchat;
+			CBindChat pBindchat = GameClient()->m_Bindchat;
 			if(!m_CheckedCommand)
 			{
 				bool NormalCommand = false;
@@ -319,7 +319,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				m_VoteKickTimer = 0;
 				SilentMessage = true;
 			}
-			else if (!str_comp(m_Input.GetString(), "No") || !str_comp(m_Input.GetString(), "no"))
+			else if(!str_comp(m_Input.GetString(), "No") || !str_comp(m_Input.GetString(), "no"))
 			{
 				m_VoteKickTimer = 0;
 				SilentMessage = true;
@@ -329,7 +329,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(m_Mode == MODE_SILENT)
 			SilentMessage = true;
 
-		if( GameClient()->m_Bindchat.ChatDoBinds(m_Input.GetString()))
+		if(GameClient()->m_Bindchat.ChatDoBinds(m_Input.GetString()))
 			SilentMessage = true;
 
 		if(SilentMessage)
@@ -395,7 +395,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				});
 		}
 
-		if( GameClient()->m_Bindchat.ChatDoAutocomplete(ShiftPressed))
+		if(GameClient()->m_Bindchat.ChatDoAutocomplete(ShiftPressed))
 		{
 		}
 		else if(m_aCompletionBuffer[0] == '/' && !m_vServerCommands.empty())
@@ -507,7 +507,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 				// quote the name
 				char aQuoted[128];
-				if((m_Input.GetString()[0] == '/' ||  GameClient()->m_Bindchat.CheckBindChat(m_Input.GetString())) && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"") || str_startswith(pCompletionString, "#")))
+				if((m_Input.GetString()[0] == '/' || GameClient()->m_Bindchat.CheckBindChat(m_Input.GetString())) && (str_find(pCompletionString, " ") || str_find(pCompletionString, "\"") || str_startswith(pCompletionString, "#")))
 				{
 					// escape the name
 					str_copy(aQuoted, "\"");
@@ -735,9 +735,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
 		{
 			char Message[2048];
-			str_format(Message, sizeof(Message), "[Muted] %s",  GameClient()->m_aClients[ClientId].m_aName);
+			str_format(Message, sizeof(Message), "[Muted] %s", GameClient()->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "[Muted] ← %s",  GameClient()->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "[Muted] ← %s", GameClient()->m_aClients[ClientId].m_aName);
 
 			if(g_Config.m_ClMutedConsoleColor)
 				Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
@@ -752,23 +752,23 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.m_WarTypes[1]->m_aWarName);
 			else if(GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
 				str_format(TypeName, sizeof(TypeName), "%s", GameClient()->m_WarList.GetWarTypeName(ClientId));
-		
+
 			char Message[2048];
-			str_format(Message, sizeof(Message), "[%s] %s", TypeName,  GameClient()->m_aClients[ClientId].m_aName);
+			str_format(Message, sizeof(Message), "[%s] %s", TypeName, GameClient()->m_aClients[ClientId].m_aName);
 			if(Team == 3)
-				str_format(Message, sizeof(Message), "[%s] ← %s", TypeName,  GameClient()->m_aClients[ClientId].m_aName);
+				str_format(Message, sizeof(Message), "[%s] ← %s", TypeName, GameClient()->m_aClients[ClientId].m_aName);
 
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine);
 			return;
 		}
 	}
 
-	if(*pLine == 0 || (ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) || 
+	if(*pLine == 0 || (ClientId == SERVER_MSG && !g_Config.m_ClShowChatSystem) ||
 		(ClientId >= 0 && (GameClient()->m_aClients[ClientId].m_aName[0] == '\0' || // unknown client
-		GameClient()->m_aClients[ClientId].m_ChatIgnore ||
-		(GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend) ||
-		(GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK) || 
-		(GameClient()->m_Snap.m_LocalClientId != ClientId && GameClient()->m_aClients[ClientId].m_Foe))))
+					  GameClient()->m_aClients[ClientId].m_ChatIgnore ||
+					  (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend) ||
+					  (GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK) ||
+					  (GameClient()->m_Snap.m_LocalClientId != ClientId && GameClient()->m_aClients[ClientId].m_Foe))))
 		return;
 
 	// trim right and set maximum length to 256 utf8-characters
@@ -939,7 +939,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	}
 	else if(CurrentLine.m_ClientId == SILENT_MSG)
 	{
-		auto &LineAuthor =  GameClient()->m_aClients[ GameClient()->m_Snap.m_LocalClientId];
+		auto &LineAuthor = GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId];
 
 		str_copy(CurrentLine.m_aName, LineAuthor.m_aName);
 		str_append(CurrentLine.m_aName, ": ");
@@ -1053,10 +1053,9 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 			}
 			else if(g_Config.m_SndFriendChat && (GameClient()->Friends()->IsFriend(m_aLines[m_CurrentLine].m_aName, "\0", true)))
 			{
-				 GameClient()->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0.8f);
+				GameClient()->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CHAT_CLIENT, 0.8f);
 				m_aLastSoundPlayed[CHAT_CLIENT] = Now;
 			}
-
 		}
 	}
 }
@@ -1180,7 +1179,7 @@ void CChat::OnPrepareLines(float y)
 			// This is here so that the background has the correct size
 			if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
 				TextRender()->ColorParsing(Line.m_aText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
-			else 
+			else
 				TextRender()->TextEx(&AppendCursor, pText);
 
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
@@ -1301,7 +1300,6 @@ void CChat::OnPrepareLines(float y)
 			TextRender()->ColorParsing(Line.m_aText, &Cursor, Color, &Line.m_TextContainerIndex);
 		else
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
-
 
 		if(!g_Config.m_ClChatOld && (Line.m_aText[0] != '\0' || Line.m_aName[0] != '\0'))
 		{
@@ -1430,7 +1428,7 @@ void CChat::OnRender()
 		m_Input.SetScrollOffset(ScrollOffset);
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
 
-		CBindChat pBindchat =  GameClient()->m_Bindchat;
+		CBindChat pBindchat = GameClient()->m_Bindchat;
 
 		if(pBindchat.CheckBindChat(m_Input.GetString()) && m_Input.GetString()[1] != '\0')
 		{
@@ -1744,7 +1742,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					{
 						char aBuf[2048] = "/Join ";
 						str_append(aBuf, PlayerName);
-						 GameClient()->m_Chat.SendChat(0, aBuf);
+						GameClient()->m_Chat.SendChat(0, aBuf);
 						char Joined[2048] = "Auto Joined ";
 						str_append(Joined, PlayerName);
 
@@ -1777,7 +1775,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 						if(NameToJoin == 0)
 						{
 							GameClient()->ClientMessage(g_Config.m_ClAutoNotifyMsg);
-							 GameClient()->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.6f);
+							GameClient()->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.6f);
 						}
 					}
 				}
@@ -1813,9 +1811,8 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			if(str_find_nocase(pLine, "hink you could do better") && str_find_nocase(pLine, "Not without")) // mass ping advertising
 			{
 				// try to not remove their message if they are just trying to be funny
-				if(!str_find_nocase(pLine, "github.com")
-					&& !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") // TClient
-					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") // 
+				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") // TClient
+					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") //
 					&& !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") // E-Client (rebranded AClient)
 					&& !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus")) // Other
 					AdBotFound = true;
@@ -1826,7 +1823,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			if(AdBotFound == true)
 			{
 				// This is done so that when a player forwards a message of another player sending a krx message it wont start a vote for the forwarder
-				if(str_find_nocase(pLine,"← "))
+				if(str_find_nocase(pLine, "← "))
 					return false;
 
 				// Console Storing
@@ -1856,12 +1853,12 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 					GameClient()->ClientMessage("│ unless you type &00\"No\"&x");
 					GameClient()->ClientMessage("│");
 					GameClient()->ClientMessage("╰───────────────────────");
-				
+
 					m_AdBotId = ClientId;
 					m_VoteKickTimer = time_get() + time_freq() * 60;
 					return true;
 				}
-				else if (g_Config.m_ClDismissAdBots == 3)
+				else if(g_Config.m_ClDismissAdBots == 3)
 				{
 					char AdBotInfo[256];
 					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Player \"%s\" has been Auto Voted (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);

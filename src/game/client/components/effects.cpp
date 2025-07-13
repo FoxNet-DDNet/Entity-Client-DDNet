@@ -439,7 +439,7 @@ void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
 		return;
 
 	const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 100) % 1000 / 100.f);
-	
+
 	float RotSpeed = 5.0f + Changer;
 	if(Changer > 5.0f)
 		RotSpeed = 5.0f + (10 - Changer);
@@ -448,7 +448,7 @@ void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SMOKE;
 	p.m_Pos = Pos;
-	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f,1.0f,1.0f);
+	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f, 1.0f, 1.0f);
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 35.0f;

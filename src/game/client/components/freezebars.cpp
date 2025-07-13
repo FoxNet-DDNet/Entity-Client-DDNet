@@ -4,7 +4,6 @@
 
 void CFreezeBars::RenderKillBar()
 {
-
 	if(!g_Config.m_ClFreezeKill || !GameClient()->CurrentRaceTime())
 		return;
 
@@ -40,7 +39,6 @@ void CFreezeBars::RenderKillBar()
 		return;
 	}
 
-
 	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += 22;
@@ -53,7 +51,6 @@ void CFreezeBars::RenderFreezeBar(const int ClientId)
 	float R = 1.0f;
 	float G = 1.0f;
 	float B = 1.0f;
-
 
 	const float FreezeBarWidth = 64.0f;
 	const float FreezeBarHalfWidth = 32.0f;
@@ -284,7 +281,7 @@ void CFreezeBars::OnRender()
 			continue;
 		}
 
-		//don't render if the tee is offscreen
+		// don't render if the tee is offscreen
 		vec2 *pRenderPos = &GameClient()->m_aClients[ClientId].m_RenderPos;
 		if(pRenderPos->x < ScreenX0 || pRenderPos->x > ScreenX1 || pRenderPos->y < ScreenY0 || pRenderPos->y > ScreenY1)
 		{
