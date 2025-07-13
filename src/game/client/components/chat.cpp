@@ -261,9 +261,6 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 	if(m_Mode == MODE_NONE)
 		return false;
 
-	if(g_Config.m_ClAutoWhisper && m_SetConverse && !str_comp(m_Input.GetString(), "/c ") && Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_BACKSPACE)
-		m_Input.Clear();
-
 	if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_ESCAPE)
 	{
 		DisableMode();
@@ -280,30 +277,6 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		{
 			std::sort(m_vServerCommands.begin(), m_vServerCommands.end());
 			m_ServerCommandsNeedSorting = false;
-		}
-
-		if(g_Config.m_ClAutoWhisper)
-		{
-			CBindChat pBindchat = GameClient()->m_Bindchat;
-			if(!m_CheckedCommand)
-			{
-				bool NormalCommand = false;
-				for(int i = 0; i < (int)pBindchat.m_vBinds.size(); i++)
-				{
-					if(str_startswith_nocase(m_Input.GetString() + str_length("/c "), pBindchat.m_vBinds.at(i).m_aName))
-						NormalCommand = true;
-				}
-				for(const auto &Command : m_vServerCommands)
-				{
-					if(str_startswith_nocase(m_Input.GetString() + str_length("/c /"), Command.m_aName))
-						NormalCommand = true;
-				}
-				if(NormalCommand)
-				{
-					m_Input.Set(m_Input.GetString() + str_length("/c "));
-					m_CheckedCommand = true;
-				}
-			}
 		}
 
 		bool SilentMessage = false;
@@ -1328,23 +1301,6 @@ void CChat::OnRender()
 {
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
-
-	if(g_Config.m_ClAutoWhisper)
-	{
-		CHistoryEntry *pEntry = m_History.Last();
-		if(pEntry && (str_startswith(pEntry->m_aText, "/c ") || str_startswith(pEntry->m_aText, "/w ") || str_startswith(pEntry->m_aText, "/converse ") || str_startswith(pEntry->m_aText, "/whisper ")))
-		{
-			if(!m_Input.IsActive())
-				m_SetConverse = false;
-
-			if(m_Input.IsActive() && !str_startswith(m_Input.GetString(), "/c ") && !m_SetConverse)
-			{
-				m_Input.Set("/c ");
-				m_SetConverse = true;
-				m_CheckedCommand = false;
-			}
-		}
-	}
 
 	// send pending chat messages
 	if(m_PendingChatCounter > 0 && m_LastChatSend + time_freq() < time())
