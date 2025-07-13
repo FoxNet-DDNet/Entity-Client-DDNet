@@ -56,6 +56,8 @@ class CChatBubbles : public CComponent
 	void AddBubble(int ClientId, int Team, const char *pText);
 	void RemoveBubble(int ClientId, Bubbles Bubble);
 
+	float ShiftBubbles(int ClientId, vec2 Pos, float w);
+
 	void Reset();
 
 public:
