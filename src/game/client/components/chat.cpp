@@ -780,7 +780,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	if(*pLine == 0)
 		return;
 
-	bool Highlighted = false;
+	bool Highlighted = LineHighlighted(ClientId, pLine);
 
 	auto &&FChatMsgCheckAndPrint = [this](const CLine &Line) {
 		if(Line.m_ClientId < 0) // server or client message
@@ -883,7 +883,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	CurrentLine.m_Whisper = Team >= 2;
 	CurrentLine.m_NameColor = -2;
 	CurrentLine.m_CustomColor = CustomColor;
-	CurrentLine.m_Highlighted = LineHighlighted(ClientId, pLine);
+	CurrentLine.m_Highlighted = Highlighted;
 
 	str_copy(CurrentLine.m_aText, pLine);
 
