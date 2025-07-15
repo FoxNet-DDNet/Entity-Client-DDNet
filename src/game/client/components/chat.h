@@ -212,9 +212,6 @@ public:
 	// E-Client
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
 
-	int m_AdBotId;
-	int64_t m_VoteKickTimer;
-
 	// ----- send functions -----
 
 	// Sends a chat message to the server.

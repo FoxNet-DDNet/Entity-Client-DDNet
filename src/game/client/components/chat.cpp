@@ -281,24 +281,6 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 		bool SilentMessage = false;
 
-		if(m_VoteKickTimer > time_freq())
-		{
-			if(!str_comp(m_Input.GetString(), "Yes") || !str_comp(m_Input.GetString(), "yes"))
-			{
-				char Id[8];
-				str_format(Id, sizeof(Id), "%d", m_AdBotId);
-
-				GameClient()->m_Voting.Callvote("kick", Id, "Krx detected");
-				m_VoteKickTimer = 0;
-				SilentMessage = true;
-			}
-			else if(!str_comp(m_Input.GetString(), "No") || !str_comp(m_Input.GetString(), "no"))
-			{
-				m_VoteKickTimer = 0;
-				SilentMessage = true;
-			}
-		}
-
 		if(m_Mode == MODE_SILENT)
 			SilentMessage = true;
 
@@ -1579,7 +1561,7 @@ void CChat::SendChatQueued(const char *pLine)
 bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 {
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
-		return false; // Prevent crashes
+		return false;
 
 	if(ClientId == SERVER_MSG)
 	{
@@ -1759,18 +1741,18 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 		{
 			bool AdBotFound = false;
 
-			// generic krx message
+			// generic message
 			if(str_find_nocase(pLine, "bro, check out this client") && Team == TEAM_WHISPER_RECV) // whisper advertising
 				AdBotFound = true;
 
-			// removed "t" from "think" because it sometimes sends "hink" instead of "think" - trash clients i suppose
-			if(str_find_nocase(pLine, "hink you could do better") && str_find_nocase(pLine, "Not without")) // mass ping advertising
+			// rit sometimes sends "hink" instead of "think"
+			if(str_find_nocase(pLine, "hink you could do better") && str_find_nocase(pLine, "Not without"))
 			{
 				// try to not remove their message if they are just trying to be funny
-				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") // TClient
-					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") //
-					&& !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") // E-Client (rebranded AClient)
-					&& !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus")) // Other
+				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app")
+					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client")
+					&& !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") 
+					&& !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))
 					AdBotFound = true;
 				if(str_find(pLine, " ")) // This is the little white space it uses between some letters
 					AdBotFound = true;
@@ -1782,57 +1764,13 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 				if(str_find_nocase(pLine, "← "))
 					return false;
 
-				// Console Storing
 				char Text[265] = "";
-
-				if(Team == TEAM_WHISPER_RECV)
-					str_copy(Text, "← ");
-
-				str_format(Text, sizeof(Text), "%s%s%s", GameClient()->m_aClients[ClientId].m_aName, ClientId >= 0 ? ": " : "", pLine);
-				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "E-Client", Text, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor)));
+				str_format(Text, sizeof(Text), "← %s: %s", GameClient()->m_aClients[ClientId].m_aName, pLine);
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "whisper", Text, color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor)));
 
 				// Chat Response
 				if(g_Config.m_ClDismissAdBots == 1)
 					return true; // just dont show their messages
-				else if(g_Config.m_ClDismissAdBots == 2)
-				{
-					char AdBotInfo[256];
-					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Dismissed message of &10\"%s\"&x (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
-
-					GameClient()->ClientMessage("╭──                  Entity Alert");
-					GameClient()->ClientMessage("│");
-					GameClient()->ClientMessage(AdBotInfo);
-					GameClient()->ClientMessage("│");
-					GameClient()->ClientMessage("│ If you want to start a Vote Kick Type &35\"Yes\"&x");
-					GameClient()->ClientMessage("│");
-					GameClient()->ClientMessage("│ This Option will last for one Minute,");
-					GameClient()->ClientMessage("│ unless you type &00\"No\"&x");
-					GameClient()->ClientMessage("│");
-					GameClient()->ClientMessage("╰───────────────────────");
-
-					m_AdBotId = ClientId;
-					m_VoteKickTimer = time_get() + time_freq() * 60;
-					return true;
-				}
-				else if(g_Config.m_ClDismissAdBots == 3)
-				{
-					char AdBotInfo[256];
-					str_format(AdBotInfo, sizeof(AdBotInfo), "│ Player \"%s\" has been Auto Voted (Ad Bot)", GameClient()->m_aClients[ClientId].m_aName);
-
-					GameClient()->ClientMessage("╭──                  Entity Alert");
-					GameClient()->ClientMessage("│");
-					GameClient()->ClientMessage(AdBotInfo);
-					GameClient()->ClientMessage("│");
-					GameClient()->ClientMessage("│ Press F4 (Vote No) to cancel the vote");
-					GameClient()->ClientMessage("│");
-					GameClient()->ClientMessage("╰───────────────────────");
-
-					char Id[8];
-					str_format(Id, sizeof(Id), "%d", ClientId);
-
-					GameClient()->m_Voting.Callvote("kick", Id, "Krx (auto vote)");
-					return true;
-				}
 			}
 		}
 	}
