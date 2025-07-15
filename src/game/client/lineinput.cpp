@@ -28,6 +28,7 @@ void CLineInput::SetBuffer(char *pStr, size_t MaxSize, size_t MaxChars)
 	m_MaxSize = MaxSize;
 	m_MaxChars = MaxChars;
 	m_WasChanged = m_pStr && pLastStr && m_WasChanged;
+	m_WasCursorChanged = m_pStr && pLastStr && m_WasCursorChanged;
 	if(!pLastStr)
 	{
 		m_CursorPos = m_SelectionStart = m_SelectionEnd = m_LastCompositionCursorPos = 0;
@@ -476,7 +477,7 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			// E-Client
 			if(g_Config.m_ClChatColorParsing)
 				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
-			else 
+			else
 				TextRender()->TextEx(&Cursor, pDisplayStr);
 
 			TextRender()->TextSelectionColor(TextRender()->DefaultTextSelectionColor());

@@ -169,7 +169,7 @@ void CBindChat::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	if(pConfigManager)
-		pConfigManager->RegisterACallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterECallback(ConfigSaveCallback, this);
 
 	Console()->Register("bindchat", "s[name] r[command]", CFGFLAG_CLIENT, ConAddBindchat, this, "Add a chat bind");
 	Console()->Register("bindchats", "?s[name]", CFGFLAG_CLIENT, ConBindchats, this, "Print command executed by this name or all chat binds");
@@ -343,14 +343,14 @@ bool CBindChat::ChatDoBinds(const char *pText)
 		return false;
 
 	const bool IsExclemataion = str_startswith(pText, "!") && g_Config.m_ClSendExclamation;
-	
+
 	CChat &Chat = GameClient()->m_Chat;
 	const char *pSpace = str_find(pText, " ");
 	size_t SpaceIndex = pSpace ? pSpace - pText : strlen(pText);
 	for(const CBind &Bind : m_vBinds)
 	{
-		const bool SendsMessage = str_find(Bind.m_aCommand, "say") || 
-			str_find(Bind.m_aCommand, "say_team") || str_find(Bind.m_aCommand, "reply_last");
+		const bool SendsMessage = str_find(Bind.m_aCommand, "say") ||
+					  str_find(Bind.m_aCommand, "say_team") || str_find(Bind.m_aCommand, "reply_last");
 		if(str_startswith_nocase(pText, Bind.m_aName) &&
 			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{
@@ -412,7 +412,7 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 	// insert the command
 	if(pCompletionBind)
 	{
-		char aBuf[CChat::MAX_LINE_LENGTH];
+		char aBuf[MAX_LINE_LENGTH];
 		// add part before the name
 		str_truncate(aBuf, sizeof(aBuf), Chat.m_Input.GetString(), Chat.m_PlaceholderOffset);
 
@@ -443,7 +443,6 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 
 	return pCompletionBind != nullptr;
 }
-
 
 void CBindChat::WriteLine(const char *pLine)
 {

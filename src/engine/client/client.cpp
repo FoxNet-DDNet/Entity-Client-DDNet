@@ -49,6 +49,7 @@
 
 #include <engine/shared/protocolglue.h>
 
+#include <game/client/projectile_data.h>
 #include <game/localization.h>
 #include <game/version.h>
 
@@ -219,10 +220,9 @@ void CClient::SendInfo(int Conn)
 	SendqxdInfo(CONN_MAIN);
 
 	if(!str_comp(g_Config.m_Password, ""))
-	{
 		str_copy(g_Config.m_Password, g_Config.m_ClPermaPassword);
+	if(!str_comp(m_aPassword, ""))
 		str_copy(m_aPassword, g_Config.m_ClPermaPassword);
-	}
 
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
@@ -471,7 +471,7 @@ void CClient::DiscordRPCchange()
 		CServerInfo CurrentServerInfo;
 		GetServerInfo(&CurrentServerInfo);
 
-		Discord()->SetGameInfo(CurrentServerInfo, m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);	
+		Discord()->SetGameInfo(CurrentServerInfo, m_aCurrentMap, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{
@@ -540,7 +540,7 @@ void CClient::EnterGame(int Conn)
 	m_CurrentServerNextPingTime = time_get() + time_freq() / 2;
 }
 
-void GenerateTimeoutCode(char *pBuffer, unsigned Size, char *pSeed, const NETADDR *pAddrs, int NumAddrs, bool Dummy)
+static void GenerateTimeoutCode(char *pBuffer, unsigned Size, char *pSeed, const NETADDR *pAddrs, int NumAddrs, bool Dummy)
 {
 	MD5_CTX Md5;
 	md5_init(&Md5);
@@ -2462,7 +2462,7 @@ void CClient::ResetDDNetInfoTask()
 typedef std::tuple<int, int, int> TVersion;
 static const TVersion gs_InvalidVersion = std::make_tuple(-1, -1, -1);
 
-TVersion ToVersion(char *pStr)
+static TVersion ToVersion(char *pStr)
 {
 	int aVersion[3] = {0, 0, 0};
 	const char *p = strtok(pStr, ".");

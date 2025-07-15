@@ -1,14 +1,14 @@
-#include <engine/shared/config.h>
 #include <engine/client.h>
+#include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
 
-#include <game/gamecore.h>
 #include <game/client/components/chat.h>
 #include <game/client/gameclient.h>
+#include <game/gamecore.h>
 
-#include <base/vmath.h>
 #include <base/system.h>
+#include <base/vmath.h>
 
 #include "freeze_kill.h"
 
@@ -75,7 +75,7 @@ void CFreezeKill::OnRender()
 		}
 
 		// dont kill if teamate is in x * 2 blocks range
-	
+
 		if(g_Config.m_ClFreezeKillTeamClose && !GameClient()->m_WarList.m_WarPlayers[ClientId].m_WarGroupMatches[2] && !OtherTee.m_Solo && OtherTee.m_Team == GameClient()->m_aClients[Local].m_Team && ClientId != Local)
 		{
 			if(!((OtherTee.m_RenderPos.x < Position.x - Distance) || (OtherTee.m_RenderPos.x > Position.x + Distance) || (OtherTee.m_RenderPos.y > Position.y + Distance) || (OtherTee.m_RenderPos.y < Position.y - Distance)))

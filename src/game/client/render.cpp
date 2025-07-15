@@ -251,7 +251,8 @@ void CRenderTools::GetRenderTeeAnimScaleAndBaseSize(const CTeeRenderInfo *pInfo,
 
 void CRenderTools::GetRenderTeeBodyScale(float BaseSize, float &BodyScale)
 {
-	BodyScale = g_Config.m_ClFatSkins ? BaseSize * 1.3f : g_Config.m_ClSmallSkins ? BaseSize * 0.89f : BaseSize;
+	BodyScale = g_Config.m_ClFatSkins ? BaseSize * 1.3f : g_Config.m_ClSmallSkins ? BaseSize * 0.89f :
+											BaseSize;
 	BodyScale /= 64.0f;
 }
 
@@ -287,7 +288,6 @@ void CRenderTools::GetRenderTeeFeetSize(const CAnimState *pAnim, const CTeeRende
 	Height = pInfo->m_SkinMetrics.m_Feet.HeightNormalized() * 32.0f * FeetScaleHeight;
 	FeetOffset.x = pInfo->m_SkinMetrics.m_Feet.OffsetXNormalized() * 64.0f * FeetScaleWidth;
 	FeetOffset.y = pInfo->m_SkinMetrics.m_Feet.OffsetYNormalized() * 32.0f * FeetScaleHeight;
-
 }
 
 void CRenderTools::GetRenderTeeOffsetToRenderedTee(const CAnimState *pAnim, const CTeeRenderInfo *pInfo, vec2 &TeeOffsetToMid)

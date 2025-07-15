@@ -50,8 +50,6 @@
 
 using namespace std::chrono_literals;
 
-extern bool IsInterrupted();
-
 #if defined(CONF_PLATFORM_ANDROID)
 extern std::vector<std::string> FetchAndroidServerCommandQueue();
 #endif
@@ -1158,7 +1156,7 @@ void CServer::InitDnsbl(int ClientId)
 {
 	NETADDR Addr = *ClientAddr(ClientId);
 
-	//TODO: support ipv6
+	// TODO: support ipv6
 	if(Addr.type != NETTYPE_IPV4)
 		return;
 
@@ -1789,9 +1787,9 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 				}
 				else
 				{
-					CMsgPacker Msgp(protocol7::NETMSG_SERVERINFO, true, true);
-					GetServerInfoSixup(&Msgp, -1, false);
-					SendMsg(&Msgp, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientId);
+					CMsgPacker ServerInfoMessage(protocol7::NETMSG_SERVERINFO, true, true);
+					GetServerInfoSixup(&ServerInfoMessage, false);
+					SendMsg(&ServerInfoMessage, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientId);
 				}
 				GameServer()->OnClientEnter(ClientId);
 			}
@@ -1972,8 +1970,8 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 					if(!IsSixup(ClientId))
 					{
 						CMsgPacker Msgp(NETMSG_RCON_AUTH_STATUS, true);
-						Msgp.AddInt(1); //authed
-						Msgp.AddInt(1); //cmdlist
+						Msgp.AddInt(1); // authed
+						Msgp.AddInt(1); // cmdlist
 						SendMsg(&Msgp, MSGFLAG_VITAL, ClientId);
 					}
 					else
@@ -2505,17 +2503,8 @@ void CServer::SendServerInfo(const NETADDR *pAddr, int Token, int Type, bool Sen
 	}
 }
 
-void CServer::GetServerInfoSixup(CPacker *pPacker, int Token, bool SendClients)
+void CServer::GetServerInfoSixup(CPacker *pPacker, bool SendClients)
 {
-	if(Token != -1)
-	{
-		pPacker->Reset();
-		pPacker->AddRaw(SERVERBROWSE_INFO, sizeof(SERVERBROWSE_INFO));
-		pPacker->AddInt(Token);
-	}
-
-	SendClients = SendClients && Token != -1;
-
 	CCache::CCacheChunk &FirstChunk = m_aSixupServerInfoCache[SendClients].m_vCache.front();
 	pPacker->AddRaw(FirstChunk.m_vData.data(), FirstChunk.m_vData.size());
 }
@@ -2668,9 +2657,9 @@ void CServer::UpdateServerInfo(bool Resend)
 					SendServerInfo(ClientAddr(i), -1, SERVERINFO_INGAME, false);
 				else
 				{
-					CMsgPacker Msg(protocol7::NETMSG_SERVERINFO, true, true);
-					GetServerInfoSixup(&Msg, -1, false);
-					SendMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, i);
+					CMsgPacker ServerInfoMessage(protocol7::NETMSG_SERVERINFO, true, true);
+					GetServerInfoSixup(&ServerInfoMessage, false);
+					SendMsg(&ServerInfoMessage, MSGFLAG_VITAL | MSGFLAG_FLUSH, i);
 				}
 			}
 		}
@@ -2727,8 +2716,10 @@ void CServer::PumpNetwork(bool PacketWaiting)
 						}
 
 						CPacker Packer;
-						GetServerInfoSixup(&Packer, SrvBrwsToken, RateLimitServerInfoConnless());
-
+						Packer.Reset();
+						Packer.AddRaw(SERVERBROWSE_INFO, sizeof(SERVERBROWSE_INFO));
+						Packer.AddInt(SrvBrwsToken);
+						GetServerInfoSixup(&Packer, RateLimitServerInfoConnless());
 						CNetBase::SendPacketConnlessWithToken7(m_NetServer.Socket(), &Packet.m_Address, Packer.Data(), Packer.Size(), ResponseToken, m_NetServer.GetToken(Packet.m_Address));
 					}
 					else if(Type != -1)
@@ -3409,8 +3400,9 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			if(pThis->Config()->m_SvDnsbl)
 			{
 				const char *pDnsblStr = pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_WHITELISTED ? "white" :
-																pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_BLACKLISTED ? "black" :
-																									pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_PENDING ? "pending" : "n/a";
+							pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_BLACKLISTED ? "black" :
+							pThis->m_aClients[i].m_DnsblState == CClient::DNSBL_STATE_PENDING     ? "pending" :
+																"n/a";
 
 				str_format(aDnsblStr, sizeof(aDnsblStr), " dnsbl=%s", pDnsblStr);
 			}
@@ -3419,9 +3411,10 @@ void CServer::ConStatus(IConsole::IResult *pResult, void *pUser)
 			aAuthStr[0] = '\0';
 			if(pThis->m_aClients[i].m_AuthKey >= 0)
 			{
-				const char *pAuthStr = pThis->m_aClients[i].m_Authed == AUTHED_ADMIN ? "(Admin)" :
-												       pThis->m_aClients[i].m_Authed == AUTHED_MOD ? "(Mod)" :
-																		     pThis->m_aClients[i].m_Authed == AUTHED_HELPER ? "(Helper)" : "";
+				const char *pAuthStr = pThis->m_aClients[i].m_Authed == AUTHED_ADMIN  ? "(Admin)" :
+						       pThis->m_aClients[i].m_Authed == AUTHED_MOD    ? "(Mod)" :
+						       pThis->m_aClients[i].m_Authed == AUTHED_HELPER ? "(Helper)" :
+													"";
 
 				str_format(aAuthStr, sizeof(aAuthStr), " key=%s %s", pThis->m_AuthManager.KeyIdent(pThis->m_aClients[i].m_AuthKey), pAuthStr);
 			}
@@ -4006,8 +3999,8 @@ void CServer::LogoutClient(int ClientId, const char *pReason)
 	if(!IsSixup(ClientId))
 	{
 		CMsgPacker Msg(NETMSG_RCON_AUTH_STATUS, true);
-		Msg.AddInt(0); //authed
-		Msg.AddInt(0); //cmdlist
+		Msg.AddInt(0); // authed
+		Msg.AddInt(0); // cmdlist
 		SendMsg(&Msg, MSGFLAG_VITAL, ClientId);
 	}
 	else

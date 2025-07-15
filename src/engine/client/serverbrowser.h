@@ -391,8 +391,8 @@ private:
 
 public:
 	void CleanUp();
-private:
 
+private:
 	void UpdateFromHttp();
 	CServerEntry *Add(const NETADDR *pAddrs, int NumAddrs);
 	CServerEntry *ReplaceEntry(CServerEntry *pEntry, const NETADDR *pAddrs, int NumAddrs);
@@ -400,7 +400,7 @@ private:
 	void RemoveRequest(CServerEntry *pEntry);
 
 	void RequestImpl(const NETADDR &Addr, CServerEntry *pEntry, int *pBasicToken, int *pToken, bool RandomToken) const;
-	
+
 	void RegisterCommands();
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 	static void Con_AddFavoriteCommunity(IConsole::IResult *pResult, void *pUserData);

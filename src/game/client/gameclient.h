@@ -66,11 +66,12 @@
 #include "components/voting.h"
 
 // Entity
-#include "components/entity/entity.h"
 #include "components/entity/anti_spawn_block.h"
+#include "components/entity/chat_bubbles.h"
+#include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
-#include "components/entity/update.h"
 #include "components/entity/mapconfig.h"
+#include "components/entity/update.h"
 
 // Tater
 #include "components/tclient/bindchat.h"
@@ -190,11 +191,12 @@ public:
 	CGhost m_Ghost;
 
 	CTooltips m_Tooltips;
-	
+
 	CLocalServer m_LocalServer;
 
 	// Entity
 	CEClient m_EClient;
+	CChatBubbles m_ChatBubbles;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CUpdate m_AcUpdate;
@@ -495,7 +497,6 @@ public:
 		CCharacterCore m_Predicted;
 		CCharacterCore m_PrevPredicted;
 
-
 		// TClient
 		vec2 m_ImprovedPredPos = vec2(0, 0);
 		vec2 m_PrevImprovedPredPos = vec2(0, 0);
@@ -525,7 +526,7 @@ public:
 		CNetObj_Character m_Snapped;
 		CNetObj_Character m_Evolved;
 
-		CNetMsg_Sv_PreInput m_PreInput[200];
+		CNetMsg_Sv_PreInput m_aPreInputs[200];
 
 		// rendered characters
 		CNetObj_Character m_RenderCur;
@@ -666,7 +667,7 @@ public:
 	const char *NetVersion7() const override;
 	int DDNetVersion() const override;
 	const char *DDNetVersionStr() const override;
-	virtual int ClientVersion7() const override;
+	int ClientVersion7() const override;
 
 	void DoTeamChangeMessage7(const char *pName, int ClientId, int Team, const char *pPrefix = "");
 
@@ -728,7 +729,7 @@ public:
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
 
-	// E-Client	
+	// E-Client
 	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;
 	void SetLastMovementTime(int Delay) override;
@@ -736,7 +737,6 @@ public:
 	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;
 	const char *GetClientName(int ClientId) override;
-
 
 	CNetObjHandler *GetNetObjHandler() override;
 	protocol7::CNetObjHandler *GetNetObjHandler7() override;

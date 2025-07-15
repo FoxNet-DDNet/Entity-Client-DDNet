@@ -251,8 +251,7 @@ int CSkins::SkinScan(const char *pName, int IsDir, int StorageType, void *pUser)
 
 	char aNormalizedName[NORMALIZED_SKIN_NAME_LENGTH];
 	str_utf8_tolower(aSkinName, aNormalizedName, sizeof(aNormalizedName));
-	auto ExistingSkin = pSelf->m_Skins.find(aNormalizedName);
-	if(ExistingSkin != pSelf->m_Skins.end())
+	if(pSelf->m_Skins.contains(aNormalizedName))
 	{
 		return 0;
 	}
@@ -467,8 +466,7 @@ void CSkins::LoadSkinDirect(const char *pName)
 {
 	char aNormalizedName[NORMALIZED_SKIN_NAME_LENGTH];
 	str_utf8_tolower(pName, aNormalizedName, sizeof(aNormalizedName));
-	auto ExistingSkin = m_Skins.find(aNormalizedName);
-	if(ExistingSkin != m_Skins.end())
+	if(m_Skins.contains(aNormalizedName))
 	{
 		return;
 	}
@@ -519,7 +517,6 @@ void CSkins::OnInit()
 			str_copy(m_aEventSkinPrefix, "santa");
 		}
 	}
-
 
 	// load skins
 	Refresh([this]() {
@@ -766,6 +763,7 @@ CSkins::CSkinList &CSkins::SkinList()
 	char aDummySkin[NORMALIZED_SKIN_NAME_LENGTH];
 	str_utf8_tolower(g_Config.m_ClPlayerSkin, aPlayerSkin, sizeof(aPlayerSkin));
 	str_utf8_tolower(g_Config.m_ClDummySkin, aDummySkin, sizeof(aDummySkin));
+	m_SkinList.m_vSkins.reserve(m_Skins.size());
 	for(const auto &[_, pSkinContainer] : m_Skins)
 	{
 		if(pSkinContainer->IsSpecial())
@@ -798,7 +796,7 @@ CSkins::CSkinList &CSkins::SkinList()
 			}
 			NameMatch = std::make_pair<int, int>(pNameMatchStart - pSkinContainer->Name(), pNameMatchEnd - pNameMatchStart);
 		}
-		m_SkinList.m_vSkins.emplace_back(pSkinContainer.get(), m_Favorites.find(pSkinContainer->NormalizedName()) != m_Favorites.end(), SelectedMain, SelectedDummy, NameMatch);
+		m_SkinList.m_vSkins.emplace_back(pSkinContainer.get(), m_Favorites.contains(pSkinContainer->NormalizedName()), SelectedMain, SelectedDummy, NameMatch);
 	}
 
 	std::sort(m_SkinList.m_vSkins.begin(), m_SkinList.m_vSkins.end());
@@ -903,7 +901,7 @@ bool CSkins::IsFavorite(const char *pName) const
 {
 	char aNormalizedName[NORMALIZED_SKIN_NAME_LENGTH];
 	str_utf8_tolower(pName, aNormalizedName, sizeof(aNormalizedName));
-	return m_Favorites.find(aNormalizedName) != m_Favorites.end();
+	return m_Favorites.contains(aNormalizedName);
 }
 
 void CSkins::RandomizeSkin(int Dummy)

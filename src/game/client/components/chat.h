@@ -16,17 +16,17 @@
 
 constexpr auto SAVES_FILE = "ddnet-saves.txt";
 
+enum
+{
+	MAX_LINES = 64,
+	MAX_LINE_LENGTH = 256
+};
+
 class CChat : public CComponent
 {
 	static constexpr float CHAT_HEIGHT_FULL = 200.0f;
 	static constexpr float CHAT_HEIGHT_MIN = 50.0f;
 	static constexpr float CHAT_FONTSIZE_WIDTH_RATIO = 2.5f;
-
-	enum
-	{
-		MAX_LINES = 64,
-		MAX_LINE_LENGTH = 256
-	};
 
 	CLineInputBuffered<MAX_LINE_LENGTH> m_Input;
 	class CLine
@@ -74,6 +74,8 @@ class CChat : public CComponent
 		// 0.7 Skin
 		CSixup m_Sixup;
 	};
+
+	bool LineShouldHighlight(const char *pLine, const char *pName);
 
 	bool m_PrevScoreBoardShowed;
 	bool m_PrevShowChat;
@@ -165,12 +167,13 @@ class CChat : public CComponent
 	static void ConchainChatFontSize(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainChatWidth(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
-	bool LineShouldHighlight(const char *pLine, const char *pName);
 	void StoreSave(const char *pText);
 
 	friend class CBindChat;
+	friend class CChatBubbles;
 
 public:
+
 	CChat();
 	int Sizeof() const override { return sizeof(*this); }
 
@@ -207,16 +210,6 @@ public:
 	float MessageTeeSize() const { return FontSize() * (7 / 6.f); }
 	float MessageRounding() const { return FontSize() * (1 / 2.f); }
 
-	// E-Client
-	bool m_SetConverse = false;
-	bool m_CheckedCommand = false;
-
-	bool ChatDetection(int ClientId, int Team, const char *pLine);
-
-	int m_AdBotId;
-	int64_t m_VoteKickTimer;
-
-
 	// ----- send functions -----
 
 	// Sends a chat message to the server.
@@ -233,5 +226,9 @@ public:
 	//
 	// It uses team or public chat depending on m_Mode.
 	void SendChatQueued(const char *pLine);
+
+	// E-Client
+	bool LineHighlighted(int ClientId, const char *pLine);
+	bool ChatDetection(int ClientId, int Team, const char *pLine);
 };
 #endif

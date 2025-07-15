@@ -35,7 +35,7 @@ struct SBufferContainerInfo
 		bool m_Normalized;
 		void *m_pOffset;
 
-		//0: float, 1:integer
+		// 0: float, 1:integer
 		unsigned int m_FuncType;
 	};
 	std::vector<SAttribute> m_vAttributes;
@@ -103,7 +103,7 @@ struct GL_STexCoord3D
 };
 
 typedef ColorRGBA GL_SColorf;
-//use normalized color values
+// use normalized color values
 typedef vector4_base<unsigned char> GL_SColor;
 
 struct GL_SVertex
@@ -236,13 +236,13 @@ public:
 	virtual bool IsScreenKeyboardShown() = 0;
 
 	/**
-	* Listens to a resize event of the canvas, which is usually caused by a window resize.
-	* Will only be triggered if the actual size changed.
-	*/
+	 * Listens to a resize event of the canvas, which is usually caused by a window resize.
+	 * Will only be triggered if the actual size changed.
+	 */
 	virtual void AddWindowResizeListener(WINDOW_RESIZE_FUNC pFunc) = 0;
 	/**
-	* Listens to various window property changes, such as minimize, maximize, move, fullscreen mode
-	*/
+	 * Listens to various window property changes, such as minimize, maximize, move, fullscreen mode
+	 */
 	virtual void AddWindowPropChangeListener(WINDOW_PROPS_CHANGED_FUNC pFunc) = 0;
 
 	virtual void WindowDestroyNtf(uint32_t WindowId) = 0;
@@ -335,8 +335,9 @@ public:
 	virtual const char *GetVersionString() = 0;
 	virtual const char *GetRendererString() = 0;
 
-	struct CLineItem
+	class CLineItem
 	{
+	public:
 		float m_X0, m_Y0, m_X1, m_Y1;
 		CLineItem() {}
 		CLineItem(float x0, float y0, float x1, float y1) :
@@ -344,7 +345,17 @@ public:
 	};
 	virtual void LinesBegin() = 0;
 	virtual void LinesEnd() = 0;
-	virtual void LinesDraw(const CLineItem *pArray, int Num) = 0;
+	virtual void LinesDraw(const CLineItem *pArray, size_t Num) = 0;
+
+	class CLineItemBatch
+	{
+	public:
+		IGraphics::CLineItem m_aItems[256];
+		size_t m_NumItems = 0;
+	};
+	virtual void LinesBatchBegin(CLineItemBatch *pBatch) = 0;
+	virtual void LinesBatchEnd(CLineItemBatch *pBatch) = 0;
+	virtual void LinesBatchDraw(CLineItemBatch *pBatch, const CLineItem *pArray, size_t Num) = 0;
 
 	virtual void QuadsBegin() = 0;
 	virtual void QuadsEnd() = 0;
@@ -490,7 +501,7 @@ class IEngineGraphics : public IGraphics
 	MACRO_INTERFACE("enginegraphics")
 public:
 	virtual int Init() = 0;
-	virtual void Shutdown() override = 0;
+	void Shutdown() override = 0;
 
 	virtual void Minimize() = 0;
 	virtual void Maximize() = 0;

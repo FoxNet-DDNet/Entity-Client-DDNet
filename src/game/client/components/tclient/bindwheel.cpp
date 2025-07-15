@@ -109,7 +109,7 @@ void CBindWheel::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	if(pConfigManager)
-		pConfigManager->RegisterACallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterECallback(ConfigSaveCallback, this);
 
 	Console()->Register("+bindwheel", "", CFGFLAG_CLIENT, ConOpenBindwheel, this, "Open bindwheel selector");
 	Console()->Register("+bindwheel_execute_hover", "", CFGFLAG_CLIENT, ConBindwheelExecuteHover, this, "Execute hovered bindwheel bind");
@@ -160,8 +160,8 @@ void CBindWheel::OnRender()
 			if(m_WasActive && m_SelectedBind != -1)
 				ExecuteBind(m_SelectedBind);
 		}
-			m_WasActive = false;
-			return;
+		m_WasActive = false;
+		return;
 	}
 	m_WasActive = true;
 

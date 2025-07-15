@@ -167,8 +167,26 @@ void CUi::OnCursorMove(float X, float Y)
 {
 	if(!CheckMouseLock())
 	{
-		m_UpdatedMousePos.x = std::clamp(m_UpdatedMousePos.x + X, 0.0f, Graphics()->WindowWidth() - 1.0f);
-		m_UpdatedMousePos.y = std::clamp(m_UpdatedMousePos.y + Y, 0.0f, Graphics()->WindowHeight() - 1.0f);
+		if(g_Config.m_ClUiMouseBorderTeleport)
+		{
+			m_UpdatedMousePos.x = m_UpdatedMousePos.x + X;
+			m_UpdatedMousePos.y = m_UpdatedMousePos.y + Y;
+
+			if(m_UpdatedMousePos.x < -45.0f)
+				m_UpdatedMousePos.x = Graphics()->WindowWidth() + 5.0f;
+			if(m_UpdatedMousePos.x > Graphics()->WindowWidth() + 5.0f)
+				m_UpdatedMousePos.x = -45.0f;
+
+			if(m_UpdatedMousePos.y < -45.0f)
+				m_UpdatedMousePos.y = Graphics()->WindowHeight() + 5.0f;
+			if(m_UpdatedMousePos.y > Graphics()->WindowHeight() + 5.0f)
+				m_UpdatedMousePos.y = -45.0f;
+		}
+		else
+		{
+			m_UpdatedMousePos.x = std::clamp(m_UpdatedMousePos.x + X, 0.0f, Graphics()->WindowWidth() - 1.0f);
+			m_UpdatedMousePos.y = std::clamp(m_UpdatedMousePos.y + Y, 0.0f, Graphics()->WindowHeight() - 1.0f);
+		}
 	}
 
 	m_UpdatedMouseDelta += vec2(X, Y);
@@ -1623,7 +1641,6 @@ bool CUi::DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *
 	}
 	return false;
 }
-
 
 void CUi::RenderProgressBar(CUIRect ProgressBar, float Progress)
 {

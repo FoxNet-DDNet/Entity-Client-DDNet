@@ -219,13 +219,15 @@ void CInfoMessages::OnMessage(int MsgType, void *pRawMsg)
 void CInfoMessages::OnTeamKillMessage(const CNetMsg_Sv_KillMsgTeam *pMsg)
 {
 	std::vector<std::pair<int, int>> vStrongWeakSorted;
+	vStrongWeakSorted.reserve(MAX_CLIENTS);
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(GameClient()->m_aClients[ClientId].m_Active &&
 			GameClient()->m_Teams.Team(ClientId) == pMsg->m_Team)
 		{
 			CCharacter *pChr = GameClient()->m_GameWorld.GetCharacterById(ClientId);
-			vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChr ? pChr->GetStrongWeakId() : 0);
+			vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChr ? pChr->GetStrongWeakId() :
+														  0);
 		}
 	}
 	std::stable_sort(vStrongWeakSorted.begin(), vStrongWeakSorted.end(), [](auto &Left, auto &Right) { return Left.second > Right.second; });

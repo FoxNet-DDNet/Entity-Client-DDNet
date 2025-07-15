@@ -170,12 +170,12 @@ public:
 	~CWarList();
 
 	/*
-	* duplicate war types are NOT allowed
-	* 0 = none
-	* 1 = enemy
-	* 2 = team
-	* 3 = helper
-	*/
+	 * duplicate war types are NOT allowed
+	 * 0 = none
+	 * 1 = enemy
+	 * 2 = team
+	 * 3 = helper
+	 */
 	std::vector<CWarType *> m_WarTypes = {
 		new CWarType("none", ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f), false), // 0
 		new CWarType("enemy", ColorRGBA(1.0f, 0.2f, 0.2f, 1.0f), false), // 1

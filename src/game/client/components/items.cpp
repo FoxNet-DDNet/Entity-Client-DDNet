@@ -430,7 +430,7 @@ void CItems::RenderLaser(vec2 From, vec2 Pos, ColorRGBA OuterColor, ColorRGBA In
 				Graphics()->RenderQuadContainerAsSprite(m_ItemsQuadContainerIndex, m_PulleyHeadOffset, From.x, From.y, Size, Size);
 			}
 
-			//rotating orbs
+			// rotating orbs
 			Size = Inner ? 0.75f - 1.f / 5.f : 0.75f;
 			for(int Orb = 0; Orb < 3; ++Orb)
 			{

@@ -40,7 +40,7 @@ class CTooltips : public CComponent
 
 public:
 	CTooltips();
-	virtual int Sizeof() const override { return sizeof(*this); }
+	int Sizeof() const override { return sizeof(*this); }
 
 	/**
 	 * Adds the tooltip to a cache and renders it when active.
@@ -58,8 +58,8 @@ public:
 	// TClient
 	void SetFadeTime(const void *pId, float Time);
 
-	virtual void OnReset() override;
-	virtual void OnRender() override;
+	void OnReset() override;
+	void OnRender() override;
 };
 
 #endif

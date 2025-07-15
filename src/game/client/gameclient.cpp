@@ -115,64 +115,66 @@ void CGameClient::OnConsoleInit()
 	m_pHttp = Kernel()->RequestInterface<IHttp>();
 
 	// make a list of all the systems, make sure to add them in the correct render order
-	m_vpAll.insert(m_vpAll.end(), {&m_Skins,
-						  &m_Skins7,
-						  &m_CountryFlags,
-						  &m_MapImages,
-						  &m_Effects, // doesn't render anything, just updates effects
-						  &m_Binds,
-						  &m_Binds.m_SpecialBinds,
-						  &m_Controls,
-						  &m_Camera,
-						  &m_Sounds,
-						  &m_Voting,
-						  &m_Particles, // doesn't render anything, just updates all the particles
-						  &m_SkinProfiles,
-						  &m_RaceDemo,
-						  &m_Rainbow,
-						  &m_MapSounds,
-						  &m_Background, // render instead of m_MapLayersBackground when g_Config.m_ClOverlayEntities == 100
-						  &m_MapLayersBackground, // first to render
-						  &m_Particles.m_RenderTrail,
-						  &m_Particles.m_RenderTrailExtra,
-						  &m_Items,
-						  &m_Ghost,
-						  &m_Players,
-						  &m_MapLayersForeground,
-						  &m_Outlines,
-						  &m_Particles.m_RenderExplosions,
-						  &m_NamePlates,
-						  &m_Particles.m_RenderExtra,
-						  &m_Particles.m_RenderGeneral,
-						  &m_FreezeBars,
-						  &m_DamageInd,
-						  &m_PlayerIndicator,
-						  &m_Hud,
-						  &m_Spectator,
-						  &m_Emoticon,
-						  &m_Bindchat,
-						  &m_Bindwheel,
-						  &m_WarList,
-						  &m_InfoMessages,
-						  &m_Chat,
-						  &m_Broadcast,
-						  &m_DebugHud,
-						  &m_TouchControls,
-						  &m_Scoreboard,
-						  &m_Statboard,
-						  &m_Motd,
-						  &m_Menus,
-						  &m_Tooltips,
-						  &m_Menus.m_Binder,
-						  &m_GameConsole,
-						  // E-Client
-						  &m_MenuBackground,
-						  &m_EClient,
-						  &m_AntiSpawnBlock,
-						  &m_FreezeKill,
+	m_vpAll.insert(m_vpAll.end(), {
+					      &m_Skins,
+					      &m_Skins7,
+					      &m_CountryFlags,
+					      &m_MapImages,
+					      &m_Effects, // doesn't render anything, just updates effects
+					      &m_Binds,
+					      &m_Binds.m_SpecialBinds,
+					      &m_Controls,
+					      &m_Camera,
+					      &m_Sounds,
+					      &m_Voting,
+					      &m_Particles, // doesn't render anything, just updates all the particles
+					      &m_SkinProfiles,
+					      &m_RaceDemo,
+					      &m_Rainbow,
+					      &m_MapSounds,
+					      &m_Background, // render instead of m_MapLayersBackground when g_Config.m_ClOverlayEntities == 100
+					      &m_MapLayersBackground, // first to render
+					      &m_Particles.m_RenderTrail,
+					      &m_Particles.m_RenderTrailExtra,
+					      &m_Items,
+					      &m_Ghost,
+					      &m_Players,
+					      &m_MapLayersForeground,
+					      &m_Outlines,
+					      &m_Particles.m_RenderExplosions,
+					      &m_NamePlates,
+					      &m_ChatBubbles, // E-Client
+					      &m_Particles.m_RenderExtra,
+					      &m_Particles.m_RenderGeneral,
+					      &m_FreezeBars,
+					      &m_DamageInd,
+					      &m_PlayerIndicator,
+					      &m_Hud,
+					      &m_Spectator,
+					      &m_Emoticon,
+					      &m_Bindchat,
+					      &m_Bindwheel,
+					      &m_WarList,
+					      &m_InfoMessages,
+					      &m_Chat,
+					      &m_Broadcast,
+					      &m_DebugHud,
+					      &m_TouchControls,
+					      &m_Scoreboard,
+					      &m_Statboard,
+					      &m_Motd,
+					      &m_Menus,
+					      &m_Tooltips,
+					      &m_Menus.m_Binder,
+					      &m_GameConsole,
+					      &m_MenuBackground,
+					      // E-Client
+					      &m_EClient,
+					      &m_AntiSpawnBlock,
+					      &m_FreezeKill,
 					      &m_AcUpdate,
 					      &m_MapConfig,
-	});
+				      });
 
 	// build the input stack
 	m_vpInput.insert(m_vpInput.end(), {&m_Menus.m_Binder, // this will take over all input when we want to bind a key
@@ -827,7 +829,7 @@ void CGameClient::OnRender()
 		}
 		if(Warning.has_value())
 		{
-			const SWarning TheWarning = Warning.value();
+			const SWarning &TheWarning = Warning.value();
 			m_Menus.PopupWarning(TheWarning.m_aWarningTitle[0] == '\0' ? Localize("Warning") : TheWarning.m_aWarningTitle, TheWarning.m_aWarningMsg, Localize("Ok"), TheWarning.m_AutoHide ? 10s : 0s);
 		}
 	}
@@ -1191,7 +1193,8 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 				if(CCharacter *pChar = m_GameWorld.GetCharacterById(ClientId))
 				{
 					pChar->ResetPrediction();
-					vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChar ? pChar->GetStrongWeakId() : 0);
+					vStrongWeakSorted.emplace_back(ClientId, pMsg->m_First == ClientId ? MAX_CLIENTS : pChar ? pChar->GetStrongWeakId() :
+																   0);
 				}
 				m_GameWorld.ReleaseHooked(ClientId);
 			}
@@ -1206,7 +1209,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 	{
 		CNetMsg_Sv_ChangeInfoCooldown *pMsg = (CNetMsg_Sv_ChangeInfoCooldown *)pRawMsg;
 		m_NextChangeInfo = pMsg->m_WaitUntil;
-		g_Config.m_SvInfoChangeDelay = (pMsg->m_WaitUntil - Client()->GameTick(g_Config.m_ClDummy) + Client()->GameTickSpeed() - 1) / Client()->GameTickSpeed(); 
+		g_Config.m_SvInfoChangeDelay = (pMsg->m_WaitUntil - Client()->GameTick(g_Config.m_ClDummy) + Client()->GameTickSpeed() - 1) / Client()->GameTickSpeed();
 	}
 	else if(MsgId == NETMSGTYPE_SV_MAPSOUNDGLOBAL)
 	{
@@ -1222,7 +1225,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 	else if(MsgId == NETMSGTYPE_SV_PREINPUT)
 	{
 		CNetMsg_Sv_PreInput *pMsg = (CNetMsg_Sv_PreInput *)pRawMsg;
-		m_aClients[pMsg->m_Owner].m_PreInput[pMsg->m_IntendedTick % 200] = *pMsg;
+		m_aClients[pMsg->m_Owner].m_aPreInputs[pMsg->m_IntendedTick % 200] = *pMsg;
 	}
 }
 
@@ -2470,11 +2473,11 @@ void CGameClient::OnPredict()
 					if(pDummyChar == pChar || pLocalChar == pChar)
 						continue;
 
-					const CNetMsg_Sv_PreInput PreInput = m_aClients[i].m_PreInput[Tick % 200];
+					const CNetMsg_Sv_PreInput PreInput = m_aClients[i].m_aPreInputs[Tick % 200];
 					if(PreInput.m_IntendedTick != Tick)
 						continue;
 
-					//convert preinput to input
+					// convert preinput to input
 					CNetObj_PlayerInput Input = {0};
 					Input.m_Direction = PreInput.m_Direction;
 					Input.m_TargetX = PreInput.m_TargetX;
@@ -2506,11 +2509,11 @@ void CGameClient::OnPredict()
 					if(pDummyChar == pChar || pLocalChar == pChar)
 						continue;
 
-					const CNetMsg_Sv_PreInput PreInput = m_aClients[i].m_PreInput[Tick % 200];
+					const CNetMsg_Sv_PreInput PreInput = m_aClients[i].m_aPreInputs[Tick % 200];
 					if(PreInput.m_IntendedTick != Tick)
 						continue;
 
-					//convert preinput to input
+					// convert preinput to input
 					CNetObj_PlayerInput Input = {0};
 					Input.m_Direction = PreInput.m_Direction;
 					Input.m_TargetX = PreInput.m_TargetX;
@@ -3175,6 +3178,11 @@ void CGameClient::CClientData::Reset()
 
 	m_Snapped.m_Tick = -1;
 	m_Evolved.m_Tick = -1;
+
+	for(auto &PreInput : m_aPreInputs)
+	{
+		PreInput.m_IntendedTick = -1;
+	}
 
 	m_RenderCur.m_Tick = -1;
 	m_RenderPrev.m_Tick = -1;
@@ -4191,7 +4199,7 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 			m_aClients[ClientId].m_aPredTick[(SmoothTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
 			m_aClients[ClientId].m_aPredTick[SmoothTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + g_Config.m_ClFastInput)
 		{
-				Pos[i] = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200][i], m_aClients[ClientId].m_aPredPos[SmoothTick % 200][i], SmoothIntra);
+			Pos[i] = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200][i], m_aClients[ClientId].m_aPredPos[SmoothTick % 200][i], SmoothIntra);
 		}
 	}
 	return Pos;

@@ -303,7 +303,7 @@ void CConfigManager::Init()
 	{ \
 		const size_t HelpSize = (size_t)str_length(Desc) + 32; \
 		char *pHelp = static_cast<char *>(m_ConfigHeap.Allocate(HelpSize)); \
-		const bool Alpha = ((Flags)&CFGFLAG_COLALPHA) != 0; \
+		const bool Alpha = ((Flags) & CFGFLAG_COLALPHA) != 0; \
 		str_format(pHelp, HelpSize, "%s (default: $%0*X)", Desc, Alpha ? 8 : 6, color_cast<ColorRGBA>(ColorHSLA(Def, Alpha)).Pack(Alpha)); \
 		AddVariable(m_ConfigHeap.Allocate<SColorConfigVariable>(m_pConsole, #ScriptName, SConfigVariable::VAR_COLOR, Flags, pHelp, &g_Config.m_##Name, Def)); \
 	}
@@ -480,7 +480,7 @@ bool CConfigManager::EClientSave()
 #undef MACRO_CONFIG_COL
 #undef MACRO_CONFIG_STR
 
-	for(const auto &Callback : m_vACallbacks)
+	for(const auto &Callback : m_vECallbacks)
 	{
 		Callback.m_pfnFunc(this, Callback.m_pUserData);
 	}
@@ -516,9 +516,9 @@ void CConfigManager::RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
 	m_vCallbacks.emplace_back(pfnFunc, pUserData);
 }
 
-void CConfigManager::RegisterACallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
+void CConfigManager::RegisterECallback(SAVECALLBACKFUNC pfnFunc, void *pUserData)
 {
-	m_vACallbacks.emplace_back(pfnFunc, pUserData);
+	m_vECallbacks.emplace_back(pfnFunc, pUserData);
 }
 
 void CConfigManager::WriteLine(const char *pLine)

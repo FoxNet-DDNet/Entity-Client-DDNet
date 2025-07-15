@@ -23,14 +23,14 @@
 #include <game/client/lineinput.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
-#include <game/voting.h>
 #include <game/localization.h>
+#include <game/voting.h>
 
+#include "tclient/warlist.h"
+#include <engine/shared/localization.h>
 #include <game/client/components/community_icons.h>
 #include <game/client/components/menus_start.h>
 #include <game/client/components/skins7.h>
-#include <engine/shared/localization.h>
-#include "tclient/warlist.h"
 
 // component to fetch keypresses, override all other input
 class CMenusKeyBinder : public CComponent
@@ -42,8 +42,8 @@ public:
 	IInput::CEvent m_Key;
 	int m_ModifierCombination;
 	CMenusKeyBinder();
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual bool OnInput(const IInput::CEvent &Event) override;
+	int Sizeof() const override { return sizeof(*this); }
+	bool OnInput(const IInput::CEvent &Event) override;
 };
 
 class CMenus : public CComponent
@@ -598,7 +598,7 @@ public:
 	CMenusKeyBinder m_Binder;
 
 	CMenus();
-	virtual int Sizeof() const override { return sizeof(*this); }
+	int Sizeof() const override { return sizeof(*this); }
 
 	void RenderLoading(const char *pCaption, const char *pContent, int IncreaseCounter);
 	void FinishLoading();
@@ -609,15 +609,15 @@ public:
 	void SetActive(bool Active);
 
 	void OnInterfacesInit(CGameClient *pClient) override;
-	virtual void OnInit() override;
+	void OnInit() override;
 
-	virtual void OnStateChange(int NewState, int OldState) override;
-	virtual void OnWindowResize() override;
-	virtual void OnReset() override;
-	virtual void OnRender() override;
-	virtual bool OnInput(const IInput::CEvent &Event) override;
-	virtual bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
-	virtual void OnShutdown() override;
+	void OnStateChange(int NewState, int OldState) override;
+	void OnWindowResize() override;
+	void OnReset() override;
+	void OnRender() override;
+	bool OnInput(const IInput::CEvent &Event) override;
+	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
+	void OnShutdown() override;
 
 	enum
 	{
@@ -799,12 +799,12 @@ public:
 	int64_t m_RPC_Ratelimit;
 
 	/*
-	* 
-	* If Draggable = 1 the Tee can be dragged to anywhere on the screen
-	* If 2 its limited to the size of the big menu
-	* If 3 its limited to the size of the settings menu (ToDo)
-	* 
-	*/
+	 *
+	 * If Draggable = 1 the Tee can be dragged to anywhere on the screen
+	 * If 2 its limited to the size of the big menu
+	 * If 3 its limited to the size of the settings menu (ToDo)
+	 *
+	 */
 	void RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable = 0, float TeeSize = 75.0f, float Alpha = 1.0f);
 	bool ResetTeePos;
 
@@ -828,5 +828,7 @@ public:
 	int DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags = BUTTONFLAG_LEFT, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
 
 	bool DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags = 0u, const char *pSuffix = "");
+
+	bool DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix);
 };
 #endif

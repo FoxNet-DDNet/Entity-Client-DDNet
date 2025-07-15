@@ -29,6 +29,7 @@
 #include <game/client/ui.h>
 #include <game/client/ui_listbox.h>
 #include <game/client/ui_scrollregion.h>
+#include <game/editor/explanations.h>
 #include <game/generated/client_data.h>
 #include <game/localization.h>
 
@@ -47,12 +48,12 @@
 
 using namespace FontIcons;
 
-float fxt2f(int t)
+static float fxt2f(int t)
 {
 	return t / 1000.0f;
 }
 
-int f2fxt(float t)
+static int f2fxt(float t)
 {
 	return static_cast<int>(t * 1000.0f);
 }
@@ -471,9 +472,13 @@ std::vector<CQuad *> CEditor::GetSelectedQuads()
 	std::vector<CQuad *> vpQuads;
 	if(!pQuadLayer)
 		return vpQuads;
-	vpQuads.resize(m_vSelectedQuads.size());
-	for(int i = 0; i < (int)m_vSelectedQuads.size(); ++i)
-		vpQuads[i] = &pQuadLayer->m_vQuads[m_vSelectedQuads[i]];
+	vpQuads.reserve(m_vSelectedQuads.size());
+	for(const auto &SelectedQuad : m_vSelectedQuads)
+	{
+		if(SelectedQuad >= (int)pQuadLayer->m_vQuads.size())
+			continue;
+		vpQuads.push_back(&pQuadLayer->m_vQuads[SelectedQuad]);
+	}
 	return vpQuads;
 }
 
@@ -564,7 +569,7 @@ void CEditor::DeleteSelectedQuads()
 
 	std::vector<int> vSelectedQuads(m_vSelectedQuads);
 	std::vector<CQuad> vDeletedQuads;
-
+	vDeletedQuads.reserve(m_vSelectedQuads.size());
 	for(int i = 0; i < (int)m_vSelectedQuads.size(); ++i)
 	{
 		auto const &Quad = pLayer->m_vQuads[m_vSelectedQuads[i]];
@@ -1502,12 +1507,13 @@ void CEditor::DoSoundSource(int LayerIndex, CSoundSource *pSource, int Index)
 		{
 			if(s_Operation == ESoundSourceOp::OP_MOVE)
 			{
-				float x = wx;
-				float y = wy;
+				vec2 Pos = vec2(wx, wy);
 				if(MapView()->MapGrid()->IsEnabled() && !IgnoreGrid)
-					MapView()->MapGrid()->SnapToGrid(x, y);
-				pSource->m_Position.x = f2fx(x);
-				pSource->m_Position.y = f2fx(y);
+				{
+					MapView()->MapGrid()->SnapToGrid(Pos);
+				}
+				pSource->m_Position.x = f2fx(Pos.x);
+				pSource->m_Position.y = f2fx(Pos.y);
 			}
 		}
 
@@ -2068,15 +2074,14 @@ void CEditor::DoQuad(int LayerIndex, const std::shared_ptr<CLayerQuads> &pLayer,
 	const bool IgnoreGrid = Input()->AltIsPressed();
 
 	auto &&GetDragOffset = [&]() -> ivec2 {
-		float x = wx;
-		float y = wy;
+		vec2 Pos = vec2(wx, wy);
 		if(MapView()->MapGrid()->IsEnabled() && !IgnoreGrid)
-			MapView()->MapGrid()->SnapToGrid(x, y);
-
-		int OffsetX = f2fx(x) - s_OriginalPosition.x;
-		int OffsetY = f2fx(y) - s_OriginalPosition.y;
-
-		return {OffsetX, OffsetY};
+		{
+			MapView()->MapGrid()->SnapToGrid(Pos);
+		}
+		int OffsetX = f2fx(Pos.x) - s_OriginalPosition.x;
+		int OffsetY = f2fx(Pos.y) - s_OriginalPosition.y;
+		return ivec2(OffsetX, OffsetY);
 	};
 
 	// draw selection background
@@ -2390,15 +2395,14 @@ void CEditor::DoQuadPoint(int LayerIndex, const std::shared_ptr<CLayerQuads> &pL
 	const bool IgnoreGrid = Input()->AltIsPressed();
 
 	auto &&GetDragOffset = [&]() -> ivec2 {
-		float x = wx;
-		float y = wy;
+		vec2 Pos = vec2(wx, wy);
 		if(MapView()->MapGrid()->IsEnabled() && !IgnoreGrid)
-			MapView()->MapGrid()->SnapToGrid(x, y);
-
-		int OffsetX = f2fx(x) - s_OriginalPoint.x;
-		int OffsetY = f2fx(y) - s_OriginalPoint.y;
-
-		return {OffsetX, OffsetY};
+		{
+			MapView()->MapGrid()->SnapToGrid(Pos);
+		}
+		int OffsetX = f2fx(Pos.x) - s_OriginalPoint.x;
+		int OffsetY = f2fx(Pos.y) - s_OriginalPoint.y;
+		return ivec2(OffsetX, OffsetY);
 	};
 
 	if(Ui()->CheckActiveItem(pId))
@@ -2634,8 +2638,8 @@ void CEditor::DoQuadKnife(int QuadIndex)
 	if(MapView()->MapGrid()->IsEnabled() && !IgnoreGrid)
 	{
 		float CellSize = MapView()->MapGrid()->GridLineDistance();
-		vec2 OnGrid(Mouse.x, Mouse.y);
-		MapView()->MapGrid()->SnapToGrid(OnGrid.x, OnGrid.y);
+		vec2 OnGrid = Mouse;
+		MapView()->MapGrid()->SnapToGrid(OnGrid);
 
 		if(IsInTriangle(OnGrid, v[0], v[1], v[2]) || IsInTriangle(OnGrid, v[0], v[3], v[2]))
 			Point = OnGrid;
@@ -2775,14 +2779,14 @@ void CEditor::DoQuadKnife(int QuadIndex)
 	Graphics()->TextureClear();
 	Graphics()->LinesBegin();
 
-	IGraphics::CLineItem aEdges[4] = {
+	IGraphics::CLineItem aEdges[] = {
 		IGraphics::CLineItem(v[0].x, v[0].y, v[1].x, v[1].y),
 		IGraphics::CLineItem(v[1].x, v[1].y, v[2].x, v[2].y),
 		IGraphics::CLineItem(v[2].x, v[2].y, v[3].x, v[3].y),
 		IGraphics::CLineItem(v[3].x, v[3].y, v[0].x, v[0].y)};
 
 	Graphics()->SetColor(1.f, 0.5f, 0.f, 1.f);
-	Graphics()->LinesDraw(aEdges, 4);
+	Graphics()->LinesDraw(aEdges, std::size(aEdges));
 
 	IGraphics::CLineItem aLines[4];
 	int LineCount = maximum(m_QuadKnifeCount - 1, 0);
@@ -2844,10 +2848,9 @@ void CEditor::DoQuadEnvelopes(const std::vector<CQuad> &vQuads, IGraphics::CText
 
 	// Draw Lines
 	Graphics()->TextureClear();
-	Graphics()->LinesBegin();
+	IGraphics::CLineItemBatch LineItemBatch;
+	Graphics()->LinesBatchBegin(&LineItemBatch);
 	Graphics()->SetColor(80.0f / 255, 150.0f / 255, 230.f / 255, 0.5f);
-	IGraphics::CLineItem aLineItems[128];
-	size_t NumLineItems = 0;
 	for(size_t j = 0; j < Num; j++)
 	{
 		if(!apEnvelope[j] || apEnvelope[j]->m_vPoints.empty())
@@ -2881,24 +2884,14 @@ void CEditor::DoQuadEnvelopes(const std::vector<CQuad> &vQuads, IGraphics::CText
 
 			const vec2 Pos1 = PivotPoint + vec2(Result.r, Result.g);
 
-			aLineItems[NumLineItems] = IGraphics::CLineItem(Pos0.x, Pos0.y, Pos1.x, Pos1.y);
-			NumLineItems++;
-			if(NumLineItems == std::size(aLineItems))
-			{
-				Graphics()->LinesDraw(aLineItems, NumLineItems);
-				NumLineItems = 0;
-			}
+			const IGraphics::CLineItem Item = IGraphics::CLineItem(Pos0.x, Pos0.y, Pos1.x, Pos1.y);
+			Graphics()->LinesBatchDraw(&LineItemBatch, &Item, 1);
 
 			Pos0 = Pos1;
 			PrevTime = CurrentTime;
 		}
 	}
-	if(NumLineItems)
-	{
-		Graphics()->LinesDraw(aLineItems, NumLineItems);
-	}
-	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-	Graphics()->LinesEnd();
+	Graphics()->LinesBatchEnd(&LineItemBatch);
 
 	// Draw Quads
 	Graphics()->TextureSet(Texture);
@@ -2961,10 +2954,10 @@ void CEditor::DoQuadEnvelopes(const std::vector<CQuad> &vQuads, IGraphics::CText
 		}
 	}
 	Graphics()->QuadsEnd();
-	Graphics()->TextureClear();
-	Graphics()->QuadsBegin();
 
 	// Draw QuadPoints
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
 	for(size_t j = 0; j < Num; j++)
 	{
 		if(!apEnvelope[j])
@@ -3007,11 +3000,10 @@ void CEditor::DoQuadEnvPoint(const CQuad *pQuad, int QIndex, int PIndex)
 		{
 			if(MapView()->MapGrid()->IsEnabled() && !IgnoreGrid)
 			{
-				float x = wx;
-				float y = wy;
-				MapView()->MapGrid()->SnapToGrid(x, y);
-				pEnvelope->m_vPoints[PIndex].m_aValues[0] = f2fx(x) - pQuad->m_aPoints[4].x;
-				pEnvelope->m_vPoints[PIndex].m_aValues[1] = f2fx(y) - pQuad->m_aPoints[4].y;
+				vec2 Pos = vec2(wx, wy);
+				MapView()->MapGrid()->SnapToGrid(Pos);
+				pEnvelope->m_vPoints[PIndex].m_aValues[0] = f2fx(Pos.x) - pQuad->m_aPoints[4].x;
+				pEnvelope->m_vPoints[PIndex].m_aValues[1] = f2fx(Pos.y) - pQuad->m_aPoints[4].y;
 			}
 			else
 			{
@@ -3275,23 +3267,23 @@ void CEditor::DoMapEditor(CUIRect View)
 				else
 					Layer = NUM_LAYERS;
 
-				EExplanation Explanation;
+				CExplanations::EGametype ExplanationGametype;
 				if(m_SelectEntitiesImage == "DDNet")
-					Explanation = EExplanation::DDNET;
+					ExplanationGametype = CExplanations::EGametype::DDNET;
 				else if(m_SelectEntitiesImage == "FNG")
-					Explanation = EExplanation::FNG;
+					ExplanationGametype = CExplanations::EGametype::FNG;
 				else if(m_SelectEntitiesImage == "Race")
-					Explanation = EExplanation::RACE;
+					ExplanationGametype = CExplanations::EGametype::RACE;
 				else if(m_SelectEntitiesImage == "Vanilla")
-					Explanation = EExplanation::VANILLA;
+					ExplanationGametype = CExplanations::EGametype::VANILLA;
 				else if(m_SelectEntitiesImage == "blockworlds")
-					Explanation = EExplanation::BLOCKWORLDS;
+					ExplanationGametype = CExplanations::EGametype::BLOCKWORLDS;
 				else
-					Explanation = EExplanation::NONE;
+					ExplanationGametype = CExplanations::EGametype::NONE;
 
 				if(Layer != NUM_LAYERS)
 				{
-					const char *pExplanation = Explain(Explanation, (int)wx / 32 + (int)wy / 32 * 16, Layer);
+					const char *pExplanation = CExplanations::Explain(ExplanationGametype, (int)wx / 32 + (int)wy / 32 * 16, Layer);
 					if(pExplanation)
 						str_copy(m_aTooltip, pExplanation);
 				}
@@ -6836,9 +6828,10 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 
 			Ui()->ClipEnable(&View);
 			Graphics()->TextureClear();
-			Graphics()->LinesBegin();
+			IGraphics::CLineItemBatch LineItemBatch;
 			for(int c = 0; c < pEnvelope->GetChannels(); c++)
 			{
+				Graphics()->LinesBatchBegin(&LineItemBatch);
 				if(s_ActiveChannels & (1 << c))
 					Graphics()->SetColor(aColors[c].r, aColors[c].g, aColors[c].b, 1);
 				else
@@ -6847,9 +6840,6 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 				const int Steps = static_cast<int>(((EndX - StartX) / Ui()->Screen()->w) * Graphics()->ScreenWidth());
 				const float StepTime = (EndTime - StartTime) / static_cast<float>(Steps);
 				const float StepSize = (EndX - StartX) / static_cast<float>(Steps);
-
-				IGraphics::CLineItem aLineItems[128];
-				size_t NumLineItems = 0;
 
 				ColorRGBA Channels = ColorRGBA(0.0f, 0.0f, 0.0f, 0.0f);
 				pEnvelope->Eval(StartTime, Channels, c + 1);
@@ -6871,24 +6861,15 @@ void CEditor::RenderEnvelopeEditor(CUIRect View)
 					const float CurrentX = StartX + Step * StepSize;
 					const float CurrentY = EnvelopeToScreenY(View, Channels[c]);
 
-					aLineItems[NumLineItems] = IGraphics::CLineItem(PrevX, PrevY, CurrentX, CurrentY);
-					NumLineItems++;
-					if(NumLineItems == std::size(aLineItems))
-					{
-						Graphics()->LinesDraw(aLineItems, NumLineItems);
-						NumLineItems = 0;
-					}
+					const IGraphics::CLineItem Item = IGraphics::CLineItem(PrevX, PrevY, CurrentX, CurrentY);
+					Graphics()->LinesBatchDraw(&LineItemBatch, &Item, 1);
 
 					PrevTime = CurrentTime;
 					PrevX = CurrentX;
 					PrevY = CurrentY;
 				}
-				if(NumLineItems)
-				{
-					Graphics()->LinesDraw(aLineItems, NumLineItems);
-				}
+				Graphics()->LinesBatchEnd(&LineItemBatch);
 			}
-			Graphics()->LinesEnd();
 			Ui()->ClipDisable();
 		}
 
@@ -8247,7 +8228,7 @@ void CEditor::Render()
 		}
 		if(!m_pBrush->IsEmpty())
 		{
-			const bool HasTeleTiles = std::any_of(m_pBrush->m_vpLayers.begin(), m_pBrush->m_vpLayers.end(), [](auto pLayer) {
+			const bool HasTeleTiles = std::any_of(m_pBrush->m_vpLayers.begin(), m_pBrush->m_vpLayers.end(), [](const auto &pLayer) {
 				return pLayer->m_Type == LAYERTYPE_TILES && std::static_pointer_cast<CLayerTiles>(pLayer)->m_HasTele;
 			});
 			if(HasTeleTiles)
@@ -8789,6 +8770,7 @@ void CEditor::Init()
 	m_vComponents.emplace_back(m_MapSettingsBackend);
 	m_vComponents.emplace_back(m_LayerSelector);
 	m_vComponents.emplace_back(m_Prompt);
+	m_vComponents.emplace_back(m_FontTyper);
 	for(CEditorComponent &Component : m_vComponents)
 		Component.OnInit(this);
 
@@ -9307,7 +9289,7 @@ bool CEditor::Append(const char *pFileName, int StorageType, bool IgnoreHistory)
 	s_ReplacedMap.clear();
 	for(auto NewMapIt = NewMap.m_vpImages.begin(); NewMapIt != NewMap.m_vpImages.end(); ++NewMapIt)
 	{
-		auto pNewImage = *NewMapIt;
+		const auto &pNewImage = *NewMapIt;
 		auto NameIsTaken = [pNewImage](const std::shared_ptr<CEditorImage> &OtherImage) { return str_comp(pNewImage->m_aName, OtherImage->m_aName) == 0; };
 		auto MatchInCurrentMap = std::find_if(m_Map.m_vpImages.begin(), m_Map.m_vpImages.end(), NameIsTaken);
 

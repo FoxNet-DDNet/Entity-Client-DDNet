@@ -135,7 +135,6 @@ public:
 			str_copy(m_Activity.state, pMapName, sizeof(m_Activity.state));
 		str_copy(m_Activity.details, pDetail, sizeof(m_Activity.details));
 
-
 		m_Activity.party.size.current_size = ServerInfo.m_NumClients;
 		m_Activity.party.size.max_size = ServerInfo.m_MaxClients;
 		// private makes it so the game isn't public to join, but there's 'Ask to Join' button instead
@@ -220,7 +219,7 @@ public:
 	}
 };
 
-IDiscord *CreateDiscordImpl()
+static IDiscord *CreateDiscordImpl()
 {
 	FDiscordCreate pfnDiscordCreate = GetDiscordCreate();
 	if(!pfnDiscordCreate)
@@ -236,7 +235,7 @@ IDiscord *CreateDiscordImpl()
 	return pDiscord;
 }
 #else
-IDiscord *CreateDiscordImpl()
+static IDiscord *CreateDiscordImpl()
 {
 	return nullptr;
 }

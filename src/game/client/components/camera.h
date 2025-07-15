@@ -62,9 +62,9 @@ private:
 public:
 	static constexpr float ZOOM_STEP = 0.866025f;
 
-	/** 
+	/**
 	 * Convert zoom steps to zoom value
-	 * 
+	 *
 	 * @param Steps - Zoom steps, 0.0f converts to default zoom (returns 1.0f)
 	 * @return converted zoom value
 	 **/
@@ -84,13 +84,13 @@ public:
 	vec2 m_aDyncamCurrentCameraOffset[NUM_DUMMIES];
 
 	CCamera();
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnRender() override;
+	int Sizeof() const override { return sizeof(*this); }
+	void OnRender() override;
 
 	// DDRace
 
-	virtual void OnConsoleInit() override;
-	virtual void OnReset() override;
+	void OnConsoleInit() override;
+	void OnReset() override;
 
 	void SetView(ivec2 Pos, bool Relative = false);
 	void GotoSwitch(int Number, int Offset = -1);

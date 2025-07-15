@@ -174,7 +174,7 @@ public:
 
 	bool IsPlaying() const;
 	int64_t m_Last_KickVote;
-	int64_t m_Last_Team;
+	int64_t m_LastDDRaceTeamChange;
 	int m_ShowOthers;
 	bool m_ShowAll;
 	vec2 m_ShowDistance;
@@ -229,7 +229,7 @@ public:
 	bool m_NotEligibleForFinish;
 	int64_t m_EligibleForFinishCheck;
 	bool m_VotedForPractice;
-	int m_SwapTargetsClientId; //Client ID of the swap target for the given player
+	int m_SwapTargetsClientId; // Client ID of the swap target for the given player
 	bool m_BirthdayAnnounced;
 
 	int m_RescueMode;

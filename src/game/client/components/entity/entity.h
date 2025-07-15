@@ -1,8 +1,8 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_H
-#include <game/client/component.h>
-#include <engine/console.h>
 #include <base/system.h>
+#include <engine/console.h>
+#include <game/client/component.h>
 #include <vector>
 
 class CTempEntry
@@ -15,10 +15,10 @@ public:
 	char m_aReason[128] = "";
 
 	/*
-	* Type = 0 -> TempWar
-	* Type = 1 -> TempHelper
-	* type = 2 -> TempMute
-	*/
+	 * Type = 0 -> TempWar
+	 * Type = 1 -> TempHelper
+	 * type = 2 -> TempMute
+	 */
 	CTempEntry(int Type, const char *pName, const char *pReason)
 	{
 		if(Type == 0)
@@ -55,15 +55,12 @@ class CEClient : public CComponent
 {
 	bool m_AttempedJoinTeam;
 	bool m_JoinedTeam;
-	
+
 	bool m_KogModeRebound;
 	bool m_WeaponsGot;
 	bool m_GoresModeWasOn;
 	bool m_GoresServer;
 
-	// Chat Message Stuffc
-
-	
 	// Reply to Ping
 	struct CLastPing
 	{
@@ -81,9 +78,10 @@ class CEClient : public CComponent
 	CLastPing m_aLastPing;
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
-	int Get128Name(const char *pMsg, char *pName);
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
 	virtual void OnMessage(int MsgType, void *pRawMsg) override;
+
+	int m_LastReplyId = -1;
 
 	// Console Commands
 	virtual void OnConsoleInit() override;
@@ -135,7 +133,6 @@ public:
 	bool UnTempWar(const char *pName, bool Silent = false);
 	bool UnTempMute(const char *pName, bool Silent = false);
 
-
 	void Votekick(const char *pName, const char *pReason);
 
 	void PlayerInfo(const char *pName);
@@ -152,7 +149,7 @@ public:
 	void RemoveWarEntry(int Type, const char *pName);
 
 	// Movement Notification if tabbed out
-	vec2 m_LastPos = vec2(0 ,0);
+	vec2 m_LastPos = vec2(0, 0);
 	void NotifyOnMove();
 
 	// Rainbow
@@ -191,10 +188,10 @@ public:
 	void OnConnect();
 
 	/* Last Movement
-	*	+left
-	*	+right
-	*	+jump
-	*/
+	 *	+left
+	 *	+right
+	 *	+jump
+	 */
 	int64_t m_LastMovement = 10.0f;
 
 	bool m_FirstLaunch = false;
