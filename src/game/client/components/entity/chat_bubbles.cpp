@@ -44,7 +44,7 @@ void CChatBubbles::UpdateBubbleOffsets(int ClientId, float inputBubbleHeight)
 		Offset += inputBubbleHeight + MarginBetween;
 
 	int FontSize = g_Config.m_ClChatBubbleSize;
-	for(Bubbles &aBubble : m_ChatBubbles[ClientId])
+	for(CBubbles &aBubble : m_ChatBubbles[ClientId])
 	{
 		if(!aBubble.m_TextContainerIndex.Valid() || aBubble.m_Cursor.m_FontSize != FontSize)
 		{
@@ -128,7 +128,7 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	TextRender()->SetCursor(&pCursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
 	pCursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 
-	Bubbles bubble(pText, pCursor, time_get());
+	CBubbles bubble(pText, pCursor, time_get());
 
 	ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
 	if(LineHighlighted(ClientId, pText))
@@ -155,7 +155,7 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
-void CChatBubbles::RemoveBubble(int ClientId, Bubbles aBubble)
+void CChatBubbles::RemoveBubble(int ClientId, CBubbles aBubble)
 {
 	for(auto it = m_ChatBubbles[ClientId].begin(); it != m_ChatBubbles[ClientId].end(); ++it)
 	{
@@ -235,7 +235,7 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 	if(ClientId == GameClient()->m_Snap.m_LocalClientId)
 		RenderCurInput(BaseY);
 
-	for(Bubbles &aBubble : m_ChatBubbles[ClientId])
+	for(CBubbles &aBubble : m_ChatBubbles[ClientId])
 	{
 		float Alpha = 1.0f;
 		if(GameClient()->IsOtherTeam(ClientId))
@@ -277,7 +277,8 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 			float x = Position.x - (BoundingBox.m_W / 2.0f + g_Config.m_ClChatBubbleSize / 15.0f);
 			float y = BaseY - aBubble.m_OffsetY - BoundingBox.m_H - FontSize;
 
-			float PushBubble = ShiftBubbles(ClientId, vec2(x - FontSize / 2.0f, y - FontSize / 2.0f), BoundingBox.m_W + FontSize * 1.20f);
+			//float PushBubble = ShiftBubbles(ClientId, vec2(x - FontSize / 2.0f, y - FontSize / 2.0f), BoundingBox.m_W + FontSize * 1.20f);
+			float PushBubble = 0;
 
 			Graphics()->DrawRect((x - FontSize / 2.0f) + PushBubble, y - FontSize / 2.0f,
 				BoundingBox.m_W + FontSize * 1.20f, BoundingBox.m_H + FontSize,
@@ -288,9 +289,11 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 	}
 }
 
+// @qxdFox ToDo:
+// have to store the bubbles position in CBubbles in order to do this properly
 float CChatBubbles::ShiftBubbles(int ClientId, vec2 Pos, float w)
 {
-	if(!g_Config.m_ClChatBubblePushOut)
+	//if(!g_Config.m_ClChatBubblePushOut)
 		return 0.0f;
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
