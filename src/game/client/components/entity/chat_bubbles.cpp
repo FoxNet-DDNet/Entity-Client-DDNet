@@ -68,30 +68,6 @@ void CChatBubbles::UpdateBubbleOffsets(int ClientId, float inputBubbleHeight)
 	}
 }
 
-bool CChatBubbles::LineHighlighted(int ClientId, const char *pLine)
-{
-	bool Highlighted = false;
-
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		if(ClientId >= 0 && ClientId != GameClient()->m_aLocalIds[0] && ClientId != GameClient()->m_aLocalIds[1])
-		{
-			for(int LocalId : GameClient()->m_aLocalIds)
-			{
-				Highlighted |= LocalId >= 0 && Chat()->LineShouldHighlight(pLine, GameClient()->m_aClients[LocalId].m_aName);
-			}
-		}
-	}
-	else
-	{
-		// on demo playback use local id from snap directly,
-		// since m_aLocalIds isn't valid there
-		Highlighted |= GameClient()->m_Snap.m_LocalClientId >= 0 && Chat()->LineShouldHighlight(pLine, GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_aName);
-	}
-
-	return Highlighted;
-}
-
 void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 {
 	if(ClientId < 0 || ClientId >= MAX_CLIENTS || !pText)
@@ -131,7 +107,7 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	CBubbles bubble(pText, pCursor, time_get());
 
 	ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-	if(LineHighlighted(ClientId, pText))
+	if(Chat()->LineHighlighted(ClientId, pText))
 		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageHighlightColor));
 	else if(Team == 1)
 		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageTeamColor));

@@ -75,6 +75,8 @@ class CChat : public CComponent
 		CSixup m_Sixup;
 	};
 
+	bool LineShouldHighlight(const char *pLine, const char *pName);
+
 	bool m_PrevScoreBoardShowed;
 	bool m_PrevShowChat;
 
@@ -171,7 +173,6 @@ class CChat : public CComponent
 	friend class CChatBubbles;
 
 public:
-	bool LineShouldHighlight(const char *pLine, const char *pName); // E-Client
 
 	CChat();
 	int Sizeof() const override { return sizeof(*this); }
@@ -209,9 +210,6 @@ public:
 	float MessageTeeSize() const { return FontSize() * (7 / 6.f); }
 	float MessageRounding() const { return FontSize() * (1 / 2.f); }
 
-	// E-Client
-	bool ChatDetection(int ClientId, int Team, const char *pLine);
-
 	// ----- send functions -----
 
 	// Sends a chat message to the server.
@@ -228,5 +226,9 @@ public:
 	//
 	// It uses team or public chat depending on m_Mode.
 	void SendChatQueued(const char *pLine);
+
+	// E-Client
+	bool LineHighlighted(int ClientId, const char *pLine);
+	bool ChatDetection(int ClientId, int Team, const char *pLine);
 };
 #endif

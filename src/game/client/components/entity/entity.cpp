@@ -31,51 +31,12 @@ bool CEClient::LineShouldHighlight(const char *pLine, const char *pName)
 	return false;
 }
 
-int CEClient::Get128Name(const char *pMsg, char *pName)
-{
-	int i = 0;
-	for(i = 0; pMsg[i] && i < 17; i++)
-	{
-		if(pMsg[i] == ':' && pMsg[i + 1] == ' ')
-		{
-			str_copy(pName, pMsg, i + 1);
-			return i;
-		}
-	}
-	str_copy(pName, " ", 2);
-	return -1;
-}
-
 void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {
 	if(ClientId < 0 || ClientId > MAX_CLIENTS)
 		return;
 
-	bool Highlighted = false;
-
-	// check for highlighted name
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		if(GameClient()->m_aLocalIds[0] == -1)
-			return;
-		if(GameClient()->Client()->DummyConnected() && GameClient()->m_aLocalIds[1] == -1)
-			return;
-		if(ClientId >= 0 && ClientId != GameClient()->m_aLocalIds[0] && (!GameClient()->Client()->DummyConnected() || ClientId != GameClient()->m_aLocalIds[1]))
-		{
-			// main character
-			Highlighted |= LineShouldHighlight(pMsg, GameClient()->m_aClients[GameClient()->m_aLocalIds[0]].m_aName);
-			// dummy
-			Highlighted |= GameClient()->Client()->DummyConnected() && LineShouldHighlight(pMsg, GameClient()->m_aClients[GameClient()->m_aLocalIds[1]].m_aName);
-		}
-	}
-	else
-	{
-		if(GameClient()->m_Snap.m_LocalClientId == -1)
-			return;
-		// on demo playback use local id from snap directly,
-		// since m_aLocalIds isn't valid there
-		Highlighted |= GameClient()->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pMsg, GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_aName);
-	}
+	bool Highlighted = GameClient()->m_Chat.LineHighlighted(ClientId, pMsg);
 
 	if(Team == 3) // whisper recv
 		Highlighted = true;
@@ -84,12 +45,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		return;
 	char aName[16];
 	str_copy(aName, GameClient()->m_aClients[ClientId].m_aName, sizeof(aName));
-	if(ClientId == 63 && !str_comp_num(GameClient()->m_aClients[ClientId].m_aName, " ", 2))
-	{
-		Get128Name(pMsg, aName);
-		// dbg_msg("E-Client", "fixname 128 player '%s' -> '%s'", GameClient()->m_aClients[ClientId].m_aName, aName);
-	}
-	// ignore own and dummys messages
+
 	if(!str_comp(aName, GameClient()->m_aClients[GameClient()->m_aLocalIds[0]].m_aName))
 		return;
 	if(Client()->DummyConnected() && !str_comp(aName, GameClient()->m_aClients[GameClient()->m_aLocalIds[1]].m_aName))
@@ -105,40 +61,40 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 		m_aLastPing.m_Team = Team;
 	}
 
-	if(g_Config.m_ClReplyMuted && (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute))
+	if(!GameClient()->m_Snap.m_pLocalCharacter)
+		return;
+	
+	if(ClientId != m_LastReplyId)
 	{
-		if(!GameClient()->m_Snap.m_pLocalCharacter)
-			return;
-
-		char Text[2048];
-		str_format(Text, sizeof(Text), "%s: %s", aName, g_Config.m_ClAutoReplyMutedMsg);
-
-		if(Team == 3) // whisper recv
-			str_format(Text, sizeof(Text), "/w %s %s", aName, g_Config.m_ClAutoReplyMutedMsg);
-
-		GameClient()->m_Chat.SendChat(0, Text);
-	}
-	else if(g_Config.m_ClTabbedOutMsg)
-	{
-		if(!GameClient()->m_Snap.m_pLocalCharacter)
-			return;
-
-		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
-		if(pGraphics && !pGraphics->WindowActive() && Graphics())
+		char Reply[MAX_LINE_LENGTH];
+		if(g_Config.m_ClReplyMuted && (GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || m_TempPlayers[ClientId].IsTempMute))
 		{
-			if(Team == 3) // whisper recv
+			str_format(Reply, sizeof(Reply), "%s: %s", aName, g_Config.m_ClAutoReplyMutedMsg);
+
+			if(Team == TEAM_WHISPER_RECV) // whisper recv
+				str_format(Reply, sizeof(Reply), "/w %s %s", aName, g_Config.m_ClAutoReplyMutedMsg);
+
+			GameClient()->m_Chat.SendChat(TEAM_FLOCK, Reply);
+			m_LastReplyId = ClientId;
+		}
+		else if(g_Config.m_ClTabbedOutMsg)
+		{
+			IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
+			if(pGraphics && !pGraphics->WindowActive() && Graphics())
 			{
-				char Text[2048];
-				str_format(Text, sizeof(Text), "/w %s ", aName);
-				str_append(Text, g_Config.m_ClAutoReplyMsg);
-				GameClient()->m_Chat.SendChat(0, Text);
-			}
-			else
-			{
-				char Text[2048];
-				str_format(Text, sizeof(Text), "%s: ", aName);
-				str_append(Text, g_Config.m_ClAutoReplyMsg);
-				GameClient()->m_Chat.SendChat(0, Text);
+				if(Team == TEAM_WHISPER_RECV) // whisper recv
+				{
+					str_format(Reply, sizeof(Reply), "/w %s ", aName);
+					str_append(Reply, g_Config.m_ClAutoReplyMsg);
+					GameClient()->m_Chat.SendChat(TEAM_FLOCK, Reply);
+				}
+				else
+				{
+					str_format(Reply, sizeof(Reply), "%s: ", aName);
+					str_append(Reply, g_Config.m_ClAutoReplyMsg);
+					GameClient()->m_Chat.SendChat(TEAM_FLOCK, Reply);
+				}
+				m_LastReplyId = ClientId;
 			}
 		}
 	}

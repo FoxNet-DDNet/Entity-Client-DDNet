@@ -679,6 +679,31 @@ void CChat::StoreSave(const char *pText)
 	io_close(File);
 }
 
+bool CChat::LineHighlighted(int ClientId, const char *pLine)
+{
+	bool Highlighted = false;
+
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	{
+		if(ClientId >= 0 && ClientId != GameClient()->m_aLocalIds[0] && ClientId != GameClient()->m_aLocalIds[1])
+		{
+			for(int LocalId : GameClient()->m_aLocalIds)
+			{
+				Highlighted |= LocalId >= 0 && LineShouldHighlight(pLine, GameClient()->m_aClients[LocalId].m_aName);
+			}
+		}
+	}
+	else
+	{
+		// on demo playback use local id from snap directly,
+		// since m_aLocalIds isn't valid there
+		Highlighted |= GameClient()->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pLine, GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_aName);
+	}
+
+	return Highlighted;
+}
+
+
 void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
 	if(ChatDetection(ClientId, Team, pLine))
@@ -858,25 +883,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	CurrentLine.m_Whisper = Team >= 2;
 	CurrentLine.m_NameColor = -2;
 	CurrentLine.m_CustomColor = CustomColor;
-
-	// check for highlighted name
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		if(ClientId >= 0 && ClientId != GameClient()->m_aLocalIds[0] && ClientId != GameClient()->m_aLocalIds[1])
-		{
-			for(int LocalId : GameClient()->m_aLocalIds)
-			{
-				Highlighted |= LocalId >= 0 && LineShouldHighlight(pLine, GameClient()->m_aClients[LocalId].m_aName);
-			}
-		}
-	}
-	else
-	{
-		// on demo playback use local id from snap directly,
-		// since m_aLocalIds isn't valid there
-		Highlighted |= GameClient()->m_Snap.m_LocalClientId >= 0 && LineShouldHighlight(pLine, GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_aName);
-	}
-	CurrentLine.m_Highlighted = Highlighted;
+	CurrentLine.m_Highlighted = LineHighlighted(ClientId, pLine);
 
 	str_copy(CurrentLine.m_aText, pLine);
 

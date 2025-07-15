@@ -51,8 +51,6 @@ class CChatBubbles : public CComponent
 
 	void UpdateBubbleOffsets(int ClientId, float inputBubbleHeight = 0.0f);
 
-	bool LineHighlighted(int ClientId, const char *pLine);
-
 	void AddBubble(int ClientId, int Team, const char *pText);
 	void RemoveBubble(int ClientId, CBubbles Bubble);
 

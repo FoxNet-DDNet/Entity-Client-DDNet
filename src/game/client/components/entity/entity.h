@@ -61,8 +61,6 @@ class CEClient : public CComponent
 	bool m_GoresModeWasOn;
 	bool m_GoresServer;
 
-	// Chat Message Stuffc
-
 	// Reply to Ping
 	struct CLastPing
 	{
@@ -80,9 +78,10 @@ class CEClient : public CComponent
 	CLastPing m_aLastPing;
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
-	int Get128Name(const char *pMsg, char *pName);
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
 	virtual void OnMessage(int MsgType, void *pRawMsg) override;
+
+	int m_LastReplyId = -1;
 
 	// Console Commands
 	virtual void OnConsoleInit() override;
