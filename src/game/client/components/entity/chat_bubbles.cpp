@@ -82,16 +82,19 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 		return;
 	if(GameClient()->m_aClients[ClientId].m_ChatIgnore)
 		return;
-	if(GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend)
-		return;
-	if(GameClient()->m_Snap.m_LocalClientId != ClientId && g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK)
-		return;
-	if(GameClient()->m_Snap.m_LocalClientId != ClientId && GameClient()->m_aClients[ClientId].m_Foe)
-		return;
-	if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
-		return;
-	else if(g_Config.m_ClWarList && g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar))
-		return;
+	if(GameClient()->m_Snap.m_LocalClientId != ClientId)
+	{
+		if(g_Config.m_ClShowChatFriends && !GameClient()->m_aClients[ClientId].m_Friend)
+			return;
+		if(g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK)
+			return;
+		if( GameClient()->m_aClients[ClientId].m_Foe)
+			return;
+		if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
+			return;
+		else if(g_Config.m_ClWarList && g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar))
+			return;
+	}
 
 	int FontSize = g_Config.m_ClChatBubbleSize;
 	CTextCursor pCursor;

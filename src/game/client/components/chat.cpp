@@ -710,7 +710,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		return;
 
 	ColorRGBA Colors = g_Config.m_ClMessageColor;
-	if(ClientId >= 0)
+	if(ClientId >= 0 && GameClient()->m_Snap.m_LocalClientId != ClientId)
 	{
 		if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
 		{
