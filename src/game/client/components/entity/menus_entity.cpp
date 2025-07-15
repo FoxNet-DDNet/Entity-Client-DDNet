@@ -3090,20 +3090,14 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 	CUIRect TabBar, Button, Label;
 
 	int TabCount = NUMBER_OF_PG1921_TABS;
-	for(int Tab = 0; Tab < NUMBER_OF_PG1921_TABS; ++Tab)
-	{
-		if(IsFlagSet(g_Config.m_ClAClientSettingsTabs, Tab))
-		{
-			TabCount--;
-			if(s_CurTab == Tab)
-				s_CurTab++;
-		}
-	}
+
+	s_CurTab = PG1921_TAB_SETTINGS;
 
 	MainView.HSplitTop(LineSize * 1.1f, &TabBar, &MainView);
 	const float TabWidth = TabBar.w / TabCount;
 	static CButtonContainer s_aPageTabs[NUMBER_OF_PG1921_TABS] = {};
-	const char *apTabNames[NUMBER_OF_PG1921_TABS] = {
+	const char *apTabNames[NUMBER_OF_PG1921_TABS] = 
+	{
 		Localize("Pro_Gaming1921"),
 	};
 
@@ -3149,7 +3143,7 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 			AllPlayerSettings.HSplitTop(235.0f, &AllPlayerSettings, 0);
 			if(s_ScrollRegion.AddRect(AllPlayerSettings))
 			{
-				AllPlayerSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				AllPlayerSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 				AllPlayerSettings.VMargin(Margin, &AllPlayerSettings);
 
 				AllPlayerSettings.HSplitTop(HeaderHeight, &Button, &AllPlayerSettings);
@@ -3184,6 +3178,7 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 				static int s_CustomColorSwitch = 0;
 
 				DoButton_CheckBoxAutoVMarginAndSet(&s_CustomColorSwitch, Localize("Change Feet Color"), &s_CustomColorSwitch, &AllPlayerSettings, LineSize);
+
 
 				AllPlayerSettings.VSplitLeft(52, &Button, &AllPlayerSettings);
 				if(s_CustomColorSwitch)
@@ -3232,7 +3227,7 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 			DemoSettings.HSplitTop(80.0f, &DemoSettings, 0);
 			if(s_ScrollRegion.AddRect(DemoSettings))
 			{
-				DemoSettings.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClScrollMenuColor, true)), IGraphics::CORNER_ALL, (g_Config.m_ClCornerRoundness / 5.0f));
+				DemoSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 				DemoSettings.VMargin(Margin, &DemoSettings);
 
 				DemoSettings.HSplitTop(HeaderHeight, &Button, &DemoSettings);
@@ -3241,8 +3236,6 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDemoHideIfSolo, Localize("Hide Solo Players in Demos"), &g_Config.m_ClDemoHideIfSolo, &DemoSettings, LineSize);
 			}
 		}
-
 		s_ScrollRegion.End();
 	}
-
 }
