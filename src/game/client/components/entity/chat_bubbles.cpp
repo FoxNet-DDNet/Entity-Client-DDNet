@@ -344,6 +344,7 @@ void CChatBubbles::OnRender()
 
 	if(!g_Config.m_ClChatBubbles)
 		return;
+
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
