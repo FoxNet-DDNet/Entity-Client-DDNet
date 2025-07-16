@@ -732,7 +732,7 @@ public:
 	// E-Client
 	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;
-	void SetLastMovementTime(int Delay) override;
+	void SetLastMovementTime() override;
 
 	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;
