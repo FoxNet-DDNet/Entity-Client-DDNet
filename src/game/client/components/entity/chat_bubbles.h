@@ -41,8 +41,6 @@ class CChatBubbles : public CComponent
 
 	std::vector<CBubbles> m_ChatBubbles[MAX_CLIENTS];
 
-	bool m_ChatBubbleEnabled;
-
 	void RenderCurInput(float y);
 	void RenderChatBubbles(int ClientId);
 
@@ -55,6 +53,9 @@ class CChatBubbles : public CComponent
 	void RemoveBubble(int ClientId, CBubbles Bubble);
 
 	float ShiftBubbles(int ClientId, vec2 Pos, float w);
+
+	void ExpireBubbles();
+	int m_UseChatBubbles = 0;
 
 	void Reset();
 

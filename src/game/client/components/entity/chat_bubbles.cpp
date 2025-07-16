@@ -30,6 +30,9 @@ void CChatBubbles::OnMessage(int MsgType, void *pRawMsg)
 	if(GameClient()->m_SuppressEvents)
 		return;
 
+	if(!g_Config.m_ClChatBubbles)
+		return;
+
 	if(MsgType == NETMSGTYPE_SV_CHAT)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
@@ -307,6 +310,12 @@ float CChatBubbles::ShiftBubbles(int ClientId, vec2 Pos, float w)
 	return 0.0f;
 }
 
+void CChatBubbles::ExpireBubbles()
+{
+	if(m_ChatBubbles->empty())
+		return;
+}
+
 
 float CChatBubbles::GetAlpha(int64_t Time)
 {
@@ -324,19 +333,17 @@ float CChatBubbles::GetAlpha(int64_t Time)
 	float FadeOutProgress = (LineAge - (ShowTime - FadeOutTime)) / FadeOutTime;
 	return std::clamp(1.0f - FadeOutProgress, 0.0f, 1.0f);
 }
-
+ 
 void CChatBubbles::OnRender()
 {
-	if(m_ChatBubbleEnabled != (bool)g_Config.m_ClChatBubbles)
+	if(m_UseChatBubbles != g_Config.m_ClChatBubbles)
 	{
-		m_ChatBubbleEnabled = (bool)g_Config.m_ClChatBubbles;
-		if(!m_ChatBubbleEnabled)
-		{
-			Reset();
-			return;
-		}
+		m_UseChatBubbles = g_Config.m_ClChatBubbles;
+		Reset();
 	}
 
+	if(!g_Config.m_ClChatBubbles)
+		return;
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
@@ -359,6 +366,9 @@ void CChatBubbles::OnRender()
 
 void CChatBubbles::Reset()
 {
+	if(m_ChatBubbles->empty())
+		return;
+
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
 		for(auto &aBubble : m_ChatBubbles[ClientId])
