@@ -251,7 +251,11 @@ void CEClient::GoresMode()
 	{
 		bool GoresBind;
 		const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
-		if(!str_comp(GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key], "+fire;+prevweapon"))
+		const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+		if(!pBind)
+			return;
+
+		if(!str_comp(pBind, "+fire;+prevweapon"))
 			GoresBind = true;
 		else
 			GoresBind = false;
@@ -273,7 +277,7 @@ void CEClient::OnConnect()
 	if(g_Config.m_ClDummy)
 		return;
 
-	GameClient()->m_EClient.m_LastMovement = time_get() + time_freq() * 60;
+	GameClient()->m_EClient.m_LastMovement = time_get();
 
 	// if current server is type "Gores", turn the config on, else turn it off
 
@@ -482,7 +486,7 @@ void CEClient::Rainbow()
 
 	if(Client()->State() == IClient::STATE_ONLINE)
 	{
-		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && m_LastMovement > time_get() && !GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_Afk)
+		if(g_Config.m_ClServerRainbow && m_RainbowDelay < time_get() && m_LastMovement + time_freq() * 30 > time_get() && !GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_Afk)
 		{
 			if(m_RainbowBody[g_Config.m_ClDummy] || m_RainbowFeet[g_Config.m_ClDummy])
 			{
@@ -550,21 +554,21 @@ void CEClient::OnInit()
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
 
 	// Get Bindslot for Mouse1, default shoot bind
-	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
-	if(Key == KEY_UNKNOWN)
-		dbg_msg("E-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
-	else
+	if(g_Config.m_ClDisableGoresOnShutdown)
 	{
-		const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
-		*g_Config.m_ClGoresModeSaved = *GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+		int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
+		if(Key == KEY_UNKNOWN)
+		{
+			dbg_msg("E-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
+		}
+		else
+		{
+			const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
+			const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+			*g_Config.m_ClGoresModeSaved = *pBind;
 
-		// Tells you what the bind is
-		char aBuf[1024];
-		str_format(aBuf, sizeof(aBuf), "Gores Mode Saved Bind Currently is: %s", g_Config.m_ClGoresModeSaved);
-		dbg_msg("E-Client", aBuf);
-
-		// Binds the mouse to the saved bind, also doe
-		GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
+			GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
+		}
 	}
 
 	// Set Kill Counter
@@ -582,7 +586,6 @@ void CEClient::OnNewSnapshot()
 {
 	UpdateTempPlayers();
 	NotifyOnMove();
-	// AutoJoinTeam();
 }
 
 void CEClient::OnRender()
@@ -615,10 +618,9 @@ void CEClient::OnRender()
 		m_SentKill = false;
 	}
 
-	// "secret" effect, makes a circle go around the player
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 	{
-		m_LastMovement = time_get() + time_freq() * 30;
+		m_LastMovement = time_get();
 	}
 
 	if(GameClient()->m_Menus.m_RPC_Ratelimit < time_get() && (GameClient()->m_Menus.m_RPC_Ratelimit - time_get()) / time_freq() > -1)

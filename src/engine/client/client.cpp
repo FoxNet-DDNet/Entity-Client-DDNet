@@ -2199,7 +2199,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					}
 					if((g_Config.m_ClEnabledInfo || g_Config.m_ClListsInfo) && !m_aOnJoinInfo[CONN_MAIN])
 					{
-						GameClient()->SetLastMovementTime(59);
+						GameClient()->SetLastMovementTime();
 						if(m_aReceivedSnapshots[Conn] > 10)
 						{
 							GameClient()->OnJoinInfo();

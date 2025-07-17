@@ -192,7 +192,7 @@ public:
 	 *	+right
 	 *	+jump
 	 */
-	int64_t m_LastMovement = 10.0f;
+	int64_t m_LastMovement;
 
 	bool m_FirstLaunch = false;
 

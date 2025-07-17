@@ -5448,9 +5448,9 @@ void CGameClient::OnJoinInfo()
 	m_EClient.OnConnect();
 }
 
-void CGameClient::SetLastMovementTime(int Delay)
+void CGameClient::SetLastMovementTime()
 {
-	m_EClient.m_LastMovement = time_get() + time_freq() * Delay;
+	m_EClient.m_LastMovement = time_get();
 }
 
 int CGameClient::GetClientId(const char *pName)

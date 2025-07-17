@@ -1,6 +1,6 @@
-// I have no clue why I thought that this is needed but here we are
+#ifndef E_ENUMS_H
+#define E_ENUMS_H
 
-#include <game/generated/protocol.h>
 
 enum
 {
@@ -12,3 +12,5 @@ enum
 	SILENT_MSG = TEAM_ALL - 2,
 	ECLIENT_MSG,
 };
+
+#endif // E_ENUMS_H
