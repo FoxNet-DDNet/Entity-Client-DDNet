@@ -730,6 +730,8 @@ public:
 	bool CanDisplayWarning() const override;
 
 	// E-Client
+	void OnServerBrowserUpdate() override;
+
 	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;
 	void SetLastMovementTime() override;

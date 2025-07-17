@@ -2606,6 +2606,7 @@ void CMenus::RefreshBrowserTab(bool Force)
 			}
 			ServerBrowser()->Refresh(IServerBrowser::TYPE_INTERNET);
 			UpdateCommunityCache(true);
+			UpdateWarlistCache();
 		}
 	}
 	else if(g_Config.m_UiPage == PAGE_LAN)

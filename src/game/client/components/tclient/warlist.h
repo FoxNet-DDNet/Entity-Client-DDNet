@@ -211,6 +211,8 @@ public:
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
 
 	// E-Client
+	int GetWarlistEntryCount(CWarType *pType);
+
 	void AddMuteEntry(const char *pName); // E-Client [Mutes]
 	void AddMute(const char *pName);
 	void DelMute(const char *pName, bool Silent = false);

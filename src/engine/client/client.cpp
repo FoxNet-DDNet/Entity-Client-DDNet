@@ -4193,6 +4193,7 @@ void CClient::UpdateAndSwap()
 void CClient::ServerBrowserUpdate()
 {
 	m_ServerBrowser.RequestResort();
+	GameClient()->OnServerBrowserUpdate();
 }
 
 void CClient::ConchainServerBrowserUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

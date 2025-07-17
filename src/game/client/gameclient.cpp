@@ -5471,3 +5471,8 @@ const char *CGameClient::GetClientName(int ClientId)
 {
 	return m_aClients[ClientId].m_aName;
 }
+
+void CGameClient::OnServerBrowserUpdate()
+{
+	m_Menus.UpdateWarlistCache();
+}
