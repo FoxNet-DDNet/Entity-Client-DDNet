@@ -4,6 +4,8 @@
 #include <engine/console.h>
 #include <engine/shared/protocol.h>
 #include <game/client/component.h>
+#include <unordered_map>
+#include <string>
 
 #define WARLIST_FILE "tclient_warlist.cfg"
 
@@ -200,6 +202,12 @@ public:
 	virtual void OnNewSnapshot() override;
 	virtual void OnConsoleInit() override;
 
+	// Fps Increase
+	std::unordered_map<std::string, CWarEntry *> m_NameWarMap;
+	std::unordered_map<std::string, CWarEntry *> m_ClanWarMap;
+	std::unordered_map<std::string, CMuteEntry *> m_MuteMap;
+	void RebuildWarMaps();
+
 	void UpdateWarPlayers();
 
 	void UpdateWarEntry(int Index, const char *pName, const char *pClan, const char *pReason, CWarType *pType);
@@ -211,8 +219,6 @@ public:
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
 
 	// E-Client
-	int GetWarlistEntryCount(CWarType *pType);
-
 	void AddMuteEntry(const char *pName); // E-Client [Mutes]
 	void AddMute(const char *pName);
 	void DelMute(const char *pName, bool Silent = false);
@@ -231,17 +237,17 @@ public:
 
 	void RemoveWarEntry(CWarEntry *Entry);
 
-	void RemoveWarEntry(int Index);
-	void RemoveWarType(int Index);
+	//void RemoveWarEntry(int Index);
+	//void RemoveWarType(int Index);
 
-	ColorRGBA GetPriorityColor(int ClientId);
-	ColorRGBA GetNameplateColor(int ClientId);
-	ColorRGBA GetClanColor(int ClientId);
-	bool GetAnyWar(int ClientId);
-	bool GetNameWar(int ClientId);
-	bool GetClanWar(int ClientId);
+	ColorRGBA GetPriorityColor(int ClientId) const;
+	ColorRGBA GetNameplateColor(int ClientId) const;
+	ColorRGBA GetClanColor(int ClientId) const;
+	bool GetAnyWar(int ClientId) const;
+	bool GetNameWar(int ClientId) const;
+	bool GetClanWar(int ClientId) const;
 
-	void GetReason(char *pReason, int ClientId);
+	void GetReason(char *pReason, int ClientId) const;
 	CWarDataCache &GetWarData(int ClientId);
 
 	void SortWarEntries();
