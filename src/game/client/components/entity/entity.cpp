@@ -280,7 +280,6 @@ void CEClient::OnConnect()
 	GameClient()->m_EClient.m_LastMovement = time_get();
 
 	// if current server is type "Gores", turn the config on, else turn it off
-
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
 	static bool SentInfoMessage = false;
@@ -587,10 +586,10 @@ void CEClient::OnInit()
 	m_KogModeRebound = false;
 	m_AttempedJoinTeam = false;
 
-	// UpdateRainbow
+	// Rainbow
 	m_RainbowColor[0] = g_Config.m_ClPlayerColorBody;
 
-	// Dummy UpdateRainbow
+	// Dummy Rainbow
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
 
 	// Get Bindslot for Mouse1, default shoot bind
