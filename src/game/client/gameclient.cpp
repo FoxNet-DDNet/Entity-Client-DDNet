@@ -128,9 +128,9 @@ void CGameClient::OnConsoleInit()
 					      &m_Sounds,
 					      &m_Voting,
 					      &m_Particles, // doesn't render anything, just updates all the particles
-					      &m_SkinProfiles,
+					      &m_SkinProfiles, // TClient
 					      &m_RaceDemo,
-					      &m_Rainbow,
+					      &m_Rainbow, // TClient
 					      &m_MapSounds,
 					      &m_Background, // render instead of m_MapLayersBackground when g_Config.m_ClOverlayEntities == 100
 					      &m_MapLayersBackground, // first to render
@@ -140,7 +140,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Ghost,
 					      &m_Players,
 					      &m_MapLayersForeground,
-					      &m_Outlines,
+					      &m_Outlines, // TClient
 					      &m_Particles.m_RenderExplosions,
 					      &m_NamePlates,
 					      &m_ChatBubbles, // E-Client
@@ -148,13 +148,13 @@ void CGameClient::OnConsoleInit()
 					      &m_Particles.m_RenderGeneral,
 					      &m_FreezeBars,
 					      &m_DamageInd,
-					      &m_PlayerIndicator,
+					      &m_PlayerIndicator, // TClient
 					      &m_Hud,
 					      &m_Spectator,
 					      &m_Emoticon,
-					      &m_Bindchat,
-					      &m_Bindwheel,
-					      &m_WarList,
+					      &m_Bindchat, // TClient
+					      &m_Bindwheel, // TClient
+					      &m_WarList, // TClient
 					      &m_InfoMessages,
 					      &m_Chat,
 					      &m_Broadcast,
