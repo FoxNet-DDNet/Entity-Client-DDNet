@@ -2003,8 +2003,8 @@ void CMenus::ConchainUiPageUpdate(IConsole::IResult *pResult, void *pUserData, I
 			// Reset page to internet when there is no favorite community for this page.
 			g_Config.m_UiPage = PAGE_INTERNET;
 		}
-
 		pThis->SetMenuPage(g_Config.m_UiPage);
+		pThis->UpdateWarlistCache();
 	}
 }
 
