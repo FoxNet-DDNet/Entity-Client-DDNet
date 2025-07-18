@@ -377,6 +377,10 @@ void CEClient::NotifyOnMove()
 {
 	if(!g_Config.m_ClChangeTileNotification)
 		return;
+	IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
+	if((pGraphics && pGraphics->WindowActive()) || !Graphics())
+		return; // return when window is active
+
 	const CNetObj_Character *pLocalChar = GameClient()->m_Snap.m_pLocalCharacter;
 	if(!pLocalChar)
 		return;
@@ -425,12 +429,8 @@ void CEClient::NotifyOnMove()
 
 	if(Moved)
 	{
-		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
-		if(pGraphics && !pGraphics->WindowActive() && Graphics())
-		{
-			Client()->Notify("E-Client", "current tile changed");
-			Graphics()->NotifyWindow();
-		}
+		Client()->Notify("E-Client", "current tile changed");
+		Graphics()->NotifyWindow();
 	}
 	m_LastPos = Pos;
 }
@@ -497,7 +497,7 @@ void CEClient::UpdateTempPlayers()
 	}
 }
 
-void CEClient::Rainbow()
+void CEClient::UpdateRainbow()
 {
 	static bool m_RainbowWasOn = false;
 
@@ -587,10 +587,10 @@ void CEClient::OnInit()
 	m_KogModeRebound = false;
 	m_AttempedJoinTeam = false;
 
-	// Rainbow
+	// UpdateRainbow
 	m_RainbowColor[0] = g_Config.m_ClPlayerColorBody;
 
-	// Dummy Rainbow
+	// Dummy UpdateRainbow
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
 
 	// Get Bindslot for Mouse1, default shoot bind
@@ -633,7 +633,7 @@ void CEClient::OnRender()
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return;
 
-	Rainbow();
+	UpdateRainbow();
 	GoresMode();
 
 	// Set Offline RPC on Client start
