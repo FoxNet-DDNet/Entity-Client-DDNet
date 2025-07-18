@@ -377,13 +377,53 @@ void CEClient::NotifyOnMove()
 {
 	if(!g_Config.m_ClChangeTileNotification)
 		return;
-	if(!GameClient()->m_Snap.m_pLocalCharacter)
+	const CNetObj_Character *pLocalChar = GameClient()->m_Snap.m_pLocalCharacter;
+	if(!pLocalChar)
 		return;
 
-	float X = GameClient()->m_Snap.m_aCharacters[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_X;
-	float Y = GameClient()->m_Snap.m_aCharacters[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_Y;
-	vec2 Pos = vec2(round_to_int(X), round_to_int(Y)); // notifying on the smallest bump isnt what we need
-	if(m_LastPos != Pos)
+	int LocalId = GameClient()->m_Snap.m_LocalClientId;
+
+	bool Moved = false;
+
+	int X = GameClient()->m_Snap.m_aCharacters[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_X / 18;
+	int Y = GameClient()->m_Snap.m_aCharacters[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_Y / 18;
+	vec2 Pos = vec2(X, Y);
+	
+	vec2 LocalPos = GameClient()->m_aClients[LocalId].m_RenderPos; // Accurate Pos
+	float MaxDist = 27.5f; 
+
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		if(m_LastPos == Pos)
+			continue;
+		CGameClient::CClientData pClient = GameClient()->m_aClients[ClientId];
+		if(ClientId == LocalId || !pClient.m_Active)
+			continue;
+		if(pClient.m_Solo)
+			continue;
+		if(!GameClient()->m_Teams.SameTeam(LocalId, ClientId))
+			continue;
+		if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData)
+			continue;
+		const CNetObj_Character *pOtherChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
+		vec2 OtherPos = GameClient()->m_aClients[ClientId].m_RenderPos;
+
+		float dist = distance(LocalPos, OtherPos);
+		if(dist < MaxDist + MaxDist)
+			Moved = true;
+
+		// check if the player is hooked to the local player
+		if(GameClient()->m_aClients[ClientId].m_RenderCur.m_HookedPlayer == LocalId)
+			Moved = true;
+
+		// Check for hammer firing
+		bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
+		dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
+		if(Hammering && dist < 70.0f)
+			Moved = true;
+	}
+
+	if(Moved)
 	{
 		IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 		if(pGraphics && !pGraphics->WindowActive() && Graphics())
