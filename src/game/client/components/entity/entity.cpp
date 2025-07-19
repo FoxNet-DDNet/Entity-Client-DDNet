@@ -374,7 +374,7 @@ void CEClient::OnConnect()
 
 void CEClient::NotifyOnMove()
 {
-	if(!g_Config.m_ClChangeTileNotification)
+	if(!g_Config.m_ClNotifyOnMove)
 		return;
 	IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
 	if((pGraphics && pGraphics->WindowActive()) || !Graphics())
