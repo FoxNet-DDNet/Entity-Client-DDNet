@@ -68,6 +68,7 @@
 // Entity
 #include "components/entity/anti_spawn_block.h"
 #include "components/entity/chat_bubbles.h"
+#include "components/entity/quick_actions.h"
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/mapconfig.h"
@@ -197,6 +198,7 @@ public:
 	// Entity
 	CEClient m_EClient;
 	CChatBubbles m_ChatBubbles;
+	CQuickActions m_QuickActions;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CUpdate m_AcUpdate;

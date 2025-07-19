@@ -2390,6 +2390,8 @@ if(CLIENT)
     components/entity/mapconfig.cpp
     components/entity/mapconfig.h
     components/entity/menus_entity.cpp 
+    components/entity/quick_actions.cpp
+    components/entity/quick_actions.h
     components/entity/update.cpp
     components/entity/update.h
     components/flow.cpp
