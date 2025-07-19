@@ -198,14 +198,6 @@ void CChatBubbles::RenderCurInput(float y)
 
 void CChatBubbles::RenderChatBubbles(int ClientId)
 {
-	const CNetObj_PlayerInfo *pInfo = GameClient()->m_Snap.m_apPlayerInfos[ClientId];
-	if(!pInfo)
-		return;
-
-	const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
-	if(!ClientData.m_Active || !ClientData.m_RenderInfo.Valid())
-		return;
-
 	if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
 		return;
 
