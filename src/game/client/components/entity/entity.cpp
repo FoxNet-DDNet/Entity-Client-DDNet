@@ -220,9 +220,17 @@ void CEClient::GoresMode()
 		}
 	}
 
+	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
+	if(Key == KEY_UNKNOWN)
+	{
+		g_Config.m_ClGoresMode = 0;
+		dbg_msg("E-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
+		return;
+	}
+
 	if(!g_Config.m_ClGoresMode && m_KogModeRebound)
 	{
-		GameClient()->m_Binds.Bind(KEY_MOUSE_1, g_Config.m_ClGoresModeSaved);
+		GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
 		m_KogModeRebound = false;
 	}
 
@@ -230,7 +238,7 @@ void CEClient::GoresMode()
 
 	if(!m_KogModeRebound && g_Config.m_ClGoresMode)
 	{
-		GameClient()->m_Binds.Bind(KEY_MOUSE_1, "+fire;+prevweapon");
+		GameClient()->m_Binds.Bind(Key, "+fire;+prevweapon");
 		m_KogModeRebound = true;
 	}
 
@@ -241,31 +249,23 @@ void CEClient::GoresMode()
 
 	// actual code lmfao
 
-	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
-	if(Key == KEY_UNKNOWN)
-	{
-		g_Config.m_ClGoresMode = 0;
-		dbg_msg("E-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
-	}
+
+	bool GoresBind;
+	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
+	const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+	if(!pBind)
+		return;
+
+	if(!str_comp(pBind, "+fire;+prevweapon"))
+		GoresBind = true;
 	else
+		GoresBind = false;
+
+	if(g_Config.m_ClGoresMode && GoresBind)
 	{
-		bool GoresBind;
-		const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
-		const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
-		if(!pBind)
-			return;
-
-		if(!str_comp(pBind, "+fire;+prevweapon"))
-			GoresBind = true;
-		else
-			GoresBind = false;
-
-		if(g_Config.m_ClGoresMode && GoresBind)
+		if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon == 0)
 		{
-			if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon == 0)
-			{
-				GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
-			}
+			GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
 		}
 	}
 }
