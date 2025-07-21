@@ -31,6 +31,8 @@ class CQuickActions : public CComponent
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
+	void DrawDebugLines();
+
 public:
 	class CBind
 	{

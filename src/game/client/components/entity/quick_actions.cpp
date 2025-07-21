@@ -19,7 +19,11 @@ CQuickActions::CQuickActions()
 
 vec2 CQuickActions::GetCursorWorldPos() const
 {
+	if(GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW)
+		return GameClient()->m_Camera.m_Center;
+
 	vec2 Target = GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy];
+
 	vec2 TargetCameraOffset(0, 0);
 	float l = length(Target);
 
@@ -214,6 +218,8 @@ void CQuickActions::OnRender()
 
 	const bool BindsEmpty = m_vBinds.empty();
 
+	// DrawDebugLines();
+
 	if(!m_Active)
 	{
 		if(!BindsEmpty)
@@ -311,10 +317,15 @@ void CQuickActions::ExecuteBind(int Bind)
 
 	if(m_QuickActionId < 0 || m_QuickActionId >= MAX_CLIENTS)
 		return;
-	const char *pTargetName = GameClient()->m_aClients[m_QuickActionId].m_aName;
+	char pTargetName[32];
+
+	str_copy(pTargetName, "\"");
+	str_append(pTargetName, GameClient()->m_aClients[m_QuickActionId].m_aName);
+	str_append(pTargetName, "\"");
+
 	str_format(aCmd, sizeof(aCmd), m_vBinds[Bind].m_aCommand, pTargetName);
-	Console()->ExecuteLine(aCmd);
 	GameClient()->ClientMessage(aCmd);
+	Console()->ExecuteLine(aCmd);
 }
 
 void CQuickActions::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
@@ -337,4 +348,27 @@ void CQuickActions::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUs
 		str_append(aBuf, "\"");
 		pConfigManager->WriteLine(aBuf);
 	}
+}
+
+void CQuickActions::DrawDebugLines()
+{
+	vec2 TargetPos = GetCursorWorldPos();
+	int Id = GetClosetClientId(TargetPos);
+	if(Id < 0 || Id >= MAX_CLIENTS)
+		return;
+
+	CGameClient::CClientData &Target = GameClient()->m_aClients[Id];
+
+	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
+	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	RenderTools()->MapScreenToGroup(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y, Layers()->GameGroup(), GameClient()->m_Camera.m_Zoom);
+
+	const IGraphics::CLineItem Test(Target.m_RenderPos.x, Target.m_RenderPos.y, TargetPos.x, TargetPos.y);
+
+	Graphics()->TextureClear();
+	Graphics()->LinesBegin();
+	Graphics()->LinesDraw(&Test, 1);
+	Graphics()->LinesEnd();
+
+	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
