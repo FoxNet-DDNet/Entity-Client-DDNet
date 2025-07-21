@@ -646,7 +646,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		// right side
 		{
 			GoresMode.VMargin(5.0f, &GoresMode);
-			GoresMode.HSplitTop(120.0f, &GoresMode, &MenuSettings);
+			GoresMode.HSplitTop(140.0f, &GoresMode, &MenuSettings);
 			if(s_ScrollRegion.AddRect(GoresMode))
 			{
 				GoresMode.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -659,6 +659,30 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &GoresMode, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &GoresMode, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDisableGoresOnShutdown, ("Disable on Shutdown"), &g_Config.m_ClDisableGoresOnShutdown, &GoresMode, LineSize);
+
+				// Key Reader for Gores Mode
+				{
+					static int s_GoresModeKey = g_Config.m_ClGoresModeKey;
+
+					const char *pText = Localize("Gores Mode Key:");
+					float Length = TextRender()->TextBoundingBox(FontSize, pText).m_W + 3.5f;
+					CUIRect KeyLabel, KeyButton;
+					GoresMode.HSplitTop(LineSize, &KeyButton, &GoresMode);
+					KeyButton.VSplitLeft(Length, &KeyLabel, &KeyButton);
+
+					Ui()->DoLabel(&KeyLabel, Localize(pText), 14.0f, TEXTALIGN_ML);
+
+					int NewModifierCombination = 0;
+					int NewKey = DoKeyReader(&s_GoresModeKey, &KeyButton, s_GoresModeKey, 0, &NewModifierCombination);
+
+					if(NewKey != s_GoresModeKey)
+					{
+						GameClient()->m_EClient.GoresModeRestore();
+						s_GoresModeKey = NewKey;
+						g_Config.m_ClGoresModeKey = s_GoresModeKey;
+						GameClient()->m_EClient.GoresModeSave(true);
+					}
+				}
 			}
 		}
 

@@ -663,6 +663,8 @@ void CEClient::OnConsoleInit()
 	Console()->Register("reply_last", "?r[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
 	Console()->Register("specid", "i[Id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
 	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Reply to the last ping");
+
+	Console()->Chain("ec_gores_mode", ConchainGoresMode, this);
 }
 
 void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)

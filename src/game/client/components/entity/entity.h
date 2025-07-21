@@ -56,9 +56,7 @@ class CEClient : public CComponent
 	bool m_AttempedJoinTeam;
 	bool m_JoinedTeam;
 
-	bool m_KogModeRebound;
 	bool m_WeaponsGot;
-	bool m_GoresModeWasOn;
 	bool m_GoresServer;
 
 	// Reply to Ping
@@ -182,7 +180,13 @@ public:
 
 	int64_t m_RainbowDelay;
 
+	
+	static void ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	void GoresMode();
+
+	void GoresModeSave(bool Enable = false);
+	void GoresModeRestore();
+
 	int64_t m_JoinTeam;
 	void AutoJoinTeam();
 	void OnConnect();

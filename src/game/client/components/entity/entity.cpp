@@ -202,72 +202,102 @@ void CEClient::AutoJoinTeam()
 void CEClient::GoresMode()
 {
 	// if turning off kog mode and it was on before, rebind to previous bind
+	if(!GameClient()->m_Snap.m_pLocalCharacter)
+		return;
+	if(!g_Config.m_ClGoresMode)
+		return;
 
 	CCharacterCore Core = GameClient()->m_PredictedPrevChar;
 
-	if(g_Config.m_ClGoresModeDisableIfWeapons && g_Config.m_ClGoresMode)
+	if(g_Config.m_ClGoresModeDisableIfWeapons)
 	{
-		if((Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_ExplosionGun || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) && g_Config.m_ClGoresMode)
-		{
-			g_Config.m_ClGoresMode = 0;
+		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_ExplosionGun || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) 
 			m_WeaponsGot = true;
-			m_GoresModeWasOn = true;
-		}
 		if((!Core.m_aWeapons[WEAPON_GRENADE].m_Got && !Core.m_aWeapons[WEAPON_LASER].m_Got && !Core.m_ExplosionGun && !Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) && m_WeaponsGot)
-		{
-			g_Config.m_ClGoresMode = 1;
 			m_WeaponsGot = false;
-		}
+
+		if(m_WeaponsGot)
+			return;
 	}
 
-	int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
-	if(Key == KEY_UNKNOWN)
+	int Key = g_Config.m_ClGoresModeKey;
+	if(Key < KEY_FIRST || Key >= KEY_LAST)
 	{
 		g_Config.m_ClGoresMode = 0;
-		dbg_msg("E-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
+		dbg_msg("E-Client", "Invalid key: %d", Key);
 		return;
 	}
-
-	if(!g_Config.m_ClGoresMode && m_KogModeRebound)
-	{
-		GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
-		m_KogModeRebound = false;
-	}
-
-	// if hasnt rebound yet and turning on kog mode, rebind to kog mode
-
-	if(!m_KogModeRebound && g_Config.m_ClGoresMode)
-	{
-		GameClient()->m_Binds.Bind(Key, "+fire;+prevweapon");
-		m_KogModeRebound = true;
-	}
-
-	// if not local return
-
-	if(!GameClient()->m_Snap.m_pLocalCharacter)
-		return;
-
-	// actual code lmfao
-
-
-	bool GoresBind;
-	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
+	const char *pKeyName = Input()->KeyName(Key);
+	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
 	const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
 	if(!pBind)
 		return;
 
+	bool GoresBind = false;
+
 	if(!str_comp(pBind, "+fire;+prevweapon"))
 		GoresBind = true;
-	else
-		GoresBind = false;
 
-	if(g_Config.m_ClGoresMode && GoresBind)
+	if(!GoresBind)
+		return;
+
+	if(GoresBind)
 	{
 		if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon == 0)
 		{
 			GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
 		}
 	}
+}
+
+void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	CEClient *pSelf = (CEClient *)pUserData;
+	if(pResult->NumArguments())
+	{
+		int GoresMode = pResult->GetInteger(0);
+
+		if(GoresMode)
+		{
+			pSelf->GoresModeSave(true);
+		}
+		else
+		{
+			pSelf->GoresModeRestore();
+		}
+	}
+}
+
+
+void CEClient::GoresModeSave(bool Enable)
+{
+	int Key = g_Config.m_ClGoresModeKey;
+	if(Key < KEY_FIRST || Key >= KEY_LAST)
+	{
+		g_Config.m_ClGoresMode = 0;
+		dbg_msg("E-Client", "Invalid key: %d", Key);
+		return;
+	}
+	const char *pKeyName = Input()->KeyName(Key);
+
+	const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
+	const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
+	str_copy(g_Config.m_ClGoresModeSaved, pBind);
+
+	GameClient()->m_Binds.Bind(Key, "+fire;+prevweapon");
+}
+
+void CEClient::GoresModeRestore()
+{
+	int Key = g_Config.m_ClGoresModeKey;
+	if(Key < KEY_FIRST || Key >= KEY_LAST)
+	{
+		g_Config.m_ClGoresMode = 0;
+		dbg_msg("E-Client", "Invalid key: %d", Key);
+		return;
+	}
+	GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
 }
 
 void CEClient::OnConnect()
@@ -570,7 +600,13 @@ void CEClient::OnShutdown()
 	}
 
 	if(g_Config.m_ClDisableGoresOnShutdown)
+	{
 		g_Config.m_ClGoresMode = 0;
+		int Key = g_Config.m_ClGoresModeKey;
+		if(Key < KEY_FIRST || Key >= KEY_LAST)
+			return;
+		GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
+	}
 
 	g_Config.m_ClKillCounter = m_KillCount;
 }
@@ -583,7 +619,6 @@ void CEClient::OnInit()
 	m_LastMovement = 0;
 
 	m_JoinedTeam = false;
-	m_KogModeRebound = false;
 	m_AttempedJoinTeam = false;
 
 	// Rainbow
@@ -592,23 +627,8 @@ void CEClient::OnInit()
 	// Dummy Rainbow
 	m_RainbowColor[1] = g_Config.m_ClDummyColorBody;
 
-	// Get Bindslot for Mouse1, default shoot bind
 	if(g_Config.m_ClDisableGoresOnShutdown)
-	{
-		int Key = Input()->FindKeyByName(g_Config.m_ClGoresModeKey);
-		if(Key == KEY_UNKNOWN)
-		{
-			dbg_msg("E-Client", "Invalid key: %s", g_Config.m_ClGoresModeKey);
-		}
-		else
-		{
-			const CBinds::CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(g_Config.m_ClGoresModeKey);
-			const char *pBind = GameClient()->m_Binds.m_aapKeyBindings[BindSlot.m_ModifierMask][BindSlot.m_Key];
-			*g_Config.m_ClGoresModeSaved = *pBind;
-
-			GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
-		}
-	}
+		GoresModeSave();
 
 	// Set Kill Counter
 	m_KillCount = g_Config.m_ClKillCounter;
