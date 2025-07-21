@@ -246,6 +246,8 @@ void CChat::OnConsoleInit()
 	Console()->Register("echo", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConEcho, this, "Echo the text in chat window");
 	Console()->Register("message", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClientMessage, this, "Echo the text in chat window");
 	Console()->Register("clear_chat", "", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClearChat, this, "Clear chat messages");
+
+	Console()->Register("set_input", "r[input]", CFGFLAG_CLIENT, ConSetChatInput, this, "Opens chat and sets the input as the message"); // E-Client [Quick Actions]
 }
 
 void CChat::OnInit()
@@ -1782,4 +1784,11 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 		}
 	}
 	return false;
+}
+
+void CChat::ConSetChatInput(IConsole::IResult *pResult, void *pUserData)
+{
+	CChat *pChat = (CChat *)pUserData;
+	pChat->EnableMode(TEAM_FLOCK);
+	pChat->m_Input.Set(pResult->GetString(0));
 }

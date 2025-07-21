@@ -160,7 +160,6 @@ class CChat : public CComponent
 	static void ConChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConShowChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConEcho(IConsole::IResult *pResult, void *pUserData);
-	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client
 	static void ConClearChat(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainChatOld(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -230,5 +229,9 @@ public:
 	// E-Client
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
+
+private:
+	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client
+	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData); // E-Client
 };
 #endif

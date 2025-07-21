@@ -339,10 +339,13 @@ MACRO_CONFIG_INT(ClChatBubbleShowTime, ec_chat_bubble_showtime, 200, 200, 1000, 
 MACRO_CONFIG_INT(ClChatBubbleFadeOut, ec_chat_bubble_fadeout, 35, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long it fades out")
 MACRO_CONFIG_INT(ClChatBubbleFadeIn, ec_chat_bubble_fadein, 15, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "how long it fades in")
 
+// MACRO_CONFIG_INT(ClChatBubblePushOut, ec_chat_bubble_push_out, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Experimental setting to push bubbles away from eachother")
+
 // Warlist Server Browser
 MACRO_CONFIG_INT(ClWarlistServerBrowser, ec_warlist_server_browser, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable Warlist Server Browser, works like the friends tab")
 
-//MACRO_CONFIG_INT(ClChatBubblePushOut, ec_chat_bubble_push_out, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Experimental setting to push bubbles away from eachother")
+// Quick Actions
+MACRO_CONFIG_INT(ClResetQuickActionMouse, ec_reset_quickaction_mouse, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Reset position of mouse when opening the quickactions menu")
 
 // Custom Vairiables from My Server for the editor
 // You can use these if you get my server from https://github.com/FoxNetw/FoxNet-DDNet

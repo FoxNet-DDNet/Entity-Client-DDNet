@@ -37,6 +37,7 @@ enum
 	ENTITY_TAB_SETTINGS = 0,
 	ENTITY_TAB_VISUAL,
 	ENTITY_TAB_WARLIST,
+	ENTITY_TAB_QUICKACTION,
 	ENTITY_TAB_BINDWHEEL,
 	NUMBER_OF_ENTITY_TABS,
 };
@@ -121,6 +122,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		Localize("E-Client Settings"),
 		Localize("Visual Settings"),
 		Localize("Warlist"),
+		Localize("Quick Actions"),
 		Localize("Bindwheel"),
 	};
 
@@ -132,31 +134,18 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, Tab))
 			continue;
 
-		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_SETTINGS))
+
+		for(int i = 0; i < Tab; ++i)
 		{
-			LeftTab = ENTITY_TAB_VISUAL;
-			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL))
-			{
-				LeftTab = ENTITY_TAB_WARLIST;
-				if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST))
-				{
-					LeftTab = ENTITY_TAB_BINDWHEEL;
-				}
-			}
+			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, i) && IsFlagSet(g_Config.m_ClEClientSettingsTabs, LeftTab))
+				LeftTab++;
+		}
+		for(int i = NUMBER_OF_ENTITY_TABS - 1; i > 0; --i)
+		{
+			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, i) && IsFlagSet(g_Config.m_ClEClientSettingsTabs, RightTab))
+				RightTab--;
 		}
 
-		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL))
-		{
-			RightTab = ENTITY_TAB_WARLIST;
-			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST))
-			{
-				RightTab = ENTITY_TAB_VISUAL;
-				if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL))
-				{
-					RightTab = ENTITY_TAB_SETTINGS;
-				}
-			}
-		}
 
 		TabBar.VSplitLeft(TabWidth, &Button, &TabBar);
 
@@ -1313,6 +1302,11 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		s_ScrollRegion.End();
 	}
 
+	if(s_CurTab == ENTITY_TAB_QUICKACTION)
+	{
+		RenderSettingsQuickActions(MainView);
+	}
+
 	if(s_CurTab == ENTITY_TAB_BINDWHEEL)
 	{
 		RenderSettingsBindwheel(MainView);
@@ -1373,17 +1367,21 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettings, Localize("Settings"), &s_ShowSettings, &LeftView, LineSize);
 	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_SETTINGS, s_ShowSettings);
 
-	static int s_ShowBindWheel = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindWheel, Localize("Visual"), &s_ShowBindWheel, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL, s_ShowBindWheel);
+	static int s_ShowVisal = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL);
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowVisal, Localize("Visual"), &s_ShowVisal, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_VISUAL, s_ShowVisal);
 
-	static int s_ShowBindChat = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindChat, Localize("Warlist"), &s_ShowBindChat, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST, s_ShowBindChat);
+	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST);
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowWarlist, Localize("Warlist"), &s_ShowWarlist, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_WARLIST, s_ShowWarlist);
 
-	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, Localize("BindWheel"), &s_ShowStatusBar, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL, s_ShowStatusBar);
+	static int s_ShowQuickActions = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_QUICKACTION);
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowQuickActions, Localize("Quick Actions"), &s_ShowQuickActions, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_QUICKACTION, s_ShowQuickActions);
+
+	static int s_ShowBindwheel = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL);
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindwheel, Localize("Bindwheel"), &s_ShowBindwheel, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL, s_ShowBindwheel);
 
 	// Make this Saveable and somewhere hidden in roaming
 	char DeathCounter[32];
@@ -1838,6 +1836,226 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 	RenderPreview(PREVIEW_CLIENT, X, Y);
 
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
+}
+
+void CMenus::RenderSettingsQuickActions(CUIRect MainView)
+{
+	CUIRect LeftView, RightView, Button, Label;
+
+	MainView.HSplitTop(MarginBetweenSections, nullptr, &MainView);
+	MainView.VSplitLeft(MainView.w / 2.1f, &LeftView, &RightView);
+
+	const float Radius = minimum(RightView.w, RightView.h) / 2.0f;
+	vec2 Pos{RightView.x + RightView.w / 2.0f, RightView.y + RightView.h / 2.0f};
+	// Draw Circle
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
+	Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.3f);
+	Graphics()->DrawCircle(Pos.x, Pos.y, Radius, 64);
+	Graphics()->QuadsEnd();
+
+	static char s_aBindName[QUICKACTIONS_MAX_NAME];
+	static char s_aBindCommand[QUICKACTIONS_MAX_CMD];
+
+	static int s_SelectedBindIndex = -1;
+	int HoveringIndex = -1;
+
+	float MouseDist = distance(Pos, Ui()->MousePos());
+	if(GameClient()->m_QuickActions.m_vBinds.empty()) 
+	{
+		float Size = 20.0f;
+		TextRender()->Text(Pos.x - TextRender()->TextWidth(Size, "Empty") / 2.0f, Pos.y - Size / 2, Size, "Empty");
+	}
+	else if(MouseDist < Radius && MouseDist > Radius * 0.25f)
+	{
+		int SegmentCount = GameClient()->m_QuickActions.m_vBinds.size();
+		float SegmentAngle = 2 * pi / SegmentCount;
+
+		float HoveringAngle = angle(Ui()->MousePos() - Pos) + SegmentAngle / 2;
+		if(HoveringAngle < 0.0f)
+			HoveringAngle += 2.0f * pi;
+
+		HoveringIndex = (int)(HoveringAngle / (2 * pi) * SegmentCount);
+		if(Ui()->MouseButtonClicked(0))
+		{
+			s_SelectedBindIndex = HoveringIndex;
+			str_copy(s_aBindName, GameClient()->m_QuickActions.m_vBinds[HoveringIndex].m_aName);
+			str_copy(s_aBindCommand, GameClient()->m_QuickActions.m_vBinds[HoveringIndex].m_aCommand);
+		}
+		else if(Ui()->MouseButtonClicked(1) && s_SelectedBindIndex >= 0 && HoveringIndex >= 0 && HoveringIndex != s_SelectedBindIndex)
+		{
+			CQuickActions::CBind BindA = GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex];
+			CQuickActions::CBind BindB = GameClient()->m_QuickActions.m_vBinds[HoveringIndex];
+			str_copy(GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex].m_aName, BindB.m_aName);
+			str_copy(GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex].m_aCommand, BindB.m_aCommand);
+			str_copy(GameClient()->m_QuickActions.m_vBinds[HoveringIndex].m_aName, BindA.m_aName);
+			str_copy(GameClient()->m_QuickActions.m_vBinds[HoveringIndex].m_aCommand, BindA.m_aCommand);
+		}
+		else if(Ui()->MouseButtonClicked(2))
+		{
+			s_SelectedBindIndex = HoveringIndex;
+		}
+	}
+	else if(MouseDist < Radius && Ui()->MouseButtonClicked(0))
+	{
+		s_SelectedBindIndex = -1;
+		str_copy(s_aBindName, "");
+		str_copy(s_aBindCommand, "");
+	}
+
+	const float Theta = pi * 2.0f / GameClient()->m_QuickActions.m_vBinds.size();
+	for(int i = 0; i < static_cast<int>(GameClient()->m_QuickActions.m_vBinds.size()); i++)
+	{
+		float FontSizes = 12.0f;
+		if(i == s_SelectedBindIndex)
+		{
+			FontSizes = 20.0f;
+			TextRender()->TextColor(ColorRGBA(0.5f, 1.0f, 0.75f, 1.0f));
+		}
+		else if(i == HoveringIndex)
+			FontSizes = 14.0f;
+
+		const CQuickActions::CBind Bind = GameClient()->m_QuickActions.m_vBinds[i];
+		const float Angle = Theta * i;
+		vec2 TextPos = direction(Angle);
+		TextPos *= Radius * 0.75f;
+
+		float Width = TextRender()->TextWidth(FontSizes, Bind.m_aName);
+		TextPos += Pos;
+		TextPos.x -= Width / 2.0f;
+		TextRender()->Text(TextPos.x, TextPos.y, FontSizes, Bind.m_aName);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+	}
+
+	LeftView.HSplitTop(LineSize, &Button, &LeftView);
+	Button.VSplitLeft(100.0f, &Label, &Button);
+	Ui()->DoLabel(&Label, Localize("Name:"), 14.0f, TEXTALIGN_ML);
+	static CLineInput s_NameInput;
+	s_NameInput.SetBuffer(s_aBindName, sizeof(s_aBindName));
+	s_NameInput.SetEmptyText("Name");
+	Ui()->DoEditBox(&s_NameInput, &Button, 12.0f);
+
+	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+	LeftView.HSplitTop(LineSize, &Button, &LeftView);
+	Button.VSplitLeft(100.0f, &Label, &Button);
+	Ui()->DoLabel(&Label, Localize("Command:"), 14.0f, TEXTALIGN_ML);
+	static CLineInput s_BindInput;
+	s_BindInput.SetBuffer(s_aBindCommand, sizeof(s_aBindCommand));
+	s_BindInput.SetEmptyText(Localize("Command"));
+	Ui()->DoEditBox(&s_BindInput, &Button, 12.0f);
+
+	static CButtonContainer s_AddButton, s_RemoveButton, s_OverrideButton;
+
+	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+	LeftView.HSplitTop(LineSize, &Button, &LeftView);
+	if(DoButton_Menu(&s_OverrideButton, Localize("Override Selected"), 0, &Button) && s_SelectedBindIndex >= 0)
+	{
+		CQuickActions::CBind TempBind;
+		if(str_length(s_aBindName) == 0)
+			str_copy(TempBind.m_aName, "*");
+		else
+			str_copy(TempBind.m_aName, s_aBindName);
+
+		str_copy(GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex].m_aName, TempBind.m_aName);
+		str_copy(GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex].m_aCommand, s_aBindCommand);
+	}
+	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+	LeftView.HSplitTop(LineSize, &Button, &LeftView);
+	CUIRect ButtonAdd, ButtonRemove;
+	Button.VSplitMid(&ButtonRemove, &ButtonAdd, MarginSmall);
+	if(DoButton_Menu(&s_AddButton, Localize("Add Bind"), 0, &ButtonAdd))
+	{
+		CQuickActions::CBind TempBind;
+		if(str_length(s_aBindName) == 0)
+			str_copy(TempBind.m_aName, "*");
+		else
+			str_copy(TempBind.m_aName, s_aBindName);
+
+		GameClient()->m_QuickActions.AddBind(TempBind.m_aName, s_aBindCommand);
+		s_SelectedBindIndex = static_cast<int>(GameClient()->m_QuickActions.m_vBinds.size()) - 1;
+	}
+	if(DoButton_Menu(&s_RemoveButton, Localize("Remove Bind"), 0, &ButtonRemove) && s_SelectedBindIndex >= 0)
+	{
+		GameClient()->m_QuickActions.RemoveBind(s_SelectedBindIndex);
+		s_SelectedBindIndex = -1;
+	}
+
+	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	Ui()->DoLabel(&Label, Localize("Use left mouse to select"), 14.0f, TEXTALIGN_ML);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	Ui()->DoLabel(&Label, Localize("Use right mouse to swap with selected"), 14.0f, TEXTALIGN_ML);
+	LeftView.HSplitTop(LineSize, &Label, &LeftView);
+	Ui()->DoLabel(&Label, Localize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
+
+	// Do Settings Key
+	CKeyInfo Key = CKeyInfo{"Quick Actions Key", "+quickactions", 0, 0};
+	for(int Mod = 0; Mod < CBinds::MODIFIER_COMBINATION_COUNT; Mod++)
+	{
+		for(int KeyId = 0; KeyId < KEY_LAST; KeyId++)
+		{
+			const char *pBind = GameClient()->m_Binds.Get(KeyId, Mod);
+			if(!pBind[0])
+				continue;
+
+			if(str_comp(pBind, Key.m_pCommand) == 0)
+			{
+				Key.m_KeyId = KeyId;
+				Key.m_ModifierCombination = Mod;
+				break;
+			}
+		}
+	}
+
+	// RenderTee
+	{
+		const char *pSkinName = g_Config.m_ClPlayerSkin;
+		int pUseCustomColor = g_Config.m_ClPlayerUseCustomColor;
+		unsigned pColorBody = g_Config.m_ClPlayerColorBody;
+		unsigned pColorFeet = g_Config.m_ClPlayerColorFeet;
+
+		const CSkin *pDefaultSkin = GameClient()->m_Skins.Find("default");
+		const CSkins::CSkinContainer *pOwnSkinContainer = GameClient()->m_Skins.FindContainerOrNullptr(pSkinName[0] == '\0' ? "default" : pSkinName);
+		if(pOwnSkinContainer != nullptr && pOwnSkinContainer->IsSpecial())
+		{
+			pOwnSkinContainer = nullptr; // Special skins cannot be selected, show as missing due to invalid name
+		}
+
+		CTeeRenderInfo OwnSkinInfo;
+		OwnSkinInfo.Apply(pOwnSkinContainer == nullptr || pOwnSkinContainer->Skin() == nullptr ? pDefaultSkin : pOwnSkinContainer->Skin().get());
+		OwnSkinInfo.ApplyColors(pUseCustomColor, pColorBody, pColorFeet);
+		OwnSkinInfo.m_Size = 72.0f;
+
+		// Tee
+		{
+			vec2 DeltaPosition = Ui()->MousePos() - Pos;
+			vec2 TeeDirection = normalize(DeltaPosition);
+
+			const vec2 TeeRenderPos = vec2(Pos.x, Pos.y);
+			RenderTools()->RenderTee(CAnimState::GetIdle(), &OwnSkinInfo, EMOTE_NORMAL, TeeDirection, TeeRenderPos);
+		}
+	}
+
+	CUIRect KeyLabel;
+	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
+	Button.VSplitLeft(120.0f, &KeyLabel, &Button);
+	Button.VSplitLeft(100.0f, &Button, nullptr);
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "%s:", Localize((const char *)Key.m_pName));
+
+	Ui()->DoLabel(&KeyLabel, aBuf, 14.0f, TEXTALIGN_ML);
+	int OldId = Key.m_KeyId, OldModifierCombination = Key.m_ModifierCombination, NewModifierCombination;
+	int NewId = DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
+	if(NewId != OldId || NewModifierCombination != OldModifierCombination)
+	{
+		if(OldId != 0 || NewId == 0)
+			GameClient()->m_Binds.Bind(OldId, "", false, OldModifierCombination);
+		if(NewId != 0)
+			GameClient()->m_Binds.Bind(NewId, Key.m_pCommand, false, NewModifierCombination);
+	}
+	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
+
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetQuickActionMouse, Localize("Reset position of mouse when opening the quick actions menu"), &g_Config.m_ClResetQuickActionMouse, &Button, LineSize);
 }
 
 void CMenus::RenderSettingsBindwheel(CUIRect MainView)

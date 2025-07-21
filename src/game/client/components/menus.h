@@ -811,6 +811,7 @@ public:
 	void RenderSettingsEntity(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
+	void RenderSettingsQuickActions(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderEClientVersionPage(CUIRect MainView);
 
