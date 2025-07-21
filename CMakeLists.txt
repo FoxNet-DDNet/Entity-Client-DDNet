@@ -110,7 +110,7 @@ option(ANTIBOT "Enable support for a dynamic anticheat library (not provided, se
 option(HEADLESS_CLIENT "Build the client without graphics" OFF)
 option(CLIENT "Compile client" ON)
 option(SERVER "Compile server" ON)
-option(TOOLS "Compile tools" OFF)
+option(TOOLS "Compile tools" ON)
 option(DOWNLOAD_GTEST "Download and compile GTest" ${AUTO_DEPENDENCIES_DEFAULT})
 option(STEAM "Build the Steam release version" OFF)
 option(DISCORD "Enable Discord rich presence support" ON)
@@ -124,16 +124,11 @@ option(IPO "Enable interprocedural optimizations" OFF)
 option(FUSE_LD "Linker to use" OFF)
 option(SECURITY_COMPILER_FLAGS "Whether to set security-relevant compiler flags like -D_FORTIFY_SOURCE=2 and -fstack-protector-strong" ON)
 
-if(TARGET_OS STREQUAL "mac")
-    set(TOOLS ON)
-endif()
-
 if(TARGET_OS STREQUAL "android")
-    set(CLIENT ON)
     set(DISCORD OFF)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+if(TARGET_OS STREQUAL "emscripten")
   include(${PROJECT_SOURCE_DIR}/cmake/toolchains/Emscripten.toolchain)
 endif()
 
@@ -716,15 +711,16 @@ endif()
 
 if(TARGET_OS STREQUAL "windows")
   set(PLATFORM_CLIENT)
-  set(PLATFORM_CLIENT_LIBS opengl32 winmm imm32)
+  set(PLATFORM_CLIENT_LIBS opengl32.lib winmm.lib imm32.lib)
   set(PLATFORM_LIBS)
-  list(APPEND PLATFORM_LIBS shlwapi) # PathIsRelativeW
-  list(APPEND PLATFORM_LIBS version ws2_32) # Windows sockets
-  list(APPEND PLATFORM_LIBS advapi32) # Reg* and Crypt* functions
-  list(APPEND PLATFORM_LIBS bcrypt userenv) # for Rust (https://github.com/rust-lang/rust/issues/91974)
-  list(APPEND PLATFORM_LIBS ole32) # CoInitialize(Ex)
-  list(APPEND PLATFORM_LIBS shell32)
-  list(APPEND PLATFORM_LIBS ntdll) # https://github.com/ddnet/ddnet/issues/6725
+  list(APPEND PLATFORM_LIBS shlwapi.lib) # PathIsRelativeW
+  list(APPEND PLATFORM_LIBS version ws2_32.lib) # Windows sockets
+  list(APPEND PLATFORM_LIBS advapi32.lib) # Reg* and Crypt* functions
+  list(APPEND PLATFORM_LIBS bcrypt.lib userenv.lib) # for Rust (https://github.com/rust-lang/rust/issues/91974)
+  list(APPEND PLATFORM_LIBS ole32.lib) # CoInitialize(Ex)
+  list(APPEND PLATFORM_LIBS shell32.lib)
+  list(APPEND PLATFORM_LIBS ntdll.lib) # https://github.com/ddnet/ddnet/issues/6725
+  list(APPEND PLATFORM_LIBS uuid.lib) # FOLDERID_RoamingAppData
 elseif(TARGET_OS STREQUAL "mac")
   find_library(CARBON Carbon)
   find_library(COCOA Cocoa)
@@ -2575,6 +2571,7 @@ if(CLIENT)
     mapitems/layer_tune.cpp
     mapitems/layer_tune.h
     mapitems/map.cpp
+    mapitems/map.h
     mapitems/map_io.cpp
     mapitems/sound.cpp
     mapitems/sound.h
@@ -2797,7 +2794,7 @@ if(SERVER)
     entities/dragger_beam.cpp
     entities/dragger_beam.h
     entities/gun.cpp
-    entities/gun.h  
+    entities/gun.h
     entities/laser.cpp
     entities/laser.h
     entities/light.cpp
@@ -3131,7 +3128,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
   add_custom_target(run_tests
     DEPENDS run_cxx_tests
   )
-  if((NOT MSVC OR CMAKE_BUILD_TYPE STREQUAL Release) AND NOT MINGW)
+  if(NOT MSVC OR CMAKE_BUILD_TYPE STREQUAL Release)
     # On MSVC, Rust tests only work in the release mode because we link our C++
     # code with the debug C standard library (/MTd) but Rust only supports
     # linking to the release C standard library (/MT).
