@@ -372,7 +372,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					}
 					Automation.HSplitTop(2.5f, &Button, &Automation);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChangeTileNotification, "Notify When Player is Being Moved", &g_Config.m_ClChangeTileNotification, &Automation, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNotifyOnMove, "Notify When Player is Being Moved", &g_Config.m_ClChangeTileNotification, &Automation, LineSize);
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, "Anti Mult Spawn Block", &g_Config.m_ClAntiSpawnBlock, &Automation, LineSize);
 					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you Kill and get frozen");

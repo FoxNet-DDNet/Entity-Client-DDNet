@@ -50,6 +50,26 @@ void CWarList::OnConsoleInit()
 	}
 }
 
+void CWarList::RebuildWarMaps()
+{
+	m_NameWarMap.clear();
+	m_ClanWarMap.clear();
+	m_MuteMap.clear();
+
+	for(CWarEntry &entry : m_WarEntries)
+	{
+		if(entry.m_aName[0])
+			m_NameWarMap[entry.m_aName] = &entry;
+		if(entry.m_aClan[0])
+			m_ClanWarMap[entry.m_aClan] = &entry;
+	}
+	for(CMuteEntry &entry : m_MuteEntries)
+	{
+		if(entry.m_aMutedName[0])
+			m_MuteMap[entry.m_aMutedName] = &entry;
+	}
+}
+
 // In-game war Commands
 void CWarList::ConNameIndex(IConsole::IResult *pResult, void *pUserData)
 {
@@ -209,8 +229,6 @@ void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pRe
 	GameClient()->ClientMessage(aBuf);
 
 	AddWarEntry(Entry.m_aName, Entry.m_aClan, Entry.m_aReason, Entry.m_pWarType->m_aWarName);
-	// if(str_comp(Entry.m_aClan, "") != 0 || str_comp(Entry.m_aName, "") != 0)
-	//	m_WarEntries.push_back(Entry);
 }
 
 void CWarList::RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan)
@@ -268,6 +286,8 @@ void CWarList::AddMuteEntry(const char *pName)
 	str_copy(Entry.m_aMutedName, pName);
 
 	m_MuteEntries.push_back(Entry);
+
+	RebuildWarMaps(); // E-Client
 }
 
 void CWarList::AddMute(const char *pName)
@@ -286,6 +306,8 @@ void CWarList::AddMute(const char *pName)
 	m_MuteEntries.push_back(Entry);
 
 	GameClient()->m_EClient.UnTempMute(pName, true);
+
+	RebuildWarMaps(); // E-Client
 }
 
 void CWarList::DelMute(const char *pName, bool Silent)
@@ -321,6 +343,8 @@ void CWarList::DelMute(const char *pName, bool Silent)
 
 	if(!Silent)
 		GameClient()->ClientMessage(aBuf);
+
+	RebuildWarMaps(); // E-Client
 }
 
 void CWarList::UpdateWarEntry(int Index, const char *pName, const char *pClan, const char *pReason, CWarType *pType)
@@ -373,6 +397,8 @@ void CWarList::AddWarEntry(const char *pName, const char *pClan, const char *pRe
 	if(!g_Config.m_ClWarListAllowDuplicates)
 		RemoveWarEntryDuplicates(pName, pClan);
 	m_WarEntries.push_back(Entry);
+
+	RebuildWarMaps(); // E-Client
 }
 
 void CWarList::RemoveWarEntryDuplicates(const char *pName, const char *pClan)
@@ -391,6 +417,8 @@ void CWarList::RemoveWarEntryDuplicates(const char *pName, const char *pClan)
 		else
 			++it;
 	}
+
+	RebuildWarMaps(); // E-Client
 }
 
 void CWarList::AddWarType(const char *pType, ColorRGBA Color)
@@ -416,7 +444,10 @@ void CWarList::RemoveWarEntry(const char *pName, const char *pClan, const char *
 	CWarEntry Entry(WarType, pName, pClan, "");
 	auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), Entry);
 	if(it != m_WarEntries.end())
+	{
 		m_WarEntries.erase(it);
+		RebuildWarMaps(); // E-Client
+	}
 }
 
 void CWarList::RemoveWarEntry(CWarEntry *Entry)
@@ -424,7 +455,10 @@ void CWarList::RemoveWarEntry(CWarEntry *Entry)
 	auto it = std::find_if(m_WarEntries.begin(), m_WarEntries.end(),
 		[Entry](const CWarEntry &WarEntry) { return &WarEntry == Entry; });
 	if(it != m_WarEntries.end())
+	{
 		m_WarEntries.erase(it);
+		RebuildWarMaps(); // E-Client
+	}
 }
 
 void CWarList::RemoveWarType(const char *pType)
@@ -514,7 +548,7 @@ CWarEntry *CWarList::FindWarEntry(const char *pName, const char *pClan, const ch
 		return nullptr;
 }
 
-ColorRGBA CWarList::GetPriorityColor(int ClientId)
+ColorRGBA CWarList::GetPriorityColor(int ClientId) const
 {
 	if(m_WarPlayers[ClientId].IsWarClan && !m_WarPlayers[ClientId].IsWarName)
 		return m_WarPlayers[ClientId].m_ClanColor;
@@ -522,37 +556,37 @@ ColorRGBA CWarList::GetPriorityColor(int ClientId)
 		return m_WarPlayers[ClientId].m_NameColor;
 }
 
-ColorRGBA CWarList::GetNameplateColor(int ClientId)
+ColorRGBA CWarList::GetNameplateColor(int ClientId) const
 {
 	return m_WarPlayers[ClientId].m_NameColor;
 }
 
-ColorRGBA CWarList::GetClanColor(int ClientId)
+ColorRGBA CWarList::GetClanColor(int ClientId) const
 {
 	return m_WarPlayers[ClientId].m_ClanColor;
 }
 
-bool CWarList::GetAnyWar(int ClientId)
+bool CWarList::GetAnyWar(int ClientId) const
 {
 	if(ClientId < 0)
 		return false;
 	return m_WarPlayers[ClientId].IsWarClan || m_WarPlayers[ClientId].IsWarName;
 }
 
-bool CWarList::GetNameWar(int ClientId)
+bool CWarList::GetNameWar(int ClientId) const
 {
 	if(ClientId < 0)
 		return false;
 	return m_WarPlayers[ClientId].IsWarName;
 }
-bool CWarList::GetClanWar(int ClientId)
+bool CWarList::GetClanWar(int ClientId) const
 {
 	if(ClientId < 0)
 		return false;
 	return m_WarPlayers[ClientId].IsWarClan;
 }
 
-void CWarList::GetReason(char *pReason, int ClientId)
+void CWarList::GetReason(char *pReason, int ClientId) const
 {
 	str_copy(pReason, m_WarPlayers[ClientId].m_aReason, sizeof(m_WarPlayers[ClientId].m_aReason));
 }
@@ -577,44 +611,45 @@ void CWarList::UpdateWarPlayers()
 		if(!GameClient()->m_aClients[i].m_Active)
 			continue;
 
-		m_WarPlayers[i].IsMuted = false; // E-Client [Mutes]
+		auto &Client = GameClient()->m_aClients[i];
+		auto &Cache = m_WarPlayers[i];
 
-		m_WarPlayers[i].IsWarName = false;
-		m_WarPlayers[i].IsWarClan = false;
-		memset(m_WarPlayers[i].m_aReason, 0, sizeof(m_WarPlayers[i].m_aReason));
-		m_WarPlayers[i].m_NameColor = ColorRGBA(1, 1, 1, 1);
-		m_WarPlayers[i].m_ClanColor = ColorRGBA(1, 1, 1, 1);
-		m_WarPlayers[i].m_WarGroupMatches.clear();
-		m_WarPlayers[i].m_WarGroupMatches.resize((int)m_WarTypes.size(), false);
+		Cache.IsMuted = false;
+		Cache.IsWarName = false;
+		Cache.IsWarClan = false;
+		memset(Cache.m_aReason, 0, sizeof(Cache.m_aReason));
+		Cache.m_NameColor = ColorRGBA(1, 1, 1, 1);
+		Cache.m_ClanColor = ColorRGBA(1, 1, 1, 1);
+		Cache.m_WarGroupMatches.clear();
+		Cache.m_WarGroupMatches.resize((int)m_WarTypes.size(), false);
 
-		for(CWarEntry &Entry : m_WarEntries)
+		// Name war
+		auto itName = m_NameWarMap.find(Client.m_aName);
+		if(itName != m_NameWarMap.end())
 		{
-			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aName) == 0 && str_comp(Entry.m_aName, "") != 0)
-			{
-				str_copy(m_WarPlayers[i].m_aReason, Entry.m_aReason);
-				m_WarPlayers[i].IsWarName = true;
-				m_WarPlayers[i].m_NameColor = Entry.m_pWarType->m_Color;
-				m_WarPlayers[i].m_WarGroupMatches[Entry.m_pWarType->m_Index] = true;
-			}
-			else if(str_comp(GameClient()->m_aClients[i].m_aClan, Entry.m_aClan) == 0 && str_comp(Entry.m_aClan, "") != 0)
-			{
-				// Name war reason has priority over clan war reason
-				if(!m_WarPlayers[i].IsWarName)
-					str_copy(m_WarPlayers[i].m_aReason, Entry.m_aReason);
-
-				m_WarPlayers[i].IsWarClan = true;
-				m_WarPlayers[i].m_ClanColor = Entry.m_pWarType->m_Color;
-				m_WarPlayers[i].m_WarGroupMatches[Entry.m_pWarType->m_Index] = true;
-			}
+			CWarEntry *entry = itName->second;
+			str_copy(Cache.m_aReason, entry->m_aReason);
+			Cache.IsWarName = true;
+			Cache.m_NameColor = entry->m_pWarType->m_Color;
+			Cache.m_WarGroupMatches[entry->m_pWarType->m_Index] = true;
 		}
 
-		for(CMuteEntry &Entry : m_MuteEntries) // E-Client [Mutes]
+		// Clan war (only if not already a name war)
+		auto itClan = m_ClanWarMap.find(Client.m_aClan);
+		if(itClan != m_ClanWarMap.end())
 		{
-			if(str_comp(GameClient()->m_aClients[i].m_aName, Entry.m_aMutedName) == 0 && str_comp(Entry.m_aMutedName, "") != 0)
-			{
-				m_WarPlayers[i].IsMuted = true;
-			}
+			CWarEntry *entry = itClan->second;
+			if(!Cache.IsWarName)
+				str_copy(Cache.m_aReason, entry->m_aReason);
+			Cache.IsWarClan = true;
+			Cache.m_ClanColor = entry->m_pWarType->m_Color;
+			Cache.m_WarGroupMatches[entry->m_pWarType->m_Index] = true;
 		}
+
+		// Mute
+		auto itMute = m_MuteMap.find(Client.m_aName);
+		if(itMute != m_MuteMap.end())
+			Cache.IsMuted = true;
 	}
 }
 

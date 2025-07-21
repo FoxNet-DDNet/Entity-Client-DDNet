@@ -11,7 +11,7 @@
 MACRO_CONFIG_STR(ClAutoReplyMsg, ec_auto_reply_msg, 255, "I'm currently tabbed out", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply when pinged in chat and ec_auto_reply is set to 1")
 MACRO_CONFIG_INT(ClTabbedOutMsg, ec_tabbed_out_msg, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Let others know when pinged in chat that you are tabbed out")
 
-MACRO_CONFIG_INT(ClChangeTileNotification, ec_change_tile_notification, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notify when leaving current tile type")
+MACRO_CONFIG_INT(ClNotifyOnMove, ec_notify_on_move, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Notifies you when your player moves")
 
 MACRO_CONFIG_COL(ClECMessageColor, ec_message_color, 9633471, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds (usually)")
 MACRO_CONFIG_INT(ClMutedConsoleColor, ec_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
@@ -338,6 +338,9 @@ MACRO_CONFIG_INT(ClChatBubbleSize, ec_chat_bubble_size, 20, 15, 30, CFGFLAG_CLIE
 MACRO_CONFIG_INT(ClChatBubbleShowTime, ec_chat_bubble_showtime, 200, 200, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long to show the bubble for")
 MACRO_CONFIG_INT(ClChatBubbleFadeOut, ec_chat_bubble_fadeout, 35, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long it fades out")
 MACRO_CONFIG_INT(ClChatBubbleFadeIn, ec_chat_bubble_fadein, 15, 15, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "how long it fades in")
+
+// Warlist Server Browser
+MACRO_CONFIG_INT(ClWarlistServerBrowser, ec_warlist_server_browser, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable Warlist Server Browser, works like the friends tab")
 
 //MACRO_CONFIG_INT(ClChatBubblePushOut, ec_chat_bubble_push_out, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Experimental setting to push bubbles away from eachother")
 

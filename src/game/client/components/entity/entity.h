@@ -153,7 +153,7 @@ public:
 	void NotifyOnMove();
 
 	// Rainbow
-	void Rainbow();
+	void UpdateRainbow();
 
 	int m_BothPlayers = true;
 

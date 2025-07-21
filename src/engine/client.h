@@ -398,6 +398,7 @@ public:
 	virtual void Echo(const char *pString) = 0;
 
 	// E-Client
+	virtual void OnServerBrowserUpdate() = 0;
 	virtual void ClientMessage(const char *pString) = 0;
 	virtual void OnJoinInfo() = 0;
 	virtual void SetLastMovementTime() = 0;
