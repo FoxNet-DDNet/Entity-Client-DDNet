@@ -19,7 +19,7 @@ CQuickActions::CQuickActions()
 
 vec2 CQuickActions::GetCursorWorldPos() const
 {
-	if(GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW)
+	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
 		return GameClient()->m_Camera.m_Center;
 
 	vec2 Target = GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy];
