@@ -27,6 +27,7 @@ class CQuickActions : public CComponent
 	static void ConOpenQuickActionMenu(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddQuickAction(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveQuickAction(IConsole::IResult *pResult, void *pUserData);
+	static void ConResetAllQuickActions(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveAllQuickActions(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);

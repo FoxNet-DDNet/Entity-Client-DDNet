@@ -109,6 +109,13 @@ void CQuickActions::ConRemoveQuickAction(IConsole::IResult *pResult, void *pUser
 	pThis->RemoveBind(aName, aCommand);
 }
 
+void CQuickActions::ConResetAllQuickActions(IConsole::IResult *pResult, void *pUserData)
+{
+	CQuickActions *pThis = static_cast<CQuickActions *>(pUserData);
+	pThis->RemoveAllBinds();
+	pThis->AddDefaultBinds();
+}
+
 void CQuickActions::ConRemoveAllQuickActions(IConsole::IResult *pResult, void *pUserData)
 {
 	CQuickActions *pThis = static_cast<CQuickActions *>(pUserData);
@@ -159,20 +166,21 @@ void CQuickActions::OnConsoleInit()
 
 	Console()->Register("add_quickaction", "s[name] s[command]", CFGFLAG_CLIENT, ConAddQuickAction, this, "Add a bind to the quick action menu");
 	Console()->Register("remove_quickaction", "s[name] s[command]", CFGFLAG_CLIENT, ConRemoveQuickAction, this, "Remove a bind from the quick action menu");
+	Console()->Register("reset_all_quickactions", "", CFGFLAG_CLIENT, ConResetAllQuickActions, this, "Resets quick actions to the default ones");
 	Console()->Register("delete_all_quickactions", "", CFGFLAG_CLIENT, ConRemoveAllQuickActions, this, "Removes all quick actions");
 }
 
 void CQuickActions::AddDefaultBinds()
 {
-	AddBind("Add War", "war_name_index 1 %s");
-	AddBind("Add Team", "war_name_index 2 %s");
-	AddBind("Add Helper", "war_name_index 3 %s");
-	AddBind("Add Clan War", "war_clan_index 1 %s");
-	AddBind("Add Clan Team", "war_clan_index 2 %s");
-	AddBind("Player Info", "playerinfo %s");
+	AddBind("Add War", "war_name_index 1 \"%s\"");
+	AddBind("Add Team", "war_name_index 2 \"%s\"");
+	AddBind("Add Helper", "war_name_index 3 \"%s\"");
+	AddBind("Add Clan War", "war_clan_index 1 \"%s\"");
+	AddBind("Add Clan Team", "war_clan_index 2 \"%s\"");
+	AddBind("Player Info", "playerinfo \"%s\"");
 	AddBind("Message Player", "set_input %s: ");
-	AddBind("Whisper Player", "set_input /w %s ");
-	AddBind("Mute", "addmute %s");
+	AddBind("Whisper Player", "set_input /w \"%s\" ");
+	AddBind("Mute", "addmute \"%s\"");
 }
 
 void CQuickActions::OnInit()
@@ -319,12 +327,9 @@ void CQuickActions::ExecuteBind(int Bind)
 		return;
 	char pTargetName[32];
 
-	str_copy(pTargetName, "\"");
-	str_append(pTargetName, GameClient()->m_aClients[m_QuickActionId].m_aName);
-	str_append(pTargetName, "\"");
+	str_copy(pTargetName, GameClient()->m_aClients[m_QuickActionId].m_aName);
 
 	str_format(aCmd, sizeof(aCmd), m_vBinds[Bind].m_aCommand, pTargetName);
-	GameClient()->ClientMessage(aCmd);
 	Console()->ExecuteLine(aCmd);
 }
 
