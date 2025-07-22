@@ -374,6 +374,12 @@ void CChatBubbles::Reset()
 	}
 }
 
+void CChatBubbles::OnStateChange(int NewState, int OldState)
+{
+	if(OldState <= IClient::STATE_CONNECTING)
+		Reset();
+}
+
 void CChatBubbles::OnWindowResize()
 {
 	Reset();

@@ -63,7 +63,9 @@ public:
 	virtual void OnMessage(int MsgType, void *pRawMsg) override;
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnRender() override;
-	virtual void OnWindowResize() override;
+	virtual void OnStateChange(int NewState, int OldState) override;
+
+	virtual void OnWindowResize() override; // so it resets when font is changed
 };
 
 #endif
