@@ -2008,6 +2008,16 @@ void CUi::ShowPopupSelection(float X, float Y, SSelectionPopupContext *pContext)
 	DoPopupMenu(pContext, X, Y, pContext->m_Width, PopupHeight, pContext, PopupSelection, pContext->m_Props);
 }
 
+void CUi::UpdatePopupMenuOffset(const SSelectionPopupContext *pContext, float NewX, float NewY)
+{
+	auto PopupMenu = std::find_if(m_vPopupMenus.begin(), m_vPopupMenus.end(), [pContext](const SPopupMenu PopupMenu) { return PopupMenu.m_pId == pContext; });
+	if(PopupMenu != m_vPopupMenus.end())
+	{
+		PopupMenu->m_Rect.x = NewX;
+		PopupMenu->m_Rect.y = NewY + pContext->m_AlignmentHeight;
+	}
+}
+
 int CUi::DoDropDown(CUIRect *pRect, int CurSelection, const char **pStrs, int Num, SDropDownState &State)
 {
 	if(!State.m_Init)
@@ -2025,7 +2035,10 @@ int CUi::DoDropDown(CUIRect *pRect, int CurSelection, const char **pStrs, int Nu
 	Props.m_HintCanChangePositionOrSize = true;
 	Props.m_ShowDropDownIcon = true;
 	if(IsPopupOpen(&State.m_SelectionPopupContext))
+	{
 		Props.m_Corners = IGraphics::CORNER_ALL & (~State.m_SelectionPopupContext.m_Props.m_Corners);
+		UpdatePopupMenuOffset(&State.m_SelectionPopupContext, pRect->x, pRect->y); // E-Client
+	}
 	if(DoButton_Menu(State.m_UiElement, &State.m_ButtonContainer, LabelFunc, pRect, Props))
 	{
 		State.m_SelectionPopupContext.Reset();

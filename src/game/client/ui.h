@@ -740,6 +740,7 @@ public:
 		void Reset();
 	};
 	void ShowPopupSelection(float X, float Y, SSelectionPopupContext *pContext);
+	void UpdatePopupMenuOffset(const SSelectionPopupContext *pId, float NewX, float NewY); // E-CLient
 
 	struct SColorPickerPopupContext : public SPopupMenuId
 	{
