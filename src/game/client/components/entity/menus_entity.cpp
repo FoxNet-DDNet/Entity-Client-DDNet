@@ -371,7 +371,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		// chat settings
 		{
 			ChatSettings.HSplitTop(Margin, nullptr, &ChatSettings);
-			ChatSettings.HSplitTop(395.0f, &ChatSettings, &ChatBubbles);
+			ChatSettings.HSplitTop(395.0f, &ChatSettings, &PlayerIndicator);
 			if(s_ScrollRegion.AddRect(ChatSettings))
 			{
 				ChatSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -494,30 +494,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					ChatSettings.HSplitTop(-15.0f, &Button, &ChatSettings);
 
 					RenderChatPreview(ChatSettings);
-				}
-			}
-		}
-		{
-			ChatBubbles.HSplitTop(Margin, nullptr, &ChatBubbles);
-			ChatBubbles.HSplitTop(145.0f, &ChatBubbles, &PlayerIndicator);
-			if(s_ScrollRegion.AddRect(ChatBubbles))
-			{
-				ChatBubbles.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-				ChatBubbles.VMargin(Margin, &ChatBubbles);
-
-				ChatBubbles.HSplitTop(HeaderHeight, &Button, &ChatBubbles);
-				Ui()->DoLabel(&Button, Localize("Chat Bubbles"), HeaderSize, HeaderAlignment);
-				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubbles, Localize("Show Chatbubbles above players"), &g_Config.m_ClChatBubbles, &ChatBubbles, LineSize);
-					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
-					Ui()->DoScrollbarOption(&g_Config.m_ClChatBubbleSize, &g_Config.m_ClChatBubbleSize, &Button, Localize("Chat Bubble Size"), 20, 30);
-					ChatBubbles.HSplitTop(MarginSmall, &Button, &ChatBubbles);
-					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
-					DoFloatScrollBar(&g_Config.m_ClChatBubbleShowTime, &g_Config.m_ClChatBubbleShowTime, &Button, Localize("Show the Bubbles for"), 200, 1000, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
-					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
-					DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeIn, &g_Config.m_ClChatBubbleFadeIn, &Button, Localize("fade in for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
-					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
-					DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeOut, &g_Config.m_ClChatBubbleFadeOut, &Button, Localize("fade out for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
 				}
 			}
 		}
@@ -938,25 +914,25 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		MainView.y += ScrollOffset.y;
 
 		// left side in settings menu
-		CUIRect MiscSettings, PlayerSettings, WarVisual, RainbowSettings, DiscordSettings;
-		MainView.VSplitMid(&PlayerSettings, &MiscSettings);
+		CUIRect Miscellaneous, Cosmetics, ServerRainbow, DiscordRpc, ChatBubbles, SweatMode;
+		MainView.VSplitMid(&Cosmetics, &Miscellaneous);
 
 		{
 			bool RainbowOn = g_Config.m_ClRainbowHook || g_Config.m_ClRainbowTees || g_Config.m_ClRainbowWeapon || g_Config.m_ClRainbowOthers;
 			static float Offset = 0.0f;
 
-			PlayerSettings.VMargin(5.0f, &PlayerSettings);
-			PlayerSettings.HSplitTop(245.0f + Offset, &PlayerSettings, &RainbowSettings);
-			if(s_ScrollRegion.AddRect(PlayerSettings))
+			Cosmetics.VMargin(5.0f, &Cosmetics);
+			Cosmetics.HSplitTop(245.0f + Offset, &Cosmetics, &ServerRainbow);
+			if(s_ScrollRegion.AddRect(Cosmetics))
 			{
 				Offset = 0.0f;
-				PlayerSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-				PlayerSettings.VMargin(Margin, &PlayerSettings);
+				Cosmetics.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+				Cosmetics.VMargin(Margin, &Cosmetics);
 
-				PlayerSettings.HSplitTop(HeaderHeight, &Button, &PlayerSettings);
+				Cosmetics.HSplitTop(HeaderHeight, &Button, &Cosmetics);
 				Ui()->DoLabel(&Button, Localize("Cosmetic Settings"), HeaderSize, HeaderAlignment);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &PlayerSettings, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &Cosmetics, LineMargin);
 
 				static std::vector<const char *> s_EffectDropDownNames;
 				s_EffectDropDownNames = {Localize("Off"), Localize("Sparkle effect"), Localize("Fire Trail"), Localize("Switch Effect")};
@@ -965,7 +941,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				s_EffectDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_EffectDropDownScrollRegion;
 				int EffectSelectedOld = g_Config.m_ClEffect;
 				CUIRect EffectDropDownRect;
-				PlayerSettings.HSplitTop(LineSize, &EffectDropDownRect, &PlayerSettings);
+				Cosmetics.HSplitTop(LineSize, &EffectDropDownRect, &Cosmetics);
 				const int EffectSelectedNew = Ui()->DoDropDown(&EffectDropDownRect, EffectSelectedOld, s_EffectDropDownNames.data(), s_EffectDropDownNames.size(), s_EffectDropDownState);
 				if(EffectSelectedOld != EffectSelectedNew)
 				{
@@ -984,32 +960,32 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					}
 				}
 
-				PlayerSettings.HSplitTop(5.0f, &Button, &PlayerSettings);
+				Cosmetics.HSplitTop(5.0f, &Button, &Cosmetics);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectColors, ("Effect Color"), &g_Config.m_ClEffectColors, &PlayerSettings, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectColors, ("Effect Color"), &g_Config.m_ClEffectColors, &Cosmetics, LineMargin);
 
-				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClEffectColors, &PlayerSettings, "Doesn't work if the sprite already has a set color\nMake the sprite the color you want if it doesn't work");
+				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClEffectColors, &Cosmetics, "Doesn't work if the sprite already has a set color\nMake the sprite the color you want if it doesn't work");
 				if(g_Config.m_ClEffectColors)
 				{
 					static CButtonContainer s_EffectR;
-					PlayerSettings.HSplitTop(-3.0f, &Label, &PlayerSettings);
-					PlayerSettings.HSplitTop(-17.0f, &Button, &PlayerSettings);
-					DoLine_ColorPicker(&s_EffectR, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &PlayerSettings, Localize(""), &g_Config.m_ClEffectColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(29057)), true);
-					PlayerSettings.HSplitTop(-10.0f, &Button, &PlayerSettings);
+					Cosmetics.HSplitTop(-3.0f, &Label, &Cosmetics);
+					Cosmetics.HSplitTop(-17.0f, &Button, &Cosmetics);
+					DoLine_ColorPicker(&s_EffectR, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &Cosmetics, Localize(""), &g_Config.m_ClEffectColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(29057)), true);
+					Cosmetics.HSplitTop(-10.0f, &Button, &Cosmetics);
 				}
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectOthers, ("Effect Others"), &g_Config.m_ClEffectOthers, &PlayerSettings, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectOthers, ("Effect Others"), &g_Config.m_ClEffectOthers, &Cosmetics, LineMargin);
 
-				PlayerSettings.HSplitTop(MarginSmall, &Button, &PlayerSettings);
+				Cosmetics.HSplitTop(MarginSmall, &Button, &Cosmetics);
 
 				// ***** Rainbow ***** //
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowTees, Localize("Rainbow Tees"), &g_Config.m_ClRainbowTees, &PlayerSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowWeapon, Localize("Rainbow weapons"), &g_Config.m_ClRainbowWeapon, &PlayerSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowHook, Localize("Rainbow hook"), &g_Config.m_ClRainbowHook, &PlayerSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowOthers, Localize("Rainbow others"), &g_Config.m_ClRainbowOthers, &PlayerSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowTees, Localize("Rainbow Tees"), &g_Config.m_ClRainbowTees, &Cosmetics, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowWeapon, Localize("Rainbow weapons"), &g_Config.m_ClRainbowWeapon, &Cosmetics, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowHook, Localize("Rainbow hook"), &g_Config.m_ClRainbowHook, &Cosmetics, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowOthers, Localize("Rainbow others"), &g_Config.m_ClRainbowOthers, &Cosmetics, LineSize);
 
-				PlayerSettings.HSplitTop(MarginExtraSmall, nullptr, &PlayerSettings);
+				Cosmetics.HSplitTop(MarginExtraSmall, nullptr, &Cosmetics);
 				static std::vector<const char *> s_RainbowDropDownNames;
 				s_RainbowDropDownNames = {Localize("Rainbow"), Localize("Pulse"), Localize("Black"), Localize("Random")};
 				static CUi::SDropDownState s_RainbowDropDownState;
@@ -1017,7 +993,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 				s_RainbowDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_RainbowDropDownScrollRegion;
 				int RainbowSelectedOld = g_Config.m_ClRainbowMode - 1;
 				CUIRect RainbowDropDownRect;
-				PlayerSettings.HSplitTop(LineSize, &RainbowDropDownRect, &PlayerSettings);
+				Cosmetics.HSplitTop(LineSize, &RainbowDropDownRect, &Cosmetics);
 				const int RainbowSelectedNew = Ui()->DoDropDown(&RainbowDropDownRect, RainbowSelectedOld, s_RainbowDropDownNames.data(), s_RainbowDropDownNames.size(), s_RainbowDropDownState);
 				if(RainbowSelectedOld != RainbowSelectedNew)
 				{
@@ -1025,44 +1001,44 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					RainbowSelectedOld = RainbowSelectedNew;
 					dbg_msg("rainbow", "rainbow mode changed to %d", g_Config.m_ClRainbowMode);
 				}
-				PlayerSettings.HSplitTop(MarginExtraSmall, nullptr, &PlayerSettings);
-				PlayerSettings.HSplitTop(LineSize, &Button, &PlayerSettings);
+				Cosmetics.HSplitTop(MarginExtraSmall, nullptr, &Cosmetics);
+				Cosmetics.HSplitTop(LineSize, &Button, &Cosmetics);
 				if(RainbowOn)
 				{
 					Offset += 20.0f;
 					Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, Localize("Rainbow speed"), 0, 200, &CUi::ms_LogarithmicScrollbarScale, 0, "%");
 				}
-				PlayerSettings.HSplitTop(MarginExtraSmall, nullptr, &PlayerSettings);
-				PlayerSettings.HSplitTop(MarginSmall, nullptr, &PlayerSettings);
+				Cosmetics.HSplitTop(MarginExtraSmall, nullptr, &Cosmetics);
+				Cosmetics.HSplitTop(MarginSmall, nullptr, &Cosmetics);
 			}
 		}
 
 		{
 			CUIRect TeeRect;
-			RainbowSettings.HSplitTop(Margin, nullptr, &RainbowSettings);
-			RainbowSettings.HSplitTop(Margin, nullptr, &TeeRect);
-			RainbowSettings.HSplitTop(260.0f, &RainbowSettings, 0);
-			if(s_ScrollRegion.AddRect(RainbowSettings))
+			ServerRainbow.HSplitTop(Margin, nullptr, &ServerRainbow);
+			ServerRainbow.HSplitTop(Margin, nullptr, &TeeRect);
+			ServerRainbow.HSplitTop(260.0f, &ServerRainbow, 0);
+			if(s_ScrollRegion.AddRect(ServerRainbow))
 			{
-				RainbowSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-				RainbowSettings.VMargin(Margin, &RainbowSettings);
+				ServerRainbow.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+				ServerRainbow.VMargin(Margin, &ServerRainbow);
 
-				RainbowSettings.HSplitTop(HeaderHeight, &Button, &RainbowSettings);
+				ServerRainbow.HSplitTop(HeaderHeight, &Button, &ServerRainbow);
 				Ui()->DoLabel(&Button, Localize("Server-Side Rainbow"), HeaderSize, HeaderAlignment);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, Localize("Enable Serverside Rainbow"), &g_Config.m_ClServerRainbow, &RainbowSettings, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, Localize("Enable Serverside Rainbow"), &g_Config.m_ClServerRainbow, &ServerRainbow, LineSize);
 
-				RainbowSettings.HSplitTop(2 * LineSize, &Button, &RainbowSettings);
+				ServerRainbow.HSplitTop(2 * LineSize, &Button, &ServerRainbow);
 				Ui()->DoScrollbarOption(&GameClient()->m_EClient.m_RainbowSpeed, &GameClient()->m_EClient.m_RainbowSpeed, &Button, Localize("Rainbow Speed"), 1, 5000, &CUi::ms_LogarithmicScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "");
-				RainbowSettings.VSplitLeft(52, &Button, &RainbowSettings);
-				RenderHslaScrollbars(&RainbowSettings, &GameClient()->m_EClient.m_PreviewRainbowColor[g_Config.m_ClDummy], false, ColorHSLA::DARKEST_LGT, false);
-				RainbowSettings.VSplitLeft(-140, &Button, &RainbowSettings);
+				ServerRainbow.VSplitLeft(52, &Button, &ServerRainbow);
+				RenderHslaScrollbars(&ServerRainbow, &GameClient()->m_EClient.m_PreviewRainbowColor[g_Config.m_ClDummy], false, ColorHSLA::DARKEST_LGT, false);
+				ServerRainbow.VSplitLeft(-140, &Button, &ServerRainbow);
 
-				RainbowSettings.HSplitTop(-54, &Button, &RainbowSettings);
-				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
+				ServerRainbow.HSplitTop(-54, &Button, &ServerRainbow);
+				ServerRainbow.HSplitTop(28, &Button, &ServerRainbow);
 				Ui()->DoScrollbarOptionRender(&GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy], &GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
-				RainbowSettings.HSplitTop(-3, &Button, &RainbowSettings);
-				RainbowSettings.HSplitTop(28, &Button, &RainbowSettings);
+				ServerRainbow.HSplitTop(-3, &Button, &ServerRainbow);
+				ServerRainbow.HSplitTop(28, &Button, &ServerRainbow);
 				Ui()->DoScrollbarOptionRender(&GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy], &GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
 				{
 					TeeRect.HSplitTop(80.0f, nullptr, &TeeRect);
@@ -1110,26 +1086,26 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					}
 					RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
 				}
-				RainbowSettings.VSplitLeft(88, &Button, &RainbowSettings);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], &RainbowSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowFeet[g_Config.m_ClDummy], "Rainbow Feet", &GameClient()->m_EClient.m_RainbowFeet[g_Config.m_ClDummy], &RainbowSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_BothPlayers, "Do Dummy and Main Player at the same time", &GameClient()->m_EClient.m_BothPlayers, &RainbowSettings, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_ShowServerSide, "Show what it'll look like Server-side", &GameClient()->m_EClient.m_ShowServerSide, &RainbowSettings, LineSize);
+				ServerRainbow.VSplitLeft(88, &Button, &ServerRainbow);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], &ServerRainbow, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowFeet[g_Config.m_ClDummy], "Rainbow Feet", &GameClient()->m_EClient.m_RainbowFeet[g_Config.m_ClDummy], &ServerRainbow, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_BothPlayers, "Do Dummy and Main Player at the same time", &GameClient()->m_EClient.m_BothPlayers, &ServerRainbow, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_ShowServerSide, "Show what it'll look like Server-side", &GameClient()->m_EClient.m_ShowServerSide, &ServerRainbow, LineSize);
 			}
 		}
 
 		// right side in settings menu
 		{
 			static float Offset = 0.0f;
-			MiscSettings.VMargin(5.0f, &MiscSettings);
-			MiscSettings.HSplitTop(105.0f + Offset, &MiscSettings, &DiscordSettings);
-			if(s_ScrollRegion.AddRect(MiscSettings))
+			Miscellaneous.VMargin(5.0f, &Miscellaneous);
+			Miscellaneous.HSplitTop(105.0f + Offset, &Miscellaneous, &DiscordRpc);
+			if(s_ScrollRegion.AddRect(Miscellaneous))
 			{
 				Offset = 0.0f;
-				MiscSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-				MiscSettings.VMargin(Margin, &MiscSettings);
+				Miscellaneous.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+				Miscellaneous.VMargin(Margin, &Miscellaneous);
 
-				MiscSettings.HSplitTop(HeaderHeight, &Button, &MiscSettings);
+				Miscellaneous.HSplitTop(HeaderHeight, &Button, &Miscellaneous);
 				Ui()->DoLabel(&Button, Localize("Miscellaneous"), HeaderSize, HeaderAlignment);
 				{
 					// T-Client
@@ -1149,7 +1125,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 								FontSelectedOld = i;
 						}
 						CUIRect FontDropDownRect, FontDirectory;
-						MiscSettings.HSplitTop(LineSize, &FontDropDownRect, &MiscSettings);
+						Miscellaneous.HSplitTop(LineSize, &FontDropDownRect, &Miscellaneous);
 
 						float Length = TextRender()->TextBoundingBox(FontSize, "Custom Font:").m_W + 3.5f;
 
@@ -1181,29 +1157,29 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 						}
 					}
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &MiscSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &Miscellaneous, LineSize);
 
-					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);
+					Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
 
-					MiscSettings.HSplitTop(20.f, &Button, &MiscSettings);
+					Miscellaneous.HSplitTop(20.f, &Button, &Miscellaneous);
 					Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpec, &g_Config.m_ClRenderCursorSpec, &Button, Localize("Cursor Opacity in Spec"), 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
 				}
 			}
 		}
 
 		{
-			DiscordSettings.HSplitTop(Margin, nullptr, &DiscordSettings);
-			DiscordSettings.HSplitTop(125.0f, &DiscordSettings, &WarVisual);
-			if(s_ScrollRegion.AddRect(DiscordSettings))
+			DiscordRpc.HSplitTop(Margin, nullptr, &DiscordRpc);
+			DiscordRpc.HSplitTop(125.0f, &DiscordRpc, &ChatBubbles);
+			if(s_ScrollRegion.AddRect(DiscordRpc))
 			{
-				DiscordSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-				DiscordSettings.VMargin(Margin, &DiscordSettings);
+				DiscordRpc.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+				DiscordRpc.VMargin(Margin, &DiscordRpc);
 
-				DiscordSettings.HSplitTop(HeaderHeight, &Button, &DiscordSettings);
+				DiscordRpc.HSplitTop(HeaderHeight, &Button, &DiscordRpc);
 				Ui()->DoLabel(&Button, Localize("Discord RPC"), HeaderSize, HeaderAlignment);
 				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordSettings, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordSettings, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &DiscordRpc, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show What Map you're on", &g_Config.m_ClDiscordMapStatus, &DiscordRpc, LineSize);
 					static int DiscordRPC = g_Config.m_ClDiscordRPC;
 					static int DiscordRPCMap = g_Config.m_ClDiscordMapStatus;
 					static char DiscordRPCOnlineMsg[25];
@@ -1247,12 +1223,12 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 3.5f;
 
 					{
-						DiscordSettings.HSplitTop(19.9f, &Button, &MainView);
+						DiscordRpc.HSplitTop(19.9f, &Button, &MainView);
 
-						DiscordSettings.HSplitTop(2.5f, &Label, &Label);
+						DiscordRpc.HSplitTop(2.5f, &Label, &Label);
 						Ui()->DoLabel(&Label, "Online Message:", FontSize, TEXTALIGN_TL);
 
-						Button.VSplitLeft(0.0f, 0, &DiscordSettings);
+						Button.VSplitLeft(0.0f, 0, &DiscordRpc);
 						Button.VSplitLeft(Length, &Label, &Button);
 						Button.VSplitRight(0.0f, &Button, &MainView);
 
@@ -1262,14 +1238,14 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 						Ui()->DoEditBox(&s_PrefixMsg, &Button, 14.0f);
 					}
 
-					DiscordSettings.HSplitTop(21.0f, &Button, &DiscordSettings);
+					DiscordRpc.HSplitTop(21.0f, &Button, &DiscordRpc);
 					{
-						DiscordSettings.HSplitTop(19.9f, &Button, &MainView);
+						DiscordRpc.HSplitTop(19.9f, &Button, &MainView);
 
-						DiscordSettings.HSplitTop(2.5f, &Label, &Label);
+						DiscordRpc.HSplitTop(2.5f, &Label, &Label);
 						Ui()->DoLabel(&Label, "Offline Message:", FontSize, TEXTALIGN_TL);
 
-						Button.VSplitLeft(0.0f, 0, &DiscordSettings);
+						Button.VSplitLeft(0.0f, 0, &DiscordRpc);
 						Button.VSplitLeft(Length, &Label, &Button);
 						Button.VSplitRight(0.0f, &Button, &MainView);
 
@@ -1283,35 +1259,60 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		}
 
 		{
-			WarVisual.HSplitTop(Margin, nullptr, &WarVisual);
-			WarVisual.HSplitTop(130.0f, &WarVisual, 0);
-			if(s_ScrollRegion.AddRect(WarVisual))
+			ChatBubbles.HSplitTop(Margin, nullptr, &ChatBubbles);
+			ChatBubbles.HSplitTop(145.0f, &ChatBubbles, &SweatMode);
+			if(s_ScrollRegion.AddRect(ChatBubbles))
 			{
-				WarVisual.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-				WarVisual.VMargin(Margin, &WarVisual);
+				ChatBubbles.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+				ChatBubbles.VMargin(Margin, &ChatBubbles);
 
-				WarVisual.HSplitTop(HeaderHeight, &Button, &WarVisual);
+				ChatBubbles.HSplitTop(HeaderHeight, &Button, &ChatBubbles);
+				Ui()->DoLabel(&Button, Localize("Chat Bubbles"), HeaderSize, HeaderAlignment);
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubbles, Localize("Show Chatbubbles above players"), &g_Config.m_ClChatBubbles, &ChatBubbles, LineSize);
+					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
+					Ui()->DoScrollbarOption(&g_Config.m_ClChatBubbleSize, &g_Config.m_ClChatBubbleSize, &Button, Localize("Chat Bubble Size"), 20, 30);
+					ChatBubbles.HSplitTop(MarginSmall, &Button, &ChatBubbles);
+					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
+					DoFloatScrollBar(&g_Config.m_ClChatBubbleShowTime, &g_Config.m_ClChatBubbleShowTime, &Button, Localize("Show the Bubbles for"), 200, 1000, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
+					DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeIn, &g_Config.m_ClChatBubbleFadeIn, &Button, Localize("fade in for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+					ChatBubbles.HSplitTop(LineSize, &Button, &ChatBubbles);
+					DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeOut, &g_Config.m_ClChatBubbleFadeOut, &Button, Localize("fade out for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+				}
+			}
+		}
+
+		{
+			SweatMode.HSplitTop(Margin, nullptr, &SweatMode);
+			SweatMode.HSplitTop(130.0f, &SweatMode, 0);
+			if(s_ScrollRegion.AddRect(SweatMode))
+			{
+				SweatMode.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+				SweatMode.VMargin(Margin, &SweatMode);
+
+				SweatMode.HSplitTop(HeaderHeight, &Button, &SweatMode);
 				Ui()->DoLabel(&Button, Localize("Warlist Sweat Mode"), HeaderSize, HeaderAlignment);
 
-				WarVisual.HSplitTop(5, &Button, &WarVisual);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode"), &g_Config.m_ClSweatMode, &WarVisual, LineMargin);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &WarVisual, LineMargin);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSelfColor, ("Don't Change Own Color"), &g_Config.m_ClSweatModeSelfColor, &WarVisual, LineMargin);
+				SweatMode.HSplitTop(5, &Button, &SweatMode);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode"), &g_Config.m_ClSweatMode, &SweatMode, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &SweatMode, LineMargin);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSelfColor, ("Don't Change Own Color"), &g_Config.m_ClSweatModeSelfColor, &SweatMode, LineMargin);
 
 				static CLineInput s_Name;
 				s_Name.SetBuffer(g_Config.m_ClSweatModeSkinName, sizeof(g_Config.m_ClSweatModeSkinName));
 				s_Name.SetEmptyText("x_ninja");
 
-				WarVisual.HSplitTop(2.4f, &Label, &WarVisual);
-				WarVisual.VSplitLeft(25.0f, &WarVisual, &WarVisual);
-				Ui()->DoLabel(&WarVisual, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
+				SweatMode.HSplitTop(2.4f, &Label, &SweatMode);
+				SweatMode.VSplitLeft(25.0f, &SweatMode, &SweatMode);
+				Ui()->DoLabel(&SweatMode, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
 
-				WarVisual.HSplitTop(-1, &Button, &WarVisual);
-				WarVisual.HSplitTop(18.9f, &Button, &WarVisual);
+				SweatMode.HSplitTop(-1, &Button, &SweatMode);
+				SweatMode.HSplitTop(18.9f, &Button, &SweatMode);
 
 				float Length = TextRender()->TextBoundingBox(FontSize, "Skin Name").m_W + 3.5f;
 
-				Button.VSplitLeft(0.0f, 0, &WarVisual);
+				Button.VSplitLeft(0.0f, 0, &SweatMode);
 				Button.VSplitLeft(Length, &Label, &Button);
 				Button.VSplitLeft(150.0f, &Button, 0);
 
