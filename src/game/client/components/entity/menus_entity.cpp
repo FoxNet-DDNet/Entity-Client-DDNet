@@ -1429,7 +1429,7 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 
 	if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, Color))
 	{
-		open_link("https://github.com/qxdFox/Entity-Client-DDNet/releases");
+		Client()->ViewLink(Localize("https://github.com/qxdFox/Entity-Client-DDNet/releases"));
 	}
 
 	// Right Side

@@ -649,7 +649,7 @@ void CEClient::OnConsoleInit()
 	Console()->Register("saveskin", "", CFGFLAG_CLIENT, ConSaveSkin, this, "Save Your Current Info (Skin, name, etc.)");
 
 	// View Link
-	Console()->Register("view_link", "s[Url]", CFGFLAG_CLIENT, ConViewLink, this, "Opens a new Browser tab with that Link");
+	Console()->Register("view_link", "r[Url]", CFGFLAG_CLIENT, ConViewLink, this, "Opens a new Browser tab with that Link");
 
 	// Rainbow Commands
 	Console()->Register("server_rainbow_speed", "?s[speed]", CFGFLAG_CLIENT, ConServerRainbowSpeed, this, "Rainbow Speed of Server side rainbow mode (default = 10)");
@@ -662,7 +662,7 @@ void CEClient::OnConsoleInit()
 
 	Console()->Register("reply_last", "?r[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
 	Console()->Register("specid", "i[Id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
-	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Reply to the last ping");
+	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Crash your own client");
 
 	Console()->Chain("ec_gores_mode", ConchainGoresMode, this);
 }
