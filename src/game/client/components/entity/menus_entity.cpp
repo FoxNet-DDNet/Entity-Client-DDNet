@@ -1185,13 +1185,8 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 					MiscSettings.HSplitTop(5.0f, &Button, &MiscSettings);
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderCursorSpec, ("Show Cursor While Spectating"), &g_Config.m_ClRenderCursorSpec, &MiscSettings, LineSize);
-					if(g_Config.m_ClRenderCursorSpec)
-					{
-						Offset += 20.0f;
-						MiscSettings.HSplitTop(20.f, &Button, &MiscSettings);
-						Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpecOpacity, &g_Config.m_ClRenderCursorSpecOpacity, &Button, Localize("Cursor Opacity"), 1, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
-					}
+					MiscSettings.HSplitTop(20.f, &Button, &MiscSettings);
+					Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpec, &g_Config.m_ClRenderCursorSpec, &Button, Localize("Cursor Opacity in Spec"), 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
 				}
 			}
 		}

@@ -649,6 +649,14 @@ void CEClient::OnNewSnapshot()
 
 void CEClient::OnRender()
 {
+	UpdateRainbow();
+
+	if(GameClient()->m_Menus.m_RPC_Ratelimit < time_get() && (GameClient()->m_Menus.m_RPC_Ratelimit - time_get()) / time_freq() > -1)
+	{
+		Client()->DiscordRPCchange();
+		GameClient()->m_Menus.m_RPC_Ratelimit = -2;
+	}
+
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return;
 
@@ -680,11 +688,5 @@ void CEClient::OnRender()
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 	{
 		m_LastMovement = time_get();
-	}
-
-	if(GameClient()->m_Menus.m_RPC_Ratelimit < time_get() && (GameClient()->m_Menus.m_RPC_Ratelimit - time_get()) / time_freq() > -1)
-	{
-		Client()->DiscordRPCchange();
-		GameClient()->m_Menus.m_RPC_Ratelimit = -2;
 	}
 }

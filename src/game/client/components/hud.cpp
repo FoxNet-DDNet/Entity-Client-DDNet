@@ -562,13 +562,6 @@ void CHud::RenderTextInfo()
 		str_format(aBuf, sizeof(aBuf), "%d", Client()->GetPredictionTime());
 		TextRender()->Text(m_Width - 10.0f - TextRender()->TextWidth(12.0f, aBuf), Showfps ? 20.0f : 5.0f, 12.0f, aBuf, -1.0f);
 	}
-	if(g_Config.m_ClRenderCursorSpec && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW)
-	{
-		int CurWeapon = 1;
-		Graphics()->SetColor(1.0f, 1.0f, 1.0f, g_Config.m_ClRenderCursorSpecOpacity / 100.0f);
-		Graphics()->TextureSet(GameClient()->m_GameSkin.m_aSpriteWeaponCursors[CurWeapon]);
-		Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_aCursorOffset[CurWeapon], m_Width / 2.0f, m_Height / 2.0f, 0.36f, 0.36f);
-	}
 }
 void CHud::RenderConnectionWarning()
 {
@@ -616,6 +609,13 @@ void CHud::RenderCursor()
 		// Render local cursor
 		CurWeapon = maximum(0, GameClient()->m_Snap.m_pLocalCharacter->m_Weapon % NUM_WEAPONS);
 		TargetPos = GameClient()->m_Controls.m_aTargetPos[g_Config.m_ClDummy];
+	}
+	else if(g_Config.m_ClRenderCursorSpec > 0 && GameClient()->m_Snap.m_SpecInfo.m_Active && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW)
+	{
+		CurWeapon = 1;
+		Alpha = g_Config.m_ClRenderCursorSpec / 100.0f;
+		TargetPos = Center;
+		Graphics()->TextureSet(GameClient()->m_GameSkin.m_aSpriteWeaponCursors[CurWeapon]);
 	}
 	else
 	{
