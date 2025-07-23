@@ -176,7 +176,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 		// left side in settings menu
 
-		CUIRect Automation, FreezeKill, ChatSettings, ChatBubbles, PlayerIndicator, GoresMode,
+		CUIRect Automation, FreezeKill, ChatSettings, PlayerIndicator, GoresMode,
 			MenuSettings, TileOutline, AntiLatency, FrozenTeeHud, EntitySettings,
 			FastInput, AntiPingSmoothing, GhostTools;
 		MainView.VSplitMid(&Automation, &GoresMode);

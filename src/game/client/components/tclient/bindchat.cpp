@@ -399,15 +399,6 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 			break;
 		}
 	}
-	// for(const CBind &Bind : m_vBinds)
-	//{
-	//	if(str_startswith_nocase(Bind.m_aName, Chat.m_aCompletionBuffer))
-	//	{
-	//		pCompletionBind = &Bind;
-	//		Chat.m_CompletionChosen = &Bind - m_vBinds.data();
-	//		break;
-	//	}
-	// }
 
 	// insert the command
 	if(pCompletionBind)
