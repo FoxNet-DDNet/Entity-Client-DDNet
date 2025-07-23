@@ -83,6 +83,7 @@ public:
 		// which application to launch when joining activity
 		m_pActivityManager->register_command(m_pActivityManager, CONNECTLINK_DOUBLE_SLASH);
 		m_pActivityManager->register_steam(m_pActivityManager, 412220); // steam id
+		str_copy(m_Activity.details, "Initializing", sizeof(m_Activity.details));
 
 		return false;
 	}

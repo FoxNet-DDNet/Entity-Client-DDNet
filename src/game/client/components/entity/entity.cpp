@@ -663,21 +663,6 @@ void CEClient::OnRender()
 	UpdateRainbow();
 	GoresMode();
 
-	// Set Offline RPC on Client start
-	if(g_Config.m_ClDiscordRPC)
-	{
-		static int64_t Delay = time_get() + time_freq();
-		static bool SetRpc = false;
-		if(!SetRpc && Client()->State() != Client()->STATE_LOADING)
-		{
-			if(Delay < time_get())
-			{
-				Client()->DiscordRPCchange();
-				SetRpc = true;
-			}
-		}
-	}
-
 	if(m_SentKill)
 	{
 		GameClient()->m_AntiSpawnBlock.m_SentKill = true;
