@@ -2010,7 +2010,7 @@ void CUi::ShowPopupSelection(float X, float Y, SSelectionPopupContext *pContext)
 
 void CUi::UpdatePopupMenuOffset(const SSelectionPopupContext *pContext, float NewX, float NewY)
 {
-	auto PopupMenu = std::find_if(m_vPopupMenus.begin(), m_vPopupMenus.end(), [pContext](const SPopupMenu PopupMenu) { return PopupMenu.m_pId == pContext; });
+	auto PopupMenu = std::find_if(m_vPopupMenus.begin(), m_vPopupMenus.end(), [pContext](const SPopupMenu pMenu) { return pMenu.m_pId == pContext; });
 	if(PopupMenu != m_vPopupMenus.end())
 	{
 		PopupMenu->m_Rect.x = NewX;
