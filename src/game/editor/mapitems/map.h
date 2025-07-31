@@ -92,16 +92,16 @@ public:
 
 	std::shared_ptr<CEnvelope> NewEnvelope(CEnvelope::EType Type);
 	void DeleteEnvelope(int Index);
-	void SwapEnvelopes(int Index0, int Index1);
+	int MoveEnvelope(int IndexFrom, int IndexTo);
 	template<typename F>
 	void VisitEnvelopeReferences(F &&Visitor);
 
 	std::shared_ptr<CLayerGroup> NewGroup();
-	int SwapGroups(int Index0, int Index1);
+	int MoveGroup(int IndexFrom, int IndexTo);
 	void DeleteGroup(int Index);
-	void ModifyImageIndex(const FIndexModifyFunction &pfnFunc);
-	void ModifyEnvelopeIndex(const FIndexModifyFunction &pfnFunc);
-	void ModifySoundIndex(const FIndexModifyFunction &pfnFunc);
+	void ModifyImageIndex(const FIndexModifyFunction &IndexModifyFunction);
+	void ModifyEnvelopeIndex(const FIndexModifyFunction &IndexModifyFunction);
+	void ModifySoundIndex(const FIndexModifyFunction &IndexModifyFunction);
 
 	void Clean();
 	void CreateDefault(IGraphics::CTextureHandle EntitiesTexture);

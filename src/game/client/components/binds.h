@@ -36,6 +36,9 @@ public:
 		}
 	};
 
+	// free buffer after use
+	char *GetKeyBindCommand(int ModifierCombination, int Key) const;
+
 public:
 	CBindSlot GetBindSlot(const char *pBindString) const;
 

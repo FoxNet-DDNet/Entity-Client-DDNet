@@ -343,16 +343,10 @@ public:
 	virtual void ShellUnregister() = 0;
 #endif
 
-	enum EMessageBoxType
-	{
-		MESSAGE_BOX_TYPE_ERROR,
-		MESSAGE_BOX_TYPE_WARNING,
-		MESSAGE_BOX_TYPE_INFO,
-	};
-	virtual void ShowMessageBox(const char *pTitle, const char *pMessage, EMessageBoxType Type = MESSAGE_BOX_TYPE_ERROR) = 0;
-	virtual void GetGpuInfoString(char (&aGpuInfo)[256]) = 0;
+	virtual std::optional<int> ShowMessageBox(const IGraphics::CMessageBox &MessageBox) = 0;
+	virtual void GetGpuInfoString(char (&aGpuInfo)[512]) = 0;
 
-	// TClientAdd commentMore actions
+	// TClient
 	bool m_IsLocalFrozen = false;
 
 	// E-Client
@@ -416,6 +410,7 @@ public:
 	virtual void ApplySkin7InfoFromSnapObj(const protocol7::CNetObj_De_ClientInfo *pObj, int ClientId) = 0;
 	virtual int OnDemoRecSnap7(class CSnapshot *pFrom, class CSnapshot *pTo, int Conn) = 0;
 	virtual int TranslateSnap(class CSnapshot *pSnapDstSix, class CSnapshot *pSnapSrcSeven, int Conn, bool Dummy) = 0;
+	virtual void ProcessDemoSnapshot(class CSnapshot *pSnap) = 0;
 
 	virtual bool CheckNewInput() = 0;
 	virtual void InitializeLanguage() = 0;

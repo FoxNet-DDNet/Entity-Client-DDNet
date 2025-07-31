@@ -42,8 +42,9 @@ public:
 	void TickDeferred() override;
 	void TickPaused() override;
 	void Snap(int SnappingClient) override;
-	void PostSnap() override;
 	void SwapClients(int Client1, int Client2) override;
+
+	void PostGlobalSnap();
 
 	bool CanSnapCharacter(int SnappingClient);
 	bool IsSnappingCharacterInView(int SnappingClientId);
@@ -66,8 +67,8 @@ public:
 	void HandleNinja();
 	void HandleJetpack();
 
-	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);
-	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
+	void OnPredictedInput(const CNetObj_PlayerInput *pNewInput);
+	void OnDirectInput(const CNetObj_PlayerInput *pNewInput);
 	void ReleaseHook();
 	void ResetHook();
 	void ResetInput();
@@ -151,7 +152,6 @@ private:
 
 	int m_Health;
 	int m_Armor;
-
 	int m_TriggeredEvents7;
 
 	// the player core for the physics

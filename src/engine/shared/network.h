@@ -68,6 +68,7 @@ enum
 	NET_MAX_CLIENTS = 64,
 	NET_MAX_CONSOLE_CLIENTS = 4,
 	NET_MAX_SEQUENCE = 1 << 10,
+	NET_MAX_PACKET_CHUNKS = 0xFF,
 
 	NET_PACKETFLAG_UNUSED = 1 << 0,
 	NET_PACKETFLAG_TOKEN = 1 << 1,
@@ -86,7 +87,6 @@ enum
 	NET_CTRLMSG_CONNECTACCEPT = 2,
 	NET_CTRLMSG_ACCEPT = 3,
 	NET_CTRLMSG_CLOSE = 4,
-	NET_CTRLMSG_TOKEN = 5,
 
 	NET_CONN_BUFFERSIZE = 1024 * 32,
 
@@ -264,7 +264,7 @@ private:
 	// client 0.7
 	static TOKEN GenerateToken7(const NETADDR *pPeerAddr);
 	class CNetBase *m_pNetBase;
-	bool IsSixup() { return m_Sixup; }
+	bool IsSixup() const { return m_Sixup; }
 
 	//
 	void SetPeerAddr(const NETADDR *pAddr);
@@ -614,6 +614,8 @@ public:
 	static void Init();
 	static int Compress(const void *pData, int DataSize, void *pOutput, int OutputSize);
 	static int Decompress(const void *pData, int DataSize, void *pOutput, int OutputSize);
+
+	static bool IsValidConnectionOrientedPacket(const CNetPacketConstruct *pPacket);
 
 	static void SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, int ControlMsg, const void *pExtra, int ExtraSize, SECURITY_TOKEN SecurityToken, bool Sixup = false);
 	static void SendControlMsgWithToken7(NETSOCKET Socket, NETADDR *pAddr, TOKEN Token, int Ack, int ControlMsg, TOKEN MyToken, bool Extended);
