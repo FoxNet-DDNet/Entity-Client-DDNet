@@ -1149,7 +1149,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 							GameClient()->m_MapImages.SetTextureScale(g_Config.m_ClTextEntitiesSize);
 						}
 						static CButtonContainer s_FontDirectoryId;
-						if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, 0))
+						if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FONT_ICON_FOLDER, 0, &FontDirectory, BUTTONFLAG_LEFT))
 						{
 							Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
 							Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);
@@ -1159,9 +1159,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &Miscellaneous, LineSize);
 
-					Miscellaneous.HSplitTop(5.0f, &Button, &Miscellaneous);
-
-					Miscellaneous.HSplitTop(20.f, &Button, &Miscellaneous);
+					Miscellaneous.HSplitTop(25.f, &Button, &Miscellaneous);
 					Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpec, &g_Config.m_ClRenderCursorSpec, &Button, Localize("Cursor Opacity in Spec"), 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
 				}
 			}
@@ -1375,7 +1373,7 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 		Button.VSplitLeft(MarginSmall, nullptr, &Button);
 		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
 		Ui()->DoLabel(&Label, "qxdFox", LineSize, TEXTALIGN_ML);
-		if(Ui()->DoButton_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, 0))
+		if(Ui()->DoButton_FontIcon(&s_LinkButton, FONT_ICON_ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, BUTTONFLAG_LEFT))
 			Client()->ViewLink("https://github.com/qxdFox");
 	}
 
@@ -2305,7 +2303,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	static CButtonContainer s_ReverseEntries;
 	static bool s_Reversed = true;
-	if(Ui()->DoButton_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, 0))
+	if(Ui()->DoButton_FontIcon(&s_ReverseEntries, FONT_ICON_CHEVRON_DOWN, 0, &Button, BUTTONFLAG_LEFT))
 	{
 		s_Reversed = !s_Reversed;
 	}
@@ -2371,7 +2369,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		DeleteButton.VSplitLeft(MarginSmall, nullptr, &DeleteButton);
 		DeleteButton.VSplitRight(MarginExtraSmall, &DeleteButton, nullptr);
 
-		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
+		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, BUTTONFLAG_LEFT))
 			GameClient()->m_WarList.RemoveWarEntry(pEntry);
 
 		bool IsClan = false;
