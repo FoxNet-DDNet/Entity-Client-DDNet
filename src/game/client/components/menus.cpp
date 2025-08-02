@@ -2590,7 +2590,6 @@ void CMenus::SetMenuPage(int NewPage)
 		if(OldPage != NewPage || ForceRefresh)
 		{
 			RefreshBrowserTab(ForceRefresh);
-			UpdateWarlistCache();
 		}
 	}
 }
@@ -2607,7 +2606,6 @@ void CMenus::RefreshBrowserTab(bool Force)
 			}
 			ServerBrowser()->Refresh(IServerBrowser::TYPE_INTERNET);
 			UpdateCommunityCache(true);
-			UpdateWarlistCache();
 		}
 	}
 	else if(g_Config.m_UiPage == PAGE_LAN)
@@ -2643,6 +2641,7 @@ void CMenus::RefreshBrowserTab(bool Force)
 			UpdateCommunityCache(true);
 		}
 	}
+	UpdateWarlistCache();
 }
 
 void CMenus::ForceRefreshLanPage()

@@ -1913,9 +1913,13 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 	RenderServerbrowserTabBar(TabBar);
 	RenderServerbrowserToolBox(ToolBox);
 
+
 	// E-Client
-	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && m_vWarlistCache.empty())
+	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && !m_WarlistInited)
+	{
 		UpdateWarlistCache();
+		m_WarlistInited = true;
+	}
 }
 
 template<typename F>
