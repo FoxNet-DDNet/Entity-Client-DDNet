@@ -776,10 +776,12 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		}
 
 		{
+			static float Offset = 0.0f;
 			TileOutline.HSplitTop(Margin, nullptr, &TileOutline);
-			TileOutline.HSplitTop(g_Config.m_ClOutline ? 295.0f : 80.0f, &TileOutline, &AntiLatency);
+			TileOutline.HSplitTop(g_Config.m_ClOutline ? 270.0f + Offset : 80.0f, &TileOutline, &AntiLatency);
 			if(s_ScrollRegion.AddRect(TileOutline))
 			{
+				Offset = 0.0f;
 				TileOutline.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 				TileOutline.VMargin(Margin, &TileOutline);
 
@@ -793,32 +795,75 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineEntities, Localize("Only show outlines in entities"), &g_Config.m_ClOutlineEntities, &TileOutline, LineSize);
 
 						TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
-						Ui()->DoScrollbarOption(&g_Config.m_ClOutlineWidth, &g_Config.m_ClOutlineWidth, &Button, Localize("Outline width"), 1, 16);
-						TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
 						Ui()->DoScrollbarOption(&g_Config.m_ClOutlineAlpha, &g_Config.m_ClOutlineAlpha, &Button, Localize("Outline alpha"), 0, 100);
 						TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
 						Ui()->DoScrollbarOption(&g_Config.m_ClOutlineAlphaSolid, &g_Config.m_ClOutlineAlphaSolid, &Button, Localize("Outline Alpha (walls)"), 0, 100);
 
-						TileOutline.HSplitTop(10.0f, &Button, &TileOutline);
-
 						static CButtonContainer s_OutlineColorFreezeId, s_OutlineColorSolidId, s_OutlineColorTeleId, s_OutlineColorUnfreezeId, s_OutlineColorKillId;
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineFreeze, Localize("Outline Freeze & Deep"), &g_Config.m_ClOutlineFreeze, &TileOutline, LineMargin);
-						TileOutline.HSplitTop(10.0f, &Button, &TileOutline);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineSolid, Localize("Outline walls"), &g_Config.m_ClOutlineSolid, &TileOutline, LineSize);
-						TileOutline.HSplitTop(10.0f, &Button, &TileOutline);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineTele, Localize("Outline teleporter"), &g_Config.m_ClOutlineTele, &TileOutline, LineSize);
-						TileOutline.HSplitTop(10.0f, &Button, &TileOutline);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineUnFreeze, Localize("Outline unfreeze & undeep"), &g_Config.m_ClOutlineUnFreeze, &TileOutline, LineSize);
-						TileOutline.HSplitTop(10.0f, &Button, &TileOutline);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineKill, Localize("Outline kill"), &g_Config.m_ClOutlineKill, &TileOutline, LineSize);
 
-						TileOutline.HSplitTop(-140.0f, &Button, &TileOutline);
+						TileOutline.HSplitTop(5.0f, &Button, &TileOutline);
 
+						const float ScrollBarOffset = 8.5f;
+
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineFreeze, Localize("Outline freezes & deeps"), &g_Config.m_ClOutlineFreeze, &TileOutline, LineSize);
+						TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
 						DoLine_ColorPicker(&s_OutlineColorFreezeId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorFreeze, ColorRGBA(0.0f, 0.0f, 0.0f), false);
-						DoLine_ColorPicker(&s_OutlineColorSolidId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorSolid, ColorRGBA(0.0f, 0.0f, 0.0f), false);
-						DoLine_ColorPicker(&s_OutlineColorTeleId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorTele, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+						if(g_Config.m_ClOutlineFreeze)
+						{
+							Offset += 25.0f - ScrollBarOffset;
+							TileOutline.HSplitTop(-ScrollBarOffset, &Button, &TileOutline);
+							TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
+							Ui()->DoScrollbarOption(&g_Config.m_ClOutlineWidthFreeze, &g_Config.m_ClOutlineWidthFreeze, &Button, Localize("Freeze width"), 1, 16);
+							TileOutline.HSplitTop(5.0f, &Button, &TileOutline);
+						}
+
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineUnFreeze, Localize("Outline unfreezes & undeeps"), &g_Config.m_ClOutlineUnFreeze, &TileOutline, LineSize);
+						TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
 						DoLine_ColorPicker(&s_OutlineColorUnfreezeId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorUnfreeze, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+						if(g_Config.m_ClOutlineUnFreeze)
+						{
+							Offset += 25.0f - ScrollBarOffset;
+							TileOutline.HSplitTop(-ScrollBarOffset, &Button, &TileOutline);
+							TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
+							Ui()->DoScrollbarOption(&g_Config.m_ClOutlineWidthUnFreeze, &g_Config.m_ClOutlineWidthUnFreeze, &Button, Localize("Unfreeze width"), 1, 16);
+							TileOutline.HSplitTop(5.0f, &Button, &TileOutline);
+						}
+
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineSolid, Localize("Outline solids"), &g_Config.m_ClOutlineSolid, &TileOutline, LineSize);
+						TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
+						DoLine_ColorPicker(&s_OutlineColorSolidId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorSolid, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+						if(g_Config.m_ClOutlineSolid)
+						{
+							Offset += 25.0f - ScrollBarOffset;
+							TileOutline.HSplitTop(-ScrollBarOffset, &Button, &TileOutline);
+							TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
+							Ui()->DoScrollbarOption(&g_Config.m_ClOutlineWidthSolid, &g_Config.m_ClOutlineWidthSolid, &Button, Localize("Solid width"), 1, 16);
+							TileOutline.HSplitTop(5.0f, &Button, &TileOutline);
+						}
+
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineTele, Localize("Outline teleporters"), &g_Config.m_ClOutlineTele, &TileOutline, LineSize);
+						TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
+						DoLine_ColorPicker(&s_OutlineColorTeleId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorTele, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+						if(g_Config.m_ClOutlineTele)
+						{
+							Offset += 25.0f - ScrollBarOffset;
+							TileOutline.HSplitTop(-ScrollBarOffset, &Button, &TileOutline);
+							TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
+							Ui()->DoScrollbarOption(&g_Config.m_ClOutlineWidthTele, &g_Config.m_ClOutlineWidthTele, &Button, Localize("Tele width"), 1, 16);
+							TileOutline.HSplitTop(5.0f, &Button, &TileOutline);
+						}
+
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineKill, Localize("Outline kills"), &g_Config.m_ClOutlineKill, &TileOutline, LineSize);
+						TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
 						DoLine_ColorPicker(&s_OutlineColorKillId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorKill, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+						if(g_Config.m_ClOutlineKill)
+						{
+							Offset += 25.0f - ScrollBarOffset;
+							TileOutline.HSplitTop(-ScrollBarOffset, &Button, &TileOutline);
+							TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
+							Ui()->DoScrollbarOption(&g_Config.m_ClOutlineKillWidth, &g_Config.m_ClOutlineKillWidth, &Button, Localize("Kill width"), 1, 16);
+							TileOutline.HSplitTop(5.0f, &Button, &TileOutline);
+						}
 					}
 				}
 			}
