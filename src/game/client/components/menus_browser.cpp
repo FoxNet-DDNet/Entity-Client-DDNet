@@ -1914,10 +1914,10 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 	RenderServerbrowserToolBox(ToolBox);
 
 	// E-Client
-	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && !m_WarlistInited)
+	if(!ServerBrowser()->IsRefreshing() && !ServerBrowser()->IsGettingServerlist() && !m_WarlistInitalized)
 	{
 		UpdateWarlistCache();
-		m_WarlistInited = true;
+		m_WarlistInitalized = true;
 	}
 }
 
@@ -2127,10 +2127,10 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 			continue;
 		}
 
-		for(const CWarlistCache &match : m_vWarlistCache)
+		for(const CWarlistCache &Entry : m_vWarlistCache)
 		{
 			// Only show entries for this war type
-			if(match.m_pWarType != GameClient()->m_WarList.m_WarTypes[WarlistType])
+			if(Entry.m_pWarType != GameClient()->m_WarList.m_WarTypes[WarlistType])
 				continue;
 
 			{
@@ -2146,11 +2146,11 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 			if(ScrollRegion.RectClipped(Rect))
 				continue;
 
-			const bool Inside = Ui()->HotItem() == match.ListItemId() || Ui()->HotItem() == match.RemoveButtonId() || Ui()->HotItem() == match.CommunityTooltipId() || Ui()->HotItem() == match.SkinTooltipId();
-			int ButtonResult = Ui()->DoButtonLogic(match.ListItemId(), 0, &Rect, BUTTONFLAG_LEFT);
+			const bool Inside = Ui()->HotItem() == Entry.ListItemId() || Ui()->HotItem() == Entry.RemoveButtonId() || Ui()->HotItem() == Entry.CommunityTooltipId() || Ui()->HotItem() == Entry.SkinTooltipId();
+			int ButtonResult = Ui()->DoButtonLogic(Entry.ListItemId(), 0, &Rect, BUTTONFLAG_LEFT);
 
-			ColorRGBA BgColor = match.m_pWarType ? match.m_pWarType->m_Color.WithAlpha(Inside ? 0.45f : 0.3f) : ColorRGBA(1, 1, 1, 0.3f);
-			if(match.m_IsAfk)
+			ColorRGBA BgColor = Entry.m_pWarType ? Entry.m_pWarType->m_Color.WithAlpha(Inside ? 0.45f : 0.3f) : ColorRGBA(1, 1, 1, 0.3f);
+			if(Entry.m_IsAfk)
 				BgColor.a *= 0.75f;
 			Rect.Draw(BgColor, IGraphics::CORNER_ALL, 5.0f);
 			Rect.Margin(2.0f, &Rect);
@@ -2168,32 +2168,40 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 			CUIRect Skin;
 			Rect.VSplitLeft(Rect.h, &Skin, &Rect);
 			Rect.VSplitLeft(2.0f, nullptr, &Rect);
-			if(match.Skin()[0] != '\0')
+			if(Entry.Skin()[0] != '\0')
 			{
-				const CTeeRenderInfo TeeInfo = GetTeeRenderInfo(vec2(Skin.w, Skin.h), match.Skin(), match.CustomSkinColors(), match.CustomSkinColorBody(), match.CustomSkinColorFeet());
+				const CTeeRenderInfo TeeInfo = GetTeeRenderInfo(vec2(Skin.w, Skin.h), Entry.Skin(), Entry.CustomSkinColors(), Entry.CustomSkinColorBody(), Entry.CustomSkinColorFeet());
 				const CAnimState *pIdleState = CAnimState::GetIdle();
 				vec2 OffsetToMid;
 				CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
 				const vec2 TeeRenderPos = vec2(Skin.x + Skin.w / 2.0f, Skin.y + Skin.h * 0.55f + OffsetToMid.y);
-				RenderTools()->RenderTee(pIdleState, &TeeInfo, match.IsAfk() ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
-				Ui()->DoButtonLogic(match.SkinTooltipId(), 0, &Skin, BUTTONFLAG_NONE);
-				GameClient()->m_Tooltips.DoToolTip(match.SkinTooltipId(), &Skin, match.Skin());
+				RenderTools()->RenderTee(pIdleState, &TeeInfo, Entry.IsAfk() ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
+				Ui()->DoButtonLogic(Entry.SkinTooltipId(), 0, &Skin, BUTTONFLAG_NONE);
+				GameClient()->m_Tooltips.DoToolTip(Entry.SkinTooltipId(), &Skin, Entry.Skin());
 			}
 			Rect.HSplitTop(11.0f, &NameLabel, &ClanLabel);
 
 			// name
-			Ui()->DoLabel(&NameLabel, match.Name(), FontSize - 1.0f, TEXTALIGN_ML);
+			char pNameBuf[MAX_NAME_LENGTH];
+			str_copy(pNameBuf, Entry.Name());
+			if(Inside && str_comp(Entry.m_pEntry->m_aReason, "") != 0)
+			{
+				str_copy(pNameBuf, Entry.m_pEntry->m_aReason);
+				TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f));
+			}
+			Ui()->DoLabel(&NameLabel, pNameBuf, FontSize - 1.0f, TEXTALIGN_ML);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 			// clan
-			Ui()->DoLabel(&ClanLabel, match.Clan(), FontSize - 2.0f, TEXTALIGN_ML);
+			Ui()->DoLabel(&ClanLabel, Entry.Clan(), FontSize - 2.0f, TEXTALIGN_ML);
 
 			bool FoxNet = false;
 			{
 				using namespace std;
-				const char *aName = str_find_nocase(match.m_aAddress, ":");
+				const char *aName = str_find_nocase(Entry.m_aAddress, ":");
 
-				int n = str_length(match.m_aAddress) - str_length(aName);
-				string ServerIp(match.m_aAddress);
+				int n = str_length(Entry.m_aAddress) - str_length(aName);
+				string ServerIp(Entry.m_aAddress);
 				ServerIp.erase(n);
 
 				if(!str_comp(ServerIp.c_str(), "85.215.138.194"))
@@ -2203,7 +2211,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 			}
 
 			// community icon
-			const CCommunity *pCommunity = ServerBrowser()->Community(match.m_aCommunityId);
+			const CCommunity *pCommunity = ServerBrowser()->Community(Entry.m_aCommunityId);
 			if(FoxNet)
 			{
 				CUIRect FoxRect;
@@ -2229,45 +2237,45 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 					InfoLabel.VSplitLeft(21.0f, &CommunityIcon, &InfoLabel);
 					InfoLabel.VSplitLeft(2.0f, nullptr, &InfoLabel);
 					m_CommunityIcons.Render(pIcon, CommunityIcon, true);
-					Ui()->DoButtonLogic(match.CommunityTooltipId(), 0, &CommunityIcon, BUTTONFLAG_NONE);
-					GameClient()->m_Tooltips.DoToolTip(match.CommunityTooltipId(), &CommunityIcon, pCommunity->Name());
+					Ui()->DoButtonLogic(Entry.CommunityTooltipId(), 0, &CommunityIcon, BUTTONFLAG_NONE);
+					GameClient()->m_Tooltips.DoToolTip(Entry.CommunityTooltipId(), &CommunityIcon, pCommunity->Name());
 				}
 			}
 
 			// server info text
 			char aLatency[16];
-			str_format(aLatency, sizeof(aLatency), "%d", match.Latency());
+			str_format(aLatency, sizeof(aLatency), "%d", Entry.Latency());
 			if(aLatency[0] != '\0')
-				str_format(aBuf, sizeof(aBuf), "%s | %s | %s", match.m_aMap, match.m_aGameType, aLatency);
+				str_format(aBuf, sizeof(aBuf), "%s | %s | %s", Entry.m_aMap, Entry.m_aGameType, aLatency);
 			else
-				str_format(aBuf, sizeof(aBuf), "%s | %s", match.m_aMap, match.m_aGameType);
+				str_format(aBuf, sizeof(aBuf), "%s | %s", Entry.m_aMap, Entry.m_aGameType);
 			Ui()->DoLabel(&InfoLabel, aBuf, FontSize - 2.0f, TEXTALIGN_ML);
 
 			// remove button
 			if(Inside)
 			{
-				TextRender()->TextColor(Ui()->HotItem() == match.RemoveButtonId() ? TextRender()->DefaultTextColor() : ColorRGBA(0.4f, 0.4f, 0.4f, 1.0f));
+				TextRender()->TextColor(Ui()->HotItem() == Entry.RemoveButtonId() ? TextRender()->DefaultTextColor() : ColorRGBA(0.4f, 0.4f, 0.4f, 1.0f));
 				TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 				TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
 				Ui()->DoLabel(&RemoveButton, FONT_ICON_TRASH, RemoveButton.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
 				TextRender()->SetRenderFlags(0);
 				TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
-				if(Ui()->DoButtonLogic(match.RemoveButtonId(), 0, &RemoveButton, BUTTONFLAG_LEFT))
+				if(Ui()->DoButtonLogic(Entry.RemoveButtonId(), 0, &RemoveButton, BUTTONFLAG_LEFT))
 				{
-					GameClient()->m_WarList.RemoveWarEntry(match.m_pEntry);
+					GameClient()->m_WarList.RemoveWarEntry(Entry.m_pEntry);
 					ButtonResult = 0;
 					UpdateWarlistCache();
 				}
-				GameClient()->m_Tooltips.DoToolTip(match.RemoveButtonId(), &RemoveButton, Localize("Click to remove entry"));
+				GameClient()->m_Tooltips.DoToolTip(Entry.RemoveButtonId(), &RemoveButton, Localize("Click to remove entry"));
 			}
 
 			// handle click and double click on item
 			if(ButtonResult)
 			{
-				str_copy(g_Config.m_UiServerAddress, match.m_aAddress);
+				str_copy(g_Config.m_UiServerAddress, Entry.m_aAddress);
 				m_ServerBrowserShouldRevealSelection = true;
-				if(ButtonResult == 1 && Ui()->DoDoubleClickLogic(match.ListItemId()))
+				if(ButtonResult == 1 && Ui()->DoDoubleClickLogic(Entry.ListItemId()))
 				{
 					Connect(g_Config.m_UiServerAddress);
 				}
