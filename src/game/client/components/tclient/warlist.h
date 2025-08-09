@@ -150,15 +150,13 @@ class CWarList : public CComponent
 	static void ConRemoveName(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveClan(IConsole::IResult *pResult, void *pUserData);
 
-	// E-Client
-	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
-	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
-
 	// Backend Commands for config file
 	static void ConAddWarEntry(IConsole::IResult *pResult, void *pUserData);
 	static void ConUpsertWarType(IConsole::IResult *pResult, void *pUserData);
 
 	// E-Client
+	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
+	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
