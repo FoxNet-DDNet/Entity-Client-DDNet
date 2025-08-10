@@ -284,11 +284,11 @@ MACRO_CONFIG_STR(ClSweatModeSkinName, ec_sweat_mode_skin_name, 24, "x_ninja", CF
 MACRO_CONFIG_INT(ClEffectSpeed, ec_effect_speed, 50, 1, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How Fast The Particles Should Update")
 MACRO_CONFIG_INT(ClEffectSpeedOverride, ec_effect_speed_override, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Change the Speed to an \"ideal\" one after switching to a different effect")
 
-MACRO_CONFIG_COL(ClEffectColor, ec_effect_color, 14155743, CFGFLAG_CLIENT | CFGFLAG_SAVE, "effect Color")
-MACRO_CONFIG_INT(ClEffectColors, ec_effect_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "effect Color")
+MACRO_CONFIG_COL(ClEffectColor, ec_effect_color, 14155743, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Effect Color")
+MACRO_CONFIG_INT(ClEffectColors, ec_effect_colors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Do Effect Color")
 
-MACRO_CONFIG_INT(ClEffect, ec_effect, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on  Effect Client Side")
-MACRO_CONFIG_INT(ClEffectOthers, ec_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turn on Effect Client Side")
+MACRO_CONFIG_INT(ClEffect, ec_effect, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show effect for own player")
+MACRO_CONFIG_INT(ClEffectOthers, ec_effect_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show effects for others")
 MACRO_CONFIG_INT(ClSmallSkins, ec_small_skins, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Small tees")
 
 // Serverside Rainbow

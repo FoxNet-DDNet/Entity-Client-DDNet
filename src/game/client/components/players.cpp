@@ -1193,7 +1193,9 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 			ShowFor = 3; // All
 	}
 	else if(ShowEffectOthers)
+	{
 		ShowFor = 2; // All but Self | doesn't exist currently but just in case
+	}
 
 	if((ShowFor == 1 && Local) || (ShowFor == 2 && !Local) || ShowFor == 3)
 	{
