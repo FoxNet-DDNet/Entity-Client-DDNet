@@ -81,6 +81,7 @@
 #include "components/tclient/player_indicator.h"
 #include "components/tclient/rainbow.h"
 #include "components/tclient/skinprofiles.h"
+#include "components/tclient/statusbar.h"
 #include "components/tclient/warlist.h"
 
 class CGameInfo
@@ -205,12 +206,13 @@ public:
 	CMapConfig m_MapConfig;
 
 	// T-Client
-	CSkinProfiles m_SkinProfiles;
 	CBindChat m_Bindchat;
 	CBindWheel m_Bindwheel;
 	CPlayerIndicator m_PlayerIndicator;
 	COutlines m_Outlines;
 	CRainbow m_Rainbow;
+	CSkinProfiles m_SkinProfiles;
+	CStatusBar m_StatusBar;
 	CWarList m_WarList;
 
 private:

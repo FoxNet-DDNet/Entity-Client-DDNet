@@ -808,8 +808,11 @@ public:
 
 	void RenderChatPreview(CUIRect MainView);
 	void RenderSettingsEntity(CUIRect MainView);
+	void RenderSettingsEClient(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
+	void RenderSettingsVisual(CUIRect MainView);
+	void RenderSettingsStatusbar(CUIRect MainView);
 	void RenderSettingsQuickActions(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderEClientVersionPage(CUIRect MainView);

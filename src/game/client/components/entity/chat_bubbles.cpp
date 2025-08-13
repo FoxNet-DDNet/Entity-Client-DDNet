@@ -91,9 +91,9 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 			return;
 		if(g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK)
 			return;
-		if( GameClient()->m_aClients[ClientId].m_Foe)
+		if(GameClient()->m_aClients[ClientId].m_Foe)
 			return;
-		if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
+		if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute)
 			return;
 		else if(g_Config.m_ClWarList && g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar))
 			return;
@@ -251,7 +251,7 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 			float x = Position.x - (BoundingBox.m_W / 2.0f + g_Config.m_ClChatBubbleSize / 15.0f);
 			float y = BaseY - aBubble.m_OffsetY - BoundingBox.m_H - FontSize;
 
-			//float PushBubble = ShiftBubbles(ClientId, vec2(x - FontSize / 2.0f, y - FontSize / 2.0f), BoundingBox.m_W + FontSize * 1.20f);
+			// float PushBubble = ShiftBubbles(ClientId, vec2(x - FontSize / 2.0f, y - FontSize / 2.0f), BoundingBox.m_W + FontSize * 1.20f);
 			float PushBubble = 0;
 
 			Graphics()->DrawRect((x - FontSize / 2.0f) + PushBubble, y - FontSize / 2.0f,
@@ -267,8 +267,8 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 // have to store the bubbles position in CBubbles in order to do this properly
 float CChatBubbles::ShiftBubbles(int ClientId, vec2 Pos, float w)
 {
-	//if(!g_Config.m_ClChatBubblePushOut)
-		return 0.0f;
+	// if(!g_Config.m_ClChatBubblePushOut)
+	return 0.0f;
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
@@ -308,7 +308,6 @@ void CChatBubbles::ExpireBubbles()
 		return;
 }
 
-
 float CChatBubbles::GetAlpha(int64_t Time)
 {
 	const float FadeOutTime = g_Config.m_ClChatBubbleFadeOut / 100.0f;
@@ -325,7 +324,7 @@ float CChatBubbles::GetAlpha(int64_t Time)
 	float FadeOutProgress = (LineAge - (ShowTime - FadeOutTime)) / FadeOutTime;
 	return std::clamp(1.0f - FadeOutProgress, 0.0f, 1.0f);
 }
- 
+
 void CChatBubbles::OnRender()
 {
 	if(m_UseChatBubbles != g_Config.m_ClChatBubbles)

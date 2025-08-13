@@ -2046,7 +2046,6 @@ int CUi::DoDropDown(CUIRect *pRect, int CurSelection, const char **pStrs, int Nu
 	if(IsPopupOpen(&State.m_SelectionPopupContext))
 	{
 		Props.m_Corners = IGraphics::CORNER_ALL & (~State.m_SelectionPopupContext.m_Props.m_Corners);
-		UpdatePopupMenuOffset(&State.m_SelectionPopupContext, pRect->x, pRect->y); // E-Client
 	}
 	if(DoButton_Menu(State.m_UiElement, &State.m_ButtonContainer, LabelFunc, pRect, Props))
 	{
