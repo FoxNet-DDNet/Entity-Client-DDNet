@@ -2588,6 +2588,8 @@ if(CLIENT)
     quick_action.h
     quick_actions.cpp
     quick_actions.h
+    references.cpp
+    references.h
     smooth_value.cpp
     smooth_value.h
     tileart.cpp
@@ -3594,7 +3596,7 @@ foreach(target ${TARGETS})
     target_compile_options(${target} PRIVATE /utf-8) # Use UTF-8 for source files.
     # Enable Edit & Continue (Hot Reload) support
     if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
-      set_property(TARGET ${target} PROPERTY MSVC_DEBUG_INFORMATION_FORMAT $<$<CONFIG:Debug>:EditAndContinue>)
+      set_property(TARGET ${target} PROPERTY MSVC_DEBUG_INFORMATION_FORMAT $<IF:$<CONFIG:Debug>,EditAndContinue,Embedded>)
       target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:/INCREMENTAL>)
     endif()
   endif()
