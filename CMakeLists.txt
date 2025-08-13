@@ -1461,7 +1461,7 @@ set(EXPECTED_DATA
   fonts/DejaVuSans.ttf
   fonts/Font_Awesome_6_Free-Solid-900.otf
   fonts/GlowSansJ-Compressed-Book.otf
-  fonts/NotoEmoji-VariableFont_wght.ttf
+  fonts/NotoEmoji-Regular.ttf
   fonts/SourceHanSans.ttc
   fonts/index.json
   game.png
@@ -2537,6 +2537,8 @@ if(CLIENT)
     enums.h
     explanations.cpp
     explanations.h
+    file_browser.cpp
+    file_browser.h
     font_typer.cpp
     font_typer.h
     layer_selector.cpp

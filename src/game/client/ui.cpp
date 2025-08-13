@@ -1452,6 +1452,7 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 			if(MouseButton(0))
 			{
 				SetActiveItem(pId);
+				m_pLastActiveScrollbar = pId;
 				m_ActiveScrollbarOffset = MouseX() - Handle.x;
 				Grabbed = true;
 			}
@@ -1459,6 +1460,7 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 		else if(MouseButtonClicked(0))
 		{
 			SetActiveItem(pId);
+			m_pLastActiveScrollbar = pId;
 			m_ActiveScrollbarOffset = Handle.w / 2.0f;
 			Grabbed = true;
 		}
@@ -1512,8 +1514,9 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
 	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
 	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
+	const bool DelayUpdate = Flags & CUi::SCROLLBAR_OPTION_DELAYUPDATE;
 
-	int Value = *pOption;
+	int Value = (DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId)) ? m_ScrollbarValue : *pOption;
 	if(Infinite)
 	{
 		Max += 1;
@@ -1574,6 +1577,12 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 	{
 		if(Value == Max)
 			Value = 0;
+	}
+
+	if(DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId))
+	{
+		m_ScrollbarValue = Value;
+		return false;
 	}
 
 	if(*pOption != Value)

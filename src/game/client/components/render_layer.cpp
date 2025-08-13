@@ -224,7 +224,11 @@ bool CRenderLayerGroup::DoRender(const CRenderLayerParams &Params) const
 
 void CRenderLayerGroup::Render(const CRenderLayerParams &Params)
 {
-	RenderTools()->MapScreenToGroup(Params.m_Center.x, Params.m_Center.y, m_pGroup, Params.m_Zoom);
+	int ParallaxZoom = std::clamp((maximum(m_pGroup->m_ParallaxX, m_pGroup->m_ParallaxY)), 0, 100);
+	float aPoints[4];
+	RenderTools()->MapScreenToWorld(Params.m_Center.x, Params.m_Center.y, m_pGroup->m_ParallaxX, m_pGroup->m_ParallaxY, (float)ParallaxZoom,
+		m_pGroup->m_OffsetX, m_pGroup->m_OffsetY, Graphics()->ScreenAspect(), Params.m_Zoom, aPoints);
+	Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
 }
 
 /**************
@@ -548,6 +552,7 @@ void CRenderLayerTile::UploadTileData(std::optional<CTileLayerVisuals> &VisualsO
 
 	// create the visual and set it in the optional, afterwards get it
 	CTileLayerVisuals v;
+	v.OnInterfacesInit(GameClient());
 	VisualsOptional = v;
 	CTileLayerVisuals &Visuals = VisualsOptional.value();
 
@@ -756,6 +761,20 @@ void CRenderLayerTile::UploadTileData(std::optional<CTileLayerVisuals> &VisualsO
 	RenderLoading();
 }
 
+void CRenderLayerTile::Unload()
+{
+	if(m_VisualTiles.has_value())
+	{
+		m_VisualTiles->Unload();
+		m_VisualTiles = std::nullopt;
+	}
+}
+
+void CRenderLayerTile::CTileLayerVisuals::Unload()
+{
+	Graphics()->DeleteBufferContainer(m_BufferContainerIndex);
+}
+
 int CRenderLayerTile::GetDataIndex(unsigned int &TileSize) const
 {
 	TileSize = sizeof(CTile);
@@ -897,6 +916,7 @@ void CRenderLayerQuads::Init()
 	std::vector<CTmpQuad> vTmpQuads;
 	std::vector<CTmpQuadTextured> vTmpQuadsTextured;
 	CQuadLayerVisuals v;
+	v.OnInterfacesInit(GameClient());
 	m_VisualQuad = v;
 	CQuadLayerVisuals *pQLayerVisuals = &(m_VisualQuad.value());
 
@@ -1025,6 +1045,20 @@ void CRenderLayerQuads::Init()
 		Graphics()->IndicesNumRequiredNotify(m_pLayerQuads->m_NumQuads * 6);
 	}
 	RenderLoading();
+}
+
+void CRenderLayerQuads::Unload()
+{
+	if(m_VisualQuad.has_value())
+	{
+		m_VisualQuad->Unload();
+		m_VisualQuad = std::nullopt;
+	}
+}
+
+void CRenderLayerQuads::CQuadLayerVisuals::Unload()
+{
+	Graphics()->DeleteBufferContainer(m_BufferContainerIndex);
 }
 
 void CRenderLayerQuads::CalculateClipping()
@@ -1281,6 +1315,16 @@ void CRenderLayerEntityTele::Init()
 	UploadTileData(m_VisualTeleNumbers, 1, false);
 }
 
+void CRenderLayerEntityTele::Unload()
+{
+	CRenderLayerTile::Unload();
+	if(m_VisualTeleNumbers.has_value())
+	{
+		m_VisualTeleNumbers->Unload();
+		m_VisualTeleNumbers = std::nullopt;
+	}
+}
+
 void CRenderLayerEntityTele::RenderTileLayerWithTileBuffer(const ColorRGBA &Color, const CRenderLayerParams &Params)
 {
 	Graphics()->BlendNormal();
@@ -1337,6 +1381,21 @@ void CRenderLayerEntitySpeedup::Init()
 	UploadTileData(m_VisualTiles, 0, true);
 	UploadTileData(m_VisualForce, 1, false);
 	UploadTileData(m_VisualMaxSpeed, 2, false);
+}
+
+void CRenderLayerEntitySpeedup::Unload()
+{
+	CRenderLayerTile::Unload();
+	if(m_VisualForce.has_value())
+	{
+		m_VisualForce->Unload();
+		m_VisualForce = std::nullopt;
+	}
+	if(m_VisualMaxSpeed.has_value())
+	{
+		m_VisualMaxSpeed->Unload();
+		m_VisualMaxSpeed = std::nullopt;
+	}
 }
 
 void CRenderLayerEntitySpeedup::GetTileData(unsigned char *pIndex, unsigned char *pFlags, int *pAngleRotate, unsigned int x, unsigned int y, int CurOverlay) const
@@ -1399,6 +1458,21 @@ void CRenderLayerEntitySwitch::Init()
 	UploadTileData(m_VisualTiles, 0, false);
 	UploadTileData(m_VisualSwitchNumberTop, 1, false);
 	UploadTileData(m_VisualSwitchNumberBottom, 2, false);
+}
+
+void CRenderLayerEntitySwitch::Unload()
+{
+	CRenderLayerTile::Unload();
+	if(m_VisualSwitchNumberTop.has_value())
+	{
+		m_VisualSwitchNumberTop->Unload();
+		m_VisualSwitchNumberTop = std::nullopt;
+	}
+	if(m_VisualSwitchNumberBottom.has_value())
+	{
+		m_VisualSwitchNumberBottom->Unload();
+		m_VisualSwitchNumberBottom = std::nullopt;
+	}
 }
 
 void CRenderLayerEntitySwitch::GetTileData(unsigned char *pIndex, unsigned char *pFlags, int *pAngleRotate, unsigned int x, unsigned int y, int CurOverlay) const

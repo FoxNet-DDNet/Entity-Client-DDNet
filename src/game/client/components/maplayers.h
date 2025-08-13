@@ -59,11 +59,12 @@ public:
 	void OnInit() override;
 	void OnRender() override;
 	void OnMapLoad() override;
+	void Unload();
 
 	virtual CCamera *GetCurCamera();
 
 private:
-	std::vector<std::unique_ptr<CRenderLayer>> m_vRenderLayers;
+	std::vector<std::unique_ptr<CRenderLayer>> m_vpRenderLayers;
 	int GetLayerType(const CMapItemLayer *pLayer) const;
 	CRenderLayerParams m_Params;
 };

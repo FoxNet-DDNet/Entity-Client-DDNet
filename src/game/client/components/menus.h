@@ -376,7 +376,6 @@ protected:
 		int m_CustomSkinColorFeet;
 
 	public:
-		CFriendItem() {}
 		CFriendItem(const CFriendInfo *pFriendInfo) :
 			m_pServerInfo(nullptr),
 			m_IsPlayer(false),

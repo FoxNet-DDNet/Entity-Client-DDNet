@@ -18,7 +18,6 @@ class CMenuMap : public CBackgroundEngineMap
 class CTheme
 {
 public:
-	CTheme() {}
 	CTheme(const char *pName, bool HasDay, bool HasNight) :
 		m_Name(pName), m_HasDay(HasDay), m_HasNight(HasNight) {}
 
@@ -102,7 +101,6 @@ private:
 
 public:
 	CMenuBackground();
-	~CMenuBackground() override {}
 	int Sizeof() const override { return sizeof(*this); }
 
 	void OnInterfacesInit(CGameClient *pClient) override;

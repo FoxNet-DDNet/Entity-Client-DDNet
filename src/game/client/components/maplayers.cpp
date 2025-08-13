@@ -71,6 +71,13 @@ CMapLayers::CMapLayers(int Type, bool OnlineOnly)
 	m_Params.m_RenderTileBorder = true;
 }
 
+void CMapLayers::Unload()
+{
+	for(auto &pLayer : m_vpRenderLayers)
+		pLayer->Unload();
+	m_vpRenderLayers.clear();
+}
+
 void CMapLayers::OnInit()
 {
 	m_pLayers = Layers();
@@ -86,7 +93,7 @@ void CMapLayers::OnMapLoad()
 {
 	m_pEnvelopePoints = std::make_shared<CMapBasedEnvelopePointAccess>(m_pLayers->Map());
 	bool PassedGameLayer = false;
-	m_vRenderLayers.clear();
+	Unload();
 
 	const char *pLoadingTitle = Localize("Loading map");
 	const char *pLoadingMessage = Localize("Uploading map data to GPU");
@@ -123,7 +130,7 @@ void CMapLayers::OnMapLoad()
 			}
 
 			if(pRenderLayerGroup)
-				m_vRenderLayers.push_back(std::move(pRenderLayerGroup));
+				m_vpRenderLayers.push_back(std::move(pRenderLayerGroup));
 
 			std::unique_ptr<CRenderLayer> pRenderLayer;
 
@@ -204,7 +211,7 @@ void CMapLayers::OnMapLoad()
 				if(pRenderLayer->IsValid())
 				{
 					pRenderLayer->Init();
-					m_vRenderLayers.push_back(std::move(pRenderLayer));
+					m_vpRenderLayers.push_back(std::move(pRenderLayer));
 				}
 			}
 		}
@@ -226,7 +233,7 @@ void CMapLayers::OnRender()
 	m_Params.m_RenderText = g_Config.m_ClTextEntities;
 
 	bool DoRenderGroup = true;
-	for(auto &&pRenderLayer : m_vRenderLayers)
+	for(auto &pRenderLayer : m_vpRenderLayers)
 	{
 		if(pRenderLayer->IsGroup())
 			DoRenderGroup = pRenderLayer->DoRender(m_Params);
