@@ -602,19 +602,19 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 		else
 			SetPreviewLine(PREVIEW_CLIENT, -1, "— ", "Echo command executed", FLAG_CLIENT, 0);
 		SetPreviewLine(PREVIEW_ENEMY, 6, "Enemy", "Nobo", FLAG_ENEMY, 0);
-		SetPreviewLine(PREVIEW_HELPER, 3, "Helper", "Ima Help this random :>", FLAG_HELPER, 0);
-		SetPreviewLine(PREVIEW_TEAMMATE, 10, "Teammate", "Help me There's too many!", FLAG_TEAMMATE, 0);
-		SetPreviewLine(PREVIEW_SPEC, 11, "Random Spectator", "Crazy Gameplay dude", FLAG_SPEC, 0);
+		SetPreviewLine(PREVIEW_HELPER, 3, "Helper", "Ima help this random :>", FLAG_HELPER, 0);
+		SetPreviewLine(PREVIEW_TEAMMATE, 10, "Teammate", "Help me!", FLAG_TEAMMATE, 0);
+		SetPreviewLine(PREVIEW_SPEC, 11, "Random Spectator", "Crazy gameplay dude", FLAG_SPEC, 0);
 	}
 
-	SetLineSkin(1, GameClient()->m_Skins.Find("pinky"));
-	SetLineSkin(2, GameClient()->m_Skins.Find("default_flower"));
-	SetLineSkin(3, GameClient()->m_Skins.Find("cammostripes"));
-	SetLineSkin(4, GameClient()->m_Skins.Find("beast"));
-	SetLineSkin(5, GameClient()->m_Skins.Find("default"));
-	SetLineSkin(6, GameClient()->m_Skins.Find("Robot"));
-	SetLineSkin(7, GameClient()->m_Skins.Find("Catnoa"));
-	SetLineSkin(8, GameClient()->m_Skins.Find("turtle"));
+	SetLineSkin(PREVIEW_HIGHLIGHT, GameClient()->m_Skins.Find("pinky"));
+	SetLineSkin(PREVIEW_TEAM, GameClient()->m_Skins.Find("default_flower"));
+	SetLineSkin(PREVIEW_FRIEND, GameClient()->m_Skins.Find("cammostripes"));
+	SetLineSkin(PREVIEW_SPAMMER, GameClient()->m_Skins.Find("beast"));
+	SetLineSkin(PREVIEW_ENEMY, GameClient()->m_Skins.Find("default"));
+	SetLineSkin(PREVIEW_HELPER, GameClient()->m_Skins.Find("Robot"));
+	SetLineSkin(PREVIEW_TEAMMATE, GameClient()->m_Skins.Find("Catnoa"));
+	SetLineSkin(PREVIEW_SPEC, GameClient()->m_Skins.Find("turtle"));
 
 	// Backgrounds first
 	if(!g_Config.m_ClChatOld)
@@ -2306,7 +2306,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	// chat settings
 	{
 		ChatSettings.HSplitTop(Margin, nullptr, &ChatSettings);
-		ChatSettings.HSplitTop(395.0f, &ChatSettings, &PlayerIndicator);
+		ChatSettings.HSplitTop(355.0f, &ChatSettings, &PlayerIndicator);
 		if(s_ScrollRegion.AddRect(ChatSettings))
 		{
 			ChatSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
