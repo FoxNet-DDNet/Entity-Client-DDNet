@@ -82,18 +82,6 @@ const float HeaderSize = 20.0f;
 const float HeaderAlignment = TEXTALIGN_MC;
 const ColorRGBA BackgroundColor = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
 
-void SetFlag(int32_t &Flags, int n, bool Value)
-{
-	if(Value)
-		Flags |= (1 << n);
-	else
-		Flags &= ~(1 << n);
-}
-bool IsFlagSet(int32_t Flags, int n)
-{
-	return (Flags & (1 << n)) != 0;
-}
-
 void CMenus::RenderSettingsEntity(CUIRect MainView)
 {
 	s_Time += Client()->RenderFrameTime() * (1.0f / 100.0f);
@@ -1642,10 +1630,12 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	static std::vector<unsigned char> s_vTypeItemIds;
 	static std::vector<CButtonContainer> s_vTypeDeleteButtons;
+	static std::vector<CButtonContainer> s_vTypeBrowserHideButtons;
 
 	const int MaxTypes = GameClient()->m_WarList.m_WarTypes.size();
 	s_vTypeItemIds.resize(MaxTypes);
 	s_vTypeDeleteButtons.resize(MaxTypes);
+	s_vTypeBrowserHideButtons.resize(MaxTypes);
 
 	for(int i = 0; i < (int)GameClient()->m_WarList.m_WarTypes.size(); i++)
 	{
@@ -1661,7 +1651,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		if(!Item.m_Visible)
 			continue;
 
-		CUIRect TypeRect, DeleteButton;
+		CUIRect TypeRect, DeleteButton, HideButton;
 		Item.m_Rect.Margin(0.0f, &TypeRect);
 
 		if(pType->m_Removable)
@@ -1672,6 +1662,22 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 			if(DoButtonNoRect_FontIcon(&s_vTypeDeleteButtons[i], FONT_ICON_TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
 				m_pRemoveWarType = pType;
 		}
+		if(g_Config.m_ClWarlistBrowser && pType != GameClient()->m_WarList.m_pWarTypeNone)
+		{
+			TypeRect.VSplitRight(20.0f, &TypeRect, &HideButton);
+			HideButton.HSplitTop(20.0f, &HideButton, nullptr);
+			HideButton.Margin(2.0f, &HideButton);
+
+			const bool BrowserFlagSet = IsFlagSet(g_Config.m_ClWarlistrowserFlags, i);
+
+			if(DoButtonNoRect_FontIcon(&s_vTypeBrowserHideButtons[i], BrowserFlagSet ? FONT_ICON_EYE_SLASH : FONT_ICON_EYE, 0, &HideButton, IGraphics::CORNER_ALL))
+			{
+				SetFlag(g_Config.m_ClWarlistrowserFlags, i, !BrowserFlagSet);
+			}
+			GameClient()->m_Tooltips.DoToolTip(&s_vTypeBrowserHideButtons[i], &HideButton,
+				BrowserFlagSet ? Localize("Hidden in server browser") : Localize("Shown in server browser"));
+		}
+
 		TextRender()->TextColor(pType->m_Color);
 		Ui()->DoLabel(&TypeRect, pType->m_aWarName, StandardFontSize, TEXTALIGN_ML);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
@@ -2135,8 +2141,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				{
 					std::array<float, 2> Sizes = {
 						TextRender()->TextBoundingBox(FontSize, "Tabbed reply").m_W,
-						TextRender()->TextBoundingBox(FontSize, "Muted Reply").m_W,
-					};
+						TextRender()->TextBoundingBox(FontSize, "Muted Reply").m_W};
 					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 23.5f;
 
 					{
@@ -2151,9 +2156,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 						s_ReplyMsg.SetEmptyText("I'm Currently Tabbed Out");
 
 						if(DoButton_CheckBox(&g_Config.m_ClTabbedOutMsg, "Tabbed reply", g_Config.m_ClTabbedOutMsg, &Automation))
-						{
 							g_Config.m_ClTabbedOutMsg ^= 1;
-						}
 
 						if(g_Config.m_ClTabbedOutMsg)
 							Ui()->DoEditBox(&s_ReplyMsg, &Button, EditBoxFontSize);
@@ -2171,9 +2174,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 						s_ReplyMsg.SetEmptyText("You're muted, I can't see your messages");
 
 						if(DoButton_CheckBox(&g_Config.m_ClReplyMuted, "Muted Reply", g_Config.m_ClReplyMuted, &Automation))
-						{
 							g_Config.m_ClReplyMuted ^= 1;
-						}
 						if(g_Config.m_ClReplyMuted)
 							Ui()->DoEditBox(&s_ReplyMsg, &Button, EditBoxFontSize);
 					}

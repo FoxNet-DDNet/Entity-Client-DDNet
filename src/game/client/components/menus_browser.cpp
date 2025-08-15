@@ -2075,7 +2075,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 {
 	if(GameClient()->m_WarList.m_WarTypes.empty())
 		return;
-	if(!g_Config.m_ClWarlistServerBrowser)
+	if(!g_Config.m_ClWarlistBrowser)
 		return;
 
 	const float FontSize = 10.0f;
@@ -2093,6 +2093,9 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 	char aBuf[256];
 	for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
 	{
+		if(IsFlagSet(g_Config.m_ClWarlistrowserFlags, WarlistType))
+			continue;
+
 		// Header for warlist type
 		CUIRect Header, Icon, Label;
 		List.HSplitTop(ms_ListheaderHeight, &Header, &List);
