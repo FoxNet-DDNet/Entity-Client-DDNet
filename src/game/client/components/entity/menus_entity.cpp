@@ -3081,7 +3081,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	{
 		static float Offset = 0.0f;
 		Miscellaneous.VMargin(5.0f, &Miscellaneous);
-		Miscellaneous.HSplitTop(105.0f + Offset, &Miscellaneous, &DiscordRpc);
+		Miscellaneous.HSplitTop(145.0f + Offset, &Miscellaneous, &DiscordRpc);
 		if(s_ScrollRegion.AddRect(Miscellaneous))
 		{
 			Offset = 0.0f;
@@ -3142,6 +3142,9 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				}
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &Miscellaneous, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, Localize("Freeze stars"), &g_Config.m_ClFreezeStars, &Miscellaneous, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKatana, Localize("Show katana on frozen players"), &g_Config.m_ClFreezeKatana, &Miscellaneous, LineSize);
 
 				Miscellaneous.HSplitTop(25.f, &Button, &Miscellaneous);
 				Ui()->DoScrollbarOption(&g_Config.m_ClRenderCursorSpec, &g_Config.m_ClRenderCursorSpec, &Button, Localize("Cursor Opacity in Spec"), 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");

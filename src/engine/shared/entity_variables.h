@@ -63,8 +63,9 @@ MACRO_CONFIG_INT(ClAntiPingNegativeBuffer, ec_antiping_negative_buffer, 0, 0, 1,
 MACRO_CONFIG_INT(ClAntiPingStableDirection, ec_antiping_stable_direction, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predicts optimistically along the tees stable axis to reduce delay in gaining overall stability")
 MACRO_CONFIG_INT(ClAntiPingUncertaintyScale, ec_antiping_uncertainty_scale, 150, 25, 400, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Determines uncertainty duration as a factor of ping, 100 = 1.0")
 
-// used in fast input code
+// Revert Variables
 MACRO_CONFIG_INT(ClSmoothPredictionMargin, ec_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
+MACRO_CONFIG_INT(ClFreezeKatana, ec_frozen_katana, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show katana on frozen players (reverts a DDNet change)")
 
 // War List
 MACRO_CONFIG_INT(ClWarList, ec_warlist, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles war list visuals")
