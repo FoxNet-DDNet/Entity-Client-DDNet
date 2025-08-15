@@ -5482,3 +5482,16 @@ bool str_isalluppercase(const char *str)
 	}
 	return true;
 }
+
+void SetFlag(int32_t &Flags, int n, bool Value)
+{
+	if(Value)
+		Flags |= (1 << n);
+	else
+		Flags &= ~(1 << n);
+}
+
+bool IsFlagSet(int32_t Flags, int n)
+{
+	return (Flags & (1 << n)) != 0;
+}

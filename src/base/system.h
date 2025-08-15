@@ -3018,3 +3018,6 @@ void shell_update();
 // E-Client
 const char *str_to_uppercase(const char *src);
 bool str_isalluppercase(const char *str);
+
+void SetFlag(int32_t &Flags, int n, bool Value);
+bool IsFlagSet(int32_t Flags, int n);
