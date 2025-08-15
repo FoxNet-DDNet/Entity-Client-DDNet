@@ -415,11 +415,19 @@ public:
 
 	enum
 	{
-		CORNER_NONE = 0,
-		CORNER_TL = 1,
-		CORNER_TR = 2,
-		CORNER_BL = 4,
-		CORNER_BR = 8,
+		// E-Client
+		SIDE_T = 1 << 0,
+		SIDE_R = 1 << 1,
+		SIDE_B = 1 << 2,
+		SIDE_L = 1 << 3,
+		SIDE_ALL = SIDE_T | SIDE_R | SIDE_B | SIDE_L,
+		//
+
+		CORNER_NONE = 1 << 0,
+		CORNER_TL = 1 << 1,
+		CORNER_TR = 1 << 2,
+		CORNER_BL = 1 << 3,
+		CORNER_BR = 1 << 4,
 
 		CORNER_T = CORNER_TL | CORNER_TR,
 		CORNER_B = CORNER_BL | CORNER_BR,

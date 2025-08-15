@@ -189,3 +189,141 @@ void CUIRect::DrawOutline(ColorRGBA Color) const
 	s_pGraphics->LinesDraw(aArray, std::size(aArray));
 	s_pGraphics->LinesEnd();
 }
+
+void CUIRect::DrawOutline(ColorRGBA Color, float Rounding, int Corners) const
+{
+	const int NumSegments = 8;
+	const float AngleStep = (pi / 2.0f) / NumSegments;
+
+	std::vector<IGraphics::CLineItem> Lines;
+
+	auto AddCornerArc = [&](float cx, float cy, float startAngle, int cornerFlag) {
+		if((Corners & cornerFlag) && Rounding > 0.0f)
+		{
+			for(int i = 0; i < NumSegments; ++i)
+			{
+				float a0 = startAngle + i * AngleStep;
+				float a1 = startAngle + (i + 1) * AngleStep;
+				float x0 = cx + std::cos(a0) * Rounding;
+				float y0 = cy + std::sin(a0) * Rounding;
+				float x1 = cx + std::cos(a1) * Rounding;
+				float y1 = cy + std::sin(a1) * Rounding;
+				Lines.emplace_back(x0, y0, x1, y1);
+			}
+		}
+	};
+
+	const bool Tl = (Corners & IGraphics::CORNER_TL);
+	const bool Tr = (Corners & IGraphics::CORNER_TR);
+	const bool Bl = (Corners & IGraphics::CORNER_BL);
+	const bool Br = (Corners & IGraphics::CORNER_BR);
+
+	float LengthEnd = 0.0f;
+	float LengthStart = 0.0f;
+
+	// Top
+	LengthEnd = (Rounding > 0.0f && Tl) ? Rounding : 0.0f;
+	LengthStart = (Rounding > 0.0f && Tr) ? Rounding : 0.0f;
+	Lines.emplace_back(x + LengthEnd, y, x + w - LengthStart, y);
+
+	// Right
+	LengthEnd = (Rounding > 0.0f && Tr) ? Rounding : 0.0f;
+	LengthStart = (Rounding > 0.0f && Br) ? Rounding : 0.0f;
+	Lines.emplace_back(x + w, y + LengthEnd, x + w, y + h - LengthStart);
+
+	// Bottom
+	LengthEnd = (Rounding > 0.0f && Br) ? Rounding : 0.0f;
+	LengthStart = (Rounding > 0.0f && Bl) ? Rounding : 0.0f;
+	Lines.emplace_back(x + w - LengthEnd, y + h, x + LengthStart, y + h);
+
+	// Left
+	LengthEnd = (Rounding > 0.0f && Bl) ? Rounding : 0.0f;
+	LengthStart = (Rounding > 0.0f && Tl) ? Rounding : 0.0f;
+	Lines.emplace_back(x, y + h - LengthEnd, x, y + LengthStart);
+
+	AddCornerArc(x + Rounding, y + Rounding, pi, IGraphics::CORNER_TL); // Top-left
+	AddCornerArc(x + w - Rounding, y + Rounding, -pi / 2.0f, IGraphics::CORNER_TR); // Top-right
+	AddCornerArc(x + w - Rounding, y + h - Rounding, 0.0f, IGraphics::CORNER_BR); // Bottom-right
+	AddCornerArc(x + Rounding, y + h - Rounding, pi / 2.0f, IGraphics::CORNER_BL); // Bottom-left
+
+	s_pGraphics->TextureClear();
+	s_pGraphics->LinesBegin();
+	s_pGraphics->SetColor(Color);
+	s_pGraphics->LinesDraw(Lines.data(), Lines.size());
+	s_pGraphics->LinesEnd();
+}
+
+void CUIRect::DrawSpecificOutline(ColorRGBA Color, float Rounding, int Corners, int Sides) const
+{
+	const int NumSegments = 8;
+	const float AngleStep = (pi / 2.0f) / NumSegments;
+
+	std::vector<IGraphics::CLineItem> Lines;
+
+	auto AddCornerArc = [&](float cx, float cy, float startAngle, int cornerFlag) {
+		if((Corners & cornerFlag) && Rounding > 0.0f)
+		{
+			for(int i = 0; i < NumSegments; ++i)
+			{
+				float a0 = startAngle + i * AngleStep;
+				float a1 = startAngle + (i + 1) * AngleStep;
+				float x0 = cx + std::cos(a0) * Rounding;
+				float y0 = cy + std::sin(a0) * Rounding;
+				float x1 = cx + std::cos(a1) * Rounding;
+				float y1 = cy + std::sin(a1) * Rounding;
+				Lines.emplace_back(x0, y0, x1, y1);
+			}
+		}
+	};
+
+	const bool Tl = (Corners & IGraphics::CORNER_TL);
+	const bool Tr = (Corners & IGraphics::CORNER_TR);
+	const bool Bl = (Corners & IGraphics::CORNER_BL);
+	const bool Br = (Corners & IGraphics::CORNER_BR);
+
+	float LengthEnd = 0.0f;
+	float LengthStart = 0.0f;
+
+	// Top
+	if(Sides & IGraphics::SIDE_T)
+	{
+		LengthEnd = (Rounding > 0.0f && Tl) ? Rounding : 0.0f;
+		LengthStart = (Rounding > 0.0f && Tr) ? Rounding : 0.0f;
+		Lines.emplace_back(x + LengthEnd, y, x + w - LengthStart, y);
+	}
+
+	// Right
+	if(Sides & IGraphics::SIDE_R)
+	{
+		LengthEnd = (Rounding > 0.0f && Tr) ? Rounding : 0.0f;
+		LengthStart = (Rounding > 0.0f && Br) ? Rounding : 0.0f;
+		Lines.emplace_back(x + w, y + LengthEnd, x + w, y + h - LengthStart);
+	}
+
+	// Bottom
+	if(Sides & IGraphics::SIDE_B)
+	{
+		LengthEnd = (Rounding > 0.0f && Br) ? Rounding : 0.0f;
+		LengthStart = (Rounding > 0.0f && Bl) ? Rounding : 0.0f;
+		Lines.emplace_back(x + w - LengthEnd, y + h, x + LengthStart, y + h);
+	}
+
+	// Left
+	if(Sides & IGraphics::SIDE_L)
+	{
+		LengthEnd = (Rounding > 0.0f && Bl) ? Rounding : 0.0f;
+		LengthStart = (Rounding > 0.0f && Tl) ? Rounding : 0.0f;
+		Lines.emplace_back(x, y + h - LengthEnd, x, y + LengthStart);
+	}
+
+	AddCornerArc(x + Rounding, y + Rounding, pi, IGraphics::CORNER_TL); // Top-left
+	AddCornerArc(x + w - Rounding, y + Rounding, -pi / 2.0f, IGraphics::CORNER_TR); // Top-right
+	AddCornerArc(x + w - Rounding, y + h - Rounding, 0.0f, IGraphics::CORNER_BR); // Bottom-right
+	AddCornerArc(x + Rounding, y + h - Rounding, pi / 2.0f, IGraphics::CORNER_BL); // Bottom-left
+
+	s_pGraphics->TextureClear();
+	s_pGraphics->LinesBegin();
+	s_pGraphics->SetColor(Color);
+	s_pGraphics->LinesDraw(Lines.data(), Lines.size());
+	s_pGraphics->LinesEnd();
+}
