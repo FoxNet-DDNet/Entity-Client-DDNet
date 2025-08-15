@@ -2917,7 +2917,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &Cosmetics, LineMargin);
 
 			static std::vector<const char *> s_EffectDropDownNames;
-			s_EffectDropDownNames = {Localize("Off"), Localize("Sparkle effect"), Localize("Fire Trail"), Localize("Switch Effect")};
+			s_EffectDropDownNames = {Localize("No Effect"), Localize("Sparkle effect"), Localize("Fire Trail Effect"), Localize("Switch Effect")};
 			static CUi::SDropDownState s_EffectDropDownState;
 			static CScrollRegion s_EffectDropDownScrollRegion;
 			s_EffectDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_EffectDropDownScrollRegion;
