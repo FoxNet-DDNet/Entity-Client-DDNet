@@ -2306,7 +2306,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	// chat settings
 	{
 		ChatSettings.HSplitTop(Margin, nullptr, &ChatSettings);
-		ChatSettings.HSplitTop(355.0f, &ChatSettings, &PlayerIndicator);
+		ChatSettings.HSplitTop(395.0f, &ChatSettings, &PlayerIndicator);
 		if(s_ScrollRegion.AddRect(ChatSettings))
 		{
 			ChatSettings.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
