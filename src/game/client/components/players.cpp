@@ -967,7 +967,7 @@ void CPlayers::OnRender()
 
 			ColorRGBA Color = ColorRGBA(0.5f, 0.5f, 0.5f);
 
-			if(GameClient()->m_aClients[i].m_Friend && g_Config.m_ClDoFriendColors)
+			if(GameClient()->m_aClients[i].m_Friend)
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 			if(g_Config.m_ClWarList)
 			{

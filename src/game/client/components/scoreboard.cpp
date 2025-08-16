@@ -235,7 +235,7 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 		}
 		if(GameClient()->m_aClients[pInfo->m_ClientId].m_Friend)
 		{
-			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoFriendColors)));
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)));
 		}
 
 		TextRender()->TextEx(&Cursor, GameClient()->m_aClients[pInfo->m_ClientId].m_aName);
@@ -642,7 +642,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, Alpha);
 
-				if(g_Config.m_ClDoFriendColors && ClientData.m_Friend)
+				if(ClientData.m_Friend)
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 
 				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)

@@ -351,7 +351,7 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 	ColorRGBA SystemColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageSystemColor));
 	ColorRGBA HighlightedColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageHighlightColor));
 	ColorRGBA TeamColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageTeamColor));
-	ColorRGBA FriendColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMessageFriendColor));
+	ColorRGBA FriendColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClFriendColor));
 	ColorRGBA SpecColor = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClSpecColor));
 	ColorRGBA EnemyColor = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
 	ColorRGBA HelperColor = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
@@ -513,7 +513,7 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 		}
 
 		ColorRGBA NameColor;
-		if(Line.m_Friend && g_Config.m_ClDoFriendColors)
+		if(Line.m_Friend)
 			NameColor = FriendColor;
 		else if(Line.m_Team)
 			NameColor = CalculateNameColor(color_cast<ColorHSLA>(TeamColor));

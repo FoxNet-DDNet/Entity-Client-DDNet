@@ -1,4 +1,4 @@
-/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include <base/log.h>
 
@@ -22,14 +22,15 @@
 
 #include "menus.h"
 
+constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f;
+
 using namespace FontIcons;
 
 static constexpr ColorRGBA gs_HighlightedTextColor = ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f);
 
-static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Afk, bool Inside)
+static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Inside)
 {
 	static const ColorRGBA COLORS[] = {ColorRGBA(0.5f, 1.0f, 0.5f), ColorRGBA(0.4f, 0.4f, 1.0f), ColorRGBA(0.75f, 0.75f, 0.75f)};
-	static const ColorRGBA COLORS_AFK[] = {ColorRGBA(1.0f, 1.0f, 0.5f), ColorRGBA(0.4f, 0.75f, 1.0f), ColorRGBA(0.6f, 0.6f, 0.6f)};
 	int i;
 	if(Friend)
 		i = 0;
@@ -37,7 +38,7 @@ static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Afk, bool In
 		i = 1;
 	else
 		i = 2;
-	return (Afk ? COLORS_AFK[i] : COLORS[i]).WithAlpha(Inside ? 0.45f : 0.3f);
+	return COLORS[i].WithAlpha(Inside ? 0.45f : 0.3f);
 }
 
 template<size_t N>
@@ -1331,7 +1332,10 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 		CUIRect Skin, Name, Clan, Score, Flag;
 		Name = Item.m_Rect;
 
-		const ColorRGBA Color = PlayerBackgroundColor(CurrentClient.m_FriendState == IFriends::FRIEND_PLAYER, CurrentClient.m_FriendState == IFriends::FRIEND_CLAN, CurrentClient.m_Afk, false);
+		ColorRGBA Color = PlayerBackgroundColor(CurrentClient.m_FriendState == IFriends::FRIEND_PLAYER, CurrentClient.m_FriendState == IFriends::FRIEND_CLAN, false);
+		if(CurrentClient.m_Afk)
+			Color.a *= PLAYER_AFK_COLOR_ALPHA;
+
 		Name.Draw(Color, IGraphics::CORNER_ALL, 4.0f);
 		Name.VSplitLeft(1.0f, nullptr, &Name);
 		Name.VSplitLeft(34.0f, &Score, &Name);
@@ -1404,7 +1408,7 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 				TextRender()->TextColor(gs_HighlightedTextColor);
 				TextRender()->TextEx(&Cursor, pFilteredStr, FilterLen);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
-				TextRender()->TextEx(&Cursor, pFilteredStr + FilterLen, -1);
+				TextRender()->TextEx(&Cursor, pFilteredStr + FilterLen);
 			});
 		if(!Printed)
 			TextRender()->TextEx(&Cursor, pName, -1);
@@ -1565,7 +1569,11 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 				{
 					GameClient()->m_Tooltips.DoToolTip(Friend.ListItemId(), &Rect, Localize("Click to select server. Double click to join your friend."));
 				}
-				const ColorRGBA Color = PlayerBackgroundColor(FriendType == FRIEND_PLAYER_ON, FriendType == FRIEND_CLAN_ON, FriendType == FRIEND_OFF ? true : Friend.IsAfk(), Inside);
+
+				ColorRGBA Color = PlayerBackgroundColor(FriendType == FRIEND_PLAYER_ON, FriendType == FRIEND_CLAN_ON, Inside);
+				if(FriendType == FRIEND_OFF ? true : Friend.IsAfk())
+					Color.a *= PLAYER_AFK_COLOR_ALPHA;
+
 				Rect.Draw(Color, IGraphics::CORNER_ALL, 5.0f);
 				Rect.Margin(2.0f, &Rect);
 
@@ -2154,7 +2162,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 
 			ColorRGBA BgColor = Entry.m_pWarType ? Entry.m_pWarType->m_Color.WithAlpha(Inside ? 0.45f : 0.3f) : ColorRGBA(1, 1, 1, 0.3f);
 			if(Entry.m_IsAfk)
-				BgColor.a *= 0.75f;
+				BgColor.a *= PLAYER_AFK_COLOR_ALPHA;
 			Rect.Draw(BgColor, IGraphics::CORNER_ALL, 5.0f);
 			Rect.Margin(2.0f, &Rect);
 
