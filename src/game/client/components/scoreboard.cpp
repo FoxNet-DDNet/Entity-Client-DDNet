@@ -457,7 +457,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 						TeamRectSides |= IGraphics::SIDE_T;
 					if(TeamRectCorners & IGraphics::CORNER_B)
 						TeamRectSides |= IGraphics::SIDE_B;
-					RowAndSpacing.DrawSpecificOutline(ColorRGBA(0.5f, 0.5f, 0.5f, 1.0f), RoundRadius, TeamRectCorners, TeamRectSides);
+					RowAndSpacing.DrawSpecificOutline(ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f), RoundRadius, TeamRectCorners, TeamRectSides);
 				}
 
 				CurrentDDTeamSize++;
