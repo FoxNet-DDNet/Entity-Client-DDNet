@@ -417,11 +417,15 @@ void CEffects::SparkleEffect(vec2 Pos, float Alpha)
 	if(!m_AddXhz)
 		return;
 
+	ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f);
+	if(g_Config.m_ClEffectColors)
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor));
+
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SPARKLE;
 	p.m_Pos = Pos + random_direction() * random_float(40.0f);
-	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f, 1.0f, 1.0f);
+	p.m_Color = Color;
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 0.0f;
@@ -444,11 +448,15 @@ void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
 	if(Changer > 5.0f)
 		RotSpeed = 5.0f + (10 - Changer);
 
+	ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f);
+	if(g_Config.m_ClEffectColors)
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor));
+
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SMOKE;
 	p.m_Pos = Pos;
-	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f, 1.0f, 1.0f);
+	p.m_Color = Color;
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 35.0f;
