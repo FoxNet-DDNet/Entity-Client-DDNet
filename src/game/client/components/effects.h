@@ -7,6 +7,14 @@
 
 #include <game/client/component.h>
 
+enum
+{
+	EFFECT_OFF = 0,
+	EFFECT_SPARKLE,
+	EFFECT_FIRETRAIL,
+	EFFECT_SWITCH
+};
+
 class CEffects : public CComponent
 {
 private:

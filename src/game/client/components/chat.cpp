@@ -22,7 +22,6 @@
 #include "chat.h"
 #include <string.h>
 
-#include "entity/e_enums.h"
 #include "entity/entity.h"
 #include "tclient/warlist.h"
 
@@ -296,7 +295,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				AddLine(SILENT_MSG, TEAM_ALL, m_Input.GetString());
 			if(GameClient()->m_EClient.m_FirstLaunch && !SilentMessageInfo)
 			{
-				AddLine(ECLIENT_MSG, TEAM_ALL, "This Message was a Silent Message, no one else can see it!");
+				GameClient()->ClientMessage("This Message was a Silent Message, no one else can see it!");
 				SilentMessageInfo = true;
 			}
 		}

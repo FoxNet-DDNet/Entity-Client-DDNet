@@ -24,7 +24,6 @@
 
 #include "players.h"
 
-#include "entity/e_enums.h"
 #include <base/color.h>
 #include <base/math.h>
 

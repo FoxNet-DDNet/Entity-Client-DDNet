@@ -24,7 +24,6 @@
 #include <game/client/components/menus.h>
 #include <game/client/components/skins.h>
 
-#include "e_enums.h"
 #include <base/color.h>
 #include <string>
 #include <vector>
