@@ -69,7 +69,7 @@ CUi::EPopupMenuFunctionResult CEditor::PopupMenuFile(void *pContext, CUIRect Vie
 
 	View.HSplitTop(2.0f, nullptr, &View);
 	View.HSplitTop(12.0f, &Slot, &View);
-	if(pEditor->DoButton_MenuItem(&s_OpenCurrentMapButton, pEditor->m_QuickActionLoadCurrentMap.Label(), 0, &Slot, BUTTONFLAG_LEFT, pEditor->m_QuickActionLoadCurrentMap.Description()))
+	if(pEditor->DoButton_MenuItem(&s_OpenCurrentMapButton, pEditor->m_QuickActionLoadCurrentMap.Label(), pEditor->m_QuickActionLoadCurrentMap.Disabled() ? -1 : 0, &Slot, BUTTONFLAG_LEFT, pEditor->m_QuickActionLoadCurrentMap.Description()))
 	{
 		pEditor->m_QuickActionLoadCurrentMap.Call();
 		return CUi::POPUP_CLOSE_CURRENT;
@@ -1392,7 +1392,7 @@ CUi::EPopupMenuFunctionResult CEditor::PopupEnvPoint(void *pContext, CUIRect Vie
 		const auto SelectedPoint = pEditor->m_vSelectedEnvelopePoints.front();
 		const int SelectedIndex = SelectedPoint.first;
 		auto *pValues = pEnvelope->m_vPoints[SelectedIndex].m_aValues;
-		const ColorRGBA Color = ColorRGBA(fx2f(pValues[0]), fx2f(pValues[1]), fx2f(pValues[2]), fx2f(pValues[3]));
+		const ColorRGBA Color = pEnvelope->m_vPoints[SelectedIndex].ColorValue();
 		const auto &&SetColor = [&](ColorRGBA NewColor) {
 			if(Color == NewColor && pEditor->m_ColorPickerPopupContext.m_State == EEditState::EDITING)
 				return;
@@ -1405,10 +1405,7 @@ CUi::EPopupMenuFunctionResult CEditor::PopupEnvPoint(void *pContext, CUIRect Vie
 					s_Values[Channel] = pValues[Channel];
 			}
 
-			for(int Channel = 0; Channel < 4; ++Channel)
-			{
-				pValues[Channel] = f2fx(NewColor[Channel]);
-			}
+			pEnvelope->m_vPoints[SelectedIndex].SetColorValue(NewColor);
 
 			if(pEditor->m_ColorPickerPopupContext.m_State == EEditState::END || pEditor->m_ColorPickerPopupContext.m_State == EEditState::ONE_GO)
 			{

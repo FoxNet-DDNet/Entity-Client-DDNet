@@ -162,7 +162,8 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 	Spectators.Margin(10.0f, &Spectators);
 
 	CTextCursor Cursor;
-	TextRender()->SetCursor(&Cursor, Spectators.x, Spectators.y, 22.0f, TEXTFLAG_RENDER);
+	Cursor.SetPosition(Spectators.TopLeft());
+	Cursor.m_FontSize = 22.0f;
 	Cursor.m_LineWidth = Spectators.w;
 	Cursor.m_MaxLines = round_truncate(Spectators.h / Cursor.m_FontSize);
 
@@ -585,7 +586,9 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			// name
 			{
 				CTextCursor Cursor;
-				TextRender()->SetCursor(&Cursor, NameOffset, Row.y + (Row.h - FontSize) / 2.0f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
+				Cursor.SetPosition(vec2(NameOffset, Row.y + (Row.h - FontSize) / 2.0f));
+				Cursor.m_FontSize = FontSize;
+				Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
 				Cursor.m_LineWidth = NameLength;
 				if(ClientData.m_AuthLevel)
 				{
@@ -677,7 +680,9 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(pInfo->m_ClientId));
 
 				CTextCursor Cursor;
-				TextRender()->SetCursor(&Cursor, ClanOffset + (ClanLength - minimum(TextRender()->TextWidth(FontSize, ClientData.m_aClan), ClanLength)) / 2.0f, Row.y + (Row.h - FontSize) / 2.0f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
+				Cursor.SetPosition(vec2(ClanOffset + (ClanLength - minimum(TextRender()->TextWidth(FontSize, ClientData.m_aClan), ClanLength)) / 2.0f, Row.y + (Row.h - FontSize) / 2.0f));
+				Cursor.m_FontSize = FontSize;
+				Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
 				Cursor.m_LineWidth = ClanLength;
 				TextRender()->TextEx(&Cursor, ClientData.m_aClan);
 			}

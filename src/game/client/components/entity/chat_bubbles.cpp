@@ -58,7 +58,10 @@ void CChatBubbles::UpdateBubbleOffsets(int ClientId, float inputBubbleHeight)
 			}
 
 			CTextCursor Cursor;
-			TextRender()->SetCursor(&Cursor, 0, 0, FontSize, TEXTFLAG_RENDER);
+			Cursor.SetPosition(vec2(0, 0));
+			Cursor.m_FontSize = FontSize;
+			Cursor.m_Flags = TEXTFLAG_RENDER;
+
 			Cursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 			TextRender()->CreateOrAppendTextContainer(aBubble.m_TextContainerIndex, &Cursor, aBubble.m_aText);
 			aBubble.m_Cursor.m_FontSize = FontSize;
@@ -105,9 +108,11 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	// Create Text at default zoom
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	RenderTools()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
+	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
 
-	TextRender()->SetCursor(&pCursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	pCursor.SetPosition(vec2(0, 0));
+	pCursor.m_FontSize = FontSize;
+	pCursor.m_Flags = TEXTFLAG_RENDER;
 	pCursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 
 	CBubbles bubble(pText, pCursor, time_get());
@@ -164,9 +169,11 @@ void CChatBubbles::RenderCurInput(float y)
 	// Create Text at default zoom
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	RenderTools()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
-
-	TextRender()->SetCursor(&pCursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
+	
+	pCursor.SetPosition(vec2(0, 0));
+	pCursor.m_FontSize = FontSize;
+	pCursor.m_Flags = TEXTFLAG_RENDER;
 	pCursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 	TextRender()->CreateOrAppendTextContainer(TextContainerIndex, &pCursor, pText);
 
@@ -234,7 +241,9 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 				TextRender()->DeleteTextContainer(aBubble.m_TextContainerIndex);
 
 			CTextCursor Cursor;
-			TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+			Cursor.SetPosition(vec2(0, 0));
+			Cursor.m_FontSize = FontSize;
+			Cursor.m_Flags = TEXTFLAG_RENDER;
 			Cursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 			TextRender()->CreateOrAppendTextContainer(aBubble.m_TextContainerIndex, &Cursor, aBubble.m_aText);
 			aBubble.m_Cursor.m_FontSize = FontSize;

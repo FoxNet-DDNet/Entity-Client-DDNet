@@ -387,7 +387,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 					Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
 					Graphics()->QuadsBegin();
 					Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-					RenderTools()->SelectSprite(SPRITE_FOXNET_FLAG0);
+					Graphics()->SelectSprite(SPRITE_FOXNET_FLAG0);
 					IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
 					Graphics()->QuadsDrawTL(&QuadItem, 1);
 					Graphics()->QuadsEnd();
@@ -1395,39 +1395,59 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 			Ui()->DoButtonLogic(&CurrentClient.m_aSkin, 0, &Skin, BUTTONFLAG_NONE);
 			GameClient()->m_Tooltips.DoToolTip(&CurrentClient.m_aSkin, &Skin, CurrentClient.m_aSkin);
 		}
+		else if(CurrentClient.m_aaSkin7[protocol7::SKINPART_BODY][0] != '\0')
+		{
+			CTeeRenderInfo TeeInfo;
+			TeeInfo.m_Size = minimum(Skin.w, Skin.h);
+			for(int Part = 0; Part < protocol7::NUM_SKINPARTS; Part++)
+			{
+				GameClient()->m_Skins7.FindSkinPart(Part, CurrentClient.m_aaSkin7[Part], true)->ApplyTo(TeeInfo.m_aSixup[g_Config.m_ClDummy]);
+				GameClient()->m_Skins7.ApplyColorTo(TeeInfo.m_aSixup[g_Config.m_ClDummy], CurrentClient.m_aUseCustomSkinColor7[Part], CurrentClient.m_aCustomSkinColor7[Part], Part);
+			}
+			const CAnimState *pIdleState = CAnimState::GetIdle();
+			vec2 OffsetToMid;
+			CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
+			const vec2 TeeRenderPos = vec2(Skin.x + TeeInfo.m_Size / 2.0f, Skin.y + Skin.h / 2.0f + OffsetToMid.y);
+			RenderTools()->RenderTee(pIdleState, &TeeInfo, CurrentClient.m_Afk ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
+		}
 
 		// name
-		CTextCursor Cursor;
-		TextRender()->SetCursor(&Cursor, Name.x, Name.y + (Name.h - (FontSize - 1.0f)) / 2.0f, FontSize - 1.0f, TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END);
-		Cursor.m_LineWidth = Name.w;
+		CTextCursor NameCursor;
+		NameCursor.SetPosition(vec2(Name.x, Name.y + (Name.h - (FontSize - 1.0f)) / 2.0f));
+		NameCursor.m_FontSize = FontSize - 1.0f;
+		NameCursor.m_Flags |= TEXTFLAG_STOP_AT_END;
+		NameCursor.m_LineWidth = Name.w;
 		const char *pName = CurrentClient.m_aName;
 		bool Printed = false;
 		if(g_Config.m_BrFilterString[0])
 			Printed = PrintHighlighted(pName, [&](const char *pFilteredStr, const int FilterLen) {
-				TextRender()->TextEx(&Cursor, pName, (int)(pFilteredStr - pName));
+				TextRender()->TextEx(&NameCursor, pName, (int)(pFilteredStr - pName));
 				TextRender()->TextColor(gs_HighlightedTextColor);
-				TextRender()->TextEx(&Cursor, pFilteredStr, FilterLen);
+				TextRender()->TextEx(&NameCursor, pFilteredStr, FilterLen);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
-				TextRender()->TextEx(&Cursor, pFilteredStr + FilterLen);
+				TextRender()->TextEx(&NameCursor, pFilteredStr + FilterLen, -1);
 			});
 		if(!Printed)
-			TextRender()->TextEx(&Cursor, pName, -1);
+			TextRender()->TextEx(&NameCursor, pName, -1);
 
 		// clan
-		TextRender()->SetCursor(&Cursor, Clan.x, Clan.y + (Clan.h - (FontSize - 2.0f)) / 2.0f, FontSize - 2.0f, TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END);
-		Cursor.m_LineWidth = Clan.w;
+		CTextCursor ClanCursor;
+		ClanCursor.SetPosition(vec2(Clan.x, Clan.y + (Clan.h - (FontSize - 2.0f)) / 2.0f));
+		ClanCursor.m_FontSize = FontSize - 2.0f;
+		ClanCursor.m_Flags |= TEXTFLAG_STOP_AT_END;
+		ClanCursor.m_LineWidth = Clan.w;
 		const char *pClan = CurrentClient.m_aClan;
 		Printed = false;
 		if(g_Config.m_BrFilterString[0])
 			Printed = PrintHighlighted(pClan, [&](const char *pFilteredStr, const int FilterLen) {
-				TextRender()->TextEx(&Cursor, pClan, (int)(pFilteredStr - pClan));
+				TextRender()->TextEx(&ClanCursor, pClan, (int)(pFilteredStr - pClan));
 				TextRender()->TextColor(0.4f, 0.4f, 1.0f, 1.0f);
-				TextRender()->TextEx(&Cursor, pFilteredStr, FilterLen);
+				TextRender()->TextEx(&ClanCursor, pFilteredStr, FilterLen);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
-				TextRender()->TextEx(&Cursor, pFilteredStr + FilterLen, -1);
+				TextRender()->TextEx(&ClanCursor, pFilteredStr + FilterLen, -1);
 			});
 		if(!Printed)
-			TextRender()->TextEx(&Cursor, pClan, -1);
+			TextRender()->TextEx(&ClanCursor, pClan, -1);
 
 		// flag
 		GameClient()->m_CountryFlags.Render(CurrentClient.m_Country, ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f), Flag.x, Flag.y, Flag.w, Flag.h);
@@ -1602,6 +1622,21 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 					Ui()->DoButtonLogic(Friend.SkinTooltipId(), 0, &Skin, BUTTONFLAG_NONE);
 					GameClient()->m_Tooltips.DoToolTip(Friend.SkinTooltipId(), &Skin, Friend.Skin());
 				}
+				else if(Friend.Skin7(protocol7::SKINPART_BODY)[0] != '\0')
+				{
+					CTeeRenderInfo TeeInfo;
+					TeeInfo.m_Size = minimum(Skin.w, Skin.h);
+					for(int Part = 0; Part < protocol7::NUM_SKINPARTS; Part++)
+					{
+						GameClient()->m_Skins7.FindSkinPart(Part, Friend.Skin7(Part), true)->ApplyTo(TeeInfo.m_aSixup[g_Config.m_ClDummy]);
+						GameClient()->m_Skins7.ApplyColorTo(TeeInfo.m_aSixup[g_Config.m_ClDummy], Friend.UseCustomSkinColor7(Part), Friend.CustomSkinColor7(Part), Part);
+					}
+					const CAnimState *pIdleState = CAnimState::GetIdle();
+					vec2 OffsetToMid;
+					CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
+					const vec2 TeeRenderPos = vec2(Skin.x + Skin.w / 2.0f, Skin.y + Skin.h * 0.55f + OffsetToMid.y);
+					RenderTools()->RenderTee(pIdleState, &TeeInfo, Friend.IsAfk() ? EMOTE_BLINK : EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
+				}
 				Rect.HSplitTop(11.0f, &NameLabel, &ClanLabel);
 
 				// name
@@ -1641,7 +1676,8 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
 						Graphics()->QuadsBegin();
 						Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-						RenderTools()->SelectSprite(SPRITE_FOXNET_FLAG0);
+						Graphics()->SelectSprite(SPRITE_FOXNET_FLAG0);
+						
 						IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
 						Graphics()->QuadsDrawTL(&QuadItem, 1);
 						Graphics()->QuadsEnd();
@@ -2234,7 +2270,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 				Graphics()->TextureSet(g_pData->m_aImages[IMAGE_FOXNET_FLAGS].m_Id);
 				Graphics()->QuadsBegin();
 				Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
-				RenderTools()->SelectSprite(SPRITE_FOXNET_FLAG0);
+				Graphics()->SelectSprite(SPRITE_FOXNET_FLAG0);
 				IGraphics::CQuadItem QuadItem(FoxRect.x, FoxRect.y, FoxRect.w, FoxRect.h);
 				Graphics()->QuadsDrawTL(&QuadItem, 1);
 				Graphics()->QuadsEnd();

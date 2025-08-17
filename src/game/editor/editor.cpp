@@ -26,7 +26,6 @@
 #include <game/client/components/camera.h>
 #include <game/client/gameclient.h>
 #include <game/client/lineinput.h>
-#include <game/client/render.h>
 #include <game/client/ui.h>
 #include <game/client/ui_listbox.h>
 #include <game/client/ui_scrollregion.h>
@@ -94,15 +93,14 @@ bool CEditor::IsVanillaImage(const char *pImage)
 	return std::any_of(std::begin(VANILLA_IMAGES), std::end(VANILLA_IMAGES), [pImage](const char *pVanillaImage) { return str_comp(pImage, pVanillaImage) == 0; });
 }
 
-void CEditor::EnvelopeEval(int TimeOffsetMillis, int Env, ColorRGBA &Result, size_t Channels, void *pUser)
+void CEditor::EnvelopeEval(int TimeOffsetMillis, int Env, ColorRGBA &Result, size_t Channels)
 {
-	CEditor *pThis = (CEditor *)pUser;
-	if(Env < 0 || Env >= (int)pThis->m_Map.m_vpEnvelopes.size())
+	if(Env < 0 || Env >= (int)m_Map.m_vpEnvelopes.size())
 		return;
 
-	std::shared_ptr<CEnvelope> pEnv = pThis->m_Map.m_vpEnvelopes[Env];
-	float Time = pThis->m_AnimateTime;
-	Time *= pThis->m_AnimateSpeed;
+	std::shared_ptr<CEnvelope> pEnv = m_Map.m_vpEnvelopes[Env];
+	float Time = m_AnimateTime;
+	Time *= m_AnimateSpeed;
 	Time += (TimeOffsetMillis / 1000.0f);
 	pEnv->Eval(Time, Result, Channels);
 }
@@ -221,7 +219,7 @@ int CEditor::DoButton_Env(const void *pId, const char *pText, int Checked, const
 
 int CEditor::DoButton_MenuItem(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Flags, const char *pToolTip)
 {
-	if(Ui()->HotItem() == pId || Checked)
+	if((Ui()->HotItem() == pId && Checked == 0) || Checked > 0)
 		pRect->Draw(GetButtonColor(pId, Checked), IGraphics::CORNER_ALL, 3.0f);
 
 	CUIRect Rect;
@@ -230,6 +228,10 @@ int CEditor::DoButton_MenuItem(const void *pId, const char *pText, int Checked, 
 	SLabelProperties Props;
 	Props.m_MaxWidth = Rect.w;
 	Props.m_EllipsisAtEnd = true;
+	if(Checked < 0)
+	{
+		Props.SetColor(ColorRGBA(0.6f, 0.6f, 0.6f, 1.0f));
+	}
 	Ui()->DoLabel(&Rect, pText, 10.0f, TEXTALIGN_ML, Props);
 
 	return DoButton_Editor_Common(pId, pText, Checked, pRect, Flags, pToolTip);
@@ -3050,7 +3052,7 @@ void CEditor::DoMapEditor(CUIRect View)
 	// render all good stuff
 	if(!m_ShowPicker)
 	{
-		MapView()->RenderMap();
+		MapView()->RenderEditorMap();
 	}
 	else
 	{
@@ -3570,23 +3572,6 @@ void CEditor::DoMapEditor(CUIRect View)
 			}
 		}
 
-		if(Ui()->CheckActiveItem(&m_MapEditorId) && m_pContainerPanned == nullptr)
-		{
-			// release mouse
-			if(!Ui()->MouseButton(0))
-			{
-				if(s_Operation == OP_BRUSH_DRAW)
-				{
-					std::shared_ptr<IEditorAction> Action = std::make_shared<CEditorBrushDrawAction>(this, m_SelectedGroup);
-
-					if(!Action->IsEmpty()) // Avoid recording tile draw action when placing quads only
-						m_EditorHistory.RecordAction(Action);
-				}
-
-				s_Operation = OP_NONE;
-				Ui()->SetActiveItem(nullptr);
-			}
-		}
 		if(!Input()->ModifierIsPressed() && m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr)
 		{
 			float PanSpeed = Input()->ShiftIsPressed() ? 200.0f : 64.0f;
@@ -3600,11 +3585,20 @@ void CEditor::DoMapEditor(CUIRect View)
 				MapView()->OffsetWorld({0, PanSpeed * m_MouseWorldScale});
 		}
 	}
-	else if(Ui()->CheckActiveItem(&m_MapEditorId) && m_pContainerPanned == nullptr)
+
+	if(Ui()->CheckActiveItem(&m_MapEditorId) && m_pContainerPanned == nullptr)
 	{
 		// release mouse
 		if(!Ui()->MouseButton(0))
 		{
+			if(s_Operation == OP_BRUSH_DRAW)
+			{
+				std::shared_ptr<IEditorAction> pAction = std::make_shared<CEditorBrushDrawAction>(this, m_SelectedGroup);
+
+				if(!pAction->IsEmpty()) // Avoid recording tile draw action when placing quads only
+					m_EditorHistory.RecordAction(pAction);
+			}
+
 			s_Operation = OP_NONE;
 			Ui()->SetActiveItem(nullptr);
 		}
@@ -6893,7 +6887,7 @@ void CEditor::RenderEnvelopeEditorColorBar(CUIRect ColorBar, const std::shared_p
 			ColorRGBA StartColor;
 			if(Step == 1 && OverallSectionStartTime == PointStartTime)
 			{
-				StartColor = ColorRGBA(fx2f(PointStart.m_aValues[0]), fx2f(PointStart.m_aValues[1]), fx2f(PointStart.m_aValues[2]), fx2f(PointStart.m_aValues[3]));
+				StartColor = PointStart.ColorValue();
 			}
 			else
 			{
@@ -6908,7 +6902,7 @@ void CEditor::RenderEnvelopeEditorColorBar(CUIRect ColorBar, const std::shared_p
 			}
 			else if(Step == Steps && OverallSectionEndTime == PointEndTime)
 			{
-				EndColor = ColorRGBA(fx2f(PointEnd.m_aValues[0]), fx2f(PointEnd.m_aValues[1]), fx2f(PointEnd.m_aValues[2]), fx2f(PointEnd.m_aValues[3]));
+				EndColor = PointEnd.ColorValue();
 			}
 			else
 			{
@@ -7362,17 +7356,9 @@ void CEditor::Render()
 		{
 			if(ShiftPressed)
 			{
-				if(HasUnsavedData())
+				if(!m_QuickActionLoadCurrentMap.Disabled())
 				{
-					if(!m_PopupEventWasActivated)
-					{
-						m_PopupEventType = POPEVENT_LOADCURRENT;
-						m_PopupEventActivated = true;
-					}
-				}
-				else
-				{
-					LoadCurrentMap();
+					m_QuickActionLoadCurrentMap.Call();
 				}
 			}
 			else
@@ -7566,7 +7552,8 @@ void CEditor::RenderPressedKeys(CUIRect View)
 
 	Ui()->MapScreen();
 	CTextCursor Cursor;
-	TextRender()->SetCursor(&Cursor, View.x + 10, View.y + View.h - 24 - 10, 24.0f, TEXTFLAG_RENDER);
+	Cursor.SetPosition(vec2(View.x + 10, View.y + View.h - 24 - 10));
+	Cursor.m_FontSize = 24.0f;
 
 	int NKeys = 0;
 	for(int i = 0; i < KEY_LAST; i++)
@@ -7756,37 +7743,37 @@ void CEditor::RenderGameEntities(const std::shared_ptr<CLayerTiles> &pTiles)
 			else if(Index == ENTITY_ARMOR_1)
 			{
 				Graphics()->TextureSet(pGameClient->m_GameSkin.m_SpritePickupArmor);
-				RenderTools()->GetSpriteScale(SPRITE_PICKUP_HEALTH, Scale.x, Scale.y);
+				Graphics()->GetSpriteScale(SPRITE_PICKUP_HEALTH, Scale.x, Scale.y);
 				VisualSize = 64;
 			}
 			else if(Index == ENTITY_HEALTH_1)
 			{
 				Graphics()->TextureSet(pGameClient->m_GameSkin.m_SpritePickupHealth);
-				RenderTools()->GetSpriteScale(SPRITE_PICKUP_HEALTH, Scale.x, Scale.y);
+				Graphics()->GetSpriteScale(SPRITE_PICKUP_HEALTH, Scale.x, Scale.y);
 				VisualSize = 64;
 			}
 			else if(Index == ENTITY_WEAPON_SHOTGUN)
 			{
 				Graphics()->TextureSet(pGameClient->m_GameSkin.m_aSpritePickupWeapons[WEAPON_SHOTGUN]);
-				RenderTools()->GetSpriteScale(SPRITE_PICKUP_SHOTGUN, Scale.x, Scale.y);
+				Graphics()->GetSpriteScale(SPRITE_PICKUP_SHOTGUN, Scale.x, Scale.y);
 				VisualSize = g_pData->m_Weapons.m_aId[WEAPON_SHOTGUN].m_VisualSize;
 			}
 			else if(Index == ENTITY_WEAPON_GRENADE)
 			{
 				Graphics()->TextureSet(pGameClient->m_GameSkin.m_aSpritePickupWeapons[WEAPON_GRENADE]);
-				RenderTools()->GetSpriteScale(SPRITE_PICKUP_GRENADE, Scale.x, Scale.y);
+				Graphics()->GetSpriteScale(SPRITE_PICKUP_GRENADE, Scale.x, Scale.y);
 				VisualSize = g_pData->m_Weapons.m_aId[WEAPON_GRENADE].m_VisualSize;
 			}
 			else if(Index == ENTITY_WEAPON_LASER)
 			{
 				Graphics()->TextureSet(pGameClient->m_GameSkin.m_aSpritePickupWeapons[WEAPON_LASER]);
-				RenderTools()->GetSpriteScale(SPRITE_PICKUP_LASER, Scale.x, Scale.y);
+				Graphics()->GetSpriteScale(SPRITE_PICKUP_LASER, Scale.x, Scale.y);
 				VisualSize = g_pData->m_Weapons.m_aId[WEAPON_LASER].m_VisualSize;
 			}
 			else if(Index == ENTITY_POWERUP_NINJA)
 			{
 				Graphics()->TextureSet(pGameClient->m_GameSkin.m_aSpritePickupWeapons[WEAPON_NINJA]);
-				RenderTools()->GetSpriteScale(SPRITE_PICKUP_NINJA, Scale.x, Scale.y);
+				Graphics()->GetSpriteScale(SPRITE_PICKUP_NINJA, Scale.x, Scale.y);
 				VisualSize = 128;
 			}
 			else if(DDNetOrCustomEntities)
@@ -7794,25 +7781,25 @@ void CEditor::RenderGameEntities(const std::shared_ptr<CLayerTiles> &pTiles)
 				if(Index == ENTITY_ARMOR_SHOTGUN)
 				{
 					Graphics()->TextureSet(pGameClient->m_GameSkin.m_SpritePickupArmorShotgun);
-					RenderTools()->GetSpriteScale(SPRITE_PICKUP_ARMOR_SHOTGUN, Scale.x, Scale.y);
+					Graphics()->GetSpriteScale(SPRITE_PICKUP_ARMOR_SHOTGUN, Scale.x, Scale.y);
 					VisualSize = 64;
 				}
 				else if(Index == ENTITY_ARMOR_GRENADE)
 				{
 					Graphics()->TextureSet(pGameClient->m_GameSkin.m_SpritePickupArmorGrenade);
-					RenderTools()->GetSpriteScale(SPRITE_PICKUP_ARMOR_GRENADE, Scale.x, Scale.y);
+					Graphics()->GetSpriteScale(SPRITE_PICKUP_ARMOR_GRENADE, Scale.x, Scale.y);
 					VisualSize = 64;
 				}
 				else if(Index == ENTITY_ARMOR_NINJA)
 				{
 					Graphics()->TextureSet(pGameClient->m_GameSkin.m_SpritePickupArmorNinja);
-					RenderTools()->GetSpriteScale(SPRITE_PICKUP_ARMOR_NINJA, Scale.x, Scale.y);
+					Graphics()->GetSpriteScale(SPRITE_PICKUP_ARMOR_NINJA, Scale.x, Scale.y);
 					VisualSize = 64;
 				}
 				else if(Index == ENTITY_ARMOR_LASER)
 				{
 					Graphics()->TextureSet(pGameClient->m_GameSkin.m_SpritePickupArmorLaser);
-					RenderTools()->GetSpriteScale(SPRITE_PICKUP_ARMOR_LASER, Scale.x, Scale.y);
+					Graphics()->GetSpriteScale(SPRITE_PICKUP_ARMOR_LASER, Scale.x, Scale.y);
 					VisualSize = 64;
 				}
 				else
@@ -8043,7 +8030,7 @@ void CEditor::Init()
 	m_UI.SetPopupMenuClosedCallback([this]() {
 		m_PopupEventWasActivated = false;
 	});
-	m_RenderTools.Init(m_pGraphics, m_pTextRender);
+	m_RenderMap.Init(m_pGraphics, m_pTextRender);
 	m_ZoomEnvelopeX.OnInit(this);
 	m_ZoomEnvelopeY.OnInit(this);
 

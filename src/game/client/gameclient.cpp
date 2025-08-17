@@ -279,6 +279,7 @@ void CGameClient::OnConsoleInit()
 
 	Console()->Chain("cl_skin_download_url", ConchainRefreshSkins, this);
 	Console()->Chain("cl_skin_community_download_url", ConchainRefreshSkins, this);
+	Console()->Chain("cl_skin_prefix", ConchainRefreshSkins, this);
 	Console()->Chain("cl_download_skins", ConchainRefreshSkins, this);
 	Console()->Chain("cl_download_community_skins", ConchainRefreshSkins, this);
 	Console()->Chain("cl_vanilla_skins_only", ConchainRefreshSkins, this);
@@ -347,6 +348,7 @@ void CGameClient::OnInit()
 	// propagate pointers
 	m_UI.Init(Kernel());
 	m_RenderTools.Init(Graphics(), TextRender());
+	m_RenderMap.Init(Graphics(), TextRender());
 
 	if(GIT_SHORTREV_HASH)
 	{
@@ -1697,14 +1699,14 @@ void CGameClient::OnNewSnapshot()
 				{
 					CClientData *pClient = &m_aClients[ClientId];
 
-					if(!IntsToStr(&pInfo->m_Name0, 4, pClient->m_aName, std::size(pClient->m_aName)))
+					if(!IntsToStr(pInfo->m_aName, std::size(pInfo->m_aName), pClient->m_aName, std::size(pClient->m_aName)))
 					{
 						str_copy(pClient->m_aName, "nameless tee");
 					}
-					IntsToStr(&pInfo->m_Clan0, 3, pClient->m_aClan, std::size(pClient->m_aClan));
+					IntsToStr(pInfo->m_aClan, std::size(pInfo->m_aClan), pClient->m_aClan, std::size(pClient->m_aClan));
 					pClient->m_Country = pInfo->m_Country;
 
-					IntsToStr(&pInfo->m_Skin0, 6, pClient->m_aSkinName, std::size(pClient->m_aSkinName));
+					IntsToStr(pInfo->m_aSkin, std::size(pInfo->m_aSkin), pClient->m_aSkinName, std::size(pClient->m_aSkinName));
 					if(!CSkin::IsValidName(pClient->m_aSkinName) ||
 						(!m_GameInfo.m_AllowXSkins && CSkins::IsSpecialSkin(pClient->m_aSkinName)))
 					{
@@ -2222,7 +2224,7 @@ void CGameClient::OnNewSnapshot()
 		{
 			CNetMsg_Cl_ShowDistance Msg;
 			float x, y;
-			RenderTools()->CalcScreenParams(Graphics()->ScreenAspect(), ShowDistanceZoom, &x, &y);
+			Graphics()->CalcScreenParams(Graphics()->ScreenAspect(), ShowDistanceZoom, &x, &y);
 			Msg.m_X = x;
 			Msg.m_Y = y;
 			CMsgPacker Packer(&Msg);
@@ -2245,7 +2247,7 @@ void CGameClient::OnNewSnapshot()
 	{
 		CNetMsg_Cl_ShowDistance Msg;
 		float x, y;
-		RenderTools()->CalcScreenParams(Graphics()->ScreenAspect(), ShowDistanceZoom, &x, &y);
+		Graphics()->CalcScreenParams(Graphics()->ScreenAspect(), ShowDistanceZoom, &x, &y);
 		Msg.m_X = x;
 		Msg.m_Y = y;
 		Client()->ChecksumData()->m_Zoom = ShowDistanceZoom;
@@ -4888,10 +4890,40 @@ void CGameClient::RefreshSkins(int SkinDescriptorFlags)
 
 void CGameClient::OnSkinUpdate(const char *pSkinName)
 {
+	// If the refreshed skin's name starts with the current skin prefix, we also have to
+	// refresh skins matching the unprefixed skin name, e.g. if "santa_cammo" is refreshed
+	// with prefix "santa" we need to refresh both "santa_cammo" and "cammo".
+	const char *pSkinPrefix = m_Skins.SkinPrefix();
+	const int SkinPrefixLength = str_length(pSkinPrefix);
+	char aSkinNameWithoutPrefix[MAX_SKIN_LENGTH];
+	if(SkinPrefixLength > 0 &&
+		str_utf8_comp_nocase_num(pSkinName, pSkinPrefix, SkinPrefixLength) == 0 &&
+		pSkinName[SkinPrefixLength] == '_' &&
+		pSkinName[SkinPrefixLength + 1] != '\0')
+	{
+		str_copy(aSkinNameWithoutPrefix, &pSkinName[SkinPrefixLength + 1]);
+	}
+	else
+	{
+		aSkinNameWithoutPrefix[0] = '\0';
+	}
+	const auto &&NameMatches = [&](const char *pCheckName) {
+		if(str_utf8_comp_nocase(pCheckName, pSkinName) == 0)
+		{
+			return true;
+		}
+		if(aSkinNameWithoutPrefix[0] != '\0' &&
+			str_utf8_comp_nocase(pCheckName, aSkinNameWithoutPrefix) == 0)
+		{
+			return true;
+		}
+		return false;
+	};
+
 	for(std::shared_ptr<CManagedTeeRenderInfo> &pManagedTeeRenderInfo : m_vpManagedTeeRenderInfos)
 	{
 		if(!(pManagedTeeRenderInfo->SkinDescriptor().m_Flags & CSkinDescriptor::FLAG_SIX) ||
-			str_utf8_comp_nocase(pManagedTeeRenderInfo->SkinDescriptor().m_aSkinName, pSkinName) != 0)
+			!NameMatches(pManagedTeeRenderInfo->SkinDescriptor().m_aSkinName))
 		{
 			continue;
 		}
@@ -5263,7 +5295,7 @@ bool CGameClient::InitMultiView(int Team)
 	m_MultiView.m_IsInit = true;
 
 	// get the current view coordinates
-	RenderTools()->CalcScreenParams(Graphics()->ScreenAspect(), m_Camera.m_Zoom, &Width, &Height);
+	Graphics()->CalcScreenParams(Graphics()->ScreenAspect(), m_Camera.m_Zoom, &Width, &Height);
 	vec2 AxisX = vec2(m_Camera.m_Center.x - (Width / 2.0f), m_Camera.m_Center.x + (Width / 2.0f));
 	vec2 AxisY = vec2(m_Camera.m_Center.y - (Height / 2.0f), m_Camera.m_Center.y + (Height / 2.0f));
 

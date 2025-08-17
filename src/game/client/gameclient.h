@@ -14,6 +14,7 @@
 #include <game/collision.h>
 #include <game/gamecore.h>
 #include <game/layers.h>
+#include <game/map/render_map.h>
 #include <game/mapbugs.h>
 #include <game/teamscore.h>
 
@@ -182,8 +183,8 @@ public:
 	CItems m_Items;
 	CMapImages m_MapImages;
 
-	CMapLayers m_MapLayersBackground = CMapLayers{CMapLayers::TYPE_BACKGROUND};
-	CMapLayers m_MapLayersForeground = CMapLayers{CMapLayers::TYPE_FOREGROUND};
+	CMapLayers m_MapLayersBackground = CMapLayers{ERenderType::RENDERTYPE_BACKGROUND};
+	CMapLayers m_MapLayersForeground = CMapLayers{ERenderType::RENDERTYPE_FOREGROUND};
 	CBackground m_Background;
 	CMenuBackground m_MenuBackground;
 
@@ -310,6 +311,7 @@ public:
 	class IFavorites *Favorites() const { return m_pFavorites; }
 	class IServerBrowser *ServerBrowser() const { return m_pServerBrowser; }
 	class CRenderTools *RenderTools() { return &m_RenderTools; }
+	class CRenderMap *RenderMap() { return &m_RenderMap; }
 	class CLayers *Layers() { return &m_Layers; }
 	CCollision *Collision() { return &m_Collision; }
 	const CCollision *Collision() const { return &m_Collision; }
@@ -614,6 +616,7 @@ public:
 	CClientStats m_aStats[MAX_CLIENTS];
 
 	CRenderTools m_RenderTools;
+	CRenderMap m_RenderMap;
 
 	void OnReset();
 

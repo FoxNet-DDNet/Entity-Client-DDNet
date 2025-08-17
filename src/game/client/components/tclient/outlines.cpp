@@ -68,17 +68,17 @@ void COutlines::OnRender()
 	if(m_pGameTiles)
 	{
 		if(g_Config.m_ClOutlineUnFreeze)
-			RenderTools()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_UNFREEZE, alpha);
+			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_UNFREEZE, alpha);
 		if(g_Config.m_ClOutlineFreeze)
-			RenderTools()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_FREEZE, alpha);
+			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_FREEZE, alpha);
 		if(g_Config.m_ClOutlineSolid)
-			RenderTools()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_SOLID, alphaSolid);
+			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_SOLID, alphaSolid);
 		if(g_Config.m_ClOutlineKill)
-			RenderTools()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_DEATH, alpha);
+			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_DEATH, alpha);
 	}
 
 	if(m_pGameTiles && m_pTeleTiles && g_Config.m_ClOutlineTele)
 	{
-		RenderTools()->RenderTeleOutlines(m_pGameTiles, m_pTeleTiles, m_Width, m_Height, 32.0f, alpha);
+		RenderMap()->RenderTeleOutlines(m_pGameTiles, m_pTeleTiles, m_Width, m_Height, 32.0f, alpha);
 	}
 }
