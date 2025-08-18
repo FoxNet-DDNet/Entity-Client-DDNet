@@ -761,3 +761,5 @@ void CWorldCore::InitSwitchers(int HighestSwitchNumber)
 		}
 	}
 }
+
+const CTuningParams CTuningParams::DEFAULT;

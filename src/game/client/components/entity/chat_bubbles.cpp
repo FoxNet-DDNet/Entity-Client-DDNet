@@ -58,7 +58,10 @@ void CChatBubbles::UpdateBubbleOffsets(int ClientId, float inputBubbleHeight)
 			}
 
 			CTextCursor Cursor;
-			TextRender()->SetCursor(&Cursor, 0, 0, FontSize, TEXTFLAG_RENDER);
+			Cursor.SetPosition(vec2(0, 0));
+			Cursor.m_FontSize = FontSize;
+			Cursor.m_Flags = TEXTFLAG_RENDER;
+
 			Cursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 			TextRender()->CreateOrAppendTextContainer(aBubble.m_TextContainerIndex, &Cursor, aBubble.m_aText);
 			aBubble.m_Cursor.m_FontSize = FontSize;
@@ -91,9 +94,9 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 			return;
 		if(g_Config.m_ClShowChatTeamMembersOnly && GameClient()->IsOtherTeam(ClientId) && GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK)
 			return;
-		if( GameClient()->m_aClients[ClientId].m_Foe)
+		if(GameClient()->m_aClients[ClientId].m_Foe)
 			return;
-		if((GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute) && g_Config.m_ClShowMutedInConsole)
+		if(GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempMute)
 			return;
 		else if(g_Config.m_ClWarList && g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1] || GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar))
 			return;
@@ -105,9 +108,11 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	// Create Text at default zoom
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	RenderTools()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
+	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
 
-	TextRender()->SetCursor(&pCursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	pCursor.SetPosition(vec2(0, 0));
+	pCursor.m_FontSize = FontSize;
+	pCursor.m_Flags = TEXTFLAG_RENDER;
 	pCursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 
 	CBubbles bubble(pText, pCursor, time_get());
@@ -164,9 +169,11 @@ void CChatBubbles::RenderCurInput(float y)
 	// Create Text at default zoom
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	RenderTools()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
-
-	TextRender()->SetCursor(&pCursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
+	
+	pCursor.SetPosition(vec2(0, 0));
+	pCursor.m_FontSize = FontSize;
+	pCursor.m_Flags = TEXTFLAG_RENDER;
 	pCursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 	TextRender()->CreateOrAppendTextContainer(TextContainerIndex, &pCursor, pText);
 
@@ -234,7 +241,9 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 				TextRender()->DeleteTextContainer(aBubble.m_TextContainerIndex);
 
 			CTextCursor Cursor;
-			TextRender()->SetCursor(&Cursor, 0.0f, 0.0f, FontSize, TEXTFLAG_RENDER);
+			Cursor.SetPosition(vec2(0, 0));
+			Cursor.m_FontSize = FontSize;
+			Cursor.m_Flags = TEXTFLAG_RENDER;
 			Cursor.m_LineWidth = 500.0f - FontSize * 2.0f;
 			TextRender()->CreateOrAppendTextContainer(aBubble.m_TextContainerIndex, &Cursor, aBubble.m_aText);
 			aBubble.m_Cursor.m_FontSize = FontSize;
@@ -251,7 +260,7 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 			float x = Position.x - (BoundingBox.m_W / 2.0f + g_Config.m_ClChatBubbleSize / 15.0f);
 			float y = BaseY - aBubble.m_OffsetY - BoundingBox.m_H - FontSize;
 
-			//float PushBubble = ShiftBubbles(ClientId, vec2(x - FontSize / 2.0f, y - FontSize / 2.0f), BoundingBox.m_W + FontSize * 1.20f);
+			// float PushBubble = ShiftBubbles(ClientId, vec2(x - FontSize / 2.0f, y - FontSize / 2.0f), BoundingBox.m_W + FontSize * 1.20f);
 			float PushBubble = 0;
 
 			Graphics()->DrawRect((x - FontSize / 2.0f) + PushBubble, y - FontSize / 2.0f,
@@ -267,8 +276,8 @@ void CChatBubbles::RenderChatBubbles(int ClientId)
 // have to store the bubbles position in CBubbles in order to do this properly
 float CChatBubbles::ShiftBubbles(int ClientId, vec2 Pos, float w)
 {
-	//if(!g_Config.m_ClChatBubblePushOut)
-		return 0.0f;
+	// if(!g_Config.m_ClChatBubblePushOut)
+	return 0.0f;
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
@@ -308,7 +317,6 @@ void CChatBubbles::ExpireBubbles()
 		return;
 }
 
-
 float CChatBubbles::GetAlpha(int64_t Time)
 {
 	const float FadeOutTime = g_Config.m_ClChatBubbleFadeOut / 100.0f;
@@ -325,7 +333,7 @@ float CChatBubbles::GetAlpha(int64_t Time)
 	float FadeOutProgress = (LineAge - (ShowTime - FadeOutTime)) / FadeOutTime;
 	return std::clamp(1.0f - FadeOutProgress, 0.0f, 1.0f);
 }
- 
+
 void CChatBubbles::OnRender()
 {
 	if(m_UseChatBubbles != g_Config.m_ClChatBubbles)
@@ -372,6 +380,12 @@ void CChatBubbles::Reset()
 		}
 		m_ChatBubbles[ClientId].clear();
 	}
+}
+
+void CChatBubbles::OnStateChange(int NewState, int OldState)
+{
+	if(OldState <= IClient::STATE_CONNECTING)
+		Reset();
 }
 
 void CChatBubbles::OnWindowResize()

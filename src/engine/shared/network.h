@@ -65,16 +65,11 @@ enum
 	NET_MAX_PAYLOAD = NET_MAX_PACKETSIZE - 6,
 	NET_MAX_CHUNKHEADERSIZE = 3,
 	NET_PACKETHEADERSIZE = 3,
+	NET_CONNLESS_EXTRA_SIZE = 4,
 	NET_MAX_CLIENTS = 64,
 	NET_MAX_CONSOLE_CLIENTS = 4,
 	NET_MAX_SEQUENCE = 1 << 10,
-
-	NET_CONNSTATE_OFFLINE = 0,
-	NET_CONNSTATE_TOKEN = 1,
-	NET_CONNSTATE_CONNECT = 2,
-	NET_CONNSTATE_PENDING = 3,
-	NET_CONNSTATE_ONLINE = 4,
-	NET_CONNSTATE_ERROR = 5,
+	NET_MAX_PACKET_CHUNKS = 0xFF,
 
 	NET_PACKETFLAG_UNUSED = 1 << 0,
 	NET_PACKETFLAG_TOKEN = 1 << 1,
@@ -93,7 +88,6 @@ enum
 	NET_CTRLMSG_CONNECTACCEPT = 2,
 	NET_CTRLMSG_ACCEPT = 3,
 	NET_CTRLMSG_CLOSE = 4,
-	NET_CTRLMSG_TOKEN = 5,
 
 	NET_CONN_BUFFERSIZE = 1024 * 32,
 
@@ -141,7 +135,7 @@ struct CNetChunk
 	int m_DataSize;
 	const void *m_pData;
 	// only used if the flags contain NETSENDFLAG_EXTENDED and NETSENDFLAG_CONNLESS
-	unsigned char m_aExtraData[4];
+	unsigned char m_aExtraData[NET_CONNLESS_EXTRA_SIZE];
 };
 
 class CNetChunkHeader
@@ -175,7 +169,7 @@ public:
 	int m_NumChunks;
 	int m_DataSize;
 	unsigned char m_aChunkData[NET_MAX_PAYLOAD];
-	unsigned char m_aExtraData[4];
+	unsigned char m_aExtraData[NET_CONNLESS_EXTRA_SIZE];
 };
 
 enum class CONNECTIVITY
@@ -228,16 +222,24 @@ class CNetConnection
 	// that. this should be fixed.
 	friend class CNetRecvUnpacker;
 
+public:
+	enum class EState
+	{
+		OFFLINE,
+		WANT_TOKEN,
+		CONNECT,
+		PENDING,
+		ONLINE,
+		ERROR,
+	};
+
+	SECURITY_TOKEN m_SecurityToken;
+
 private:
 	unsigned short m_Sequence;
 	unsigned short m_Ack;
 	unsigned short m_PeerAck;
-	unsigned m_State;
-
-public:
-	SECURITY_TOKEN m_SecurityToken;
-
-private:
+	EState m_State;
 	int m_RemoteClosed;
 	bool m_BlockCloseMsg;
 	bool m_UnknownSeq;
@@ -263,7 +265,7 @@ private:
 	// client 0.7
 	static TOKEN GenerateToken7(const NETADDR *pPeerAddr);
 	class CNetBase *m_pNetBase;
-	bool IsSixup() { return m_Sixup; }
+	bool IsSixup() const { return m_Sixup; }
 
 	//
 	void SetPeerAddr(const NETADDR *pAddr);
@@ -299,7 +301,7 @@ public:
 
 	const char *ErrorString();
 	void SignalResend();
-	int State() const { return m_State; }
+	EState State() const { return m_State; }
 	const NETADDR *PeerAddress() const { return &m_PeerAddr; }
 	const std::array<char, NETADDR_MAXSTRSIZE> &PeerAddressString(bool IncludePort) const
 	{
@@ -336,8 +338,16 @@ public:
 
 class CConsoleNetConnection
 {
+public:
+	enum class EState
+	{
+		OFFLINE,
+		ONLINE,
+		ERROR,
+	};
+
 private:
-	int m_State;
+	EState m_State;
 
 	NETADDR m_PeerAddr;
 	NETSOCKET m_Socket;
@@ -354,7 +364,7 @@ public:
 	int Init(NETSOCKET Socket, const NETADDR *pAddr);
 	void Disconnect(const char *pReason);
 
-	int State() const { return m_State; }
+	EState State() const { return m_State; }
 	const NETADDR *PeerAddress() const { return &m_PeerAddr; }
 	const char *ErrorString() const { return m_aErrorString; }
 
@@ -606,9 +616,11 @@ public:
 	static int Compress(const void *pData, int DataSize, void *pOutput, int OutputSize);
 	static int Decompress(const void *pData, int DataSize, void *pOutput, int OutputSize);
 
+	static bool IsValidConnectionOrientedPacket(const CNetPacketConstruct *pPacket);
+
 	static void SendControlMsg(NETSOCKET Socket, NETADDR *pAddr, int Ack, int ControlMsg, const void *pExtra, int ExtraSize, SECURITY_TOKEN SecurityToken, bool Sixup = false);
 	static void SendControlMsgWithToken7(NETSOCKET Socket, NETADDR *pAddr, TOKEN Token, int Ack, int ControlMsg, TOKEN MyToken, bool Extended);
-	static void SendPacketConnless(NETSOCKET Socket, NETADDR *pAddr, const void *pData, int DataSize, bool Extended, unsigned char aExtra[4]);
+	static void SendPacketConnless(NETSOCKET Socket, NETADDR *pAddr, const void *pData, int DataSize, bool Extended, unsigned char aExtra[NET_CONNLESS_EXTRA_SIZE]);
 	static void SendPacketConnlessWithToken7(NETSOCKET Socket, NETADDR *pAddr, const void *pData, int DataSize, SECURITY_TOKEN Token, SECURITY_TOKEN ResponseToken);
 	static void SendPacket(NETSOCKET Socket, NETADDR *pAddr, CNetPacketConstruct *pPacket, SECURITY_TOKEN SecurityToken, bool Sixup = false);
 

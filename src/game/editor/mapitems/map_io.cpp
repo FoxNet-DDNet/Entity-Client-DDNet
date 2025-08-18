@@ -29,6 +29,18 @@ public:
 	int m_SoundEnvOffset;
 };
 
+void CDataFileWriterFinishJob::Run()
+{
+	m_Writer.Finish();
+}
+
+CDataFileWriterFinishJob::CDataFileWriterFinishJob(const char *pRealFileName, const char *pTempFileName, CDataFileWriter &&Writer) :
+	m_Writer(std::move(Writer))
+{
+	str_copy(m_aRealFileName, pRealFileName);
+	str_copy(m_aTempFileName, pTempFileName);
+}
+
 bool CEditorMap::Save(const char *pFileName, const std::function<void(const char *pErrorMessage)> &ErrorHandler)
 {
 	char aFileNameTmp[IO_MAX_PATH_LENGTH];
@@ -744,6 +756,12 @@ bool CEditorMap::Load(const char *pFileName, int StorageType, const std::functio
 					pTiles->m_Image = pTilemapItem->m_Image;
 					pTiles->m_HasGame = pTilemapItem->m_Flags & TILESLAYERFLAG_GAME;
 
+					// validate image index
+					if(pTiles->m_Image < -1 || pTiles->m_Image >= (int)m_vpImages.size())
+					{
+						pTiles->m_Image = -1;
+					}
+
 					// load layer name
 					if(pTilemapItem->m_Version >= 3)
 						IntsToStr(pTilemapItem->m_aName, std::size(pTilemapItem->m_aName), pTiles->m_aName, std::size(pTiles->m_aName));
@@ -858,8 +876,12 @@ bool CEditorMap::Load(const char *pFileName, int StorageType, const std::functio
 					std::shared_ptr<CLayerQuads> pQuads = std::make_shared<CLayerQuads>(m_pEditor);
 					pQuads->m_Flags = pLayerItem->m_Flags;
 					pQuads->m_Image = pQuadsItem->m_Image;
+
+					// validate image index
 					if(pQuads->m_Image < -1 || pQuads->m_Image >= (int)m_vpImages.size())
+					{
 						pQuads->m_Image = -1;
+					}
 
 					// load layer name
 					if(pQuadsItem->m_Version >= 2)
@@ -885,9 +907,11 @@ bool CEditorMap::Load(const char *pFileName, int StorageType, const std::functio
 					pSounds->m_Flags = pLayerItem->m_Flags;
 					pSounds->m_Sound = pSoundsItem->m_Sound;
 
-					// validate m_Sound
+					// validate sound index
 					if(pSounds->m_Sound < -1 || pSounds->m_Sound >= (int)m_vpSounds.size())
+					{
 						pSounds->m_Sound = -1;
+					}
 
 					// load layer name
 					IntsToStr(pSoundsItem->m_aName, std::size(pSoundsItem->m_aName), pSounds->m_aName, std::size(pSounds->m_aName));
@@ -914,9 +938,11 @@ bool CEditorMap::Load(const char *pFileName, int StorageType, const std::functio
 					pSounds->m_Flags = pLayerItem->m_Flags;
 					pSounds->m_Sound = pSoundsItem->m_Sound;
 
-					// validate m_Sound
+					// validate sound index
 					if(pSounds->m_Sound < -1 || pSounds->m_Sound >= (int)m_vpSounds.size())
+					{
 						pSounds->m_Sound = -1;
+					}
 
 					// load layer name
 					IntsToStr(pSoundsItem->m_aName, std::size(pSoundsItem->m_aName), pSounds->m_aName, std::size(pSounds->m_aName));

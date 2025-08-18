@@ -728,13 +728,7 @@ void CEditorActionEditGroupProp::Undo()
 
 	if(m_Prop == EGroupProp::PROP_ORDER)
 	{
-		int CurrentOrder = m_Current;
-		bool Dir = m_Current > m_Previous;
-		while(CurrentOrder != m_Previous)
-		{
-			CurrentOrder = m_pEditor->m_Map.SwapGroups(CurrentOrder, Dir ? CurrentOrder - 1 : CurrentOrder + 1);
-		}
-		m_pEditor->m_SelectedGroup = m_Previous;
+		m_pEditor->m_SelectedGroup = m_pEditor->m_Map.MoveGroup(m_Current, m_Previous);
 	}
 	else
 		Apply(m_Previous);
@@ -746,13 +740,7 @@ void CEditorActionEditGroupProp::Redo()
 
 	if(m_Prop == EGroupProp::PROP_ORDER)
 	{
-		int CurrentOrder = m_Previous;
-		bool Dir = m_Previous > m_Current;
-		while(CurrentOrder != m_Current)
-		{
-			CurrentOrder = m_pEditor->m_Map.SwapGroups(CurrentOrder, Dir ? CurrentOrder - 1 : CurrentOrder + 1);
-		}
-		m_pEditor->m_SelectedGroup = m_Current;
+		m_pEditor->m_SelectedGroup = m_pEditor->m_Map.MoveGroup(m_Previous, m_Current);
 	}
 	else
 		Apply(m_Current);
@@ -808,7 +796,7 @@ void CEditorActionEditLayerProp::Undo()
 
 	if(m_Prop == ELayerProp::PROP_ORDER)
 	{
-		m_pEditor->SelectLayer(pCurrentGroup->SwapLayers(m_Current, m_Previous));
+		m_pEditor->SelectLayer(pCurrentGroup->MoveLayer(m_Current, m_Previous));
 	}
 	else
 		Apply(m_Previous);
@@ -820,7 +808,7 @@ void CEditorActionEditLayerProp::Redo()
 
 	if(m_Prop == ELayerProp::PROP_ORDER)
 	{
-		m_pEditor->SelectLayer(pCurrentGroup->SwapLayers(m_Previous, m_Current));
+		m_pEditor->SelectLayer(pCurrentGroup->MoveLayer(m_Previous, m_Current));
 	}
 	else
 		Apply(m_Current);
@@ -1462,25 +1450,23 @@ void CEditorActionEnvelopeAdd::Redo()
 	m_pEditor->m_SelectedEnvelope = m_pEditor->m_Map.m_vpEnvelopes.size() - 1;
 }
 
-CEditorActionEveloppeDelete::CEditorActionEveloppeDelete(CEditor *pEditor, int EnvelopeIndex) :
-	IEditorAction(pEditor), m_EnvelopeIndex(EnvelopeIndex), m_pEnv(pEditor->m_Map.m_vpEnvelopes[EnvelopeIndex])
+CEditorActionEnvelopeDelete::CEditorActionEnvelopeDelete(CEditor *pEditor, int EnvelopeIndex, std::vector<std::shared_ptr<IEditorEnvelopeReference>> &vpObjectReferences, std::shared_ptr<CEnvelope> &pEnvelope) :
+	IEditorAction(pEditor), m_EnvelopeIndex(EnvelopeIndex), m_pEnv(pEnvelope), m_vpObjectReferences(vpObjectReferences)
 {
 	str_format(m_aDisplayText, sizeof(m_aDisplayText), "Delete envelope %d", m_EnvelopeIndex);
 }
 
-void CEditorActionEveloppeDelete::Undo()
+void CEditorActionEnvelopeDelete::Undo()
 {
 	// Undo is adding back the envelope
-	m_pEditor->m_Map.m_vpEnvelopes.insert(m_pEditor->m_Map.m_vpEnvelopes.begin() + m_EnvelopeIndex, m_pEnv);
-	m_pEditor->m_SelectedEnvelope = m_EnvelopeIndex;
+	m_pEditor->m_Map.InsertEnvelope(m_EnvelopeIndex, m_pEnv);
+	m_pEditor->m_Map.UpdateEnvelopeReferences(m_EnvelopeIndex, m_pEnv, m_vpObjectReferences);
 }
 
-void CEditorActionEveloppeDelete::Redo()
+void CEditorActionEnvelopeDelete::Redo()
 {
 	// Redo is erasing the same envelope index
-	m_pEditor->m_Map.m_vpEnvelopes.erase(m_pEditor->m_Map.m_vpEnvelopes.begin() + m_EnvelopeIndex);
-	if(m_pEditor->m_SelectedEnvelope >= (int)m_pEditor->m_Map.m_vpEnvelopes.size())
-		m_pEditor->m_SelectedEnvelope = m_pEditor->m_Map.m_vpEnvelopes.size() - 1;
+	m_pEditor->m_Map.DeleteEnvelope(m_EnvelopeIndex);
 }
 
 CEditorActionEnvelopeEdit::CEditorActionEnvelopeEdit(CEditor *pEditor, int EnvelopeIndex, EEditType EditType, int Previous, int Current) :
@@ -1498,7 +1484,7 @@ void CEditorActionEnvelopeEdit::Undo()
 	{
 	case EEditType::ORDER:
 	{
-		m_pEditor->m_Map.SwapEnvelopes(m_Current, m_Previous);
+		m_pEditor->m_Map.MoveEnvelope(m_Current, m_Previous);
 		break;
 	}
 	case EEditType::SYNC:
@@ -1517,7 +1503,7 @@ void CEditorActionEnvelopeEdit::Redo()
 	{
 	case EEditType::ORDER:
 	{
-		m_pEditor->m_Map.SwapEnvelopes(m_Previous, m_Current);
+		m_pEditor->m_Map.MoveEnvelope(m_Previous, m_Current);
 		break;
 	}
 	case EEditType::SYNC:
@@ -1562,11 +1548,8 @@ void CEditorActionEnvelopeEditPoint::Apply(int Value)
 
 		if(m_pEnv->GetChannels() == 4)
 		{
-			auto *pValues = m_pEnv->m_vPoints[m_PointIndex].m_aValues;
-			const ColorRGBA Color = ColorRGBA(fx2f(pValues[0]), fx2f(pValues[1]), fx2f(pValues[2]), fx2f(pValues[3]));
-
-			m_pEditor->m_ColorPickerPopupContext.m_RgbaColor = Color;
-			m_pEditor->m_ColorPickerPopupContext.m_HslaColor = color_cast<ColorHSLA>(Color);
+			m_pEditor->m_ColorPickerPopupContext.m_RgbaColor = m_pEnv->m_vPoints[m_PointIndex].ColorValue();
+			m_pEditor->m_ColorPickerPopupContext.m_HslaColor = color_cast<ColorHSLA>(m_pEditor->m_ColorPickerPopupContext.m_RgbaColor);
 			m_pEditor->m_ColorPickerPopupContext.m_HsvaColor = color_cast<ColorHSVA>(m_pEditor->m_ColorPickerPopupContext.m_HslaColor);
 		}
 	}

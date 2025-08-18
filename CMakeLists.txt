@@ -110,7 +110,7 @@ option(ANTIBOT "Enable support for a dynamic anticheat library (not provided, se
 option(HEADLESS_CLIENT "Build the client without graphics" OFF)
 option(CLIENT "Compile client" ON)
 option(SERVER "Compile server" ON)
-option(TOOLS "Compile tools" OFF)
+option(TOOLS "Compile tools" ON)
 option(DOWNLOAD_GTEST "Download and compile GTest" ${AUTO_DEPENDENCIES_DEFAULT})
 option(STEAM "Build the Steam release version" OFF)
 option(DISCORD "Enable Discord rich presence support" ON)
@@ -124,16 +124,11 @@ option(IPO "Enable interprocedural optimizations" OFF)
 option(FUSE_LD "Linker to use" OFF)
 option(SECURITY_COMPILER_FLAGS "Whether to set security-relevant compiler flags like -D_FORTIFY_SOURCE=2 and -fstack-protector-strong" ON)
 
-if(TARGET_OS STREQUAL "mac")
-    set(TOOLS ON)
-endif()
-
 if(TARGET_OS STREQUAL "android")
-    set(CLIENT ON)
     set(DISCORD OFF)
 endif()
 
-if(CMAKE_SYSTEM_NAME STREQUAL "Emscripten")
+if(TARGET_OS STREQUAL "emscripten")
   include(${PROJECT_SOURCE_DIR}/cmake/toolchains/Emscripten.toolchain)
 endif()
 
@@ -716,15 +711,16 @@ endif()
 
 if(TARGET_OS STREQUAL "windows")
   set(PLATFORM_CLIENT)
-  set(PLATFORM_CLIENT_LIBS opengl32 winmm imm32)
+  set(PLATFORM_CLIENT_LIBS opengl32.lib winmm.lib imm32.lib)
   set(PLATFORM_LIBS)
-  list(APPEND PLATFORM_LIBS shlwapi) # PathIsRelativeW
-  list(APPEND PLATFORM_LIBS version ws2_32) # Windows sockets
-  list(APPEND PLATFORM_LIBS advapi32) # Reg* and Crypt* functions
-  list(APPEND PLATFORM_LIBS bcrypt userenv) # for Rust (https://github.com/rust-lang/rust/issues/91974)
-  list(APPEND PLATFORM_LIBS ole32) # CoInitialize(Ex)
-  list(APPEND PLATFORM_LIBS shell32)
-  list(APPEND PLATFORM_LIBS ntdll) # https://github.com/ddnet/ddnet/issues/6725
+  list(APPEND PLATFORM_LIBS shlwapi.lib) # PathIsRelativeW
+  list(APPEND PLATFORM_LIBS version ws2_32.lib) # Windows sockets
+  list(APPEND PLATFORM_LIBS advapi32.lib) # Reg* and Crypt* functions
+  list(APPEND PLATFORM_LIBS bcrypt.lib userenv.lib) # for Rust (https://github.com/rust-lang/rust/issues/91974)
+  list(APPEND PLATFORM_LIBS ole32.lib) # CoInitialize(Ex)
+  list(APPEND PLATFORM_LIBS shell32.lib)
+  list(APPEND PLATFORM_LIBS ntdll.lib) # https://github.com/ddnet/ddnet/issues/6725
+  list(APPEND PLATFORM_LIBS uuid.lib) # FOLDERID_RoamingAppData
 elseif(TARGET_OS STREQUAL "mac")
   find_library(CARBON Carbon)
   find_library(COCOA Cocoa)
@@ -883,8 +879,8 @@ list(APPEND TARGETS_OWN rust-bridge-shared)
 
 if(TARGET_OS STREQUAL "android")
   set(CARGO_BUILD_DIR "${CARGO_NDK_TARGET}/")
-  set(CARGO_BUILD ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${PROJECT_BINARY_DIR} DDNET_TEST_NO_LINK=1 ${RUST_CARGO} ndk --manifest-path "${PROJECT_SOURCE_DIR}/Cargo.toml" -t ${CARGO_NDK_TARGET} -p ${CARGO_NDK_API} build)
-  set(CARGO_TEST ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${PROJECT_BINARY_DIR} ${RUST_CARGO} ndk -t ${CARGO_NDK_TARGET} -p ${CARGO_NDK_API} test)
+  set(CARGO_BUILD ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${PROJECT_BINARY_DIR} DDNET_TEST_NO_LINK=1 ${RUST_CARGO} ndk --manifest-path "${PROJECT_SOURCE_DIR}/Cargo.toml" --target ${CARGO_NDK_TARGET} --platform ${CARGO_NDK_API} build)
+  set(CARGO_TEST ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${PROJECT_BINARY_DIR} ${RUST_CARGO} ndk --target ${CARGO_NDK_TARGET} --platform ${CARGO_NDK_API} test)
 else()
   set(CARGO_BUILD_DIR "")
   set(CARGO_BUILD ${CMAKE_COMMAND} -E env CARGO_TARGET_DIR=${PROJECT_BINARY_DIR} DDNET_TEST_NO_LINK=1 ${RUST_CARGO} build --manifest-path "${PROJECT_SOURCE_DIR}/Cargo.toml")
@@ -1465,6 +1461,7 @@ set(EXPECTED_DATA
   fonts/DejaVuSans.ttf
   fonts/Font_Awesome_6_Free-Solid-900.otf
   fonts/GlowSansJ-Compressed-Book.otf
+  fonts/NotoEmoji-Regular.ttf
   fonts/SourceHanSans.ttc
   fonts/index.json
   game.png
@@ -2054,6 +2051,7 @@ set_src(ENGINE_INTERFACE GLOB src/engine
   favorites.h
   friends.h
   ghost.h
+  graphics.cpp
   graphics.h
   http.h
   image.h
@@ -2320,6 +2318,7 @@ if(CLIENT)
     graphics_defines.h
     graphics_threaded.cpp
     graphics_threaded.h
+    graphics_threaded_sprites.cpp
     input.cpp
     input.h
     keynames.cpp
@@ -2382,7 +2381,6 @@ if(CLIENT)
     components/entity/chat_bubbles.cpp
     components/entity/chat_bubbles.h
     components/entity/commands.cpp
-    components/entity/e_enums.h
     components/entity/entity.cpp
     components/entity/entity.h 
     components/entity/freeze_kill.cpp
@@ -2390,6 +2388,8 @@ if(CLIENT)
     components/entity/mapconfig.cpp
     components/entity/mapconfig.h
     components/entity/menus_entity.cpp 
+    components/entity/quick_actions.cpp
+    components/entity/quick_actions.h
     components/entity/update.cpp
     components/entity/update.h
     components/flow.cpp
@@ -2434,8 +2434,6 @@ if(CLIENT)
     components/players.h
     components/race_demo.cpp
     components/race_demo.h
-    components/render_layer.cpp
-    components/render_layer.h
     components/scoreboard.cpp
     components/scoreboard.h
     components/skins.cpp
@@ -2460,6 +2458,8 @@ if(CLIENT)
     components/tclient/rainbow.h
     components/tclient/skinprofiles.cpp
     components/tclient/skinprofiles.h
+    components/tclient/statusbar.cpp
+    components/tclient/statusbar.h
     components/tclient/warlist.cpp
     components/tclient/warlist.h
     components/tooltips.cpp
@@ -2500,7 +2500,6 @@ if(CLIENT)
     race.h
     render.cpp
     render.h
-    render_map.cpp
     sixup_translate_connless.cpp
     sixup_translate_game.cpp
     sixup_translate_snapshot.cpp
@@ -2538,6 +2537,8 @@ if(CLIENT)
     enums.h
     explanations.cpp
     explanations.h
+    file_browser.cpp
+    file_browser.h
     font_typer.cpp
     font_typer.h
     layer_selector.cpp
@@ -2573,6 +2574,7 @@ if(CLIENT)
     mapitems/layer_tune.cpp
     mapitems/layer_tune.h
     mapitems/map.cpp
+    mapitems/map.h
     mapitems/map_io.cpp
     mapitems/sound.cpp
     mapitems/sound.h
@@ -2586,9 +2588,20 @@ if(CLIENT)
     quick_action.h
     quick_actions.cpp
     quick_actions.h
+    references.cpp
+    references.h
     smooth_value.cpp
     smooth_value.h
     tileart.cpp
+  )
+  set_src(GAME_MAP GLOB_RECURSE src/game/map
+    render_component.cpp
+    render_component.h
+    render_interfaces.h
+    render_layer.cpp
+    render_layer.h
+    render_map.cpp
+    render_map.h
   )
   set(GAME_GENERATED_CLIENT
     src/game/generated/checksum.cpp
@@ -2597,7 +2610,7 @@ if(CLIENT)
     src/game/generated/client_data7.cpp
     src/game/generated/client_data7.h
   )
-  set(CLIENT_SRC ${ENGINE_CLIENT} ${PLATFORM_CLIENT} ${GAME_CLIENT} ${GAME_EDITOR} ${GAME_GENERATED_CLIENT})
+  set(CLIENT_SRC ${ENGINE_CLIENT} ${PLATFORM_CLIENT} ${GAME_CLIENT} ${GAME_EDITOR} ${GAME_MAP} ${GAME_GENERATED_CLIENT})
 
   set(DEPS_CLIENT ${DEPS} ${GLEW_DEP} ${WAVPACK_DEP})
 
@@ -2795,7 +2808,7 @@ if(SERVER)
     entities/dragger_beam.cpp
     entities/dragger_beam.h
     entities/gun.cpp
-    entities/gun.h  
+    entities/gun.h
     entities/laser.cpp
     entities/laser.h
     entities/light.cpp
@@ -3129,7 +3142,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
   add_custom_target(run_tests
     DEPENDS run_cxx_tests
   )
-  if((NOT MSVC OR CMAKE_BUILD_TYPE STREQUAL Release) AND NOT MINGW)
+  if(NOT MSVC OR CMAKE_BUILD_TYPE STREQUAL Release)
     # On MSVC, Rust tests only work in the release mode because we link our C++
     # code with the debug C standard library (/MTd) but Rust only supports
     # linking to the release C standard library (/MT).
@@ -3592,7 +3605,7 @@ foreach(target ${TARGETS})
     target_compile_options(${target} PRIVATE /utf-8) # Use UTF-8 for source files.
     # Enable Edit & Continue (Hot Reload) support
     if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.25)
-      set_property(TARGET ${target} PROPERTY MSVC_DEBUG_INFORMATION_FORMAT $<$<CONFIG:Debug>:EditAndContinue>)
+      set_property(TARGET ${target} PROPERTY MSVC_DEBUG_INFORMATION_FORMAT $<IF:$<CONFIG:Debug>,EditAndContinue,Embedded>)
       target_link_options(${target} PRIVATE $<$<CONFIG:Debug>:/INCREMENTAL>)
     endif()
   endif()

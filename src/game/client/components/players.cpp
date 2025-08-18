@@ -24,7 +24,6 @@
 
 #include "players.h"
 
-#include "entity/e_enums.h"
 #include <base/color.h>
 #include <base/math.h>
 
@@ -76,9 +75,9 @@ void CPlayers::RenderHand7(const CTeeRenderInfo *pInfo, vec2 HandPos, float Hand
 	Graphics()->QuadsBegin();
 	Graphics()->SetColor(pInfo->m_aSixup[g_Config.m_ClDummy].m_aColors[protocol7::SKINPART_HANDS].WithAlpha(Alpha));
 	Graphics()->QuadsSetRotation(HandAngle);
-	RenderTools()->SelectSprite7(client_data7::SPRITE_TEE_HAND_OUTLINE);
+	Graphics()->SelectSprite7(client_data7::SPRITE_TEE_HAND_OUTLINE);
 	Graphics()->QuadsDraw(&QuadOutline, 1);
-	RenderTools()->SelectSprite7(client_data7::SPRITE_TEE_HAND);
+	Graphics()->SelectSprite7(client_data7::SPRITE_TEE_HAND);
 	Graphics()->QuadsDraw(&QuadHand, 1);
 	Graphics()->QuadsEnd();
 }
@@ -435,7 +434,7 @@ void CPlayers::RenderPlayer(
 
 	bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
 	bool OtherTeam = GameClient()->IsOtherTeam(ClientId);
-	// float Alpha = (OtherTeam || ClientId < 0) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+	// float Alpha = (OtherTeam || i < 0) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
 	bool Spec = GameClient()->m_Snap.m_SpecInfo.m_Active;
 
 	float Alpha = 1.0f;
@@ -865,42 +864,42 @@ void CPlayers::OnRender()
 	const bool IsTeamPlay = GameClient()->IsTeamPlay();
 	const int LocalClientId = GameClient()->m_Snap.m_LocalClientId;
 
-	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
+	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
-			if(GameClient()->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
+			if(GameClient()->m_aClients[i].m_Solo && i != LocalClientId)
 				continue;
 			
-		aRenderInfo[ClientId] =  GameClient()->m_aClients[ClientId].m_RenderInfo;
-		aRenderInfo[ClientId].m_TeeRenderFlags = 0;
+		aRenderInfo[i] = GameClient()->m_aClients[i].m_RenderInfo;
+		aRenderInfo[i].m_TeeRenderFlags = 0;
 
 		// predict freeze skin only for local players
 		bool Frozen = false;
-		if(ClientId == GameClient()->m_aLocalIds[0] || ClientId == GameClient()->m_aLocalIds[1])
+		if(i == GameClient()->m_aLocalIds[0] || i == GameClient()->m_aLocalIds[1])
 		{
-			if(GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0)
-				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
-			if(GameClient()->m_aClients[ClientId].m_Predicted.m_LiveFrozen)
-				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
-			if(GameClient()->m_aClients[ClientId].m_Predicted.m_Invincible)
-				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+			if(GameClient()->m_aClients[i].m_Predicted.m_FreezeEnd != 0)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+			if(GameClient()->m_aClients[i].m_Predicted.m_LiveFrozen)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+			if(GameClient()->m_aClients[i].m_Predicted.m_Invincible)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
-			Frozen = GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0;
+			Frozen = GameClient()->m_aClients[i].m_Predicted.m_FreezeEnd != 0;
 		}
 		else
 		{
-			if(GameClient()->m_aClients[ClientId].m_FreezeEnd != 0)
-				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
-			if(GameClient()->m_aClients[ClientId].m_LiveFrozen)
-				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
-			if(GameClient()->m_aClients[ClientId].m_Invincible)
-				aRenderInfo[ClientId].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
+			if(GameClient()->m_aClients[i].m_FreezeEnd != 0)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN | TEE_NO_WEAPON;
+			if(GameClient()->m_aClients[i].m_LiveFrozen)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_FROZEN;
+			if(GameClient()->m_aClients[i].m_Invincible)
+				aRenderInfo[i].m_TeeRenderFlags |= TEE_EFFECT_SPARKLE;
 
-			Frozen = GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_FreezeEnd != 0;
+			Frozen = GameClient()->m_Snap.m_aCharacters[i].m_HasExtendedData && GameClient()->m_Snap.m_aCharacters[i].m_ExtendedData.m_FreezeEnd != 0;
 		}
 
-		const bool Local = ClientId == GameClient()->m_Snap.m_LocalClientId;
-		const bool Dummy = ClientId == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
+		const bool Local = i == GameClient()->m_Snap.m_LocalClientId;
+		const bool Dummy = i == GameClient()->m_aLocalIds[!g_Config.m_ClDummy];
 
 		// change own tee skin, if player has the same skin, you can see theirs but yours stays whatever you put it as
 		if(g_Config.m_ClOwnTeeSkin && (Local || Dummy))
@@ -909,21 +908,21 @@ void CPlayers::OnRender()
 
 			if(pSkin != nullptr)
 			{
-				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
-				aRenderInfo[ClientId].Apply(pSkin);
+				aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
+				aRenderInfo[i].Apply(pSkin);
 
 				const bool IsCustomColored = g_Config.m_ClOwnTeeSkinCustomColor;
-				aRenderInfo[ClientId].m_CustomColoredSkin = IsCustomColored;
+				aRenderInfo[i].m_CustomColoredSkin = IsCustomColored;
 
 				if(IsCustomColored)
 				{
-					aRenderInfo[ClientId].m_ColorBody = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorBody)));
-					aRenderInfo[ClientId].m_ColorFeet = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorFeet)));
+					aRenderInfo[i].m_ColorBody = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorBody)));
+					aRenderInfo[i].m_ColorFeet = (color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOwnTeeColorFeet)));
 				}
 				else
 				{
-					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
-					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
+					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 1);
 				}
 			}
 		}
@@ -946,60 +945,38 @@ void CPlayers::OnRender()
 				aRenderInfo[ClientId].m_CustomColoredSkin = CustomColor;
 				if(!CustomColor)
 				{
-					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
-					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
+					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 1);
 				}
 				else
 				{
-					aRenderInfo[ClientId].m_ColorBody = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorBody));
-					aRenderInfo[ClientId].m_ColorFeet = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorFeet));
+					aRenderInfo[i].m_ColorBody = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorBody));
+					aRenderInfo[i].m_ColorFeet = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorFeet));
 				}
 			}
 		}
 
-		// Pro_Gaming1921 Extra
-		if(g_Config.m_ClChangeAllSkin)
+		// TClient
+		if(g_Config.m_ClFreezeKatana > 0 && GameClient()->m_aClients[i].m_Predicted.m_FreezeEnd != 0)
 		{
-			// find skin in database
-			const auto *pSkin =  GameClient()->m_Skins.FindOrNullptr(g_Config.m_ClChangeAllSkinName);
-
-			if(pSkin == nullptr)
-				pSkin =  GameClient()->m_Skins.FindOrNullptr("Catnoa");
-
-			if(pSkin != nullptr)
-			{
-				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
-				aRenderInfo[ClientId].Apply(pSkin);
-
-				const bool CustomColor = g_Config.m_ClChangeAllCustomCol;
-				aRenderInfo[ClientId].m_CustomColoredSkin = CustomColor;
-				if(!CustomColor)
-				{
-					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
-					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
-				}
-				else
-				{
-					aRenderInfo[ClientId].m_ColorBody = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorBody));
-					aRenderInfo[ClientId].m_ColorFeet = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChangeAllColorFeet));
-				}
-			}
+			GameClient()->m_aClients[i].m_RenderCur.m_Weapon = WEAPON_NINJA;
+			aRenderInfo[i].m_TeeRenderFlags &= ~TEE_NO_WEAPON;
 		}
 
-		if((GameClient()->m_aClients[ClientId].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
+		if((GameClient()->m_aClients[i].m_RenderCur.m_Weapon == WEAPON_NINJA || (Frozen && !GameClient()->m_GameInfo.m_NoSkinChangeForFrozen)) && g_Config.m_ClShowNinja)
 		{
 			// change the skin for the player to the ninja
 			const auto *pSkin = GameClient()->m_Skins.FindOrNullptr("x_ninja");
 			if(pSkin != nullptr)
 			{
-				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
+				aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
 
-				aRenderInfo[ClientId].Apply(pSkin);
-				aRenderInfo[ClientId].m_CustomColoredSkin = IsTeamPlay;
+				aRenderInfo[i].Apply(pSkin);
+				aRenderInfo[i].m_CustomColoredSkin = IsTeamPlay;
 				if(!IsTeamPlay)
 				{
-					aRenderInfo[ClientId].m_ColorBody = ColorRGBA(1, 1, 1);
-					aRenderInfo[ClientId].m_ColorFeet = ColorRGBA(1, 1, 1);
+					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 1);
+					aRenderInfo[i].m_ColorFeet = ColorRGBA(1, 1, 1);
 				}
 			}
 		}
@@ -1015,39 +992,39 @@ void CPlayers::OnRender()
 				if(Local)
 				{
 					if(!g_Config.m_ClSweatModeOnlyOthers)
-						aRenderInfo[ClientId].Apply(pSkin);
+						aRenderInfo[i].Apply(pSkin);
 				}
 				else
-					aRenderInfo[ClientId].Apply(pSkin);
+					aRenderInfo[i].Apply(pSkin);
 			}
 
 			ColorRGBA Color = ColorRGBA(0.5f, 0.5f, 0.5f);
 
-			if(GameClient()->m_aClients[ClientId].m_Friend && g_Config.m_ClDoFriendColors)
+			if(GameClient()->m_aClients[i].m_Friend)
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 			if(g_Config.m_ClWarList)
 			{
-				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
-					Color = GameClient()->m_WarList.GetClanColor(ClientId);
+				if(GameClient()->m_WarList.GetWarData(i).IsWarClan)
+					Color = GameClient()->m_WarList.GetClanColor(i);
 
-				if(GameClient()->m_WarList.GetWarData(ClientId).IsWarName)
-					Color = GameClient()->m_WarList.GetNameplateColor(ClientId);
-				else if(GameClient()->m_WarList.GetWarData(ClientId).IsWarClan)
-					Color = GameClient()->m_WarList.GetClanColor(ClientId);
+				if(GameClient()->m_WarList.GetWarData(i).IsWarName)
+					Color = GameClient()->m_WarList.GetNameplateColor(i);
+				else if(GameClient()->m_WarList.GetWarData(i).IsWarClan)
+					Color = GameClient()->m_WarList.GetClanColor(i);
 
-				if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempWar)
+				if(GameClient()->m_EClient.m_TempPlayers[i].IsTempWar)
 					Color = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
-				else if(GameClient()->m_EClient.m_TempPlayers[ClientId].IsTempHelper)
+				else if(GameClient()->m_EClient.m_TempPlayers[i].IsTempHelper)
 					Color = GameClient()->m_WarList.m_WarTypes[3]->m_Color;
 			}
 
 			if(g_Config.m_ClSweatModeSelfColor && (Local || Dummy))
 				continue;
 
-			if(!(GameClient()->m_aClients[ClientId].m_FreezeEnd > 0))
-				aRenderInfo[ClientId].m_CustomColoredSkin = 1;
-			aRenderInfo[ClientId].m_ColorBody = Color;
-			aRenderInfo[ClientId].m_ColorFeet = Color;
+			if(!(GameClient()->m_aClients[i].m_FreezeEnd > 0))
+				aRenderInfo[i].m_CustomColoredSkin = 1;
+			aRenderInfo[i].m_ColorBody = Color;
+			aRenderInfo[i].m_ColorFeet = Color;
 		}
 	}
 	CTeeRenderInfo RenderInfoSpec;
@@ -1111,13 +1088,36 @@ void CPlayers::OnRender()
 	// render everyone else's tee, then either our own or the tee we are spectating.
 	const int RenderLastId = (GameClient()->m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW && GameClient()->m_Snap.m_SpecInfo.m_Active) ? GameClient()->m_Snap.m_SpecInfo.m_SpectatorId : LocalClientId;
 
+	std::vector<int> OtherTeamIds;
+	std::vector<int> SameTeamIds;
+
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(ClientId == RenderLastId || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active || !IsPlayerInfoAvailable(ClientId))
-		{
 			continue;
-		}
 
+		if(GameClient()->IsOtherTeam(ClientId))
+			OtherTeamIds.push_back(ClientId);
+		else
+			SameTeamIds.push_back(ClientId);
+	}
+
+	for(int ClientId : OtherTeamIds)
+	{
+		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
+			if(GameClient()->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
+				continue;
+				
+		RenderHookCollLine(&GameClient()->m_aClients[ClientId].m_RenderPrev, &GameClient()->m_aClients[ClientId].m_RenderCur, ClientId);
+
+		if(!in_range(GameClient()->m_aClients[ClientId].m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(GameClient()->m_aClients[ClientId].m_RenderPos.y, ScreenY0, ScreenY1))
+			continue;
+
+		RenderPlayer(&GameClient()->m_aClients[ClientId].m_RenderPrev, &GameClient()->m_aClients[ClientId].m_RenderCur, &aRenderInfo[ClientId], ClientId);
+	}
+
+	for(int ClientId : SameTeamIds)
+	{
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
 			if(GameClient()->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
 				continue;
@@ -1125,11 +1125,11 @@ void CPlayers::OnRender()
 		RenderHookCollLine(&GameClient()->m_aClients[ClientId].m_RenderPrev, &GameClient()->m_aClients[ClientId].m_RenderCur, ClientId);
 
 		if(!in_range(GameClient()->m_aClients[ClientId].m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(GameClient()->m_aClients[ClientId].m_RenderPos.y, ScreenY0, ScreenY1))
-		{
 			continue;
-		}
+
 		RenderPlayer(&GameClient()->m_aClients[ClientId].m_RenderPrev, &GameClient()->m_aClients[ClientId].m_RenderCur, &aRenderInfo[ClientId], ClientId);
 	}
+
 	if(RenderLastId != -1 && GameClient()->m_Snap.m_aCharacters[RenderLastId].m_Active && IsPlayerInfoAvailable(RenderLastId))
 	{
 		const CGameClient::CClientData *pClientData = &GameClient()->m_aClients[RenderLastId];
@@ -1167,29 +1167,29 @@ void CPlayers::OnInit()
 	for(int i = 0; i < NUM_WEAPONS; ++i)
 	{
 		float ScaleX, ScaleY;
-		RenderTools()->GetSpriteScale(g_pData->m_Weapons.m_aId[i].m_pSpriteBody, ScaleX, ScaleY);
+		Graphics()->GetSpriteScale(g_pData->m_Weapons.m_aId[i].m_pSpriteBody, ScaleX, ScaleY);
 		Graphics()->QuadsSetSubset(0, 0, 1, 1);
-		RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleX, g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleY);
+		Graphics()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleX, g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleY);
 		Graphics()->QuadsSetSubset(0, 1, 1, 0);
-		RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleX, g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleY);
+		Graphics()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleX, g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleY);
 	}
 	float ScaleX, ScaleY;
 
 	// at the end the hand
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
-	RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, 20.f);
+	Graphics()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, 20.f);
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
-	RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, 20.f);
+	Graphics()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, 20.f);
 
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
-	RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, -12.f, -8.f, 24.f, 16.f);
+	Graphics()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, -12.f, -8.f, 24.f, 16.f);
 	Graphics()->QuadsSetSubset(0, 0, 1, 1);
-	RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, -12.f, -8.f, 24.f, 16.f);
+	Graphics()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, -12.f, -8.f, 24.f, 16.f);
 
 	for(int i = 0; i < NUM_EMOTICONS; ++i)
 	{
 		Graphics()->QuadsSetSubset(0, 0, 1, 1);
-		RenderTools()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, 64.f);
+		Graphics()->QuadContainerAddSprite(m_WeaponEmoteQuadContainerIndex, 64.f);
 	}
 	Graphics()->QuadContainerUpload(m_WeaponEmoteQuadContainerIndex);
 
@@ -1203,10 +1203,10 @@ void CPlayers::OnInit()
 				if(i == WEAPON_GUN || i == WEAPON_SHOTGUN)
 				{
 					// TODO: hardcoded for now to get the same particle size as before
-					RenderTools()->GetSpriteScaleImpl(96, 64, ScaleX, ScaleY);
+					Graphics()->GetSpriteScaleImpl(96, 64, ScaleX, ScaleY);
 				}
 				else
-					RenderTools()->GetSpriteScale(g_pData->m_Weapons.m_aId[i].m_aSpriteMuzzles[n], ScaleX, ScaleY);
+					Graphics()->GetSpriteScale(g_pData->m_Weapons.m_aId[i].m_aSpriteMuzzles[n], ScaleX, ScaleY);
 			}
 
 			float SWidth = (g_pData->m_Weapons.m_aId[i].m_VisualSize * ScaleX) * (4.0f / 3.0f);
@@ -1214,15 +1214,15 @@ void CPlayers::OnInit()
 
 			Graphics()->QuadsSetSubset(0, 0, 1, 1);
 			if(WEAPON_NINJA == i)
-				RenderTools()->QuadContainerAddSprite(m_aWeaponSpriteMuzzleQuadContainerIndex[i], 160.f * ScaleX, 160.f * ScaleY);
+				Graphics()->QuadContainerAddSprite(m_aWeaponSpriteMuzzleQuadContainerIndex[i], 160.f * ScaleX, 160.f * ScaleY);
 			else
-				RenderTools()->QuadContainerAddSprite(m_aWeaponSpriteMuzzleQuadContainerIndex[i], SWidth, SHeight);
+				Graphics()->QuadContainerAddSprite(m_aWeaponSpriteMuzzleQuadContainerIndex[i], SWidth, SHeight);
 
 			Graphics()->QuadsSetSubset(0, 1, 1, 0);
 			if(WEAPON_NINJA == i)
-				RenderTools()->QuadContainerAddSprite(m_aWeaponSpriteMuzzleQuadContainerIndex[i], 160.f * ScaleX, 160.f * ScaleY);
+				Graphics()->QuadContainerAddSprite(m_aWeaponSpriteMuzzleQuadContainerIndex[i], 160.f * ScaleX, 160.f * ScaleY);
 			else
-				RenderTools()->QuadContainerAddSprite(m_aWeaponSpriteMuzzleQuadContainerIndex[i], SWidth, SHeight);
+				Graphics()->QuadContainerAddSprite(m_aWeaponSpriteMuzzleQuadContainerIndex[i], SWidth, SHeight);
 		}
 		Graphics()->QuadContainerUpload(m_aWeaponSpriteMuzzleQuadContainerIndex[i]);
 	}
@@ -1249,7 +1249,9 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 			ShowFor = 3; // All
 	}
 	else if(ShowEffectOthers)
+	{
 		ShowFor = 2; // All but Self | doesn't exist currently but just in case
+	}
 
 	if((ShowFor == 1 && Local) || (ShowFor == 2 && !Local) || ShowFor == 3)
 	{

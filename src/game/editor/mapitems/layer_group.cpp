@@ -37,42 +37,50 @@ void CLayerGroup::Convert(CUIRect *pRect) const
 void CLayerGroup::Mapping(float *pPoints) const
 {
 	float NormalParallaxZoom = std::clamp((double)(maximum(m_ParallaxX, m_ParallaxY)), 0., 100.);
-	float ParallaxZoom = m_pMap->m_pEditor->m_PreviewZoom ? NormalParallaxZoom : 100.0f;
+	float ParallaxZoom = m_pMap->Editor()->m_PreviewZoom ? NormalParallaxZoom : 100.0f;
 
-	m_pMap->m_pEditor->RenderTools()->MapScreenToWorld(
-		m_pMap->m_pEditor->MapView()->GetWorldOffset().x, m_pMap->m_pEditor->MapView()->GetWorldOffset().y,
+	m_pMap->Editor()->Graphics()->MapScreenToWorld(
+		m_pMap->Editor()->MapView()->GetWorldOffset().x, m_pMap->Editor()->MapView()->GetWorldOffset().y,
 		m_ParallaxX, m_ParallaxY, ParallaxZoom, m_OffsetX, m_OffsetY,
-		m_pMap->m_pEditor->Graphics()->ScreenAspect(), m_pMap->m_pEditor->MapView()->GetWorldZoom(), pPoints);
+		m_pMap->Editor()->Graphics()->ScreenAspect(), m_pMap->Editor()->MapView()->GetWorldZoom(), pPoints);
 
-	pPoints[0] += m_pMap->m_pEditor->MapView()->GetEditorOffset().x;
-	pPoints[1] += m_pMap->m_pEditor->MapView()->GetEditorOffset().y;
-	pPoints[2] += m_pMap->m_pEditor->MapView()->GetEditorOffset().x;
-	pPoints[3] += m_pMap->m_pEditor->MapView()->GetEditorOffset().y;
+	pPoints[0] += m_pMap->Editor()->MapView()->GetEditorOffset().x;
+	pPoints[1] += m_pMap->Editor()->MapView()->GetEditorOffset().y;
+	pPoints[2] += m_pMap->Editor()->MapView()->GetEditorOffset().x;
+	pPoints[3] += m_pMap->Editor()->MapView()->GetEditorOffset().y;
 }
 
 void CLayerGroup::MapScreen() const
 {
 	float aPoints[4];
 	Mapping(aPoints);
-	m_pMap->m_pEditor->Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
+	m_pMap->Editor()->Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
 }
 
 void CLayerGroup::Render()
 {
 	MapScreen();
-	IGraphics *pGraphics = m_pMap->m_pEditor->Graphics();
+	IGraphics *pGraphics = m_pMap->Editor()->Graphics();
 
 	if(m_UseClipping)
 	{
 		float aPoints[4];
 		m_pMap->m_pGameGroup->Mapping(aPoints);
-		float x0 = (m_ClipX - aPoints[0]) / (aPoints[2] - aPoints[0]);
-		float y0 = (m_ClipY - aPoints[1]) / (aPoints[3] - aPoints[1]);
-		float x1 = ((m_ClipX + m_ClipW) - aPoints[0]) / (aPoints[2] - aPoints[0]);
-		float y1 = ((m_ClipY + m_ClipH) - aPoints[1]) / (aPoints[3] - aPoints[1]);
+		float ScreenWidth = aPoints[2] - aPoints[0];
+		float ScreenHeight = aPoints[3] - aPoints[1];
+		float Left = m_ClipX - aPoints[0];
+		float Top = m_ClipY - aPoints[1];
+		float Right = (m_ClipX + m_ClipW) - aPoints[0];
+		float Bottom = (m_ClipY + m_ClipH) - aPoints[1];
 
-		pGraphics->ClipEnable((int)(x0 * pGraphics->ScreenWidth()), (int)(y0 * pGraphics->ScreenHeight()),
-			(int)((x1 - x0) * pGraphics->ScreenWidth()), (int)((y1 - y0) * pGraphics->ScreenHeight()));
+		int ClipX = (int)std::round(Left * pGraphics->ScreenWidth() / ScreenWidth);
+		int ClipY = (int)std::round(Top * pGraphics->ScreenHeight() / ScreenHeight);
+
+		pGraphics->ClipEnable(
+			ClipX,
+			ClipY,
+			(int)std::round(Right * pGraphics->ScreenWidth() / ScreenWidth) - ClipX,
+			(int)std::round(Bottom * pGraphics->ScreenHeight() / ScreenHeight) - ClipY);
 	}
 
 	for(auto &pLayer : m_vpLayers)
@@ -86,14 +94,14 @@ void CLayerGroup::Render()
 				if(g_Config.m_EdShowIngameEntities && pLayer->IsEntitiesLayer() && (pLayer == m_pMap->m_pGameLayer || pLayer == m_pMap->m_pFrontLayer || pLayer == m_pMap->m_pSwitchLayer))
 				{
 					if(pLayer != m_pMap->m_pSwitchLayer)
-						m_pMap->m_pEditor->RenderGameEntities(pTiles);
-					m_pMap->m_pEditor->RenderSwitchEntities(pTiles);
+						m_pMap->Editor()->RenderGameEntities(pTiles);
+					m_pMap->Editor()->RenderSwitchEntities(pTiles);
 				}
 
 				if(pTiles->m_HasGame || pTiles->m_HasFront || pTiles->m_HasTele || pTiles->m_HasSpeedup || pTiles->m_HasTune || pTiles->m_HasSwitch)
 					continue;
 			}
-			if(m_pMap->m_pEditor->m_ShowDetail || !(pLayer->m_Flags & LAYERFLAG_DETAIL))
+			if(m_pMap->Editor()->m_ShowDetail || !(pLayer->m_Flags & LAYERFLAG_DETAIL))
 				pLayer->Render();
 		}
 	}
@@ -152,15 +160,51 @@ void CLayerGroup::GetSize(float *pWidth, float *pHeight) const
 	}
 }
 
-int CLayerGroup::SwapLayers(int Index0, int Index1)
+int CLayerGroup::MoveLayer(int IndexFrom, int IndexTo)
 {
-	if(Index0 < 0 || Index0 >= (int)m_vpLayers.size())
-		return Index0;
-	if(Index1 < 0 || Index1 >= (int)m_vpLayers.size())
-		return Index0;
-	if(Index0 == Index1)
-		return Index0;
+	if(IndexFrom < 0 || IndexFrom >= (int)m_vpLayers.size())
+		return IndexFrom;
+	if(IndexTo < 0 || IndexTo >= (int)m_vpLayers.size())
+		return IndexFrom;
+	if(IndexFrom == IndexTo)
+		return IndexFrom;
 	m_pMap->OnModify();
-	std::swap(m_vpLayers[Index0], m_vpLayers[Index1]);
-	return Index1;
+	auto pMovedLayer = m_vpLayers[IndexFrom];
+	m_vpLayers.erase(m_vpLayers.begin() + IndexFrom);
+	m_vpLayers.insert(m_vpLayers.begin() + IndexTo, pMovedLayer);
+	return IndexTo;
+}
+
+bool CLayerGroup::IsEmpty() const
+{
+	return m_vpLayers.empty();
+}
+
+void CLayerGroup::Clear()
+{
+	m_vpLayers.clear();
+}
+
+void CLayerGroup::ModifyImageIndex(const FIndexModifyFunction &IndexModifyFunction)
+{
+	for(auto &pLayer : m_vpLayers)
+	{
+		pLayer->ModifyImageIndex(IndexModifyFunction);
+	}
+}
+
+void CLayerGroup::ModifyEnvelopeIndex(const FIndexModifyFunction &IndexModifyFunction)
+{
+	for(auto &pLayer : m_vpLayers)
+	{
+		pLayer->ModifyEnvelopeIndex(IndexModifyFunction);
+	}
+}
+
+void CLayerGroup::ModifySoundIndex(const FIndexModifyFunction &IndexModifyFunction)
+{
+	for(auto &pLayer : m_vpLayers)
+	{
+		pLayer->ModifySoundIndex(IndexModifyFunction);
+	}
 }

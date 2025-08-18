@@ -11,6 +11,7 @@
 #include <cstring>
 #include <iomanip> // std::get_time
 #include <iterator> // std::size
+#include <random>
 #include <sstream> // std::istringstream
 #include <string_view>
 
@@ -138,7 +139,7 @@ void dbg_assert_imp(const char *filename, int line, const char *fmt, ...)
 	va_list args;
 	va_start(args, fmt);
 	str_format_v(msg, sizeof(msg), fmt, args);
-	char error[512];
+	char error[1024];
 	str_format(error, sizeof(error), "%s(%d): %s", filename, line, msg);
 	va_end(args);
 	log_error("assert", "%s", error);
@@ -2702,7 +2703,9 @@ int fs_remove(const char *filename)
 	}
 	const std::wstring wide_filename = windows_utf8_to_wide(filename);
 
-	unsigned random_num = secure_rand();
+	thread_local std::mt19937 rand_generator(std::random_device{}());
+	std::uniform_int_distribution<unsigned> rand_distribution(std::numeric_limits<unsigned>::min(), std::numeric_limits<unsigned>::max());
+	unsigned random_num = rand_distribution(rand_generator);
 	std::wstring wide_filename_temp;
 	do
 	{
@@ -5478,4 +5481,17 @@ bool str_isalluppercase(const char *str)
 			return false;
 	}
 	return true;
+}
+
+void SetFlag(int32_t &Flags, int n, bool Value)
+{
+	if(Value)
+		Flags |= (1 << n);
+	else
+		Flags &= ~(1 << n);
+}
+
+bool IsFlagSet(int32_t Flags, int n)
+{
+	return (Flags & (1 << n)) != 0;
 }

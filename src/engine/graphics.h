@@ -50,16 +50,18 @@ struct SQuadRenderInfo
 	float m_Padding;
 };
 
-struct SGraphicTile
+class CGraphicTile
 {
+public:
 	vec2 m_TopLeft;
 	vec2 m_TopRight;
 	vec2 m_BottomRight;
 	vec2 m_BottomLeft;
 };
 
-struct SGraphicTileTexureCoords
+class CGraphicTileTextureCoords
 {
+public:
 	ubvec4 m_TexCoordTopLeft;
 	ubvec4 m_TexCoordTopRight;
 	ubvec4 m_TexCoordBottomRight;
@@ -180,6 +182,8 @@ typedef std::function<void()> WINDOW_PROPS_CHANGED_FUNC;
 
 typedef std::function<bool(uint32_t &Width, uint32_t &Height, CImageInfo::EImageFormat &Format, std::vector<uint8_t> &vDstData)> TGLBackendReadPresentedImageData;
 
+struct CDataSprite;
+
 class IGraphics : public IInterface
 {
 	MACRO_INTERFACE("graphics")
@@ -255,6 +259,13 @@ public:
 	virtual void ClipDisable() = 0;
 
 	virtual void MapScreen(float TopLeftX, float TopLeftY, float BottomRightX, float BottomRightY) = 0;
+
+	// helper functions
+	void CalcScreenParams(float Aspect, float Zoom, float *pWidth, float *pHeight);
+	void MapScreenToWorld(float CenterX, float CenterY, float ParallaxX, float ParallaxY,
+		float ParallaxZoom, float OffsetX, float OffsetY, float Aspect, float Zoom, float *pPoints);
+	void MapScreenToInterface(float CenterX, float CenterY, float Zoom = 1.0f);
+
 	virtual void GetScreen(float *pTopLeftX, float *pTopLeftY, float *pBottomRightX, float *pBottomRightY) = 0;
 
 	// TODO: These should perhaps not be virtuals
@@ -339,7 +350,7 @@ public:
 	{
 	public:
 		float m_X0, m_Y0, m_X1, m_Y1;
-		CLineItem() {}
+		CLineItem() = default;
 		CLineItem(float x0, float y0, float x1, float y1) :
 			m_X0(x0), m_Y0(y0), m_X1(x1), m_Y1(y1) {}
 	};
@@ -372,7 +383,7 @@ public:
 	struct CFreeformItem
 	{
 		float m_X0, m_Y0, m_X1, m_Y1, m_X2, m_Y2, m_X3, m_Y3;
-		CFreeformItem() {}
+		CFreeformItem() = default;
 		CFreeformItem(float x0, float y0, float x1, float y1, float x2, float y2, float x3, float y3) :
 			m_X0(x0), m_Y0(y0), m_X1(x1), m_Y1(y1), m_X2(x2), m_Y2(y2), m_X3(x3), m_Y3(y3) {}
 	};
@@ -380,7 +391,7 @@ public:
 	struct CQuadItem
 	{
 		float m_X, m_Y, m_Width, m_Height;
-		CQuadItem() {}
+		CQuadItem() = default;
 		CQuadItem(float x, float y, float w, float h) :
 			m_X(x), m_Y(y), m_Width(w), m_Height(h) {}
 	};
@@ -413,13 +424,42 @@ public:
 	virtual void QuadsDrawFreeform(const CFreeformItem *pArray, int Num) = 0;
 	virtual void QuadsText(float x, float y, float Size, const char *pText) = 0;
 
+	// sprites
 	enum
 	{
-		CORNER_NONE = 0,
-		CORNER_TL = 1,
-		CORNER_TR = 2,
-		CORNER_BL = 4,
-		CORNER_BR = 8,
+		SPRITE_FLAG_FLIP_Y = 1,
+		SPRITE_FLAG_FLIP_X = 2,
+	};
+	virtual void SelectSprite(int Id, int Flags = 0) = 0;
+	virtual void SelectSprite7(int Id, int Flags = 0) = 0;
+
+	virtual void GetSpriteScale(const CDataSprite *pSprite, float &ScaleX, float &ScaleY) const = 0;
+	virtual void GetSpriteScale(int Id, float &ScaleX, float &ScaleY) const = 0;
+	virtual void GetSpriteScaleImpl(int Width, int Height, float &ScaleX, float &ScaleY) const = 0;
+
+	virtual void DrawSprite(float x, float y, float Size) = 0;
+	virtual void DrawSprite(float x, float y, float ScaledWidth, float ScaledHeight) = 0;
+
+	virtual int QuadContainerAddSprite(int QuadContainerIndex, float x, float y, float Size) = 0;
+	virtual int QuadContainerAddSprite(int QuadContainerIndex, float Size) = 0;
+	virtual int QuadContainerAddSprite(int QuadContainerIndex, float Width, float Height) = 0;
+	virtual int QuadContainerAddSprite(int QuadContainerIndex, float X, float Y, float Width, float Height) = 0;
+
+	enum
+	{
+		// E-Client
+		SIDE_T = 1 << 0,
+		SIDE_R = 1 << 1,
+		SIDE_B = 1 << 2,
+		SIDE_L = 1 << 3,
+		SIDE_ALL = SIDE_T | SIDE_R | SIDE_B | SIDE_L,
+		//
+
+		CORNER_NONE = 1 << 0,
+		CORNER_TL = 1 << 1,
+		CORNER_TR = 1 << 2,
+		CORNER_BL = 1 << 3,
+		CORNER_BR = 1 << 4,
 
 		CORNER_T = CORNER_TL | CORNER_TR,
 		CORNER_B = CORNER_BL | CORNER_BR,
@@ -439,7 +479,7 @@ public:
 	{
 		int m_Index;
 		float m_R, m_G, m_B, m_A;
-		CColorVertex() {}
+		CColorVertex() = default;
 		CColorVertex(int i, float r, float g, float b, float a) :
 			m_Index(i), m_R(r), m_G(g), m_B(b), m_A(a) {}
 		CColorVertex(int i, ColorRGBA Color) :
@@ -483,8 +523,81 @@ public:
 
 	virtual std::optional<SWarning> CurrentWarning() = 0;
 
-	// returns true if the error msg was shown
-	virtual bool ShowMessageBox(unsigned Type, const char *pTitle, const char *pMsg) = 0;
+	/**
+	 * Type of a message box popup.
+	 *
+	 * @see CMessageBox
+	 */
+	enum class EMessageBoxType
+	{
+		ERROR,
+		WARNING,
+		INFO,
+	};
+	/**
+	 * Description of a message box popup button.
+	 *
+	 * @see CMessageBox
+	 */
+	class CMessageBoxButton
+	{
+	public:
+		/**
+		 * The label of this button.
+		 *
+		 * @remark This needs to be short because some systems do not increase the button sizes.
+		 */
+		const char *m_pLabel = nullptr;
+		/**
+		 * Whether the enter key activates this button.
+		 */
+		bool m_Confirm = false;
+		/**
+		 * Whether the escape key activates this button.
+		 *
+		 * @remark Closing the popup with the window manager will also cause this button to be activated.
+		 */
+		bool m_Cancel = false;
+	};
+	/**
+	 * Description of a message box popup.
+	 *
+	 * @see ShowMessageBox
+	 */
+	class CMessageBox
+	{
+	public:
+		/**
+		 * Title of the message box.
+		 */
+		const char *m_pTitle = nullptr;
+		/**
+		 * Main message of the message box.
+		 */
+		const char *m_pMessage = nullptr;
+		/**
+		 * Type of the message box.
+		 */
+		EMessageBoxType m_Type = EMessageBoxType::ERROR;
+		/**
+		 * Buttons shown in the message box. At least one button is required.
+		 * The buttons are layed out from left to right.
+		 */
+		std::vector<CMessageBoxButton> m_vButtons = {{.m_pLabel = "OK", .m_Confirm = true, .m_Cancel = true}};
+	};
+	/**
+	 * Shows a modal message box with configuration title, message and buttons.
+	 *
+	 * @param MessageBox Description of the message box.
+	 *
+	 * @return Optional containing the index of the pressed button if the popup was shown successfully.
+	 * @return Empty optional if the message box was not shown successfully.
+	 *
+	 * @remark Note that calling this function will destroy the current window,
+	 *         so it only makes sense for fatal errors at the moment.
+	 */
+	virtual std::optional<int> ShowMessageBox(const CMessageBox &MessageBox) = 0;
+
 	virtual bool IsBackendInitialized() = 0;
 
 protected:
@@ -511,5 +624,12 @@ public:
 };
 
 extern IEngineGraphics *CreateEngineGraphicsThreaded();
+
+/**
+ * This function should only be used when the graphics are not initialized or when @link IGraphics::ShowMessageBox @endlink failed.
+ *
+ * @see IGraphics::ShowMessageBox
+ */
+extern std::optional<int> ShowMessageBoxWithoutGraphics(const IGraphics::CMessageBox &MessageBox);
 
 #endif

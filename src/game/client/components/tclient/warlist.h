@@ -13,7 +13,7 @@ enum
 {
 	MAX_WARLIST_TYPE_LENGTH = 10,
 	MAX_WARLIST_IMPORT_ID_LENGTH = 16,
-	MAX_WARLIST_REASON_LENGTH = 256
+	MAX_WARLIST_REASON_LENGTH = 32
 };
 
 // TODO, add chat prefix
@@ -150,15 +150,13 @@ class CWarList : public CComponent
 	static void ConRemoveName(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveClan(IConsole::IResult *pResult, void *pUserData);
 
-	// E-Client
-	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
-	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
-
 	// Backend Commands for config file
 	static void ConAddWarEntry(IConsole::IResult *pResult, void *pUserData);
 	static void ConUpsertWarType(IConsole::IResult *pResult, void *pUserData);
 
 	// E-Client
+	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
+	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);

@@ -14,6 +14,7 @@
 #include <game/collision.h>
 #include <game/gamecore.h>
 #include <game/layers.h>
+#include <game/map/render_map.h>
 #include <game/mapbugs.h>
 #include <game/teamscore.h>
 
@@ -68,6 +69,7 @@
 // Entity
 #include "components/entity/anti_spawn_block.h"
 #include "components/entity/chat_bubbles.h"
+#include "components/entity/quick_actions.h"
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/mapconfig.h"
@@ -80,6 +82,7 @@
 #include "components/tclient/player_indicator.h"
 #include "components/tclient/rainbow.h"
 #include "components/tclient/skinprofiles.h"
+#include "components/tclient/statusbar.h"
 #include "components/tclient/warlist.h"
 
 class CGameInfo
@@ -180,8 +183,8 @@ public:
 	CItems m_Items;
 	CMapImages m_MapImages;
 
-	CMapLayers m_MapLayersBackground = CMapLayers{CMapLayers::TYPE_BACKGROUND};
-	CMapLayers m_MapLayersForeground = CMapLayers{CMapLayers::TYPE_FOREGROUND};
+	CMapLayers m_MapLayersBackground = CMapLayers{ERenderType::RENDERTYPE_BACKGROUND};
+	CMapLayers m_MapLayersForeground = CMapLayers{ERenderType::RENDERTYPE_FOREGROUND};
 	CBackground m_Background;
 	CMenuBackground m_MenuBackground;
 
@@ -197,18 +200,20 @@ public:
 	// Entity
 	CEClient m_EClient;
 	CChatBubbles m_ChatBubbles;
+	CQuickActions m_QuickActions;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CUpdate m_AcUpdate;
 	CMapConfig m_MapConfig;
 
 	// T-Client
-	CSkinProfiles m_SkinProfiles;
 	CBindChat m_Bindchat;
 	CBindWheel m_Bindwheel;
 	CPlayerIndicator m_PlayerIndicator;
 	COutlines m_Outlines;
 	CRainbow m_Rainbow;
+	CSkinProfiles m_SkinProfiles;
+	CStatusBar m_StatusBar;
 	CWarList m_WarList;
 
 private:
@@ -306,6 +311,7 @@ public:
 	class IFavorites *Favorites() const { return m_pFavorites; }
 	class IServerBrowser *ServerBrowser() const { return m_pServerBrowser; }
 	class CRenderTools *RenderTools() { return &m_RenderTools; }
+	class CRenderMap *RenderMap() { return &m_RenderMap; }
 	class CLayers *Layers() { return &m_Layers; }
 	CCollision *Collision() { return &m_Collision; }
 	const CCollision *Collision() const { return &m_Collision; }
@@ -610,6 +616,7 @@ public:
 	CClientStats m_aStats[MAX_CLIENTS];
 
 	CRenderTools m_RenderTools;
+	CRenderMap m_RenderMap;
 
 	void OnReset();
 
@@ -660,6 +667,7 @@ public:
 	void CollectManagedTeeRenderInfos(const std::function<void(const char *pSkinName)> &ActiveSkinAcceptor);
 
 	void RenderShutdownMessage() override;
+	void ProcessDemoSnapshot(CSnapshot *pSnap) override;
 
 	const char *GetItemName(int Type) const override;
 	const char *Version() const override;

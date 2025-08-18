@@ -22,6 +22,27 @@ enum
 	MAX_LINE_LENGTH = 256
 };
 
+
+enum
+{
+	// client IDs for special messages
+	SILENT_MSG = -4,
+	ECLIENT_MSG = -3,
+
+	CLIENT_MSG = -2,
+	SERVER_MSG = -1,
+
+	MODE_NONE = 0,
+	MODE_ALL,
+	MODE_TEAM,
+	MODE_SILENT,
+
+	CHAT_SERVER = 0,
+	CHAT_HIGHLIGHT,
+	CHAT_CLIENT,
+	CHAT_NUM,
+};
+
 class CChat : public CComponent
 {
 	static constexpr float CHAT_HEIGHT_FULL = 200.0f;
@@ -83,23 +104,6 @@ class CChat : public CComponent
 	CLine m_aLines[MAX_LINES];
 	int m_CurrentLine;
 
-	enum
-	{
-		// client IDs for special messages
-		CLIENT_MSG = -2,
-		SERVER_MSG = -1,
-
-		MODE_NONE = 0,
-		MODE_ALL,
-		MODE_TEAM,
-		MODE_SILENT,
-
-		CHAT_SERVER = 0,
-		CHAT_HIGHLIGHT,
-		CHAT_CLIENT,
-		CHAT_NUM,
-	};
-
 	int m_Mode;
 	bool m_Show;
 	bool m_CompletionUsed;
@@ -160,7 +164,6 @@ class CChat : public CComponent
 	static void ConChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConShowChat(IConsole::IResult *pResult, void *pUserData);
 	static void ConEcho(IConsole::IResult *pResult, void *pUserData);
-	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client
 	static void ConClearChat(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConchainChatOld(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
@@ -230,5 +233,9 @@ public:
 	// E-Client
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
+
+private:
+	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client
+	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData); // E-Client
 };
 #endif

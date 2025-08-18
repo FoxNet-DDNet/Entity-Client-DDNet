@@ -48,9 +48,9 @@ public:
 	void Snap(int SnappingClient);
 	void FakeSnap();
 
-	void OnDirectInput(CNetObj_PlayerInput *pNewInput);
-	void OnPredictedInput(CNetObj_PlayerInput *pNewInput);
-	void OnPredictedEarlyInput(CNetObj_PlayerInput *pNewInput);
+	void OnDirectInput(const CNetObj_PlayerInput *pNewInput);
+	void OnPredictedInput(const CNetObj_PlayerInput *pNewInput);
+	void OnPredictedEarlyInput(const CNetObj_PlayerInput *pNewInput);
 	void OnDisconnect();
 
 	void KillCharacter(int Weapon = WEAPON_GAME, bool SendKillMsg = true);
@@ -73,8 +73,8 @@ public:
 
 	int m_SentSnaps = 0;
 
-	// used for spectator mode
-	int m_SpectatorId;
+	int SpectatorId() const { return m_SpectatorId; }
+	void SetSpectatorId(int Id);
 
 	bool m_IsReady;
 
@@ -132,6 +132,9 @@ private:
 	bool m_WeakHookSpawn;
 	int m_ClientId;
 	int m_Team;
+
+	// used for spectator mode
+	int m_SpectatorId;
 
 	int m_Paused;
 	int64_t m_ForcePauseTime;

@@ -727,12 +727,11 @@ bool CConsole::ExecuteLegacyFile()
 		while(const char *pLine = LineReader.Get())
 		{
 			bool LegacyCommand = str_startswith(pLine, "ac_");
-			const char *pOldPrefix = pLine;
 			char Command[64];
 			str_copy(Command, pLine, sizeof(Command));
 			if(LegacyCommand)
 			{
-				pOldPrefix = str_startswith(pLine, "ac_");
+				const char *pOldPrefix = str_startswith(pLine, "ac_");
 				str_copy(Command, "ec_", sizeof(Command));
 				str_append(Command, pOldPrefix);
 			}

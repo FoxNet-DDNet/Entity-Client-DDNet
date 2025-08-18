@@ -445,8 +445,8 @@ void CGameContext::SnapSwitchers(int SnappingClient)
 	CPlayer *pPlayer = SnappingClient != SERVER_DEMO_CLIENT ? m_apPlayers[SnappingClient] : nullptr;
 	int Team = pPlayer && pPlayer->GetCharacter() ? pPlayer->GetCharacter()->Team() : 0;
 
-	if(pPlayer && (pPlayer->GetTeam() == TEAM_SPECTATORS || pPlayer->IsPaused()) && pPlayer->m_SpectatorId != SPEC_FREEVIEW && m_apPlayers[pPlayer->m_SpectatorId] && m_apPlayers[pPlayer->m_SpectatorId]->GetCharacter())
-		Team = m_apPlayers[pPlayer->m_SpectatorId]->GetCharacter()->Team();
+	if(pPlayer && (pPlayer->GetTeam() == TEAM_SPECTATORS || pPlayer->IsPaused()) && pPlayer->SpectatorId() != SPEC_FREEVIEW && m_apPlayers[pPlayer->SpectatorId()] && m_apPlayers[pPlayer->SpectatorId()]->GetCharacter())
+		Team = m_apPlayers[pPlayer->SpectatorId()]->GetCharacter()->Team();
 
 	if(Team == TEAM_SUPER)
 		return;
@@ -927,11 +927,10 @@ void CGameContext::CheckPureTuning()
 		str_comp(m_pController->m_pGameType, "TDM") == 0 ||
 		str_comp(m_pController->m_pGameType, "CTF") == 0)
 	{
-		CTuningParams p;
-		if(mem_comp(&p, &m_Tuning, sizeof(p)) != 0)
+		if(mem_comp(&CTuningParams::DEFAULT, &m_Tuning, sizeof(CTuningParams)) != 0)
 		{
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "resetting tuning due to pure server");
-			m_Tuning = p;
+			m_Tuning = CTuningParams::DEFAULT;
 		}
 	}
 }
@@ -1371,33 +1370,38 @@ void CGameContext::PreInputClients(int ClientId, bool *pClients)
 // Server hooks
 void CGameContext::OnClientPrepareInput(int ClientId, void *pInput)
 {
-	auto *pPlayerInput = (CNetObj_PlayerInput *)pInput;
+	CNetObj_PlayerInput *pPlayerInput = static_cast<CNetObj_PlayerInput *>(pInput);
+
 	if(Server()->IsSixup(ClientId))
 		pPlayerInput->m_PlayerFlags = PlayerFlags_SevenToSix(pPlayerInput->m_PlayerFlags);
 }
 
-void CGameContext::OnClientDirectInput(int ClientId, void *pInput)
+void CGameContext::OnClientDirectInput(int ClientId, const void *pInput)
 {
-	if(!m_World.m_Paused)
-		m_apPlayers[ClientId]->OnDirectInput((CNetObj_PlayerInput *)pInput);
+	const CNetObj_PlayerInput *pPlayerInput = static_cast<const CNetObj_PlayerInput *>(pInput);
 
-	int Flags = ((CNetObj_PlayerInput *)pInput)->m_PlayerFlags;
+	if(!m_World.m_Paused)
+		m_apPlayers[ClientId]->OnDirectInput(pPlayerInput);
+
+	int Flags = pPlayerInput->m_PlayerFlags;
 	if((Flags & 256) || (Flags & 512))
 	{
 		Server()->Kick(ClientId, "please update your client or use DDNet client");
 	}
 }
 
-void CGameContext::OnClientPredictedInput(int ClientId, void *pInput)
+void CGameContext::OnClientPredictedInput(int ClientId, const void *pInput)
 {
-	// early return if no input at all has been sent by a player
-	if(pInput == nullptr && !m_aPlayerHasInput[ClientId])
-		return;
+	const CNetObj_PlayerInput *pApplyInput = static_cast<const CNetObj_PlayerInput *>(pInput);
 
-	// set to last sent input when no new input has been sent
-	CNetObj_PlayerInput *pApplyInput = (CNetObj_PlayerInput *)pInput;
 	if(pApplyInput == nullptr)
 	{
+		// early return if no input at all has been sent by a player
+		if(!m_aPlayerHasInput[ClientId])
+		{
+			return;
+		}
+		// set to last sent input when no new input has been sent
 		pApplyInput = &m_aLastPlayerInput[ClientId];
 	}
 
@@ -1405,16 +1409,18 @@ void CGameContext::OnClientPredictedInput(int ClientId, void *pInput)
 		m_apPlayers[ClientId]->OnPredictedInput(pApplyInput);
 }
 
-void CGameContext::OnClientPredictedEarlyInput(int ClientId, void *pInput)
+void CGameContext::OnClientPredictedEarlyInput(int ClientId, const void *pInput)
 {
-	// early return if no input at all has been sent by a player
-	if(pInput == nullptr && !m_aPlayerHasInput[ClientId])
-		return;
+	const CNetObj_PlayerInput *pApplyInput = static_cast<const CNetObj_PlayerInput *>(pInput);
 
-	// set to last sent input when no new input has been sent
-	CNetObj_PlayerInput *pApplyInput = (CNetObj_PlayerInput *)pInput;
 	if(pApplyInput == nullptr)
 	{
+		// early return if no input at all has been sent by a player
+		if(!m_aPlayerHasInput[ClientId])
+		{
+			return;
+		}
+		// set to last sent input when no new input has been sent
 		pApplyInput = &m_aLastPlayerInput[ClientId];
 	}
 	else
@@ -1791,8 +1797,8 @@ void CGameContext::OnClientDrop(int ClientId, const char *pReason)
 	// update spectator modes
 	for(auto &pPlayer : m_apPlayers)
 	{
-		if(pPlayer && pPlayer->m_SpectatorId == ClientId)
-			pPlayer->m_SpectatorId = SPEC_FREEVIEW;
+		if(pPlayer && pPlayer->SpectatorId() == ClientId)
+			pPlayer->SetSpectatorId(SPEC_FREEVIEW);
 	}
 
 	// update conversation targets
@@ -2663,7 +2669,7 @@ void CGameContext::OnSetSpectatorModeNetMessage(const CNetMsg_Cl_SetSpectatorMod
 	if(SpectatorId >= 0 && (!m_apPlayers[SpectatorId] || m_apPlayers[SpectatorId]->GetTeam() == TEAM_SPECTATORS))
 		SendChatTarget(ClientId, "Invalid spectator id used");
 	else
-		pPlayer->m_SpectatorId = SpectatorId;
+		pPlayer->SetSpectatorId(SpectatorId);
 }
 
 void CGameContext::OnChangeInfoNetMessage(const CNetMsg_Cl_ChangeInfo *pMsg, int ClientId)
@@ -2998,8 +3004,8 @@ void CGameContext::ConTuneReset(IConsole::IResult *pResult, void *pUserData)
 		const char *pParamName = pResult->GetString(0);
 		float DefaultValue = 0.0f;
 		char aBuf[256];
-		CTuningParams TuningParams;
-		if(TuningParams.Get(pParamName, &DefaultValue) && pSelf->Tuning()->Set(pParamName, DefaultValue) && pSelf->Tuning()->Get(pParamName, &DefaultValue))
+
+		if(CTuningParams::DEFAULT.Get(pParamName, &DefaultValue) && pSelf->Tuning()->Set(pParamName, DefaultValue) && pSelf->Tuning()->Get(pParamName, &DefaultValue))
 		{
 			str_format(aBuf, sizeof(aBuf), "%s reset to %.2f", pParamName, DefaultValue);
 			pSelf->SendTuningParams(-1);
@@ -3073,13 +3079,12 @@ void CGameContext::ConTuneDumpZone(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConTuneResetZone(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
-	CTuningParams TuningParams;
 	if(pResult->NumArguments())
 	{
 		int List = pResult->GetInteger(0);
 		if(List >= 0 && List < NUM_TUNEZONES)
 		{
-			pSelf->TuningList()[List] = TuningParams;
+			pSelf->TuningList()[List] = CTuningParams::DEFAULT;
 			char aBuf[256];
 			str_format(aBuf, sizeof(aBuf), "Tunezone %d reset", List);
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "tuning", aBuf);
@@ -3090,7 +3095,7 @@ void CGameContext::ConTuneResetZone(IConsole::IResult *pResult, void *pUserData)
 	{
 		for(int i = 0; i < NUM_TUNEZONES; i++)
 		{
-			*(pSelf->TuningList() + i) = TuningParams;
+			*(pSelf->TuningList() + i) = CTuningParams::DEFAULT;
 			pSelf->SendTuningParams(-1, i);
 		}
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "tuning", "All Tunezones reset");
@@ -3699,6 +3704,39 @@ void CGameContext::ConchainSettingUpdate(IConsole::IResult *pResult, void *pUser
 	}
 }
 
+void CGameContext::ConchainPracticeByDefaultUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	const int OldValue = g_Config.m_SvPracticeByDefault;
+	pfnCallback(pResult, pCallbackUserData);
+
+	if(pResult->NumArguments() && g_Config.m_SvTestingCommands)
+	{
+		CGameContext *pSelf = (CGameContext *)pUserData;
+
+		if(pSelf->m_pController == nullptr)
+			return;
+
+		const int Enable = pResult->GetInteger(0);
+		if(Enable == OldValue)
+			return;
+
+		char aBuf[256];
+		str_format(aBuf, sizeof(aBuf), "Practice is %s by default.", Enable ? "enabled" : "disabled");
+		if(Enable)
+			str_append(aBuf, " Join a team and /unpractice to turn it off for your team.");
+
+		pSelf->SendChat(-1, TEAM_ALL, aBuf);
+
+		for(int Team = 0; Team < NUM_DDRACE_TEAMS; Team++)
+		{
+			if(Team == TEAM_FLOCK || pSelf->m_pController->Teams().Count(Team) == 0)
+			{
+				pSelf->m_pController->Teams().SetPractice(Team, Enable);
+			}
+		}
+	}
+}
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -3824,6 +3862,8 @@ void CGameContext::RegisterDDRaceCommands()
 	Console()->Register("vote_no", "", CFGFLAG_SERVER, ConVoteNo, this, "Same as \"vote no\"");
 	Console()->Register("save_dry", "", CFGFLAG_SERVER, ConDrySave, this, "Dump the current savestring");
 	Console()->Register("dump_log", "?i[seconds]", CFGFLAG_SERVER, ConDumpLog, this, "Show logs of the last i seconds");
+
+	Console()->Chain("sv_practice_by_default", ConchainPracticeByDefaultUpdate, this);
 }
 
 void CGameContext::RegisterChatCommands()
@@ -3969,10 +4009,9 @@ void CGameContext::OnInit(const void *pPersistentData)
 	m_MapBugs = CMapBugs::Create(aMapName, MapSize, MapSha256);
 
 	// Reset Tunezones
-	CTuningParams TuningParams;
 	for(int i = 0; i < NUM_TUNEZONES; i++)
 	{
-		TuningList()[i] = TuningParams;
+		TuningList()[i] = CTuningParams::DEFAULT;
 		TuningList()[i].Set("gun_curvature", 0);
 		TuningList()[i].Set("gun_speed", 1400);
 		TuningList()[i].Set("shotgun_curvature", 0);
@@ -4455,11 +4494,13 @@ void CGameContext::LoadMapSettings()
 	Console()->ExecuteFile(aBuf, IConsole::CLIENT_ID_NO_GAME);
 }
 
-void CGameContext::OnSnap(int ClientId)
+void CGameContext::OnSnap(int ClientId, bool GlobalSnap)
 {
+	// sixup should only snap during global snap
+	dbg_assert(!Server()->IsSixup(ClientId) || GlobalSnap, "sixup should only snap during global snap");
+
 	// add tuning to demo
-	CTuningParams StandardTuning;
-	if(Server()->IsRecording(ClientId > -1 ? ClientId : MAX_CLIENTS) && mem_comp(&StandardTuning, &m_Tuning, sizeof(CTuningParams)) != 0)
+	if(Server()->IsRecording(ClientId > -1 ? ClientId : MAX_CLIENTS) && mem_comp(&CTuningParams::DEFAULT, &m_Tuning, sizeof(CTuningParams)) != 0)
 	{
 		CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
 		int *pParams = (int *)&m_Tuning;
@@ -4480,12 +4521,21 @@ void CGameContext::OnSnap(int ClientId)
 		m_apPlayers[ClientId]->FakeSnap();
 
 	m_World.Snap(ClientId);
-	m_Events.Snap(ClientId);
+
+	// events are only sent on global snapshots
+	if(GlobalSnap)
+	{
+		m_Events.Snap(ClientId);
+	}
 }
-void CGameContext::OnPreSnap() {}
-void CGameContext::OnPostSnap()
+
+void CGameContext::OnPostGlobalSnap()
 {
-	m_World.PostSnap();
+	for(auto &pPlayer : m_apPlayers)
+	{
+		if(pPlayer && pPlayer->GetCharacter())
+			pPlayer->GetCharacter()->PostGlobalSnap();
+	}
 	m_Events.Clear();
 }
 
@@ -4558,6 +4608,13 @@ bool CGameContext::IsClientReady(int ClientId) const
 bool CGameContext::IsClientPlayer(int ClientId) const
 {
 	return m_apPlayers[ClientId] && m_apPlayers[ClientId]->GetTeam() != TEAM_SPECTATORS;
+}
+
+bool CGameContext::IsClientHighBandwidth(int ClientId) const
+{
+	// force high bandwidth is not supported for sixup
+	return m_apPlayers[ClientId] && !Server()->IsSixup(ClientId) && Server()->GetAuthedState(ClientId) &&
+	       (m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS || m_apPlayers[ClientId]->IsPaused());
 }
 
 CUuid CGameContext::GameUuid() const { return m_GameUuid; }
@@ -4707,8 +4764,7 @@ int CGameContext::GetDDRaceTeam(int ClientId) const
 
 void CGameContext::ResetTuning()
 {
-	CTuningParams TuningParams;
-	m_Tuning = TuningParams;
+	m_Tuning = CTuningParams::DEFAULT;
 	Tuning()->Set("gun_speed", 1400);
 	Tuning()->Set("gun_curvature", 0);
 	Tuning()->Set("shotgun_speed", 500);

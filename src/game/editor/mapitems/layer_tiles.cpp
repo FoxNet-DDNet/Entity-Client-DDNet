@@ -76,7 +76,7 @@ CLayerTiles::~CLayerTiles()
 	delete[] m_pTiles;
 }
 
-CTile CLayerTiles::GetTile(int x, int y)
+CTile CLayerTiles::GetTile(int x, int y) const
 {
 	return m_pTiles[y * m_Width + x];
 }
@@ -173,26 +173,26 @@ void CLayerTiles::Render(bool Tileset)
 	Graphics()->TextureSet(Texture);
 
 	ColorRGBA ColorEnv = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
-	CEditor::EnvelopeEval(m_ColorEnvOffset, m_ColorEnv, ColorEnv, 4, m_pEditor);
+	m_pEditor->EnvelopeEval(m_ColorEnvOffset, m_ColorEnv, ColorEnv, 4);
 	const ColorRGBA Color = ColorRGBA(m_Color.r / 255.0f, m_Color.g / 255.0f, m_Color.b / 255.0f, m_Color.a / 255.0f).Multiply(ColorEnv);
 
 	Graphics()->BlendNone();
-	m_pEditor->RenderTools()->RenderTilemap(m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_OPAQUE);
+	m_pEditor->RenderMap()->RenderTilemap(m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_OPAQUE);
 	Graphics()->BlendNormal();
-	m_pEditor->RenderTools()->RenderTilemap(m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_TRANSPARENT);
+	m_pEditor->RenderMap()->RenderTilemap(m_pTiles, m_Width, m_Height, 32.0f, Color, LAYERRENDERFLAG_TRANSPARENT);
 
 	// Render DDRace Layers
 	if(!Tileset)
 	{
 		int OverlayRenderFlags = (g_Config.m_ClTextEntitiesEditor ? OVERLAYRENDERFLAG_TEXT : 0) | OVERLAYRENDERFLAG_EDITOR;
 		if(m_HasTele)
-			m_pEditor->RenderTools()->RenderTeleOverlay(static_cast<CLayerTele *>(this)->m_pTeleTile, m_Width, m_Height, 32.0f, OverlayRenderFlags);
+			m_pEditor->RenderMap()->RenderTeleOverlay(static_cast<CLayerTele *>(this)->m_pTeleTile, m_Width, m_Height, 32.0f, OverlayRenderFlags);
 		if(m_HasSpeedup)
-			m_pEditor->RenderTools()->RenderSpeedupOverlay(static_cast<CLayerSpeedup *>(this)->m_pSpeedupTile, m_Width, m_Height, 32.0f, OverlayRenderFlags);
+			m_pEditor->RenderMap()->RenderSpeedupOverlay(static_cast<CLayerSpeedup *>(this)->m_pSpeedupTile, m_Width, m_Height, 32.0f, OverlayRenderFlags);
 		if(m_HasSwitch)
-			m_pEditor->RenderTools()->RenderSwitchOverlay(static_cast<CLayerSwitch *>(this)->m_pSwitchTile, m_Width, m_Height, 32.0f, OverlayRenderFlags);
+			m_pEditor->RenderMap()->RenderSwitchOverlay(static_cast<CLayerSwitch *>(this)->m_pSwitchTile, m_Width, m_Height, 32.0f, OverlayRenderFlags);
 		if(m_HasTune)
-			m_pEditor->RenderTools()->RenderTuneOverlay(static_cast<CLayerTune *>(this)->m_pTuneTile, m_Width, m_Height, 32.0f, OverlayRenderFlags);
+			m_pEditor->RenderMap()->RenderTuneOverlay(static_cast<CLayerTune *>(this)->m_pTuneTile, m_Width, m_Height, 32.0f, OverlayRenderFlags);
 	}
 }
 
@@ -248,31 +248,18 @@ bool CLayerTiles::IsEntitiesLayer() const
 	return m_pEditor->m_Map.m_pGameLayer.get() == this || m_pEditor->m_Map.m_pTeleLayer.get() == this || m_pEditor->m_Map.m_pSpeedupLayer.get() == this || m_pEditor->m_Map.m_pFrontLayer.get() == this || m_pEditor->m_Map.m_pSwitchLayer.get() == this || m_pEditor->m_Map.m_pTuneLayer.get() == this;
 }
 
-bool CLayerTiles::IsEmpty(const std::shared_ptr<CLayerTiles> &pLayer)
+bool CLayerTiles::IsEmpty() const
 {
-	for(int y = 0; y < pLayer->m_Height; y++)
+	for(int y = 0; y < m_Height; y++)
 	{
-		for(int x = 0; x < pLayer->m_Width; x++)
+		for(int x = 0; x < m_Width; x++)
 		{
-			int Index = pLayer->GetTile(x, y).m_Index;
-			if(Index)
+			if(GetTile(x, y).m_Index != 0)
 			{
-				if(pLayer->m_HasGame)
-				{
-					if(m_pEditor->IsAllowPlaceUnusedTiles() || IsValidGameTile(Index))
-						return false;
-				}
-				else if(pLayer->m_HasFront)
-				{
-					if(m_pEditor->IsAllowPlaceUnusedTiles() || IsValidFrontTile(Index))
-						return false;
-				}
-				else
-					return false;
+				return false;
 			}
 		}
 	}
-
 	return true;
 }
 
@@ -530,7 +517,7 @@ void CLayerTiles::FillSelection(bool Empty, std::shared_ptr<CLayer> pBrush, CUIR
 
 	std::shared_ptr<CLayerTiles> pLt = std::static_pointer_cast<CLayerTiles>(pBrush);
 
-	bool Destructive = m_pEditor->m_BrushDrawDestructive || Empty || IsEmpty(pLt);
+	bool Destructive = m_pEditor->m_BrushDrawDestructive || Empty || pLt->IsEmpty();
 
 	for(int y = 0; y < h; y++)
 	{
@@ -574,7 +561,7 @@ void CLayerTiles::BrushDraw(std::shared_ptr<CLayer> pBrush, vec2 WorldPos)
 	int sx = ConvertX(WorldPos.x);
 	int sy = ConvertY(WorldPos.y);
 
-	bool Destructive = m_pEditor->m_BrushDrawDestructive || IsEmpty(pTileLayer);
+	bool Destructive = m_pEditor->m_BrushDrawDestructive || pTileLayer->IsEmpty();
 
 	for(int y = 0; y < pTileLayer->m_Height; y++)
 		for(int x = 0; x < pTileLayer->m_Width; x++)
@@ -1041,15 +1028,13 @@ CUi::EPopupMenuFunctionResult CLayerTiles::RenderProperties(CUIRect *pToolBox)
 		}
 	}
 
-	int Color = PackColor(m_Color);
-
 	CProperty aProps[] = {
 		{"Width", m_Width, PROPTYPE_INT, 1, 100000},
 		{"Height", m_Height, PROPTYPE_INT, 1, 100000},
 		{"Shift", 0, PROPTYPE_SHIFT, 0, 0},
 		{"Shift by", m_pEditor->m_ShiftBy, PROPTYPE_INT, 1, 100000},
 		{"Image", m_Image, PROPTYPE_IMAGE, 0, 0},
-		{"Color", Color, PROPTYPE_COLOR, 0, 0},
+		{"Color", PackColor(m_Color), PROPTYPE_COLOR, 0, 0},
 		{"Color Env", m_ColorEnv + 1, PROPTYPE_ENVELOPE, 0, 0},
 		{"Color TO", m_ColorEnvOffset, PROPTYPE_INT, -1000000, 1000000},
 		{"Auto Rule", m_AutoMapperConfig, PROPTYPE_AUTOMAPPER, m_Image, 0},
@@ -1131,10 +1116,7 @@ CUi::EPopupMenuFunctionResult CLayerTiles::RenderProperties(CUIRect *pToolBox)
 	}
 	else if(Prop == ETilesProp::PROP_COLOR)
 	{
-		m_Color.r = (NewVal >> 24) & 0xff;
-		m_Color.g = (NewVal >> 16) & 0xff;
-		m_Color.b = (NewVal >> 8) & 0xff;
-		m_Color.a = NewVal & 0xff;
+		m_Color = UnpackColor(NewVal);
 	}
 	else if(Prop == ETilesProp::PROP_COLOR_ENV)
 	{
@@ -1258,18 +1240,9 @@ CUi::EPopupMenuFunctionResult CLayerTiles::RenderCommonProperties(SCommonPropSta
 
 				if(HasModifiedColor && !pLayer->IsEntitiesLayer())
 				{
-					int Color = 0;
-					Color |= pLayer->m_Color.r << 24;
-					Color |= pLayer->m_Color.g << 16;
-					Color |= pLayer->m_Color.b << 8;
-					Color |= pLayer->m_Color.a;
-
-					pLayer->m_Color.r = (State.m_Color >> 24) & 0xff;
-					pLayer->m_Color.g = (State.m_Color >> 16) & 0xff;
-					pLayer->m_Color.b = (State.m_Color >> 8) & 0xff;
-					pLayer->m_Color.a = State.m_Color & 0xff;
-
-					vpActions.push_back(std::make_shared<CEditorActionEditLayerTilesProp>(pEditor, GroupIndex, LayerIndex, ETilesProp::PROP_COLOR, Color, State.m_Color));
+					const int PackedColor = PackColor(pLayer->m_Color);
+					pLayer->m_Color = UnpackColor(State.m_Color);
+					vpActions.push_back(std::make_shared<CEditorActionEditLayerTilesProp>(pEditor, GroupIndex, LayerIndex, ETilesProp::PROP_COLOR, PackedColor, State.m_Color));
 				}
 
 				pLayer->FlagModified(0, 0, pLayer->m_Width, pLayer->m_Height);
@@ -1290,6 +1263,8 @@ CUi::EPopupMenuFunctionResult CLayerTiles::RenderCommonProperties(SCommonPropSta
 			if(pLayer->m_Height > State.m_Height)
 				State.m_Height = pLayer->m_Height;
 		}
+
+		State.m_Color = PackColor(vpLayers[0]->m_Color);
 	}
 
 	{
@@ -1384,14 +1359,14 @@ void CLayerTiles::FlagModified(int x, int y, int w, int h)
 	}
 }
 
-void CLayerTiles::ModifyImageIndex(FIndexModifyFunction Func)
+void CLayerTiles::ModifyImageIndex(const FIndexModifyFunction &IndexModifyFunction)
 {
-	Func(&m_Image);
+	IndexModifyFunction(&m_Image);
 }
 
-void CLayerTiles::ModifyEnvelopeIndex(FIndexModifyFunction Func)
+void CLayerTiles::ModifyEnvelopeIndex(const FIndexModifyFunction &IndexModifyFunction)
 {
-	Func(&m_ColorEnv);
+	IndexModifyFunction(&m_ColorEnv);
 }
 
 void CLayerTiles::ShowPreventUnusedTilesWarning()

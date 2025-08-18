@@ -417,11 +417,15 @@ void CEffects::SparkleEffect(vec2 Pos, float Alpha)
 	if(!m_AddXhz)
 		return;
 
+	ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f);
+	if(g_Config.m_ClEffectColors)
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor));
+
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SPARKLE;
 	p.m_Pos = Pos + random_direction() * random_float(40.0f);
-	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f, 1.0f, 1.0f);
+	p.m_Color = Color;
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 0.0f;
@@ -444,11 +448,15 @@ void CEffects::FireTrailEffet(vec2 Pos, float Alpha)
 	if(Changer > 5.0f)
 		RotSpeed = 5.0f + (10 - Changer);
 
+	ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f);
+	if(g_Config.m_ClEffectColors)
+		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor));
+
 	CParticle p;
 	p.SetDefault();
 	p.m_Spr = SPRITE_PART_SMOKE;
 	p.m_Pos = Pos;
-	p.m_Color = g_Config.m_ClEffectColors ? color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClEffectColor)) : ColorRGBA(1.0f, 1.0f, 1.0f);
+	p.m_Color = Color;
 	p.m_Vel = vec2(0, 0);
 	p.m_LifeSpan = 0.5f;
 	p.m_StartSize = 35.0f;
@@ -490,14 +498,14 @@ void CEffects::OnRender()
 		Speed = DemoPlayer()->BaseInfo()->m_Speed;
 
 	const int64_t Now = time();
-	auto FUpdateClock = [&](bool &Add, int64_t &LastUpdate, int Frequency) {
+	auto UpdateClock = [&](bool &Add, int64_t &LastUpdate, int Frequency) {
 		Add = Now - LastUpdate > time_freq() / ((float)Frequency * Speed);
 		if(Add)
 			LastUpdate = Now;
 	};
-	FUpdateClock(m_Add5hz, m_LastUpdate5hz, 5);
-	FUpdateClock(m_Add50hz, m_LastUpdate50hz, 50);
-	FUpdateClock(m_Add100hz, m_LastUpdate100hz, 100);
+	UpdateClock(m_Add5hz, m_LastUpdate5hz, 5);
+	UpdateClock(m_Add50hz, m_LastUpdate50hz, 50);
+	UpdateClock(m_Add100hz, m_LastUpdate100hz, 100);
 
 	if(time() - s_LastUpdate > time_freq() / (g_Config.m_ClEffectSpeed * Speed))
 	{
@@ -506,7 +514,7 @@ void CEffects::OnRender()
 	}
 	else
 		m_AddXhz = false;
-
+		
 	if(m_Add50hz)
 		GameClient()->m_Flow.Update();
 }

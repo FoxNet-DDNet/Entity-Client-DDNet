@@ -47,7 +47,7 @@ void CUIElement::SUIElementRect::Reset()
 	m_Rounding = -1.0f;
 	m_Corners = -1;
 	m_Text.clear();
-	m_Cursor.Reset();
+	m_Cursor = CTextCursor();
 	m_TextColor = ColorRGBA(-1, -1, -1, -1);
 	m_TextOutlineColor = ColorRGBA(-1, -1, -1, -1);
 	m_QuadColor = ColorRGBA(-1, -1, -1, -1);
@@ -78,6 +78,12 @@ void CUIElement::SUIElementRect::Draw(const CUIRect *pRect, ColorRGBA Color, int
 	m_pParent->Ui()->Graphics()->TextureClear();
 	m_pParent->Ui()->Graphics()->RenderQuadContainerEx(m_UIRectQuadContainer,
 		0, -1, m_X, m_Y, 1, 1);
+}
+
+void SLabelProperties::SetColor(const ColorRGBA &Color)
+{
+	m_vColorSplits.clear();
+	m_vColorSplits.emplace_back(0, -1, Color);
 }
 
 /********************************************************
@@ -815,7 +821,9 @@ void CUi::DoLabel(const CUIRect *pRect, const char *pText, float Size, int Align
 	const vec2 CursorPos = CalcAlignedCursorPos(pRect, TextBounds.m_TextSize, Align, TextBounds.m_LineCount == 1 ? &TextBounds.m_BiggestCharacterHeight : nullptr);
 
 	CTextCursor Cursor;
-	TextRender()->SetCursor(&Cursor, CursorPos.x, CursorPos.y, Size, TEXTFLAG_RENDER | Flags);
+	Cursor.SetPosition(CursorPos);
+	Cursor.m_FontSize = Size;
+	Cursor.m_Flags |= Flags;
 	Cursor.m_vColorSplits = LabelProps.m_vColorSplits;
 	Cursor.m_LineWidth = (float)LabelProps.m_MaxWidth;
 	TextRender()->TextEx(&Cursor, pText, -1);
@@ -833,8 +841,9 @@ void CUi::DoLabel(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, cons
 	}
 	else
 	{
-		const vec2 CursorPos = CalcAlignedCursorPos(pRect, TextBounds.m_TextSize, Align);
-		TextRender()->SetCursor(&Cursor, CursorPos.x, CursorPos.y, Size, TEXTFLAG_RENDER | Flags);
+		Cursor.SetPosition(CalcAlignedCursorPos(pRect, TextBounds.m_TextSize, Align));
+		Cursor.m_FontSize = Size;
+		Cursor.m_Flags |= Flags;
 	}
 	Cursor.m_LineWidth = LabelProps.m_MaxWidth;
 
@@ -1452,6 +1461,7 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 			if(MouseButton(0))
 			{
 				SetActiveItem(pId);
+				m_pLastActiveScrollbar = pId;
 				m_ActiveScrollbarOffset = MouseX() - Handle.x;
 				Grabbed = true;
 			}
@@ -1459,6 +1469,7 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 		else if(MouseButtonClicked(0))
 		{
 			SetActiveItem(pId);
+			m_pLastActiveScrollbar = pId;
 			m_ActiveScrollbarOffset = Handle.w / 2.0f;
 			Grabbed = true;
 		}
@@ -1512,8 +1523,9 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
 	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
 	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
+	const bool DelayUpdate = Flags & CUi::SCROLLBAR_OPTION_DELAYUPDATE;
 
-	int Value = *pOption;
+	int Value = (DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId)) ? m_ScrollbarValue : *pOption;
 	if(Infinite)
 	{
 		Max += 1;
@@ -1574,6 +1586,12 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 	{
 		if(Value == Max)
 			Value = 0;
+	}
+
+	if(DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId))
+	{
+		m_ScrollbarValue = Value;
+		return false;
 	}
 
 	if(*pOption != Value)
@@ -2008,6 +2026,16 @@ void CUi::ShowPopupSelection(float X, float Y, SSelectionPopupContext *pContext)
 	DoPopupMenu(pContext, X, Y, pContext->m_Width, PopupHeight, pContext, PopupSelection, pContext->m_Props);
 }
 
+void CUi::UpdatePopupMenuOffset(const SSelectionPopupContext *pContext, float NewX, float NewY)
+{
+	auto PopupMenu = std::find_if(m_vPopupMenus.begin(), m_vPopupMenus.end(), [pContext](const SPopupMenu pMenu) { return pMenu.m_pId == pContext; });
+	if(PopupMenu != m_vPopupMenus.end())
+	{
+		PopupMenu->m_Rect.x = NewX;
+		PopupMenu->m_Rect.y = NewY + pContext->m_AlignmentHeight;
+	}
+}
+
 int CUi::DoDropDown(CUIRect *pRect, int CurSelection, const char **pStrs, int Num, SDropDownState &State)
 {
 	if(!State.m_Init)
@@ -2025,7 +2053,9 @@ int CUi::DoDropDown(CUIRect *pRect, int CurSelection, const char **pStrs, int Nu
 	Props.m_HintCanChangePositionOrSize = true;
 	Props.m_ShowDropDownIcon = true;
 	if(IsPopupOpen(&State.m_SelectionPopupContext))
+	{
 		Props.m_Corners = IGraphics::CORNER_ALL & (~State.m_SelectionPopupContext.m_Props.m_Corners);
+	}
 	if(DoButton_Menu(State.m_UiElement, &State.m_ButtonContainer, LabelFunc, pRect, Props))
 	{
 		State.m_SelectionPopupContext.Reset();

@@ -83,15 +83,10 @@ public:
 		CMDGROUP_PLATFORM_GL = 10000, // commands specific to a platform
 		CMDGROUP_PLATFORM_SDL = 20000,
 
-		//
 		CMD_FIRST = CMDGROUP_CORE,
-		CMD_NOP = CMD_FIRST,
-
-		//
-		CMD_RUNBUFFER,
 
 		// synchronization
-		CMD_SIGNAL,
+		CMD_SIGNAL = CMD_FIRST,
 
 		// texture commands
 		CMD_TEXTURE_CREATE,
@@ -225,13 +220,6 @@ public:
 		SCommand_Signal() :
 			SCommand(CMD_SIGNAL) {}
 		CSemaphore *m_pSemaphore;
-	};
-
-	struct SCommand_RunBuffer : public SCommand
-	{
-		SCommand_RunBuffer() :
-			SCommand(CMD_RUNBUFFER) {}
-		CCommandBuffer *m_pOtherBuffer;
 	};
 
 	struct SCommand_Render : public SCommand
@@ -659,10 +647,10 @@ public:
 
 enum EGraphicsBackendErrorCodes
 {
-	GRAPHICS_BACKEND_ERROR_CODE_UNKNOWN = -1,
 	GRAPHICS_BACKEND_ERROR_CODE_NONE = 0,
 	GRAPHICS_BACKEND_ERROR_CODE_GL_CONTEXT_FAILED,
 	GRAPHICS_BACKEND_ERROR_CODE_GL_VERSION_FAILED,
+	GRAPHICS_BACKEND_ERROR_CODE_GLEW_INIT_FAILED,
 	GRAPHICS_BACKEND_ERROR_CODE_SDL_INIT_FAILED,
 	GRAPHICS_BACKEND_ERROR_CODE_SDL_SCREEN_REQUEST_FAILED,
 	GRAPHICS_BACKEND_ERROR_CODE_SDL_SCREEN_INFO_REQUEST_FAILED,
@@ -746,8 +734,10 @@ public:
 
 	virtual bool GetWarning(std::vector<std::string> &WarningStrings) = 0;
 
-	// returns true if the error msg was shown
-	virtual bool ShowMessageBox(unsigned Type, const char *pTitle, const char *pMsg) = 0;
+	/**
+	 * @see IGraphics::ShowMessageBox
+	 */
+	virtual std::optional<int> ShowMessageBox(const IGraphics::CMessageBox &MessageBox) = 0;
 };
 
 class CGraphics_Threaded : public IEngineGraphics
@@ -1119,6 +1109,29 @@ public:
 	void RenderQuadContainerAsSprite(int ContainerIndex, int QuadOffset, float X, float Y, float ScaleX = 1.f, float ScaleY = 1.f) override;
 	void RenderQuadContainerAsSpriteMultiple(int ContainerIndex, int QuadOffset, int DrawCount, SRenderSpriteInfo *pRenderInfo) override;
 
+	// sprites
+private:
+	vec2 m_SpriteScale = vec2(-1.0f, -1.0f);
+
+protected:
+	void SelectSprite(const CDataSprite *pSprite, int Flags);
+
+public:
+	void SelectSprite(int Id, int Flags = 0) override;
+	void SelectSprite7(int Id, int Flags = 0) override;
+
+	void GetSpriteScale(const CDataSprite *pSprite, float &ScaleX, float &ScaleY) const override;
+	void GetSpriteScale(int Id, float &ScaleX, float &ScaleY) const override;
+	void GetSpriteScaleImpl(int Width, int Height, float &ScaleX, float &ScaleY) const override;
+
+	void DrawSprite(float x, float y, float Size) override;
+	void DrawSprite(float x, float y, float ScaledWidth, float ScaledHeight) override;
+
+	int QuadContainerAddSprite(int QuadContainerIndex, float x, float y, float Size) override;
+	int QuadContainerAddSprite(int QuadContainerIndex, float Size) override;
+	int QuadContainerAddSprite(int QuadContainerIndex, float Width, float Height) override;
+	int QuadContainerAddSprite(int QuadContainerIndex, float X, float Y, float Width, float Height) override;
+
 	template<typename TName>
 	void FlushVerticesImpl(bool KeepVertices, int &PrimType, size_t &PrimCount, size_t &NumVerts, TName &Command, size_t VertSize)
 	{
@@ -1245,7 +1258,8 @@ public:
 	void AddWarning(const SWarning &Warning);
 	std::optional<SWarning> CurrentWarning() override;
 
-	bool ShowMessageBox(unsigned Type, const char *pTitle, const char *pMsg) override;
+	std::optional<int> ShowMessageBox(const CMessageBox &MessageBox) override;
+
 	bool IsBackendInitialized() override;
 
 	bool GetDriverVersion(EGraphicsDriverAgeType DriverAgeType, int &Major, int &Minor, int &Patch, const char *&pName, EBackendType BackendType) override { return m_pBackend->GetDriverVersion(DriverAgeType, Major, Minor, Patch, pName, BackendType); }

@@ -162,7 +162,8 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 	Spectators.Margin(10.0f, &Spectators);
 
 	CTextCursor Cursor;
-	TextRender()->SetCursor(&Cursor, Spectators.x, Spectators.y, 22.0f, TEXTFLAG_RENDER);
+	Cursor.SetPosition(Spectators.TopLeft());
+	Cursor.m_FontSize = 22.0f;
 	Cursor.m_LineWidth = Spectators.w;
 	Cursor.m_MaxLines = round_truncate(Spectators.h / Cursor.m_FontSize);
 
@@ -235,7 +236,7 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 		}
 		if(GameClient()->m_aClients[pInfo->m_ClientId].m_Friend)
 		{
-			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClDoFriendColors)));
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)));
 		}
 
 		TextRender()->TextEx(&Cursor, GameClient()->m_aClients[pInfo->m_ClientId].m_aName);
@@ -445,7 +446,20 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				}
 				if(NextDDTeam != DDTeam)
 					TeamRectCorners |= IGraphics::CORNER_B;
+
+
+
 				RowAndSpacing.Draw(Color, TeamRectCorners, RoundRadius);
+
+				if(g_Config.m_ClRevertTeamColors)
+				{
+					int TeamRectSides = IGraphics::SIDE_L | IGraphics::SIDE_R;
+					if(TeamRectCorners & IGraphics::CORNER_T)
+						TeamRectSides |= IGraphics::SIDE_T;
+					if(TeamRectCorners & IGraphics::CORNER_B)
+						TeamRectSides |= IGraphics::SIDE_B;
+					RowAndSpacing.DrawSpecificOutline(ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f), RoundRadius, TeamRectCorners, TeamRectSides);
+				}
 
 				CurrentDDTeamSize++;
 
@@ -572,7 +586,9 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			// name
 			{
 				CTextCursor Cursor;
-				TextRender()->SetCursor(&Cursor, NameOffset, Row.y + (Row.h - FontSize) / 2.0f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
+				Cursor.SetPosition(vec2(NameOffset, Row.y + (Row.h - FontSize) / 2.0f));
+				Cursor.m_FontSize = FontSize;
+				Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
 				Cursor.m_LineWidth = NameLength;
 				if(ClientData.m_AuthLevel)
 				{
@@ -629,7 +645,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, Alpha);
 
-				if(g_Config.m_ClDoFriendColors && ClientData.m_Friend)
+				if(ClientData.m_Friend)
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 
 				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)
@@ -664,7 +680,9 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					TextRender()->TextColor(GameClient()->m_WarList.GetClanColor(pInfo->m_ClientId));
 
 				CTextCursor Cursor;
-				TextRender()->SetCursor(&Cursor, ClanOffset + (ClanLength - minimum(TextRender()->TextWidth(FontSize, ClientData.m_aClan), ClanLength)) / 2.0f, Row.y + (Row.h - FontSize) / 2.0f, FontSize, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
+				Cursor.SetPosition(vec2(ClanOffset + (ClanLength - minimum(TextRender()->TextWidth(FontSize, ClientData.m_aClan), ClanLength)) / 2.0f, Row.y + (Row.h - FontSize) / 2.0f));
+				Cursor.m_FontSize = FontSize;
+				Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
 				Cursor.m_LineWidth = ClanLength;
 				TextRender()->TextEx(&Cursor, ClientData.m_aClan);
 			}
