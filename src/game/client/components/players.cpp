@@ -938,11 +938,11 @@ void CPlayers::OnRender()
 
 			if(pSkin != nullptr)
 			{
-				aRenderInfo[ClientId].m_aSixup[g_Config.m_ClDummy].Reset();
-				aRenderInfo[ClientId].Apply(pSkin);
+				aRenderInfo[i].m_aSixup[g_Config.m_ClDummy].Reset();
+				aRenderInfo[i].Apply(pSkin);
 
 				const bool CustomColor = g_Config.m_ClChangeAllCustomCol;
-				aRenderInfo[ClientId].m_CustomColoredSkin = CustomColor;
+				aRenderInfo[i].m_CustomColoredSkin = CustomColor;
 				if(!CustomColor)
 				{
 					aRenderInfo[i].m_ColorBody = ColorRGBA(1, 1, 1);
