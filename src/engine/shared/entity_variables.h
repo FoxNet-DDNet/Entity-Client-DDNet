@@ -55,9 +55,11 @@ MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 0, CFGFLAG_CLIENT | 
 MACRO_CONFIG_COL(ClOutlineColorUnfreeze, ec_outline_color_unfreeze, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Unfreeze outline color") // 0 0 0
 MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 0, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Unfreeze outline color") // 0 0 0
 
+// Fast Input
 MACRO_CONFIG_INT(ClFastInput, ec_fast_input, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction up to 20ms faster")
 MACRO_CONFIG_INT(ClFastInputOthers, ec_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Do an extra 1 tick (20ms) for other tees with your fast inputs. (increases visual latency, makes dragging easier)")
 
+// Anti Ping Smoothing
 MACRO_CONFIG_INT(ClAntiPingImproved, ec_antiping_improved, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Different antiping smoothing algorithm, not compatible with cl_antiping_smooth")
 MACRO_CONFIG_INT(ClAntiPingNegativeBuffer, ec_antiping_negative_buffer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Helps in Gores. Allows internal certainty value to be negative which causes more conservative prediction")
 MACRO_CONFIG_INT(ClAntiPingStableDirection, ec_antiping_stable_direction, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predicts optimistically along the tees stable axis to reduce delay in gaining overall stability")
@@ -97,9 +99,9 @@ MACRO_CONFIG_INT(ClRunOnJoinConsole, ec_run_on_join_console, 1, 0, 1, CFGFLAG_CL
 MACRO_CONFIG_INT(ClRunOnJoinDelay, ec_run_on_join_delay, 2, 7, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 MACRO_CONFIG_STR(ClRunOnJoinMsg, ec_run_on_join_console_msg, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 
+// Limit Mouse
 MACRO_CONFIG_INT(ClLimitMouseToScreen, ec_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundries")
 MACRO_CONFIG_INT(ClScaleMouseDistance, ec_scale_mouse_distance, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Improve mouse precision by scaling max distance to 1000")
-
 MACRO_CONFIG_INT(ClUiMouseBorderTeleport, ec_ui_mouse_border_teleport, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Teleport Mouse from one border to the other if it goes off screen")
 
 // Frozen Tee Display
@@ -146,7 +148,7 @@ MACRO_CONFIG_INT(ClResetBindWheelMouse, ec_reset_bindwheel_mouse, 0, 0, 1, CFGFL
 // Profiles
 MACRO_CONFIG_INT(ClProfileSkin, ec_profile_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply skin in profiles")
 MACRO_CONFIG_INT(ClProfileName, ec_profile_name, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply name in profiles")
-MACRO_CONFIG_INT(ClProfileClan, etc_profile_clan, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply clan in profiles")
+MACRO_CONFIG_INT(ClProfileClan, ec_profile_clan, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply clan in profiles")
 MACRO_CONFIG_INT(ClProfileFlag, ec_profile_flag, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply flag in profiles")
 MACRO_CONFIG_INT(ClProfileColors, ec_profile_colors, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply colors in profiles")
 MACRO_CONFIG_INT(ClProfileEmote, ec_profile_emote, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply emote in profiles")
@@ -172,17 +174,15 @@ MACRO_CONFIG_INT(ClChatBubble, ec_chatbubble, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_
 MACRO_CONFIG_INT(ClShowOthersInMenu, ec_show_others_in_menu, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows The Settings Emote if Someones in The Menu")
 MACRO_CONFIG_INT(ClSendMenuFlag, ec_send_menu_flag, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to send the in settings flag to the server or not")
 
-// misc
+// misc/Bind Chat
+MACRO_CONFIG_INT(ClSendExclamation, ec_send_exclamation_mark, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send chat messages that begin with the prefix \"!\"")
 MACRO_CONFIG_INT(ClSendDotsChat, ec_send_dots_chat, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Never send a message if it starts with a '.'")
 MACRO_CONFIG_INT(ClShowIdsChat, ec_show_ids_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Whether to Show Client IDs in Chat")
 
 MACRO_CONFIG_INT(ClDoAfkColors, ec_do_afk_colors, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Makes Names Darker in Scoreboard if Player is afk")
-
-// Prefix toggles
-MACRO_CONFIG_INT(ClSpectatePrefix, ec_chat_spectate_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Spectator Prefix Next to Names")
-
 MACRO_CONFIG_INT(ClChatServerPrefix, ec_do_chat_server_prefix, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Server Prefix")
 MACRO_CONFIG_INT(ClChatClientPrefix, ec_do_chat_client_prefix, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Client Prefix")
+MACRO_CONFIG_INT(ClSpectatePrefix, ec_do_spec_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Spectator Prefix Next to Names")
 
 // Prefixes
 MACRO_CONFIG_STR(ClClientPrefix, ec_client_prefix, 8, "— ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client (Echo) Message Prefix")
@@ -240,7 +240,7 @@ MACRO_CONFIG_INT(ClAutoAddOnNameChange, ec_auto_add_on_name_change, 2, 0, 2, CFG
 MACRO_CONFIG_INT(ClAutoJoinTest, ec_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
 
 // Info
-MACRO_CONFIG_INT(ClListsInfo, ec_lists_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed How many enemies, teams, helpers and mutes are online on the current server")
+MACRO_CONFIG_INT(ClListsInfo, ec_list_warlist_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed How many enemies, teams, helpers and mutes are online on the current server")
 MACRO_CONFIG_INT(ClEnabledInfo, ec_enabled_info, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Everytime You Join a Server You Will be Informed About Enabled Features")
 
 // Anti Spawn Block
@@ -262,14 +262,13 @@ MACRO_CONFIG_INT(ClFreezeKillDebug, ec_freeze_kill_debug, 0, 0, 1, CFGFLAG_CLIEN
 
 // Ui/Sound
 MACRO_CONFIG_INT(SndFriendChat, snd_friend_chat, 0, 0, 1, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Enable regular Chat Sound Only When a Friend Says Something") // Aiodob Menu color plates
-MACRO_CONFIG_COL(ClScrollMenuColor, ec_scrollmenu_color, 654311494, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Color in Entity Menu")
 
 // Gores Mode
 MACRO_CONFIG_INT(ClGoresMode, ec_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "always have a gun in your hand :p")
 MACRO_CONFIG_INT(ClGoresModeKey, ec_gores_mode_key, 291, 0, 512, CFGFLAG_CLIENT | CFGFLAG_SAVE, "The key it binds to")
 MACRO_CONFIG_INT(ClGoresModeDisableIfWeapons, ec_gores_mode_disable_weapons, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Disable Gores Mode When The Player Has Another Weapon")
-MACRO_CONFIG_INT(ClAutoEnableGoresMode, ec_auto_enable_gores_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "enables it on Gores gametype and disables on others")
-MACRO_CONFIG_INT(ClDisableGoresOnShutdown, ec_disable_gores_on_shutdown, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "disables it on shutdown")
+MACRO_CONFIG_INT(ClAutoEnableGoresMode, ec_gores_mode_auto_enable, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "enables it on Gores gametype and disables on others")
+MACRO_CONFIG_INT(ClDisableGoresOnShutdown, ec_gores_mode_disable_shutdown, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "disables it on shutdown")
 MACRO_CONFIG_STR(ClGoresModeSaved, ec_gores_mode_saved, 128, "+fire", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont Edit This")
 
 // Tee
@@ -322,9 +321,6 @@ MACRO_CONFIG_INT(ClEClientSettingsTabs, ec_eclient_settings_tabs, 0, 0, 65536, C
 // Kill Counter
 MACRO_CONFIG_INT(ClKillCounter, ec_self_murder_count, 0, 0, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "I'f you wish to fake the ammount of deaths then this is the config to edit (it's named that way so its harder to find)")
 
-// Bind Chat
-MACRO_CONFIG_INT(ClSendExclamation, ec_send_exclamation_mark, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Send chat messages that begin with the prefix \"!\"")
-
 // Silent Messages
 MACRO_CONFIG_INT(ClSilentMessages, ec_silent_messages, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "When sending a Silent Message to the chat it will still show what you typed")
 MACRO_CONFIG_COL(ClSilentColor, ec_silent_color, 8924078, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
@@ -371,7 +367,7 @@ MACRO_CONFIG_INT(ClStatusBarLabels, ec_statusbar_labels, 1, 0, 1, CFGFLAG_CLIENT
 MACRO_CONFIG_STR(ClStatusBarScheme, ec_statusbar_scheme, 16, "ac pf r", CFGFLAG_CLIENT | CFGFLAG_SAVE, "The order in which to show status bar items")
 
 
-// Custom Vairiables from My Server for the editor
+// Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNetw/FoxNet-DDNet
 
 MACRO_CONFIG_INT(SvAutoHammer, fs_auto_hammer, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")

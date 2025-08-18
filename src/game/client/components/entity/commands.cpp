@@ -649,19 +649,19 @@ void CEClient::OnConsoleInit()
 	Console()->Register("saveskin", "", CFGFLAG_CLIENT, ConSaveSkin, this, "Save Your Current Info (Skin, name, etc.)");
 
 	// View Link
-	Console()->Register("view_link", "r[Url]", CFGFLAG_CLIENT, ConViewLink, this, "Opens a new Browser tab with that Link");
+	Console()->Register("view_link", "r[url]", CFGFLAG_CLIENT, ConViewLink, this, "Opens a new Browser tab with that Link");
 
 	// Rainbow Commands
 	Console()->Register("server_rainbow_speed", "?s[speed]", CFGFLAG_CLIENT, ConServerRainbowSpeed, this, "Rainbow Speed of Server side rainbow mode (default = 10)");
 	Console()->Register("server_rainbow_both_players", "?i[int]", CFGFLAG_CLIENT, ConServerRainbowBothPlayers, this, "Rainbow Both Players at the same time");
-	Console()->Register("server_rainbow_sat", "?i[Sat] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 200)");
-	Console()->Register("server_rainbow_lht", "?i[Lht] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 30)");
+	Console()->Register("server_rainbow_sat", "?i[sat] ?i[0 | 1(dummy)]", CFGFLAG_CLIENT, ConServerRainbowSaturation, this, "Rainbow Saturation of Server side rainbow mode (default = 200)");
+	Console()->Register("server_rainbow_lht", "?i[lht] ?i[0 | 1(dummy)]", CFGFLAG_CLIENT, ConServerRainbowLightness, this, "Rainbow Lightness of Server side rainbow mode (default = 30)");
 
-	Console()->Register("server_rainbow_body", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
-	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(Dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
+	Console()->Register("server_rainbow_body", "?i[int] ?i[0 | 1(dummy)]", CFGFLAG_CLIENT, ConServerRainbowBody, this, "Rainbow Body");
+	Console()->Register("server_rainbow_feet", "?i[int] ?i[0 | 1(dummy)]", CFGFLAG_CLIENT, ConServerRainbowFeet, this, "Rainbow Feet");
 
-	Console()->Register("reply_last", "?r[Message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
-	Console()->Register("specid", "i[Id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
+	Console()->Register("reply_last", "?r[message]", CFGFLAG_CLIENT, ConReplyLast, this, "Reply to the last ping");
+	Console()->Register("specid", "i[id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
 	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Crash your own client");
 
 	Console()->Chain("ec_gores_mode", ConchainGoresMode, this);
