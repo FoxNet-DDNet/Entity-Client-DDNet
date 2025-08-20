@@ -73,7 +73,7 @@
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/mapconfig.h"
-#include "components/entity/update.h"
+#include "components/entity/info.h"
 
 // Tater
 #include "components/tclient/bindchat.h"
@@ -203,7 +203,7 @@ public:
 	CQuickActions m_QuickActions;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
-	CUpdate m_EntityUpdate;
+	CEntityInfo m_EntityInfo;
 	CMapConfig m_MapConfig;
 
 	// T-Client
@@ -743,6 +743,8 @@ public:
 	void ClientMessage(const char *pString) override;
 	void OnJoinInfo() override;
 	void SetLastMovementTime() override;
+
+	void RequestEClientInfo() override;
 
 	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;

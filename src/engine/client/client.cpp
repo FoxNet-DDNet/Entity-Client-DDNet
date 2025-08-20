@@ -5166,6 +5166,7 @@ void CClient::RequestDDNetInfo()
 	m_pDDNetInfoTask->IpResolve(IPRESOLVE::V4);
 	Http()->Run(m_pDDNetInfoTask);
 	m_InfoState = EInfoState::LOADING;
+	GameClient()->RequestEClientInfo();
 }
 
 int CClient::GetPredictionTime()

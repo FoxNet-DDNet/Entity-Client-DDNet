@@ -657,7 +657,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		static CButtonContainer s_EClientButton;
 		ColorRGBA Inactive = ms_ColorTabbarInactive;
 		ColorRGBA Active = ms_ColorTabbarActive;
-		if(str_comp(GameClient()->m_EntityUpdate.m_aVersionStr, "0") != 0)
+		if(g_Config.m_EcUnreadNews)
 		{
 			Inactive = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
 			Active = ColorRGBA(0.3f, 0.8f, 0.6, 0.5f);

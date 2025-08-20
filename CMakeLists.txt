@@ -2385,13 +2385,13 @@ if(CLIENT)
     components/entity/entity.h 
     components/entity/freeze_kill.cpp
     components/entity/freeze_kill.h 
+    components/entity/info.cpp
+    components/entity/info.h
     components/entity/mapconfig.cpp
     components/entity/mapconfig.h
     components/entity/menus_entity.cpp 
     components/entity/quick_actions.cpp
     components/entity/quick_actions.h
-    components/entity/update.cpp
-    components/entity/update.h
     components/flow.cpp
     components/flow.h
     components/freezebars.cpp

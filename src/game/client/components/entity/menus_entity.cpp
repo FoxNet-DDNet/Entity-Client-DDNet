@@ -195,7 +195,7 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 
 	CUIRect Label;
 
-	const char *pStr = GameClient()->m_EntityUpdate.m_aNews;
+	const char *pStr = GameClient()->m_EntityInfo.m_aNews;
 	char aLine[256];
 	while((pStr = str_next_token(pStr, "\n", aLine, sizeof(aLine))))
 	{
@@ -303,24 +303,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	LeftView.HSplitTop(LineSize, &LeftView, &LeftView);
 	Ui()->DoLabel(&LeftView, DeathCounter, FontSize, TEXTALIGN_ML);
 
-	CUIRect LeftBottom;
-	MainView.HSplitBottom(Margin, 0, &LeftBottom);
-	LeftBottom.HSplitBottom(Margin, &LeftView, &LeftBottom);
-	LeftBottom.HSplitBottom(LineSize * 2.0f, 0, &LeftBottom);
-	LeftBottom.VSplitLeft(5.0f, &LeftView, &LeftBottom);
-	LeftBottom.VSplitLeft(LineSize * 6.0f, &LeftBottom, &Button);
-	static CButtonContainer s_NewestRelGithub;
-	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
-	if(str_comp(GameClient()->m_EntityUpdate.m_aVersionStr, "0") != 0)
-		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.25f);
-
-	if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, Color))
-	{
-		Client()->ViewLink(Localize("https://github.com/qxdFox/Entity-Client-DDNet/releases"));
-	}
-
 	// Right Side
-
 	RightView.HSplitTop(HeadlineHeight, &Label, &RightView);
 	Ui()->DoLabel(&Label, Localize("Config Files"), HeadlineFontSize, TEXTALIGN_MR);
 	RightView.HSplitTop(MarginSmall, nullptr, &RightView);

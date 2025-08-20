@@ -396,6 +396,7 @@ public:
 	virtual void ClientMessage(const char *pString) = 0;
 	virtual void OnJoinInfo() = 0;
 	virtual void SetLastMovementTime() = 0;
+	virtual void RequestEClientInfo() = 0;
 	virtual int GetClientId(const char *pName) = 0;
 	virtual const char *GetClientName(int Id) = 0;
 

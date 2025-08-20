@@ -173,7 +173,7 @@ void CGameClient::OnConsoleInit()
 					      &m_EClient,
 					      &m_AntiSpawnBlock,
 					      &m_FreezeKill,
-					      &m_EntityUpdate,
+					      &m_EntityInfo,
 					      &m_MapConfig,
 				      });
 
@@ -5507,6 +5507,11 @@ void CGameClient::ClientMessage(const char *pString)
 void CGameClient::OnJoinInfo()
 {
 	m_EClient.OnConnect();
+}
+
+void CGameClient::RequestEClientInfo()
+{
+	m_EntityInfo.FetchEClientInfo();
 }
 
 void CGameClient::SetLastMovementTime()
