@@ -1027,7 +1027,7 @@ void CGameConsole::Prompt(char (&aPrompt)[32])
 				str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("Enter Password"));
 		}
 		else
-			str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("Not Connected"));
+			str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("NOT CONNECTED"));
 	}
 	else
 	{
@@ -1213,8 +1213,7 @@ void CGameConsole::OnRender()
 		if(pConsole->m_Input.HasSelection())
 			pConsole->m_HasSelection = false; // Clear console selection if we have a line input selection
 
-		y -= pConsole->m_BoundingBox.m_H - FONT_SIZE;
-
+	
 		if(pConsole->m_LastInputHeight != pConsole->m_BoundingBox.m_H)
 		{
 			pConsole->m_HasSelection = false;
