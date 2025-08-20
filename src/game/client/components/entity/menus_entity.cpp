@@ -372,7 +372,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 		TeeRenderInfo.Apply(GameClient()->m_Skins.Find("Catnoa"));
 		TeeRenderInfo.ApplyColors(true, 5374207, 12767844);
 
-		RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo, 2);
+		RenderECTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo, 2);
 	}
 }
 
@@ -3101,7 +3101,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClDummySkin));
 					TeeRenderInfo.ApplyColors(DUseCustomColor, DBodyColor, DFeetColor);
 				}
-				RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
+				RenderECTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
 			}
 			ServerRainbow.VSplitLeft(88, &Button, &ServerRainbow);
 			DoButton_CheckBoxAutoVMarginAndSet(&GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], "Rainbow Body", &GameClient()->m_EClient.m_RainbowBody[g_Config.m_ClDummy], &ServerRainbow, LineSize);
@@ -3490,7 +3490,7 @@ bool CMenus::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRec
 	return false;
 }
 
-void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable, float TeeSize, float Alpha)
+void CMenus::RenderECTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable, float TeeSize, float Alpha)
 {
 	static bool OverrideTeePos = false;
 	static bool CanDrag = false;
@@ -3515,7 +3515,9 @@ void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 	if(Draggable > 0)
 	{
 		if(Distance < InteractionDistance)
+		{
 			CanDrag = true;
+		}
 
 		if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && CanDrag)
 		{
@@ -3545,6 +3547,7 @@ void CMenus::RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 
 			CanDrag = true;
 			OverrideTeePos = true;
+			Ui()->SetHotItem(nullptr);
 		}
 		else if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_2) && OverrideTeePos && CanDrag)
 			OverrideTeePos = false;

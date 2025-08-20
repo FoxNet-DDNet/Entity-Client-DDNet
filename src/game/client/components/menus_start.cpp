@@ -185,9 +185,14 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	EClientVersion.VSplitRight(5.0f, &EClientVersion, nullptr);
 	EClientVersion.VSplitRight(100.0f, &EClientVersion, &EClientVersion);
 	static CButtonContainer s_EClientVer;
-	if(GameClient()->m_Menus.DoButton_Menu(&s_EClientVer, Localize("E-Client v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 11.0f))
+	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
+	if(g_Config.m_EcUnreadNews)
+		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
+	if(GameClient()->m_Menus.DoButton_Menu(&s_EClientVer, Localize("E-Client v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, Color, 11.0f))
 	{
 		NewPage = CMenus::PAGE_ECLIENTNEWS;
+		GameClient()->m_Menus.ResetTeePos = true;
+		g_Config.m_EcUnreadNews = false;
 	}
 
 	static CButtonContainer s_ConsoleButton;
@@ -261,7 +266,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 #endif
-	if(str_comp(GameClient()->m_EntityInfo.m_aVersionStr, "0") != 0)
+	if(g_Config.m_ClInformUpdate &&str_comp(GameClient()->m_EntityInfo.m_aVersionStr, "0") != 0)
 	{
 		char aBuf[64];
 		str_format(aBuf, sizeof(aBuf), Localize("E-Client v%s is out!"), GameClient()->m_EntityInfo.m_aVersionStr);

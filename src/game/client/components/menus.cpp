@@ -666,6 +666,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		{
 			NewPage = PAGE_ECLIENTNEWS;
 			ResetTeePos = true;
+			g_Config.m_EcUnreadNews = false;
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("News"));
 	}
@@ -694,6 +695,10 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 #endif
 
 		GotNewsOrUpdate |= (bool)g_Config.m_UiUnreadNews;
+
+		GotNewsOrUpdate |= (bool)g_Config.m_EcUnreadNews;
+		if(g_Config.m_ClInformUpdate)
+			GotNewsOrUpdate |= str_comp(GameClient()->m_EntityInfo.m_aVersionStr, "0") != 0;
 
 		ColorRGBA HomeButtonColorAlert(0, 1, 0, 0.25f);
 		ColorRGBA HomeButtonColorAlertHover(0, 1, 0, 0.5f);
