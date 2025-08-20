@@ -203,7 +203,7 @@ public:
 	CQuickActions m_QuickActions;
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
-	CUpdate m_AcUpdate;
+	CUpdate m_EntityUpdate;
 	CMapConfig m_MapConfig;
 
 	// T-Client

@@ -657,17 +657,17 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 		static CButtonContainer s_EClientButton;
 		ColorRGBA Inactive = ms_ColorTabbarInactive;
 		ColorRGBA Active = ms_ColorTabbarActive;
-		if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
+		if(str_comp(GameClient()->m_EntityUpdate.m_aVersionStr, "0") != 0)
 		{
 			Inactive = ColorRGBA(0.2f, 0.7f, 0.5, 0.4f);
 			Active = ColorRGBA(0.3f, 0.8f, 0.6, 0.5f);
 		}
-		if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENT, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, nullptr, &Active))
+		if(DoButton_MenuTab(&s_EClientButton, FONT_ICON_INFO, ActivePage == PAGE_ECLIENTNEWS, &Button, IGraphics::CORNER_T, &m_aAnimatorsSmallPage[SMALL_TAB_ECLIENT], &Inactive, nullptr, &Active))
 		{
-			NewPage = PAGE_ECLIENT;
+			NewPage = PAGE_ECLIENTNEWS;
 			ResetTeePos = true;
 		}
-		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("E-Client"));
+		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("News"));
 	}
 
 	Box.VSplitRight(10.0f, &Box, nullptr);
@@ -1228,9 +1228,9 @@ void CMenus::Render()
 			{
 				RenderSettings(MainView);
 			}
-			else if(m_MenuPage == PAGE_ECLIENT)
+			else if(m_MenuPage == PAGE_ECLIENTNEWS)
 			{
-				RenderEClientVersionPage(MainView);
+				RenderEClientNewsPage(MainView);
 			}
 			else
 			{
@@ -1279,10 +1279,6 @@ void CMenus::Render()
 			else if(m_GamePage == PAGE_SETTINGS)
 			{
 				RenderSettings(MainView);
-			}
-			else if(m_GamePage == PAGE_ECLIENT)
-			{
-				RenderEClientVersionPage(MainView);
 			}
 			else
 			{

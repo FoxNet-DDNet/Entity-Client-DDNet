@@ -187,7 +187,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	static CButtonContainer s_AClient;
 	if(GameClient()->m_Menus.DoButton_Menu(&s_AClient, Localize("E-Client v" ECLIENT_VERSION), 0, &EClientVersion, BUTTONFLAG_ALL, nullptr, IGraphics::CORNER_ALL, 5, 0.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f), 11.0f))
 	{
-		NewPage = CMenus::PAGE_ECLIENT;
+		NewPage = CMenus::PAGE_ECLIENTNEWS;
 	}
 
 	static CButtonContainer s_ConsoleButton;
@@ -261,10 +261,10 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 #endif
-	if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
+	if(str_comp(GameClient()->m_EntityUpdate.m_aVersionStr, "0") != 0)
 	{
 		char aBuf[64];
-		str_format(aBuf, sizeof(aBuf), Localize("E-Client v%s is out!"), GameClient()->m_AcUpdate.m_aVersionStr);
+		str_format(aBuf, sizeof(aBuf), Localize("E-Client v%s is out!"), GameClient()->m_EntityUpdate.m_aVersionStr);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 		Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_MC);
 	}

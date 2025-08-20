@@ -14,6 +14,7 @@ public:
 	void ResetEClientInfoTask();
 
 	char m_aVersionStr[10] = "0";
+	char m_aNews[3000] = "";
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnInit() override;
 	virtual void OnRender() override;

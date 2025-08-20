@@ -658,7 +658,7 @@ public:
 		PAGE_SETTINGS,
 		PAGE_NETWORK,
 		PAGE_GHOST,
-		PAGE_ECLIENT,
+		PAGE_ECLIENTNEWS,
 
 		PAGE_LENGTH,
 
@@ -836,7 +836,8 @@ public:
 	void RenderSettingsStatusbar(CUIRect MainView);
 	void RenderSettingsQuickActions(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
-	void RenderEClientVersionPage(CUIRect MainView);
+	void RenderEClientInfoPage(CUIRect MainView);
+	void RenderEClientNewsPage(CUIRect MainView);
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();

@@ -40,6 +40,7 @@ enum
 	ENTITY_TAB_STATUSBAR,
 	ENTITY_TAB_QUICKACTION,
 	ENTITY_TAB_BINDWHEEL,
+	ENTITY_TAB_INFO,
 	NUMBER_OF_ENTITY_TABS,
 };
 
@@ -115,6 +116,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		Localize("Status Bar"),
 		Localize("Quick Actions"),
 		Localize("Bindwheel"),
+		Localize("Info"),
 	};
 
 	for(int Tab = 0; Tab < NUMBER_OF_ENTITY_TABS; ++Tab)
@@ -152,9 +154,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 
 	MainView.HSplitTop(MarginSmall, nullptr, &MainView);
 
-	// Client Page 1
-
-	if (s_CurTab == ENTITY_TAB_SETTINGS)
+	if(s_CurTab == ENTITY_TAB_SETTINGS)
 	{
 		RenderSettingsEClient(MainView);
 	}
@@ -178,17 +178,66 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	{
 		RenderSettingsWarList(MainView);
 	}
+	if(s_CurTab == ENTITY_TAB_INFO)
+	{
+		RenderEClientInfoPage(MainView);
+	}
 }
 
-void CMenus::RenderEClientVersionPage(CUIRect MainView)
+void CMenus::RenderEClientNewsPage(CUIRect MainView)
 {
+	GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_NEWS);
+
 	MainView.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, 10.0f);
 
 	MainView.HSplitTop(10.0f, nullptr, &MainView);
 	MainView.VSplitLeft(15.0f, nullptr, &MainView);
-	MainView.VSplitRight(15.0f, &MainView, nullptr);
-	MainView.HSplitBottom(10.0f, &MainView, nullptr);
 
+	CUIRect Label;
+
+	const char *pStr = GameClient()->m_EntityUpdate.m_aNews;
+	char aLine[256];
+	while((pStr = str_next_token(pStr, "\n", aLine, sizeof(aLine))))
+	{
+		const size_t Len = str_length(aLine);
+		if(Len > 0 && aLine[0] == '#' && aLine[1] == '#' && aLine[2] == '#')
+		{
+			memmove(aLine, aLine + 3, Len - 1);
+			aLine[Len - 3] = '\0';
+			MainView.HSplitTop(20.0f, &Label, &MainView);
+			Ui()->DoLabel(&Label, aLine, 17.5f, TEXTALIGN_ML);
+		}
+		else if(Len > 0 && aLine[0] == '#' && aLine[1] == '#')
+		{
+			memmove(aLine, aLine + 2, Len - 1);
+			aLine[Len - 2] = '\0';
+			MainView.HSplitTop(20.0f, &Label, &MainView);
+			Ui()->DoLabel(&Label, aLine, 20.0f, TEXTALIGN_ML);
+		}
+		else if(Len > 0 && aLine[0] == '#')
+		{
+			MainView.HSplitTop(25.0f, &Label, &MainView);
+			Ui()->DoLabel(&Label, aLine + 1, 22.5f, TEXTALIGN_ML);
+		}
+		else if(Len > 0 && aLine[0] == '-' && aLine[1] == '#')
+		{
+			memmove(aLine, aLine + 1, Len - 1);
+			aLine[Len - 1] = '\0';
+			MainView.HSplitTop(15.0f, &Label, &MainView);
+			TextRender()->TextColor(0.8f, 0.8f, 0.8f, 1.0f);
+			Ui()->DoLabel(&Label, aLine + 1, 10.5f, TEXTALIGN_ML);
+		}
+		else
+		{
+			MainView.HSplitTop(20.0f, &Label, &MainView);
+			Ui()->DoLabel(&Label, aLine, 15.0f, TEXTALIGN_ML);
+		}
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+	}
+}
+
+void CMenus::RenderEClientInfoPage(CUIRect MainView)
+{
 	CUIRect LeftView, RightView, Button, Label, LowerRightView;
 	MainView.HSplitTop(MarginSmall, nullptr, &MainView);
 
@@ -262,7 +311,7 @@ void CMenus::RenderEClientVersionPage(CUIRect MainView)
 	LeftBottom.VSplitLeft(LineSize * 6.0f, &LeftBottom, &Button);
 	static CButtonContainer s_NewestRelGithub;
 	ColorRGBA Color = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
-	if(str_comp(GameClient()->m_AcUpdate.m_aVersionStr, "0") != 0)
+	if(str_comp(GameClient()->m_EntityUpdate.m_aVersionStr, "0") != 0)
 		Color = ColorRGBA(0.2f, 0.7f, 0.5, 0.25f);
 
 	if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Newest Release"), 0, &LeftBottom, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, Color))

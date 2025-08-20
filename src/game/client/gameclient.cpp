@@ -173,7 +173,7 @@ void CGameClient::OnConsoleInit()
 					      &m_EClient,
 					      &m_AntiSpawnBlock,
 					      &m_FreezeKill,
-					      &m_AcUpdate,
+					      &m_EntityUpdate,
 					      &m_MapConfig,
 				      });
 
