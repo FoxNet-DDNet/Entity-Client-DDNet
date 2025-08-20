@@ -696,7 +696,6 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 
 		GotNewsOrUpdate |= (bool)g_Config.m_UiUnreadNews;
 
-		GotNewsOrUpdate |= (bool)g_Config.m_EcUnreadNews;
 		if(g_Config.m_ClInformUpdate)
 			GotNewsOrUpdate |= str_comp(GameClient()->m_EntityInfo.m_aVersionStr, "0") != 0;
 
@@ -1284,6 +1283,10 @@ void CMenus::Render()
 			else if(m_GamePage == PAGE_SETTINGS)
 			{
 				RenderSettings(MainView);
+			}
+			else if(m_GamePage == PAGE_ECLIENTNEWS)
+			{
+				RenderEClientNewsPage(MainView);
 			}
 			else
 			{

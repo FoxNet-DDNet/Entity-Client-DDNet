@@ -193,47 +193,67 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 	MainView.HSplitTop(10.0f, nullptr, &MainView);
 	MainView.VSplitLeft(15.0f, nullptr, &MainView);
 
-	CUIRect Label;
+	// --- Begin scroll region ---
+	static CScrollRegion s_ScrollRegion;
+	vec2 ScrollOffset(0.0f, 0.0f);
+	CScrollRegionParams ScrollParams;
+	ScrollParams.m_ScrollUnit = 120.0f;
+	s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
 
+	CUIRect ContentView = MainView;
+	ContentView.y += ScrollOffset.y;
+
+	CUIRect Label;
 	const char *pStr = GameClient()->m_EntityInfo.m_aNews;
 	char aLine[256];
+
 	while((pStr = str_next_token(pStr, "\n", aLine, sizeof(aLine))))
 	{
 		const size_t Len = str_length(aLine);
+		float LineHeight = 20.0f;
+		float FontSize = 15.0f;
+
 		if(Len > 0 && aLine[0] == '#' && aLine[1] == '#' && aLine[2] == '#')
 		{
 			memmove(aLine, aLine + 3, Len - 1);
 			aLine[Len - 3] = '\0';
-			MainView.HSplitTop(20.0f, &Label, &MainView);
-			Ui()->DoLabel(&Label, aLine, 17.5f, TEXTALIGN_ML);
+			LineHeight = 20.0f;
+			FontSize = 17.5f;
 		}
 		else if(Len > 0 && aLine[0] == '#' && aLine[1] == '#')
 		{
 			memmove(aLine, aLine + 2, Len - 1);
 			aLine[Len - 2] = '\0';
-			MainView.HSplitTop(20.0f, &Label, &MainView);
-			Ui()->DoLabel(&Label, aLine, 20.0f, TEXTALIGN_ML);
+			LineHeight = 20.0f;
+			FontSize = 20.0f;
 		}
 		else if(Len > 0 && aLine[0] == '#')
 		{
-			MainView.HSplitTop(25.0f, &Label, &MainView);
-			Ui()->DoLabel(&Label, aLine + 1, 22.5f, TEXTALIGN_ML);
+			LineHeight = 25.0f;
+			FontSize = 22.5f;
 		}
 		else if(Len > 0 && aLine[0] == '-' && aLine[1] == '#')
 		{
+			TextRender()->TextColor(0.8f, 0.8f, 0.8f, 1.0f);
 			memmove(aLine, aLine + 1, Len - 1);
 			aLine[Len - 1] = '\0';
-			MainView.HSplitTop(15.0f, &Label, &MainView);
-			TextRender()->TextColor(0.8f, 0.8f, 0.8f, 1.0f);
-			Ui()->DoLabel(&Label, aLine + 1, 10.5f, TEXTALIGN_ML);
+			LineHeight = 15.0f;
+			FontSize = 10.5f;
 		}
-		else
+
+		ContentView.HSplitTop(LineHeight, &Label, &ContentView);
+
+		if(s_ScrollRegion.AddRect(Label))
 		{
-			MainView.HSplitTop(20.0f, &Label, &MainView);
-			Ui()->DoLabel(&Label, aLine, 15.0f, TEXTALIGN_ML);
+			if(Len > 0 && aLine[0] == '#')
+				Ui()->DoLabel(&Label, aLine + 1, FontSize, TEXTALIGN_ML);
+			else
+				Ui()->DoLabel(&Label, aLine, FontSize, TEXTALIGN_ML);
 		}
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
+
+	s_ScrollRegion.End();
 }
 
 void CMenus::RenderEClientInfoPage(CUIRect MainView)
