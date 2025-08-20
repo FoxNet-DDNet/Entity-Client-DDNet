@@ -217,19 +217,19 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 		{
 			memmove(aLine, aLine + 3, Len - 1);
 			aLine[Len - 3] = '\0';
-			LineHeight = 20.0f;
+			LineHeight = 21.0f;
 			FontSize = 17.5f;
 		}
 		else if(Len > 0 && aLine[0] == '#' && aLine[1] == '#')
 		{
 			memmove(aLine, aLine + 2, Len - 1);
 			aLine[Len - 2] = '\0';
-			LineHeight = 20.0f;
+			LineHeight = 23.5f;
 			FontSize = 20.0f;
 		}
 		else if(Len > 0 && aLine[0] == '#')
 		{
-			LineHeight = 25.0f;
+			LineHeight = 26.0f;
 			FontSize = 22.5f;
 		}
 		else if(Len > 0 && aLine[0] == '-' && aLine[1] == '#')
@@ -237,7 +237,7 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 			TextRender()->TextColor(0.8f, 0.8f, 0.8f, 1.0f);
 			memmove(aLine, aLine + 1, Len - 1);
 			aLine[Len - 1] = '\0';
-			LineHeight = 15.0f;
+			LineHeight = 13.5f;
 			FontSize = 10.5f;
 		}
 
