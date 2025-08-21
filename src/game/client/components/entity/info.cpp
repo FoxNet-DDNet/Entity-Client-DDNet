@@ -23,9 +23,6 @@ void CEntityInfo::OnInit()
 
 	if(CurrentNews.type == json_string)
 	{
-		if(m_aNews[0] && !str_find(m_aNews, CurrentNews))
-			g_Config.m_EcUnreadNews = true;
-
 		str_copy(m_aNews, CurrentNews);
 	}
 }
@@ -93,9 +90,7 @@ void CEntityInfo::FinishEClientInfo()
 	unsigned Length;
 	json_value *pJson = nullptr;
 	if(Storage()->ReadFile(ECLIENT_INFO_FILE, IStorage::TYPE_SAVE, &pBuf, &Length))
-	{
 		pJson = json_parse((const char *)pBuf, Length);
-	}
 	if(!pJson)
 		return;
 	const json_value &Json = *pJson;

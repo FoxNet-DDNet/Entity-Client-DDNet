@@ -1220,6 +1220,9 @@ void CGameConsole::OnRender()
 			pConsole->m_LastInputHeight = pConsole->m_BoundingBox.m_H;
 		}
 
+		float InputHeight = maximum(pConsole->m_BoundingBox.m_H, FONT_SIZE);
+		y -= InputHeight - FONT_SIZE;
+
 		// render possible commands
 		if(!pConsole->m_Searching && (m_ConsoleType == CONSOLETYPE_LOCAL || Client()->RconAuthed()) && !pConsole->m_Input.IsEmpty())
 		{
