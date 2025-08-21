@@ -213,7 +213,6 @@ bool CQuickActions::OnCursorMove(float x, float y, IInput::ECursorType CursorTyp
 	return true;
 }
 
-
 void CQuickActions::DrawCircle(float x, float y, float r, int Segments)
 {
 	Graphics()->DrawCircle(x, y, r, Segments);
@@ -295,10 +294,10 @@ void CQuickActions::OnRender()
 	DrawCircle(Screen.w / 2.0f, Screen.h / 2.0f, 100.0f, 64);
 	Graphics()->QuadsEnd();
 
+	float FontSize = 20.0f;
 	if(BindsEmpty)
 	{
-		float Size = 20.0f;
-		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(Size, "Empty") / 2.0f, Screen.h / 2.0f - Size / 2, Size, "Empty");
+		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(FontSize, "Empty") / 2.0f, Screen.h / 2.0f - FontSize / 2, FontSize, "Empty");
 	}
 	else
 	{
@@ -311,9 +310,20 @@ void CQuickActions::OnRender()
 
 		// bool Sitting = Target.m_Afk || Target.m_Paused;
 		// if(Sitting)
-		//	State.Add(Direction.x < 0 ? &g_pData->m_aAnimations[ANIM_SIT_LEFT] : &g_pData->m_aAnimations[ANIM_SIT_RIGHT], 0, 1.0f);
-		
+		// State.Add(Direction.x < 0 ? &g_pData->m_aAnimations[ANIM_SIT_LEFT] : &g_pData->m_aAnimations[ANIM_SIT_RIGHT], 0, 1.0f);
+
 		RenderTools()->RenderTee(&State, &Target.m_RenderInfo, TargetRender.m_Emote, normalize(Direction), Middle, 1.0f);
+
+		const char *pName = Target.m_aName;
+		float NameWidth = std::clamp(TextRender()->TextWidth(FontSize, pName), 0.0f, 165.0f);
+
+		CTextCursor Cursor;
+		Cursor.SetPosition(vec2(Screen.w / 2.0f - NameWidth / 2, Screen.h / 2.0f - FontSize / 2 - 50.0f));
+		Cursor.m_FontSize = FontSize;
+		Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
+		Cursor.m_LineWidth = 175.0f;
+
+		TextRender()->TextEx(&Cursor, pName);
 	}
 
 	RenderTools()->RenderCursor(m_SelectorMouse + vec2(Screen.w, Screen.h) / 2.0f, 24.0f);
