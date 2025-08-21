@@ -458,6 +458,15 @@ void CSpectator::OnRender()
 			if(NextDDTeam != DDTeam)
 				Corners |= IGraphics::CORNER_BL | IGraphics::CORNER_BR;
 			Graphics()->DrawRect(Width / 2.0f + x - 10.0f + BoxOffset, Height / 2.0f + y + BoxMove, 270.0f - BoxOffset, LineHeight, Color, Corners, RoundRadius);
+			if(g_Config.m_ClRevertTeamColors)
+			{
+				int TeamRectSides = IGraphics::SIDE_L | IGraphics::SIDE_R;
+				if(Corners & IGraphics::CORNER_T)
+					TeamRectSides |= IGraphics::SIDE_T;
+				if(Corners & IGraphics::CORNER_B)
+					TeamRectSides |= IGraphics::SIDE_B;
+				Graphics()->DrawRectOutline(Width / 2.0f + x - 10.0f + BoxOffset, Height / 2.0f + y + BoxMove, 270.0f - BoxOffset, LineHeight, ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f), Corners, TeamRectSides, RoundRadius);
+			}
 		}
 
 		OldDDTeam = DDTeam;
