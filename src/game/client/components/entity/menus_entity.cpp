@@ -204,8 +204,7 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 	ContentView.y += ScrollOffset.y;
 
 	CUIRect Label;
-	//const char *pStr = GameClient()->m_EntityInfo.m_aNews;
-	const char *pStr = "#Test\n##Test\n###Test\nTest\n-#Test";
+	const char *pStr = GameClient()->m_EntityInfo.m_aNews;
 	char aLine[256];
 
 	while((pStr = str_next_token(pStr, "\n", aLine, sizeof(aLine))))
