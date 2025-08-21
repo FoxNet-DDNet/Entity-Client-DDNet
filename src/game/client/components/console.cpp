@@ -1212,8 +1212,7 @@ void CGameConsole::OnRender()
 			pConsole->m_LastInputHeight = pConsole->m_BoundingBox.m_H;
 		if(pConsole->m_Input.HasSelection())
 			pConsole->m_HasSelection = false; // Clear console selection if we have a line input selection
-
-	
+		
 		if(pConsole->m_LastInputHeight != pConsole->m_BoundingBox.m_H)
 		{
 			pConsole->m_HasSelection = false;

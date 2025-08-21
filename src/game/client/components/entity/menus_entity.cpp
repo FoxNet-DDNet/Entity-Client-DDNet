@@ -204,52 +204,51 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 	ContentView.y += ScrollOffset.y;
 
 	CUIRect Label;
-	const char *pStr = GameClient()->m_EntityInfo.m_aNews;
+	//const char *pStr = GameClient()->m_EntityInfo.m_aNews;
+	const char *pStr = "#Test\n##Test\n###Test\nTest\n-#Test";
 	char aLine[256];
 
 	while((pStr = str_next_token(pStr, "\n", aLine, sizeof(aLine))))
 	{
 		const size_t Len = str_length(aLine);
-		float LineHeight = 20.0f;
-		float FontSize = 15.0f;
+		float aLineHeight = 20.0f;
+		float aFontSize = 15.0f;
 
 		if(Len > 0 && aLine[0] == '#' && aLine[1] == '#' && aLine[2] == '#')
 		{
 			memmove(aLine, aLine + 3, Len - 1);
 			aLine[Len - 3] = '\0';
-			LineHeight = 21.0f;
-			FontSize = 17.5f;
+			aLineHeight = 21.0f;
+			aFontSize = 17.5f;
 		}
 		else if(Len > 0 && aLine[0] == '#' && aLine[1] == '#')
 		{
 			memmove(aLine, aLine + 2, Len - 1);
 			aLine[Len - 2] = '\0';
-			LineHeight = 23.5f;
-			FontSize = 20.0f;
+			aLineHeight = 23.5f;
+			aFontSize = 20.0f;
 		}
 		else if(Len > 0 && aLine[0] == '#')
 		{
-			LineHeight = 26.0f;
-			FontSize = 22.5f;
+			memmove(aLine, aLine + 1, Len - 1);
+			aLine[Len - 1] = '\0';
+			aLineHeight = 26.0f;
+			aFontSize = 22.5f;
 		}
 		else if(Len > 0 && aLine[0] == '-' && aLine[1] == '#')
 		{
 			TextRender()->TextColor(0.8f, 0.8f, 0.8f, 1.0f);
-			memmove(aLine, aLine + 1, Len - 1);
+			memmove(aLine, aLine + 2, Len - 1);
 			aLine[Len - 1] = '\0';
-			LineHeight = 13.5f;
-			FontSize = 10.5f;
+			aLineHeight = 13.5f;
+			aFontSize = 10.5f;
 		}
 
-		ContentView.HSplitTop(LineHeight, &Label, &ContentView);
+		ContentView.HSplitTop(aLineHeight, &Label, &ContentView);
 
 		if(s_ScrollRegion.AddRect(Label))
-		{
-			if(Len > 0 && aLine[0] == '#')
-				Ui()->DoLabel(&Label, aLine + 1, FontSize, TEXTALIGN_ML);
-			else
-				Ui()->DoLabel(&Label, aLine, FontSize, TEXTALIGN_ML);
-		}
+			Ui()->DoLabel(&Label, aLine, aFontSize, TEXTALIGN_ML);
+
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
