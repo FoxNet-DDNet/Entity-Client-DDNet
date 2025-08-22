@@ -71,6 +71,7 @@
 #include "components/entity/chat_bubbles.h"
 #include "components/entity/quick_actions.h"
 #include "components/entity/entity.h"
+#include "components/entity/damageind.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/mapconfig.h"
 #include "components/entity/info.h"
@@ -205,6 +206,7 @@ public:
 	CFreezeKill m_FreezeKill;
 	CEntityInfo m_EntityInfo;
 	CMapConfig m_MapConfig;
+	CCustomDamageInd m_CustomDamageInd;
 
 	// T-Client
 	CBindChat m_Bindchat;

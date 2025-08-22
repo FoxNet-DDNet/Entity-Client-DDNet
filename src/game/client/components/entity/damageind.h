@@ -1,12 +1,12 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
-#ifndef GAME_CLIENT_COMPONENTS_DAMAGEIND_H
-#define GAME_CLIENT_COMPONENTS_DAMAGEIND_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_DAMAGEIND_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_DAMAGEIND_H
 #include <base/color.h>
 #include <base/vmath.h>
 #include <game/client/component.h>
 
-class CDamageInd : public CComponent
+class CCustomDamageInd : public CComponent
 {
 	struct CItem
 	{
@@ -27,10 +27,11 @@ class CDamageInd : public CComponent
 
 	int m_DmgIndQuadContainerIndex;
 
-	vec2 m_LastItemPos;
+	int64_t m_LastAddTime;
+	int m_SameOnes;
 
 public:
-	CDamageInd();
+	CCustomDamageInd();
 	int Sizeof() const override { return sizeof(*this); }
 
 	void Create(vec2 Pos, vec2 Dir, float Alpha);
