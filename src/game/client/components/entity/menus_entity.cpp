@@ -2765,7 +2765,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	{
 		static float Offset = 0.0f;
 		TileOutline.HSplitTop(Margin, nullptr, &TileOutline);
-		TileOutline.HSplitTop(g_Config.m_ClOutline ? 270.0f + Offset : 80.0f, &TileOutline, &AntiLatency);
+		TileOutline.HSplitTop(g_Config.m_ClOutline ? 230.0f + Offset : 80.0f, &TileOutline, &AntiLatency);
 		if(s_ScrollRegion.AddRect(TileOutline))
 		{
 			Offset = 0.0f;
@@ -2781,11 +2781,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineEntities, Localize("Only show outlines in entities"), &g_Config.m_ClOutlineEntities, &TileOutline, LineSize);
 
-					TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
-					Ui()->DoScrollbarOption(&g_Config.m_ClOutlineAlpha, &g_Config.m_ClOutlineAlpha, &Button, Localize("Outline alpha"), 0, 100);
-					TileOutline.HSplitTop(LineSize, &Button, &TileOutline);
-					Ui()->DoScrollbarOption(&g_Config.m_ClOutlineAlphaSolid, &g_Config.m_ClOutlineAlphaSolid, &Button, Localize("Outline Alpha (walls)"), 0, 100);
-
 					static CButtonContainer s_OutlineColorFreezeId, s_OutlineColorSolidId, s_OutlineColorTeleId, s_OutlineColorUnfreezeId, s_OutlineColorKillId;
 
 					TileOutline.HSplitTop(5.0f, &Button, &TileOutline);
@@ -2794,7 +2789,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineFreeze, Localize("Outline freezes & deeps"), &g_Config.m_ClOutlineFreeze, &TileOutline, LineSize);
 					TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
-					DoLine_ColorPicker(&s_OutlineColorFreezeId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorFreeze, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+					DoLine_ColorPicker(&s_OutlineColorFreezeId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorFreeze, ColorRGBA(0.0f, 0.0f, 0.0f), false, nullptr, true);
 					if(g_Config.m_ClOutlineFreeze)
 					{
 						Offset += 25.0f - ScrollBarOffset;
@@ -2806,7 +2801,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineUnFreeze, Localize("Outline unfreezes & undeeps"), &g_Config.m_ClOutlineUnFreeze, &TileOutline, LineSize);
 					TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
-					DoLine_ColorPicker(&s_OutlineColorUnfreezeId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorUnfreeze, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+					DoLine_ColorPicker(&s_OutlineColorUnfreezeId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorUnfreeze, ColorRGBA(0.0f, 0.0f, 0.0f), false, nullptr, true);
 					if(g_Config.m_ClOutlineUnFreeze)
 					{
 						Offset += 25.0f - ScrollBarOffset;
@@ -2818,7 +2813,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineSolid, Localize("Outline solids"), &g_Config.m_ClOutlineSolid, &TileOutline, LineSize);
 					TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
-					DoLine_ColorPicker(&s_OutlineColorSolidId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorSolid, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+					DoLine_ColorPicker(&s_OutlineColorSolidId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorSolid, ColorRGBA(0.0f, 0.0f, 0.0f), false, nullptr, true);
 					if(g_Config.m_ClOutlineSolid)
 					{
 						Offset += 25.0f - ScrollBarOffset;
@@ -2830,7 +2825,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineTele, Localize("Outline teleporters"), &g_Config.m_ClOutlineTele, &TileOutline, LineSize);
 					TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
-					DoLine_ColorPicker(&s_OutlineColorTeleId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorTele, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+					DoLine_ColorPicker(&s_OutlineColorTeleId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorTele, ColorRGBA(0.0f, 0.0f, 0.0f), false, nullptr, true);
 					if(g_Config.m_ClOutlineTele)
 					{
 						Offset += 25.0f - ScrollBarOffset;
@@ -2842,7 +2837,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineKill, Localize("Outline kills"), &g_Config.m_ClOutlineKill, &TileOutline, LineSize);
 					TileOutline.HSplitTop(-20.0f, &Button, &TileOutline);
-					DoLine_ColorPicker(&s_OutlineColorKillId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorKill, ColorRGBA(0.0f, 0.0f, 0.0f), false);
+					DoLine_ColorPicker(&s_OutlineColorKillId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutline, Localize(""), &g_Config.m_ClOutlineColorKill, ColorRGBA(0.0f, 0.0f, 0.0f), false, nullptr, true);
 					if(g_Config.m_ClOutlineKill)
 					{
 						Offset += 25.0f - ScrollBarOffset;
@@ -3069,16 +3064,14 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			RenderHslaScrollbars(&ServerRainbow, &GameClient()->m_EClient.m_PreviewRainbowColor[g_Config.m_ClDummy], false, ColorHSLA::DARKEST_LGT, false);
 			ServerRainbow.VSplitLeft(-140, &Button, &ServerRainbow);
 
-			ServerRainbow.HSplitTop(-54, &Button, &ServerRainbow);
-			ServerRainbow.HSplitTop(28, &Button, &ServerRainbow);
+			ServerRainbow.HSplitTop(-26, &Button, &ServerRainbow);
 			Ui()->DoScrollbarOptionRender(&GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy], &GameClient()->m_EClient.m_RainbowSat[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
-			ServerRainbow.HSplitTop(-3, &Button, &ServerRainbow);
-			ServerRainbow.HSplitTop(28, &Button, &ServerRainbow);
+			ServerRainbow.HSplitTop(25, &Button, &ServerRainbow);
 			Ui()->DoScrollbarOptionRender(&GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy], &GameClient()->m_EClient.m_RainbowLht[g_Config.m_ClDummy], &Button, Localize(""), 0, 254, &CUi::ms_LinearScrollbarScale);
 			{
 				TeeRect.HSplitTop(80.0f, nullptr, &TeeRect);
 				TeeRect.HSplitTop(80.0f, &TeeRect, nullptr);
-				TeeRect.VSplitLeft(80.0f, &TeeRect, nullptr);
+				TeeRect.VSplitLeft(70.0f, &TeeRect, nullptr);
 
 				CTeeRenderInfo TeeRenderInfo;
 

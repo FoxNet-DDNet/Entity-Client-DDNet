@@ -62,23 +62,20 @@ void COutlines::OnRender()
 	if(!g_Config.m_ClOutline)
 		return;
 
-	const float alpha = static_cast<float>(g_Config.m_ClOutlineAlpha) / 100.0f;
-	const float alphaSolid = static_cast<float>(g_Config.m_ClOutlineAlphaSolid) / 100.0f;
-
 	if(m_pGameTiles)
 	{
 		if(g_Config.m_ClOutlineUnFreeze)
-			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_UNFREEZE, alpha);
+			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_UNFREEZE);
 		if(g_Config.m_ClOutlineFreeze)
-			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_FREEZE, alpha);
+			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_FREEZE);
 		if(g_Config.m_ClOutlineSolid)
-			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_SOLID, alphaSolid);
+			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_SOLID);
 		if(g_Config.m_ClOutlineKill)
-			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_DEATH, alpha);
+			RenderMap()->RenderGameTileOutlines(m_pGameTiles, m_Width, m_Height, 32.0f, TILE_DEATH);
 	}
 
 	if(m_pGameTiles && m_pTeleTiles && g_Config.m_ClOutlineTele)
 	{
-		RenderMap()->RenderTeleOutlines(m_pGameTiles, m_pTeleTiles, m_Width, m_Height, 32.0f, alpha);
+		RenderMap()->RenderTeleOutlines(m_pGameTiles, m_pTeleTiles, m_Width, m_Height, 32.0f);
 	}
 }

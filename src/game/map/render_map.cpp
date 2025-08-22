@@ -1414,7 +1414,7 @@ int ClampedIndex(int x, int y, int w, int h)
 	return x + y * w;
 }
 
-void CRenderMap::RenderGameTileOutlines(CTile *pTiles, int w, int h, float Scale, int TileType, float Alpha)
+void CRenderMap::RenderGameTileOutlines(CTile *pTiles, int w, int h, float Scale, int TileType)
 {
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
@@ -1437,15 +1437,15 @@ void CRenderMap::RenderGameTileOutlines(CTile *pTiles, int w, int h, float Scale
 	Graphics()->QuadsBegin();
 	ColorRGBA Col = ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f);
 	if(TileType == TILE_FREEZE)
-		Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorFreeze));
+		Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorFreeze, true));
 	else if(TileType == TILE_SOLID)
-		Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorSolid));
+		Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorSolid, true));
 	else if(TileType == TILE_UNFREEZE)
-		Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorUnfreeze));
+		Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorUnfreeze, true));
 	else if(TileType == TILE_DEATH)
-		Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorKill));
+		Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorKill, true));
 
-	Graphics()->SetColor(Col.r, Col.g, Col.b, Alpha);
+	Graphics()->SetColor(Col);
 
 	for(int y = StartY; y < EndY; y++)
 	{
@@ -1636,7 +1636,7 @@ void CRenderMap::RenderGameTileOutlines(CTile *pTiles, int w, int h, float Scale
 	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
 }
 
-void CRenderMap::RenderTeleOutlines(CTile *pTiles, CTeleTile *pTele, int w, int h, float Scale, float Alpha)
+void CRenderMap::RenderTeleOutlines(CTile *pTiles, CTeleTile *pTele, int w, int h, float Scale)
 {
 	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
@@ -1659,8 +1659,8 @@ void CRenderMap::RenderTeleOutlines(CTile *pTiles, CTeleTile *pTele, int w, int 
 
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
-	ColorRGBA Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorTele));
-	Graphics()->SetColor(Col.r, Col.g, Col.b, Alpha);
+	ColorRGBA Col = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClOutlineColorTele, true));
+	Graphics()->SetColor(Col);
 
 	for(int y = StartY; y < EndY; y++)
 	{

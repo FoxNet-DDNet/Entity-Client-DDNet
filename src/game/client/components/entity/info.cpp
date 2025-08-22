@@ -23,6 +23,9 @@ void CEntityInfo::OnInit()
 
 	if(CurrentNews.type == json_string)
 	{
+		if(m_aNews[0] && !str_find(m_aNews, CurrentNews))
+			g_Config.m_EcUnreadNews = true;
+
 		str_copy(m_aNews, CurrentNews);
 	}
 }
