@@ -363,7 +363,7 @@ protected:
 		// E-Client
 		ColorRGBA Color = Data.m_Color;
 
-		if(This.m_aClients[Data.m_ClientId].m_Friend)
+		if(g_Config.m_ClNameplateFriendColor && This.m_aClients[Data.m_ClientId].m_Friend)
 			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 
 		if(g_Config.m_ClWarList)
