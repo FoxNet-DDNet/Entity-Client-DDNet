@@ -51,10 +51,7 @@ void CEffects::AirJump(vec2 Pos, float Alpha)
 
 void CEffects::DamageIndicator(vec2 Pos, vec2 Dir, float Alpha)
 {
-	if(g_Config.m_ClDamageIndicatorEffect <= 0)
-		GameClient()->m_DamageInd.Create(Pos, Dir, Alpha);
-	else
-		GameClient()->m_CustomDamageInd.Create(Pos, Dir, Alpha);
+	GameClient()->m_DamageInd.Create(Pos, Dir, Alpha);
 }
 
 void CEffects::PowerupShine(vec2 Pos, vec2 Size, float Alpha)

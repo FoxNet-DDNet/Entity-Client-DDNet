@@ -365,8 +365,6 @@ MACRO_CONFIG_INT(ClStatusBarTextAlpha, ec_statusbar_text_alpha, 100, 0, 100, CFG
 MACRO_CONFIG_INT(ClStatusBarLabels, ec_statusbar_labels, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show labels on status bar entries")
 MACRO_CONFIG_STR(ClStatusBarScheme, ec_statusbar_scheme, 16, "ac pf r", CFGFLAG_CLIENT | CFGFLAG_SAVE, "The order in which to show status bar items")
 
-MACRO_CONFIG_INT(ClDamageIndicatorEffect, ec_damage_indicator_effect, 0, 0, 4, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Custom Damage Indicator Effects")
-
 
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNetw/FoxNet-DDNet

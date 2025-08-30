@@ -147,7 +147,6 @@ void CGameClient::OnConsoleInit()
 					      &m_Particles.m_RenderGeneral,
 					      &m_FreezeBars,
 					      &m_DamageInd,
-					      &m_CustomDamageInd,
 					      &m_PlayerIndicator, // TClient
 					      &m_Hud,
 					      &m_Spectator,

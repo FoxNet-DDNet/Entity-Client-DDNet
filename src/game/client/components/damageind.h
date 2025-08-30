@@ -27,8 +27,6 @@ class CDamageInd : public CComponent
 
 	int m_DmgIndQuadContainerIndex;
 
-	vec2 m_LastItemPos;
-
 public:
 	CDamageInd();
 	int Sizeof() const override { return sizeof(*this); }

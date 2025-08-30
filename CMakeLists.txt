@@ -2381,8 +2381,6 @@ if(CLIENT)
     components/entity/chat_bubbles.cpp
     components/entity/chat_bubbles.h
     components/entity/commands.cpp
-    components/entity/damageind.cpp
-    components/entity/damageind.h 
     components/entity/entity.cpp
     components/entity/entity.h 
     components/entity/freeze_kill.cpp
