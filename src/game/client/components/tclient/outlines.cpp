@@ -4,8 +4,8 @@
 #include <game/client/animstate.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
-#include <game/generated/client_data.h>
-#include <game/generated/protocol.h>
+#include <generated/client_data.h>
+#include <generated/protocol.h>
 #include <game/mapitems.h>
 
 #include "outlines.h"

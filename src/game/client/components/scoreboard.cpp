@@ -8,6 +8,7 @@
 #include <engine/textrender.h>
 
 #include <generated/client_data7.h>
+#include <generated/client_data.h>
 #include <generated/protocol.h>
 
 #include <game/client/animstate.h>

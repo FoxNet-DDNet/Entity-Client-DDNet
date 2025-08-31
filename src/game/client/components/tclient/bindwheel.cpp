@@ -1,6 +1,6 @@
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 #include "../chat.h"
 #include "../emoticon.h"

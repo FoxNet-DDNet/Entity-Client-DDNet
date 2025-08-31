@@ -8,7 +8,7 @@
 #include <game/client/components/controls.h>
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 #include <base/math.h>
 #include <base/system.h>

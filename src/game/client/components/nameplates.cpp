@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "nameplates.h"
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 static constexpr float DEFAULT_PADDING = 5.0f;
 

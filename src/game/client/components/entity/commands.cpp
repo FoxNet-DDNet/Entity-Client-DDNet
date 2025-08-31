@@ -8,7 +8,7 @@
 
 #include "entity.h"
 #include <base/log.h>
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 void CEClient::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 {
