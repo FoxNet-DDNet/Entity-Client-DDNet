@@ -214,7 +214,7 @@ void CClient::SendqxdInfo(int Conn)
 
 void CClient::SendInfo(int Conn)
 {
-	SendqxdInfo(CONN_MAIN);
+	SendqxdInfo(CONN_MAIN); // E-Client
 
 	if(!str_comp(g_Config.m_Password, ""))
 		str_copy(g_Config.m_Password, g_Config.m_ClPermaPassword);
@@ -3262,7 +3262,7 @@ void CClient::Run()
 			m_DummySendConnInfo = false;
 
 			// send client info
-			SendqxdInfo(CONN_DUMMY);
+			SendqxdInfo(CONN_DUMMY); // E-Client
 
 			SendInfo(CONN_DUMMY);
 			m_aNetClient[CONN_DUMMY].Update();
