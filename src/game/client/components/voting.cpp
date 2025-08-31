@@ -7,11 +7,11 @@
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 
+#include <generated/protocol.h>
+
 #include <game/client/components/scoreboard.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
-#include <game/client/render.h>
-#include <game/generated/protocol.h>
 #include <game/localization.h>
 
 void CVoting::ConCallvote(IConsole::IResult *pResult, void *pUserData)

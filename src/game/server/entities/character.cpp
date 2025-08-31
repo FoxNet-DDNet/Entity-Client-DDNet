@@ -6,12 +6,14 @@
 #include "projectile.h"
 
 #include <antibot/antibot_data.h>
+#include <base/log.h>
 
 #include <engine/antibot.h>
 #include <engine/shared/config.h>
 
-#include <game/generated/protocol.h>
-#include <game/generated/server_data.h>
+#include <generated/protocol.h>
+#include <generated/server_data.h>
+
 #include <game/mapitems.h>
 #include <game/team_state.h>
 
@@ -968,25 +970,18 @@ void CCharacter::Die(int Killer, int Weapon, bool SendKillMsg)
 	StopRecording();
 	int ModeSpecial = GameServer()->m_pController->OnCharacterDeath(this, GameServer()->m_apPlayers[Killer], Weapon);
 
-	char aBuf[256];
-	str_format(aBuf, sizeof(aBuf), "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
+	log_info("game", "kill killer='%d:%s' victim='%d:%s' weapon=%d special=%d",
 		Killer, Server()->ClientName(Killer),
 		m_pPlayer->GetCid(), Server()->ClientName(m_pPlayer->GetCid()), Weapon, ModeSpecial);
-	GameServer()->Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "game", aBuf);
 
-	// send the kill message
-	if(SendKillMsg && (Team() == TEAM_FLOCK || Teams()->TeamFlock(Team()) || Teams()->Count(Team()) == 1 || Teams()->GetTeamState(Team()) == ETeamState::OPEN || !Teams()->TeamLocked(Team())))
+	if(SendKillMsg)
 	{
-		CNetMsg_Sv_KillMsg Msg;
-		Msg.m_Killer = Killer;
-		Msg.m_Victim = m_pPlayer->GetCid();
-		Msg.m_Weapon = Weapon;
-		Msg.m_ModeSpecial = ModeSpecial;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+		SendDeathMessageIfNotInLockedTeam(Killer, Weapon, ModeSpecial);
 	}
 
-	// a nice sound
+	// a nice sound, and bursting tee death effect
 	GameServer()->CreateSound(m_Pos, SOUND_PLAYER_DIE, TeamMask());
+	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCid(), TeamMask());
 
 	// this is to rate limit respawning to 3 secs
 	m_pPlayer->m_PreviousDieTick = m_pPlayer->m_DieTick;
@@ -997,16 +992,8 @@ void CCharacter::Die(int Killer, int Weapon, bool SendKillMsg)
 
 	GameServer()->m_World.RemoveEntity(this);
 	GameServer()->m_World.m_Core.m_apCharacters[m_pPlayer->GetCid()] = nullptr;
-	GameServer()->CreateDeath(m_Pos, m_pPlayer->GetCid(), TeamMask());
 	Teams()->OnCharacterDeath(GetPlayer()->GetCid(), Weapon);
-
-	// Cancel swap requests
-	for(auto &pPlayer : GameServer()->m_apPlayers)
-	{
-		if(pPlayer && pPlayer->m_SwapTargetsClientId == GetPlayer()->GetCid())
-			pPlayer->m_SwapTargetsClientId = -1;
-	}
-	GetPlayer()->m_SwapTargetsClientId = -1;
+	CancelSwapRequests();
 }
 
 bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
@@ -1022,7 +1009,30 @@ bool CCharacter::TakeDamage(vec2 Force, int Dmg, int From, int Weapon)
 	return true;
 }
 
-// TODO: Move the emote stuff to a function
+void CCharacter::SendDeathMessageIfNotInLockedTeam(int Killer, int Weapon, int ModeSpecial)
+{
+	if((Team() == TEAM_FLOCK || Teams()->TeamFlock(Team()) || Teams()->Count(Team()) == 1 || Teams()->GetTeamState(Team()) == ETeamState::OPEN || !Teams()->TeamLocked(Team())))
+	{
+		CNetMsg_Sv_KillMsg Msg;
+		Msg.m_Killer = Killer;
+		Msg.m_Victim = m_pPlayer->GetCid();
+		Msg.m_Weapon = Weapon;
+		Msg.m_ModeSpecial = ModeSpecial;
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL, -1);
+	}
+}
+
+void CCharacter::CancelSwapRequests()
+{
+	for(auto &pPlayer : GameServer()->m_apPlayers)
+	{
+		if(pPlayer && pPlayer->m_SwapTargetsClientId == GetPlayer()->GetCid())
+			pPlayer->m_SwapTargetsClientId = -1;
+	}
+	GetPlayer()->m_SwapTargetsClientId = -1;
+}
+
+//TODO: Move the emote stuff to a function
 void CCharacter::SnapCharacter(int SnappingClient, int Id)
 {
 	int SnappingClientVersion = GameServer()->GetClientVersion(SnappingClient);
@@ -2482,7 +2492,7 @@ void CCharacter::Rescue()
 
 		m_LastRescue = Server()->Tick();
 		int StartTime = m_StartTime;
-		m_RescueTee[GetPlayer()->m_RescueMode].Load(this, Team());
+		m_RescueTee[GetPlayer()->m_RescueMode].Load(this);
 		// Don't load these from saved tee:
 		m_Core.m_Vel = vec2(0, 0);
 		m_Core.m_HookState = HOOK_IDLE;
