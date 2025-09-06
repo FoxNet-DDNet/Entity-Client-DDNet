@@ -38,8 +38,11 @@ void CWarList::OnConsoleInit()
 	Console()->Register("remove_war_clan_index", "s[group_index] s[name]", CFGFLAG_CLIENT, ConRemoveClanIndex, this, "Remove a clan war entry");
 
 	// E-Client [Mutes]
-	Console()->Register("addmute", "s[name]", CFGFLAG_CLIENT, ConAddMute, this, "Remove a clan war entry");
-	Console()->Register("delmute", "s[name]", CFGFLAG_CLIENT, ConDelMute, this, "Removes a Muted Name");
+	Console()->Register("addmute", "r[name]", CFGFLAG_CLIENT, ConAddMute, this, "Remove a clan war entry");
+	Console()->Register("delmute", "r[name]", CFGFLAG_CLIENT, ConDelMute, this, "Removes a Muted Name");
+
+	Console()->Register("remove_entry_name", "r[name]", CFGFLAG_CLIENT, ConRemoveNameEntry, this, "Remove a clan war entry");
+	Console()->Register("remove_entry_clan", "r[clan]", CFGFLAG_CLIENT, ConRemoveClanEntry, this, "Removes a Muted Name");
 
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
 	IOHANDLE File = m_pStorage->OpenFile(WARLIST_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
@@ -115,30 +118,30 @@ void CWarList::ConName(IConsole::IResult *pResult, void *pUserData)
 	const char *pType = pResult->GetString(0);
 	const char *pName = pResult->GetString(1);
 	const char *pReason = pResult->GetString(2);
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->AddWarEntry(pName, "", pReason, pType);
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
+	pSelf->AddWarEntry(pName, "", pReason, pType);
 }
 void CWarList::ConClan(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *pType = pResult->GetString(0);
 	const char *pClan = pResult->GetString(1);
 	const char *pReason = pResult->GetString(2);
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->AddWarEntry("", pClan, pReason, pType);
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
+	pSelf->AddWarEntry("", pClan, pReason, pType);
 }
 void CWarList::ConRemoveName(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *pType = pResult->GetString(0);
 	const char *pName = pResult->GetString(1);
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->RemoveWarEntry(pName, "", pType);
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
+	pSelf->RemoveWarEntry(pName, "", pType);
 }
 void CWarList::ConRemoveClan(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *pType = pResult->GetString(0);
 	const char *pClan = pResult->GetString(1);
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->RemoveWarEntry("", pClan, pType);
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
+	pSelf->RemoveWarEntry("", pClan, pType);
 }
 
 // Backend Commands for config file
@@ -148,8 +151,8 @@ void CWarList::ConAddWarEntry(IConsole::IResult *pResult, void *pUserData)
 	const char *pName = pResult->GetString(1);
 	const char *pClan = pResult->GetString(2);
 	const char *pReason = pResult->GetString(3);
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->AddWarEntry(pName, pClan, pReason, pType);
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
+	pSelf->AddWarEntry(pName, pClan, pReason, pType);
 }
 void CWarList::ConUpsertWarType(IConsole::IResult *pResult, void *pUserData)
 {
@@ -157,28 +160,50 @@ void CWarList::ConUpsertWarType(IConsole::IResult *pResult, void *pUserData)
 	const char *pType = pResult->GetString(1);
 	unsigned int ColorInt = pResult->GetInteger(2);
 	ColorRGBA Color = color_cast<ColorRGBA>(ColorHSLA(ColorInt));
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->UpsertWarType(Index, pType, Color);
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
+	pSelf->UpsertWarType(Index, pType, Color);
 }
 
 // E-Client [Mutes]
 void CWarList::ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData)
 {
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
 	const char *pName = pResult->GetString(0);
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->AddMuteEntry(pName);
+	pSelf->AddMuteEntry(pName);
 }
 void CWarList::ConAddMute(IConsole::IResult *pResult, void *pUserData)
 {
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
 	const char *pName = pResult->GetString(0);
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->AddMute(pName);
+	pSelf->AddMute(pName);
 }
 void CWarList::ConDelMute(IConsole::IResult *pResult, void *pUserData)
 {
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
 	const char *pName = pResult->GetString(0);
-	CWarList *pThis = static_cast<CWarList *>(pUserData);
-	pThis->DelMute(pName);
+	pSelf->DelMute(pName);
+}
+void CWarList::ConRemoveNameEntry(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
+	const char *pName = pResult->GetString(0);
+	if(pSelf->RemoveWarEntryDuplicates(pName, ""))
+	{
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "Removed all entries for name \"%s\"", pName);
+		pSelf->GameClient()->ClientMessage(aBuf);
+	}
+}
+void CWarList::ConRemoveClanEntry(IConsole::IResult *pResult, void *pUserData)
+{
+	CWarList *pSelf = static_cast<CWarList *>(pUserData);
+	const char *pClan = pResult->GetString(0);
+	if(pSelf->RemoveWarEntryDuplicates("", pClan))
+	{
+		char aBuf[128];
+		str_format(aBuf, sizeof(aBuf), "Removed all entries for clan \"%s\"", pClan);
+		pSelf->GameClient()->ClientMessage(aBuf);
+	}
 }
 
 void CWarList::AddWarEntryInGame(int WarType, const char *pName, const char *pReason, bool IsClan)
@@ -401,10 +426,12 @@ void CWarList::AddWarEntry(const char *pName, const char *pClan, const char *pRe
 	RebuildWarMaps(); // E-Client
 }
 
-void CWarList::RemoveWarEntryDuplicates(const char *pName, const char *pClan)
+bool CWarList::RemoveWarEntryDuplicates(const char *pName, const char *pClan)
 {
 	if(str_comp(pName, "") == 0 && str_comp(pClan, "") == 0)
-		return;
+		return false;
+
+	bool Found = false;
 
 	for(auto it = m_WarEntries.begin(); it != m_WarEntries.end();)
 	{
@@ -413,12 +440,16 @@ void CWarList::RemoveWarEntryDuplicates(const char *pName, const char *pClan)
 			(str_comp(it->m_aClan, pClan) == 0);
 
 		if(IsDuplicate)
+		{
 			it = m_WarEntries.erase(it);
+			Found = true;
+		}
 		else
 			++it;
 	}
 
 	RebuildWarMaps(); // E-Client
+	return Found;
 }
 
 void CWarList::AddWarType(const char *pType, ColorRGBA Color)

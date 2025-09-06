@@ -176,11 +176,12 @@ void CQuickActions::AddDefaultBinds()
 	AddBind("Add War", "war_name_index 1 \"%s\"");
 	AddBind("Add Team", "war_name_index 2 \"%s\"");
 	AddBind("Add Helper", "war_name_index 3 \"%s\"");
-	AddBind("Add Clan War", "war_clan_index 1 \"%s\"");
-	AddBind("Add Clan Team", "war_clan_index 2 \"%s\"");
+	AddBind("Add Clanwar", "war_clan_index 1 \"%s\"");
+	AddBind("Add Clanteam", "war_clan_index 2 \"%s\"");
+	AddBind("Remove Entry", "remove_entry_name \"%s\" ");
 	AddBind("Player Info", "playerinfo \"%s\"");
-	AddBind("Message Player", "set_input %s: ");
-	AddBind("Whisper Player", "set_input /w \"%s\" ");
+	AddBind("Message", "set_input %s: ");
+	AddBind("Whisper", "set_input /w \"%s\" ");
 	AddBind("Mute", "addmute \"%s\"");
 }
 

@@ -159,6 +159,9 @@ class CWarList : public CComponent
 	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConRemoveNameEntry(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveClanEntry(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
 	void WriteLine(const char *pLine);
@@ -217,7 +220,7 @@ public:
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
 
 	// E-Client
-	void AddMuteEntry(const char *pName); // E-Client [Mutes]
+	void AddMuteEntry(const char *pName);
 	void AddMute(const char *pName);
 	void DelMute(const char *pName, bool Silent = false);
 
@@ -231,7 +234,7 @@ public:
 	void RemoveWarEntry(const char *pName, const char *pClan, const char *pType);
 	void RemoveWarType(const char *pType);
 
-	void RemoveWarEntryDuplicates(const char *pName, const char *pClan);
+	bool RemoveWarEntryDuplicates(const char *pName, const char *pClan);
 
 	void RemoveWarEntry(CWarEntry *Entry);
 
