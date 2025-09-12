@@ -15,7 +15,7 @@
 void CFreezeKill::OnRender()
 {
 	int Local = GameClient()->m_Snap.m_LocalClientId;
-	float Time = g_Config.m_ClFreezeKillMs / 1000.0f;
+	float Time = g_Config.m_ClFreezeKillWaitMs ? g_Config.m_ClFreezeKillMs / 1000.0f : 0.0f;
 	float TimeReset = time_get() + time_freq() * Time;
 
 	if(!g_Config.m_ClFreezeKill)
@@ -51,7 +51,6 @@ void CFreezeKill::OnRender()
 	{
 		// stuff
 		CCharacterCore *pCharacterOther = &GameClient()->m_aClients[ClientId].m_Predicted;
-
 		CCharacterCore *pCharacter = &GameClient()->m_aClients[Local].m_Predicted;
 
 		vec2 Position = GameClient()->m_aClients[Local].m_RenderPos;
@@ -59,7 +58,7 @@ void CFreezeKill::OnRender()
 		int Distance = g_Config.m_ClFreezeKillTeamDistance * 100;
 
 		// if tried to kill, stop
-		if(m_SentFreezeKill == true)
+		if(m_SentFreezeKill)
 			return;
 
 		// stop when spectating
@@ -94,19 +93,10 @@ void CFreezeKill::OnRender()
 			if(GameClient()->m_aClients[Local].m_FreezeEnd < 3 && !g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
 				m_LastFreeze = TimeReset;
 
-			// only kill if player is in a freeze tile
-			if(g_Config.m_ClFreezeKillOnlyFullFrozen)
-			{
-				if(!pCharacter->m_IsInFreeze)
-					m_LastFreeze = TimeReset;
 
-				// dont kill if not touching the ground (might crash not sure yet) - does crash
-
-				// if(pCharacter->m_IsInFreeze && !pChar->IsGrounded() && g_Config.m_ClFreezeKillGrounded)
-				//{
-				//	m_LastFreeze = TimeReset;
-				// }
-			}
+			if(g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
+				m_LastFreeze = TimeReset;
+			
 
 			// default kill protection timer
 			if(m_LastFreeze <= time_get())

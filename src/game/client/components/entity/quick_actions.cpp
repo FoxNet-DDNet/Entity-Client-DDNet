@@ -62,7 +62,7 @@ int CQuickActions::GetClosetClientId(vec2 Pos)
 		if(!GameClient()->m_aClients[ClientId].m_RenderInfo.Valid())
 			continue;
 
-		vec2 PlayerPos = GameClient()->m_Snap.m_aCharacters[ClientId].m_Position;
+		vec2 PlayerPos = GameClient()->m_aClients[ClientId].m_RenderPos;
 		float Distance = distance(Pos, PlayerPos);
 
 		if(Distance < ClosestDistance)

@@ -80,20 +80,6 @@ class CChat : public CComponent
 		float m_TextYOffset;
 
 		int m_TimesRepeated;
-
-		class CSixup
-		{
-		public:
-			IGraphics::CTextureHandle m_aTextures[protocol7::NUM_SKINPARTS];
-			IGraphics::CTextureHandle m_HatTexture;
-			IGraphics::CTextureHandle m_BotTexture;
-			int m_HatSpriteIndex;
-			ColorRGBA m_BotColor;
-			ColorRGBA m_aColors[protocol7::NUM_SKINPARTS];
-		};
-
-		// 0.7 Skin
-		CSixup m_Sixup;
 	};
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
