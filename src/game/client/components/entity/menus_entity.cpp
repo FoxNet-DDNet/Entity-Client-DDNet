@@ -28,6 +28,7 @@
 #include <string>
 #include <vector>
 #include <game/client/components/tclient/statusbar.h>
+#include <base/str.h>
 
 using namespace FontIcons;
 using namespace std::chrono_literals;
@@ -227,6 +228,14 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 			aLineHeight = 23.5f;
 			aFontSize = 20.0f;
 		}
+		else if(Len > 0 && aLine[0] == '#' && str_isnum(aLine[1]))
+		{
+			int code = (aLine[1] - '0') * 2;
+			memmove(aLine, aLine + 2, Len - 1);
+			aLine[Len - 1] = '\0';
+			aLineHeight = 31.5f - code;
+			aFontSize = 28.5f - code;
+		}
 		else if(Len > 0 && aLine[0] == '#')
 		{
 			memmove(aLine, aLine + 1, Len - 1);
@@ -241,6 +250,15 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 			aLine[Len - 1] = '\0';
 			aLineHeight = 13.5f;
 			aFontSize = 10.5f;
+		}
+		else if(Len > 0 && aLine[0] == '-' && aLine[1] == ' ')
+		{
+			char Temp[256];
+			str_copy(Temp, aLine);
+			memmove(Temp, Temp + 1, Len - 1);
+			Temp[Len - 1] = '\0';
+			str_format(aLine, sizeof(aLine), "•%s", Temp);
+
 		}
 
 		ContentView.HSplitTop(aLineHeight, &Label, &ContentView);
