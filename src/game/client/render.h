@@ -232,7 +232,7 @@ public:
 
 	void Init(class IGraphics *pGraphics, class ITextRender *pTextRender);
 
-	void RenderCursor(vec2 Center, float Size) const;
+	void RenderCursor(vec2 Center, float Size, float Alpha = 1.0f) const;
 	void RenderIcon(int ImageId, int SpriteId, const CUIRect *pRect, const ColorRGBA *pColor = nullptr) const;
 
 	// larger rendering methods

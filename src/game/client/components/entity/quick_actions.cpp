@@ -12,6 +12,7 @@
 
 #include "quick_actions.h"
 #include <game/client/gameclient.h>
+#include <engine/input.h>
 
 CQuickActions::CQuickActions()
 {

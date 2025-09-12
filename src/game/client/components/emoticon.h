@@ -38,6 +38,8 @@ public:
 	void EyeEmote(int EyeEmote);
 
 	bool IsActive() const { return m_Active; }
+
+	friend class CBindWheel;
 };
 
 #endif
