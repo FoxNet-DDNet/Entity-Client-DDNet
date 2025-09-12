@@ -24,7 +24,7 @@ void CBindWheel::ConOpenBindwheel(IConsole::IResult *pResult, void *pUserData)
 	CBindWheel *pThis = (CBindWheel *)pUserData;
 	if(pThis->Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
-		if(pThis->GameClient()->m_Emoticon.IsActive())
+		if(pThis->GameClient()->m_Emoticon.IsActive() || pThis->GameClient()->m_QuickActions.IsActive())
 			pThis->m_Active = false;
 		else
 			pThis->m_Active = pResult->GetInteger(0) != 0;
@@ -306,14 +306,16 @@ void CBindWheel::OnRender()
 		{
 			pName = "Empty";
 			TextRender()->TextColor(0.7f, 0.7f, 0.7f, aAnimationPhase[1]);
+			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, aAnimationPhase[1]);
 		}
 		else
 		{
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, aAnimationPhase[1]);
+			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, aAnimationPhase[1]);
 		}
-		const vec2 Pos = vec2(Screen.x, Screen.y) + vec2(Screen.w, Screen.h) / 2.0f + direction(Angle) * s_OuterItemRadius * aAnimationPhase[1];
-		const CUIRect Rect = CUIRect{Pos.x - 50.0f, Pos.y - 50.0f, 100.0f, 100.0f};
-		Ui()->DoLabel(&Rect, pName, FontSize, TEXTALIGN_MC);
+		const float Width = TextRender()->TextWidth(FontSize, pName);
+		const vec2 Pos = direction(Angle) * s_OuterItemRadius * aAnimationPhase[1];
+		TextRender()->Text(Screen.w / 2.0f + Pos.x - Width / 2.0f, Screen.h / 2.0f + Pos.y - FontSize / 2.0f, FontSize, pName);
 	}
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	Graphics()->WrapNormal();

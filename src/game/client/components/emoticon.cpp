@@ -11,6 +11,7 @@
 #include <game/client/ui.h>
 
 #include <game/client/gameclient.h>
+#include <game/teamscore.h>
 
 CEmoticon::CEmoticon()
 {
@@ -20,7 +21,13 @@ CEmoticon::CEmoticon()
 void CEmoticon::ConKeyEmoticon(IConsole::IResult *pResult, void *pUserData)
 {
 	CEmoticon *pSelf = (CEmoticon *)pUserData;
-	pSelf->m_Active = pResult->GetInteger(0) != 0;
+	if(!pSelf->GameClient()->m_Snap.m_SpecInfo.m_Active && pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	{
+		if(pSelf->GameClient()->m_Bindwheel.IsActive() || pSelf->GameClient()->m_QuickActions.IsActive())
+			pSelf->m_Active = false;
+		else
+			pSelf->m_Active = pResult->GetInteger(0) != 0;
+	}
 }
 
 void CEmoticon::ConEmote(IConsole::IResult *pResult, void *pUserData)
@@ -73,6 +80,36 @@ void CEmoticon::OnRender()
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
+	static const auto QuadEaseInOut = [](float t) -> float {
+		if(t == 0.0f)
+			return 0.0f;
+		if(t == 1.0f)
+			return 1.0f;
+		return (t < 0.5f) ? (2.0f * t * t) : (1.0f - std::pow(-2.0f * t + 2.0f, 2) / 2.0f);
+	};
+	static const auto PositiveMod = [](float x, float y) -> float {
+		return std::fmod(x + y, y);
+	};
+
+	static const float s_InnerMouseLimitRadius = 40.0f;
+	static const float s_InnerOuterMouseBoundaryRadius = 110.0f;
+	static const float s_OuterMouseLimitRadius = 170.0f;
+	static const float s_InnerItemRadius = 70.0f;
+	static const float s_OuterItemRadius = 150.0f;
+	static const float s_InnerCircleRadius = 100.0f;
+	static const float s_OuterCircleRadius = 190.0f;
+
+	const float AnimationTime = (float)g_Config.m_ClAnimateWheelTime / 1000.0f;
+	const float ItemAnimationTime = AnimationTime / 2.0f;
+
+	if(AnimationTime != 0.0f)
+	{
+		for(float &Time : m_aAnimationTimeEmotes)
+			Time = std::max(0.0f, Time - Client()->RenderFrameTime());
+		for(float &Time : m_aAnimationTimeEyeEmotes)
+			Time = std::max(0.0f, Time - Client()->RenderFrameTime());
+	}
+
 	if(!m_Active)
 	{
 		if(m_TouchPressedOutside)
@@ -87,10 +124,27 @@ void CEmoticon::OnRender()
 		if(m_WasActive && m_SelectedEyeEmote != -1)
 			EyeEmote(m_SelectedEyeEmote);
 		m_WasActive = false;
-		return;
-	}
 
-	m_WasActive = true;
+		if(AnimationTime == 0.0f)
+			return;
+
+		m_AnimationTime -= Client()->RenderFrameTime() * 3.0f; // Close animation 3x faster
+		if(m_AnimationTime <= 0.0f)
+		{
+			m_AnimationTime = 0.0f;
+			return;
+		}
+	}
+	else
+	{
+		if(AnimationTime != 0.0f)
+		{
+			m_AnimationTime += Client()->RenderFrameTime();
+			if(m_AnimationTime > AnimationTime)
+				m_AnimationTime = AnimationTime;
+		}
+		m_WasActive = true;
+	}
 
 	const CUIRect Screen = *Ui()->Screen();
 
@@ -100,11 +154,11 @@ void CEmoticon::OnRender()
 	{
 		const vec2 TouchPos = (m_TouchState.m_PrimaryPosition - vec2(0.5f, 0.5f)) * Screen.Size();
 		const float TouchCenterDistance = length(TouchPos);
-		if(TouchCenterDistance <= 170.0f)
+		if(TouchCenterDistance <= s_OuterMouseLimitRadius)
 		{
 			m_SelectorMouse = TouchPos;
 		}
-		else if(TouchCenterDistance > 190.0f)
+		else if(TouchCenterDistance > s_OuterCircleRadius)
 		{
 			m_TouchPressedOutside = true;
 		}
@@ -112,22 +166,46 @@ void CEmoticon::OnRender()
 	else if(WasTouchPressed)
 	{
 		m_Active = false;
-		return;
 	}
 
-	if(length(m_SelectorMouse) > 170.0f)
-		m_SelectorMouse = normalize(m_SelectorMouse) * 170.0f;
+	std::array<float, 5> aAnimationPhase;
+	if(AnimationTime == 0.0f)
+	{
+		aAnimationPhase.fill(1.0f);
+	}
+	else
+	{
+		aAnimationPhase[0] = QuadEaseInOut(m_AnimationTime / AnimationTime);
+		aAnimationPhase[1] = aAnimationPhase[0] * aAnimationPhase[0];
+		aAnimationPhase[2] = aAnimationPhase[1] * aAnimationPhase[1];
+		aAnimationPhase[3] = aAnimationPhase[2] * aAnimationPhase[2];
+		aAnimationPhase[4] = aAnimationPhase[3] * aAnimationPhase[3];
+	}
 
-	float SelectedAngle = angle(m_SelectorMouse) + 2 * pi / 24;
-	if(SelectedAngle < 0)
-		SelectedAngle += 2 * pi;
+	if(length(m_SelectorMouse) > s_OuterMouseLimitRadius)
+		m_SelectorMouse = normalize(m_SelectorMouse) * s_OuterMouseLimitRadius;
+
+	const float SelectorAngle = angle(m_SelectorMouse);
 
 	m_SelectedEmote = -1;
 	m_SelectedEyeEmote = -1;
-	if(length(m_SelectorMouse) > 110.0f)
-		m_SelectedEmote = (int)(SelectedAngle / (2 * pi) * NUM_EMOTICONS);
-	else if(length(m_SelectorMouse) > 40.0f)
-		m_SelectedEyeEmote = (int)(SelectedAngle / (2 * pi) * NUM_EMOTES);
+	if(length(m_SelectorMouse) > s_InnerOuterMouseBoundaryRadius)
+		m_SelectedEmote = PositiveMod(std::round(SelectorAngle / (2.0f * pi) * NUM_EMOTICONS), NUM_EMOTICONS);
+	else if(length(m_SelectorMouse) > s_InnerMouseLimitRadius)
+		m_SelectedEyeEmote = PositiveMod(std::round(SelectorAngle / (2.0f * pi) * NUM_EMOTES), NUM_EMOTES);
+
+	if(m_SelectedEmote != -1)
+	{
+		m_aAnimationTimeEmotes[m_SelectedEmote] += Client()->RenderFrameTime() * 2.0f; // To counteract earlier decrement
+		if(m_aAnimationTimeEmotes[m_SelectedEmote] >= ItemAnimationTime)
+			m_aAnimationTimeEmotes[m_SelectedEmote] = ItemAnimationTime;
+	}
+	if(m_SelectedEyeEmote != -1)
+	{
+		m_aAnimationTimeEyeEmotes[m_SelectedEyeEmote] += Client()->RenderFrameTime() * 2.0f; // To counteract earlier decrement
+		if(m_aAnimationTimeEyeEmotes[m_SelectedEyeEmote] >= ItemAnimationTime)
+			m_aAnimationTimeEyeEmotes[m_SelectedEyeEmote] = ItemAnimationTime;
+	}
 
 	const vec2 ScreenCenter = Screen.Center();
 
@@ -137,23 +215,24 @@ void CEmoticon::OnRender()
 
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
-	Graphics()->SetColor(0, 0, 0, 0.3f);
-	Graphics()->DrawCircle(ScreenCenter.x, ScreenCenter.y, 190.0f, 64);
+	Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.3f * aAnimationPhase[0]);
+	Graphics()->DrawCircle(ScreenCenter.x, ScreenCenter.y, s_OuterCircleRadius * aAnimationPhase[0], 64);
 	Graphics()->QuadsEnd();
 
 	Graphics()->WrapClamp();
 	for(int Emote = 0; Emote < NUM_EMOTICONS; Emote++)
 	{
-		float Angle = 2 * pi * Emote / NUM_EMOTICONS;
+		float Angle = 2.0f * pi * Emote / NUM_EMOTICONS;
 		if(Angle > pi)
-			Angle -= 2 * pi;
+			Angle -= 2.0f * pi;
 
 		Graphics()->TextureSet(GameClient()->m_EmoticonsSkin.m_aSpriteEmoticons[Emote]);
 		Graphics()->QuadsSetSubset(0, 0, 1, 1);
 		Graphics()->QuadsBegin();
-		const vec2 Nudge = direction(Angle) * 150.0f;
-		const float Size = m_SelectedEmote == Emote ? 80.0f : 50.0f;
-		IGraphics::CQuadItem QuadItem(ScreenCenter.x + Nudge.x, ScreenCenter.y + Nudge.y, Size, Size);
+		const vec2 Nudge = direction(Angle) * s_OuterItemRadius * aAnimationPhase[1];
+		const float Phase = ItemAnimationTime == 0.0f ? (Emote == m_SelectedEmote ? 1.0f : 0.0f) : QuadEaseInOut(m_aAnimationTimeEmotes[Emote] / ItemAnimationTime);
+		const float Size = (50.0f + Phase * 30.0f) * aAnimationPhase[1];
+		IGraphics::CQuadItem QuadItem(ScreenCenter.x + Nudge.x, ScreenCenter.y + Nudge.y, Size * aAnimationPhase[1], Size * aAnimationPhase[1]);
 		Graphics()->QuadsDraw(&QuadItem, 1);
 		Graphics()->QuadsEnd();
 	}
@@ -163,33 +242,34 @@ void CEmoticon::OnRender()
 	{
 		Graphics()->TextureClear();
 		Graphics()->QuadsBegin();
-		Graphics()->SetColor(1.0, 1.0, 1.0, 0.3f);
-		Graphics()->DrawCircle(ScreenCenter.x, ScreenCenter.y, 100.0f, 64);
+		Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.3f * aAnimationPhase[2]);
+		Graphics()->DrawCircle(ScreenCenter.x, ScreenCenter.y, s_InnerCircleRadius * aAnimationPhase[2], 64);
 		Graphics()->QuadsEnd();
 
 		CTeeRenderInfo TeeInfo = GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_RenderInfo;
 
 		for(int Emote = 0; Emote < NUM_EMOTES; Emote++)
 		{
-			float Angle = 2 * pi * Emote / NUM_EMOTES;
+			float Angle = 2.0f * pi * Emote / NUM_EMOTES;
 			if(Angle > pi)
-				Angle -= 2 * pi;
+				Angle -= 2.0f * pi;
 
-			const vec2 Nudge = direction(Angle) * 70.0f;
-			TeeInfo.m_Size = m_SelectedEyeEmote == Emote ? 64.0f : 48.0f;
-			RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, Emote, vec2(-1, 0), ScreenCenter + Nudge);
+			const vec2 Nudge = direction(Angle) * s_InnerItemRadius * aAnimationPhase[3];
+			const float Phase = ItemAnimationTime == 0.0f ? (Emote == m_SelectedEyeEmote ? 1.0f : 0.0f) : QuadEaseInOut(m_aAnimationTimeEyeEmotes[Emote] / ItemAnimationTime);
+			TeeInfo.m_Size = (48.0f + Phase * 18.0f) * aAnimationPhase[3];
+			RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, Emote, vec2(-1.0f, 0.0f), ScreenCenter + Nudge, aAnimationPhase[3]);
 		}
 
 		Graphics()->TextureClear();
 		Graphics()->QuadsBegin();
-		Graphics()->SetColor(0, 0, 0, 0.3f);
-		Graphics()->DrawCircle(ScreenCenter.x, ScreenCenter.y, 30.0f, 64);
+		Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.3f * aAnimationPhase[4]);
+		Graphics()->DrawCircle(ScreenCenter.x, ScreenCenter.y, 30.0f * aAnimationPhase[4], 64);
 		Graphics()->QuadsEnd();
 	}
 	else
 		m_SelectedEyeEmote = -1;
 
-	RenderTools()->RenderCursor(ScreenCenter + m_SelectorMouse, 24.0f);
+	RenderTools()->RenderCursor(ScreenCenter + m_SelectorMouse, 24.0f, aAnimationPhase[0]);
 }
 
 void CEmoticon::Emote(int Emoticon)
@@ -230,5 +310,5 @@ void CEmoticon::EyeEmote(int Emote)
 		str_format(aBuf, sizeof(aBuf), "/emote blink %d", g_Config.m_ClEyeDuration);
 		break;
 	}
-	GameClient()->m_Chat.SendChat(0, aBuf);
+	GameClient()->m_Chat.SendChat(TEAM_FLOCK, aBuf);
 }

@@ -10,6 +10,10 @@
 
 class CEmoticon : public CComponent
 {
+	float m_AnimationTime = 0.0f;
+	float m_aAnimationTimeEmotes[NUM_EMOTICONS] = {0};
+	float m_aAnimationTimeEyeEmotes[NUM_EMOTES] = {0};
+
 	bool m_WasActive;
 	bool m_Active;
 
@@ -40,6 +44,7 @@ public:
 	bool IsActive() const { return m_Active; }
 
 	friend class CBindWheel;
+	friend class CQuickActions;
 };
 
 #endif

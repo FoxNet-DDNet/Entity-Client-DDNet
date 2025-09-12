@@ -1,6 +1,12 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_QUICKACTIONS_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_QUICKACTIONS_H
 #include <game/client/component.h>
+
+#include <engine/console.h>
+
+#include <base/system.h>
+#include <vector>
+
 class IConfigManager;
 
 enum
@@ -12,17 +18,18 @@ enum
 
 class CQuickActions : public CComponent
 {
-	void DrawCircle(float x, float y, float r, int Segments);
+	float m_AnimationTime = 0.0f;
+	float m_aAnimationTimeItems[QUICKACTIONS_MAX_BINDS] = {0};
 
-	bool m_WasActive;
-	bool m_Active;
+	bool m_Active = false;
+	bool m_WasActive = false;
 
 	int m_QuickActionId;
 
-	vec2 m_SelectorMouse;
 	int m_SelectedBind;
 
 	vec2 GetCursorWorldPos() const;
+	int GetClosetClientId(vec2 Pos);
 
 	static void ConOpenQuickActionMenu(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddQuickAction(IConsole::IResult *pResult, void *pUserData);
@@ -38,28 +45,29 @@ public:
 	class CBind
 	{
 	public:
-		char m_aName[QUICKACTIONS_MAX_NAME];
-		char m_aCommand[QUICKACTIONS_MAX_CMD];
+		char m_aName[QUICKACTIONS_MAX_NAME] = "*";
+		char m_aCommand[QUICKACTIONS_MAX_CMD] = "";
 
 		bool operator==(const CBind &Other) const
 		{
-			return str_comp(m_aName, Other.m_aName) == 0 && str_comp(m_aCommand, Other.m_aCommand) == 0;
+			return !str_comp(m_aName, Other.m_aName) && !str_comp(m_aCommand, Other.m_aCommand);
 		}
 	};
 
 	std::vector<CBind> m_vBinds;
 
 	CQuickActions();
-	virtual int Sizeof() const override { return sizeof(*this); }
+	int Sizeof() const override { return sizeof(*this); }
 
-	virtual void OnReset() override;
-	virtual void OnRender() override;
-	virtual void OnConsoleInit() override;
-	virtual void OnInit() override;
-	virtual void OnRelease() override;
-	virtual bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
+	void OnReset() override;
+	void OnRender() override;
+	void OnConsoleInit() override;
+	void OnInit() override;
+	void OnRelease() override;
+	bool OnInput(const IInput::CEvent &Event) override;
+	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
 
-	int GetClosetClientId(vec2 Pos);
+	bool IsActive() const { return m_Active; }
 
 	void AddBind(const char *Name, const char *Command);
 	void RemoveBind(const char *Name, const char *Command);
