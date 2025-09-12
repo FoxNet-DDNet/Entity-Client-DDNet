@@ -22,27 +22,6 @@ enum
 	MAX_LINE_LENGTH = 256
 };
 
-
-enum
-{
-	// client IDs for special messages
-	SILENT_MSG = -4,
-	ECLIENT_MSG = -3,
-
-	CLIENT_MSG = -2,
-	SERVER_MSG = -1,
-
-	MODE_NONE = 0,
-	MODE_ALL,
-	MODE_TEAM,
-	MODE_SILENT,
-
-	CHAT_SERVER = 0,
-	CHAT_HIGHLIGHT,
-	CHAT_CLIENT,
-	CHAT_NUM,
-};
-
 class CChat : public CComponent
 {
 	static constexpr float CHAT_HEIGHT_FULL = 200.0f;
@@ -93,6 +72,8 @@ class CChat : public CComponent
 	enum
 	{
 		// client IDs for special messages
+		SILENT_MSG = -4, // E-Client
+		ECLIENT_MSG = -3,// E-Client
 		CLIENT_MSG = -2,
 		SERVER_MSG = -1,
 	};
@@ -102,6 +83,7 @@ class CChat : public CComponent
 		MODE_NONE = 0,
 		MODE_ALL,
 		MODE_TEAM,
+		MODE_SILENT, // E-Client
 	};
 
 	enum

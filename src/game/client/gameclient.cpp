@@ -5500,7 +5500,7 @@ bool CGameClient::CheckNewInput()
 
 void CGameClient::ClientMessage(const char *pString)
 {
-	m_Chat.AddLine(ECLIENT_MSG, 0, pString);
+	m_Chat.AddLine(-3, 0, pString);
 }
 
 void CGameClient::OnJoinInfo()
