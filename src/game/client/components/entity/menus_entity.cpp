@@ -38,8 +38,8 @@ enum
 	ENTITY_TAB_VISUAL,
 	ENTITY_TAB_WARLIST,
 	ENTITY_TAB_STATUSBAR,
-	ENTITY_TAB_QUICKACTION,
 	ENTITY_TAB_BINDWHEEL,
+	ENTITY_TAB_QUICKACTION,
 	ENTITY_TAB_INFO,
 	NUMBER_OF_ENTITY_TABS,
 };
@@ -113,9 +113,9 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		Localize("Settings"),
 		Localize("Visuals"),
 		Localize("Warlist"),
-		Localize("Status Bar"),
-		Localize("Quick Actions"),
+		Localize("Status bar"),
 		Localize("Bindwheel"),
+		Localize("Quick actions"),
 		Localize("Info"),
 	};
 
@@ -162,21 +162,21 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	{
 		RenderSettingsVisual(MainView);
 	}
+	if(s_CurTab == ENTITY_TAB_WARLIST)
+	{
+		RenderSettingsWarList(MainView);
+	}
 	if(s_CurTab == ENTITY_TAB_STATUSBAR)
 	{
 		RenderSettingsStatusbar(MainView);
-	}
-	if(s_CurTab == ENTITY_TAB_QUICKACTION)
-	{
-		RenderSettingsQuickActions(MainView);
-	}
+	}	
 	if(s_CurTab == ENTITY_TAB_BINDWHEEL)
 	{
 		RenderSettingsBindwheel(MainView);
 	}
-	if(s_CurTab == ENTITY_TAB_WARLIST)
+	if(s_CurTab == ENTITY_TAB_QUICKACTION)
 	{
-		RenderSettingsWarList(MainView);
+		RenderSettingsQuickActions(MainView);
 	}
 	if(s_CurTab == ENTITY_TAB_INFO)
 	{
@@ -3549,12 +3549,14 @@ void CMenus::RenderECTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 	float Distance = length(DeltaPosition);
 	float InteractionDistance = 20.0f;
 	vec2 TeeDirection = normalize(DeltaPosition);
-	int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : EMOTE_NORMAL;
+	int TeeEmote =  EMOTE_NORMAL;
 	if(Draggable > 0)
 	{
 		if(Distance < InteractionDistance)
 		{
 			CanDrag = true;
+			TeeEmote = EMOTE_HAPPY;
+			Ui()->SetHotItem(nullptr);
 		}
 
 		if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_1) && CanDrag)
@@ -3585,7 +3587,6 @@ void CMenus::RenderECTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAni
 
 			CanDrag = true;
 			OverrideTeePos = true;
-			Ui()->SetHotItem(nullptr);
 		}
 		else if(GameClient()->Input()->KeyIsPressed(KEY_MOUSE_2) && OverrideTeePos && CanDrag)
 			OverrideTeePos = false;
