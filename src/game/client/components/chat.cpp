@@ -19,11 +19,13 @@
 #include <game/client/gameclient.h>
 #include <game/localization.h>
 
-#include "chat.h"
-#include <string.h>
-
 #include "entity/entity.h"
 #include "tclient/warlist.h"
+#include "tclient/bindchat.h"
+
+#include "chat.h"
+
+#include <vector>
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = "";
 
@@ -94,11 +96,15 @@ void CChat::RegisterCommand(const char *pName, const char *pParams, const char *
 
 	m_vServerCommands.emplace_back(pName, pParams, pHelpText);
 	m_ServerCommandsNeedSorting = true;
+
+	GameClient()->m_Bindchat.CacheChatCommands();
 }
 
 void CChat::UnregisterCommand(const char *pName)
 {
 	m_vServerCommands.erase(std::remove_if(m_vServerCommands.begin(), m_vServerCommands.end(), [pName](const CCommand &Command) { return str_comp(Command.m_aName, pName) == 0; }), m_vServerCommands.end());
+	
+	GameClient()->m_Bindchat.CacheChatCommands();
 }
 
 void CChat::RebuildChat()
@@ -277,6 +283,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(m_ServerCommandsNeedSorting)
 		{
 			std::sort(m_vServerCommands.begin(), m_vServerCommands.end());
+			GameClient()->m_Bindchat.SortChatBinds(); // E-Client
 			m_ServerCommandsNeedSorting = false;
 		}
 
@@ -352,72 +359,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		}
 
 		if(GameClient()->m_Bindchat.ChatDoAutocomplete(ShiftPressed))
-		{
-		}
-		else if(m_aCompletionBuffer[0] == '/' && !m_vServerCommands.empty())
-		{
-			CCommand *pCompletionCommand = nullptr;
-
-			const size_t NumCommands = m_vServerCommands.size();
-
-			if(ShiftPressed && m_CompletionUsed)
-				m_CompletionChosen--;
-			else if(!ShiftPressed)
-				m_CompletionChosen++;
-			m_CompletionChosen = (m_CompletionChosen + 2 * NumCommands) % (2 * NumCommands);
-
-			m_CompletionUsed = true;
-
-			const char *pCommandStart = m_aCompletionBuffer + 1;
-			for(size_t i = 0; i < 2 * NumCommands; ++i)
-			{
-				int SearchType;
-				int Index;
-
-				if(ShiftPressed)
-				{
-					SearchType = ((m_CompletionChosen - i + 2 * NumCommands) % (2 * NumCommands)) / NumCommands;
-					Index = (m_CompletionChosen - i + NumCommands) % NumCommands;
-				}
-				else
-				{
-					SearchType = ((m_CompletionChosen + i) % (2 * NumCommands)) / NumCommands;
-					Index = (m_CompletionChosen + i) % NumCommands;
-				}
-
-				auto &Command = m_vServerCommands[Index];
-
-				if(str_startswith_nocase(Command.m_aName, pCommandStart))
-				{
-					pCompletionCommand = &Command;
-					m_CompletionChosen = Index + SearchType * NumCommands;
-					break;
-				}
-			}
-
-			// insert the command
-			if(pCompletionCommand)
-			{
-				char aBuf[MAX_LINE_LENGTH];
-				// add part before the name
-				str_truncate(aBuf, sizeof(aBuf), m_Input.GetString(), m_PlaceholderOffset);
-
-				// add the command
-				str_append(aBuf, "/");
-				str_append(aBuf, pCompletionCommand->m_aName);
-
-				// add separator
-				const char *pSeparator = pCompletionCommand->m_aParams[0] == '\0' ? "" : " ";
-				str_append(aBuf, pSeparator);
-
-				// add part after the name
-				str_append(aBuf, m_Input.GetString() + m_PlaceholderOffset + m_PlaceholderLength);
-
-				m_PlaceholderLength = str_length(pSeparator) + str_length(pCompletionCommand->m_aName) + 1;
-				m_Input.Set(aBuf);
-				m_Input.SetCursorOffset(m_PlaceholderOffset + m_PlaceholderLength);
-			}
-		}
+			;
 		else
 		{
 			// find next possible name
@@ -1379,36 +1321,19 @@ void CChat::OnRender()
 		m_Input.SetScrollOffset(ScrollOffset);
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
 
-		CBindChat pBindchat = GameClient()->m_Bindchat;
-
-		if(pBindchat.CheckBindChat(m_Input.GetString()) && m_Input.GetString()[1] != '\0')
-		{
-			for(int i = 0; i < (int)pBindchat.m_vBinds.size(); i++)
-			{
-				int CommandIndex = (pBindchat.m_vBinds.size() + i) % pBindchat.m_vBinds.size();
-				if(str_startswith_nocase(pBindchat.m_vBinds.at(CommandIndex).m_aName, m_Input.GetString()))
-				{
-					InputCursor.m_X = InputCursor.m_X + TextRender()->TextWidth(InputCursor.m_FontSize, m_Input.GetString(), -1, InputCursor.m_LineWidth);
-					InputCursor.m_Y = m_Input.GetCaretPosition().y;
-					TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
-					TextRender()->TextEx(&InputCursor, pBindchat.m_vBinds.at(CommandIndex).m_aName + str_length(m_Input.GetString()));
-					TextRender()->TextColor(TextRender()->DefaultTextColor());
-					break;
-				}
-			}
-		}
+		std::vector<CCommand> vChatCommands = GameClient()->m_Bindchat.m_vChatCommands;
 
 		// Autocompletion hint
-		if(m_Input.GetString()[0] == '/' && m_Input.GetString()[1] != '\0' && !m_vServerCommands.empty())
+		if(GameClient()->m_Bindchat.ValidPrefix(m_Input.GetString()[0]) && m_Input.GetString()[1] != '\0' && !vChatCommands.empty())
 		{
-			for(const auto &Command : m_vServerCommands)
+			for(const auto &Command : vChatCommands)
 			{
-				if(str_startswith_nocase(Command.m_aName, m_Input.GetString() + 1))
+				if(str_startswith_nocase(Command.m_aName, m_Input.GetString()))
 				{
 					InputCursor.m_X = InputCursor.m_X + TextRender()->TextWidth(InputCursor.m_FontSize, m_Input.GetString(), -1, InputCursor.m_LineWidth);
 					InputCursor.m_Y = m_Input.GetCaretPosition().y;
 					TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
-					TextRender()->TextEx(&InputCursor, Command.m_aName + str_length(m_Input.GetString() + 1));
+					TextRender()->TextEx(&InputCursor, Command.m_aName + str_length(m_Input.GetString()));
 					TextRender()->TextColor(TextRender()->DefaultTextColor());
 					break;
 				}

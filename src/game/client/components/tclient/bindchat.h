@@ -44,10 +44,13 @@ public:
 
 	std::vector<CBind> m_vBinds;
 
-	CBindChat();
-	virtual int Sizeof() const override { return sizeof(*this); }
+	std::vector<CChat::CCommand> m_vChatCommands;
 
-	virtual void OnConsoleInit() override;
+	CBindChat();
+	int Sizeof() const override { return sizeof(*this); }
+
+	void OnConsoleInit() override;
+	void OnInit() override;
 
 	void AddBind(const char *pName, const char *pCommand);
 	void AddBindDefault(const char *pName, const char *pCommand);
@@ -64,6 +67,10 @@ public:
 	bool CheckBindChat(const char *pText);
 	bool ChatDoBinds(const char *pText);
 	bool ChatDoAutocomplete(bool ShiftPressed);
+
+	void CacheChatCommands();
+	void SortChatBinds();
+	bool ValidPrefix(char Prefix) const;
 };
 
 #endif

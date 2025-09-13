@@ -4,6 +4,9 @@
 
 #include "bindchat.h"
 
+#include <vector>
+#include <algorithm>
+
 CBindChat::CBindChat()
 {
 	OnReset();
@@ -79,6 +82,7 @@ void CBindChat::AddBind(const char *pName, const char *pCommand)
 	str_copy(Bind.m_aName, pName);
 	str_copy(Bind.m_aCommand, pCommand);
 	m_vBinds.push_back(Bind);
+	SortChatBinds();
 }
 
 void CBindChat::AddBindDefault(const char *pName, const char *pCommand)
@@ -119,6 +123,7 @@ void CBindChat::RemoveBind(const char *pName)
 			return;
 		}
 	}
+	SortChatBinds();
 }
 
 void CBindChat::RemoveBind(int Index)
@@ -313,6 +318,12 @@ void CBindChat::OnConsoleInit()
 	AddBindDefault("!unclanteam", "remove_war_clan_index 2");
 }
 
+void CBindChat::OnInit()
+{
+	CacheChatCommands();
+	SortChatBinds();
+}
+
 void CBindChat::ExecuteBind(int Bind, const char *pArgs)
 {
 	char aBuf[BINDCHAT_MAX_CMD] = "";
@@ -372,12 +383,13 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 {
 	CChat &Chat = GameClient()->m_Chat;
 
-	if(m_vBinds.size() == 0)
-		return false;
-	if(*Chat.m_aCompletionBuffer == '\0')
+	if(!ValidPrefix(Chat.m_aCompletionBuffer[0]))
 		return false;
 
-	const CBind *pCompletionBind = nullptr;
+	if(m_vChatCommands.size() == 0)
+		return false;
+
+	const CChat::CCommand *pCompletionCommand = nullptr;
 	int InitialCompletionChosen = Chat.m_CompletionChosen;
 	int InitialCompletionUsed = Chat.m_CompletionUsed;
 
@@ -385,30 +397,30 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 		Chat.m_CompletionChosen--;
 	else if(!ShiftPressed)
 		Chat.m_CompletionChosen++;
-	Chat.m_CompletionChosen = (Chat.m_CompletionChosen + m_vBinds.size()) % m_vBinds.size(); // size != 0
+	Chat.m_CompletionChosen = (Chat.m_CompletionChosen + m_vChatCommands.size()) % m_vChatCommands.size(); // size != 0
 
 	Chat.m_CompletionUsed = true;
 	int Index = Chat.m_CompletionChosen;
-	for(int i = 0; i < (int)m_vBinds.size(); i++)
+	for(size_t i = 0; i < m_vChatCommands.size(); i++)
 	{
-		int CommandIndex = (Index + i) % m_vBinds.size();
-		if(str_startswith_nocase(m_vBinds.at(CommandIndex).m_aName, Chat.m_aCompletionBuffer))
+		int CommandIndex = (Index + i) % m_vChatCommands.size();
+		if(str_startswith_nocase(m_vChatCommands.at(CommandIndex).m_aName, Chat.m_aCompletionBuffer))
 		{
-			pCompletionBind = &m_vBinds.at(CommandIndex);
+			pCompletionCommand = &m_vChatCommands.at(CommandIndex);
 			Chat.m_CompletionChosen = CommandIndex;
 			break;
 		}
 	}
 
 	// insert the command
-	if(pCompletionBind)
+	if(pCompletionCommand)
 	{
 		char aBuf[MAX_LINE_LENGTH];
 		// add part before the name
 		str_truncate(aBuf, sizeof(aBuf), Chat.m_Input.GetString(), Chat.m_PlaceholderOffset);
 
 		// add the command
-		str_append(aBuf, pCompletionBind->m_aName);
+		str_append(aBuf, pCompletionCommand->m_aName);
 
 		// add separator
 		// TODO: figure out if the command would accept an extra param
@@ -416,13 +428,13 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 		// str_next_token(pCompletionBind->m_aCommand, " ", commandBuf, sizeof(commandBuf));
 		// CCommandInfo *pInfo = GameClient()->Console()->GetCommandInfo(commandBuf, CFGFLAG_CLIENT, false);
 		// if(pInfo && pInfo->m_pParams != '\0')
-		const char *pSeperator = " ";
-		str_append(aBuf, pSeperator);
+		const char *pSeparator = pCompletionCommand->m_aParams[0] == '\0' ? "" : " ";
+		str_append(aBuf, pSeparator);
 
 		// add part after the name
 		str_append(aBuf, Chat.m_Input.GetString() + Chat.m_PlaceholderOffset + Chat.m_PlaceholderLength);
 
-		Chat.m_PlaceholderLength = str_length(pSeperator) + str_length(pCompletionBind->m_aName);
+		Chat.m_PlaceholderLength = str_length(pSeparator) + str_length(pCompletionCommand->m_aName);
 		Chat.m_Input.Set(aBuf);
 		Chat.m_Input.SetCursorOffset(Chat.m_PlaceholderOffset + Chat.m_PlaceholderLength);
 	}
@@ -432,7 +444,7 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 		Chat.m_CompletionUsed = InitialCompletionUsed;
 	}
 
-	return pCompletionBind != nullptr;
+	return pCompletionCommand != nullptr;
 }
 
 void CBindChat::WriteLine(const char *pLine)
@@ -479,4 +491,57 @@ void CBindChat::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDa
 	pThis->m_BindchatFile = {};
 	if(Failed)
 		dbg_msg("config", "ERROR: writing to %s failed", BINDCHAT_FILE);
+}
+
+void CBindChat::CacheChatCommands()
+{
+	m_vChatCommands.clear();
+
+	CChat &Chat = GameClient()->m_Chat;
+
+	for(const auto &ServerCommand : Chat.m_vServerCommands)
+	{
+		char Temp[64];
+		str_format(Temp, sizeof(Temp), "/%s", ServerCommand.m_aName);
+		CChat::CCommand Command(Temp, ServerCommand.m_aParams, ServerCommand.m_aHelpText);
+		Command.m_Prefix = '/';
+		m_vChatCommands.push_back(Command);
+	}
+
+	for(const auto &ChatBind : GameClient()->m_Bindchat.m_vBinds)
+	{
+		if(!ChatBind.m_aName[0])
+			continue;
+		CChat::CCommand Command(ChatBind.m_aName, ChatBind.m_aCommand, "");
+		Command.m_Prefix = ChatBind.m_aName[0];
+		bool Found = false;
+		for(const auto &ChatCommand : m_vChatCommands)
+		{
+			if(!str_comp(ChatCommand.m_aName, ChatBind.m_aName))
+			{
+				Found = true;
+				break;
+			}
+		}
+		if(!Found)
+			m_vChatCommands.push_back(Command);
+	}
+}
+
+void CBindChat::SortChatBinds()
+{
+	std::sort(m_vChatCommands.begin(), m_vChatCommands.end());
+}
+
+bool CBindChat::ValidPrefix(char Prefix) const
+{
+	for(const auto &Command : m_vChatCommands)
+	{
+		if(Command.m_Prefix == '\0')
+			continue;
+
+		if(Prefix == Command.m_Prefix)
+			return true;
+	}
+	return false;
 }

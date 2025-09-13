@@ -116,6 +116,7 @@ class CChat : public CComponent
 		char m_aName[IConsole::TEMPCMD_NAME_LENGTH];
 		char m_aParams[IConsole::TEMPCMD_PARAMS_LENGTH];
 		char m_aHelpText[IConsole::TEMPCMD_HELP_LENGTH];
+		char m_Prefix; // E-Client
 
 		CCommand() = default;
 		CCommand(const char *pName, const char *pParams, const char *pHelpText)
@@ -123,6 +124,7 @@ class CChat : public CComponent
 			str_copy(m_aName, pName);
 			str_copy(m_aParams, pParams);
 			str_copy(m_aHelpText, pHelpText);
+			m_Prefix = m_aName[0]; // E-Client
 		}
 
 		bool operator<(const CCommand &Other) const { return str_comp(m_aName, Other.m_aName) < 0; }
