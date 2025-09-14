@@ -20,8 +20,8 @@
 #include <game/localization.h>
 
 #include "entity/entity.h"
-#include "tclient/warlist.h"
 #include "tclient/bindchat.h"
+#include "tclient/warlist.h"
 
 #include "chat.h"
 
@@ -53,7 +53,15 @@ CChat::CChat()
 {
 	m_Mode = MODE_NONE;
 
-	m_Input.SetClipboardLineCallback([this](const char *pStr) { SendChatQueued(pStr); });
+	m_Input.SetClipboardLineCallback([this](const char *pStr) {
+		if(GameClient()->m_EClient.FoxNetServer() && Client()->RconAuthed())
+		{
+			SendChat(TEAM_FLOCK, pStr);
+			AddHistoryEntry(pStr);
+		}
+		else
+			SendChatQueued(pStr);
+	});
 	m_Input.SetCalculateOffsetCallback([this]() { return m_IsInputCensored; });
 	m_Input.SetDisplayTextCallback([this](char *pStr, size_t NumChars) {
 		m_IsInputCensored = false;
@@ -103,7 +111,7 @@ void CChat::RegisterCommand(const char *pName, const char *pParams, const char *
 void CChat::UnregisterCommand(const char *pName)
 {
 	m_vServerCommands.erase(std::remove_if(m_vServerCommands.begin(), m_vServerCommands.end(), [pName](const CCommand &Command) { return str_comp(Command.m_aName, pName) == 0; }), m_vServerCommands.end());
-	
+
 	GameClient()->m_Bindchat.CacheChatCommands();
 }
 
@@ -305,6 +313,11 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				GameClient()->ClientMessage("This Message was a Silent Message, no one else can see it!");
 				SilentMessageInfo = true;
 			}
+		}
+		else if(GameClient()->m_EClient.FoxNetServer() && Client()->RconAuthed())
+		{
+			SendChat(TEAM_FLOCK, m_Input.GetString());
+			AddHistoryEntry(m_Input.GetString());
 		}
 		else
 			SendChatQueued(m_Input.GetString());
@@ -645,7 +658,6 @@ bool CChat::LineHighlighted(int ClientId, const char *pLine)
 
 	return Highlighted;
 }
-
 
 void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
@@ -1267,7 +1279,7 @@ void CChat::OnRender()
 		InputCursor.SetPosition(vec2(x, y));
 		InputCursor.m_FontSize = ScaledFontSize;
 		InputCursor.m_LineWidth = Width - 190.0f;
-		
+
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 		if(m_Mode == MODE_ALL)
@@ -1286,7 +1298,7 @@ void CChat::OnRender()
 		}
 		else
 		{
-		TextRender()->TextEx(&InputCursor, Localize("Chat"));
+			TextRender()->TextEx(&InputCursor, Localize("Chat"));
 		}
 
 		TextRender()->TextEx(&InputCursor, ": ");
@@ -1488,10 +1500,7 @@ void CChat::SendChatQueued(const char *pLine)
 
 	if(AddEntry)
 	{
-		const int Length = str_length(pLine);
-		CHistoryEntry *pEntry = m_History.Allocate(sizeof(CHistoryEntry) + Length);
-		pEntry->m_Team = m_Mode == MODE_ALL ? 0 : 1;
-		str_copy(pEntry->m_aText, pLine, Length + 1);
+		AddHistoryEntry(pLine);
 	}
 }
 
@@ -1687,10 +1696,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			if(str_find_nocase(pLine, "hink you could do better") && str_find_nocase(pLine, "Not without"))
 			{
 				// try to not remove their message if they are just trying to be funny
-				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app")
-					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client")
-					&& !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") 
-					&& !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))
+				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") && !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") && !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") && !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))
 					AdBotFound = true;
 				if(str_find(pLine, " ")) // This is the little white space it uses between some letters
 					AdBotFound = true;
@@ -1720,4 +1726,12 @@ void CChat::ConSetChatInput(IConsole::IResult *pResult, void *pUserData)
 	CChat *pChat = (CChat *)pUserData;
 	pChat->EnableMode(TEAM_FLOCK);
 	pChat->m_Input.Set(pResult->GetString(0));
+}
+
+void CChat::AddHistoryEntry(const char *pLine)
+{
+	const int Length = str_length(pLine);
+	CHistoryEntry *pEntry = m_History.Allocate(sizeof(CHistoryEntry) + Length);
+	pEntry->m_Team = m_Mode == MODE_ALL ? 0 : 1;
+	str_copy(pEntry->m_aText, pLine, Length + 1);
 }

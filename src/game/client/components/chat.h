@@ -225,6 +225,7 @@ public:
 	// E-Client
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
+	void AddHistoryEntry(const char *pLine);
 
 private:
 	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client

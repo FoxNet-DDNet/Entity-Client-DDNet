@@ -647,6 +647,28 @@ void CEClient::OnNewSnapshot()
 	NotifyOnMove();
 }
 
+void CEClient::OnStateChange(int NewState, int OldState)
+{
+	if(NewState == IClient::STATE_CONNECTING || NewState == IClient::STATE_OFFLINE)
+	{
+		m_SentKill = false;
+		m_KillCount = 0;
+		m_JoinedTeam = false;
+		m_AttempedJoinTeam = false;
+		m_LastReplyId = -1;
+		m_aLastPing = CLastPing();
+	}
+	else if(NewState == IClient::STATE_ONLINE)
+	{
+		CServerInfo CurrentServerInfo;
+		Client()->GetServerInfo(&CurrentServerInfo);
+
+		m_FoxNetServer = false;
+		if(!str_comp(CurrentServerInfo.m_aGameType, "FoxNetwork"))
+			m_FoxNetServer = true;
+	}
+}
+
 void CEClient::OnRender()
 {
 	UpdateRainbow();
