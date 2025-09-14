@@ -214,7 +214,7 @@ bool CQuickActions::OnCursorMove(float x, float y, IInput::ECursorType CursorTyp
 {
 	if(!m_Active)
 		return false;
-	if(m_QuickActionId < 0 || m_QuickActionId >= MAX_CLIENTS)
+	if(m_LastQuickActionId < 0 || m_LastQuickActionId >= MAX_CLIENTS)
 		return false;
 
 	Ui()->ConvertMouseMove(&x, &y, CursorType);
@@ -409,21 +409,20 @@ void CQuickActions::OnRender()
 	Graphics()->DrawCircle(Screen.w / 2.0f, Screen.h / 2.0f, s_InnerCircleRadius * aAnimationPhase[2], 64);
 	Graphics()->QuadsEnd();
 
-	static int s_LastQuickActionId = -1;
-	if(s_LastQuickActionId != m_QuickActionId && m_QuickActionId != -1)
-		s_LastQuickActionId = m_QuickActionId;
+	if(m_LastQuickActionId != m_QuickActionId && m_QuickActionId != -1)
+		m_LastQuickActionId = m_QuickActionId;
 
 	const float FontSize = 20.0f * aAnimationPhase[2];
 	if(BindsEmpty)
 	{
 		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(FontSize, "Empty") / 2.0f, Screen.h / 2.0f - FontSize / 2, FontSize, "Empty");
 	}
-	else if(s_LastQuickActionId >= 0 && s_LastQuickActionId < MAX_CLIENTS)
+	else if(m_LastQuickActionId >= 0 && m_LastQuickActionId < MAX_CLIENTS)
 	{
-		const CGameClient::CClientData Target = GameClient()->m_aClients[s_LastQuickActionId];
-		const CNetObj_Character TargetRender = GameClient()->m_aClients[s_LastQuickActionId].m_RenderCur;
+		const CGameClient::CClientData Target = GameClient()->m_aClients[m_LastQuickActionId];
+		const CNetObj_Character TargetRender = GameClient()->m_aClients[m_LastQuickActionId].m_RenderCur;
 
-		const CNetObj_DDNetCharacter *pExtendedData = &GameClient()->m_Snap.m_aCharacters[s_LastQuickActionId].m_ExtendedData;
+		const CNetObj_DDNetCharacter *pExtendedData = &GameClient()->m_Snap.m_aCharacters[m_LastQuickActionId].m_ExtendedData;
 		const vec2 Direction = vec2(pExtendedData->m_TargetX, pExtendedData->m_TargetY);
 		const vec2 Middle = vec2(Screen.w / 2.0f, Screen.h / 2.0f) + vec2(0.0f, 10.0f) * aAnimationPhase[2];
 		CAnimState State;
@@ -463,11 +462,11 @@ void CQuickActions::ExecuteBind(int Bind)
 {
 	char aCmd[(int)BINDWHEEL_MAX_CMD + (int)MAX_NAME_LENGTH] = "";
 
-	if(m_QuickActionId < 0 || m_QuickActionId >= MAX_CLIENTS)
+	if(m_LastQuickActionId < 0 || m_LastQuickActionId >= MAX_CLIENTS)
 		return;
 	char pTargetName[32];
 
-	str_copy(pTargetName, GameClient()->m_aClients[m_QuickActionId].m_aName);
+	str_copy(pTargetName, GameClient()->m_aClients[m_LastQuickActionId].m_aName);
 
 	str_format(aCmd, sizeof(aCmd), m_vBinds[Bind].m_aCommand, pTargetName);
 	Console()->ExecuteLine(aCmd);

@@ -25,6 +25,7 @@ class CQuickActions : public CComponent
 	bool m_WasActive = false;
 
 	int m_QuickActionId;
+	int m_LastQuickActionId;
 
 	int m_SelectedBind;
 
