@@ -21,7 +21,7 @@ CEmoticon::CEmoticon()
 void CEmoticon::ConKeyEmoticon(IConsole::IResult *pResult, void *pUserData)
 {
 	CEmoticon *pSelf = (CEmoticon *)pUserData;
-	if(!pSelf->GameClient()->m_Snap.m_SpecInfo.m_Active && pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		if(pSelf->GameClient()->m_Bindwheel.IsActive() || pSelf->GameClient()->m_QuickActions.IsActive())
 			pSelf->m_Active = false;
