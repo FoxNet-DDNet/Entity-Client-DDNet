@@ -47,11 +47,11 @@ MACRO_CONFIG_INT(ClOutlineWidthFreeze, ec_outline_width_freeze, 5, 1, 16, CFGFLA
 MACRO_CONFIG_INT(ClOutlineWidthUnFreeze, ec_outline_width_unfreeze, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of unfreeze outline")
 MACRO_CONFIG_INT(ClOutlineWidthSolid, ec_outline_width_solid, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of solid outline")
 MACRO_CONFIG_INT(ClOutlineWidthTele, ec_outline_width_tele, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of tele outline")
-MACRO_CONFIG_COL(ClOutlineColorSolid, ec_outline_color_solid, 4278190080, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Solid outline color")
-MACRO_CONFIG_COL(ClOutlineColorFreeze, ec_outline_color_freeze, 4278190080, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Freeze outline color")
-MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 4278190080, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Tele outline color")
-MACRO_CONFIG_COL(ClOutlineColorUnfreeze, ec_outline_color_unfreeze, 4278190080, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
-MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 4278190080, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
+MACRO_CONFIG_COL(ClOutlineColorSolid, ec_outline_color_solid, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Solid outline color")
+MACRO_CONFIG_COL(ClOutlineColorFreeze, ec_outline_color_freeze, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Freeze outline color")
+MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Tele outline color")
+MACRO_CONFIG_COL(ClOutlineColorUnfreeze, ec_outline_color_unfreeze, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
+MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
 
 // Fast Input
 MACRO_CONFIG_INT(ClFastInput, ec_fast_input, 0, 0, 5, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction up to 20ms faster")
