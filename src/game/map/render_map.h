@@ -81,10 +81,6 @@ public:
 	void RenderTunemap(CTuneTile *pTune, int w, int h, float Scale, ColorRGBA Color, int RenderFlags);
 
 	void RenderDebugClip(float ClipX, float ClipY, float ClipW, float ClipH, ColorRGBA Color, float Zoom, const char *pLabel);
-
-	// TClient
-	void RenderGameTileOutlines(CTile *pTiles, int w, int h, float Scale, int TileType);
-	void RenderTeleOutlines(CTile *pTiles, CTeleTile *pTele, int w, int h, float Scale);
 };
 
 #endif

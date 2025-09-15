@@ -326,13 +326,13 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, Localize("Status Bar"), &s_ShowStatusBar, &LeftView, LineSize);
 	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_STATUSBAR, s_ShowStatusBar);
 
-	static int s_ShowQuickActions = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_QUICKACTION);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowQuickActions, Localize("Quick Actions"), &s_ShowQuickActions, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_QUICKACTION, s_ShowQuickActions);
-
 	static int s_ShowBindwheel = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindwheel, Localize("Bindwheel"), &s_ShowBindwheel, &LeftView, LineSize);
 	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_BINDWHEEL, s_ShowBindwheel);
+
+	static int s_ShowQuickActions = IsFlagSet(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_QUICKACTION);
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowQuickActions, Localize("Quick Actions"), &s_ShowQuickActions, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, ENTITY_TAB_QUICKACTION, s_ShowQuickActions);
 
 	char DeathCounter[32];
 	str_format(DeathCounter, sizeof(DeathCounter), "%d death%s (all time)", GameClient()->m_EClient.m_KillCount, GameClient()->m_EClient.m_KillCount == 1 ? "" : "s");
@@ -3305,15 +3305,15 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 						TileOutlines.HSplitTop(5.0f, &Button, &TileOutlines);
 					}
 
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineUnFreeze, Localize("Outline unfreezes & undeeps"), &g_Config.m_ClOutlineUnFreeze, &TileOutlines, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutlineUnfreeze, Localize("Outline unfreezes & undeeps"), &g_Config.m_ClOutlineUnfreeze, &TileOutlines, LineSize);
 					TileOutlines.HSplitTop(-20.0f, &Button, &TileOutlines);
 					DoLine_ColorPicker(&s_OutlineColorUnfreezeId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &TileOutlines, Localize(""), &g_Config.m_ClOutlineColorUnfreeze, ColorRGBA(0.0f, 0.0f, 0.0f), false, nullptr, true);
-					if(g_Config.m_ClOutlineUnFreeze)
+					if(g_Config.m_ClOutlineUnfreeze)
 					{
 						Offset += 25.0f - ScrollBarOffset;
 						TileOutlines.HSplitTop(-ScrollBarOffset, &Button, &TileOutlines);
 						TileOutlines.HSplitTop(LineSize, &Button, &TileOutlines);
-						Ui()->DoScrollbarOption(&g_Config.m_ClOutlineWidthUnFreeze, &g_Config.m_ClOutlineWidthUnFreeze, &Button, Localize("Unfreeze width"), 1, 16);
+						Ui()->DoScrollbarOption(&g_Config.m_ClOutlineWidthUnfreeze, &g_Config.m_ClOutlineWidthUnfreeze, &Button, Localize("Unfreeze width"), 1, 16);
 						TileOutlines.HSplitTop(5.0f, &Button, &TileOutlines);
 					}
 
@@ -3349,7 +3349,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 						Offset += 25.0f - ScrollBarOffset;
 						TileOutlines.HSplitTop(-ScrollBarOffset, &Button, &TileOutlines);
 						TileOutlines.HSplitTop(LineSize, &Button, &TileOutlines);
-						Ui()->DoScrollbarOption(&g_Config.m_ClOutlineKillWidth, &g_Config.m_ClOutlineKillWidth, &Button, Localize("Kill width"), 1, 16);
+						Ui()->DoScrollbarOption(&g_Config.m_ClOutlineWidthKill, &g_Config.m_ClOutlineWidthKill, &Button, Localize("Kill width"), 1, 16);
 						TileOutlines.HSplitTop(5.0f, &Button, &TileOutlines);
 					}
 				}
