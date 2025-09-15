@@ -25,7 +25,6 @@ class CQuickActions : public CComponent
 	bool m_WasActive = false;
 
 	int m_QuickActionId;
-	int m_LastQuickActionId;
 
 	int m_SelectedBind;
 
@@ -64,6 +63,7 @@ public:
 	void OnRender() override;
 	void OnConsoleInit() override;
 	void OnInit() override;
+	void OnStateChange(int NewState, int OldState) override;
 	void OnRelease() override;
 	bool OnInput(const IInput::CEvent &Event) override;
 	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;

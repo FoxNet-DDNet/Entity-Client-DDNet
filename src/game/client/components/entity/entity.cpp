@@ -38,7 +38,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 
 	bool Highlighted = GameClient()->m_Chat.LineHighlighted(ClientId, pMsg);
 
-	if(Team == 3) // whisper recv
+	if(Team == TEAM_WHISPER_RECV) // whisper recv
 		Highlighted = true;
 
 	if(!Highlighted)
