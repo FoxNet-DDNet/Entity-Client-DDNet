@@ -329,5 +329,7 @@ private:
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 	void OnConfigSave(IConfigManager *pConfigManager);
 	static void ConchainRefreshSkinList(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+
+	friend class CSkinProfiles;
 };
 #endif

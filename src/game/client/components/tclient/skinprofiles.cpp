@@ -1,8 +1,15 @@
 #include <game/client/gameclient.h>
 
 #include <engine/config.h>
+#include <engine/console.h>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
+
+#include <base/str.h>
+#include <base/system.h>
+#include <base/types.h>
+
+#include <cstring>
 
 #include "skinprofiles.h"
 
@@ -53,63 +60,34 @@ void CSkinProfiles::AddProfile(int BodyColor, int FeetColor, int CountryFlag, in
 
 void CSkinProfiles::ApplyProfile(int Dummy, const CProfile &Profile)
 {
-	char aCommand[2048] = "";
-	auto FAddPart = [&](const char *pName, const char *pValue) {
-		str_append(aCommand, Dummy ? "dummy" : "player");
-		str_append(aCommand, "_");
-		str_append(aCommand, pName);
-		str_append(aCommand, " \"");
-		char *pDst = aCommand + str_length(aCommand);
-		str_escape(&pDst, pValue, aCommand + sizeof(aCommand) - 1); // 1 extra for end quote
-		str_append(aCommand, "\";");
-	};
-	auto FAddPartNumber = [&](const char *pName, int Value) {
-		str_append(aCommand, Dummy ? "dummy" : "player");
-		str_append(aCommand, "_");
-		str_append(aCommand, pName);
-		str_append(aCommand, " ");
-		int Length = str_length(aCommand);
-		str_format(aCommand + Length, sizeof(aCommand) - Length, "%d", Value);
-		str_append(aCommand, ";");
-	};
 	if(g_Config.m_ClProfileSkin && strlen(Profile.m_SkinName) != 0)
-		FAddPart("skin", Profile.m_SkinName);
+		str_copy(Dummy ? g_Config.m_ClDummySkin : g_Config.m_ClPlayerSkin, Profile.m_SkinName);
 	if(g_Config.m_ClProfileColors && Profile.m_BodyColor != -1 && Profile.m_FeetColor != -1)
 	{
-		FAddPartNumber("color_body", Profile.m_BodyColor);
-		FAddPartNumber("color_feet", Profile.m_FeetColor);
+		(Dummy ? g_Config.m_ClDummyColorBody : g_Config.m_ClPlayerColorBody) = Profile.m_BodyColor;
+		(Dummy ? g_Config.m_ClDummyColorFeet : g_Config.m_ClPlayerColorFeet) = Profile.m_FeetColor;
 	}
 	if(g_Config.m_ClProfileEmote && Profile.m_Emote != -1)
-		FAddPartNumber("default_eyes", Profile.m_Emote);
+		(Dummy ? g_Config.m_ClDummyDefaultEyes : g_Config.m_ClPlayerDefaultEyes) = Profile.m_Emote;
 	if(g_Config.m_ClProfileName && strlen(Profile.m_Name) != 0)
-		FAddPart("name", Profile.m_Name);
+		str_copy(Dummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName, Profile.m_Name); // TODO m_ClPlayerName
 	if(g_Config.m_ClProfileClan && (strlen(Profile.m_Clan) != 0 || g_Config.m_ClProfileOverwriteClanWithEmpty))
-		FAddPart("clan", Profile.m_Clan);
+		str_copy(Dummy ? g_Config.m_ClDummyClan : g_Config.m_PlayerClan, Profile.m_Clan); // TODO m_ClPlayerClan
 	if(g_Config.m_ClProfileFlag && Profile.m_CountryFlag != -2)
-		FAddPartNumber("country", Profile.m_CountryFlag);
-	Console()->ExecuteLine(aCommand);
+		(Dummy ? g_Config.m_ClDummyCountry : g_Config.m_PlayerCountry) = Profile.m_CountryFlag;
+	GameClient()->m_Skins.m_SkinList.ForceRefresh(); // Prevent segfault
+	if(Dummy)
+		GameClient()->SendDummyInfo(false);
+	else
+		GameClient()->SendInfo(false);
 }
-void CSkinProfiles::WriteLine(const char *pLine)
-{
-	if(!m_ProfilesFile || io_write(m_ProfilesFile, pLine, str_length(pLine)) != static_cast<unsigned>(str_length(pLine)) || !io_write_newline(m_ProfilesFile))
-		return;
-}
+
 void CSkinProfiles::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
 {
 	CSkinProfiles *pThis = (CSkinProfiles *)pUserData;
-
-	pThis->m_ProfilesFile = pThis->m_pStorage->OpenFile(PROFILES_FILE, IOFLAG_WRITE, IStorage::TYPE_SAVE);
-
-	if(!pThis->m_ProfilesFile)
-	{
-		dbg_msg("config", "ERROR: opening %s failed", PROFILES_FILE);
-		return;
-	}
-
 	char aBuf[256];
 	char aBufTemp[128];
 	char aEscapeBuf[256];
-
 	for(const CProfile &Profile : pThis->m_Profiles)
 	{
 		str_copy(aBuf, "add_profile ", sizeof(aBuf));
@@ -138,15 +116,6 @@ void CSkinProfiles::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUs
 		str_format(aBufTemp, sizeof(aBufTemp), "\"%s\"", aEscapeBuf);
 		str_append(aBuf, aBufTemp, sizeof(aBuf));
 
-		pThis->WriteLine(aBuf);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::TCLIENTPROFILES);
 	}
-	bool Failed = false;
-
-	if(io_sync(pThis->m_ProfilesFile) != 0)
-		Failed = true;
-	if(io_close(pThis->m_ProfilesFile) != 0)
-		Failed = true;
-	pThis->m_ProfilesFile = {};
-	if(Failed)
-		dbg_msg("config", "ERROR: writing to %s failed", PROFILES_FILE);
 }
