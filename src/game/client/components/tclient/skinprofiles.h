@@ -4,10 +4,7 @@
 #include <game/client/component.h>
 
 #include <engine/console.h>
-#include <engine/keys.h>
 #include <engine/shared/protocol.h>
-
-#include <base/system.h>
 
 #include <vector>
 
