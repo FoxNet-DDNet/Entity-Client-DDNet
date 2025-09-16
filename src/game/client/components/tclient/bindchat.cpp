@@ -197,11 +197,10 @@ void CBindChat::OnConsoleInit()
 
 	AddDefaultBind("help", "exec data/entity/binds/.help.cfg");
 	AddDefaultBind("extra", "exec data/entity/binds/.extra.cfg");
-	AddDefaultBind("kick", "votekick");
 	AddDefaultBind("votekick", "votekick");
 	AddDefaultBind("onlineinfo", "OnlineInfo");
 	AddDefaultBind("playerinfo", "PlayerInfo");
-	AddDefaultBind("github", "view_link https://github.com/qxdFox/Entity-Client");
+	AddBindDefault("github", "view_link https://github.com/qxdFox/Entity-Client");
 	AddDefaultBind("r", "reply_last");
 
 	AddDefaultBind("friend", "add_friend");
