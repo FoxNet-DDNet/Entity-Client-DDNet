@@ -200,7 +200,7 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("votekick", "votekick");
 	AddDefaultBind("onlineinfo", "OnlineInfo");
 	AddDefaultBind("playerinfo", "PlayerInfo");
-	AddBindDefault("github", "view_link https://github.com/qxdFox/Entity-Client");
+	AddBindDefault(".github", "view_link https://github.com/qxdFox/Entity-Client");
 	AddDefaultBind("r", "reply_last");
 
 	AddDefaultBind("friend", "add_friend");
@@ -437,7 +437,6 @@ bool CBindChat::ValidPrefix(char Prefix) const
 void CBindChat::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
 {
 	CBindChat *pThis = (CBindChat *)pUserData;
-	bool Failed = false;
 
 	for(CBind &Bind : pThis->m_vBinds)
 	{
