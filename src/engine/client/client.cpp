@@ -3450,9 +3450,19 @@ void CClient::Run()
 
 	if(!m_pConfigManager->Save())
 	{
-		char aError[128];
-		str_format(aError, sizeof(aError), Localize("Saving settings to '%s' failed"), CONFIG_FILE);
-		m_vQuittingWarnings.emplace_back(Localize("Error saving settings"), aError);
+		/*
+		char aError[128] = "";
+		for(ConfigDomain ConfigDomain = ConfigDomain::START; ConfigDomain < ConfigDomain::NUM; ++ConfigDomain)
+		{
+			if(DIDNTFAIL)
+				continue
+			if(aError[0] != '\0')
+				str_append(aError, ", ");
+			str_append(s_aConfigDomains[ConfigDomain].m_aConfigPath);
+		}
+		*/
+		// TODO
+		m_vQuittingWarnings.emplace_back(Localize("Error saving settings"));
 	}
 
 	m_Fifo.Shutdown();
@@ -4911,37 +4921,22 @@ int main(int argc, const char **argv)
 	pClient->InitInterfaces();
 
 	// execute config file
-	if(pStorage->FileExists(CONFIG_FILE, IStorage::TYPE_ALL))
+	pConsole->SetUnknownCommandCallback(SaveUnknownCommandCallback, pClient);
+	for(ConfigDomain ConfigDomain = ConfigDomain::START; ConfigDomain < ConfigDomain::NUM; ++ConfigDomain)
 	{
-		pConsole->SetUnknownCommandCallback(SaveUnknownCommandCallback, pClient);
-		if(!pConsole->ExecuteFile(CONFIG_FILE))
+		if(!pStorage->FileExists(s_aConfigDomains[ConfigDomain].m_aConfigPath, IStorage::TYPE_ALL))
+			continue;
+		if(!pConsole->ExecuteFile(s_aConfigDomains[ConfigDomain].m_aConfigPath))
 		{
-			const char *pError = "Failed to load config from '" CONFIG_FILE "'.";
-			log_error("client", "%s", pError);
-			pClient->ShowMessageBox({.m_pTitle = "Config File Error", .m_pMessage = pError});
+			char aError[2048];
+			snprintf(aError, sizeof(aError), "Failed to load config from '%s'.", s_aConfigDomains[ConfigDomain].m_aConfigPath);
+			log_error("client", "%s", aError);
+			pClient->ShowMessageBox({.m_pTitle = "Config File Error", .m_pMessage = aError});
 			PerformAllCleanup();
 			return -1;
 		}
-		pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
 	}
-
-	// execute E-Client config file
-	IOHANDLE File = pStorage->OpenFile(ECONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
-	if(File)
-	{
-		io_close(File);
-		pConsole->ExecuteFile(ECONFIG_FILE);
-	}
-
-	if(pStorage->FileExists(LEGACYACONFIG_FILE, IStorage::TYPE_ALL) && g_Config.m_ClFirstLaunch)
-	{
-		if(pConsole->ExecuteLegacyFile())
-		{
-			dbg_msg("E-Client", "migrated legacy config file to new format");
-			pStorage->RemoveFile(LEGACYACONFIG_FILE, IStorage::TYPE_SAVE);
-		}
-		g_Config.m_ClFirstLaunch = 0;
-	}
+	pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
 
 	// execute autoexec file
 	if(pStorage->FileExists(AUTOEXEC_CLIENT_FILE, IStorage::TYPE_ALL))

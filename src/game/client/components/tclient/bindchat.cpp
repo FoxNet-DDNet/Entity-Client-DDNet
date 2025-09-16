@@ -175,7 +175,7 @@ void CBindChat::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	if(pConfigManager)
-		pConfigManager->RegisterECallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::TCLIENTCHATBINDS);
 
 	Console()->Register("bindchat", "s[name] r[command]", CFGFLAG_CLIENT, ConAddBindchat, this, "Add a chat bind");
 	Console()->Register("bindchats", "?s[name]", CFGFLAG_CLIENT, ConBindchats, this, "Print command executed by this name or all chat binds");
@@ -183,140 +183,70 @@ void CBindChat::OnConsoleInit()
 	Console()->Register("unbindchatall", "", CFGFLAG_CLIENT, ConRemoveBindchatAll, this, "Removes all chat binds");
 	Console()->Register("bindchatdefaults", "", CFGFLAG_CLIENT, ConBindchatDefaults, this, "Adds default chat binds");
 
-	m_pStorage = Kernel()->RequestInterface<IStorage>();
-	IOHANDLE File = m_pStorage->OpenFile(BINDCHAT_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
-	if(File)
-	{
-		io_close(File);
-		Console()->ExecuteFile(BINDCHAT_FILE);
-	}
+	AddBindDefault("/specid", "specid");
 
-	// Default Binds (.)
-	AddBindDefault(".help", "exec data/entity/binds/.help.cfg");
-	AddBindDefault(".extra", "exec data/entity/binds/.extra.cfg");
-	AddBindDefault(".kick", "votekick");
-	AddBindDefault(".votekick", "votekick");
-	AddBindDefault(".onlineinfo", "OnlineInfo");
-	AddBindDefault(".playerinfo", "PlayerInfo");
-	AddBindDefault(".github", "view_link https://github.com/qxdFox/Entity-Client");
-	AddBindDefault(".r", "reply_last");
+	auto &&AddDefaultBind = [this](const char *pName, const char *pCommand) {
+		for(int p = 0; p < 2; p++)
+		{
+			const char Prefix = p == 0 ? '.' : '!';
+			char aBuf[32];
+			str_format(aBuf, sizeof(aBuf), "%c%s", Prefix, pName);
+			AddBindDefault(aBuf, pCommand);
+		}
+	};
 
-	AddBindDefault(".friend", "add_friend");
-	AddBindDefault(".unfriend", "remove_friend");
+	AddDefaultBind("help", "exec data/entity/binds/.help.cfg");
+	AddDefaultBind("extra", "exec data/entity/binds/.extra.cfg");
+	AddDefaultBind("kick", "votekick");
+	AddDefaultBind("votekick", "votekick");
+	AddDefaultBind("onlineinfo", "OnlineInfo");
+	AddDefaultBind("playerinfo", "PlayerInfo");
+	AddDefaultBind("github", "view_link https://github.com/qxdFox/Entity-Client");
+	AddDefaultBind("r", "reply_last");
 
-	AddBindDefault(".restoreskin", "restoreskin");
-	AddBindDefault(".saveskin", "saveskin");
+	AddDefaultBind("friend", "add_friend");
+	AddDefaultBind("unfriend", "remove_friend");
 
-	AddBindDefault(".restore", "restoreskin");
-	AddBindDefault(".save", "saveskin");
+	AddDefaultBind("restoreskin", "restoreskin");
+	AddDefaultBind("saveskin", "saveskin");
 
-	AddBindDefault(".tempwar", "addtempwar");
-	AddBindDefault(".addtempwar", "addtempwar");
-	AddBindDefault(".untempwar", "deltempwar");
-	AddBindDefault(".deltempwar", "deltempwar");
+	AddDefaultBind("restore", "restoreskin");
+	AddDefaultBind("save", "saveskin");
 
-	AddBindDefault(".temphelper", "addtemphelper");
-	AddBindDefault(".addtemphelper", "addtemphelper");
-	AddBindDefault(".untemphelper", "deltemphelper");
-	AddBindDefault(".deltemphelper", "deltemphelper");
+	AddDefaultBind("tempwar", "addtempwar");
+	AddDefaultBind("untempwar", "deltempwar");
+	AddDefaultBind("deltempwar", "deltempwar");
 
-	AddBindDefault(".tempmute", "addtempmute");
-	AddBindDefault(".addtempmute", "addtempmute");
-	AddBindDefault(".untempmute", "deltempmute");
-	AddBindDefault(".deltempmute", "deltempmute");
+	AddDefaultBind("temphelper", "addtemphelper");
+	AddDefaultBind("untemphelper", "deltemphelper");
+	AddDefaultBind("deltemphelper", "deltemphelper");
 
-	AddBindDefault(".war", "war_name_index 1");
-	AddBindDefault(".addwar", "war_name_index 1");
-	AddBindDefault(".delwar", "remove_war_name_index 1");
-	AddBindDefault(".unwar", "remove_war_name_index 1");
+	AddDefaultBind("tempmute", "addtempmute");
+	AddDefaultBind("untempmute", "deltempmute");
 
-	AddBindDefault(".team", "war_name_index 2");
-	AddBindDefault(".addteam", "war_name_index 2");
-	AddBindDefault(".delteam", "remove_war_name_index 2");
-	AddBindDefault(".unteam", "remove_war_name_index 2");
+	AddDefaultBind("war", "war_name_index 1");
+	AddDefaultBind("delwar", "remove_war_name_index 1");
+	AddDefaultBind("unwar", "remove_war_name_index 1");
 
-	AddBindDefault(".helper", "war_name_index 3");
-	AddBindDefault(".addhelper", "war_name_index 3");
-	AddBindDefault(".delhelper", "remove_war_name_index 3");
-	AddBindDefault(".unhelper", "remove_war_name_index 3");
+	AddDefaultBind("team", "war_name_index 2");
+	AddDefaultBind("delteam", "remove_war_name_index 2");
+	AddDefaultBind("unteam", "remove_war_name_index 2");
 
-	AddBindDefault(".mute", "addmute");
-	AddBindDefault(".addmute", "addmute");
-	AddBindDefault(".delmute", "delmute");
-	AddBindDefault(".unmute", "delmute");
+	AddDefaultBind("helper", "war_name_index 3");
+	AddDefaultBind("delhelper", "remove_war_name_index 3");
+	AddDefaultBind("unhelper", "remove_war_name_index 3");
 
-	AddBindDefault(".clanwar", "war_clan_index 1");
-	AddBindDefault(".addclanwar", "war_clan_index 1");
-	AddBindDefault(".delclanwar", "remove_war_clan_index 1");
-	AddBindDefault(".unclanwar", "remove_war_clan_index 1");
+	AddDefaultBind("mute", "addmute");
+	AddDefaultBind("delmute", "delmute");
+	AddDefaultBind("unmute", "delmute");
 
-	AddBindDefault(".clanteam", "war_clan_index 2");
-	AddBindDefault(".addclanteam", "war_clan_index 2");
-	AddBindDefault(".delclanteam", "remove_war_clan_index 2");
-	AddBindDefault(".unclanteam", "remove_war_clan_index 2");
+	AddDefaultBind("clanwar", "war_clan_index 1");
+	AddDefaultBind("delclanwar", "remove_war_clan_index 1");
+	AddDefaultBind("unclanwar", "remove_war_clan_index 1");
 
-	// Default Binds (!)
-	AddBindDefault("!help", "exec data/entity/binds/.help.cfg");
-	AddBindDefault("!extra", "exec data/entity/binds/.extra.cfg");
-	AddBindDefault("!kick", "votekick");
-	AddBindDefault("!votekick", "votekick");
-	AddBindDefault("!onlineinfo", "OnlineInfo");
-	AddBindDefault("!playerinfo", "PlayerInfo");
-	AddBindDefault("!r", "reply_last");
-
-	AddBindDefault("!friend", "add_friend");
-	AddBindDefault("!unfriend", "remove_friend");
-
-	AddBindDefault("!restoreskin", "restoreskin");
-	AddBindDefault("!saveskin", "saveskin");
-
-	AddBindDefault("!restore", "restoreskin");
-	AddBindDefault("!save", "saveskin");
-
-	AddBindDefault("!tempwar", "addtempwar");
-	AddBindDefault("!addtempwar", "addtempwar");
-	AddBindDefault("!untempwar", "deltempwar");
-	AddBindDefault("!deltempwar", "deltempwar");
-
-	AddBindDefault("!temphelper", "addtemphelper");
-	AddBindDefault("!addtemphelper", "addtemphelper");
-	AddBindDefault("!untemphelper", "deltemphelper");
-	AddBindDefault("!deltemphelper", "deltemphelper");
-
-	AddBindDefault("!tempmute", "addtempmute");
-	AddBindDefault("!addtempmute", "addtempmute");
-	AddBindDefault("!untempmute", "deltempmute");
-	AddBindDefault("!deltempmute", "deltempmute");
-
-	AddBindDefault("!war", "war_name_index 1");
-	AddBindDefault("!addwar", "war_name_index 1");
-	AddBindDefault("!delwar", "remove_war_name_index 1");
-	AddBindDefault("!unwar", "remove_war_name_index 1");
-
-	AddBindDefault("!team", "war_name_index 2");
-	AddBindDefault("!addteam", "war_name_index 2");
-	AddBindDefault("!delteam", "remove_war_name_index 2");
-	AddBindDefault("!unteam", "remove_war_name_index 2");
-
-	AddBindDefault("!helper", "war_name_index 3");
-	AddBindDefault("!addhelper", "war_name_index 3");
-	AddBindDefault("!delhelper", "remove_war_name_index 3");
-	AddBindDefault("!unhelper", "remove_war_name_index 3");
-
-	AddBindDefault("!mute", "addmute");
-	AddBindDefault("!addmute", "addmute");
-	AddBindDefault("!delmute", "delmute");
-	AddBindDefault("!unmute", "delmute");
-
-	AddBindDefault("!clanwar", "war_clan_index 1");
-	AddBindDefault("!addclanwar", "war_clan_index 1");
-	AddBindDefault("!delclanwar", "remove_war_clan_index 1");
-	AddBindDefault("!unclanwar", "remove_war_clan_index 1");
-
-	AddBindDefault("!clanteam", "war_clan_index 2");
-	AddBindDefault("!addclanteam", "war_clan_index 2");
-	AddBindDefault("!delclanteam", "remove_war_clan_index 2");
-	AddBindDefault("!unclanteam", "remove_war_clan_index 2");
+	AddDefaultBind("clanteam", "war_clan_index 2");
+	AddDefaultBind("delclanteam", "remove_war_clan_index 2");
+	AddDefaultBind("unclanteam", "remove_war_clan_index 2");
 }
 
 void CBindChat::OnInit()
@@ -448,52 +378,6 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 	return pCompletionCommand != nullptr;
 }
 
-void CBindChat::WriteLine(const char *pLine)
-{
-	if(!m_BindchatFile || io_write(m_BindchatFile, pLine, str_length(pLine)) != static_cast<unsigned>(str_length(pLine)) || !io_write_newline(m_BindchatFile))
-		return;
-}
-void CBindChat::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
-{
-	CBindChat *pThis = (CBindChat *)pUserData;
-	bool Failed = false;
-	pThis->m_BindchatFile = pThis->m_pStorage->OpenFile(BINDCHAT_FILE, IOFLAG_WRITE, IStorage::TYPE_SAVE);
-	if(!pThis->m_BindchatFile)
-	{
-		dbg_msg("config", "ERROR: opening %s failed", BINDCHAT_FILE);
-		return;
-	}
-
-	for(CBind &Bind : pThis->m_vBinds)
-	{
-		// Default binds do not need to be saved because they will get added on launch
-		if(Bind.m_Default)
-			continue;
-
-		char aBuf[BINDCHAT_MAX_CMD * 2] = "";
-		char *pEnd = aBuf + sizeof(aBuf);
-		char *pDst;
-		str_append(aBuf, "bindchat \"");
-		// Escape name
-		pDst = aBuf + str_length(aBuf);
-		str_escape(&pDst, Bind.m_aName, pEnd);
-		str_append(aBuf, "\" \"");
-		// Escape command
-		pDst = aBuf + str_length(aBuf);
-		str_escape(&pDst, Bind.m_aCommand, pEnd);
-		str_append(aBuf, "\"");
-		pThis->WriteLine(aBuf);
-	}
-
-	if(io_sync(pThis->m_BindchatFile) != 0)
-		Failed = true;
-	if(io_close(pThis->m_BindchatFile) != 0)
-		Failed = true;
-	pThis->m_BindchatFile = {};
-	if(Failed)
-		dbg_msg("config", "ERROR: writing to %s failed", BINDCHAT_FILE);
-}
-
 void CBindChat::CacheChatCommands()
 {
 	m_vChatCommands.clear();
@@ -549,4 +433,31 @@ bool CBindChat::ValidPrefix(char Prefix) const
 			return true;
 	}
 	return false;
+}
+
+void CBindChat::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
+{
+	CBindChat *pThis = (CBindChat *)pUserData;
+	bool Failed = false;
+
+	for(CBind &Bind : pThis->m_vBinds)
+	{
+		// Default binds do not need to be saved because they will get added on launch
+		if(Bind.m_Default)
+			continue;
+
+		char aBuf[BINDCHAT_MAX_CMD * 2] = "";
+		char *pEnd = aBuf + sizeof(aBuf);
+		char *pDst;
+		str_append(aBuf, "bindchat \"");
+		// Escape name
+		pDst = aBuf + str_length(aBuf);
+		str_escape(&pDst, Bind.m_aName, pEnd);
+		str_append(aBuf, "\" \"");
+		// Escape command
+		pDst = aBuf + str_length(aBuf);
+		str_escape(&pDst, Bind.m_aCommand, pEnd);
+		str_append(aBuf, "\"");
+		pConfigManager->WriteLine(aBuf, ConfigDomain::TCLIENTCHATBINDS);
+	}
 }

@@ -142,9 +142,6 @@ public:
 
 	virtual int FlagMask() const = 0;
 	virtual void SetFlagMask(int FlagMask) = 0;
-
-	// E-Client
-	virtual bool ExecuteLegacyFile() = 0;
 };
 
 std::unique_ptr<IConsole> CreateConsole(int FlagMask);

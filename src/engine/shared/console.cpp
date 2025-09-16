@@ -732,66 +732,6 @@ bool CConsole::ExecuteFile(const char *pFilename, int ClientId, bool LogFailure,
 	return Success;
 }
 
-bool CConsole::ExecuteLegacyFile()
-{
-	if(!m_pStorage->FileExists(LEGACYACONFIG_FILE, IStorage::TYPE_ALL))
-		return false;
-
-	int Count = 0;
-	// make sure that this isn't being executed already and that recursion limit isn't met
-	for(CExecFile *pCur = m_pFirstExec; pCur; pCur = pCur->m_pPrev)
-	{
-		Count++;
-
-		if(str_comp(LEGACYACONFIG_FILE, pCur->m_pFilename) == 0 || Count > FILE_RECURSION_LIMIT)
-			return false;
-	}
-	if(!m_pStorage)
-		return false;
-
-	// push this one to the stack
-	CExecFile ThisFile;
-	CExecFile *pPrev = m_pFirstExec;
-	ThisFile.m_pFilename = LEGACYACONFIG_FILE;
-	ThisFile.m_pPrev = m_pFirstExec;
-	m_pFirstExec = &ThisFile;
-
-	// exec the file
-	CLineReader LineReader;
-	bool Success = false;
-	char aBuf[32 + IO_MAX_PATH_LENGTH];
-	if(LineReader.OpenFile(m_pStorage->OpenFile(LEGACYACONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL)))
-	{
-		str_format(aBuf, sizeof(aBuf), "executing '%s'", LEGACYACONFIG_FILE);
-		Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", aBuf);
-
-		while(const char *pLine = LineReader.Get())
-		{
-			bool LegacyCommand = str_startswith(pLine, "ac_");
-			char Command[64];
-			str_copy(Command, pLine, sizeof(Command));
-			if(LegacyCommand)
-			{
-				const char *pOldPrefix = str_startswith(pLine, "ac_");
-				str_copy(Command, "ec_", sizeof(Command));
-				str_append(Command, pOldPrefix);
-			}
-
-			ExecuteLine(Command, -1);
-		}
-
-		Success = true;
-	}
-	else
-	{
-		str_format(aBuf, sizeof(aBuf), "failed to open '%s'", LEGACYACONFIG_FILE);
-		Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", aBuf);
-	}
-
-	m_pFirstExec = pPrev;
-	return Success;
-}
-
 void CConsole::Con_Echo(IResult *pResult, void *pUserData)
 {
 	((CConsole *)pUserData)->Print(IConsole::OUTPUT_LEVEL_STANDARD, "console", pResult->GetString(0));

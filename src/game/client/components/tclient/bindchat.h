@@ -2,8 +2,6 @@
 #define GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
 #include <game/client/component.h>
 
-#define BINDCHAT_FILE "tclient_chatbinds.cfg"
-
 class IConfigManager;
 
 enum
@@ -24,11 +22,6 @@ class CBindChat : public CComponent
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
 	void ExecuteBind(int Bind, const char *pArgs);
-
-	void WriteLine(const char *pLine);
-	class IStorage *m_pStorage = nullptr;
-	IOHANDLE m_BindchatFile = nullptr;
-
 public:
 	class CBind
 	{

@@ -352,44 +352,44 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	Button.VSplitMid(&FilesLeft, &FilesRight, MarginSmall);
 
 	static CButtonContainer s_AClientConfig, s_Config, s_Warlist, s_Profiles, s_Chatbinds, s_FontFolder;
-	if(DoButtonLineSize_Menu(&s_AClientConfig, Localize("E-Client Setting File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	if(DoButtonLineSize_Menu(&s_AClientConfig, Localize("E-Client Setting"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Storage()->GetCompletePath(IStorage::TYPE_SAVE, ECONFIG_FILE, aBuf, sizeof(aBuf));
+		Storage()->GetCompletePath(IStorage::TYPE_SAVE, s_aConfigDomains[ConfigDomain::ENTITY].m_aConfigPath, aBuf, sizeof(aBuf));
 		Client()->ViewFile(aBuf);
 	}
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
 	FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
-	if(DoButtonLineSize_Menu(&s_Config, Localize("Default Settings File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	if(DoButtonLineSize_Menu(&s_Config, Localize("DDNet Settings"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Storage()->GetCompletePath(IStorage::TYPE_SAVE, CONFIG_FILE, aBuf, sizeof(aBuf));
-		Client()->ViewFile(aBuf);
-	}
-
-	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
-	FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
-	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
-	if(DoButtonLineSize_Menu(&s_Profiles, Localize("Profiles File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
-	{
-		Storage()->GetCompletePath(IStorage::TYPE_SAVE, PROFILES_FILE, aBuf, sizeof(aBuf));
+		Storage()->GetCompletePath(IStorage::TYPE_SAVE, s_aConfigDomains[ConfigDomain::DDNET].m_aConfigPath, aBuf, sizeof(aBuf));
 		Client()->ViewFile(aBuf);
 	}
 
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
 	FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
-
-	if(DoButtonLineSize_Menu(&s_Warlist, Localize("Warlist File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	if(DoButtonLineSize_Menu(&s_Profiles, Localize("Profiles"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Storage()->GetCompletePath(IStorage::TYPE_SAVE, WARLIST_FILE, aBuf, sizeof(aBuf));
+		Storage()->GetCompletePath(IStorage::TYPE_SAVE, s_aConfigDomains[ConfigDomain::TCLIENTPROFILES].m_aConfigPath, aBuf, sizeof(aBuf));
+		Client()->ViewFile(aBuf);
+	}
+
+	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
+	FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
+	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
+
+	if(DoButtonLineSize_Menu(&s_Warlist, Localize("Warlist"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	{
+		Storage()->GetCompletePath(IStorage::TYPE_SAVE, s_aConfigDomains[ConfigDomain::TCLIENTWARLIST].m_aConfigPath, aBuf, sizeof(aBuf));
 		Client()->ViewFile(aBuf);
 	}
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
 	FilesRight.HSplitTop(Margin, &FilesRight, &FilesRight);
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, 0);
-	if(DoButtonLineSize_Menu(&s_Chatbinds, Localize("Chatbinds File"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
+	if(DoButtonLineSize_Menu(&s_Chatbinds, Localize("Chatbinds"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
 	{
-		Storage()->GetCompletePath(IStorage::TYPE_SAVE, BINDCHAT_FILE, aBuf, sizeof(aBuf));
+		Storage()->GetCompletePath(IStorage::TYPE_SAVE, s_aConfigDomains[ConfigDomain::TCLIENTCHATBINDS].m_aConfigPath, aBuf, sizeof(aBuf));
 		Client()->ViewFile(aBuf);
 	}
 	FilesRight.HSplitTop(LineSize * 2.0f, &FilesRight, &FilesRight);
@@ -1453,9 +1453,9 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	// Filter the list
 	static CLineInputBuffered<128> s_EntriesFilterInput;
 	std::vector<CWarEntry *> vpFilteredEntries;
-	for(size_t i = 0; i < GameClient()->m_WarList.m_WarEntries.size(); ++i)
+	for(size_t i = 0; i < GameClient()->m_WarList.m_vWarEntries.size(); ++i)
 	{
-		CWarEntry *pEntry = &GameClient()->m_WarList.m_WarEntries[i];
+		CWarEntry *pEntry = &GameClient()->m_WarList.m_vWarEntries[i];
 		bool Matches = false;
 		if(str_find_nocase(pEntry->m_aName, s_EntriesFilterInput.GetString()))
 			Matches = true;
@@ -1478,7 +1478,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	static std::vector<unsigned char> s_vItemIds;
 	static std::vector<CButtonContainer> s_vDeleteButtons;
 
-	const int MaxEntries = GameClient()->m_WarList.m_WarEntries.size();
+	const int MaxEntries = GameClient()->m_WarList.m_vWarEntries.size();
 	s_vItemIds.resize(MaxEntries);
 	s_vDeleteButtons.resize(MaxEntries);
 
@@ -2146,7 +2146,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 		if(DoButton_Menu(&s_ProfilesFile, Localize("Profiles file"), 0, &Button))
 		{
 			char aBuf[IO_MAX_PATH_LENGTH];
-			Storage()->GetCompletePath(IStorage::TYPE_SAVE, PROFILES_FILE, aBuf, sizeof(aBuf));
+			Storage()->GetCompletePath(IStorage::TYPE_SAVE, s_aConfigDomains[ConfigDomain::TCLIENTPROFILES].m_aConfigPath, aBuf, sizeof(aBuf));
 			Client()->ViewFile(aBuf);
 		}
 	}

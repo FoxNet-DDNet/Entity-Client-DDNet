@@ -7,8 +7,6 @@
 #include <unordered_map>
 #include <string>
 
-#define WARLIST_FILE "tclient_warlist.cfg"
-
 enum
 {
 	MAX_WARLIST_TYPE_LENGTH = 10,
@@ -164,10 +162,6 @@ class CWarList : public CComponent
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
-	void WriteLine(const char *pLine);
-	class IStorage *m_pStorage = nullptr;
-	IOHANDLE m_WarlistFile = nullptr;
-
 public:
 	CWarList();
 	~CWarList();
@@ -193,7 +187,7 @@ public:
 	CWarType *m_pWarTypeNone = m_WarTypes[0];
 
 	// Duplicate war entries ARE allowed
-	std::vector<CWarEntry> m_WarEntries;
+	std::vector<CWarEntry> m_vWarEntries;
 	// TODO: create an unordered map for war clans and war names, to speed up updating the WarPlayers cache
 	// It should be updated when m_WarList changes
 

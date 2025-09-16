@@ -2084,7 +2084,10 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   compression.h
   config.cpp
   config.h
+  config_domains.h
+  config_includes.h
   config_variables.h
+  config_variables_entity.h
   console.cpp
   console.h
   csv.cpp
@@ -2096,7 +2099,6 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   econ.cpp
   econ.h
   engine.cpp
-  entity_variables.h
   fifo.cpp
   fifo.h
   filecollection.cpp

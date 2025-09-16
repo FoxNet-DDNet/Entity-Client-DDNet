@@ -20,7 +20,7 @@ void CWarList::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	if(pConfigManager)
-		pConfigManager->RegisterECallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::TCLIENTWARLIST);
 
 	Console()->Register("update_war_group", "i[group_index] s[name] i[color]", CFGFLAG_CLIENT, ConUpsertWarType, this, "Update or add a specific war group");
 	Console()->Register("add_war_entry", "s[group] s[name] s[clan] r[reason]", CFGFLAG_CLIENT, ConAddWarEntry, this, "Adds a specific war entry");
@@ -43,14 +43,6 @@ void CWarList::OnConsoleInit()
 
 	Console()->Register("remove_entry_name", "s[name]", CFGFLAG_CLIENT, ConRemoveNameEntry, this, "Remove a clan war entry");
 	Console()->Register("remove_entry_clan", "s[clan]", CFGFLAG_CLIENT, ConRemoveClanEntry, this, "Removes a Muted Name");
-
-	m_pStorage = Kernel()->RequestInterface<IStorage>();
-	IOHANDLE File = m_pStorage->OpenFile(WARLIST_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
-	if(File)
-	{
-		io_close(File);
-		Console()->ExecuteFile(WARLIST_FILE);
-	}
 }
 
 void CWarList::RebuildWarMaps()
@@ -59,7 +51,7 @@ void CWarList::RebuildWarMaps()
 	m_ClanWarMap.clear();
 	m_MuteMap.clear();
 
-	for(CWarEntry &entry : m_WarEntries)
+	for(CWarEntry &entry : m_vWarEntries)
 	{
 		if(entry.m_aName[0])
 			m_NameWarMap[entry.m_aName] = &entry;
@@ -374,12 +366,12 @@ void CWarList::DelMute(const char *pName, bool Silent)
 
 void CWarList::UpdateWarEntry(int Index, const char *pName, const char *pClan, const char *pReason, CWarType *pType)
 {
-	if(Index >= 0 && Index < static_cast<int>(m_WarEntries.size()))
+	if(Index >= 0 && Index < static_cast<int>(m_vWarEntries.size()))
 	{
-		str_copy(m_WarEntries[Index].m_aName, pName);
-		str_copy(m_WarEntries[Index].m_aClan, pClan);
-		str_copy(m_WarEntries[Index].m_aReason, pReason);
-		m_WarEntries[Index].m_pWarType = pType;
+		str_copy(m_vWarEntries[Index].m_aName, pName);
+		str_copy(m_vWarEntries[Index].m_aClan, pClan);
+		str_copy(m_vWarEntries[Index].m_aReason, pReason);
+		m_vWarEntries[Index].m_pWarType = pType;
 	}
 }
 
@@ -421,7 +413,7 @@ void CWarList::AddWarEntry(const char *pName, const char *pClan, const char *pRe
 
 	if(!g_Config.m_ClWarListAllowDuplicates)
 		RemoveWarEntryDuplicates(pName, pClan);
-	m_WarEntries.push_back(Entry);
+	m_vWarEntries.push_back(Entry);
 
 	RebuildWarMaps(); // E-Client
 }
@@ -433,7 +425,7 @@ bool CWarList::RemoveWarEntryDuplicates(const char *pName, const char *pClan)
 
 	bool Found = false;
 
-	for(auto it = m_WarEntries.begin(); it != m_WarEntries.end();)
+	for(auto it = m_vWarEntries.begin(); it != m_vWarEntries.end();)
 	{
 		bool IsDuplicate =
 			(str_comp(it->m_aName, pName) == 0) &&
@@ -441,7 +433,7 @@ bool CWarList::RemoveWarEntryDuplicates(const char *pName, const char *pClan)
 
 		if(IsDuplicate)
 		{
-			it = m_WarEntries.erase(it);
+			it = m_vWarEntries.erase(it);
 			Found = true;
 		}
 		else
@@ -473,21 +465,21 @@ void CWarList::RemoveWarEntry(const char *pName, const char *pClan, const char *
 {
 	CWarType *WarType = FindWarType(pType);
 	CWarEntry Entry(WarType, pName, pClan, "");
-	auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), Entry);
-	if(it != m_WarEntries.end())
+	auto it = std::find(m_vWarEntries.begin(), m_vWarEntries.end(), Entry);
+	if(it != m_vWarEntries.end())
 	{
-		m_WarEntries.erase(it);
+		m_vWarEntries.erase(it);
 		RebuildWarMaps(); // E-Client
 	}
 }
 
 void CWarList::RemoveWarEntry(CWarEntry *Entry)
 {
-	auto it = std::find_if(m_WarEntries.begin(), m_WarEntries.end(),
+	auto it = std::find_if(m_vWarEntries.begin(), m_vWarEntries.end(),
 		[Entry](const CWarEntry &WarEntry) { return &WarEntry == Entry; });
-	if(it != m_WarEntries.end())
+	if(it != m_vWarEntries.end())
 	{
-		m_WarEntries.erase(it);
+		m_vWarEntries.erase(it);
 		RebuildWarMaps(); // E-Client
 	}
 }
@@ -505,7 +497,7 @@ void CWarList::RemoveWarType(const char *pType)
 			return;
 
 		// Find all war entries and set them to None if they are using this type
-		for(CWarEntry &Entry : m_WarEntries)
+		for(CWarEntry &Entry : m_vWarEntries)
 		{
 			if(*Entry.m_pWarType == **it)
 			{
@@ -518,7 +510,7 @@ void CWarList::RemoveWarType(const char *pType)
 
 int CWarList::FindWarTypeWithName(const char *pName)
 {
-	for(CWarEntry &Entry : m_WarEntries)
+	for(CWarEntry &Entry : m_vWarEntries)
 	{
 		if(str_comp(pName, Entry.m_aName) == 0 && str_comp(Entry.m_aName, "") != 0)
 		{
@@ -530,7 +522,7 @@ int CWarList::FindWarTypeWithName(const char *pName)
 
 int CWarList::FindWarTypeWithClan(const char *pClan)
 {
-	for(CWarEntry &Entry : m_WarEntries)
+	for(CWarEntry &Entry : m_vWarEntries)
 	{
 		if(str_comp(pClan, Entry.m_aClan) == 0 && str_comp(Entry.m_aClan, "") != 0)
 		{
@@ -542,7 +534,7 @@ int CWarList::FindWarTypeWithClan(const char *pClan)
 
 char *CWarList::GetWarTypeName(int ClientId)
 {
-	for(CWarEntry &Entry : m_WarEntries)
+	for(CWarEntry &Entry : m_vWarEntries)
 	{
 		if(!str_comp(GameClient()->m_aClients[ClientId].m_aName, Entry.m_aName) && str_comp(Entry.m_aName, "") != 0)
 		{
@@ -571,9 +563,9 @@ CWarEntry *CWarList::FindWarEntry(const char *pName, const char *pClan, const ch
 {
 	CWarType *WarType = FindWarType(pType);
 	CWarEntry Entry(WarType, pName, pClan, "");
-	auto it = std::find(m_WarEntries.begin(), m_WarEntries.end(), Entry);
+	auto it = std::find(m_vWarEntries.begin(), m_vWarEntries.end(), Entry);
 
-	if(it != m_WarEntries.end())
+	if(it != m_vWarEntries.end())
 		return &(*it);
 	else
 		return nullptr;
@@ -697,12 +689,6 @@ CWarList::CWarList()
 	m_WarTypes[0]->m_Color = ColorRGBA(1, 1, 1, 1);
 }
 
-void CWarList::WriteLine(const char *pLine)
-{
-	if(!m_WarlistFile || io_write(m_WarlistFile, pLine, str_length(pLine)) != static_cast<unsigned>(str_length(pLine)) || !io_write_newline(m_WarlistFile))
-		return;
-}
-
 static void EscapeParam(char *pDst, const char *pSrc, int Size)
 {
 	str_escape(&pDst, pSrc, pDst + Size);
@@ -711,14 +697,6 @@ static void EscapeParam(char *pDst, const char *pSrc, int Size)
 void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
 {
 	CWarList *pThis = (CWarList *)pUserData;
-	bool Failed = false;
-	pThis->m_WarlistFile = pThis->m_pStorage->OpenFile(WARLIST_FILE, IOFLAG_WRITE, IStorage::TYPE_SAVE);
-
-	if(!pThis->m_WarlistFile)
-	{
-		dbg_msg("config", "ERROR: opening %s failed", WARLIST_FILE);
-		return;
-	}
 
 	char aBuf[1024];
 	for(int i = 0; i < static_cast<int>(pThis->m_WarTypes.size()); i++)
@@ -734,9 +712,9 @@ void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		ColorHSLA Color = color_cast<ColorHSLA>(WarType.m_Color);
 
 		str_format(aBuf, sizeof(aBuf), "update_war_group %d \"%s\" %d", i, aEscapeType, Color.Pack(false));
-		pThis->WriteLine(aBuf);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::TCLIENTWARLIST);
 	}
-	for(CWarEntry &Entry : pThis->m_WarEntries)
+	for(CWarEntry &Entry : pThis->m_vWarEntries)
 	{
 		// Imported entries don't get saved
 		if(Entry.m_Imported)
@@ -752,7 +730,7 @@ void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		EscapeParam(aEscapeReason, Entry.m_aReason, sizeof(aEscapeReason));
 
 		str_format(aBuf, sizeof(aBuf), "add_war_entry \"%s\" \"%s\" \"%s\" \"%s\"", aEscapeType, aEscapeName, aEscapeClan, aEscapeReason);
-		pThis->WriteLine(aBuf);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::TCLIENTWARLIST);
 	}
 	for(CMuteEntry &Entry : pThis->m_MuteEntries)
 	{
@@ -760,14 +738,6 @@ void CWarList::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 		EscapeParam(aEscapeName, Entry.m_aMutedName, sizeof(aEscapeName));
 
 		str_format(aBuf, sizeof(aBuf), "add_mute \"%s\"", aEscapeName);
-		pThis->WriteLine(aBuf);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::TCLIENTWARLIST);
 	}
-
-	if(io_sync(pThis->m_WarlistFile) != 0)
-		Failed = true;
-	if(io_close(pThis->m_WarlistFile) != 0)
-		Failed = true;
-	pThis->m_WarlistFile = {};
-	if(Failed)
-		dbg_msg("config", "ERROR: writing to %s failed", WARLIST_FILE);
 }

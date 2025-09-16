@@ -2091,7 +2091,7 @@ void CMenus::UpdateWarlistCache()
 
 	std::unordered_set<const CServerInfo::CClient *> matchedClients;
 
-	for(CWarEntry &Entry : GameClient()->m_WarList.m_WarEntries)
+	for(CWarEntry &Entry : GameClient()->m_WarList.m_vWarEntries)
 	{
 		if(Entry.m_aName[0] && NameMap.count(Entry.m_aName))
 		{

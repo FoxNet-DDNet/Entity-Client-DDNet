@@ -166,7 +166,7 @@ void CQuickActions::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	if(pConfigManager)
-		pConfigManager->RegisterECallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::ENTITYQUICKACTIONS);
 
 	Console()->Register("+quickactions", "", CFGFLAG_CLIENT, ConOpenQuickActionMenu, this, "Open quick action menu");
 
@@ -480,28 +480,6 @@ void CQuickActions::ExecuteBind(int Bind)
 	Console()->ExecuteLine(aCmd);
 }
 
-void CQuickActions::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
-{
-	CQuickActions *pThis = (CQuickActions *)pUserData;
-
-	for(CBind &Bind : pThis->m_vBinds)
-	{
-		char aBuf[BINDWHEEL_MAX_CMD * 2] = "";
-		char *pEnd = aBuf + sizeof(aBuf);
-		char *pDst;
-		str_append(aBuf, "add_quickaction \"");
-		// Escape name
-		pDst = aBuf + str_length(aBuf);
-		str_escape(&pDst, Bind.m_aName, pEnd);
-		str_append(aBuf, "\" \"");
-		// Escape command
-		pDst = aBuf + str_length(aBuf);
-		str_escape(&pDst, Bind.m_aCommand, pEnd);
-		str_append(aBuf, "\"");
-		pConfigManager->WriteLine(aBuf);
-	}
-}
-
 void CQuickActions::DrawDebugLines()
 {
 	vec2 TargetPos = GetCursorWorldPos();
@@ -523,4 +501,26 @@ void CQuickActions::DrawDebugLines()
 	Graphics()->LinesEnd();
 
 	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+}
+
+void CQuickActions::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
+{
+	CQuickActions *pThis = (CQuickActions *)pUserData;
+
+	for(CBind &Bind : pThis->m_vBinds)
+	{
+		char aBuf[BINDWHEEL_MAX_CMD * 2] = "";
+		char *pEnd = aBuf + sizeof(aBuf);
+		char *pDst;
+		str_append(aBuf, "add_quickaction \"");
+		// Escape name
+		pDst = aBuf + str_length(aBuf);
+		str_escape(&pDst, Bind.m_aName, pEnd);
+		str_append(aBuf, "\" \"");
+		// Escape command
+		pDst = aBuf + str_length(aBuf);
+		str_escape(&pDst, Bind.m_aCommand, pEnd);
+		str_append(aBuf, "\"");
+		pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITYQUICKACTIONS);
+	}
 }
