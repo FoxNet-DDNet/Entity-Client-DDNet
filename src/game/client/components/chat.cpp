@@ -9,21 +9,24 @@
 #include <engine/shared/csv.h>
 #include <engine/textrender.h>
 
-#include <game/generated/protocol.h>
-#include <game/generated/protocol7.h>
+#include <generated/protocol.h>
+#include <generated/protocol7.h>
 
 #include <game/client/animstate.h>
+#include <game/client/components/censor.h>
 #include <game/client/components/scoreboard.h>
 #include <game/client/components/skins.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
 #include <game/localization.h>
 
-#include "chat.h"
-#include <string.h>
-
 #include "entity/entity.h"
+#include "tclient/bindchat.h"
 #include "tclient/warlist.h"
+
+#include "chat.h"
+
+#include <vector>
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = "";
 
@@ -37,6 +40,7 @@ void CChat::CLine::Reset(CChat &This)
 {
 	This.TextRender()->DeleteTextContainer(m_TextContainerIndex);
 	This.Graphics()->DeleteQuadContainer(m_QuadContainerIndex);
+	m_Initialized = false;
 	m_Time = 0;
 	m_aText[0] = '\0';
 	m_aName[0] = '\0';
@@ -51,7 +55,15 @@ CChat::CChat()
 {
 	m_Mode = MODE_NONE;
 
-	m_Input.SetClipboardLineCallback([this](const char *pStr) { SendChatQueued(pStr); });
+	m_Input.SetClipboardLineCallback([this](const char *pStr) {
+		if(GameClient()->m_EClient.FoxNetServer() && Client()->RconAuthed())
+		{
+			SendChat(TEAM_FLOCK, pStr);
+			AddHistoryEntry(pStr);
+		}
+		else
+			SendChatQueued(pStr);
+	});
 	m_Input.SetCalculateOffsetCallback([this]() { return m_IsInputCensored; });
 	m_Input.SetDisplayTextCallback([this](char *pStr, size_t NumChars) {
 		m_IsInputCensored = false;
@@ -94,17 +106,23 @@ void CChat::RegisterCommand(const char *pName, const char *pParams, const char *
 
 	m_vServerCommands.emplace_back(pName, pParams, pHelpText);
 	m_ServerCommandsNeedSorting = true;
+
+	GameClient()->m_Bindchat.CacheChatCommands();
 }
 
 void CChat::UnregisterCommand(const char *pName)
 {
 	m_vServerCommands.erase(std::remove_if(m_vServerCommands.begin(), m_vServerCommands.end(), [pName](const CCommand &Command) { return str_comp(Command.m_aName, pName) == 0; }), m_vServerCommands.end());
+
+	GameClient()->m_Bindchat.CacheChatCommands();
 }
 
 void CChat::RebuildChat()
 {
 	for(auto &Line : m_aLines)
 	{
+		if(!Line.m_Initialized)
+			continue;
 		TextRender()->DeleteTextContainer(Line.m_TextContainerIndex);
 		Graphics()->DeleteQuadContainer(Line.m_QuadContainerIndex);
 		// recalculate sizes
@@ -144,7 +162,7 @@ void CChat::Reset()
 	m_EditingNewLine = true;
 	m_ServerSupportsCommandInfo = false;
 	m_ServerCommandsNeedSorting = false;
-	mem_zero(m_aCurrentInputText, sizeof(m_aCurrentInputText));
+	m_aCurrentInputText[0] = '\0';
 	DisableMode();
 	m_vServerCommands.clear();
 
@@ -277,6 +295,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(m_ServerCommandsNeedSorting)
 		{
 			std::sort(m_vServerCommands.begin(), m_vServerCommands.end());
+			GameClient()->m_Bindchat.SortChatBinds(); // E-Client
 			m_ServerCommandsNeedSorting = false;
 		}
 
@@ -298,6 +317,11 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 				GameClient()->ClientMessage("This Message was a Silent Message, no one else can see it!");
 				SilentMessageInfo = true;
 			}
+		}
+		else if(GameClient()->m_EClient.FoxNetServer() && Client()->RconAuthed())
+		{
+			SendChat(TEAM_FLOCK, m_Input.GetString());
+			AddHistoryEntry(m_Input.GetString());
 		}
 		else
 			SendChatQueued(m_Input.GetString());
@@ -352,72 +376,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		}
 
 		if(GameClient()->m_Bindchat.ChatDoAutocomplete(ShiftPressed))
-		{
-		}
-		else if(m_aCompletionBuffer[0] == '/' && !m_vServerCommands.empty())
-		{
-			CCommand *pCompletionCommand = nullptr;
-
-			const size_t NumCommands = m_vServerCommands.size();
-
-			if(ShiftPressed && m_CompletionUsed)
-				m_CompletionChosen--;
-			else if(!ShiftPressed)
-				m_CompletionChosen++;
-			m_CompletionChosen = (m_CompletionChosen + 2 * NumCommands) % (2 * NumCommands);
-
-			m_CompletionUsed = true;
-
-			const char *pCommandStart = m_aCompletionBuffer + 1;
-			for(size_t i = 0; i < 2 * NumCommands; ++i)
-			{
-				int SearchType;
-				int Index;
-
-				if(ShiftPressed)
-				{
-					SearchType = ((m_CompletionChosen - i + 2 * NumCommands) % (2 * NumCommands)) / NumCommands;
-					Index = (m_CompletionChosen - i + NumCommands) % NumCommands;
-				}
-				else
-				{
-					SearchType = ((m_CompletionChosen + i) % (2 * NumCommands)) / NumCommands;
-					Index = (m_CompletionChosen + i) % NumCommands;
-				}
-
-				auto &Command = m_vServerCommands[Index];
-
-				if(str_startswith_nocase(Command.m_aName, pCommandStart))
-				{
-					pCompletionCommand = &Command;
-					m_CompletionChosen = Index + SearchType * NumCommands;
-					break;
-				}
-			}
-
-			// insert the command
-			if(pCompletionCommand)
-			{
-				char aBuf[MAX_LINE_LENGTH];
-				// add part before the name
-				str_truncate(aBuf, sizeof(aBuf), m_Input.GetString(), m_PlaceholderOffset);
-
-				// add the command
-				str_append(aBuf, "/");
-				str_append(aBuf, pCompletionCommand->m_aName);
-
-				// add separator
-				const char *pSeparator = pCompletionCommand->m_aParams[0] == '\0' ? "" : " ";
-				str_append(aBuf, pSeparator);
-
-				// add part after the name
-				str_append(aBuf, m_Input.GetString() + m_PlaceholderOffset + m_PlaceholderLength);
-
-				m_PlaceholderLength = str_length(pSeparator) + str_length(pCompletionCommand->m_aName) + 1;
-				m_Input.Set(aBuf);
-				m_Input.SetCursorOffset(m_PlaceholderOffset + m_PlaceholderLength);
-			}
-		}
+			;
 		else
 		{
 			// find next possible name
@@ -585,7 +544,16 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	if(MsgType == NETMSGTYPE_SV_CHAT)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
-		AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
+
+		if(g_Config.m_ClCensorChat)
+		{
+			char aMessage[MAX_LINE_LENGTH];
+			str_copy(aMessage, pMsg->m_pMessage);
+			GameClient()->m_Censor.CensorMessage(aMessage);
+			AddLine(pMsg->m_ClientId, pMsg->m_Team, aMessage);
+		}
+		else
+			AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
 	}
 	else if(MsgType == NETMSGTYPE_SV_COMMANDINFO)
 	{
@@ -703,7 +671,6 @@ bool CChat::LineHighlighted(int ClientId, const char *pLine)
 
 	return Highlighted;
 }
-
 
 void CChat::AddLine(int ClientId, int Team, const char *pLine)
 {
@@ -857,7 +824,11 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	// 0 = global; 1 = team; 2 = sending whisper; 3 = receiving whisper
 
 	// If it's a client message, m_aText will have ": " prepended so we have to work around it.
-	if(PreviousLine.m_TeamNumber == Team && PreviousLine.m_ClientId == ClientId && str_comp(PreviousLine.m_aText, pLine) == 0 && PreviousLine.m_CustomColor == CustomColor)
+	if(PreviousLine.m_Initialized &&
+		PreviousLine.m_TeamNumber == Team &&
+		PreviousLine.m_ClientId == ClientId &&
+		str_comp(PreviousLine.m_aText, pLine) == 0 &&
+		PreviousLine.m_CustomColor == CustomColor)
 	{
 		PreviousLine.m_TimesRepeated++;
 		TextRender()->DeleteTextContainer(PreviousLine.m_TextContainerIndex);
@@ -874,7 +845,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 	CLine &CurrentLine = m_aLines[m_CurrentLine];
 	CurrentLine.Reset(*this);
-
+	CurrentLine.m_Initialized = true;
 	CurrentLine.m_Time = time();
 	CurrentLine.m_aYOffset[0] = -1.0f;
 	CurrentLine.m_aYOffset[1] = -1.0f;
@@ -1057,7 +1028,8 @@ void CChat::OnPrepareLines(float y)
 	for(int i = 0; i < MAX_LINES; i++)
 	{
 		CLine &Line = m_aLines[((m_CurrentLine - i) + MAX_LINES) % MAX_LINES];
-
+		if(!Line.m_Initialized)
+			break;
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
 			break;
 
@@ -1325,7 +1297,7 @@ void CChat::OnRender()
 		InputCursor.SetPosition(vec2(x, y));
 		InputCursor.m_FontSize = ScaledFontSize;
 		InputCursor.m_LineWidth = Width - 190.0f;
-		
+
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 		if(m_Mode == MODE_ALL)
@@ -1344,7 +1316,7 @@ void CChat::OnRender()
 		}
 		else
 		{
-		TextRender()->TextEx(&InputCursor, Localize("Chat"));
+			TextRender()->TextEx(&InputCursor, Localize("Chat"));
 		}
 
 		TextRender()->TextEx(&InputCursor, ": ");
@@ -1379,36 +1351,19 @@ void CChat::OnRender()
 		m_Input.SetScrollOffset(ScrollOffset);
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
 
-		CBindChat pBindchat = GameClient()->m_Bindchat;
-
-		if(pBindchat.CheckBindChat(m_Input.GetString()) && m_Input.GetString()[1] != '\0')
-		{
-			for(int i = 0; i < (int)pBindchat.m_vBinds.size(); i++)
-			{
-				int CommandIndex = (pBindchat.m_vBinds.size() + i) % pBindchat.m_vBinds.size();
-				if(str_startswith_nocase(pBindchat.m_vBinds.at(CommandIndex).m_aName, m_Input.GetString()))
-				{
-					InputCursor.m_X = InputCursor.m_X + TextRender()->TextWidth(InputCursor.m_FontSize, m_Input.GetString(), -1, InputCursor.m_LineWidth);
-					InputCursor.m_Y = m_Input.GetCaretPosition().y;
-					TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
-					TextRender()->TextEx(&InputCursor, pBindchat.m_vBinds.at(CommandIndex).m_aName + str_length(m_Input.GetString()));
-					TextRender()->TextColor(TextRender()->DefaultTextColor());
-					break;
-				}
-			}
-		}
+		std::vector<CCommand> vChatCommands = GameClient()->m_Bindchat.m_vChatCommands;
 
 		// Autocompletion hint
-		if(m_Input.GetString()[0] == '/' && m_Input.GetString()[1] != '\0' && !m_vServerCommands.empty())
+		if(GameClient()->m_Bindchat.ValidPrefix(m_Input.GetString()[0]) && m_Input.GetString()[1] != '\0' && !vChatCommands.empty())
 		{
-			for(const auto &Command : m_vServerCommands)
+			for(const auto &Command : vChatCommands)
 			{
-				if(str_startswith_nocase(Command.m_aName, m_Input.GetString() + 1))
+				if(str_startswith_nocase(Command.m_aName, m_Input.GetString()))
 				{
 					InputCursor.m_X = InputCursor.m_X + TextRender()->TextWidth(InputCursor.m_FontSize, m_Input.GetString(), -1, InputCursor.m_LineWidth);
 					InputCursor.m_Y = m_Input.GetCaretPosition().y;
 					TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
-					TextRender()->TextEx(&InputCursor, Command.m_aName + str_length(m_Input.GetString() + 1));
+					TextRender()->TextEx(&InputCursor, Command.m_aName + str_length(m_Input.GetString()));
 					TextRender()->TextColor(TextRender()->DefaultTextColor());
 					break;
 				}
@@ -1445,6 +1400,8 @@ void CChat::OnRender()
 	for(int i = 0; i < MAX_LINES; i++)
 	{
 		CLine &Line = m_aLines[((m_CurrentLine - i) + MAX_LINES) % MAX_LINES];
+		if(!Line.m_Initialized)
+			break;
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
 			break;
 
@@ -1563,10 +1520,7 @@ void CChat::SendChatQueued(const char *pLine)
 
 	if(AddEntry)
 	{
-		const int Length = str_length(pLine);
-		CHistoryEntry *pEntry = m_History.Allocate(sizeof(CHistoryEntry) + Length);
-		pEntry->m_Team = m_Mode == MODE_ALL ? 0 : 1;
-		str_copy(pEntry->m_aText, pLine, Length + 1);
+		AddHistoryEntry(pLine);
 	}
 }
 
@@ -1762,10 +1716,7 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			if(str_find_nocase(pLine, "hink you could do better") && str_find_nocase(pLine, "Not without"))
 			{
 				// try to not remove their message if they are just trying to be funny
-				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app")
-					&& !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client")
-					&& !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") 
-					&& !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))
+				if(!str_find_nocase(pLine, "github.com") && !str_find_nocase(pLine, "tater") && !str_find_nocase(pLine, "tclient") && !str_find_nocase(pLine, "t-client") && !str_find_nocase(pLine, "tclient.app") && !str_find_nocase(pLine, "aiodob") && !str_find_nocase(pLine, "a-client") && !str_find(pLine, "A Client") && !str_find(pLine, "A client") && !str_find_nocase(pLine, "entity") && !str_find_nocase(pLine, "e-client") && !str_find_nocase(pLine, "eclient") && !str_find_nocase(pLine, "chillerbot") && !str_find_nocase(pLine, "cactus"))
 					AdBotFound = true;
 				if(str_find(pLine, " ")) // This is the little white space it uses between some letters
 					AdBotFound = true;
@@ -1795,4 +1746,12 @@ void CChat::ConSetChatInput(IConsole::IResult *pResult, void *pUserData)
 	CChat *pChat = (CChat *)pUserData;
 	pChat->EnableMode(TEAM_FLOCK);
 	pChat->m_Input.Set(pResult->GetString(0));
+}
+
+void CChat::AddHistoryEntry(const char *pLine)
+{
+	const int Length = str_length(pLine);
+	CHistoryEntry *pEntry = m_History.Allocate(sizeof(CHistoryEntry) + Length);
+	pEntry->m_Team = m_Mode == MODE_ALL ? 0 : 1;
+	str_copy(pEntry->m_aText, pLine, Length + 1);
 }

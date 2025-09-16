@@ -21,9 +21,11 @@
 #include <engine/textrender.h>
 #include <engine/updater.h>
 
-#include <game/generated/client_data.h>
-#include <game/generated/client_data7.h>
-#include <game/generated/protocol.h>
+#include <generated/client_data.h>
+#include <generated/client_data7.h>
+#include <generated/protocol.h>
+#include <generated/protocol7.h>
+#include <generated/protocolglue.h>
 
 #include <base/log.h>
 #include <base/math.h>
@@ -39,9 +41,6 @@
 #include <game/localization.h>
 #include <game/mapitems.h>
 #include <game/version.h>
-
-#include <game/generated/protocol7.h>
-#include <game/generated/protocolglue.h>
 
 #include "components/background.h"
 #include "components/binds.h"
@@ -131,6 +130,7 @@ void CGameClient::OnConsoleInit()
 					      &m_RaceDemo,
 					      &m_Rainbow, // TClient
 					      &m_MapSounds,
+					      &m_Censor,
 					      &m_Background, // render instead of m_MapLayersBackground when g_Config.m_ClOverlayEntities == 100
 					      &m_MapLayersBackground, // first to render
 					      &m_Particles.m_RenderTrail,
@@ -173,7 +173,7 @@ void CGameClient::OnConsoleInit()
 					      &m_EClient,
 					      &m_AntiSpawnBlock,
 					      &m_FreezeKill,
-					      &m_AcUpdate,
+					      &m_EntityInfo,
 					      &m_MapConfig,
 				      });
 
@@ -1815,7 +1815,7 @@ void CGameClient::OnNewSnapshot()
 				if(Item.m_Id < MAX_CLIENTS)
 				{
 					m_Snap.m_aCharacters[Item.m_Id].m_ExtendedData = *pCharacterData;
-					m_Snap.m_aCharacters[Item.m_Id].m_PrevExtendedData = (const CNetObj_DDNetCharacter *)Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_DDNETCHARACTER, Item.m_Id);
+					m_Snap.m_aCharacters[Item.m_Id].m_pPrevExtendedData = (const CNetObj_DDNetCharacter *)Client()->SnapFindItem(IClient::SNAP_PREV, NETOBJTYPE_DDNETCHARACTER, Item.m_Id);
 					m_Snap.m_aCharacters[Item.m_Id].m_HasExtendedData = true;
 					m_Snap.m_aCharacters[Item.m_Id].m_HasExtendedDisplayInfo = false;
 					if(pCharacterData->m_JumpedTotal != -1)
@@ -1916,8 +1916,8 @@ void CGameClient::OnNewSnapshot()
 			}
 			else if(Item.m_Type == NETOBJTYPE_GAMEDATA)
 			{
-				m_Snap.m_pGameDataObj = (const CNetObj_GameData *)Item.m_pData;
-				m_Snap.m_GameDataSnapId = Item.m_Id;
+				m_Snap.m_pGameDataObj = static_cast<const CNetObj_GameData *>(Item.m_pData);
+				m_Snap.m_pPrevGameDataObj = static_cast<const CNetObj_GameData *>(Client()->SnapFindItem(IClient::SNAP_PREV, Item.m_Type, Item.m_Id));
 				if(m_Snap.m_pGameDataObj->m_FlagCarrierRed == FLAG_TAKEN)
 				{
 					if(m_aFlagDropTick[TEAM_RED] == 0)
@@ -1941,7 +1941,16 @@ void CGameClient::OnNewSnapshot()
 				m_LastFlagCarrierBlue = m_Snap.m_pGameDataObj->m_FlagCarrierBlue;
 			}
 			else if(Item.m_Type == NETOBJTYPE_FLAG)
-				m_Snap.m_apFlags[Item.m_Id % 2] = (const CNetObj_Flag *)Item.m_pData;
+			{
+				const CNetObj_Flag *pPrevFlag = static_cast<const CNetObj_Flag *>(Client()->SnapFindItem(IClient::SNAP_PREV, Item.m_Type, Item.m_Id));
+				if(pPrevFlag == nullptr)
+				{
+					continue;
+				}
+				m_Snap.m_apFlags[m_Snap.m_NumFlags] = static_cast<const CNetObj_Flag *>(Item.m_pData);
+				m_Snap.m_apPrevFlags[m_Snap.m_NumFlags] = pPrevFlag;
+				++m_Snap.m_NumFlags;
+			}
 			else if(Item.m_Type == NETOBJTYPE_SWITCHSTATE)
 			{
 				if(Item.m_DataSize < 36)
@@ -2309,10 +2318,10 @@ void CGameClient::OnNewSnapshot()
 	{
 		for(auto &Character : m_Snap.m_aCharacters)
 		{
-			if(Character.m_Active && Character.m_HasExtendedData && Character.m_PrevExtendedData)
+			if(Character.m_Active && Character.m_HasExtendedData && Character.m_pPrevExtendedData)
 			{
 				int FreezeTimeNow = Character.m_ExtendedData.m_FreezeEnd - Client()->GameTick(g_Config.m_ClDummy);
-				int FreezeTimePrev = Character.m_PrevExtendedData->m_FreezeEnd - Client()->PrevGameTick(g_Config.m_ClDummy);
+				int FreezeTimePrev = Character.m_pPrevExtendedData->m_FreezeEnd - Client()->PrevGameTick(g_Config.m_ClDummy);
 				vec2 Pos = vec2(Character.m_Cur.m_X, Character.m_Cur.m_Y);
 				int StarsNow = (FreezeTimeNow + 1) / Client()->GameTickSpeed();
 				int StarsPrev = (FreezeTimePrev + 1) / Client()->GameTickSpeed();
@@ -3892,8 +3901,9 @@ void CGameClient::UpdateSpectatorCursor()
 		return;
 	}
 
-	const CSnapState::CCharacterInfo CharInfo = m_Snap.m_aCharacters[CursorOwnerId];
-	if(!CharInfo.m_HasExtendedDisplayInfo || !m_aClients[CursorOwnerId].m_Active || (!g_Config.m_Debug && m_aClients[CursorOwnerId].m_Paused))
+	const CSnapState::CCharacterInfo &CharInfo = m_Snap.m_aCharacters[CursorOwnerId];
+	const CClientData &CursorOwnerClient = m_aClients[CursorOwnerId];
+	if(!CharInfo.m_HasExtendedDisplayInfo || !CursorOwnerClient.m_Active || (!g_Config.m_Debug && CursorOwnerClient.m_Paused))
 	{
 		// hide cursor when the spectating player is paused
 		m_CursorInfo.m_Available = false;
@@ -3902,7 +3912,7 @@ void CGameClient::UpdateSpectatorCursor()
 	}
 
 	m_CursorInfo.m_Available = true;
-	m_CursorInfo.m_Position = CharInfo.m_Position;
+	m_CursorInfo.m_Position = CursorOwnerClient.m_RenderPos;
 	m_CursorInfo.m_Weapon = CharInfo.m_Cur.m_Weapon;
 
 	const vec2 Target = vec2(CharInfo.m_ExtendedData.m_TargetX, CharInfo.m_ExtendedData.m_TargetY);
@@ -4062,7 +4072,6 @@ void CGameClient::UpdateRenderedCharacters()
 					Pos = UnpredPos;
 			}
 		}
-		m_Snap.m_aCharacters[ClientId].m_Position = Pos;
 		m_aClients[ClientId].m_RenderPos = Pos;
 		if(Predict() && ClientId == m_Snap.m_LocalClientId)
 			m_LocalCharacterPos = Pos;
@@ -5501,12 +5510,17 @@ bool CGameClient::CheckNewInput()
 
 void CGameClient::ClientMessage(const char *pString)
 {
-	m_Chat.AddLine(ECLIENT_MSG, 0, pString);
+	m_Chat.AddLine(-3, 0, pString);
 }
 
 void CGameClient::OnJoinInfo()
 {
 	m_EClient.OnConnect();
+}
+
+void CGameClient::RequestEClientInfo()
+{
+	m_EntityInfo.FetchEClientInfo();
 }
 
 void CGameClient::SetLastMovementTime()

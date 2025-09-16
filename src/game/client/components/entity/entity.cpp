@@ -8,28 +8,13 @@
 #include <game/client/components/controls.h>
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 #include <base/math.h>
 #include <base/system.h>
 
 #include "entity.h"
 #include <cmath>
-
-bool CEClient::LineShouldHighlight(const char *pLine, const char *pName)
-{
-	const char *pHL = str_utf8_find_nocase(pLine, pName);
-
-	if(pHL)
-	{
-		int Length = str_length(pName);
-
-		if(Length > 0 && (pLine == pHL || pHL[-1] == ' ') && (pHL[Length] == 0 || pHL[Length] == ' ' || pHL[Length] == '.' || pHL[Length] == '!' || pHL[Length] == ',' || pHL[Length] == '?' || pHL[Length] == ':'))
-			return true;
-	}
-
-	return false;
-}
 
 void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {
@@ -38,7 +23,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 
 	bool Highlighted = GameClient()->m_Chat.LineHighlighted(ClientId, pMsg);
 
-	if(Team == 3) // whisper recv
+	if(Team == TEAM_WHISPER_RECV)
 		Highlighted = true;
 
 	if(!Highlighted)
@@ -645,6 +630,28 @@ void CEClient::OnNewSnapshot()
 {
 	UpdateTempPlayers();
 	NotifyOnMove();
+}
+
+void CEClient::OnStateChange(int NewState, int OldState)
+{
+	if(NewState != OldState)
+	{
+		m_SentKill = false;
+		m_JoinedTeam = false;
+		m_AttempedJoinTeam = false;
+		m_LastReplyId = -1;
+		m_aLastPing = CLastPing();
+	}
+
+	if(NewState == IClient::STATE_ONLINE)
+	{
+		CServerInfo CurrentServerInfo;
+		Client()->GetServerInfo(&CurrentServerInfo);
+
+		m_FoxNetServer = false;
+		if(!str_comp(CurrentServerInfo.m_aGameType, "FoxNetwork"))
+			m_FoxNetServer = true;
+	}
 }
 
 void CEClient::OnRender()

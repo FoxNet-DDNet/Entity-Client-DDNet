@@ -24,12 +24,18 @@ public:
 		OUTPUT_LEVEL_STANDARD = 0,
 		OUTPUT_LEVEL_ADDINFO,
 		OUTPUT_LEVEL_DEBUG,
+	};
 
+	enum
+	{
 		ACCESS_LEVEL_ADMIN = 0,
 		ACCESS_LEVEL_MOD,
 		ACCESS_LEVEL_HELPER,
 		ACCESS_LEVEL_USER,
+	};
 
+	enum
+	{
 		TEMPCMD_NAME_LENGTH = 64,
 		TEMPCMD_HELP_LENGTH = 192,
 		TEMPCMD_PARAMS_LENGTH = 96,
@@ -136,9 +142,6 @@ public:
 
 	virtual int FlagMask() const = 0;
 	virtual void SetFlagMask(int FlagMask) = 0;
-
-	// E-Client
-	virtual bool ExecuteLegacyFile() = 0;
 };
 
 std::unique_ptr<IConsole> CreateConsole(int FlagMask);

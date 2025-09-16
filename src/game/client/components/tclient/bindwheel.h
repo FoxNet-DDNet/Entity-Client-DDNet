@@ -1,6 +1,13 @@
 #ifndef GAME_CLIENT_COMPONENTS_TCLIENT_BINDWHEEL_H
 #define GAME_CLIENT_COMPONENTS_TCLIENT_BINDWHEEL_H
+
 #include <game/client/component.h>
+
+#include <engine/console.h>
+
+#include <vector>
+#include <base/system.h>
+
 class IConfigManager;
 
 enum
@@ -12,12 +19,12 @@ enum
 
 class CBindWheel : public CComponent
 {
-	void DrawCircle(float x, float y, float r, int Segments);
+	float m_AnimationTime = 0.0f;
+	float m_aAnimationTimeItems[BINDWHEEL_MAX_BINDS] = {0};
 
-	bool m_WasActive;
-	bool m_Active;
+	bool m_Active = false;
+	bool m_WasActive = false;
 
-	vec2 m_SelectorMouse;
 	int m_SelectedBind;
 
 	static void ConOpenBindwheel(IConsole::IResult *pResult, void *pUserData);
@@ -33,25 +40,26 @@ public:
 	class CBind
 	{
 	public:
-		char m_aName[BINDWHEEL_MAX_NAME];
-		char m_aCommand[BINDWHEEL_MAX_CMD];
+		char m_aName[BINDWHEEL_MAX_NAME] = "*";
+		char m_aCommand[BINDWHEEL_MAX_CMD] = "";
 
 		bool operator==(const CBind &Other) const
 		{
-			return str_comp(m_aName, Other.m_aName) == 0 && str_comp(m_aCommand, Other.m_aCommand) == 0;
+			return !str_comp(m_aName, Other.m_aName) && !str_comp(m_aCommand, Other.m_aCommand);
 		}
 	};
 
 	std::vector<CBind> m_vBinds;
 
 	CBindWheel();
-	virtual int Sizeof() const override { return sizeof(*this); }
+	int Sizeof() const override { return sizeof(*this); }
 
-	virtual void OnReset() override;
-	virtual void OnRender() override;
-	virtual void OnConsoleInit() override;
-	virtual void OnRelease() override;
-	virtual bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
+	void OnReset() override;
+	void OnRender() override;
+	void OnConsoleInit() override;
+	void OnRelease() override;
+	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
+	bool OnInput(const IInput::CEvent &Event) override;
 
 	void AddBind(const char *Name, const char *Command);
 	void RemoveBind(const char *Name, const char *Command);
@@ -60,6 +68,8 @@ public:
 
 	void ExecuteHoveredBind();
 	void ExecuteBind(int Bind);
+
+	bool IsActive() const { return m_Active; }
 };
 
 #endif

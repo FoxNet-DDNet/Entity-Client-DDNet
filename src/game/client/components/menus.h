@@ -20,8 +20,8 @@
 
 #include <game/client/component.h>
 #include <game/client/components/mapimages.h>
+#include <game/client/components/menus_ingame_touch_controls.h>
 #include <game/client/lineinput.h>
-#include <game/client/render.h>
 #include <game/client/ui.h>
 #include <game/localization.h>
 #include <game/voting.h>
@@ -77,7 +77,7 @@ private:
 	ColorHSLA DoButton_ColorPicker(const CUIRect *pRect, unsigned int *pHslaColor, bool Alpha);
 
 	void DoLaserPreview(const CUIRect *pRect, ColorHSLA OutlineColor, ColorHSLA InnerColor, int LaserType);
-	int DoButton_GridHeader(const void *pId, const char *pText, int Checked, const CUIRect *pRect);
+	int DoButton_GridHeader(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Align = TEXTALIGN_ML);
 	int DoButton_Favorite(const void *pButtonId, const void *pParentId, bool Checked, const CUIRect *pRect);
 
 	int DoKeyReader(const void *pId, const CUIRect *pRect, int Key, int ModifierCombination, int *pNewModifierCombination);
@@ -273,12 +273,14 @@ protected:
 	enum
 	{
 		SORT_DEMONAME = 0,
+		SORT_MARKERS,
 		SORT_LENGTH,
 		SORT_DATE,
 	};
 
-	struct CDemoItem
+	class CDemoItem
 	{
+	public:
 		char m_aFilename[IO_MAX_PATH_LENGTH];
 		char m_aName[IO_MAX_PATH_LENGTH];
 		bool m_IsDir;
@@ -332,6 +334,8 @@ protected:
 			if(!m_InfosLoaded)
 				return !Other.m_InfosLoaded;
 
+			if(g_Config.m_BrDemoSort == SORT_MARKERS)
+				return Left.NumMarkers() < Right.NumMarkers();
 			if(g_Config.m_BrDemoSort == SORT_LENGTH)
 				return Left.Length() < Right.Length();
 
@@ -502,6 +506,12 @@ protected:
 	void PopupConfirmDiscardTouchControlsChanges();
 	void PopupConfirmResetTouchControls();
 	void PopupConfirmImportTouchControlsClipboard();
+	void PopupConfirmDeleteButton();
+	void PopupCancelDeselectButton();
+	void PopupConfirmSelectedNotVisible();
+	void PopupConfirmChangeSelectedButton();
+	void PopupCancelChangeSelectedButton();
+	void PopupConfirmTurnOffEditor();
 	void RenderPlayers(CUIRect MainView);
 	void RenderServerInfo(CUIRect MainView);
 	void RenderServerInfoMotd(CUIRect Motd);
@@ -658,10 +668,13 @@ public:
 		PAGE_SETTINGS,
 		PAGE_NETWORK,
 		PAGE_GHOST,
-		PAGE_ECLIENT,
+		PAGE_ECLIENTNEWS,
 
 		PAGE_LENGTH,
+	};
 
+	enum
+	{
 		SETTINGS_LANGUAGE = 0,
 		SETTINGS_GENERAL,
 		SETTINGS_PLAYER,
@@ -677,7 +690,10 @@ public:
 		SETTINGS_PROGAMING,
 
 		SETTINGS_LENGTH,
+	};
 
+	enum
+	{
 		BIG_TAB_NEWS = 0,
 		BIG_TAB_INTERNET,
 		BIG_TAB_LAN,
@@ -690,7 +706,10 @@ public:
 		BIG_TAB_DEMOS,
 
 		BIG_TAB_LENGTH,
+	};
 
+	enum
+	{
 		SMALL_TAB_HOME = 0,
 		SMALL_TAB_QUIT,
 		SMALL_TAB_SETTINGS,
@@ -785,7 +804,10 @@ public:
 		POPUP_RESTART,
 		POPUP_WARNING,
 		POPUP_SAVE_SKIN,
+	};
 
+	enum
+	{
 		// demo player states
 		DEMOPLAYER_NONE = 0,
 		DEMOPLAYER_SLICE_SAVE,
@@ -800,6 +822,8 @@ public:
 private:
 	CCommunityIcons m_CommunityIcons;
 	CMenusStart m_MenusStart;
+	CMenusIngameTouchControls m_MenusIngameTouchControls;
+	friend CMenusIngameTouchControls;
 
 	static int GhostlistFetchCallback(const CFsFileInfo *pInfo, int IsDir, int StorageType, void *pUser);
 
@@ -825,7 +849,7 @@ public:
 	 * If 3 its limited to the size of the settings menu (ToDo)
 	 *
 	 */
-	void RenderACTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable = 0, float TeeSize = 75.0f, float Alpha = 1.0f);
+	void RenderECTee(CUIRect MainView, vec2 SpawnPos, const CAnimState *pAnim, CTeeRenderInfo *pInfo, int Draggable = 0, float TeeSize = 75.0f, float Alpha = 1.0f);
 	bool ResetTeePos;
 
 	void RenderChatPreview(CUIRect MainView);
@@ -837,7 +861,8 @@ public:
 	void RenderSettingsStatusbar(CUIRect MainView);
 	void RenderSettingsQuickActions(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
-	void RenderEClientVersionPage(CUIRect MainView);
+	void RenderEClientInfoPage(CUIRect MainView);
+	void RenderEClientNewsPage(CUIRect MainView);
 
 	void RenderSettingsProGaming(CUIRect MainView);
 

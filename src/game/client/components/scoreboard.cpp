@@ -7,16 +7,16 @@
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 
-#include <game/generated/protocol.h>
+#include <generated/client_data7.h>
+#include <generated/client_data.h>
+#include <generated/protocol.h>
 
 #include <game/client/animstate.h>
 #include <game/client/components/countryflags.h>
 #include <game/client/components/motd.h>
 #include <game/client/components/statboard.h>
 #include <game/client/gameclient.h>
-#include <game/client/render.h>
 #include <game/client/ui.h>
-#include <game/generated/client_data7.h>
 #include <game/localization.h>
 
 CScoreboard::CScoreboard()
@@ -645,7 +645,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, Alpha);
 
-				if(ClientData.m_Friend)
+				if(g_Config.m_ClScoreboardFriendColor && ClientData.m_Friend)
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor).WithAlpha(Alpha)));
 
 				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)

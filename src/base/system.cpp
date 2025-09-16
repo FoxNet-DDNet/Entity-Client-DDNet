@@ -11,7 +11,7 @@
 #include <cstring>
 #include <iomanip> // std::get_time
 #include <iterator> // std::size
-#include <random>
+#include <mutex>
 #include <sstream> // std::istringstream
 #include <string_view>
 
@@ -1242,6 +1242,33 @@ static int priv_net_extract(const char *hostname, char *host, int max_host, int 
 	return 0;
 }
 
+static int net_host_lookup_fallback(const char *hostname, NETADDR *addr, int types, int port)
+{
+	if(str_comp_nocase(hostname, "localhost") == 0)
+	{
+		if(types == NETTYPE_IPV4)
+		{
+			dbg_assert(net_addr_from_str(addr, "127.0.0.1") == 0, "unreachable");
+			addr->port = port;
+			return 0;
+		}
+		else if(types == NETTYPE_IPV6)
+		{
+			dbg_assert(net_addr_from_str(addr, "[::1]") == 0, "unreachable");
+			addr->port = port;
+			return 0;
+		}
+		else
+		{
+			// TODO: return both IPv4 and IPv6 address
+			dbg_assert(net_addr_from_str(addr, "127.0.0.1") == 0, "unreachable");
+			addr->port = port;
+			return 0;
+		}
+	}
+	return -1;
+}
+
 static int net_host_lookup_impl(const char *hostname, NETADDR *addr, int types)
 {
 	char host[256];
@@ -1264,12 +1291,14 @@ static int net_host_lookup_impl(const char *hostname, NETADDR *addr, int types)
 	struct addrinfo *result = nullptr;
 	int e = getaddrinfo(host, nullptr, &hints, &result);
 	if(!result)
-		return -1;
+	{
+		return net_host_lookup_fallback(hostname, addr, types, port);
+	}
 
 	if(e != 0)
 	{
 		freeaddrinfo(result);
-		return -1;
+		return net_host_lookup_fallback(hostname, addr, types, port);
 	}
 
 	sockaddr_to_netaddr(result->ai_addr, result->ai_addrlen, addr);
@@ -2493,62 +2522,6 @@ int fs_makedir_rec_for(const char *path)
 	return 0;
 }
 
-int fs_makedir(const char *path)
-{
-#if defined(CONF_FAMILY_WINDOWS)
-	const std::wstring wide_path = windows_utf8_to_wide(path);
-	if(CreateDirectoryW(wide_path.c_str(), nullptr) != 0)
-	{
-		return 0;
-	}
-	const DWORD error = GetLastError();
-	if(error == ERROR_ALREADY_EXISTS)
-	{
-		return 0;
-	}
-	log_error("filesystem", "Failed to create folder '%s' (%ld '%s')", path, error, windows_format_system_message(error).c_str());
-	return -1;
-#else
-#if defined(CONF_PLATFORM_HAIKU)
-	if(fs_is_dir(path))
-	{
-		return 0;
-	}
-#endif
-	if(mkdir(path, 0755) == 0 || errno == EEXIST)
-	{
-		return 0;
-	}
-	log_error("filesystem", "Failed to create folder '%s' (%d '%s')", path, errno, strerror(errno));
-	return -1;
-#endif
-}
-
-int fs_removedir(const char *path)
-{
-#if defined(CONF_FAMILY_WINDOWS)
-	const std::wstring wide_path = windows_utf8_to_wide(path);
-	if(RemoveDirectoryW(wide_path.c_str()) != 0)
-	{
-		return 0;
-	}
-	const DWORD error = GetLastError();
-	if(error == ERROR_FILE_NOT_FOUND)
-	{
-		return 0;
-	}
-	log_error("filesystem", "Failed to remove folder '%s' (%ld '%s')", path, error, windows_format_system_message(error).c_str());
-	return -1;
-#else
-	if(rmdir(path) == 0 || errno == ENOENT)
-	{
-		return 0;
-	}
-	log_error("filesystem", "Failed to remove folder '%s' (%d '%s')", path, errno, strerror(errno));
-	return -1;
-#endif
-}
-
 int fs_is_file(const char *path)
 {
 #if defined(CONF_FAMILY_WINDOWS)
@@ -2703,9 +2676,7 @@ int fs_remove(const char *filename)
 	}
 	const std::wstring wide_filename = windows_utf8_to_wide(filename);
 
-	thread_local std::mt19937 rand_generator(std::random_device{}());
-	std::uniform_int_distribution<unsigned> rand_distribution(std::numeric_limits<unsigned>::min(), std::numeric_limits<unsigned>::max());
-	unsigned random_num = rand_distribution(rand_generator);
+	unsigned random_num = secure_rand();
 	std::wstring wide_filename_temp;
 	do
 	{
@@ -2992,62 +2963,6 @@ ETimeSeason time_season()
 	}
 }
 
-void str_append(char *dst, const char *src, int dst_size)
-{
-	int s = str_length(dst);
-	int i = 0;
-	while(s < dst_size)
-	{
-		dst[s] = src[i];
-		if(!src[i]) /* check for null termination */
-			break;
-		s++;
-		i++;
-	}
-
-	dst[dst_size - 1] = 0; /* assure null termination */
-	str_utf8_fix_truncation(dst);
-}
-
-int str_copy(char *dst, const char *src, int dst_size)
-{
-	dst[0] = '\0';
-	strncat(dst, src, dst_size - 1);
-	return str_utf8_fix_truncation(dst);
-}
-
-void str_utf8_truncate(char *dst, int dst_size, const char *src, int truncation_len)
-{
-	int size = -1;
-	const char *cursor = src;
-	int pos = 0;
-	while(pos <= truncation_len && cursor - src < dst_size && size != cursor - src)
-	{
-		size = cursor - src;
-		if(str_utf8_decode(&cursor) == 0)
-		{
-			break;
-		}
-		pos++;
-	}
-	str_copy(dst, src, size + 1);
-}
-
-void str_truncate(char *dst, int dst_size, const char *src, int truncation_len)
-{
-	int size = dst_size;
-	if(truncation_len < size)
-	{
-		size = truncation_len + 1;
-	}
-	str_copy(dst, src, size);
-}
-
-int str_length(const char *str)
-{
-	return (int)strlen(str);
-}
-
 int str_format_v(char *buffer, int buffer_size, const char *format, va_list args)
 {
 #if defined(CONF_FAMILY_WINDOWS)
@@ -3082,57 +2997,6 @@ int str_format(char *buffer, int buffer_size, const char *format, ...)
 #if !defined(CONF_DEBUG)
 #define str_format str_format_opt
 #endif
-
-const char *str_trim_words(const char *str, int words)
-{
-	while(*str && str_isspace(*str))
-		str++;
-	while(words && *str)
-	{
-		if(str_isspace(*str) && !str_isspace(*(str + 1)))
-			words--;
-		str++;
-	}
-	return str;
-}
-
-bool str_has_cc(const char *str)
-{
-	unsigned char *s = (unsigned char *)str;
-	while(*s)
-	{
-		if(*s < 32)
-		{
-			return true;
-		}
-		s++;
-	}
-	return false;
-}
-
-/* makes sure that the string only contains the characters between 32 and 255 */
-void str_sanitize_cc(char *str_in)
-{
-	unsigned char *str = (unsigned char *)str_in;
-	while(*str)
-	{
-		if(*str < 32)
-			*str = ' ';
-		str++;
-	}
-}
-
-/* makes sure that the string only contains the characters between 32 and 255 + \r\n\t */
-void str_sanitize(char *str_in)
-{
-	unsigned char *str = (unsigned char *)str_in;
-	while(*str)
-	{
-		if(*str < 32 && !(*str == '\r') && !(*str == '\n') && !(*str == '\t'))
-			*str = ' ';
-		str++;
-	}
-}
 
 void str_sanitize_filename(char *str_in)
 {
@@ -3943,45 +3807,6 @@ void net_stats(NETSTATS *stats_inout)
 	*stats_inout = network_stats;
 }
 
-int str_isspace(char c)
-{
-	return c == ' ' || c == '\n' || c == '\r' || c == '\t';
-}
-
-char str_uppercase(char c)
-{
-	if(c >= 'a' && c <= 'z')
-		return 'A' + (c - 'a');
-	return c;
-}
-
-bool str_isnum(char c)
-{
-	return c >= '0' && c <= '9';
-}
-
-int str_isallnum(const char *str)
-{
-	while(*str)
-	{
-		if(!str_isnum(*str))
-			return 0;
-		str++;
-	}
-	return 1;
-}
-
-int str_isallnum_hex(const char *str)
-{
-	while(*str)
-	{
-		if(!str_isnum(*str) && !(*str >= 'a' && *str <= 'f') && !(*str >= 'A' && *str <= 'F'))
-			return 0;
-		str++;
-	}
-	return 1;
-}
-
 int str_toint(const char *str)
 {
 	return str_toint_base(str, 10);
@@ -4116,17 +3941,6 @@ const char *str_utf8_find_nocase(const char *haystack, const char *needle, const
 	return nullptr;
 }
 
-int str_utf8_isspace(int code)
-{
-	return code <= 0x0020 || code == 0x0085 || code == 0x00A0 || code == 0x034F ||
-	       code == 0x115F || code == 0x1160 || code == 0x1680 || code == 0x180E ||
-	       (code >= 0x2000 && code <= 0x200F) || (code >= 0x2028 && code <= 0x202F) ||
-	       (code >= 0x205F && code <= 0x2064) || (code >= 0x206A && code <= 0x206F) ||
-	       code == 0x2800 || code == 0x3000 || code == 0x3164 ||
-	       (code >= 0xFE00 && code <= 0xFE0F) || code == 0xFEFF || code == 0xFFA0 ||
-	       (code >= 0xFFF9 && code <= 0xFFFC);
-}
-
 const char *str_utf8_skip_whitespaces(const char *str)
 {
 	const char *str_old;
@@ -4172,41 +3986,6 @@ void str_utf8_trim_right(char *param)
 	}
 }
 
-int str_utf8_isstart(char c)
-{
-	if((c & 0xC0) == 0x80) /* 10xxxxxx */
-		return 0;
-	return 1;
-}
-
-int str_utf8_rewind(const char *str, int cursor)
-{
-	while(cursor)
-	{
-		cursor--;
-		if(str_utf8_isstart(*(str + cursor)))
-			break;
-	}
-	return cursor;
-}
-
-int str_utf8_fix_truncation(char *str)
-{
-	int len = str_length(str);
-	if(len > 0)
-	{
-		int last_char_index = str_utf8_rewind(str, len);
-		const char *last_char = str + last_char_index;
-		// Fix truncated UTF-8.
-		if(str_utf8_decode(&last_char) == -1)
-		{
-			str[last_char_index] = 0;
-			return last_char_index;
-		}
-	}
-	return len;
-}
-
 int str_utf8_forward(const char *str, int cursor)
 {
 	const char *ptr = str + cursor;
@@ -4248,85 +4027,6 @@ int str_utf8_encode(char *ptr, int chr)
 	}
 
 	return 0;
-}
-
-static unsigned char str_byte_next(const char **ptr)
-{
-	unsigned char byte_value = **ptr;
-	(*ptr)++;
-	return byte_value;
-}
-
-static void str_byte_rewind(const char **ptr)
-{
-	(*ptr)--;
-}
-
-int str_utf8_decode(const char **ptr)
-{
-	// As per https://encoding.spec.whatwg.org/#utf-8-decoder.
-	unsigned char utf8_lower_boundary = 0x80;
-	unsigned char utf8_upper_boundary = 0xBF;
-	int utf8_code_point = 0;
-	int utf8_bytes_seen = 0;
-	int utf8_bytes_needed = 0;
-	while(true)
-	{
-		unsigned char byte_value = str_byte_next(ptr);
-		if(utf8_bytes_needed == 0)
-		{
-			if(byte_value <= 0x7F)
-			{
-				return byte_value;
-			}
-			else if(0xC2 <= byte_value && byte_value <= 0xDF)
-			{
-				utf8_bytes_needed = 1;
-				utf8_code_point = byte_value - 0xC0;
-			}
-			else if(0xE0 <= byte_value && byte_value <= 0xEF)
-			{
-				if(byte_value == 0xE0)
-					utf8_lower_boundary = 0xA0;
-				if(byte_value == 0xED)
-					utf8_upper_boundary = 0x9F;
-				utf8_bytes_needed = 2;
-				utf8_code_point = byte_value - 0xE0;
-			}
-			else if(0xF0 <= byte_value && byte_value <= 0xF4)
-			{
-				if(byte_value == 0xF0)
-					utf8_lower_boundary = 0x90;
-				if(byte_value == 0xF4)
-					utf8_upper_boundary = 0x8F;
-				utf8_bytes_needed = 3;
-				utf8_code_point = byte_value - 0xF0;
-			}
-			else
-			{
-				return -1; // Error.
-			}
-			utf8_code_point = utf8_code_point << (6 * utf8_bytes_needed);
-			continue;
-		}
-		if(!(utf8_lower_boundary <= byte_value && byte_value <= utf8_upper_boundary))
-		{
-			// Resetting variables not necessary, will be done when
-			// the function is called again.
-			str_byte_rewind(ptr);
-			return -1;
-		}
-		utf8_lower_boundary = 0x80;
-		utf8_upper_boundary = 0xBF;
-		utf8_bytes_seen += 1;
-		utf8_code_point = utf8_code_point + ((byte_value - 0x80) << (6 * (utf8_bytes_needed - utf8_bytes_seen)));
-		if(utf8_bytes_seen != utf8_bytes_needed)
-		{
-			continue;
-		}
-		// Resetting variables not necessary, see above.
-		return utf8_code_point;
-	}
 }
 
 int str_utf8_check(const char *str)
@@ -4741,7 +4441,7 @@ int open_file(const char *path)
 
 struct SECURE_RANDOM_DATA
 {
-	int initialized;
+	std::once_flag initialized_once_flag;
 #if defined(CONF_FAMILY_WINDOWS)
 	HCRYPTPROV provider;
 #else
@@ -4749,65 +4449,23 @@ struct SECURE_RANDOM_DATA
 #endif
 };
 
-static struct SECURE_RANDOM_DATA secure_random_data = {0};
+static struct SECURE_RANDOM_DATA secure_random_data = {};
 
-int secure_random_init()
+static void ensure_secure_random_init()
 {
-	if(secure_random_data.initialized)
-	{
-		return 0;
-	}
+	std::call_once(secure_random_data.initialized_once_flag, []() {
 #if defined(CONF_FAMILY_WINDOWS)
-	if(CryptAcquireContext(&secure_random_data.provider, nullptr, nullptr, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
-	{
-		secure_random_data.initialized = 1;
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
+		if(!CryptAcquireContext(&secure_random_data.provider, nullptr, nullptr, PROV_RSA_FULL, CRYPT_VERIFYCONTEXT))
+		{
+			const DWORD LastError = GetLastError();
+			dbg_assert(false, "Failed to initialize secure random: CryptAcquireContext failure (%ld '%s')", LastError, windows_format_system_message(LastError).c_str());
+			dbg_break();
+		}
 #else
-	secure_random_data.urandom = io_open("/dev/urandom", IOFLAG_READ);
-	if(secure_random_data.urandom)
-	{
-		secure_random_data.initialized = 1;
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
+			secure_random_data.urandom = io_open("/dev/urandom", IOFLAG_READ);
+			dbg_assert(secure_random_data.urandom != nullptr, "Failed to initialize secure random: failed to open /dev/urandom");
 #endif
-}
-
-int secure_random_uninit()
-{
-	if(!secure_random_data.initialized)
-	{
-		return 0;
-	}
-#if defined(CONF_FAMILY_WINDOWS)
-	if(CryptReleaseContext(secure_random_data.provider, 0))
-	{
-		secure_random_data.initialized = 0;
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
-#else
-	if(!io_close(secure_random_data.urandom))
-	{
-		secure_random_data.initialized = 0;
-		return 0;
-	}
-	else
-	{
-		return 1;
-	}
-#endif
+	});
 }
 
 void generate_password(char *buffer, unsigned length, const unsigned short *random, unsigned random_length)
@@ -4848,25 +4506,16 @@ void secure_random_password(char *buffer, unsigned length, unsigned pw_length)
 
 void secure_random_fill(void *bytes, unsigned length)
 {
-	if(!secure_random_data.initialized)
-	{
-		dbg_msg("secure", "called secure_random_fill before secure_random_init");
-		dbg_break();
-	}
+	ensure_secure_random_init();
 #if defined(CONF_FAMILY_WINDOWS)
 	if(!CryptGenRandom(secure_random_data.provider, length, (unsigned char *)bytes))
 	{
 		const DWORD LastError = GetLastError();
-		const std::string ErrorMsg = windows_format_system_message(LastError);
-		dbg_msg("secure", "CryptGenRandom failed: %ld %s", LastError, ErrorMsg.c_str());
+		dbg_assert(false, "CryptGenRandom failure (%ld '%s')", LastError, windows_format_system_message(LastError).c_str());
 		dbg_break();
 	}
 #else
-	if(length != io_read(secure_random_data.urandom, bytes, length))
-	{
-		dbg_msg("secure", "io_read returned with a short read");
-		dbg_break();
-	}
+	dbg_assert(length == io_read(secure_random_data.urandom, bytes, length), "io_read returned with a short read");
 #endif
 }
 

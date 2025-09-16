@@ -4,7 +4,7 @@
 
 #include <engine/shared/protocol7.h>
 
-#include <game/generated/client_data.h>
+#include <generated/client_data.h>
 
 #include <game/client/animstate.h>
 #include <game/client/gameclient.h>
@@ -14,7 +14,7 @@
 #include <vector>
 
 #include "nameplates.h"
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 static constexpr float DEFAULT_PADDING = 5.0f;
 
@@ -363,7 +363,7 @@ protected:
 		// E-Client
 		ColorRGBA Color = Data.m_Color;
 
-		if(This.m_aClients[Data.m_ClientId].m_Friend)
+		if(g_Config.m_ClNameplateFriendColor && This.m_aClients[Data.m_ClientId].m_Friend)
 			Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 
 		if(g_Config.m_ClWarList)
@@ -1065,12 +1065,13 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	CNamePlate NamePlate(*GameClient(), Data);
 	Position.y += NamePlate.Size().y / 2.0f;
 	Position.y += (float)g_Config.m_ClNamePlatesOffset / 2.0f;
-	vec2 Dir = Ui()->MousePos() - Position;
-	Dir /= TeeRenderInfo.m_Size;
-	const float Length = length(Dir);
-	if(Length > 1.0f)
-		Dir /= Length;
-	RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, 0, Dir, Position);
+	// tee looking towards cursor, and it is happy when you touch it
+	const vec2 DeltaPosition = Ui()->MousePos() - Position;
+	const float Distance = length(DeltaPosition);
+	const float InteractionDistance = 20.0f;
+	const vec2 TeeDirection = Distance < InteractionDistance ? normalize(vec2(DeltaPosition.x, maximum(DeltaPosition.y, 0.5f))) : normalize(DeltaPosition);
+	const int TeeEmote = Distance < InteractionDistance ? EMOTE_HAPPY : (Dummy ? g_Config.m_ClDummyDefaultEyes : g_Config.m_ClPlayerDefaultEyes);
+	RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeRenderInfo, TeeEmote, TeeDirection, Position);
 	Position.y -= (float)g_Config.m_ClNamePlatesOffset;
 	NamePlate.Render(*GameClient(), Position - vec2(0.0f, (float)g_Config.m_ClNamePlatesOffset));
 	NamePlate.Reset(*GameClient());

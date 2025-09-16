@@ -126,7 +126,10 @@ public:
 			STATE_CONNECTING,
 			STATE_READY,
 			STATE_INGAME,
+		};
 
+		enum
+		{
 			SNAPRATE_INIT = 0,
 			SNAPRATE_FULL,
 			SNAPRATE_RECOVER,
@@ -160,7 +163,6 @@ public:
 		char m_aClan[MAX_CLAN_LENGTH];
 		int m_Country;
 		std::optional<int> m_Score;
-		int m_Authed;
 		int m_AuthKey;
 		int m_AuthTries;
 		bool m_AuthHidden;
@@ -206,13 +208,9 @@ public:
 		{
 			return m_State != STATE_EMPTY && !m_DebugDummy;
 		}
-
-		int ConsoleAccessLevel() const
-		{
-			return m_Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : m_Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
-														  IConsole::ACCESS_LEVEL_HELPER;
-		}
 	};
+
+	int ConsoleAccessLevel(int ClientId) const;
 
 	CClient m_aClients[MAX_CLIENTS];
 	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS];
@@ -318,6 +316,8 @@ public:
 	void SendLogLine(const CLogMessage *pMessage);
 	void SetRconCid(int ClientId) override;
 	int GetAuthedState(int ClientId) const override;
+	bool IsRconAuthed(int ClientId) const override;
+	bool IsRconAuthedAdmin(int ClientId) const override;
 	const char *GetAuthName(int ClientId) const override;
 	bool HasAuthHidden(int ClientId) const override;
 	void GetMapInfo(char *pMapName, int MapNameSize, int *pMapSize, SHA256_DIGEST *pMapSha256, int *pMapCrc) override;

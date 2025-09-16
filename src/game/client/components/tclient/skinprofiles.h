@@ -4,14 +4,9 @@
 #include <game/client/component.h>
 
 #include <engine/console.h>
-#include <engine/keys.h>
 #include <engine/shared/protocol.h>
 
-#include <base/system.h>
-
 #include <vector>
-
-#define PROFILES_FILE "tclient_profiles.cfg"
 
 class CProfile
 {
@@ -30,10 +25,7 @@ class CSkinProfiles : public CComponent
 {
 	static void ConAddProfile(IConsole::IResult *pResult, void *pUserData);
 
-	void WriteLine(const char *pLine);
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
-	class IStorage *m_pStorage;
-	IOHANDLE m_ProfilesFile;
 
 public:
 	std::vector<CProfile> m_Profiles;

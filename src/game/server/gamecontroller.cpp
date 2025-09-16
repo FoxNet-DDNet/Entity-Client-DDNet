@@ -3,7 +3,9 @@
 #include <engine/shared/config.h>
 
 #include <engine/shared/protocolglue.h>
-#include <game/generated/protocol.h>
+
+#include <generated/protocol.h>
+
 #include <game/mapitems.h>
 #include <game/server/score.h>
 #include <game/teamscore.h>
@@ -49,7 +51,7 @@ void IGameController::DoActivityCheck()
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
-		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && Server()->GetAuthedState(i) == AUTHED_NO)
+		if(GameServer()->m_apPlayers[i] && GameServer()->m_apPlayers[i]->GetTeam() != TEAM_SPECTATORS && !Server()->IsRconAuthed(i))
 		{
 			if(Server()->Tick() > GameServer()->m_apPlayers[i]->m_LastActionTick + g_Config.m_SvInactiveKickTime * Server()->TickSpeed() * 60)
 			{
@@ -102,7 +104,7 @@ float IGameController::EvaluateSpawnPos(CSpawnEval *pEval, vec2 Pos, int DDTeam)
 	return Score;
 }
 
-void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam)
+void IGameController::EvaluateSpawnType(CSpawnEval *pEval, ESpawnType SpawnType, int DDTeam)
 {
 	const bool PlayerCollision = GameServer()->m_World.m_Core.m_aTuning[0].m_PlayerCollision;
 
@@ -115,7 +117,7 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam)
 	for(int j = 0; j < 2; j++)
 	{
 		// get spawn point
-		for(const vec2 &SpawnPoint : m_avSpawnPoints[Type])
+		for(const vec2 &SpawnPoint : m_avSpawnPoints[SpawnType])
 		{
 			vec2 P = SpawnPoint;
 			if(j == 0)
@@ -133,8 +135,10 @@ void IGameController::EvaluateSpawnType(CSpawnEval *pEval, int Type, int DDTeam)
 					for(int c = 0; c < Num; ++c)
 					{
 						CCharacter *pChr = static_cast<CCharacter *>(apEnts[c]);
+						const bool SameTeam = GameServer()->GetDDRaceTeam(pChr->GetPlayer()->GetCid()) == DDTeam;
+
 						if(GameServer()->Collision()->CheckPoint(SpawnPoint + aPositions[Index]) ||
-							distance(pChr->m_Pos, SpawnPoint + aPositions[Index]) <= pChr->GetProximityRadius())
+							(SameTeam && distance(pChr->m_Pos, SpawnPoint + aPositions[Index]) <= pChr->GetProximityRadius()))
 						{
 							Result = -1;
 							break;
@@ -165,9 +169,9 @@ bool IGameController::CanSpawn(int Team, vec2 *pOutPos, int DDTeam)
 		return false;
 
 	CSpawnEval Eval;
-	EvaluateSpawnType(&Eval, 0, DDTeam);
-	EvaluateSpawnType(&Eval, 1, DDTeam);
-	EvaluateSpawnType(&Eval, 2, DDTeam);
+	EvaluateSpawnType(&Eval, SPAWNTYPE_DEFAULT, DDTeam);
+	EvaluateSpawnType(&Eval, SPAWNTYPE_RED, DDTeam);
+	EvaluateSpawnType(&Eval, SPAWNTYPE_BLUE, DDTeam);
 
 	*pOutPos = Eval.m_Pos;
 	return Eval.m_Got;
@@ -191,8 +195,8 @@ bool IGameController::OnEntity(int Index, int x, int y, int Layer, int Flags, bo
 
 	if(Index >= ENTITY_SPAWN && Index <= ENTITY_SPAWN_BLUE && Initial)
 	{
-		const int Type = Index - ENTITY_SPAWN;
-		m_avSpawnPoints[Type].push_back(Pos);
+		const int SpawnType = Index - ENTITY_SPAWN;
+		m_avSpawnPoints[SpawnType].push_back(Pos);
 	}
 	else if(Index == ENTITY_DOOR)
 	{

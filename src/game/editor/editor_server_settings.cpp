@@ -123,7 +123,7 @@ void CEditor::RenderServerSettingsEditor(CUIRect View, bool ShowServerSettingsEd
 	// redo button
 	ToolBar.VSplitRight(25.0f, &ToolBar, &Button);
 	static int s_RedoButton = 0;
-	if(DoButton_FontIcon(&s_RedoButton, FONT_ICON_REDO, m_ServerSettingsHistory.CanRedo() ? 0 : -1, &Button, BUTTONFLAG_LEFT, "[Ctrl+Y] Redo the last command edit.", IGraphics::CORNER_R, 11.0f) || (CanMoveDown && Input()->AltIsPressed() && Ui()->ConsumeHotkey(CUi::HOTKEY_DOWN)))
+	if(DoButton_FontIcon(&s_RedoButton, FONT_ICON_REDO, m_ServerSettingsHistory.CanRedo() ? 0 : -1, &Button, BUTTONFLAG_LEFT, "[Ctrl+Y] Redo the last command edit.", IGraphics::CORNER_R, 11.0f))
 	{
 		m_ServerSettingsHistory.Redo();
 	}
@@ -132,7 +132,7 @@ void CEditor::RenderServerSettingsEditor(CUIRect View, bool ShowServerSettingsEd
 	ToolBar.VSplitRight(25.0f, &ToolBar, &Button);
 	ToolBar.VSplitRight(5.0f, &ToolBar, nullptr);
 	static int s_UndoButton = 0;
-	if(DoButton_FontIcon(&s_UndoButton, FONT_ICON_UNDO, m_ServerSettingsHistory.CanUndo() ? 0 : -1, &Button, BUTTONFLAG_LEFT, "[Ctrl+Z] Undo the last command edit.", IGraphics::CORNER_L, 11.0f) || (CanMoveUp && Input()->AltIsPressed() && Ui()->ConsumeHotkey(CUi::HOTKEY_UP)))
+	if(DoButton_FontIcon(&s_UndoButton, FONT_ICON_UNDO, m_ServerSettingsHistory.CanUndo() ? 0 : -1, &Button, BUTTONFLAG_LEFT, "[Ctrl+Z] Undo the last command edit.", IGraphics::CORNER_L, 11.0f))
 	{
 		m_ServerSettingsHistory.Undo();
 	}
@@ -152,7 +152,7 @@ void CEditor::RenderServerSettingsEditor(CUIRect View, bool ShowServerSettingsEd
 	const bool CanUpdate = GotSelection && CurrentInputValid && str_comp(m_Map.m_vSettings[s_CommandSelectedIndex].m_aCommand, m_SettingsCommandInput.GetString()) != 0;
 
 	static int s_UpdateButton = 0;
-	if(DoButton_FontIcon(&s_UpdateButton, FONT_ICON_PENCIL, CanUpdate ? 0 : -1, &Button, BUTTONFLAG_LEFT, "[Alt+Enter] Update the selected command based on the entered value.", IGraphics::CORNER_R, 9.0f) || (CanUpdate && Input()->AltIsPressed() && m_Dialog == DIALOG_NONE && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
+	if(DoButton_FontIcon(&s_UpdateButton, FONT_ICON_PENCIL, CanUpdate ? 0 : -1, &Button, BUTTONFLAG_LEFT, "[Alt+Enter] Update the selected command based on the entered value.", IGraphics::CORNER_R, 9.0f) || (CanUpdate && Input()->AltIsPressed() && m_Dialog == DIALOG_NONE && m_SettingsCommandInput.IsActive() && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
 	{
 		if(CollidingCommandIndex == -1)
 		{
@@ -219,7 +219,7 @@ void CEditor::RenderServerSettingsEditor(CUIRect View, bool ShowServerSettingsEd
 	ToolBar.VSplitRight(100.0f, &ToolBar, nullptr);
 
 	static int s_AddButton = 0;
-	if(DoButton_FontIcon(&s_AddButton, CanReplace ? FONT_ICON_ARROWS_ROTATE : FONT_ICON_PLUS, CanAdd || CanReplace ? 0 : -1, &Button, BUTTONFLAG_LEFT, CanReplace ? "[Enter] Replace the corresponding command in the command list." : "[Enter] Add a command to the command list.", IGraphics::CORNER_L) || ((CanAdd || CanReplace) && !Input()->AltIsPressed() && m_Dialog == DIALOG_NONE && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
+	if(DoButton_FontIcon(&s_AddButton, CanReplace ? FONT_ICON_ARROWS_ROTATE : FONT_ICON_PLUS, CanAdd || CanReplace ? 0 : -1, &Button, BUTTONFLAG_LEFT, CanReplace ? "[Enter] Replace the corresponding command in the command list." : "[Enter] Add a command to the command list.", IGraphics::CORNER_L) || ((CanAdd || CanReplace) && !Input()->AltIsPressed() && m_Dialog == DIALOG_NONE && m_SettingsCommandInput.IsActive() && Ui()->ConsumeHotkey(CUi::HOTKEY_ENTER)))
 	{
 		if(CanReplace)
 		{

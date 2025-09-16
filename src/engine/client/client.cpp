@@ -40,15 +40,14 @@
 #include <engine/shared/protocol.h>
 #include <engine/shared/protocol7.h>
 #include <engine/shared/protocol_ex.h>
+#include <engine/shared/protocolglue.h>
 #include <engine/shared/rust_version.h>
 #include <engine/shared/snapshot.h>
 #include <engine/shared/uuid_manager.h>
 
-#include <game/generated/protocol.h>
-#include <game/generated/protocol7.h>
-#include <game/generated/protocolglue.h>
-
-#include <engine/shared/protocolglue.h>
+#include <generated/protocol.h>
+#include <generated/protocol7.h>
+#include <generated/protocolglue.h>
 
 #include <game/localization.h>
 #include <game/version.h>
@@ -215,7 +214,7 @@ void CClient::SendqxdInfo(int Conn)
 
 void CClient::SendInfo(int Conn)
 {
-	SendqxdInfo(CONN_MAIN);
+	SendqxdInfo(CONN_MAIN); // E-Client
 
 	if(!str_comp(g_Config.m_Password, ""))
 		str_copy(g_Config.m_Password, g_Config.m_ClPermaPassword);
@@ -708,6 +707,7 @@ void CClient::DisconnectWithReason(const char *pReason)
 	}
 
 	m_aRconAuthed[0] = 0;
+	// Make sure to clear credentials completely from memory
 	mem_zero(m_aRconUsername, sizeof(m_aRconUsername));
 	mem_zero(m_aRconPassword, sizeof(m_aRconPassword));
 	m_MapDetailsPresent = false;
@@ -3263,7 +3263,7 @@ void CClient::Run()
 			m_DummySendConnInfo = false;
 
 			// send client info
-			SendqxdInfo(CONN_DUMMY);
+			SendqxdInfo(CONN_DUMMY); // E-Client
 
 			SendInfo(CONN_DUMMY);
 			m_aNetClient[CONN_DUMMY].Update();
@@ -3450,9 +3450,19 @@ void CClient::Run()
 
 	if(!m_pConfigManager->Save())
 	{
-		char aError[128];
-		str_format(aError, sizeof(aError), Localize("Saving settings to '%s' failed"), CONFIG_FILE);
-		m_vQuittingWarnings.emplace_back(Localize("Error saving settings"), aError);
+		/*
+		char aError[128] = "";
+		for(ConfigDomain ConfigDomain = ConfigDomain::START; ConfigDomain < ConfigDomain::NUM; ++ConfigDomain)
+		{
+			if(DIDNTFAIL)
+				continue
+			if(aError[0] != '\0')
+				str_append(aError, ", ");
+			str_append(s_aConfigDomains[ConfigDomain].m_aConfigPath);
+		}
+		*/
+		// TODO
+		m_vQuittingWarnings.emplace_back(Localize("Error saving settings"));
 	}
 
 	m_Fifo.Shutdown();
@@ -4564,10 +4574,11 @@ void CClient::HandleConnectLink(const char *pLink)
 {
 	// Chrome works fine with ddnet:// but not with ddnet:
 	// Check ddnet:// before ddnet: because we don't want the // as part of connect command
-	if(str_startswith(pLink, CONNECTLINK_DOUBLE_SLASH))
-		str_copy(m_aCmdConnect, pLink + sizeof(CONNECTLINK_DOUBLE_SLASH) - 1);
-	else if(str_startswith(pLink, CONNECTLINK_NO_SLASH))
-		str_copy(m_aCmdConnect, pLink + sizeof(CONNECTLINK_NO_SLASH) - 1);
+	const char *pConnectLink = nullptr;
+	if((pConnectLink = str_startswith(pLink, CONNECTLINK_DOUBLE_SLASH)))
+		str_copy(m_aCmdConnect, pConnectLink);
+	else if((pConnectLink = str_startswith(pLink, CONNECTLINK_NO_SLASH)))
+		str_copy(m_aCmdConnect, pConnectLink);
 	else
 		str_copy(m_aCmdConnect, pLink);
 	// Edge appends / to the URL
@@ -4729,10 +4740,6 @@ int main(int argc, const char **argv)
 		PerformFinalCleanup();
 	};
 
-	const bool RandInitFailed = secure_random_init() != 0;
-	if(!RandInitFailed)
-		CleanerFunctions.emplace([]() { secure_random_uninit(); });
-
 	// Register SDL for cleanup before creating the kernel and client,
 	// so SDL is shutdown after kernel and client. Otherwise the client
 	// may crash when shutting down after SDL is already shutdown.
@@ -4865,15 +4872,6 @@ int main(int argc, const char **argv)
 		crashdump_init_if_available(aBufPath);
 	}
 
-	if(RandInitFailed)
-	{
-		const char *pError = "Failed to initialize the secure RNG.";
-		log_error("secure", "%s", pError);
-		pClient->ShowMessageBox({.m_pTitle = "Secure RNG Error", .m_pMessage = pError});
-		PerformAllCleanup();
-		return -1;
-	}
-
 	IConsole *pConsole = CreateConsole(CFGFLAG_CLIENT).release();
 	pKernel->RegisterInterface(pConsole);
 
@@ -4923,37 +4921,22 @@ int main(int argc, const char **argv)
 	pClient->InitInterfaces();
 
 	// execute config file
-	if(pStorage->FileExists(CONFIG_FILE, IStorage::TYPE_ALL))
+	pConsole->SetUnknownCommandCallback(SaveUnknownCommandCallback, pClient);
+	for(ConfigDomain ConfigDomain = ConfigDomain::START; ConfigDomain < ConfigDomain::NUM; ++ConfigDomain)
 	{
-		pConsole->SetUnknownCommandCallback(SaveUnknownCommandCallback, pClient);
-		if(!pConsole->ExecuteFile(CONFIG_FILE))
+		if(!pStorage->FileExists(s_aConfigDomains[ConfigDomain].m_aConfigPath, IStorage::TYPE_ALL))
+			continue;
+		if(!pConsole->ExecuteFile(s_aConfigDomains[ConfigDomain].m_aConfigPath))
 		{
-			const char *pError = "Failed to load config from '" CONFIG_FILE "'.";
-			log_error("client", "%s", pError);
-			pClient->ShowMessageBox({.m_pTitle = "Config File Error", .m_pMessage = pError});
+			char aError[2048];
+			snprintf(aError, sizeof(aError), "Failed to load config from '%s'.", s_aConfigDomains[ConfigDomain].m_aConfigPath);
+			log_error("client", "%s", aError);
+			pClient->ShowMessageBox({.m_pTitle = "Config File Error", .m_pMessage = aError});
 			PerformAllCleanup();
 			return -1;
 		}
-		pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
 	}
-
-	// execute E-Client config file
-	IOHANDLE File = pStorage->OpenFile(ECONFIG_FILE, IOFLAG_READ, IStorage::TYPE_ALL);
-	if(File)
-	{
-		io_close(File);
-		pConsole->ExecuteFile(ECONFIG_FILE);
-	}
-
-	if(pStorage->FileExists(LEGACYACONFIG_FILE, IStorage::TYPE_ALL) && g_Config.m_ClFirstLaunch)
-	{
-		if(pConsole->ExecuteLegacyFile())
-		{
-			dbg_msg("E-Client", "migrated legacy config file to new format");
-			pStorage->RemoveFile(LEGACYACONFIG_FILE, IStorage::TYPE_SAVE);
-		}
-		g_Config.m_ClFirstLaunch = 0;
-	}
+	pConsole->SetUnknownCommandCallback(IConsole::EmptyUnknownCommandCallback, nullptr);
 
 	// execute autoexec file
 	if(pStorage->FileExists(AUTOEXEC_CLIENT_FILE, IStorage::TYPE_ALL))
@@ -5166,6 +5149,7 @@ void CClient::RequestDDNetInfo()
 	m_pDDNetInfoTask->IpResolve(IPRESOLVE::V4);
 	Http()->Run(m_pDDNetInfoTask);
 	m_InfoState = EInfoState::LOADING;
+	GameClient()->RequestEClientInfo();
 }
 
 int CClient::GetPredictionTime()
@@ -5306,6 +5290,11 @@ int CClient::UdpConnectivity(int NetType)
 
 bool CClient::ViewLink(const char *pLink)
 {
+	if(!str_startswith(pLink, "https://"))
+	{
+		log_error("client", "Failed to open link '%s': only https-links are allowed", pLink);
+		return false;
+	}
 #if defined(CONF_PLATFORM_ANDROID)
 	if(SDL_OpenURL(pLink) == 0)
 	{

@@ -7,6 +7,7 @@
 #include <game/server/gamemodes/DDRace.h>
 #include <game/server/teams.h>
 #include <game/team_state.h>
+#include <game/teamscore.h>
 #include <game/version.h>
 
 #include "gamecontext.h"
@@ -125,7 +126,7 @@ void CGameContext::ConSettings(IConsole::IResult *pResult, void *pUserData)
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
 			"to check a server setting say /settings and setting's name, setting names are:");
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
-			"teams, cheats, collision, hooking, endlesshooking, me, ");
+			"teams, cheats, collision, hooking, endlesshooking,");
 		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
 			"hitting, oldlaser, timeout, votes, pause and scores");
 	}
@@ -189,13 +190,6 @@ void CGameContext::ConSettings(IConsole::IResult *pResult, void *pUserData)
 				g_Config.m_SvOldLaser ?
 					"Lasers can hit you if you shot them and they pull you towards the bounce origin (Like DDRace Beta)" :
 					"Lasers can't hit you if you shot them, and they pull others towards the shooter");
-		}
-		else if(str_comp_nocase(pArg, "me") == 0)
-		{
-			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
-				g_Config.m_SvSlashMe ?
-					"Players can use /me commands the famous IRC Command" :
-					"Players can't use the /me command");
 		}
 		else if(str_comp_nocase(pArg, "timeout") == 0)
 		{
@@ -776,9 +770,7 @@ void CGameContext::ConPracticeCmdList(IConsole::IResult *pResult, void *pUserDat
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
 
-	char aPracticeCommands[256];
-	mem_zero(aPracticeCommands, sizeof(aPracticeCommands));
-	str_append(aPracticeCommands, "Available practice commands: ");
+	char aPracticeCommands[256] = "Available practice commands: ";
 	for(const IConsole::CCommandInfo *pCmd = pSelf->Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_USER, CMDFLAG_PRACTICE);
 		pCmd; pCmd = pCmd->NextCommandInfo(IConsole::ACCESS_LEVEL_USER, CMDFLAG_PRACTICE))
 	{
@@ -789,7 +781,7 @@ void CGameContext::ConPracticeCmdList(IConsole::IResult *pResult, void *pUserDat
 		if(str_length(aCommand) + str_length(aPracticeCommands) > 255)
 		{
 			pSelf->SendChatTarget(pResult->m_ClientId, aPracticeCommands);
-			mem_zero(aPracticeCommands, sizeof(aPracticeCommands));
+			aPracticeCommands[0] = '\0';
 		}
 		str_append(aPracticeCommands, aCommand);
 	}
@@ -1174,21 +1166,30 @@ void CGameContext::AttemptJoinTeam(int ClientId, int Team)
 	else
 	{
 		if(Team < 0 || Team >= TEAM_SUPER)
-			Team = m_pController->Teams().GetFirstEmptyTeam();
+		{
+			auto EmptyTeam = m_pController->Teams().GetFirstEmptyTeam();
+			if(!EmptyTeam.has_value())
+			{
+				Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
+					"No empty team left.");
+				return;
+			}
+			Team = EmptyTeam.value();
+		}
 
 		if(pPlayer->m_LastDDRaceTeamChange + (int64_t)Server()->TickSpeed() * g_Config.m_SvTeamChangeDelay > Server()->Tick())
 		{
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
 				"You can\'t change teams that fast!");
 		}
-		else if(Team > 0 && Team < MAX_CLIENTS && m_pController->Teams().TeamLocked(Team) && !m_pController->Teams().IsInvited(Team, ClientId))
+		else if(Team != TEAM_FLOCK && m_pController->Teams().TeamLocked(Team) && !m_pController->Teams().IsInvited(Team, ClientId))
 		{
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "chatresp",
 				g_Config.m_SvInvite ?
 					"This team is locked using /lock. Only members of the team can unlock it using /lock." :
 					"This team is locked using /lock. Only members of the team can invite you or unlock it using /lock.");
 		}
-		else if(Team > 0 && Team < MAX_CLIENTS && m_pController->Teams().Count(Team) >= g_Config.m_SvMaxTeamSize && !m_pController->Teams().TeamFlock(Team) && !m_pController->Teams().IsPractice(Team))
+		else if(Team != TEAM_FLOCK && m_pController->Teams().Count(Team) >= g_Config.m_SvMaxTeamSize && !m_pController->Teams().TeamFlock(Team) && !m_pController->Teams().IsPractice(Team))
 		{
 			char aBuf[512];
 			str_format(aBuf, sizeof(aBuf), "This team already has the maximum allowed size of %d players", g_Config.m_SvMaxTeamSize);
@@ -1438,26 +1439,6 @@ void CGameContext::ConJoin(IConsole::IResult *pResult, void *pUserData)
 		return;
 
 	pSelf->AttemptJoinTeam(pResult->m_ClientId, Team);
-}
-
-void CGameContext::ConMe(IConsole::IResult *pResult, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-	if(!CheckClientId(pResult->m_ClientId))
-		return;
-
-	char aBuf[256 + 24];
-
-	str_format(aBuf, 256 + 24, "'%s' %s",
-		pSelf->Server()->ClientName(pResult->m_ClientId),
-		pResult->GetString(0));
-	if(g_Config.m_SvSlashMe)
-		pSelf->SendChat(-2, TEAM_ALL, aBuf, pResult->m_ClientId);
-	else
-		pSelf->Console()->Print(
-			IConsole::OUTPUT_LEVEL_STANDARD,
-			"chatresp",
-			"/me is disabled on this server");
 }
 
 void CGameContext::ConConverse(IConsole::IResult *pResult, void *pUserData)
@@ -2118,7 +2099,7 @@ void CGameContext::ConLastTele(IConsole::IResult *pResult, void *pUserData)
 		pSelf->SendChatTarget(pPlayer->GetCid(), "You haven't previously teleported. Use /tp before using this command.");
 		return;
 	}
-	pPlayer->m_LastTeleTee.Load(pChr, pChr->Team(), true);
+	pPlayer->m_LastTeleTee.Load(pChr);
 	pPlayer->Pause(CPlayer::PAUSE_NONE, true);
 }
 

@@ -8,14 +8,19 @@
 #include <engine/console.h>
 #include <engine/storage.h>
 
+#include <optional>
 #include <vector>
 
 class CConsole : public IConsole
 {
 	class CCommand : public CCommandInfo
 	{
-	public:
 		CCommand *m_pNext;
+
+	public:
+		const CCommand *Next() const { return m_pNext; }
+		CCommand *Next() { return m_pNext; }
+		void SetNext(CCommand *pNext) { m_pNext = pNext; }
 		int m_Flags;
 		bool m_Temp;
 		FCommandCallback m_pfnCallback;
@@ -178,6 +183,22 @@ public:
 
 	void SetAccessLevel(int AccessLevel) override;
 
+	/**
+	 * Converts access level string to access level enum (integer).
+	 *
+	 * @param pAccesssLevel should be either "admin", "mod", "moderator", "helper" or "user".
+	 * @return `std::nullopt` on error otherwise one of the auth enums such as `ACCESS_LEVEL_ADMIN`.
+	 */
+	static std::optional<int> AccessLevelToInt(const char *pAccessLevel);
+
+	/**
+	 * Converts access level enum (integer) to access level string.
+	 *
+	 * @param AccessLevel should be one of these: `ACCESS_LEVEL_ADMIN`, `ACCESS_LEVEL_MOD`, `ACCESS_LEVEL_HELPER` or `ACCESS_LEVEL_USER`.
+	 * @return `nullptr` on error or access level string like "admin".
+	 */
+	static const char *AccessLevelToString(int AccessLevel);
+
 	static std::optional<ColorHSLA> ColorParse(const char *pStr, float DarkestLighting);
 
 	// DDRace
@@ -188,9 +209,6 @@ public:
 
 	int FlagMask() const override { return m_FlagMask; }
 	void SetFlagMask(int FlagMask) override { m_FlagMask = FlagMask; }
-
-	// E-Client
-	bool ExecuteLegacyFile() override;
 };
 
 #endif

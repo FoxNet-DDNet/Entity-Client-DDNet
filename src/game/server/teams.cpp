@@ -379,30 +379,32 @@ void CGameTeams::CheckTeamFinished(int Team)
 
 const char *CGameTeams::SetCharacterTeam(int ClientId, int Team)
 {
+	int CurrentTeam = m_Core.Team(ClientId);
+
 	if(ClientId < 0 || ClientId >= MAX_CLIENTS)
 		return "Invalid client ID";
 	if(Team < 0 || Team > NUM_DDRACE_TEAMS)
 		return "Invalid team number";
 	if(Team != TEAM_SUPER && m_aTeamState[Team] > ETeamState::OPEN && !m_aPractice[Team] && !m_aTeamFlock[Team])
 		return "This team started already";
-	if(m_Core.Team(ClientId) == Team)
+	if(CurrentTeam == Team)
 		return "You are in this team already";
 	if(!Character(ClientId))
 		return "Your character is not valid";
 	if(Team == TEAM_SUPER && !Character(ClientId)->IsSuper())
 		return "You can't join super team if you don't have super rights";
-	if(Team != TEAM_SUPER && Character(ClientId)->m_DDRaceState != ERaceState::NONE)
+	if(Team != TEAM_SUPER && Character(ClientId)->m_DDRaceState != ERaceState::NONE && (m_aTeamState[CurrentTeam] < ETeamState::FINISHED || Team != 0))
 		return "You have started racing already";
 	// No cheating through noob filter with practice and then leaving team
-	if(m_aPractice[m_Core.Team(ClientId)] && !m_pGameContext->PracticeByDefault())
+	if(m_aPractice[CurrentTeam] && !m_pGameContext->PracticeByDefault())
 		return "You have used practice mode already";
 
 	// you can not join a team which is currently in the process of saving,
 	// because the save-process can fail and then the team is reset into the game
 	if(Team != TEAM_SUPER && GetSaving(Team))
-		return "Your team is currently saving";
-	if(m_Core.Team(ClientId) != TEAM_SUPER && GetSaving(m_Core.Team(ClientId)))
 		return "This team is currently saving";
+	if(CurrentTeam != TEAM_SUPER && GetSaving(CurrentTeam))
+		return "Your team is currently saving";
 
 	SetForceCharacterTeam(ClientId, Team);
 	return nullptr;
@@ -933,8 +935,8 @@ void CGameTeams::SwapTeamCharacters(CPlayer *pPrimaryPlayer, CPlayer *pTargetPla
 	CSaveTee SecondarySavedTee;
 	SecondarySavedTee.Save(pTargetPlayer->GetCharacter());
 
-	PrimarySavedTee.Load(pTargetPlayer->GetCharacter(), Team, true);
-	SecondarySavedTee.Load(pPrimaryPlayer->GetCharacter(), Team, true);
+	PrimarySavedTee.Load(pTargetPlayer->GetCharacter());
+	SecondarySavedTee.Load(pPrimaryPlayer->GetCharacter());
 
 	if(Team >= 1 && !m_aTeamFlock[Team])
 	{
@@ -1241,12 +1243,12 @@ void CGameTeams::ResetSavedTeam(int ClientId, int Team)
 	}
 }
 
-int CGameTeams::GetFirstEmptyTeam() const
+std::optional<int> CGameTeams::GetFirstEmptyTeam() const
 {
 	for(int i = 1; i < TEAM_SUPER; i++)
 		if(m_aTeamState[i] == ETeamState::EMPTY)
 			return i;
-	return -1;
+	return std::nullopt;
 }
 
 bool CGameTeams::TeeStarted(int ClientId) const

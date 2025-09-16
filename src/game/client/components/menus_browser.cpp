@@ -15,11 +15,11 @@
 #include <game/client/animstate.h>
 #include <game/client/components/countryflags.h>
 #include <game/client/gameclient.h>
-#include <game/client/render.h>
 #include <game/client/ui.h>
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
+#include <generated/client_data.h>
 #include "menus.h"
 
 constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f;
@@ -2091,7 +2091,7 @@ void CMenus::UpdateWarlistCache()
 
 	std::unordered_set<const CServerInfo::CClient *> matchedClients;
 
-	for(CWarEntry &Entry : GameClient()->m_WarList.m_WarEntries)
+	for(CWarEntry &Entry : GameClient()->m_WarList.m_vWarEntries)
 	{
 		if(Entry.m_aName[0] && NameMap.count(Entry.m_aName))
 		{

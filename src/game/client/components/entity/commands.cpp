@@ -8,7 +8,7 @@
 
 #include "entity.h"
 #include <base/log.h>
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 void CEClient::ConVotekick(IConsole::IResult *pResult, void *pUserData)
 {
@@ -627,7 +627,7 @@ void CEClient::OnConsoleInit()
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 
 	if(pConfigManager)
-		pConfigManager->RegisterECallback(ConfigSaveCallback, this);
+		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::ENTITY);
 
 	// Misc
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");
@@ -674,20 +674,20 @@ void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserDat
 	char aBuf[128];
 
 	str_format(aBuf, sizeof(aBuf), "server_rainbow_speed %d", pThis->m_RainbowSpeed);
-	pConfigManager->WriteLine(aBuf);
+	pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);
 	str_format(aBuf, sizeof(aBuf), "server_rainbow_both_players %d", pThis->m_BothPlayers);
-	pConfigManager->WriteLine(aBuf);
+	pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);
 
 	for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
 	{
 		str_format(aBuf, sizeof(aBuf), "server_rainbow_sat %d %d", pThis->m_RainbowSat[Dummy], Dummy);
-		pConfigManager->WriteLine(aBuf);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);
 		str_format(aBuf, sizeof(aBuf), "server_rainbow_lht %d %d", pThis->m_RainbowLht[Dummy], Dummy);
-		pConfigManager->WriteLine(aBuf);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);
 
 		str_format(aBuf, sizeof(aBuf), "server_rainbow_body %d %d", pThis->m_RainbowBody[Dummy], Dummy);
-		pConfigManager->WriteLine(aBuf);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);
 		str_format(aBuf, sizeof(aBuf), "server_rainbow_feet %d %d", pThis->m_RainbowFeet[Dummy], Dummy);
-		pConfigManager->WriteLine(aBuf);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITY);
 	}
 }

@@ -7,8 +7,6 @@
 #include <unordered_map>
 #include <string>
 
-#define WARLIST_FILE "tclient_warlist.cfg"
-
 enum
 {
 	MAX_WARLIST_TYPE_LENGTH = 10,
@@ -159,11 +157,10 @@ class CWarList : public CComponent
 	static void ConDelMute(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddMuteEntry(IConsole::IResult *pResult, void *pUserData);
 
-	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
+	static void ConRemoveNameEntry(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveClanEntry(IConsole::IResult *pResult, void *pUserData);
 
-	void WriteLine(const char *pLine);
-	class IStorage *m_pStorage = nullptr;
-	IOHANDLE m_WarlistFile = nullptr;
+	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
 public:
 	CWarList();
@@ -190,7 +187,7 @@ public:
 	CWarType *m_pWarTypeNone = m_WarTypes[0];
 
 	// Duplicate war entries ARE allowed
-	std::vector<CWarEntry> m_WarEntries;
+	std::vector<CWarEntry> m_vWarEntries;
 	// TODO: create an unordered map for war clans and war names, to speed up updating the WarPlayers cache
 	// It should be updated when m_WarList changes
 
@@ -217,7 +214,7 @@ public:
 	void RemoveWarEntryInGame(int WarType, const char *pName, bool IsClan);
 
 	// E-Client
-	void AddMuteEntry(const char *pName); // E-Client [Mutes]
+	void AddMuteEntry(const char *pName);
 	void AddMute(const char *pName);
 	void DelMute(const char *pName, bool Silent = false);
 
@@ -231,7 +228,7 @@ public:
 	void RemoveWarEntry(const char *pName, const char *pClan, const char *pType);
 	void RemoveWarType(const char *pType);
 
-	void RemoveWarEntryDuplicates(const char *pName, const char *pClan);
+	bool RemoveWarEntryDuplicates(const char *pName, const char *pClan);
 
 	void RemoveWarEntry(CWarEntry *Entry);
 

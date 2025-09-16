@@ -4,9 +4,9 @@
 #include <engine/demo.h>
 #include <engine/graphics.h>
 
+#include <generated/client_data.h>
+
 #include "particles.h"
-#include <game/client/render.h>
-#include <game/generated/client_data.h>
 
 #include <game/client/gameclient.h>
 

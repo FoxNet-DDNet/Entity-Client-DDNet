@@ -2,7 +2,7 @@
 #include <game/client/ui.h>
 
 #include <game/client/gameclient.h>
-#include <game/generated/protocol.h>
+#include <generated/protocol.h>
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>

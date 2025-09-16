@@ -62,20 +62,12 @@ class CEClient : public CComponent
 	// Reply to Ping
 	struct CLastPing
 	{
-		void Reset()
-		{
-			m_aName[0] = '\0';
-			m_aMessage[0] = '\0';
-			m_Team = 0;
-		}
-
 		char m_aName[MAX_NAME_LENGTH] = "";
 		char m_aMessage[256] = "";
-		int m_Team;
+		int m_Team = -1;
 	};
 	CLastPing m_aLastPing;
 
-	bool LineShouldHighlight(const char *pLine, const char *pName);
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
 	virtual void OnMessage(int MsgType, void *pRawMsg) override;
 
@@ -119,7 +111,11 @@ class CEClient : public CComponent
 
 	static void ConSpectateId(IConsole::IResult *pResult, void *pUserData);
 
+	bool m_FoxNetServer;
+
 public:
+	bool FoxNetServer() const { return m_FoxNetServer; }
+
 	bool m_SentKill;
 	int m_KillCount;
 
@@ -180,7 +176,6 @@ public:
 
 	int64_t m_RainbowDelay;
 
-	
 	static void ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	void GoresMode();
 
@@ -204,6 +199,7 @@ private:
 	virtual int Sizeof() const override { return sizeof(*this); }
 	virtual void OnInit() override;
 	virtual void OnRender() override;
+	virtual void OnStateChange(int NewState, int OldState) override;
 	virtual void OnNewSnapshot() override;
 	virtual void OnShutdown() override;
 };

@@ -16,12 +16,9 @@
 
 static constexpr const char *DEFAULT_SAVED_RCON_USER = "local-server";
 
-#define CONFIG_FILE "settings_ddnet.cfg"
 #define AUTOEXEC_FILE "autoexec.cfg"
 #define AUTOEXEC_CLIENT_FILE "autoexec_client.cfg"
 #define AUTOEXEC_SERVER_FILE "autoexec_server.cfg"
-#define LEGACYACONFIG_FILE "settings_aiodob.cfg"
-#define ECONFIG_FILE "settings_entity.cfg"
 #define MAX_CALLBACKS 64;
 
 class CConfig
@@ -36,10 +33,12 @@ public:
 #define MACRO_CONFIG_STR(Name, ScriptName, Len, Def, Flags, Desc) \
 	static constexpr const char *ms_p##Name = Def; \
 	char m_##Name[Len]; // Flawfinder: ignore
-#include "config_variables.h"
+#define SET_CONFIG_DOMAIN(ConfigDomain) ;
+#include "config_includes.h"
 #undef MACRO_CONFIG_INT
 #undef MACRO_CONFIG_COL
 #undef MACRO_CONFIG_STR
+#undef SET_CONFIG_DOMAIN
 };
 
 extern CConfig g_Config;
@@ -67,6 +66,7 @@ enum
 
 struct SConfigVariable
 {
+	ConfigDomain m_ConfigDomain;
 	enum EVariableType
 	{
 		VAR_INT,
@@ -202,8 +202,8 @@ class CConfigManager : public IConfigManager
 	IConsole *m_pConsole;
 	class IStorage *m_pStorage;
 
-	IOHANDLE m_ConfigFile;
-	bool m_Failed;
+	IOHANDLE m_aConfigFile[ConfigDomain::NUM];
+	bool m_aFailed[ConfigDomain::NUM];
 
 	struct SCallback
 	{
@@ -216,12 +216,11 @@ class CConfigManager : public IConfigManager
 		{
 		}
 	};
-	std::vector<SCallback> m_vCallbacks;
-	std::vector<SCallback> m_vECallbacks;
+	std::vector<SCallback> m_avCallbacks[ConfigDomain::NUM];
 
 	std::vector<SConfigVariable *> m_vpAllVariables;
 	std::vector<SConfigVariable *> m_vpGameVariables;
-	std::vector<const char *> m_vpUnknownCommands;
+	std::vector<const char *> m_vpUnknownCommands; // TODO: per config domain
 	CHeap m_ConfigHeap;
 
 	static void Con_Reset(IConsole::IResult *pResult, void *pUserData);
@@ -235,14 +234,14 @@ public:
 	void Reset(const char *pScriptName) override;
 	void ResetGameSettings() override;
 	void SetReadOnly(const char *pScriptName, bool ReadOnly) override;
+	void SetGameSettingsReadOnly(bool ReadOnly) override;
 	bool Save() override;
-	bool EClientSave();
+
 	CConfig *Values() override { return &g_Config; }
 
-	void RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
-	void RegisterECallback(SAVECALLBACKFUNC pfnFunc, void *pUserData) override;
+	void RegisterCallback(SAVECALLBACKFUNC pfnFunc, void *pUserData, ConfigDomain ConfigDomain = ConfigDomain::DDNET) override;
 
-	void WriteLine(const char *pLine) override;
+	void WriteLine(const char *pLine, ConfigDomain ConfigDomain = ConfigDomain::DDNET) override;
 
 	void StoreUnknownCommand(const char *pCommand) override;
 

@@ -12,7 +12,7 @@
 #include <game/client/component.h>
 #include <game/client/lineinput.h>
 #include <game/client/render.h>
-#include <game/generated/protocol7.h>
+#include <generated/protocol7.h>
 
 constexpr auto SAVES_FILE = "ddnet-saves.txt";
 
@@ -20,27 +20,6 @@ enum
 {
 	MAX_LINES = 64,
 	MAX_LINE_LENGTH = 256
-};
-
-
-enum
-{
-	// client IDs for special messages
-	SILENT_MSG = -4,
-	ECLIENT_MSG = -3,
-
-	CLIENT_MSG = -2,
-	SERVER_MSG = -1,
-
-	MODE_NONE = 0,
-	MODE_ALL,
-	MODE_TEAM,
-	MODE_SILENT,
-
-	CHAT_SERVER = 0,
-	CHAT_HIGHLIGHT,
-	CHAT_CLIENT,
-	CHAT_NUM,
 };
 
 class CChat : public CComponent
@@ -56,6 +35,7 @@ class CChat : public CComponent
 		CLine();
 		void Reset(CChat &This);
 
+		bool m_Initialized;
 		int64_t m_Time;
 		float m_aYOffset[2];
 		int m_ClientId;
@@ -80,20 +60,6 @@ class CChat : public CComponent
 		float m_TextYOffset;
 
 		int m_TimesRepeated;
-
-		class CSixup
-		{
-		public:
-			IGraphics::CTextureHandle m_aTextures[protocol7::NUM_SKINPARTS];
-			IGraphics::CTextureHandle m_HatTexture;
-			IGraphics::CTextureHandle m_BotTexture;
-			int m_HatSpriteIndex;
-			ColorRGBA m_BotColor;
-			ColorRGBA m_aColors[protocol7::NUM_SKINPARTS];
-		};
-
-		// 0.7 Skin
-		CSixup m_Sixup;
 	};
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
@@ -103,6 +69,31 @@ class CChat : public CComponent
 
 	CLine m_aLines[MAX_LINES];
 	int m_CurrentLine;
+
+	enum
+	{
+		// client IDs for special messages
+		SILENT_MSG = -4, // E-Client
+		ECLIENT_MSG = -3,// E-Client
+		CLIENT_MSG = -2,
+		SERVER_MSG = -1,
+	};
+
+	enum
+	{
+		MODE_NONE = 0,
+		MODE_ALL,
+		MODE_TEAM,
+		MODE_SILENT, // E-Client
+	};
+
+	enum
+	{
+		CHAT_SERVER = 0,
+		CHAT_HIGHLIGHT,
+		CHAT_CLIENT,
+		CHAT_NUM,
+	};
 
 	int m_Mode;
 	bool m_Show;
@@ -126,6 +117,7 @@ class CChat : public CComponent
 		char m_aName[IConsole::TEMPCMD_NAME_LENGTH];
 		char m_aParams[IConsole::TEMPCMD_PARAMS_LENGTH];
 		char m_aHelpText[IConsole::TEMPCMD_HELP_LENGTH];
+		char m_Prefix; // E-Client
 
 		CCommand() = default;
 		CCommand(const char *pName, const char *pParams, const char *pHelpText)
@@ -133,6 +125,7 @@ class CChat : public CComponent
 			str_copy(m_aName, pName);
 			str_copy(m_aParams, pParams);
 			str_copy(m_aHelpText, pHelpText);
+			m_Prefix = m_aName[0]; // E-Client
 		}
 
 		bool operator<(const CCommand &Other) const { return str_comp(m_aName, Other.m_aName) < 0; }
@@ -233,6 +226,7 @@ public:
 	// E-Client
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
+	void AddHistoryEntry(const char *pLine);
 
 private:
 	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); // E-Client

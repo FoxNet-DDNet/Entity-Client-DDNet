@@ -15,9 +15,9 @@
 #include "message.h"
 #include <engine/shared/jsonwriter.h>
 #include <engine/shared/protocol.h>
-#include <game/generated/protocol.h>
-#include <game/generated/protocol7.h>
-#include <game/generated/protocolglue.h>
+#include <generated/protocol.h>
+#include <generated/protocol7.h>
+#include <generated/protocolglue.h>
 
 struct CAntibotRoundData;
 
@@ -63,7 +63,7 @@ public:
 	virtual void SetClientDDNetVersion(int ClientId, int DDNetVersion) = 0;
 	virtual const NETADDR *ClientAddr(int ClientId) const = 0;
 	virtual const std::array<char, NETADDR_MAXSTRSIZE> &ClientAddrStringImpl(int ClientId, bool IncludePort) const = 0;
-	inline const char *ClientAddrString(int ClientId, bool IncludePort) const { return ClientAddrStringImpl(ClientId, IncludePort).data(); }
+	const char *ClientAddrString(int ClientId, bool IncludePort) const { return ClientAddrStringImpl(ClientId, IncludePort).data(); }
 
 	/**
 	 * Returns the version of the client with the given client ID.
@@ -79,7 +79,7 @@ public:
 	virtual int SendMsg(CMsgPacker *pMsg, int Flags, int ClientId) = 0;
 
 	template<class T, typename std::enable_if<!protocol7::is_sixup<T>::value, int>::type = 0>
-	inline int SendPackMsg(const T *pMsg, int Flags, int ClientId)
+	int SendPackMsg(const T *pMsg, int Flags, int ClientId)
 	{
 		int Result = 0;
 		if(ClientId == -1)
@@ -96,7 +96,7 @@ public:
 	}
 
 	template<class T, typename std::enable_if<protocol7::is_sixup<T>::value, int>::type = 1>
-	inline int SendPackMsg(const T *pMsg, int Flags, int ClientId)
+	int SendPackMsg(const T *pMsg, int Flags, int ClientId)
 	{
 		int Result = 0;
 		if(ClientId == -1)
@@ -251,6 +251,8 @@ public:
 	};
 	virtual void SetRconCid(int ClientId) = 0;
 	virtual int GetAuthedState(int ClientId) const = 0;
+	virtual bool IsRconAuthed(int ClientId) const = 0;
+	virtual bool IsRconAuthedAdmin(int ClientId) const = 0;
 	virtual const char *GetAuthName(int ClientId) const = 0;
 	virtual bool HasAuthHidden(int ClientId) const = 0;
 	virtual void Kick(int ClientId, const char *pReason) = 0;

@@ -3,11 +3,13 @@
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 #include <engine/textrender.h>
+
+#include <generated/client_data.h>
+
 #include <game/client/animstate.h>
 #include <game/client/components/motd.h>
 #include <game/client/components/statboard.h>
 #include <game/client/gameclient.h>
-#include <game/generated/client_data.h>
 #include <game/localization.h>
 
 CStatboard::CStatboard()
@@ -434,9 +436,7 @@ std::string CStatboard::ReplaceCommata(char *pStr)
 	if(!str_find(pStr, ","))
 		return pStr;
 
-	char aOutbuf[256];
-	mem_zero(aOutbuf, sizeof(aOutbuf));
-
+	char aOutbuf[256] = "";
 	for(int i = 0, skip = 0; i < 64; i++)
 	{
 		if(pStr[i] == ',')
@@ -448,7 +448,6 @@ std::string CStatboard::ReplaceCommata(char *pStr)
 		else
 			aOutbuf[i + skip] = pStr[i];
 	}
-
 	return aOutbuf;
 }
 
@@ -487,8 +486,7 @@ void CStatboard::FormatStats(char *pDest, size_t DestSize)
 		}
 	}
 
-	char aPlayerStats[1024 * VANILLA_MAX_CLIENTS];
-	str_copy(aPlayerStats, "Local-player,Team,Name,Clan,Score,Frags,Deaths,Suicides,F/D-ratio,Net,FPM,Spree,Best,Hammer-F/D,Gun-F/D,Shotgun-F/D,Grenade-F/D,Laser-F/D,Ninja-F/D,GameWithFlags,Flag-grabs,Flag-captures\n");
+	char aPlayerStats[1024 * VANILLA_MAX_CLIENTS] = "Local-player,Team,Name,Clan,Score,Frags,Deaths,Suicides,F/D-ratio,Net,FPM,Spree,Best,Hammer-F/D,Gun-F/D,Shotgun-F/D,Grenade-F/D,Laser-F/D,Ninja-F/D,GameWithFlags,Flag-grabs,Flag-captures\n";
 	for(int i = 0; i < NumPlayers; i++)
 	{
 		const CNetObj_PlayerInfo *pInfo = apPlayers[i];

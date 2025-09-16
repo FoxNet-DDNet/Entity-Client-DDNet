@@ -8,9 +8,11 @@
 #include <base/color.h>
 #include <base/vmath.h>
 
+#include <generated/protocol.h>
+#include <generated/protocol7.h>
+
 #include <game/client/skin.h>
 #include <game/client/ui_rect.h>
-#include <game/generated/protocol7.h>
 
 #include <functional>
 #include <memory>
@@ -21,17 +23,11 @@ class CSwitchTile;
 class CTeleTile;
 class CTile;
 class CTuneTile;
-namespace client_data7 {
-struct CDataSprite;
-}
-struct CDataSprite;
 class CEnvPoint;
 class CEnvPointBezier;
 class CEnvPointBezier_upstream;
 class CMapItemGroup;
 class CQuad;
-
-#include <game/generated/protocol.h>
 
 class CSkinDescriptor
 {
@@ -232,7 +228,7 @@ public:
 
 	void Init(class IGraphics *pGraphics, class ITextRender *pTextRender);
 
-	void RenderCursor(vec2 Center, float Size) const;
+	void RenderCursor(vec2 Center, float Size, float Alpha = 1.0f) const;
 	void RenderIcon(int ImageId, int SpriteId, const CUIRect *pRect, const ColorRGBA *pColor = nullptr) const;
 
 	// larger rendering methods

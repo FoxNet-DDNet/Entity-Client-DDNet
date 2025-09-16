@@ -6,7 +6,7 @@
 #include <base/math.h>
 #include <base/system.h>
 
-#include <game/generated/client_data.h>
+#include <generated/client_data.h>
 
 #include <engine/console.h>
 #include <engine/engine.h>
@@ -21,7 +21,6 @@
 #include <game/version.h>
 
 #include <game/client/gameclient.h>
-#include <game/client/render.h>
 #include <game/client/ui.h>
 
 #include <iterator>
@@ -739,6 +738,17 @@ void CGameConsole::CInstance::UpdateEntryTextAttributes(CBacklogEntry *pEntry) c
 	pEntry->m_LineCount = Cursor.m_LineCount;
 }
 
+bool CGameConsole::CInstance::IsInputHidden() const
+{
+	if(m_Type != CONSOLETYPE_REMOTE)
+		return false;
+	if(m_pGameConsole->Client()->State() != IClient::STATE_ONLINE || m_Searching)
+		return false;
+	if(m_pGameConsole->Client()->RconAuthed())
+		return false;
+	return m_UserGot || !m_UsernameReq;
+}
+
 void CGameConsole::CInstance::SetSearching(bool Searching)
 {
 	m_Searching = Searching;
@@ -1027,7 +1037,7 @@ void CGameConsole::Prompt(char (&aPrompt)[32])
 				str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("Enter Password"));
 		}
 		else
-			str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("Not Connected"));
+			str_format(aPrompt, sizeof(aPrompt), "%s> ", Localize("NOT CONNECTED"));
 	}
 	else
 	{
@@ -1198,7 +1208,7 @@ void CGameConsole::OnRender()
 		}
 
 		// render console input (wrap line)
-		pConsole->m_Input.SetHidden(m_ConsoleType == CONSOLETYPE_REMOTE && Client()->State() == IClient::STATE_ONLINE && !Client()->RconAuthed() && (pConsole->m_UserGot || !pConsole->m_UsernameReq));
+		pConsole->m_Input.SetHidden(pConsole->IsInputHidden());
 		if(m_ConsoleState == CONSOLE_OPEN)
 		{
 			pConsole->m_Input.Activate(EInputPriority::CONSOLE); // Ensure that the input is active
@@ -1212,15 +1222,16 @@ void CGameConsole::OnRender()
 			pConsole->m_LastInputHeight = pConsole->m_BoundingBox.m_H;
 		if(pConsole->m_Input.HasSelection())
 			pConsole->m_HasSelection = false; // Clear console selection if we have a line input selection
-
-		y -= pConsole->m_BoundingBox.m_H - FONT_SIZE;
-
+		
 		if(pConsole->m_LastInputHeight != pConsole->m_BoundingBox.m_H)
 		{
 			pConsole->m_HasSelection = false;
 			pConsole->m_MouseIsPress = false;
 			pConsole->m_LastInputHeight = pConsole->m_BoundingBox.m_H;
 		}
+
+		float InputHeight = maximum(pConsole->m_BoundingBox.m_H, FONT_SIZE);
+		y -= InputHeight - FONT_SIZE;
 
 		// render possible commands
 		if(!pConsole->m_Searching && (m_ConsoleType == CONSOLETYPE_LOCAL || Client()->RconAuthed()) && !pConsole->m_Input.IsEmpty())
@@ -1238,8 +1249,6 @@ void CGameConsole::OnRender()
 
 			Info.m_Cursor.SetPosition(vec2(InitialX - Info.m_Offset, InitialY + RowHeight + 2.0f));
 			Info.m_Cursor.m_FontSize = FONT_SIZE;
-			Info.m_Cursor.m_Flags |= TEXTFLAG_STOP_AT_END;
-			Info.m_Cursor.m_LineWidth = std::numeric_limits<float>::max();
 			const int NumCommands = m_pConsole->PossibleCommands(Info.m_pCurrentCmd, pConsole->m_CompletionFlagmask, m_ConsoleType != CGameConsole::CONSOLETYPE_LOCAL && Client()->RconAuthed() && Client()->UseTempRconCommands(), PossibleCommandsRenderCallback, &Info);
 			pConsole->m_CompletionRenderOffset = Info.m_Offset;
 

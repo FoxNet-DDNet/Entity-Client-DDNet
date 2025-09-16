@@ -9,6 +9,8 @@
 #define BASE_SYSTEM_H
 
 #include "detect.h"
+#include "fs.h"
+#include "str.h"
 #include "types.h"
 
 #include <chrono>
@@ -1209,112 +1211,6 @@ std::string windows_format_system_message(unsigned long error);
  */
 
 /**
- * Appends a string to another.
- *
- * @ingroup Strings
- *
- * @param dst Pointer to a buffer that contains a string.
- * @param src String to append.
- * @param dst_size Size of the buffer of the dst string.
- *
- * @remark The strings are treated as null-terminated strings.
- * @remark Guarantees that dst string will contain null-termination.
- */
-void str_append(char *dst, const char *src, int dst_size);
-
-/**
- * Appends a string to a fixed-size array of chars.
- *
- * @ingroup Strings
- *
- * @param dst Array that shall receive the string.
- * @param src String to append.
- *
- * @remark The strings are treated as null-terminated strings.
- * @remark Guarantees that dst string will contain null-termination.
- */
-template<int N>
-void str_append(char (&dst)[N], const char *src)
-{
-	str_append(dst, src, N);
-}
-
-/**
- * Copies a string to another.
- *
- * @ingroup Strings
- *
- * @param dst Pointer to a buffer that shall receive the string.
- * @param src String to be copied.
- * @param dst_size Size of the buffer dst.
- *
- * @return Length of written string, even if it has been truncated
- *
- * @remark The strings are treated as null-terminated strings.
- * @remark Guarantees that dst string will contain null-termination.
- */
-int str_copy(char *dst, const char *src, int dst_size);
-
-/**
- * Copies a string to a fixed-size array of chars.
- *
- * @ingroup Strings
- *
- * @param dst Array that shall receive the string.
- * @param src String to be copied.
- *
- * @remark The strings are treated as null-terminated strings.
- * @remark Guarantees that dst string will contain null-termination.
- */
-template<int N>
-void str_copy(char (&dst)[N], const char *src)
-{
-	str_copy(dst, src, N);
-}
-
-/**
- * Truncates a UTF-8 encoded string to a given length.
- *
- * @ingroup Strings
- *
- * @param dst Pointer to a buffer that shall receive the string.
- * @param dst_size Size of the buffer dst.
- * @param str String to be truncated.
- * @param truncation_len Maximum codepoints in the returned string.
- *
- * @remark The strings are treated as utf8-encoded null-terminated strings.
- * @remark Guarantees that dst string will contain null-termination.
- */
-void str_utf8_truncate(char *dst, int dst_size, const char *src, int truncation_len);
-
-/**
- * Truncates a string to a given length.
- *
- * @ingroup Strings
- *
- * @param dst Pointer to a buffer that shall receive the string.
- * @param dst_size Size of the buffer dst.
- * @param src String to be truncated.
- * @param truncation_len Maximum length of the returned string (not
- *                       counting the null-termination).
- *
- * @remark The strings are treated as null-terminated strings.
- * @remark Guarantees that dst string will contain null-termination.
- */
-void str_truncate(char *dst, int dst_size, const char *src, int truncation_len);
-
-/**
- * Returns the length of a null-terminated string.
- *
- * @ingroup Strings
- *
- * @param str Pointer to the string.
- *
- * @return Length of string in bytes excluding the null-termination.
- */
-int str_length(const char *str);
-
-/**
  * Performs printf formatting into a buffer.
  *
  * @ingroup Strings
@@ -1375,57 +1271,6 @@ inline int str_format_opt(char *buffer, int buffer_size, const char *format, int
 
 #define str_format str_format_opt
 #endif
-
-/**
- * Trims specific number of words at the start of a string.
- *
- * @ingroup Strings
- *
- * @param str String to trim the words from.
- * @param words Count of words to trim.
- *
- * @return Trimmed string
- *
- * @remark The strings are treated as null-terminated strings.
- * @remark Leading whitespace is always trimmed.
- */
-const char *str_trim_words(const char *str, int words);
-
-/**
- * Check whether string has ASCII control characters.
- *
- * @ingroup Strings
- *
- * @param str String to check.
- *
- * @return Whether the string has ASCII control characters.
- *
- * @remark The strings are treated as null-terminated strings.
- */
-bool str_has_cc(const char *str);
-
-/**
- * Replaces all characters below 32 with whitespace.
- *
- * @ingroup Strings
- *
- * @param str String to sanitize.
- *
- * @remark The strings are treated as null-terminated strings.
- */
-void str_sanitize_cc(char *str);
-
-/**
- * Replaces all characters below 32 with whitespace with
- * exception to \t, \n and \r.
- *
- * @ingroup Strings
- *
- * @param str String to sanitize.
- *
- * @remark The strings are treated as null-terminated strings.
- */
-void str_sanitize(char *str);
 
 /**
  * Replaces all invalid filename characters with whitespace.
@@ -1969,37 +1814,6 @@ void fs_listdir(const char *dir, FS_LISTDIR_CALLBACK cb, int type, void *user);
 void fs_listdir_fileinfo(const char *dir, FS_LISTDIR_CALLBACK_FILEINFO cb, int type, void *user);
 
 /**
- * Creates a directory.
- *
- * @ingroup Filesystem
- *
- * @param path Directory to create.
- *
- * @return `0` on success. Negative value on failure.
- *
- * @remark Does not create several directories if needed. "a/b/c" will
- *         result in a failure if b or a does not exist.
- *
- * @remark The strings are treated as null-terminated strings.
- */
-int fs_makedir(const char *path);
-
-/**
- * Removes a directory.
- *
- * @ingroup Filesystem
- *
- * @param path Directory to remove.
- *
- * @return `0` on success. Negative value on failure.
- *
- * @remark Cannot remove a non-empty directory.
- *
- * @remark The strings are treated as null-terminated strings.
- */
-int fs_removedir(const char *path);
-
-/**
  * Recursively creates parent directories for a file or directory.
  *
  * @ingroup Filesystem
@@ -2222,27 +2036,6 @@ int64_t str_toint64_base(const char *str, int base = 10);
 float str_tofloat(const char *str);
 bool str_tofloat(const char *str, float *out);
 
-/**
- * Determines whether a character is whitespace.
- *
- * @ingroup Strings
- *
- * @param c the character to check.
- *
- * @return `1` if the character is whitespace, `0` otherwise.
- *
- * @remark The following characters are considered whitespace: ' ', '\n', '\r', '\t'.
- */
-int str_isspace(char c);
-
-char str_uppercase(char c);
-
-bool str_isnum(char c);
-
-int str_isallnum(const char *str);
-
-int str_isallnum_hex(const char *str);
-
 unsigned str_quickhash(const char *str);
 
 int str_utf8_to_skeleton(const char *str, int *buf, int buf_len);
@@ -2333,28 +2126,6 @@ int str_utf8_comp_nocase_num(const char *a, const char *b, int num);
 const char *str_utf8_find_nocase(const char *haystack, const char *needle, const char **end = nullptr);
 
 /**
- * Checks whether the given Unicode codepoint renders as space.
- *
- * @ingroup Strings
- *
- * @param code Unicode codepoint to check.
- *
- * @return Whether the codepoint is a space.
- */
-int str_utf8_isspace(int code);
-
-/**
- * Checks whether a given byte is the start of a UTF-8 character.
- *
- * @ingroup Strings
- *
- * @param c Byte to check.
- *
- * @return Whether the char starts a UTF-8 character.
- */
-int str_utf8_isstart(char c);
-
-/**
  * Skips leading characters that render as spaces.
  *
  * @ingroup Strings
@@ -2379,34 +2150,6 @@ const char *str_utf8_skip_whitespaces(const char *str);
 void str_utf8_trim_right(char *param);
 
 /**
- * Moves a cursor backwards in an UTF-8 string,
- *
- * @ingroup Strings
- *
- * @param str UTF-8 string.
- * @param cursor Position in the string.
- *
- * @return New cursor position.
- *
- * @remark Won't move the cursor less then 0.
- * @remark The strings are treated as null-terminated.
- */
-int str_utf8_rewind(const char *str, int cursor);
-
-/**
- * Fixes truncation of a Unicode character at the end of a UTF-8 string.
- *
- * @ingroup Strings
- *
- * @param str UTF-8 string.
- *
- * @return The new string length.
- *
- * @remark The strings are treated as null-terminated.
- */
-int str_utf8_fix_truncation(char *str);
-
-/**
  * Moves a cursor forwards in an UTF-8 string.
  *
  * @ingroup Strings
@@ -2420,21 +2163,6 @@ int str_utf8_fix_truncation(char *str);
  * @remark The strings are treated as null-terminated.
  */
 int str_utf8_forward(const char *str, int cursor);
-
-/**
- * Decodes a UTF-8 codepoint.
- *
- * @ingroup Strings
- *
- * @param ptr Pointer to a UTF-8 string. This pointer will be moved forward.
- *
- * @return The Unicode codepoint. `-1` for invalid input and 0 for end of string.
- *
- * @remark This function will also move the pointer forward.
- * @remark You may call this function again after an error occurred.
- * @remark The strings are treated as null-terminated.
- */
-int str_utf8_decode(const char **ptr);
 
 /**
  * Encode a UTF-8 character.
@@ -2665,7 +2393,7 @@ std::wstring windows_args_to_wide(const char **arguments, const size_t num_argum
  *
  * @return Handle of the new process, or @link INVALID_PROCESS @endlink on error.
  */
-PROCESS shell_execute(const char *file, EShellExecuteWindowState window_state, const char **arguments = nullptr, const size_t num_arguments = 0);
+PROCESS shell_execute(const char *file, EShellExecuteWindowState window_state, const char **arguments = nullptr, size_t num_arguments = 0);
 
 /**
  * Sends kill signal to a process.
@@ -2736,25 +2464,6 @@ int open_file(const char *path);
  * @param random_length Length of the short array.
  */
 void generate_password(char *buffer, unsigned length, const unsigned short *random, unsigned random_length);
-
-/**
- * Initializes the secure random module.
- * You *MUST* check the return value of this function.
- *
- * @ingroup Secure-Random
- *
- * @return `0` on success.
- */
-[[nodiscard]] int secure_random_init();
-
-/**
- * Uninitializes the secure random module.
- *
- * @ingroup Secure-Random
- *
- * @return `0` on success.
- */
-int secure_random_uninit();
 
 /**
  * Fills the buffer with the specified amount of random password characters.

@@ -12,12 +12,12 @@
 #include <engine/storage.h>
 #include <engine/textrender.h>
 
+#include <generated/client_data.h>
+
 #include <game/client/components/console.h>
 #include <game/client/gameclient.h>
-#include <game/client/render.h>
 #include <game/client/ui.h>
 #include <game/client/ui_listbox.h>
-#include <game/generated/client_data.h>
 #include <game/localization.h>
 
 #include "maplayers.h"
@@ -63,8 +63,13 @@ void CMenus::HandleDemoSeeking(float PositionToSeek, float TimeToSeek)
 		else
 			DemoPlayer()->SeekPercent(PositionToSeek);
 		GameClient()->m_SuppressEvents = false;
-		if(!DemoPlayer()->BaseInfo()->m_Paused && PositionToSeek == 1.0f)
+
+		if(!DemoPlayer()->BaseInfo()->m_Paused &&
+			!DemoPlayer()->BaseInfo()->m_LiveDemo &&
+			PositionToSeek == 1.0f)
+		{
 			DemoPlayer()->Pause();
+		}
 	}
 }
 
@@ -346,6 +351,34 @@ void CMenus::RenderDemoPlayer(CUIRect MainView)
 				m_DemoControlsPositionOffset.y = std::clamp(m_DemoControlsPositionOffset.y, -DemoControlsOriginal.y, MainView.h - DemoControlsDragRect.h - DemoControlsOriginal.y);
 			}
 		}
+	}
+
+	// Live button
+	if(pInfo->m_LiveDemo)
+	{
+		CUIRect LiveButton;
+		SeekBar.VSplitRight(SeekBar.h, &SeekBar, &LiveButton);
+		SeekBar.VSplitRight(2.0f, &SeekBar, nullptr);
+		TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+		TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
+		TextRender()->TextColor(pInfo->m_LivePlayback ? ColorRGBA(1.0f, 0.0f, 0.0f, 1.0f) : ColorRGBA(0.6f, 0.6f, 0.6f, 1.0f));
+		Ui()->DoLabel(&LiveButton, FONT_ICON_CIRCLE, 24.0f, TEXTALIGN_MC);
+		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+		TextRender()->SetRenderFlags(0);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+		static char s_LiveButtonId;
+		if(Ui()->HotItem() == &s_LiveButtonId)
+		{
+			LiveButton.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, 3.0f);
+		}
+		if(Ui()->DoButtonLogic(&s_LiveButtonId, 0, &LiveButton, BUTTONFLAG_LEFT))
+		{
+			PositionToSeek = 1.0f;
+			DemoPlayer()->SetSpeedIndex(DEMO_SPEED_INDEX_DEFAULT);
+			UpdateLastSpeedChange();
+		}
+		GameClient()->m_Tooltips.DoToolTip(&s_LiveButtonId, &LiveButton,
+			pInfo->m_LivePlayback ? Localize("Live", "Demo playback") : Localize("Go to Live", "Demo playback"));
 	}
 
 	// do seekbar
@@ -1095,35 +1128,41 @@ void CMenus::RenderDemoBrowserList(CUIRect ListView, bool &WasListboxItemActivat
 	}
 #endif
 
-	struct SColumn
+	class CColumn
 	{
+	public:
 		int m_Id;
 		int m_Sort;
 		const char *m_pCaption;
 		int m_Direction;
+		bool m_FontIcon;
 		float m_Width;
 		CUIRect m_Rect;
+		const char *m_pTooltip;
 	};
 
 	enum
 	{
 		COL_ICON = 0,
 		COL_DEMONAME,
+		COL_MARKERS,
 		COL_LENGTH,
 		COL_DATE,
 	};
 
 	static CListBox s_ListBox;
-	static SColumn s_aCols[] = {
-		{-1, -1, "", -1, 2.0f, {0}},
-		{COL_ICON, -1, "", -1, ms_ListheaderHeight, {0}},
-		{-1, -1, "", -1, 2.0f, {0}},
-		{COL_DEMONAME, SORT_DEMONAME, Localizable("Demo"), 0, 0.0f, {0}},
-		{-1, -1, "", 1, 2.0f, {0}},
-		{COL_LENGTH, SORT_LENGTH, Localizable("Length"), 1, 75.0f, {0}},
-		{-1, -1, "", 1, 2.0f, {0}},
-		{COL_DATE, SORT_DATE, Localizable("Date"), 1, 150.0f, {0}},
-		{-1, -1, "", 1, s_ListBox.ScrollbarWidthMax(), {0}},
+	static CColumn s_aCols[] = {
+		{-1, -1, "", -1, false, 2.0f, {0}, nullptr},
+		{COL_ICON, -1, "", -1, false, ms_ListheaderHeight, {0}, nullptr},
+		{-1, -1, "", -1, false, 2.0f, {0}, nullptr},
+		{COL_DEMONAME, SORT_DEMONAME, Localizable("Demo"), 0, false, 0.0f, {0}, nullptr},
+		{-1, -1, "", 1, false, 2.0f, {0}, nullptr},
+		{COL_MARKERS, SORT_MARKERS, FONT_ICON_BOOKMARK, 1, true, 30.0f, {0}, Localizable("Markers")},
+		{-1, -1, "", 1, false, 2.0f, {0}, nullptr},
+		{COL_LENGTH, SORT_LENGTH, Localizable("Length"), 1, false, 75.0f, {0}, nullptr},
+		{-1, -1, "", 1, false, 2.0f, {0}, nullptr},
+		{COL_DATE, SORT_DATE, Localizable("Date"), 1, false, 150.0f, {0}, nullptr},
+		{-1, -1, "", 1, false, s_ListBox.ScrollbarWidthMax(), {0}, nullptr},
 	};
 
 	CUIRect Headers, ListBox;
@@ -1157,7 +1196,22 @@ void CMenus::RenderDemoBrowserList(CUIRect ListView, bool &WasListboxItemActivat
 	{
 		if(Col.m_pCaption[0] != '\0' && Col.m_Sort != -1)
 		{
-			if(DoButton_GridHeader(&Col.m_Id, Localize(Col.m_pCaption), g_Config.m_BrDemoSort == Col.m_Sort, &Col.m_Rect))
+			if(Col.m_FontIcon)
+			{
+				TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+				TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
+			}
+			const int ButtonPressed = DoButton_GridHeader(&Col.m_Id, Col.m_FontIcon ? Col.m_pCaption : Localize(Col.m_pCaption), g_Config.m_BrDemoSort == Col.m_Sort, &Col.m_Rect, Col.m_FontIcon ? TEXTALIGN_MC : TEXTALIGN_ML);
+			if(Col.m_pTooltip != nullptr)
+			{
+				GameClient()->m_Tooltips.DoToolTip(&Col.m_Id, &Col.m_Rect, Localize(Col.m_pTooltip));
+			}
+			if(Col.m_FontIcon)
+			{
+				TextRender()->SetRenderFlags(0);
+				TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+			}
+			if(ButtonPressed)
 			{
 				if(g_Config.m_BrDemoSort == Col.m_Sort)
 					g_Config.m_BrDemoSortOrder ^= 1;
@@ -1230,6 +1284,12 @@ void CMenus::RenderDemoBrowserList(CUIRect ListView, bool &WasListboxItemActivat
 				Props.m_EllipsisAtEnd = true;
 				Props.m_EnableWidthCheck = false;
 				Ui()->DoLabel(&Button, pItem->m_aName, 12.0f, TEXTALIGN_ML, Props);
+			}
+			else if(Col.m_Id == COL_MARKERS && !pItem->m_IsDir && pItem->m_Valid)
+			{
+				str_format(aBuf, sizeof(aBuf), "%d", pItem->NumMarkers());
+				Button.VMargin(4.0f, &Button);
+				Ui()->DoLabel(&Button, aBuf, 12.0f, TEXTALIGN_MR);
 			}
 			else if(Col.m_Id == COL_LENGTH && !pItem->m_IsDir && pItem->m_Valid)
 			{
