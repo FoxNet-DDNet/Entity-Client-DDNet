@@ -68,7 +68,6 @@ class CEClient : public CComponent
 	};
 	CLastPing m_aLastPing;
 
-	bool LineShouldHighlight(const char *pLine, const char *pName);
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
 	virtual void OnMessage(int MsgType, void *pRawMsg) override;
 

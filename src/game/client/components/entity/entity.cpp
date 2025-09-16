@@ -16,21 +16,6 @@
 #include "entity.h"
 #include <cmath>
 
-bool CEClient::LineShouldHighlight(const char *pLine, const char *pName)
-{
-	const char *pHL = str_utf8_find_nocase(pLine, pName);
-
-	if(pHL)
-	{
-		int Length = str_length(pName);
-
-		if(Length > 0 && (pLine == pHL || pHL[-1] == ' ') && (pHL[Length] == 0 || pHL[Length] == ' ' || pHL[Length] == '.' || pHL[Length] == '!' || pHL[Length] == ',' || pHL[Length] == '?' || pHL[Length] == ':'))
-			return true;
-	}
-
-	return false;
-}
-
 void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {
 	if(ClientId < 0 || ClientId > MAX_CLIENTS)
@@ -649,16 +634,16 @@ void CEClient::OnNewSnapshot()
 
 void CEClient::OnStateChange(int NewState, int OldState)
 {
-	if(NewState == IClient::STATE_CONNECTING || NewState == IClient::STATE_OFFLINE)
+	if(NewState != OldState)
 	{
 		m_SentKill = false;
-		m_KillCount = 0;
 		m_JoinedTeam = false;
 		m_AttempedJoinTeam = false;
 		m_LastReplyId = -1;
 		m_aLastPing = CLastPing();
 	}
-	else if(NewState == IClient::STATE_ONLINE)
+
+	if(NewState == IClient::STATE_ONLINE)
 	{
 		CServerInfo CurrentServerInfo;
 		Client()->GetServerInfo(&CurrentServerInfo);
