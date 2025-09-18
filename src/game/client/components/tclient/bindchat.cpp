@@ -316,7 +316,9 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 	if(!ValidPrefix(Chat.m_aCompletionBuffer[0]))
 		return false;
 
-	if(m_vChatCommands.size() == 0)
+	const size_t NumCommands = m_vChatCommands.size();
+
+	if(NumCommands == 0)
 		return false;
 
 	const CChat::CCommand *pCompletionCommand = nullptr;
@@ -327,17 +329,33 @@ bool CBindChat::ChatDoAutocomplete(bool ShiftPressed)
 		Chat.m_CompletionChosen--;
 	else if(!ShiftPressed)
 		Chat.m_CompletionChosen++;
-	Chat.m_CompletionChosen = (Chat.m_CompletionChosen + m_vChatCommands.size()) % m_vChatCommands.size(); // size != 0
+	Chat.m_CompletionChosen = (Chat.m_CompletionChosen + 2 * NumCommands) % (2 * NumCommands);
 
 	Chat.m_CompletionUsed = true;
-	int Index = Chat.m_CompletionChosen;
-	for(size_t i = 0; i < m_vChatCommands.size(); i++)
+
+	const char *pCommandStart = Chat.m_aCompletionBuffer;
+	for(size_t i = 0; i < 2 * NumCommands; ++i)
 	{
-		int CommandIndex = (Index + i) % m_vChatCommands.size();
-		if(str_startswith_nocase(m_vChatCommands.at(CommandIndex).m_aName, Chat.m_aCompletionBuffer))
+		int SearchType;
+		int Index;
+
+		if(ShiftPressed)
 		{
-			pCompletionCommand = &m_vChatCommands.at(CommandIndex);
-			Chat.m_CompletionChosen = CommandIndex;
+			SearchType = ((Chat.m_CompletionChosen - i + 2 * NumCommands) % (2 * NumCommands)) / NumCommands;
+			Index = (Chat.m_CompletionChosen - i + NumCommands) % NumCommands;
+		}
+		else
+		{
+			SearchType = ((Chat.m_CompletionChosen + i) % (2 * NumCommands)) / NumCommands;
+			Index = (Chat.m_CompletionChosen + i) % NumCommands;
+		}
+
+		auto &Command = m_vChatCommands[Index];
+
+		if(str_startswith_nocase(Command.m_aName, pCommandStart))
+		{
+			pCompletionCommand = &Command;
+			Chat.m_CompletionChosen = Index + SearchType * NumCommands;
 			break;
 		}
 	}
