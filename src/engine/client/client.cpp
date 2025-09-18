@@ -5288,13 +5288,8 @@ int CClient::UdpConnectivity(int NetType)
 	return Connectivity;
 }
 
-bool CClient::ViewLink(const char *pLink)
+static bool ViewLinkImpl(const char *pLink)
 {
-	if(!str_startswith(pLink, "https://"))
-	{
-		log_error("client", "Failed to open link '%s': only https-links are allowed", pLink);
-		return false;
-	}
 #if defined(CONF_PLATFORM_ANDROID)
 	if(SDL_OpenURL(pLink) == 0)
 	{
@@ -5312,10 +5307,20 @@ bool CClient::ViewLink(const char *pLink)
 #endif
 }
 
+bool CClient::ViewLink(const char *pLink)
+{
+	if(!str_startswith(pLink, "https://"))
+	{
+		log_error("client", "Failed to open link '%s': only https-links are allowed", pLink);
+		return false;
+	}
+	return ViewLinkImpl(pLink);
+}
+
 bool CClient::ViewFile(const char *pFilename)
 {
 #if defined(CONF_PLATFORM_MACOS)
-	return ViewLink(pFilename);
+	return ViewLinkImpl(pFilename);
 #else
 	// Create a file link so the path can contain forward and
 	// backward slashes. But the file link must be absolute.
@@ -5334,7 +5339,7 @@ bool CClient::ViewFile(const char *pFilename)
 
 	char aFileLink[IO_MAX_PATH_LENGTH];
 	str_format(aFileLink, sizeof(aFileLink), "file://%s%s", aWorkingDir, pFilename);
-	return ViewLink(aFileLink);
+	return ViewLinkImpl(aFileLink);
 #endif
 }
 

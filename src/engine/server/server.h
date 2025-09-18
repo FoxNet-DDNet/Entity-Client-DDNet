@@ -210,7 +210,7 @@ public:
 		}
 	};
 
-	int ConsoleAccessLevel(int ClientId) const;
+	IConsole::EAccessLevel ConsoleAccessLevel(int ClientId) const;
 
 	CClient m_aClients[MAX_CLIENTS];
 	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS];
@@ -286,7 +286,7 @@ public:
 	std::shared_ptr<ILogger> m_pStdoutLogger = nullptr;
 
 	CServer();
-	~CServer();
+	~CServer() override;
 
 	bool IsClientNameAvailable(int ClientId, const char *pNameRequest);
 	bool SetClientNameImpl(int ClientId, const char *pNameRequest, bool Set);
