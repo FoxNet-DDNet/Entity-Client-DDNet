@@ -8,7 +8,7 @@
 #include <tuple>
 
 static constexpr const char *ECLIENT_INFO_FILE = "eclient-info.json";
-static constexpr const char *ECLIENT_INFO_URL = "https://www.entityclient.net/info.json";
+static constexpr const char *ECLIENT_INFO_URL[2] = {"https://raw.githubusercontent.com/qxdFox/FoxSite/refs/heads/main/docs/info.json", "https://www.entityclient.net/info.json"};
 
 void CEntityInfo::OnInit()
 {
@@ -39,6 +39,13 @@ void CEntityInfo::OnRender()
 			FinishEClientInfo();
 			ResetEClientInfoTask();
 		}
+		else if(m_pEClientInfoTask->State() == EHttpState::ERROR && !m_Retried)
+		{
+			g_Config.m_ClInfoUrlType = !g_Config.m_ClInfoUrlType;
+			ResetEClientInfoTask();
+			FetchEClientInfo();
+			m_Retried = true;
+		}
 	}
 }
 void CEntityInfo::ResetEClientInfoTask()
@@ -52,16 +59,16 @@ void CEntityInfo::ResetEClientInfoTask()
 
 void CEntityInfo::FetchEClientInfo()
 {
-	if(m_pEClientInfoTask && !m_pEClientInfoTask->Done())
-		return;
-	const char *aUrl = ECLIENT_INFO_URL;
+    if(m_pEClientInfoTask && !m_pEClientInfoTask->Done())
+        return;
+    const char *aUrl = ECLIENT_INFO_URL[g_Config.m_ClInfoUrlType];
 
-	m_pEClientInfoTask = HttpGetFile(aUrl, Storage(), ECLIENT_INFO_FILE, IStorage::TYPE_SAVE);
-	m_pEClientInfoTask->Timeout(CTimeout{10000, 0, 500, 10});
-	m_pEClientInfoTask->IpResolve(IPRESOLVE::V4);
-	m_pEClientInfoTask->ExpectSha256(SHA256_ZEROED);
-	m_pEClientInfoTask->SkipByFileTime(false);
-	Http()->Run(m_pEClientInfoTask);
+    m_pEClientInfoTask = HttpGetFile(aUrl, Storage(), ECLIENT_INFO_FILE, IStorage::TYPE_SAVE);
+    m_pEClientInfoTask->Timeout(CTimeout{10000, 0, 500, 10});
+    m_pEClientInfoTask->IpResolve(IPRESOLVE::V4);
+    m_pEClientInfoTask->ExpectSha256(SHA256_ZEROED);
+    m_pEClientInfoTask->SkipByFileTime(false);
+    Http()->Run(m_pEClientInfoTask);
 }
 
 typedef std::tuple<int, int, int> EcVersion;
