@@ -269,6 +269,10 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
+	CUIRect Space;
+	ContentView.HSplitTop(10.0f, &Space, &ContentView);
+	s_ScrollRegion.AddRect(Space);
+
 	s_ScrollRegion.End();
 }
 
