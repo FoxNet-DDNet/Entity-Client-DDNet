@@ -2844,6 +2844,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &Cosmetics, LineMargin);
 
+
 			static std::vector<const char *> s_EffectDropDownNames;
 			s_EffectDropDownNames = {Localize("No Effect"), Localize("Sparkle effect"), Localize("Fire Trail Effect"), Localize("Switch Effect")};
 			static CUi::SDropDownState s_EffectDropDownState;
@@ -2858,8 +2859,6 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			{
 				g_Config.m_ClEffect = EffectSelectedNew;
 				EffectSelectedOld = EffectSelectedNew;
-				dbg_msg("E-Client", "Effect changed to %d", g_Config.m_ClEffect);
-
 				if(g_Config.m_ClEffectSpeedOverride)
 				{
 					if(g_Config.m_ClEffect == EFFECT_SPARKLE)
