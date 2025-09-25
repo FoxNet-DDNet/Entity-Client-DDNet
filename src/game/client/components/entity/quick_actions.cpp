@@ -79,21 +79,30 @@ int CQuickActions::GetClosetClientId(vec2 Pos)
 void CQuickActions::ConOpenQuickActionMenu(IConsole::IResult *pResult, void *pUserData)
 {
 	CQuickActions *pThis = (CQuickActions *)pUserData;
-	if(pThis->Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		if(pThis->GameClient()->m_Emoticon.IsActive() || pThis->GameClient()->m_Bindwheel.IsActive())
-		{
-			pThis->m_Active = false;
-		}
-		else
-		{
-			const vec2 Pos = pThis->GetCursorWorldPos();
-			pThis->m_QuickActionId = pThis->GetClosetClientId(Pos);
-			if(pThis->m_QuickActionId < 0 || pThis->m_QuickActionId >= MAX_CLIENTS)
-				pThis->m_QuickActionId = -1;
+	if(pThis->Client()->State() == IClient::STATE_DEMOPLAYBACK)
+		return;
 
-			pThis->m_Active = pResult->GetInteger(0) != 0;
-		}
+	const bool Open = pResult->GetInteger(0) != 0;
+
+	if(!Open)
+	{
+		pThis->m_Active = false;
+		return;
+	}
+
+	if(pThis->GameClient()->m_Emoticon.IsActive() || pThis->GameClient()->m_Bindwheel.IsActive())
+	{
+		pThis->m_Active = false;
+		return;
+	}
+
+	if(!pThis->m_Active)
+	{
+		const vec2 Pos = pThis->GetCursorWorldPos();
+		pThis->m_QuickActionId = pThis->GetClosetClientId(Pos);
+		if(pThis->m_QuickActionId < 0 || pThis->m_QuickActionId >= MAX_CLIENTS)
+			pThis->m_QuickActionId = -1;
+		pThis->m_Active = true;
 	}
 }
 
