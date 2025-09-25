@@ -477,15 +477,79 @@ void CQuickActions::OnRender()
 
 void CQuickActions::ExecuteBind(int Bind)
 {
-	char aCmd[(int)BINDWHEEL_MAX_CMD + (int)MAX_NAME_LENGTH] = "";
-
 	if(m_QuickActionId < 0 || m_QuickActionId >= MAX_CLIENTS)
 		return;
-	char pTargetName[32];
+	if(Bind < 0 || Bind >= (int)m_vBinds.size())
+		return;
 
-	str_copy(pTargetName, GameClient()->m_aClients[m_QuickActionId].m_aName);
+	const char *pTemplate = m_vBinds[Bind].m_aCommand;
+	const char *pPlayerName = GameClient()->m_aClients[m_QuickActionId].m_aName;
+	
+	char aCmd[(int)QUICKACTIONS_MAX_CMD + (int)MAX_NAME_LENGTH] = "";
 
-	str_format(aCmd, sizeof(aCmd), m_vBinds[Bind].m_aCommand, pTargetName);
+	char *pDst = aCmd;
+	size_t DstRemain = sizeof(aCmd) - 1;
+
+	for(const char *p = pTemplate; *p && DstRemain;)
+	{
+		if(*p == '%')
+		{
+			if(p[1] == '%')
+			{
+				if(DstRemain)
+				{
+					*pDst++ = '%';
+					--DstRemain;
+				}
+				p += 2;
+				continue;
+			}
+			// Player Name
+			if(p[1] == 's')
+			{
+				size_t NameLen = str_length(pPlayerName);
+				if(NameLen > DstRemain)
+					NameLen = DstRemain;
+				if(NameLen)
+				{
+					mem_copy(pDst, pPlayerName, NameLen);
+					pDst += NameLen;
+					DstRemain -= NameLen;
+				}
+				p += 2;
+				continue;
+			}
+			// Player Id
+			else if(p[1] == 'd' || p[1] == 'i')
+			{
+				char aId[12];
+				str_format(aId, sizeof(aId), "%d", m_QuickActionId);
+				size_t IdLen = str_length(aId);
+				if(IdLen > DstRemain)
+					IdLen = DstRemain;
+				if(IdLen)
+				{
+					mem_copy(pDst, aId, IdLen);
+					pDst += IdLen;
+					DstRemain -= IdLen;
+				}
+				p += 2;
+				continue;
+			}
+			if(DstRemain)
+			{
+				*pDst++ = *p++;
+				--DstRemain;
+			}
+			continue;
+		}
+
+		*pDst++ = *p++;
+		--DstRemain;
+	}
+
+	*pDst = '\0';
+
 	Console()->ExecuteLine(aCmd);
 }
 

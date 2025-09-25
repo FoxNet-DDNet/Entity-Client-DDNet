@@ -417,8 +417,8 @@ void CBindChat::CacheChatCommands()
 
 		char CommandBuf[128];
 		str_next_token(ChatBind.m_aCommand, " ", CommandBuf, sizeof(CommandBuf));
-		const IConsole::CCommandInfo *pInfo = GameClient()->Console()->GetCommandInfo(CommandBuf, CFGFLAG_CLIENT, false);
-		CChat::CCommand Command(ChatBind.m_aName, pInfo->m_pParams, pInfo->m_pHelp);
+		const IConsole::ICommandInfo *pInfo = GameClient()->Console()->GetCommandInfo(CommandBuf, CFGFLAG_CLIENT, false);
+		CChat::CCommand Command(ChatBind.m_aName, pInfo->Params(), pInfo->Help());
 		Command.m_Prefix = ChatBind.m_aName[0];
 		bool Found = false;
 		for(const auto &ChatCommand : m_vChatCommands)

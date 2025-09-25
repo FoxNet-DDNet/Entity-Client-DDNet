@@ -988,7 +988,7 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 			str_format(Reason, sizeof(Reason), "In Team %d", RandomTeam);
 			if(Type == Amount + 1)
 			{
-				str_format(Reason, sizeof(Reason), "Friend", RandomTeam);
+				str_copy(Reason, "Friend");
 				Colors = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 				Type = 1;
 			}

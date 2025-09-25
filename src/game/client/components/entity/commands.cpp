@@ -20,23 +20,17 @@ void CEClient::ConServerRainbowSpeed(IConsole::IResult *pResult, void *pUserData
 {
 	CEClient *pSelf = (CEClient *)pUserData;
 
-	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSpeed);
-
 	if(pResult->NumArguments() > 0)
 	{
 		pSelf->m_RainbowSpeed = pResult->GetInteger(0);
 	}
 	else
-		log_info("E-Client", aBuf);
+		log_info("E-Client", "%d", pSelf->m_RainbowSpeed);
 }
 
 void CEClient::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
-
-	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowSat[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
 	{
@@ -52,15 +46,12 @@ void CEClient::ConServerRainbowSaturation(IConsole::IResult *pResult, void *pUse
 		pSelf->m_RainbowSat[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("E-Client", aBuf);
+		log_info("E-Client","%d", pSelf->m_RainbowSat[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
-
-	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowLht[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
 	{
@@ -76,15 +67,12 @@ void CEClient::ConServerRainbowLightness(IConsole::IResult *pResult, void *pUser
 		pSelf->m_RainbowLht[Dummy] = pResult->GetInteger(0);
 	}
 	else
-		log_info("E-Client", aBuf);
+		log_info("E-Client", "%d", pSelf->m_RainbowLht[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
-
-	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowBody[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
 	{
@@ -103,15 +91,12 @@ void CEClient::ConServerRainbowBody(IConsole::IResult *pResult, void *pUserData)
 			pSelf->m_RainbowBody[Dummy] = 1;
 	}
 	else
-		log_info("E-Client", aBuf);
+		log_info("E-Client", "%d", pSelf->m_RainbowBody[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
-
-	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_RainbowFeet[g_Config.m_ClDummy]);
 
 	if(pResult->NumArguments() > 0)
 	{
@@ -130,15 +115,12 @@ void CEClient::ConServerRainbowFeet(IConsole::IResult *pResult, void *pUserData)
 			pSelf->m_RainbowFeet[Dummy] = 1;
 	}
 	else
-		log_info("E-Client", aBuf);
+		log_info("E-Client", "%d", pSelf->m_RainbowFeet[g_Config.m_ClDummy]);
 }
 
 void CEClient::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
-
-	char aBuf[8];
-	str_format(aBuf, sizeof(aBuf), "%d", pSelf->m_BothPlayers);
 
 	if(pResult->NumArguments() > 0)
 	{
@@ -148,27 +130,24 @@ void CEClient::ConServerRainbowBothPlayers(IConsole::IResult *pResult, void *pUs
 			pSelf->m_BothPlayers = 1;
 	}
 	else
-		log_info("E-Client", aBuf);
+		log_info("E-Client", "%d", pSelf->m_BothPlayers);
 }
 
 void CEClient::Votekick(const char *pName, const char *pReason)
 {
-	int ClientId;
-	char Id[8];
+	const int ClientId = GameClient()->GetClientId(pName);
 
-	for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
-	{
-		if(str_comp(pName, GameClient()->m_aClients[ClientId].m_aName) == 0)
-		{
-			str_format(Id, sizeof(Id), "%d", ClientId);
-			GameClient()->m_Voting.Callvote("kick", Id, pReason);
-			return;
-		}
-	}
-	if(ClientId == MAX_CLIENTS)
+	if(ClientId < 0 || ClientId >= MAX_CLIENTS)
 	{
 		GameClient()->ClientMessage("No player with this name found.");
 		return;
+	}
+
+	if(!str_comp(pName, GameClient()->m_aClients[ClientId].m_aName))
+	{
+		char Id[8];
+		str_format(Id, sizeof(Id), "%d", ClientId);
+		GameClient()->m_Voting.Callvote("kick", Id, pReason);
 	}
 }
 
@@ -248,7 +227,7 @@ void CEClient::TempWar(const char *pName, const char *pReason, bool Silent)
 	UnTempHelper(pName, true);
 
 	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp War List", pName, pReason);
+	str_format(aBuf, sizeof(aBuf), "Added \"%s\" to the Temp War List", pName);
 	if(!Silent)
 		GameClient()->ClientMessage(aBuf);
 
@@ -564,7 +543,7 @@ void CEClient::PlayerInfo(const char *pName)
 		if(GameClient()->m_aClients[Id].m_AuthLevel > 0)
 			str_format(aBuf, sizeof(aBuf), "│ Authed: Yes, Auth Level %d", GameClient()->m_aClients[Id].m_AuthLevel);
 		else
-			str_format(aBuf, sizeof(aBuf), "│ Authed: No", GameClient()->m_aClients[Id].m_AuthLevel);
+			str_copy(aBuf, "│ Authed: No");
 		GameClient()->ClientMessage(aBuf);
 
 		GameClient()->ClientMessage("│");
@@ -608,8 +587,7 @@ void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 
 void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
 {
-	char aBuf[128];
-	str_format(aBuf, sizeof(aBuf), "%s", 1);
+	exit(666);
 }
 
 void CEClient::ConSpectateId(IConsole::IResult *pResult, void *pUserData)
