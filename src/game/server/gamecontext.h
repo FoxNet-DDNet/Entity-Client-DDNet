@@ -148,7 +148,6 @@ class CGameContext : public IGameServer
 	static void ConRandomUnfinishedMap(IConsole::IResult *pResult, void *pUserData);
 	static void ConRestart(IConsole::IResult *pResult, void *pUserData);
 	static void ConBroadcast(IConsole::IResult *pResult, void *pUserData);
-	static void ConBroadcastId(IConsole::IResult *pResult, void *pUserData);
 	static void ConSay(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetTeam(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetTeamAll(IConsole::IResult *pResult, void *pUserData);
@@ -204,7 +203,7 @@ public:
 
 	CGameContext();
 	CGameContext(int Reset);
-	~CGameContext();
+	~CGameContext() override;
 
 	void Clear();
 
@@ -398,7 +397,7 @@ public:
 	bool RateLimitPlayerVote(int ClientId);
 	bool RateLimitPlayerMapVote(int ClientId) const;
 
-	void OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int Id) override;
+	void OnUpdatePlayerServerInfo(CJsonWriter *pJsonWriter, int ClientId) override;
 	void ReadCensorList();
 
 	bool PracticeByDefault() const;

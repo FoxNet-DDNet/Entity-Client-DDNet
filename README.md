@@ -2,16 +2,35 @@
 ![gui_logo](https://github.com/user-attachments/assets/76f93b08-3efa-40a8-96b9-b64b17c14b3f)
 
 Fox's client which mostly consists of stolen code
-If you find any bugs or have an Idea for a *simple* Feature then create a new Issue
+If you find any bugs or have an idea for a feature then create a new issue
 
 # Setting Pages:
-![Settings Page](https://github.com/user-attachments/assets/e361a830-0623-4216-b767-665328b7bbaa)
-![Visual Settings](https://github.com/user-attachments/assets/392b2124-4a3b-4790-8597-da5f0b4f6a64)
-![T-Client Settings](https://github.com/user-attachments/assets/a8e11be4-ee53-4b37-b60d-5681ea43157a)
-![Warlist](https://github.com/user-attachments/assets/dbed6164-71fe-4ba1-9062-47f4b87eed63)
-![Bindwheel](https://github.com/user-attachments/assets/aaa86b5b-6d3d-4902-88ae-2f08449ba2a3)
+### Main Settings
+<img width="1668" height="1719" alt="Settings" src="https://github.com/user-attachments/assets/56762cfe-c360-4fd0-853a-919c9cf19214" />
 
+#
+### Visuals
+<img width="1668" height="1702" alt="Visuals" src="https://github.com/user-attachments/assets/cb677e97-71fc-4f78-87a0-64e4f991f1ff" />
 
+#
+### Warlist
+<img width="1668" height="987" alt="Warlist" src="https://github.com/user-attachments/assets/e512dedf-7b94-4e11-9de1-86353bbb6c5f" />
+
+#
+### Status bar
+<img width="1668" height="987" alt="Status bar" src="https://github.com/user-attachments/assets/f39b763b-4391-4e85-89b7-1abb5a6fbe6f" />
+
+#
+### Bindwheel
+<img width="1668" height="987" alt="Bindwheel" src="https://github.com/user-attachments/assets/22346c8a-e8a0-4e2e-bb8a-b32c41970219" />
+
+#
+### Quickactions
+<img width="1668" height="987" alt="Quick actions" src="https://github.com/user-attachments/assets/b9796271-3535-4960-a306-5325033d467d" />
+
+#
+### Info
+<img width="1667" height="987" alt="Info" src="https://github.com/user-attachments/assets/279e9cf8-4574-4ca5-974b-733ed8466e4d" />
 
 # Command List:
 ```
@@ -70,21 +89,19 @@ ec_render_ghost_as_circle
 ec_outline
 ec_outline_in_entities
 ec_outline_freeze
-ec_outline_kill
 ec_outline_unfreeze
-ec_outline_tele
 ec_outline_solid
-ec_outline_width_kill
+ec_outline_tele
+ec_outline_kill
 ec_outline_width_freeze
 ec_outline_width_unfreeze
 ec_outline_width_solid
 ec_outline_width_tele
-ec_outline_alpha
-ec_outline_alpha_solid
-ec_outline_color_solid
+ec_outline_width_kill
 ec_outline_color_freeze
-ec_outline_color_tele
 ec_outline_color_unfreeze
+ec_outline_color_solid
+ec_outline_color_tele
 ec_outline_color_kill
 
 ec_fast_input

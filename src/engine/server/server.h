@@ -175,7 +175,7 @@ public:
 		std::array<char, NETADDR_MAXSTRSIZE> m_aDebugDummyAddrString;
 		std::array<char, NETADDR_MAXSTRSIZE> m_aDebugDummyAddrStringNoPort;
 
-		const IConsole::CCommandInfo *m_pRconCmdToSend;
+		const IConsole::ICommandInfo *m_pRconCmdToSend;
 		enum
 		{
 			MAPLIST_UNINITIALIZED = -1,
@@ -210,7 +210,7 @@ public:
 		}
 	};
 
-	int ConsoleAccessLevel(int ClientId) const;
+	IConsole::EAccessLevel ConsoleAccessLevel(int ClientId) const;
 
 	CClient m_aClients[MAX_CLIENTS];
 	int m_aIdMap[MAX_CLIENTS * VANILLA_MAX_CLIENTS];
@@ -286,7 +286,7 @@ public:
 	std::shared_ptr<ILogger> m_pStdoutLogger = nullptr;
 
 	CServer();
-	~CServer();
+	~CServer() override;
 
 	bool IsClientNameAvailable(int ClientId, const char *pNameRequest);
 	bool SetClientNameImpl(int ClientId, const char *pNameRequest, bool Set);
@@ -356,8 +356,8 @@ public:
 	// Accepts -1 as ClientId to mean "all clients with at least auth level admin"
 	void SendRconLogLine(int ClientId, const CLogMessage *pMessage);
 
-	void SendRconCmdAdd(const IConsole::CCommandInfo *pCommandInfo, int ClientId);
-	void SendRconCmdRem(const IConsole::CCommandInfo *pCommandInfo, int ClientId);
+	void SendRconCmdAdd(const IConsole::ICommandInfo *pCommandInfo, int ClientId);
+	void SendRconCmdRem(const IConsole::ICommandInfo *pCommandInfo, int ClientId);
 	void SendRconCmdGroupStart(int ClientId);
 	void SendRconCmdGroupEnd(int ClientId);
 	int NumRconCommands(int ClientId);

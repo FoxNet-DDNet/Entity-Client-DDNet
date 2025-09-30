@@ -13,6 +13,8 @@ public:
 	void FinishEClientInfo();
 	void ResetEClientInfoTask();
 
+	bool m_Retried = false;
+
 	char m_aVersionStr[10] = "0";
 	char m_aNews[5000] = "";
 	virtual int Sizeof() const override { return sizeof(*this); }

@@ -43,7 +43,7 @@ public:
 	CBindSlot GetBindSlot(const char *pBindString) const;
 
 	CBinds();
-	~CBinds();
+	~CBinds() override;
 	int Sizeof() const override { return sizeof(*this); }
 
 	class CBindsSpecial : public CComponent

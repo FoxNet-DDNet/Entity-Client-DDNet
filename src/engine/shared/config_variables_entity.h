@@ -38,19 +38,19 @@ MACRO_CONFIG_INT(ClRenderGhostAsCircle, ec_render_ghost_as_circle, 0, 0, 1, CFGF
 MACRO_CONFIG_INT(ClOutline, ec_outline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outlines")
 MACRO_CONFIG_INT(ClOutlineEntities, ec_outline_in_entities, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show outlines in entities")
 MACRO_CONFIG_INT(ClOutlineFreeze, ec_outline_freeze, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around freeze and deep")
-MACRO_CONFIG_INT(ClOutlineKill, ec_outline_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around kill")
 MACRO_CONFIG_INT(ClOutlineUnfreeze, ec_outline_unfreeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around unfreeze and undeep")
-MACRO_CONFIG_INT(ClOutlineTele, ec_outline_tele, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around teleporters")
 MACRO_CONFIG_INT(ClOutlineSolid, ec_outline_solid, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around hook and unhook")
+MACRO_CONFIG_INT(ClOutlineTele, ec_outline_tele, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around teleporters")
+MACRO_CONFIG_INT(ClOutlineKill, ec_outline_kill, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outline around kill")
 MACRO_CONFIG_INT(ClOutlineWidthFreeze, ec_outline_width_freeze, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of freeze outline")
 MACRO_CONFIG_INT(ClOutlineWidthUnfreeze, ec_outline_width_unfreeze, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of unfreeze outline")
 MACRO_CONFIG_INT(ClOutlineWidthSolid, ec_outline_width_solid, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of solid outline")
 MACRO_CONFIG_INT(ClOutlineWidthTele, ec_outline_width_tele, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of tele outline")
 MACRO_CONFIG_INT(ClOutlineWidthKill, ec_outline_width_kill, 5, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "(1-16) Width of kill outline")
-MACRO_CONFIG_COL(ClOutlineColorSolid, ec_outline_color_solid, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Solid outline color")
 MACRO_CONFIG_COL(ClOutlineColorFreeze, ec_outline_color_freeze, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Freeze outline color")
-MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Tele outline color")
 MACRO_CONFIG_COL(ClOutlineColorUnfreeze, ec_outline_color_unfreeze, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
+MACRO_CONFIG_COL(ClOutlineColorSolid, ec_outline_color_solid, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Solid outline color")
+MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Tele outline color")
 MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 4294901760, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
 
 // Fast Input
@@ -139,7 +139,6 @@ MACRO_CONFIG_INT(ClIndicatorOnlyTeammates, ec_indicator_only_teammates, 0, 0, 1,
 
 MACRO_CONFIG_INT(ClIndicatorTeamOnly, ec_indicator_inteam, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show indicator while in team")
 MACRO_CONFIG_INT(ClIndicatorTees, ec_indicator_tees, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show tees instead of circles")
-
 
 // Animations
 MACRO_CONFIG_INT(ClAnimateWheelTime, ec_animate_wheel_time, 0, 0, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Duration of wheel animations, in milliseconds (0 == no animation, 1000 = 1 second)")
@@ -325,7 +324,7 @@ MACRO_CONFIG_INT(ClSilentMessages, ec_silent_messages, 1, 0, 1, CFGFLAG_CLIENT |
 MACRO_CONFIG_COL(ClSilentColor, ec_silent_color, 8924078, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client message color of warlist cmds")
 
 // Nameplate
-//MACRO_CONFIG_INT(ClRenderNameplateSpec, ec_render_nameplate_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render nameplates when spectating")
+// MACRO_CONFIG_INT(ClRenderNameplateSpec, ec_render_nameplate_spec, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render nameplates when spectating")
 MACRO_CONFIG_INT(ClStrongWeakColorId, ec_strong_weak_color_id, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render ClientIds in Nameplate Same Color as Strong/Weak Hook Color")
 
 // Inform Update
@@ -366,22 +365,12 @@ MACRO_CONFIG_INT(ClStatusBarTextAlpha, ec_statusbar_text_alpha, 100, 0, 100, CFG
 MACRO_CONFIG_INT(ClStatusBarLabels, ec_statusbar_labels, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show labels on status bar entries")
 MACRO_CONFIG_STR(ClStatusBarScheme, ec_statusbar_scheme, 16, "ac pf r", CFGFLAG_CLIENT | CFGFLAG_SAVE, "The order in which to show status bar items")
 
+MACRO_CONFIG_INT(ClInfoUrlType, ec_info_url_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Url info.cpp should use (0 = Github, 1 = entity)")
 // Warlist Server Browser
 MACRO_CONFIG_INT(ClWarlistServerBrowser, ec_warlist_server_browser, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable Warlist Server Browser, works like the friends tab")
 
 //MACRO_CONFIG_INT(ClChatBubblePushOut, ec_chat_bubble_push_out, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Experimental setting to push bubbles away from eachother")
 
-// Pro_Gaming1921 Extra
-MACRO_CONFIG_INT(ClChangeAllSkin, ac_change_all_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "change everyones Skin")
-
-MACRO_CONFIG_STR(ClChangeAllSkinName, ac_change_all_skin_name, 24, "Catnoa", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have (leave empty to not change)")
-MACRO_CONFIG_INT(ClChangeAllCustomCol, ac_change_all_custom_col, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Change everyones Skin")
-MACRO_CONFIG_COL(ClChangeAllColorBody, ac_change_all_color_body, 5374207, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Body Color of everyone")
-MACRO_CONFIG_COL(ClChangeAllColorFeet, ac_change_all_color_feet, 12767844, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Feet Color of everyone")
-
-MACRO_CONFIG_INT(ClDemoHideIfSolo, ac_demo_hide_solo, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide Players in Demo if they are in a solo part")
-
-// Custom Vairiables from My Server for the editor
 // You can use these if you get my server from https://github.com/FoxNetw/FoxNet-DDNet
 
 MACRO_CONFIG_INT(SvAutoHammer, fs_auto_hammer, 1, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "auto enables guns")
@@ -398,3 +387,13 @@ MACRO_CONFIG_INT(SvFakeGrenade, fs_fake_grenade, 0, 0, 1, CFGFLAG_SERVER | CFGFL
 MACRO_CONFIG_INT(SvDisableFreeze, fs_disable_freeze, 0, 0, 1, CFGFLAG_SERVER | CFGFLAG_GAME, "fake freeze?")
 
 MACRO_CONFIG_INT(SvFinishXPAmount, fs_finish_xp_amount, 0, 0, 5000, CFGFLAG_SERVER | CFGFLAG_GAME, "How much xp a players should get for a map finish (0 = disabled)")
+
+// Pro_Gaming1921 Extra
+MACRO_CONFIG_INT(ClChangeAllSkin, ac_change_all_skin, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "change everyones Skin")
+
+MACRO_CONFIG_STR(ClChangeAllSkinName, ac_change_all_skin_name, 24, "Catnoa", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Skin Everyone Should Have (leave empty to not change)")
+MACRO_CONFIG_INT(ClChangeAllCustomCol, ac_change_all_custom_col, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Change everyones Skin")
+MACRO_CONFIG_COL(ClChangeAllColorBody, ac_change_all_color_body, 5374207, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Body Color of everyone")
+MACRO_CONFIG_COL(ClChangeAllColorFeet, ac_change_all_color_feet, 12767844, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Feet Color of everyone")
+
+MACRO_CONFIG_INT(ClDemoHideIfSolo, ac_demo_hide_solo, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide Players in Demo if they are in a solo part")

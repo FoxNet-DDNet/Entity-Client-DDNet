@@ -1554,10 +1554,10 @@ void CGameContext::OnClientEnter(int ClientId)
 		CNetMsg_Sv_CommandInfoGroupStart Msg;
 		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
 	}
-	for(const IConsole::CCommandInfo *pCmd = Console()->FirstCommandInfo(IConsole::ACCESS_LEVEL_USER, CFGFLAG_CHAT);
-		pCmd; pCmd = pCmd->NextCommandInfo(IConsole::ACCESS_LEVEL_USER, CFGFLAG_CHAT))
+	for(const IConsole::ICommandInfo *pCmd = Console()->FirstCommandInfo(IConsole::EAccessLevel::USER, CFGFLAG_CHAT);
+		pCmd; pCmd = pCmd->NextCommandInfo(IConsole::EAccessLevel::USER, CFGFLAG_CHAT))
 	{
-		const char *pName = pCmd->m_pName;
+		const char *pName = pCmd->Name();
 
 		if(Server()->IsSixup(ClientId))
 		{
@@ -1569,16 +1569,16 @@ void CGameContext::OnClientEnter(int ClientId)
 
 			protocol7::CNetMsg_Sv_CommandInfo Msg;
 			Msg.m_pName = pName;
-			Msg.m_pArgsFormat = pCmd->m_pParams;
-			Msg.m_pHelpText = pCmd->m_pHelp;
+			Msg.m_pArgsFormat = pCmd->Params();
+			Msg.m_pHelpText = pCmd->Help();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
 		}
 		else
 		{
 			CNetMsg_Sv_CommandInfo Msg;
 			Msg.m_pName = pName;
-			Msg.m_pArgsFormat = pCmd->m_pParams;
-			Msg.m_pHelpText = pCmd->m_pHelp;
+			Msg.m_pArgsFormat = pCmd->Params();
+			Msg.m_pHelpText = pCmd->Help();
 			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
 		}
 	}
@@ -2043,10 +2043,9 @@ void *CGameContext::PreProcessMsg(int *pMsgId, CUnpacker *pUnpacker, int ClientI
 			if(pMsg7->m_Force)
 			{
 				str_format(s_aRawMsg, sizeof(s_aRawMsg), "force_vote \"%s\" \"%s\" \"%s\"", pMsg7->m_pType, pMsg7->m_pValue, pMsg7->m_pReason);
-				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
-																	 IConsole::ACCESS_LEVEL_HELPER);
+				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::EAccessLevel::ADMIN : Authed == AUTHED_MOD ? IConsole::EAccessLevel::MODERATOR : IConsole::EAccessLevel::HELPER);
 				Console()->ExecuteLine(s_aRawMsg, ClientId, false);
-				Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
+				Console()->SetAccessLevel(IConsole::EAccessLevel::ADMIN);
 				return nullptr;
 			}
 
@@ -2251,10 +2250,9 @@ void CGameContext::OnSayNetMessage(const CNetMsg_Cl_Say *pMsg, int ClientId, con
 			Console()->SetFlagMask(CFGFLAG_CHAT);
 			int Authed = Server()->GetAuthedState(ClientId);
 			if(Authed)
-				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::ACCESS_LEVEL_ADMIN : Authed == AUTHED_MOD ? IConsole::ACCESS_LEVEL_MOD :
-																	 IConsole::ACCESS_LEVEL_HELPER);
+				Console()->SetAccessLevel(Authed == AUTHED_ADMIN ? IConsole::EAccessLevel::ADMIN : Authed == AUTHED_MOD ? IConsole::EAccessLevel::MODERATOR : IConsole::EAccessLevel::HELPER);
 			else
-				Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_USER);
+				Console()->SetAccessLevel(IConsole::EAccessLevel::USER);
 
 			{
 				CClientChatLogger Logger(this, ClientId, log_get_scope_logger());
@@ -2267,7 +2265,7 @@ void CGameContext::OnSayNetMessage(const CNetMsg_Cl_Say *pMsg, int ClientId, con
 			str_format(aBuf, sizeof(aBuf), "%d used %s", ClientId, pMsg->m_pMessage);
 			Console()->Print(IConsole::OUTPUT_LEVEL_DEBUG, "chat-command", aBuf);
 
-			Console()->SetAccessLevel(IConsole::ACCESS_LEVEL_ADMIN);
+			Console()->SetAccessLevel(IConsole::EAccessLevel::ADMIN);
 			Console()->SetFlagMask(CFGFLAG_SERVER);
 		}
 	}
@@ -3234,38 +3232,6 @@ void CGameContext::ConBroadcast(IConsole::IResult *pResult, void *pUserData)
 	pSelf->SendBroadcast(aBuf, -1);
 }
 
-void CGameContext::ConBroadcastId(IConsole::IResult *pResult, void *pUserData)
-{
-	CGameContext *pSelf = (CGameContext *)pUserData;
-
-	const int Victim = pResult->GetVictim();
-	if(!CheckClientId(Victim) || !pSelf->m_apPlayers[Victim])
-	{
-		log_info("broadcast", "Client ID not found: %d", Victim);
-		return;
-	}
-
-	char aBuf[1024];
-	str_copy(aBuf, pResult->GetString(1), sizeof(aBuf));
-
-	int i, j;
-	for(i = 0, j = 0; aBuf[i]; i++, j++)
-	{
-		if(aBuf[i] == '\\' && aBuf[i + 1] == 'n')
-		{
-			aBuf[j] = '\n';
-			i++;
-		}
-		else if(i != j)
-		{
-			aBuf[j] = aBuf[i];
-		}
-	}
-	aBuf[j] = '\0';
-
-	pSelf->SendBroadcast(aBuf, Victim);
-}
-
 void CGameContext::ConSay(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
@@ -3764,7 +3730,6 @@ void CGameContext::OnConsoleInit()
 	Console()->Register("random_unfinished_map", "?i[stars]", CFGFLAG_SERVER | CFGFLAG_STORE, ConRandomUnfinishedMap, this, "Random unfinished map");
 	Console()->Register("restart", "?i[seconds]", CFGFLAG_SERVER | CFGFLAG_STORE, ConRestart, this, "Restart in x seconds (0 = abort)");
 	Console()->Register("broadcast", "r[message]", CFGFLAG_SERVER, ConBroadcast, this, "Broadcast message");
-	Console()->Register("broadcast_pl", "v[id] r[message]", CFGFLAG_SERVER, ConBroadcastId, this, "Broadcast message to player with client ID");
 	Console()->Register("say", "r[message]", CFGFLAG_SERVER, ConSay, this, "Say in chat");
 	Console()->Register("set_team", "i[id] i[team-id] ?i[delay in minutes]", CFGFLAG_SERVER, ConSetTeam, this, "Set team of player to team");
 	Console()->Register("set_team_all", "i[team-id]", CFGFLAG_SERVER, ConSetTeamAll, this, "Set team of all players to team");
@@ -5146,29 +5111,29 @@ bool CGameContext::RateLimitPlayerMapVote(int ClientId) const
 	return false;
 }
 
-void CGameContext::OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int Id)
+void CGameContext::OnUpdatePlayerServerInfo(CJsonWriter *pJsonWriter, int ClientId)
 {
-	if(!m_apPlayers[Id])
+	if(!m_apPlayers[ClientId])
 		return;
 
-	CTeeInfo &TeeInfo = m_apPlayers[Id]->m_TeeInfos;
+	CTeeInfo &TeeInfo = m_apPlayers[ClientId]->m_TeeInfos;
 
-	pJSonWriter->WriteAttribute("skin");
-	pJSonWriter->BeginObject();
+	pJsonWriter->WriteAttribute("skin");
+	pJsonWriter->BeginObject();
 
 	// 0.6
-	if(!Server()->IsSixup(Id))
+	if(!Server()->IsSixup(ClientId))
 	{
-		pJSonWriter->WriteAttribute("name");
-		pJSonWriter->WriteStrValue(TeeInfo.m_aSkinName);
+		pJsonWriter->WriteAttribute("name");
+		pJsonWriter->WriteStrValue(TeeInfo.m_aSkinName);
 
 		if(TeeInfo.m_UseCustomColor)
 		{
-			pJSonWriter->WriteAttribute("color_body");
-			pJSonWriter->WriteIntValue(TeeInfo.m_ColorBody);
+			pJsonWriter->WriteAttribute("color_body");
+			pJsonWriter->WriteIntValue(TeeInfo.m_ColorBody);
 
-			pJSonWriter->WriteAttribute("color_feet");
-			pJSonWriter->WriteIntValue(TeeInfo.m_ColorFeet);
+			pJsonWriter->WriteAttribute("color_feet");
+			pJsonWriter->WriteIntValue(TeeInfo.m_ColorFeet);
 		}
 	}
 	// 0.7
@@ -5178,32 +5143,31 @@ void CGameContext::OnUpdatePlayerServerInfo(CJsonStringWriter *pJSonWriter, int 
 
 		for(int i = 0; i < protocol7::NUM_SKINPARTS; ++i)
 		{
-			pJSonWriter->WriteAttribute(apPartNames[i]);
-			pJSonWriter->BeginObject();
+			pJsonWriter->WriteAttribute(apPartNames[i]);
+			pJsonWriter->BeginObject();
 
-			pJSonWriter->WriteAttribute("name");
-			pJSonWriter->WriteStrValue(TeeInfo.m_aaSkinPartNames[i]);
+			pJsonWriter->WriteAttribute("name");
+			pJsonWriter->WriteStrValue(TeeInfo.m_aaSkinPartNames[i]);
 
 			if(TeeInfo.m_aUseCustomColors[i])
 			{
-				pJSonWriter->WriteAttribute("color");
-				pJSonWriter->WriteIntValue(TeeInfo.m_aSkinPartColors[i]);
+				pJsonWriter->WriteAttribute("color");
+				pJsonWriter->WriteIntValue(TeeInfo.m_aSkinPartColors[i]);
 			}
 
-			pJSonWriter->EndObject();
+			pJsonWriter->EndObject();
 		}
 	}
 
-	pJSonWriter->EndObject();
+	pJsonWriter->EndObject();
 
-	pJSonWriter->WriteAttribute("afk");
-	pJSonWriter->WriteBoolValue(m_apPlayers[Id]->IsAfk());
+	pJsonWriter->WriteAttribute("afk");
+	pJsonWriter->WriteBoolValue(m_apPlayers[ClientId]->IsAfk());
 
-	const int Team = m_pController->IsTeamPlay() ? m_apPlayers[Id]->GetTeam() : m_apPlayers[Id]->GetTeam() == TEAM_SPECTATORS ? -1 :
-																    GetDDRaceTeam(Id);
+	const int Team = m_pController->IsTeamPlay() ? m_apPlayers[ClientId]->GetTeam() : m_apPlayers[ClientId]->GetTeam() == TEAM_SPECTATORS ? -1 : GetDDRaceTeam(ClientId);
 
-	pJSonWriter->WriteAttribute("team");
-	pJSonWriter->WriteIntValue(Team);
+	pJsonWriter->WriteAttribute("team");
+	pJsonWriter->WriteIntValue(Team);
 }
 
 void CGameContext::ReadCensorList()
