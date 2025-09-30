@@ -1994,7 +1994,7 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("Assets"),
 		("E-Client"),
 		("Skin Profiles"),
-		("Extra")};
+		("PRO_Gaming1921")};
 
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
 

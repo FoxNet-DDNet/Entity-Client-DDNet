@@ -3717,7 +3717,7 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 	static CButtonContainer s_aPageTabs[NUMBER_OF_PG1921_TABS] = {};
 	const char *apTabNames[NUMBER_OF_PG1921_TABS] = 
 	{
-		Localize("Pro_Gaming1921"),
+		Localize("PRO_Gaming1921"),
 	};
 
 	for(int Tab = 0; Tab < NUMBER_OF_PG1921_TABS; ++Tab)
@@ -3820,7 +3820,7 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 					TeeRenderInfo.Apply(GameClient()->m_Skins.Find(g_Config.m_ClChangeAllSkinName));
 					TeeRenderInfo.ApplyColors(UseCustomColor, BodyColor, FeetColor);
 
-					RenderACTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
+					RenderECTee(MainView, TeeRect.Center(), CAnimState::GetIdle(), &TeeRenderInfo);
 				}
 				CUIRect CurSkin;
 				float Length = TextRender()->TextBoundingBox(FontSize, "Use Current Tee Settings").m_W + 8.0f;
