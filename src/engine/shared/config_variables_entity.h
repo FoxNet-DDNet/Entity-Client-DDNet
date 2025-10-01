@@ -169,8 +169,10 @@ MACRO_CONFIG_COL(ClSpecColor, ec_spec_color, 8936607, CFGFLAG_CLIENT | CFGFLAG_S
 
 // Friend
 MACRO_CONFIG_COL(ClFriendColor, ec_friend_color, 65425, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Friend name color")
-MACRO_CONFIG_INT(ClNameplateFriendColor, ec_nameplate_friendcolor, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use friends name color as text color")
-MACRO_CONFIG_INT(ClScoreboardFriendColor, ec_scoreboard_friendcolor, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use friends name color as text color")
+MACRO_CONFIG_INT(ClNameplateFriendColor, ec_nameplate_friend_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use friends name color as text color")
+MACRO_CONFIG_INT(ClScoreboardFriendColor, ec_scoreboard_friend_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to use friends name color as text color")
+MACRO_CONFIG_INT(ClSpecMenuFriendColor, ec_specmenu_friend_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on colors in the spectate menu")
+MACRO_CONFIG_INT(ClChatFriendColor, ec_chat_friend_color, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on colors in the spectate menu")
 
 // chatbubble / Menu
 MACRO_CONFIG_INT(ClChatBubble, ec_chatbubble, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Chatbubble on or Off")
@@ -226,7 +228,6 @@ MACRO_CONFIG_STR(ClDiscordOnlineStatus, ec_discord_online_status, 25, "Online", 
 MACRO_CONFIG_STR(ClDiscordOfflineStatus, ec_discord_offline_status, 25, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status")
 
 // Spec Menu Prefixes
-MACRO_CONFIG_INT(ClSpecMenuFriendColor, ec_spec_menu_friend_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on colors in the spectate menu")
 MACRO_CONFIG_INT(ClSpecMenuPrefixes, ec_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Prefixes Next to Names in The Spectate Menu")
 
 // Chat Detection

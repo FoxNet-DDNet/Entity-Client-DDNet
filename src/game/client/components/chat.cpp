@@ -1183,7 +1183,7 @@ void CChat::OnPrepareLines(float y)
 			NameColor = ColorRGBA(0.7f, 0.7f, 1.0f, 1.0f);
 		else if(g_Config.m_ClWarList && g_Config.m_ClWarListChat && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId)) // TClient
 			NameColor = GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId);
-		else if(Line.m_Friend)
+		else if(Line.m_Friend && g_Config.m_ClChatFriendColor)
 			NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 		else if(Line.m_NameColor == TEAM_SPECTATORS)
 			NameColor = ColorRGBA(0.75f, 0.5f, 0.75f, 1.0f);
