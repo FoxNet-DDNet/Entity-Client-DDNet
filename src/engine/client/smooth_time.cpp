@@ -8,6 +8,8 @@
 #include <base/math.h>
 #include <base/system.h>
 
+#include <engine/shared/config.h>
+
 void CSmoothTime::Init(int64_t Target)
 {
 	m_Snap = time_get();

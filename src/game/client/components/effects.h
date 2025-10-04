@@ -7,6 +7,8 @@
 
 #include <game/client/component.h>
 
+#include <base/color.h>
+
 enum
 {
 	EFFECT_OFF = 0,

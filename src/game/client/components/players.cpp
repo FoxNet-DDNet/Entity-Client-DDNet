@@ -1076,15 +1076,14 @@ void CPlayers::OnRender()
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
 		if(ClientId == RenderLastId || !IsPlayerInfoAvailable(ClientId))
-		{
 			continue;
 
 		if(GameClient()->IsOtherTeam(ClientId))
 			OtherTeamIds.push_back(ClientId);
 		else
 			SameTeamIds.push_back(ClientId);
+		
 	}
-
 	for(int ClientId : OtherTeamIds)
 	{
 		RenderHookCollLine(&GameClient()->m_aClients[ClientId].m_RenderPrev, &GameClient()->m_aClients[ClientId].m_RenderCur, ClientId);

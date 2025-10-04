@@ -159,7 +159,6 @@ namespace FontIcons
 	// E-Client
 	[[maybe_unused]] static const char *FONT_ICON_COMMENT = "\xEF\x81\xB5";
 	[[maybe_unused]] static const char *FONT_ICON_USERS = "\xEF\x83\x80";
-	[[maybe_unused]] static const char *FONT_ICON_KEY = "\xEF\x82\x84";
 }
 
 enum ETextCursorSelectionMode
