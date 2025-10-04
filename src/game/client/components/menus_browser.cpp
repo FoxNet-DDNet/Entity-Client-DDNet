@@ -1,5 +1,7 @@
 ﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
+#include "menus.h"
+
 #include <base/log.h>
 
 #include <engine/engine.h>
@@ -18,9 +20,6 @@
 #include <game/client/ui.h>
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
-
-#include <generated/client_data.h>
-#include "menus.h"
 
 constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f;
 

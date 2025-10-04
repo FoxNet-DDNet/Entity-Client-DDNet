@@ -1,6 +1,8 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
+#include "chat.h"
+
 #include <engine/client/client.h>
 #include <engine/editor.h>
 #include <engine/graphics.h>
@@ -23,9 +25,6 @@
 #include "entity/entity.h"
 #include "tclient/bindchat.h"
 #include "tclient/warlist.h"
-
-#include "chat.h"
-
 #include <vector>
 
 char CChat::ms_aDisplayText[MAX_LINE_LENGTH] = "";
