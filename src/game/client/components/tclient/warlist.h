@@ -24,6 +24,8 @@ public:
 	bool m_Removable = true;
 	bool m_Imported = false;
 	int m_Index = 0;
+	int m_NumEntries = 0;
+
 	CWarType(const char *pName, ColorRGBA Color = ColorRGBA(1, 1, 1, 1), bool Removable = true, bool IsImport = false)
 	{
 		str_copy(m_aWarName, pName);

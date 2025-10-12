@@ -1704,16 +1704,17 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	static std::vector<unsigned char> s_vTypeItemIds;
 	static std::vector<CButtonContainer> s_vTypeDeleteButtons;
 	static std::vector<CButtonContainer> s_vTypeBrowserHideButtons;
+	static std::vector<std::string> s_vTypeEntriesText;
 
 	const int MaxTypes = GameClient()->m_WarList.m_WarTypes.size();
 	s_vTypeItemIds.resize(MaxTypes);
 	s_vTypeDeleteButtons.resize(MaxTypes);
 	s_vTypeBrowserHideButtons.resize(MaxTypes);
+	s_vTypeEntriesText.resize(MaxTypes);
 
 	for(int i = 0; i < (int)GameClient()->m_WarList.m_WarTypes.size(); i++)
 	{
 		CWarType *pType = GameClient()->m_WarList.m_WarTypes[i];
-
 		if(!pType)
 			continue;
 
@@ -1754,6 +1755,11 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		TextRender()->TextColor(pType->m_Color);
 		Ui()->DoLabel(&TypeRect, pType->m_aWarName, StandardFontSize, TEXTALIGN_ML);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+		char aBuf[64];
+		str_format(aBuf, sizeof(aBuf), "%d %s", pType->m_NumEntries, Localize("entries"));
+		s_vTypeEntriesText[i] = aBuf;
+		GameClient()->m_Tooltips.DoToolTip(&s_vTypeItemIds[i], &TypeRect, s_vTypeEntriesText[i].c_str());
 	}
 	const int NewSelectedType = s_WarTypeListBox.DoEnd();
 	if((SelectedOldType != NewSelectedType && NewSelectedType >= 0) || (NewSelectedType >= 0 && Ui()->HotItem() == &s_vTypeItemIds[NewSelectedType] && Ui()->MouseButtonClicked(0)))

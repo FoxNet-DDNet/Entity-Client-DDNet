@@ -51,17 +51,23 @@ void CWarList::RebuildWarMaps()
 	m_ClanWarMap.clear();
 	m_MuteMap.clear();
 
-	for(CWarEntry &entry : m_vWarEntries)
+	for(CWarType *pType : m_WarTypes)
+		pType->m_NumEntries = 0;
+
+	for(CWarEntry &Entry : m_vWarEntries)
 	{
-		if(entry.m_aName[0])
-			m_NameWarMap[entry.m_aName] = &entry;
-		if(entry.m_aClan[0])
-			m_ClanWarMap[entry.m_aClan] = &entry;
+		if(Entry.m_aName[0])
+			m_NameWarMap[Entry.m_aName] = &Entry;
+		if(Entry.m_aClan[0])
+			m_ClanWarMap[Entry.m_aClan] = &Entry;
+
+		if(Entry.m_pWarType)
+			Entry.m_pWarType->m_NumEntries++;
 	}
-	for(CMuteEntry &entry : m_MuteEntries)
+	for(CMuteEntry &Entry : m_MuteEntries)
 	{
-		if(entry.m_aMutedName[0])
-			m_MuteMap[entry.m_aMutedName] = &entry;
+		if(Entry.m_aMutedName[0])
+			m_MuteMap[Entry.m_aMutedName] = &Entry;
 	}
 }
 
@@ -505,6 +511,7 @@ void CWarList::RemoveWarType(const char *pType)
 			}
 		}
 		m_WarTypes.erase(it);
+		RebuildWarMaps(); // E-Client
 	}
 }
 
