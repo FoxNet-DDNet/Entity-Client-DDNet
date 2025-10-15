@@ -621,7 +621,8 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 	}
 
 	Box.VSplitRight(10.0f, &Box, nullptr);
-
+	if(ClientState == IClient::STATE_OFFLINE)
+	{
 		Box.VSplitLeft(33.0f, &Button, &Box);
 
 		bool GotNewsOrUpdate = false;

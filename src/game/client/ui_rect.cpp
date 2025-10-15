@@ -246,11 +246,11 @@ void CUIRect::DrawOutline(ColorRGBA Color, float Rounding, int Corners) const
 	AddCornerArc(x + w - Rounding, y + h - Rounding, 0.0f, IGraphics::CORNER_BR); // Bottom-right
 	AddCornerArc(x + Rounding, y + h - Rounding, pi / 2.0f, IGraphics::CORNER_BL); // Bottom-left
 
-	s_pGraphics->TextureClear();
-	s_pGraphics->LinesBegin();
-	s_pGraphics->SetColor(Color);
-	s_pGraphics->LinesDraw(Lines.data(), Lines.size());
-	s_pGraphics->LinesEnd();
+	ms_pGraphics->TextureClear();
+	ms_pGraphics->LinesBegin();
+	ms_pGraphics->SetColor(Color);
+	ms_pGraphics->LinesDraw(Lines.data(), Lines.size());
+	ms_pGraphics->LinesEnd();
 }
 
 void CUIRect::DrawSpecificOutline(ColorRGBA Color, float Rounding, int Corners, int Sides) const
@@ -321,9 +321,9 @@ void CUIRect::DrawSpecificOutline(ColorRGBA Color, float Rounding, int Corners, 
 	AddCornerArc(x + w - Rounding, y + h - Rounding, 0.0f, IGraphics::CORNER_BR); // Bottom-right
 	AddCornerArc(x + Rounding, y + h - Rounding, pi / 2.0f, IGraphics::CORNER_BL); // Bottom-left
 
-	s_pGraphics->TextureClear();
-	s_pGraphics->LinesBegin();
-	s_pGraphics->SetColor(Color);
-	s_pGraphics->LinesDraw(Lines.data(), Lines.size());
-	s_pGraphics->LinesEnd();
+	ms_pGraphics->TextureClear();
+	ms_pGraphics->LinesBegin();
+	ms_pGraphics->SetColor(Color);
+	ms_pGraphics->LinesDraw(Lines.data(), Lines.size());
+	ms_pGraphics->LinesEnd();
 }

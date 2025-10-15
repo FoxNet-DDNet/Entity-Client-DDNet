@@ -1202,7 +1202,7 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 
 	Ui()->DoLabel(&KeyLabel, aBuf, 14.0f, TEXTALIGN_ML);
 	int OldId = Key.m_KeyId, OldModifierCombination = Key.m_ModifierCombination, NewModifierCombination;
-	int NewId = DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
+	int NewId = GameClient()->m_KeyBinder.DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
 	if(NewId != OldId || NewModifierCombination != OldModifierCombination)
 	{
 		if(OldId != 0 || NewId == 0)
@@ -1393,7 +1393,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 
 	Ui()->DoLabel(&KeyLabel, aBuf, 14.0f, TEXTALIGN_ML);
 	int OldId = Key.m_KeyId, OldModifierCombination = Key.m_ModifierCombination, NewModifierCombination;
-	int NewId = DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
+	int NewId = GameClient()->m_KeyBinder.DoKeyReader((void *)&Key.m_pName, &Button, OldId, OldModifierCombination, &NewModifierCombination);
 	if(NewId != OldId || NewModifierCombination != OldModifierCombination)
 	{
 		if(OldId != 0 || NewId == 0)
@@ -2563,7 +2563,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					str_format(aBuf, sizeof(aBuf), "%s:", Localize(s_Key.m_pName));
 					Ui()->DoLabel(&KeyLabel, aBuf, 12.0f, TEXTALIGN_ML);
 					int OldId = s_Key.m_KeyId, OldModifierCombination = s_Key.m_ModifierCombination, NewModifierCombination;
-					int NewId = DoKeyReader(&s_Key, &KeyButton, OldId, OldModifierCombination, &NewModifierCombination);
+					int NewId = GameClient()->m_KeyBinder.DoKeyReader(&s_Key, &KeyButton, OldId, OldModifierCombination, &NewModifierCombination);
 					if(NewId != OldId || NewModifierCombination != OldModifierCombination)
 					{
 						if(OldId != 0 || NewId == 0)
@@ -2608,7 +2608,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				Ui()->DoLabel(&KeyLabel, Localize(pText), 14.0f, TEXTALIGN_ML);
 
 				int NewModifierCombination = 0;
-				int NewKey = DoKeyReader(&s_GoresModeKey, &KeyButton, s_GoresModeKey, 0, &NewModifierCombination);
+				int NewKey = GameClient()->m_KeyBinder.DoKeyReader(&s_GoresModeKey, &KeyButton, s_GoresModeKey, 0, &NewModifierCombination);
 
 				if(NewKey != s_GoresModeKey)
 				{
