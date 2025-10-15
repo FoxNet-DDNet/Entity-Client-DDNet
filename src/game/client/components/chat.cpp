@@ -544,6 +544,7 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 	{
 		CNetMsg_Sv_Chat *pMsg = (CNetMsg_Sv_Chat *)pRawMsg;
 
+		/*
 		if(g_Config.m_ClCensorChat)
 		{
 			char aMessage[MAX_LINE_LENGTH];
@@ -553,6 +554,9 @@ void CChat::OnMessage(int MsgType, void *pRawMsg)
 		}
 		else
 			AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
+		*/
+
+		AddLine(pMsg->m_ClientId, pMsg->m_Team, pMsg->m_pMessage);
 	}
 	else if(MsgType == NETMSGTYPE_SV_COMMANDINFO)
 	{
@@ -595,6 +599,8 @@ static constexpr const char *SAVES_HEADER[] = {
 	"Code",
 };
 
+// TODO: remove this in a few releases (in 2027 or later)
+//       it got deprecated by CGameClient::StoreSave
 void CChat::StoreSave(const char *pText)
 {
 	const char *pStart = str_find(pText, "Team successfully saved by ");

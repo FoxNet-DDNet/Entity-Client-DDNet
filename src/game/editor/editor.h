@@ -273,10 +273,10 @@ public:
 		m_TeleCheckpointNumber = 1;
 		m_ViewTeleNumber = 0;
 
-		m_TuningNum = 1;
+		m_TuningNumber = 1;
 		m_ViewTuning = 0;
 
-		m_SwitchNum = 1;
+		m_SwitchNumber = 1;
 		m_SwitchDelay = 0;
 		m_SpeedupForce = 50;
 		m_SpeedupMaxSpeed = 0;
@@ -540,8 +540,6 @@ public:
 	std::vector<std::pair<int, int>> m_vSelectedEnvelopePoints;
 	int m_SelectedQuadEnvelope;
 	int m_CurrentQuadIndex;
-	int m_SelectedImage;
-	int m_SelectedSound;
 	int m_SelectedSource;
 	std::pair<int, int> m_SelectedTangentInPoint;
 	std::pair<int, int> m_SelectedTangentOutPoint;
@@ -757,7 +755,6 @@ public:
 	static bool ReplaceSoundCallback(const char *pFileName, int StorageType, void *pUser);
 	static bool AddImage(const char *pFilename, int StorageType, void *pUser);
 	static bool AddSound(const char *pFileName, int StorageType, void *pUser);
-	static bool IsAssetUsed(CFileBrowser::EFileType FileType, int Index, void *pUser);
 
 	bool IsEnvelopeUsed(int EnvelopeIndex) const;
 	void RemoveUnusedEnvelopes();
@@ -766,7 +763,7 @@ public:
 
 	void RenderLayers(CUIRect LayersBox);
 	void RenderImagesList(CUIRect Toolbox);
-	void RenderSelectedImage(CUIRect View);
+	void RenderSelectedImage(CUIRect View) const;
 	void RenderSounds(CUIRect Toolbox);
 	void RenderModebar(CUIRect View);
 	void RenderStatusbar(CUIRect View, CUIRect *pTooltipRect);
@@ -795,7 +792,6 @@ public:
 	void RenderMenubar(CUIRect Menubar);
 
 	void SelectGameLayer();
-	std::vector<int> SortImages();
 
 	void DoAudioPreview(CUIRect View, const void *pPlayPauseButtonId, const void *pStopButtonId, const void *pSeekBarId, int SampleId);
 
@@ -827,14 +823,14 @@ public:
 	unsigned char m_TeleCheckpointNumber;
 	unsigned char m_ViewTeleNumber;
 
-	unsigned char m_TuningNum;
+	unsigned char m_TuningNumber;
 	unsigned char m_ViewTuning;
 
 	unsigned char m_SpeedupForce;
 	unsigned char m_SpeedupMaxSpeed;
 	short m_SpeedupAngle;
 
-	unsigned char m_SwitchNum;
+	unsigned char m_SwitchNumber;
 	unsigned char m_SwitchDelay;
 	unsigned char m_ViewSwitch;
 
@@ -855,8 +851,8 @@ private:
 
 // make sure to inline this function
 inline const class IGraphics *CLayer::Graphics() const { return m_pEditor->Graphics(); }
-inline class IGraphics *CLayer::Graphics() { return m_pEditor->Graphics(); }
+inline class IGraphics *CLayer::Graphics() { return m_pEditor->Graphics(); } // NOLINT(readability-make-member-function-const)
 inline const class ITextRender *CLayer::TextRender() const { return m_pEditor->TextRender(); }
-inline class ITextRender *CLayer::TextRender() { return m_pEditor->TextRender(); }
+inline class ITextRender *CLayer::TextRender() { return m_pEditor->TextRender(); } // NOLINT(readability-make-member-function-const)
 
 #endif
