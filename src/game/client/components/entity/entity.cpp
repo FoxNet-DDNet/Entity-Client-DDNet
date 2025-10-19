@@ -1,20 +1,32 @@
-﻿#include <engine/client.h>
+﻿#include "entity.h"
+
+#include <base/math.h>
+#include <base/str.h>
+#include <base/system.h>
+#include <base/vmath.h>
+
+#include <engine/client.h>
+#include <engine/client/client.h>
+#include <engine/console.h>
+#include <engine/graphics.h>
+#include <engine/keys.h>
 #include <engine/serverbrowser.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
 
+#include <generated/protocol.h>
+
+#include <game/client/components/binds.h>
 #include <game/client/components/chat.h>
 #include <game/client/components/controls.h>
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
-#include <generated/protocol.h>
+#include <game/teamscore.h>
 
-#include <base/math.h>
-#include <base/system.h>
-
-#include "entity.h"
+#include <algorithm>
 #include <cmath>
+#include <cstring>
 
 void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {
@@ -48,7 +60,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 
 	if(!GameClient()->m_Snap.m_pLocalCharacter)
 		return;
-	
+
 	if(ClientId != m_LastReplyId)
 	{
 		char Reply[MAX_LINE_LENGTH];
@@ -196,7 +208,7 @@ void CEClient::GoresMode()
 
 	if(g_Config.m_ClGoresModeDisableIfWeapons)
 	{
-		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_ExplosionGun || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) 
+		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_ExplosionGun || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got)
 			m_WeaponsGot = true;
 		if((!Core.m_aWeapons[WEAPON_GRENADE].m_Got && !Core.m_aWeapons[WEAPON_LASER].m_Got && !Core.m_ExplosionGun && !Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) && m_WeaponsGot)
 			m_WeaponsGot = false;
@@ -253,7 +265,6 @@ void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IC
 		}
 	}
 }
-
 
 void CEClient::GoresModeSave(bool Enable)
 {
@@ -392,8 +403,8 @@ void CEClient::NotifyOnMove()
 	if(!g_Config.m_ClNotifyOnMove)
 		return;
 	IEngineGraphics *pGraphics = ((IEngineGraphics *)Kernel()->RequestInterface<IEngineGraphics>());
-	if((pGraphics && pGraphics->WindowActive()) || !Graphics())
-		return; // return when window is active
+	if(!pGraphics || !Graphics())
+		return;
 
 	const CNetObj_Character *pLocalChar = GameClient()->m_Snap.m_pLocalCharacter;
 	if(!pLocalChar)
@@ -401,52 +412,50 @@ void CEClient::NotifyOnMove()
 
 	int LocalId = GameClient()->m_Snap.m_LocalClientId;
 
-	bool Moved = false;
-
-	int X = GameClient()->m_Snap.m_aCharacters[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_X / 18;
-	int Y = GameClient()->m_Snap.m_aCharacters[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Cur.m_Y / 18;
-	vec2 Pos = vec2(X, Y);
-	
-	vec2 LocalPos = GameClient()->m_aClients[LocalId].m_RenderPos; // Accurate Pos
-	float MaxDist = 27.5f; 
-
-	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	vec2 LocalPos = GameClient()->m_aClients[LocalId].m_RenderPos;
+	if(!pGraphics->WindowActive())
 	{
-		if(m_LastPos == Pos)
-			continue;
-		CGameClient::CClientData pClient = GameClient()->m_aClients[ClientId];
-		if(ClientId == LocalId || !pClient.m_Active)
-			continue;
-		if(pClient.m_Solo)
-			continue;
-		if(!GameClient()->m_Teams.SameTeam(LocalId, ClientId))
-			continue;
-		if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData)
-			continue;
-		const CNetObj_Character *pOtherChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
-		vec2 OtherPos = GameClient()->m_aClients[ClientId].m_RenderPos;
+		const float MaxDist = 27.5f;
 
-		float dist = distance(LocalPos, OtherPos);
-		if(dist < MaxDist + MaxDist)
-			Moved = true;
+		bool Moved = false;
+		for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+		{
+			if(m_LastPos == LocalPos)
+				continue;
+			CGameClient::CClientData pClient = GameClient()->m_aClients[ClientId];
+			if(ClientId == LocalId || !pClient.m_Active)
+				continue;
+			if(pClient.m_Solo)
+				continue;
+			if(!GameClient()->m_Teams.SameTeam(LocalId, ClientId))
+				continue;
+			if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData)
+				continue;
+			const CNetObj_Character *pOtherChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
+			vec2 OtherPos = GameClient()->m_aClients[ClientId].m_RenderPos;
 
-		// check if the player is hooked to the local player
-		if(GameClient()->m_aClients[ClientId].m_RenderCur.m_HookedPlayer == LocalId)
-			Moved = true;
+			float dist = distance(LocalPos, OtherPos);
+			if(dist < MaxDist + MaxDist)
+				Moved = true;
 
-		// Check for hammer firing
-		bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
-		dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
-		if(Hammering && dist < 70.0f)
-			Moved = true;
+			// check if the player is hooked to the local player
+			if(GameClient()->m_aClients[ClientId].m_RenderCur.m_HookedPlayer == LocalId)
+				Moved = true;
+
+			// Check for hammer firing
+			bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
+			dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
+			if(Hammering && dist < 70.0f)
+				Moved = true;
+		}
+
+		if(Moved)
+		{
+			Client()->Notify("E-Client", "current tile changed");
+			Graphics()->NotifyWindow();
+		}
 	}
-
-	if(Moved)
-	{
-		Client()->Notify("E-Client", "current tile changed");
-		Graphics()->NotifyWindow();
-	}
-	m_LastPos = Pos;
+	m_LastPos = LocalPos;
 }
 
 void CEClient::RemoveWarEntryDuplicates(const char *pName)
