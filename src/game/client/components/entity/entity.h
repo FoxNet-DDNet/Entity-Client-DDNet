@@ -4,6 +4,7 @@
 #include <engine/console.h>
 #include <game/client/component.h>
 #include <vector>
+#include <engine/shared/protocol.h>
 
 class CTempEntry
 {
@@ -60,8 +61,9 @@ class CEClient : public CComponent
 	bool m_GoresServer;
 
 	// Reply to Ping
-	struct CLastPing
+	class CLastPing
 	{
+	public:
 		char m_aName[MAX_NAME_LENGTH] = "";
 		char m_aMessage[256] = "";
 		int m_Team = -1;
