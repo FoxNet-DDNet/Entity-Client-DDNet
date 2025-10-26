@@ -37,7 +37,7 @@ vec2 CQuickActions::GetCursorWorldPos() const
 
 	vec2 Position = GameClient()->m_CursorInfo.Position();
 
-	const float Zoom = (GameClient()->m_Camera.m_Zooming && GameClient()->m_Camera.m_AutoSpecCameraZooming) ? GameClient()->m_Camera.m_Zoom : GameClient()->m_Snap.m_SpecInfo.m_Zoom;
+	const float Zoom = GameClient()->m_Camera.m_Zoom;
 	vec2 WorldTarget = Position + (Target - TargetCameraOffset) * Zoom + TargetCameraOffset;
 
 	return WorldTarget;
