@@ -76,6 +76,7 @@
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
 #include "components/entity/map_overview.h"
+#include "components/entity/physicball.h"
 #include "components/entity/quick_actions.h"
 
 // Tater
@@ -252,6 +253,7 @@ public:
 	CFreezeKill m_FreezeKill;
 	CEntityInfo m_EntityInfo;
 	CMapOverview m_MapOverview;
+	CPhysicBalls m_PhysicBalls;
 	CQuickActions m_QuickActions;
 
 	// T-Client
@@ -1068,6 +1070,7 @@ public:
 	std::optional<CServerInfo> m_ConnectServerInfo = std::nullopt;
 	void SetConnectInfo(const NETADDR *pAddress) override;
 
+
 	// E-Client
 	void OnSelfDeath() override;
 
@@ -1082,6 +1085,7 @@ public:
 	// Get ClientId by Player Name
 	int GetClientId(const char *pName) override;
 	const char *GetClientName(int ClientId) override { return m_aClients[ClientId].m_aName; }
+	vec2 GetCursorWorldPos() const;
 };
 
 ColorRGBA CalculateNameColor(ColorHSLA TextColorHSL);

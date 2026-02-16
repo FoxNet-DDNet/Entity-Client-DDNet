@@ -19,30 +19,6 @@ CQuickActions::CQuickActions()
 	OnReset();
 }
 
-vec2 CQuickActions::GetCursorWorldPos() const
-{
-	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
-		return GameClient()->m_Camera.m_Center;
-
-	vec2 Target = GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy];
-
-	vec2 TargetCameraOffset(0, 0);
-	float l = length(Target);
-
-	if(l > 0.0001f) // make sure that this isn't 0
-	{
-		float OffsetAmount = maximum(l - GameClient()->m_Snap.m_SpecInfo.m_Deadzone, 0.0f) * (GameClient()->m_Snap.m_SpecInfo.m_FollowFactor / 100.0f);
-		TargetCameraOffset = normalize(Target) * OffsetAmount;
-	}
-
-	vec2 Position = GameClient()->m_CursorInfo.Position();
-
-	const float Zoom = GameClient()->m_Camera.m_Zoom;
-	vec2 WorldTarget = Position + (Target - TargetCameraOffset) * Zoom + TargetCameraOffset;
-
-	return WorldTarget;
-}
-
 int CQuickActions::GetClosetClientId(vec2 Pos)
 {
 	int ClosestId = -1;
@@ -98,7 +74,7 @@ void CQuickActions::ConOpenQuickActionMenu(IConsole::IResult *pResult, void *pUs
 
 	if(!pThis->m_Active)
 	{
-		const vec2 Pos = pThis->GetCursorWorldPos();
+		const vec2 Pos = pThis->GameClient()->GetCursorWorldPos();
 		pThis->m_QuickActionId = pThis->GetClosetClientId(Pos);
 		if(pThis->m_QuickActionId < 0 || pThis->m_QuickActionId >= MAX_CLIENTS)
 			pThis->m_QuickActionId = -1;
@@ -554,7 +530,7 @@ void CQuickActions::ExecuteBind(int Bind)
 
 void CQuickActions::DrawDebugLines()
 {
-	vec2 TargetPos = GetCursorWorldPos();
+	vec2 TargetPos = GameClient()->GetCursorWorldPos();
 	int Id = GetClosetClientId(TargetPos);
 	if(Id < 0 || Id >= MAX_CLIENTS)
 		return;

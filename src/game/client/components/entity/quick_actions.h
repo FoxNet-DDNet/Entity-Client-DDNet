@@ -6,6 +6,7 @@
 
 #include <base/system.h>
 #include <vector>
+#include <base/vmath.h>
 
 class IConfigManager;
 
@@ -28,7 +29,6 @@ class CQuickActions : public CComponent
 
 	int m_SelectedBind;
 
-	vec2 GetCursorWorldPos() const;
 	int GetClosetClientId(vec2 Pos);
 
 	static void ConOpenQuickActionMenu(IConsole::IResult *pResult, void *pUserData);

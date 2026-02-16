@@ -1393,7 +1393,7 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 				RotSpeed = 50.0f + 100.0f - Changer;
 
 			vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / time_freq() + RotSpeed));
-			vec2 EffectPos = BodyPos;
+			vec2 EffectPos = BodyPos + Move;
 
 			if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
 			{

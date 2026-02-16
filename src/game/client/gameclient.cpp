@@ -142,6 +142,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Trails,
 					      &m_Ghost,
 					      &m_Players,
+					      &m_PhysicBalls, // E-Client
 					      &m_MapLayersForeground,
 					      &m_Outlines, // TClient
 					      &m_Mumble, // TClient
@@ -5895,4 +5896,28 @@ void CGameClient::OnSelfDeath()
 void CGameClient::OnServerBrowserUpdate()
 {
 	m_Menus.m_ScheduledUpdate = time_get() + time_freq() / 64.0f;
+}
+
+vec2 CGameClient::GetCursorWorldPos() const
+{
+	if(m_Snap.m_SpecInfo.m_Active)
+		return m_Camera.m_Center;
+
+	vec2 Target = m_Controls.m_aMousePos[g_Config.m_ClDummy];
+
+	vec2 TargetCameraOffset(0, 0);
+	float l = length(Target);
+
+	if(l > 0.0001f) // make sure that this isn't 0
+	{
+		float OffsetAmount = maximum(l -m_Snap.m_SpecInfo.m_Deadzone, 0.0f) * (m_Snap.m_SpecInfo.m_FollowFactor / 100.0f);
+		TargetCameraOffset = normalize(Target) * OffsetAmount;
+	}
+
+	vec2 Position = m_CursorInfo.Position();
+
+	const float Zoom = m_Camera.m_Zoom;
+	vec2 WorldTarget = Position + (Target - TargetCameraOffset) * Zoom + TargetCameraOffset;
+
+	return WorldTarget;
 }
