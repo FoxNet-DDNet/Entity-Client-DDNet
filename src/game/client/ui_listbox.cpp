@@ -149,8 +149,13 @@ CListboxItem CListBox::DoNextItem(const void *pId, bool Selected, float CornerRa
 	}
 
 	CListboxItem Item = DoNextRow();
-	const int ItemClicked = Item.m_Visible ? Ui()->DoButtonLogic(pId, 0, &Item.m_Rect, BUTTONFLAG_LEFT) : 0;
-	if(ItemClicked)
+
+	// Check all mouse buttons; store result
+	const int ItemClicked = Item.m_Visible ? Ui()->DoButtonLogic(pId, 0, &Item.m_Rect, BUTTONFLAG_ALL) : 0;
+	Item.m_ButtonResult = ItemClicked;
+
+	// Left click selects
+	if(ItemClicked == 1)
 	{
 		m_ListBoxNewSelected = ThisItemIndex;
 		m_ListBoxItemSelected = true;

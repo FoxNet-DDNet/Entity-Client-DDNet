@@ -919,10 +919,20 @@ private:
 		return Count;
 	}
 
-
 	void RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &ScrollRegion);
 
+	class CPopupServerSelectionContext
+	{
+	public:
+		CMenus *m_pMenus;
+		CButtonContainer m_AutoJoinAction;
+		const CServerInfo *m_pServerInfo;
+		bool m_New;
+	};
+	static CUi::EPopupMenuFunctionResult PopupServerSelection(void *pContext, CUIRect View, bool Active);
+
 public:
+
 	int DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake = false, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));
 	void RenderFontIcon(const CUIRect Rect, const char *pText, float Size, int Align);
 

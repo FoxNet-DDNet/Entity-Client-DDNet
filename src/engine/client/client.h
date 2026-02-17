@@ -337,7 +337,7 @@ public:
 	void Connect(const char *pAddress, const char *pPassword = nullptr) override;
 	void DisconnectWithReason(const char *pReason);
 	void Disconnect() override;
-
+	
 	void DummyDisconnect(const char *pReason) override;
 	void DummyConnect() override;
 	bool DummyConnected() const override;
@@ -554,7 +554,6 @@ private:
 	void SendqxdInfo(int Conn);
 
 public:
-
 	void DiscordRPCchange() override;
 	void SendFastInputsInfo(int Conn) override;
 	// E-Client>

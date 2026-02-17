@@ -478,6 +478,16 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
 		}
+
+		if(ListItem.m_ButtonResult == 2)
+		{
+			static SPopupMenuId s_PopupServerId;
+			static CPopupServerSelectionContext s_PopupServerContext;
+			s_PopupServerContext.m_pMenus = this;
+			s_PopupServerContext.m_pServerInfo = pItem;
+			s_PopupServerContext.m_New = true;
+			Ui()->DoPopupMenu(&s_PopupServerId, Ui()->MouseX(), Ui()->MouseY(), 130, 35, &s_PopupServerContext, PopupServerSelection);
+		}
 	}
 
 	const int NewSelected = s_ListBox.DoEnd();
@@ -498,6 +508,36 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 
 	WasListboxItemActivated = s_ListBox.WasItemActivated();
 }
+
+CUi::EPopupMenuFunctionResult CMenus::PopupServerSelection(void *pContext, CUIRect View, bool Active)
+{
+	CPopupServerSelectionContext *pPopupContext = static_cast<CPopupServerSelectionContext *>(pContext);
+	CMenus *pMenus = pPopupContext->m_pMenus;
+	CUi *pUi = pMenus->Ui();
+	const CServerInfo *pServerInfo = pPopupContext->m_pServerInfo;
+	if(!pServerInfo)
+		return CUi::POPUP_CLOSE_CURRENT;
+
+	CEClient &pEc = pMenus->GameClient()->m_EClient;
+
+	const float Margin = 5.0f;
+	View.Margin(Margin, &View);
+
+	CUIRect Container;
+	const float ItemSpacing = 2.0f;
+	const float FontSize = 12.0f;
+
+	View.HSplitTop(FontSize + 3.0f, &Container, nullptr);
+	ColorRGBA SpectateButtonColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f * pUi->ButtonColorMul(&pPopupContext->m_AutoJoinAction));
+	if(pUi->DoButton_PopupMenu(&pPopupContext->m_AutoJoinAction, Localize("Auto Join"), &Container, FontSize, TEXTALIGN_MC, 0.0f, false, true, SpectateButtonColor))
+	{
+		return CUi::POPUP_CLOSE_CURRENT;
+	}
+	pMenus->GameClient()->m_Tooltips.DoToolTip(&pPopupContext->m_AutoJoinAction, &Container, Localize("Adds you to the join queue without leaving your current game"));
+
+	return CUi::POPUP_KEEP_OPEN;
+}
+
 
 void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItemActivated)
 {

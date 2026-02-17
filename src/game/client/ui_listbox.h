@@ -10,6 +10,7 @@ struct CListboxItem
 	bool m_Visible;
 	bool m_Selected;
 	CUIRect m_Rect;
+	int m_ButtonResult; // E-Client
 };
 
 // Instances of CListBox must be static, as member addresses are used as UI item IDs

@@ -189,7 +189,7 @@ public:
 	// actions
 	virtual void Connect(const char *pAddress, const char *pPassword = nullptr) = 0;
 	virtual void Disconnect() = 0;
-
+	
 	// dummy
 	virtual void DummyDisconnect(const char *pReason) = 0;
 	virtual void DummyConnect() = 0;
