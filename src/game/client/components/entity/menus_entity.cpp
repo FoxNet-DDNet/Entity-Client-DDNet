@@ -4253,7 +4253,7 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 		vec2 ScrollOffset(0.0f, 0.0f);
 		CScrollRegionParams ScrollParams;
 		ScrollParams.m_ScrollUnit = 120.0f;
-		s_ScrollRegion.Begin(&MainView, &ScrollOffset, &ScrollParams);
+		s_ScrollRegion.Begin(&MainView, &ScrollParams);
 		MainView.y += ScrollOffset.y;
 
 		// left side in settings menu
