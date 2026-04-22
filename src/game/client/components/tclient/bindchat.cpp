@@ -1,12 +1,19 @@
-#include <engine/shared/config.h>
-
-#include <game/client/gameclient.h>
-
 #include "bindchat.h"
 
-#include <vector>
+#include <base/str.h>
+
+#include <engine/config.h>
+#include <engine/console.h>
+#include <engine/shared/config.h>
+
+#include <generated/protocol.h>
+
+#include <game/client/components/chat.h>
+#include <game/client/gameclient.h>
+
 #include <algorithm>
-#include <engine/shared/console.h>
+#include <cstring>
+#include <vector>
 
 CBindChat::CBindChat()
 {
@@ -210,7 +217,7 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("votekick", "votekick");
 	AddDefaultBind("onlineinfo", "OnlineInfo");
 	AddDefaultBind("playerinfo", "PlayerInfo");
-	AddBindDefault(".github", "view_link https://github.com/FoxNet-DDNet/Entity-Client-DDNet");
+	AddBindDefault(".github", "view_link github.com/FoxNet-DDNet/Entity-Client-DDNet");
 	AddDefaultBind("r", "reply_last");
 
 	AddDefaultBind("friend", "add_friend");
@@ -252,7 +259,11 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("delclanteam", "remove_war_clan_index 2");
 	AddDefaultBind("unclanteam", "remove_war_clan_index 2");
 
+	AddDefaultBind("translate", "translate");
+	AddDefaultBind("translate_id", "translate_id");
+
 	AddDefaultBind("firetext", "chai entity/builtinscripts/firetext.chai");
+	AddDefaultBind("antiad", "chai entity/builtinscripts/anti-bot-ad.chai");
 }
 
 void CBindChat::OnInit()
@@ -298,22 +309,26 @@ bool CBindChat::ChatDoBinds(const char *pText)
 	for(const CBind &Bind : m_vBinds)
 	{
 		const bool SendsMessage = str_find(Bind.m_aCommand, "say") ||
-			str_find(Bind.m_aCommand, "reply_last") ||
-			str_find(Bind.m_aCommand, "chai");
+					  str_find(Bind.m_aCommand, "reply_last") ||
+					  str_find(Bind.m_aCommand, "chai");
 		if(str_startswith_nocase(pText, Bind.m_aName) &&
 			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 		{
+			bool SendMessage = !(IsExclemataion && !SendsMessage);
+
+			if(SendMessage)
+				GameClient()->m_Chat.AddLine(CChat::SILENT_MSG, TEAM_ALL, pText);
 			ExecuteBind(&Bind - m_vBinds.data(), pSpace ? pSpace + 1 : nullptr);
 			// Add to history (see CChat::SendChatQueued)
 			const int Length = str_length(pText);
 			CChat::CHistoryEntry *pEntry = Chat.m_History.Allocate(sizeof(CChat::CHistoryEntry) + Length);
 			pEntry->m_Team = 0; // All
 			str_copy(pEntry->m_aText, pText, Length + 1);
-			if(IsExclemataion && !SendsMessage)
-				return false;
-			return true;
+			return SendMessage;
 		}
 	}
+	if((!g_Config.m_ClSendExclamation && str_startswith(pText, "!")) || (!g_Config.m_ClSendDotsChat && str_startswith(pText, ".")))
+		GameClient()->m_Chat.AddLine(CChat::SILENT_MSG, TEAM_ALL, pText);
 	return false;
 }
 
@@ -451,15 +466,9 @@ void CBindChat::SortChatBinds()
 
 bool CBindChat::ValidPrefix(char Prefix) const
 {
-	for(const auto &Command : m_vChatCommands)
-	{
-		if(Command.m_Prefix == '\0')
-			continue;
-
-		if(Prefix == Command.m_Prefix)
-			return true;
-	}
-	return false;
+	return std::ranges::any_of(m_vChatCommands, [Prefix](const auto &Command) {
+		return Command.m_Prefix != '\0' && Prefix == Command.m_Prefix;
+	});
 }
 
 void CBindChat::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)

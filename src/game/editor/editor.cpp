@@ -309,9 +309,9 @@ void CEditor::DoAudioPreview(CUIRect View, const void *pPlayPauseButtonId, const
 
 		// draw time
 		char aCurrentTime[32];
-		str_time_float(CurrentTime, TIME_HOURS, aCurrentTime, sizeof(aCurrentTime));
+		str_time_float(CurrentTime, ETimeFormat::HOURS, aCurrentTime, sizeof(aCurrentTime));
 		char aTotalTime[32];
-		str_time_float(TotalTime, TIME_HOURS, aTotalTime, sizeof(aTotalTime));
+		str_time_float(TotalTime, ETimeFormat::HOURS, aTotalTime, sizeof(aTotalTime));
 		str_format(aBuffer, sizeof(aBuffer), "%s / %s", aCurrentTime, aTotalTime);
 		Ui()->DoLabel(&SeekBar, aBuffer, SeekBar.h * 0.70f, TEXTALIGN_MC);
 
@@ -3053,13 +3053,11 @@ void CEditor::RenderLayers(CUIRect LayersBox)
 	CUIRect UnscrolledLayersBox = LayersBox;
 
 	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollbarWidth = 10.0f;
 	ScrollParams.m_ScrollbarMargin = 3.0f;
 	ScrollParams.m_ScrollUnit = RowHeight * 5.0f;
-	s_ScrollRegion.Begin(&LayersBox, &ScrollOffset, &ScrollParams);
-	LayersBox.y += ScrollOffset.y;
+	s_ScrollRegion.Begin(&LayersBox, &ScrollParams);
 
 	enum
 	{
@@ -3114,7 +3112,7 @@ void CEditor::RenderLayers(CUIRect LayersBox)
 		{
 			MaxDraggableValue += NumButtons * (RowHeight + 2.0f) + 5.0f;
 		}
-		MaxDraggableValue += ScrollOffset.y;
+		MaxDraggableValue += LayersBox.y - UnscrolledLayersBox.y;
 
 		if(s_Operation == OP_GROUP_DRAG)
 		{
@@ -3966,13 +3964,11 @@ void CEditor::RenderImagesList(CUIRect ToolBox)
 	const float RowHeight = 12.0f;
 
 	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollbarWidth = 10.0f;
 	ScrollParams.m_ScrollbarMargin = 3.0f;
 	ScrollParams.m_ScrollUnit = RowHeight * 5;
-	s_ScrollRegion.Begin(&ToolBox, &ScrollOffset, &ScrollParams);
-	ToolBox.y += ScrollOffset.y;
+	s_ScrollRegion.Begin(&ToolBox, &ScrollParams);
 
 	bool ScrollToSelection = false;
 	if(m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr && !Map()->m_vpImages.empty())
@@ -4088,7 +4084,6 @@ void CEditor::RenderSelectedImage(CUIRect View) const
 	View.w *= pSelectedImage->m_Width / Max;
 	View.h *= pSelectedImage->m_Height / Max;
 	Graphics()->TextureSet(pSelectedImage->m_Texture);
-	Graphics()->BlendNormal();
 	Graphics()->WrapClamp();
 	Graphics()->QuadsBegin();
 	IGraphics::CQuadItem QuadItem(View.x, View.y, View.w, View.h);
@@ -4102,13 +4097,11 @@ void CEditor::RenderSounds(CUIRect ToolBox)
 	const float RowHeight = 12.0f;
 
 	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollbarWidth = 10.0f;
 	ScrollParams.m_ScrollbarMargin = 3.0f;
 	ScrollParams.m_ScrollUnit = RowHeight * 5;
-	s_ScrollRegion.Begin(&ToolBox, &ScrollOffset, &ScrollParams);
-	ToolBox.y += ScrollOffset.y;
+	s_ScrollRegion.Begin(&ToolBox, &ScrollParams);
 
 	bool ScrollToSelection = false;
 	if(m_Dialog == DIALOG_NONE && CLineInput::GetActiveInput() == nullptr && !Map()->m_vpSounds.empty())
@@ -7288,24 +7281,12 @@ void CEditor::HandleWriterFinishJobs()
 		return;
 	m_WriterFinishJobs.pop_front();
 
-	char aBuf[2 * IO_MAX_PATH_LENGTH + 128];
-	if(!Storage()->RemoveFile(pJob->GetRealFilename(), IStorage::TYPE_SAVE))
+	const char *pErrorMessage = pJob->ErrorMessage();
+	if(pErrorMessage[0] != '\0')
 	{
-		str_format(aBuf, sizeof(aBuf), "Saving failed: Could not remove old map file '%s'.", pJob->GetRealFilename());
-		ShowFileDialogError("%s", aBuf);
-		log_error("editor/save", "%s", aBuf);
+		ShowFileDialogError("%s", pErrorMessage);
 		return;
 	}
-
-	if(!Storage()->RenameFile(pJob->GetTempFilename(), pJob->GetRealFilename(), IStorage::TYPE_SAVE))
-	{
-		str_format(aBuf, sizeof(aBuf), "Saving failed: Could not move temporary map file '%s' to '%s'.", pJob->GetTempFilename(), pJob->GetRealFilename());
-		ShowFileDialogError("%s", aBuf);
-		log_error("editor/save", "%s", aBuf);
-		return;
-	}
-
-	log_trace("editor/save", "Saved map to '%s'.", pJob->GetRealFilename());
 
 	// send rcon.. if we can
 	if(Client()->RconAuthed() && g_Config.m_EdAutoMapReload)
@@ -7315,8 +7296,8 @@ void CEditor::HandleWriterFinishJobs()
 
 		if(net_addr_is_local(&Client()->ServerAddress()))
 		{
-			char aMapName[128];
-			IStorage::StripPathAndExtension(pJob->GetRealFilename(), aMapName, sizeof(aMapName));
+			char aMapName[MAX_MAP_LENGTH];
+			IStorage::StripPathAndExtension(pJob->RealFilename(), aMapName, sizeof(aMapName));
 			if(!str_comp(aMapName, CurrentServerInfo.m_aMap))
 				Client()->Rcon("hot_reload");
 		}
@@ -7470,8 +7451,12 @@ void CEditor::LoadCurrentMap()
 bool CEditor::Save(const char *pFilename)
 {
 	// Check if file with this name is already being saved at the moment
-	if(std::any_of(std::begin(m_WriterFinishJobs), std::end(m_WriterFinishJobs), [pFilename](const std::shared_ptr<CDataFileWriterFinishJob> &Job) { return str_comp(pFilename, Job->GetRealFilename()) == 0; }))
+	if(std::any_of(std::begin(m_WriterFinishJobs), std::end(m_WriterFinishJobs), [pFilename](const std::shared_ptr<CDataFileWriterFinishJob> &Job) {
+		   return str_comp(pFilename, Job->RealFilename()) == 0;
+	   }))
+	{
 		return false;
+	}
 
 	const auto &&ErrorHandler = [this](const char *pErrorMessage) {
 		ShowFileDialogError("%s", pErrorMessage);

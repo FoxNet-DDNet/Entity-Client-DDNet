@@ -1,5 +1,5 @@
-#ifndef GAME_CLIENT_COMPONENTS_ENTITY_MAPOVERVIEW_H
-#define GAME_CLIENT_COMPONENTS_ENTITY_MAPOVERVIEW_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_MAP_OVERVIEW_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_MAP_OVERVIEW_H
 
 #include <base/vmath.h>
 
@@ -46,10 +46,10 @@ public:
 	vec2 GetCloseSolidTile(vec2 Pos, int MaxDistance) const;
 	bool AddPoint(vec2 Pos);
 
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnRender() override;
-	virtual void OnStateChange(int NewState, int OldState) override;
-	virtual void OnSelfDeath() override { Reset(); }
+	int Sizeof() const override { return sizeof(*this); }
+	void OnRender() override;
+	void OnStateChange(int NewState, int OldState) override;
+	void OnSelfDeath() override { Reset(); }
 };
 
-#endif
+#endif // GAME_CLIENT_COMPONENTS_ENTITY_MAP_OVERVIEW_H

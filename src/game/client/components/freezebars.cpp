@@ -52,7 +52,7 @@ bool CFreezeBars::RenderKillBar()
 	return true;
 }
 
-void CFreezeBars::RenderFreezeBar(const int ClientId)
+void CFreezeBars::RenderFreezeBar(int ClientId)
 {
 	if(!g_Config.m_ClShowFreezeBars)
 		return;

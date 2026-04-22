@@ -81,9 +81,6 @@ void CCustomCommunities::LoadCustomCommunitiesDDNetInfo()
 		}
 	};
 	pServerBrowser->LoadDDNetServers();
-
-	if(!pServerBrowser->m_LoadedCustomCommunities)
-		pServerBrowser->CleanFilters();
 	pServerBrowser->m_LoadedCustomCommunities = true;
 }
 

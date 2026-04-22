@@ -8,8 +8,11 @@
 #include "register.h"
 
 #include <base/bytes.h>
+#include <base/fs.h>
+#include <base/io.h>
 #include <base/logger.h>
 #include <base/math.h>
+#include <base/secure.h>
 
 #include <engine/config.h>
 #include <engine/console.h>
@@ -1713,55 +1716,14 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		}
 		else if(Msg == NETMSG_INFO)
 		{
-			if((m_aClients[ClientId].m_State == CClient::STATE_PREAUTH || m_aClients[ClientId].m_State == CClient::STATE_AUTH))
-			{
-				const char *pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
-				if(Unpacker.Error())
-				{
-					return;
-				}
-				if(str_comp(pVersion, GameServer()->NetVersion()) != 0 && str_comp(pVersion, "0.7 802f1be60a05665f") != 0)
-				{
-					// wrong version
-					char aReason[256];
-					str_format(aReason, sizeof(aReason), "Wrong version. Server is running '%s' and client '%s'", GameServer()->NetVersion(), pVersion);
-					m_NetServer.Drop(ClientId, aReason);
-					return;
-				}
+			const char *pVersion = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+			if(Unpacker.Error())
+				return;
+			const char *pPassword = Unpacker.GetString(CUnpacker::SANITIZE_CC);
+			if(Unpacker.Error())
+				pPassword = nullptr;
 
-				const char *pPassword = Unpacker.GetString(CUnpacker::SANITIZE_CC);
-				if(Unpacker.Error())
-				{
-					return;
-				}
-				if(Config()->m_Password[0] != 0 && str_comp(Config()->m_Password, pPassword) != 0)
-				{
-					// wrong password
-					m_NetServer.Drop(ClientId, "Wrong password");
-					return;
-				}
-
-				int NumConnectedClients = 0;
-				for(int i = 0; i < MaxClients(); ++i)
-				{
-					if(m_aClients[i].m_State != CClient::STATE_EMPTY)
-					{
-						NumConnectedClients++;
-					}
-				}
-
-				// reserved slot
-				if(NumConnectedClients > MaxClients() - Config()->m_SvReservedSlots && !CheckReservedSlotAuth(ClientId, pPassword))
-				{
-					m_NetServer.Drop(ClientId, "This server is full");
-					return;
-				}
-
-				m_aClients[ClientId].m_State = CClient::STATE_CONNECTING;
-				SendRconType(ClientId, m_AuthManager.NumNonDefaultKeys() > 0);
-				SendCapabilities(ClientId);
-				SendMap(ClientId);
-			}
+			OnNetMsgInfo(ClientId, pVersion, pPassword);
 		}
 		else if(Msg == NETMSG_REQUEST_MAP_DATA)
 		{
@@ -1907,33 +1869,9 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 		{
 			const char *pCmd = Unpacker.GetString();
 			if(Unpacker.Error())
-			{
 				return;
-			}
-			if(!str_comp(pCmd, "crashmeplx"))
-			{
-				int Version = m_aClients[ClientId].m_DDNetVersion;
-				if(GameServer()->PlayerExists(ClientId) && Version < VERSION_DDNET_OLD)
-				{
-					m_aClients[ClientId].m_DDNetVersion = VERSION_DDNET_OLD;
-				}
-			}
-			else if(IsRconAuthed(ClientId))
-			{
-				if(GameServer()->PlayerExists(ClientId))
-				{
-					log_info("server", "ClientId=%d key='%s' rcon='%s'", ClientId, GetAuthName(ClientId), pCmd);
-					m_RconClientId = ClientId;
-					m_RconAuthLevel = GetAuthedState(ClientId);
-					{
-						CRconClientLogger Logger(this, ClientId);
-						CLogScope Scope(&Logger);
-						Console()->ExecuteLineFlag(pCmd, CFGFLAG_SERVER, ClientId);
-					}
-					m_RconClientId = IServer::RCON_CID_SERV;
-					m_RconAuthLevel = AUTHED_ADMIN;
-				}
-			}
+
+			OnNetMsgRconCmd(ClientId, pCmd);
 		}
 		else if(Msg == NETMSG_RCON_AUTH)
 		{
@@ -2004,6 +1942,53 @@ void CServer::OnNetMsgClientVer(int ClientId, CUuid *pConnectionId, int DDNetVer
 	m_aClients[ClientId].m_State = CClient::STATE_AUTH;
 }
 
+void CServer::OnNetMsgInfo(int ClientId, const char *pVersion, const char *pPasswordOrNullptr)
+{
+	if((m_aClients[ClientId].m_State != CClient::STATE_PREAUTH && m_aClients[ClientId].m_State != CClient::STATE_AUTH))
+		return;
+
+	if(str_comp(pVersion, GameServer()->NetVersion()) != 0 && str_comp(pVersion, "0.7 802f1be60a05665f") != 0)
+	{
+		// wrong version
+		char aReason[256];
+		str_format(aReason, sizeof(aReason), "Wrong version. Server is running '%s' and client '%s'", GameServer()->NetVersion(), pVersion);
+		m_NetServer.Drop(ClientId, aReason);
+		return;
+	}
+
+	const char *pPassword = pPasswordOrNullptr;
+	if(!pPassword)
+		return;
+
+	if(Config()->m_Password[0] != 0 && str_comp(Config()->m_Password, pPassword) != 0)
+	{
+		// wrong password
+		m_NetServer.Drop(ClientId, "Wrong password");
+		return;
+	}
+
+	int NumConnectedClients = 0;
+	for(int i = 0; i < MaxClients(); ++i)
+	{
+		if(m_aClients[i].m_State != CClient::STATE_EMPTY)
+		{
+			NumConnectedClients++;
+		}
+	}
+
+	// reserved slot
+	if(NumConnectedClients > MaxClients() - Config()->m_SvReservedSlots && !CheckReservedSlotAuth(ClientId, pPassword))
+	{
+		m_NetServer.Drop(ClientId, "This server is full");
+		return;
+	}
+
+	m_aClients[ClientId].m_State = CClient::STATE_CONNECTING;
+	SendRconType(ClientId, m_AuthManager.NumNonDefaultKeys() > 0);
+	SendCapabilities(ClientId);
+	SendMap(ClientId);
+}
+
 void CServer::OnNetMsgReady(int ClientId)
 {
 	if(m_aClients[ClientId].m_State == CClient::STATE_CONNECTING)
@@ -2055,6 +2040,34 @@ void CServer::OnNetMsgEnterGame(int ClientId)
 		SendMsg(&ServerInfoMessage, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientId);
 	}
 	GameServer()->OnClientEnter(ClientId);
+}
+
+void CServer::OnNetMsgRconCmd(int ClientId, const char *pCmd)
+{
+	if(!str_comp(pCmd, "crashmeplx"))
+	{
+		int Version = m_aClients[ClientId].m_DDNetVersion;
+		if(GameServer()->PlayerExists(ClientId) && Version < VERSION_DDNET_OLD)
+		{
+			m_aClients[ClientId].m_DDNetVersion = VERSION_DDNET_OLD;
+		}
+	}
+	else if(IsRconAuthed(ClientId))
+	{
+		if(GameServer()->PlayerExists(ClientId))
+		{
+			log_info("server", "ClientId=%d key='%s' rcon='%s'", ClientId, GetAuthName(ClientId), pCmd);
+			m_RconClientId = ClientId;
+			m_RconAuthLevel = GetAuthedState(ClientId);
+			{
+				CRconClientLogger Logger(this, ClientId);
+				CLogScope Scope(&Logger);
+				Console()->ExecuteLineFlag(pCmd, CFGFLAG_SERVER, ClientId);
+			}
+			m_RconClientId = IServer::RCON_CID_SERV;
+			m_RconAuthLevel = AUTHED_ADMIN;
+		}
+	}
 }
 
 void CServer::OnNetMsgRconAuth(int ClientId, const char *pName, const char *pPw, bool SendRconCmds)

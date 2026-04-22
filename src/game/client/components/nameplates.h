@@ -24,7 +24,7 @@ public:
 	CNamePlates();
 	~CNamePlates() override;
 
-	// E-Client
+	// EClient
 	float GetNamePlateOffset(int ClientId) const;
 };
 

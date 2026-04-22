@@ -1,4 +1,5 @@
 #include <base/logger.h>
+#include <base/os.h>
 #include <base/system.h>
 
 #include <engine/client.h>
@@ -50,6 +51,16 @@ public:
 			const int FromItemSize = pFrom->GetItemSize(Index);
 			const int ItemType = pFrom->GetItemType(Index);
 			const void *pData = pFromItem->Data();
+
+			if(ItemType <= 0)
+			{
+				// Don't add extended item type descriptions, they get
+				// added implicitly (== 0).
+				//
+				// Don't add items of unknown item types either (< 0).
+				continue;
+			}
+
 			Unpacker.Reset(pData, FromItemSize);
 
 			void *pRawObj = NetObjHandler.SecureUnpackObj(ItemType, &Unpacker);
@@ -57,7 +68,7 @@ public:
 				continue;
 
 			const int ItemSize = NetObjHandler.GetUnpackedObjSize(ItemType);
-			void *pObj = Builder.NewItem(pFromItem->Type(), pFromItem->Id(), ItemSize);
+			void *pObj = Builder.NewItem(ItemType, pFromItem->Id(), ItemSize);
 			if(!pObj)
 				return -4;
 
@@ -155,7 +166,7 @@ public:
 
 			const IDemoPlayer::CInfo &Info = m_pDemoPlayer->Info()->m_Info;
 			char aTime[20];
-			str_time((int64_t)(Info.m_CurrentTick - Info.m_FirstTick) / SERVER_TICK_SPEED * 100, TIME_HOURS, aTime, sizeof(aTime));
+			str_time((int64_t)(Info.m_CurrentTick - Info.m_FirstTick) / SERVER_TICK_SPEED * 100, ETimeFormat::HOURS, aTime, sizeof(aTime));
 
 			if(Msg == NETMSGTYPE_SV_CHAT)
 			{

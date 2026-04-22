@@ -370,7 +370,7 @@ public:
 	// TClient
 	bool m_IsLocalFrozen = false;
 
-	// E-Client
+	// EClient
 	virtual void DiscordRPCchange() = 0;
 	virtual void SendFastInputsInfo(int Conn) = 0;
 	int m_FoxNetVersion = 0;
@@ -433,7 +433,7 @@ public:
 
 	virtual void ForceUpdateConsoleRemoteCompletionSuggestions() = 0;
 
-	// E-Client
+	// EClient
 	virtual bool CheckNewInput() = 0;
 	virtual void SetConnectInfo(const NETADDR *pAddress) = 0;
 

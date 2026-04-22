@@ -3,6 +3,10 @@
 
 #include "file_browser.h"
 
+#include <base/dbg.h>
+#include <base/str.h>
+#include <base/time.h>
+
 #include <engine/font_icons.h>
 #include <engine/keys.h>
 #include <engine/sound.h>
@@ -554,7 +558,6 @@ void CFileBrowser::RenderFilePreview(CUIRect Preview)
 			}
 
 			Graphics()->TextureSet(m_PreviewImage);
-			Graphics()->BlendNormal();
 			Graphics()->QuadsBegin();
 			IGraphics::CQuadItem QuadItem(PreviewImage.x, PreviewImage.y, Width, Height);
 			Graphics()->QuadsDrawTL(&QuadItem, 1);

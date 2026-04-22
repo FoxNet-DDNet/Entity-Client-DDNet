@@ -669,10 +669,10 @@ public:
 	float DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner = nullptr, bool Render = true);
 	bool DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale = &ms_LinearScrollbarScale, unsigned Flags = 0u, const char *pSuffix = "");
 	bool DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale = &ms_LinearScrollbarScale, unsigned Flags = 0u);
-	
+
 	bool DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int Scale, const IScrollbarScale *pScale, unsigned Flags = 0u, const char *pSuffix = "");
 	bool DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, int DivideBy, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix);
-	
+
 	// progress bar
 	void RenderProgressBar(CUIRect ProgressBar, float Progress);
 
@@ -758,7 +758,7 @@ public:
 		void Reset();
 	};
 	void ShowPopupSelection(float X, float Y, SSelectionPopupContext *pContext);
-	void UpdatePopupMenuOffset(const SSelectionPopupContext *pId, float NewX, float NewY); // E-Client
+	void UpdatePopupMenuOffset(const SSelectionPopupContext *pContext, float NewX, float NewY); // EClient
 
 	struct SColorPickerPopupContext : public SPopupMenuId
 	{
@@ -796,7 +796,7 @@ public:
 	};
 	int DoDropDown(CUIRect *pRect, int CurSelection, const char **pStrs, int Num, SDropDownState &State);
 
-	// E-Client
+	// EClient
 	float DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner, bool Draggable);
 };
 

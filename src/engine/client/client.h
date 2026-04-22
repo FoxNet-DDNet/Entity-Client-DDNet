@@ -133,7 +133,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	char m_aTimeoutCodes[NUM_DUMMIES][32] = {"", ""};
 	bool m_aDidPostConnect[NUM_DUMMIES] = {false, false};
 	bool m_GenerateTimeoutSeed = true;
-	
+
 	bool m_aInfoDisplay[NUM_DUMMIES] = {false, false};
 
 	char m_aCmdConnect[256] = "";
@@ -347,6 +347,7 @@ public:
 
 	void GetServerInfo(CServerInfo *pServerInfo) const override;
 	void ServerInfoRequest();
+	void SetCurrentServerInfo(const CServerInfo &ServerInfo);
 
 	void LoadDebugFont();
 
@@ -552,12 +553,12 @@ private:
 	bool m_aOnJoinInfo[NUM_DUMMIES] = {false, false};
 
 	void SendqxdInfo(int Conn);
+	void SendSupportsCosmeticSnapInfo(int Conn);
 
 public:
-
 	void DiscordRPCchange() override;
 	void SendFastInputsInfo(int Conn) override;
-	// E-Client>
+	// EClient>
 };
 
 #endif

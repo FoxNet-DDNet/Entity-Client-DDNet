@@ -24,8 +24,6 @@ public:
 	bool Match(CLaser *pLaser);
 	CLaserData GetData() const;
 
-	CCharacter *laser_last_hit; // DClient addition
-
 protected:
 	bool HitCharacter(vec2 From, vec2 To);
 	void DoBounce();

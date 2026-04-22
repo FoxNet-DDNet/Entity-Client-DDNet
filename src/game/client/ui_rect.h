@@ -144,8 +144,8 @@ public:
 	 */
 	void DrawOutline(ColorRGBA Color) const;
 
-	void DrawOutline(ColorRGBA Color, int Corners, float Rounding) const; // E-Client
-	void DrawSpecificOutline(ColorRGBA Color, int Corners, int Sides, float Rounding) const; // E-Client
+	void DrawOutline(ColorRGBA Color, int Corners, float Rounding) const; // EClient
+	void DrawSpecificOutline(ColorRGBA Color, int Corners, int Sides, float Rounding) const; // EClient
 	/**
 	 * Returns the top-left position of *this* CUIRect as a vec2.
 	 *

@@ -1,13 +1,13 @@
-#include <game/client/render.h>
-#include <game/client/ui.h>
-
-#include <game/client/gameclient.h>
-#include <generated/protocol.h>
+#include "statusbar.h"
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 
-#include "statusbar.h"
+#include <generated/protocol.h>
+
+#include <game/client/gameclient.h>
+#include <game/client/render.h>
+#include <game/client/ui.h>
 
 CStatusItem::CStatusItem(std::function<void()> Render, std::function<float()> Width, const char *pLetters, const char *pName, const char *pDisplayName, const char *pDesc, bool ShowLabel)
 {
@@ -25,11 +25,11 @@ CStatusItem::CStatusItem(std::function<void()> Render, std::function<float()> Wi
 
 int CStatusBar::GetDigitsIndex(const int Value, const int Max)
 {
-	int s_Value = Value;
-	if(s_Value < 0) // Normalize
-		s_Value *= -1;
+	int a = Value;
+	if(a < 0) // Normalize
+		a *= -1;
 
-	int DigitsIndex = static_cast<int>(log10((s_Value ? s_Value : 1)));
+	int DigitsIndex = static_cast<int>(log10((a ? a : 1)));
 
 	if(DigitsIndex > Max)
 		DigitsIndex = Max;
@@ -51,7 +51,10 @@ float CStatusBar::GetDurationWidth(int Duration)
 		s_TextWidth000D = TextRender()->TextWidth(m_FontSize, "000d 00:00:00");
 		s_FontSize = m_FontSize;
 	}
-	return Duration >= 3600 * 24 * 100 ? s_TextWidth000D : Duration >= 3600 * 24 * 10 ? s_TextWidth00D : Duration >= 3600 * 24 ? s_TextWidth0D : Duration >= 3600 ? s_TextWidthH : s_TextWidthM;
+	return Duration >= 3600 * 24 * 100 ? s_TextWidth000D : Duration >= 3600 * 24 * 10 ? s_TextWidth00D :
+						       Duration >= 3600 * 24              ? s_TextWidth0D :
+						       Duration >= 3600                   ? s_TextWidthH :
+											    s_TextWidthM;
 }
 
 float CStatusBar::AngleWidth()
@@ -140,7 +143,7 @@ void CStatusBar::RaceTimeRender()
 		RaceTime = (Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick) / Client()->GameTickSpeed();
 	m_CurrentRaceTime = RaceTime;
 	char aTimeBuf[64];
-	str_time((int64_t)RaceTime * 100, TIME_DAYS, aTimeBuf, sizeof(aTimeBuf));
+	str_time((int64_t)RaceTime * 100, ETimeFormat::DAYS, aTimeBuf, sizeof(aTimeBuf));
 
 	if(GameClient()->m_Snap.m_pGameInfoObj->m_TimeLimit && RaceTime <= 60 && (GameClient()->m_Snap.m_pGameInfoObj->m_WarmupTimer <= 0))
 	{

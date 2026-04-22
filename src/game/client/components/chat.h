@@ -2,6 +2,9 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_COMPONENTS_CHAT_H
 #define GAME_CLIENT_COMPONENTS_CHAT_H
+
+#include <base/str.h>
+
 #include <engine/console.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
@@ -13,13 +16,26 @@
 #include <game/client/lineinput.h>
 #include <game/client/render.h>
 
+#include <string>
 #include <vector>
+
+// TClient
+class CTranslateResponse
+{
+public:
+	bool m_Error = false;
+	char m_Text[1024] = "";
+	char m_Language[16] = "";
+
+	bool m_Auto = false;
+	bool m_Blacklisted = false;
+};
 
 constexpr auto SAVES_FILE = "ddnet-saves.txt";
 
 enum
 {
-	MAX_LINES = 64,
+	MAX_LINES = 384,
 	MAX_LINE_LENGTH = 256
 };
 
@@ -55,18 +71,38 @@ class CChat : public CComponent
 
 		STextContainerIndex m_TextContainerIndex;
 		int m_QuadContainerIndex;
+		int m_RenderedOffsetType;
 
 		std::shared_ptr<CManagedTeeRenderInfo> m_pManagedTeeRenderInfo;
 
 		float m_TextYOffset;
 
 		int m_TimesRepeated;
+
+		std::shared_ptr<CTranslateResponse> m_pTranslateResponse;
+
+		// EClient
+		std::string m_RenderedName;
+		std::string m_RenderedText;
+		float m_StartX;
+		float m_LineWidth;
 	};
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
 
 	bool m_PrevScoreBoardShowed;
 	bool m_PrevShowChat;
+	int m_BacklogCurLine;
+	int m_LinesRendered;
+	vec2 m_SelectorMouse;
+
+	// Selection state for copying from chat
+	bool m_Selecting;
+	vec2 m_SelectionMousePress;
+	vec2 m_SelectionMouseRelease;
+	bool m_HasSelection;
+	std::string m_SelectionText;
+	int m_NewLineCounter; // Track new lines while selecting to adjust mouse position
 
 	CLine m_aLines[MAX_LINES];
 	int m_CurrentLine;
@@ -74,8 +110,8 @@ class CChat : public CComponent
 	enum
 	{
 		// client IDs for special messages
-		SILENT_MSG = -4, // E-Client
-		ECLIENT_MSG = -3,// E-Client
+		SILENT_MSG = -4, // EClient
+		ECLIENT_MSG = -3, // EClient
 		CLIENT_MSG = -2,
 		SERVER_MSG = -1,
 	};
@@ -85,7 +121,7 @@ class CChat : public CComponent
 		MODE_NONE = 0,
 		MODE_ALL,
 		MODE_TEAM,
-		MODE_SILENT, // E-Client
+		MODE_SILENT, // EClient
 	};
 
 	enum
@@ -118,7 +154,7 @@ class CChat : public CComponent
 		char m_aName[IConsole::TEMPCMD_NAME_LENGTH];
 		char m_aParams[IConsole::TEMPCMD_PARAMS_LENGTH];
 		char m_aHelpText[IConsole::TEMPCMD_HELP_LENGTH];
-		char m_Prefix; // E-Client
+		char m_Prefix; // EClient
 
 		CCommand() = default;
 		CCommand(const char *pName, const char *pParams, const char *pHelpText)
@@ -126,7 +162,7 @@ class CChat : public CComponent
 			str_copy(m_aName, pName);
 			str_copy(m_aParams, pParams);
 			str_copy(m_aHelpText, pHelpText);
-			m_Prefix = m_aName[0]; // E-Client
+			m_Prefix = m_aName[0]; // EClient
 		}
 
 		bool operator<(const CCommand &Other) const { return str_comp(m_aName, Other.m_aName) < 0; }
@@ -167,10 +203,10 @@ class CChat : public CComponent
 	void StoreSave(const char *pText);
 
 	friend class CBindChat;
+	friend class CTranslate;
 	friend class CChatBubbles;
 
 public:
-
 	CChat();
 	int Sizeof() const override { return sizeof(*this); }
 
@@ -194,9 +230,18 @@ public:
 	void OnMessage(int MsgType, void *pRawMsg) override;
 	bool OnInput(const IInput::CEvent &Event) override;
 	void OnInit() override;
+	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
 
 	void RebuildChat();
 	void ClearLines();
+	int GetLinesToScroll(int Direction, int LinesToScroll) const;
+	int NumInitializedLines() const;
+
+	// EClient
+	void ScrollToTop();
+	void ScrollToBottom();
+	void ScrollPageUp();
+	void ScrollPageDown();
 
 	void EnsureCoherentFontSize() const;
 	void EnsureCoherentWidth() const;
@@ -224,15 +269,15 @@ public:
 	// It uses team or public chat depending on m_Mode.
 	void SendChatQueued(const char *pLine);
 
-	//<E-Client
+	// <EClient
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
 	void AddHistoryEntry(const char *pLine);
 
 private:
-	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData); 
-	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData); 
+	static void ConClientMessage(IConsole::IResult *pResult, void *pUserData);
+	static void ConSetChatInput(IConsole::IResult *pResult, void *pUserData);
 	static void ConSayQueued(IConsole::IResult *pResult, void *pUserData);
-	// E-Client>
+	// EClient>
 };
 #endif

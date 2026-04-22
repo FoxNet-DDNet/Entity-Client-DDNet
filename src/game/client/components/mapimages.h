@@ -3,6 +3,8 @@
 #ifndef GAME_CLIENT_COMPONENTS_MAPIMAGES_H
 #define GAME_CLIENT_COMPONENTS_MAPIMAGES_H
 
+#include "entity/moving_tiles.h"
+
 #include <engine/console.h>
 #include <engine/graphics.h>
 
@@ -68,6 +70,8 @@ public:
 	int GetTextureScale() const;
 
 	void ChangeEntitiesPath(const char *pPath);
+
+	ColorRGBA m_aTilesDominantColor[(int)EQuadType::NUM];
 
 private:
 	bool m_aEntitiesIsLoaded[MAP_IMAGE_MOD_TYPE_COUNT * 2];

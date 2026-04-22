@@ -822,11 +822,9 @@ void CMenus::RenderServerInfoMotd(CUIRect Motd)
 		return;
 
 	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollUnit = 5 * MotdFontSize;
-	s_ScrollRegion.Begin(&Motd, &ScrollOffset, &ScrollParams);
-	Motd.y += ScrollOffset.y;
+	s_ScrollRegion.Begin(&Motd, &ScrollParams);
 
 	static float s_MotdHeight = 0.0f;
 	static int64_t s_MotdLastUpdateTime = -1;
@@ -1474,13 +1472,13 @@ void CMenus::RenderGhost(CUIRect MainView)
 			else if(Id == COL_TIME)
 			{
 				char aBuf[64];
-				str_time(pGhost->m_Time / 10, TIME_HOURS_CENTISECS, aBuf, sizeof(aBuf));
+				str_time(pGhost->m_Time / 10, ETimeFormat::HOURS_CENTISECS, aBuf, sizeof(aBuf));
 				Ui()->DoLabel(&Button, aBuf, 12.0f, TEXTALIGN_ML);
 			}
 			else if(Id == COL_DATE)
 			{
 				char aBuf[64];
-				str_timestamp_ex(pGhost->m_Date, aBuf, sizeof(aBuf), FORMAT_SPACE);
+				str_timestamp_ex(pGhost->m_Date, aBuf, sizeof(aBuf), TimestampFormat::SPACE);
 				Ui()->DoLabel(&Button, aBuf, 12.0f, TEXTALIGN_ML);
 			}
 		}

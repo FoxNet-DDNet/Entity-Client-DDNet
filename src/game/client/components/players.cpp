@@ -4,6 +4,7 @@
 #include "players.h"
 
 #include <base/color.h>
+#include <base/log.h>
 #include <base/math.h>
 
 #include <engine/client/enums.h>
@@ -24,7 +25,6 @@
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
 #include <game/mapitems.h>
-#include <base/log.h>
 
 static float CalculateHandAngle(vec2 Dir, float AngleOffset)
 {
@@ -222,8 +222,12 @@ void CPlayers::RenderHookCollLine(
 	vec2 Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 
 	static constexpr float HOOK_START_DISTANCE = CCharacterCore::PhysicalSize() * 1.5f;
-	float HookLength = (float)GameClient()->m_aClients[ClientId].m_Predicted.m_Tuning.m_HookLength;
-	float HookFireSpeed = (float)GameClient()->m_aClients[ClientId].m_Predicted.m_Tuning.m_HookFireSpeed;
+
+	// When the other player isn't predicted, we don't know their tunes.
+	// Use our own tunes instead. This is wrong, but a good heuristic.
+	const CCharacterCore &PlayerCore = GameClient()->m_aClients[ClientId].m_IsPredicted ? GameClient()->m_aClients[ClientId].m_Predicted : GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_Predicted;
+	float HookLength = PlayerCore.m_Tuning.m_HookLength;
+	float HookFireSpeed = PlayerCore.m_Tuning.m_HookFireSpeed;
 
 	// janky physics
 	if(HookLength < HOOK_START_DISTANCE || HookFireSpeed <= 0.0f)
@@ -432,7 +436,7 @@ void CPlayers::RenderHookCollLine(
 		Graphics()->QuadsDrawFreeform(vLineQuadSegments.data(), vLineQuadSegments.size());
 		if(HookTipLineSegment.has_value() && HookCollTipColor.a > 0.0f)
 		{
-			vLineQuadSegments.clear(); 
+			vLineQuadSegments.clear();
 			ConvertLineSegments(HookTipLineSegment.value());
 			Graphics()->SetColor(HookCollTipColor.WithMultipliedAlpha(Alpha));
 			Graphics()->QuadsDrawFreeform(vLineQuadSegments.data(), vLineQuadSegments.size());
@@ -460,7 +464,7 @@ void CPlayers::RenderHook(
 	int ClientId,
 	float Intra)
 {
-	if(pPrevChar->m_HookState <= 0 || pPlayerChar->m_HookState <= 0)
+	if(pPlayerChar->m_HookState <= 0)
 		return;
 
 	CNetObj_Character Prev;
@@ -512,10 +516,10 @@ void CPlayers::RenderHook(
 	int QuadOffset = NUM_WEAPONS * 2 + 2;
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 
-		bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
-		bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
-		if(g_Config.m_ClRainbowHook && !DontOthers)
-			Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
+	bool Local = GameClient()->m_Snap.m_LocalClientId == ClientId;
+	bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
+	if(g_Config.m_ClRainbowHook && !DontOthers)
+		Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
 
 	Graphics()->RenderQuadContainerAsSprite(m_WeaponEmoteQuadContainerIndex, QuadOffset, HookPos.x, HookPos.y);
 
@@ -608,7 +612,7 @@ void CPlayers::RenderPlayer(
 	if(in_range(ClientId, MAX_CLIENTS - 1))
 		Position = GameClient()->m_aClients[ClientId].m_RenderPos;
 	else
-	Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Intra);
+		Position = mix(vec2(Prev.m_X, Prev.m_Y), vec2(Player.m_X, Player.m_Y), Intra);
 
 	if(g_Config.m_TcSwapGhosts && g_Config.m_TcShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		if(ClientId >= 0)
@@ -704,8 +708,9 @@ void CPlayers::RenderPlayer(
 			State.Add(&g_pData->m_aAnimations[ANIM_WALK], WalkTime, 1.0f);
 	}
 
+	const float HammerAnimationTimeScale = 5.0f;
 	if(Player.m_Weapon == WEAPON_HAMMER)
-		State.Add(&g_pData->m_aAnimations[ANIM_HAMMER_SWING], std::clamp(LastAttackTime * 5.0f, 0.0f, 1.0f), 1.0f);
+		State.Add(&g_pData->m_aAnimations[ANIM_HAMMER_SWING], std::clamp(LastAttackTime * HammerAnimationTimeScale, 0.0f, 1.0f), 1.0f);
 	if(Player.m_Weapon == WEAPON_NINJA)
 		State.Add(&g_pData->m_aAnimations[ANIM_NINJA_SWING], std::clamp(LastAttackTime * 2.0f, 0.0f, 1.0f), 1.0f);
 
@@ -735,7 +740,7 @@ void CPlayers::RenderPlayer(
 			bool DontOthers = !g_Config.m_ClRainbowOthers && !Local;
 			if(g_Config.m_ClRainbowWeapon && !DontOthers)
 				Graphics()->SetColor(GameClient()->m_Rainbow.m_RainbowColor.WithAlpha(Alpha));
-				
+
 			float Recoil = 0.0f;
 			vec2 WeaponPosition;
 			bool IsSit = Inactive && !InAir && Stationary;
@@ -751,7 +756,7 @@ void CPlayers::RenderPlayer(
 					WeaponPosition.y += 3.0f;
 
 				// if active and attack is under way, bash stuffs
-				if(!Inactive || LastAttackTime < GameClient()->m_aClients[ClientId].m_Predicted.m_Tuning.GetWeaponFireDelay(Player.m_Weapon))
+				if(!Inactive || LastAttackTime * HammerAnimationTimeScale < 1.0f)
 				{
 					if(Direction.x < 0)
 						Graphics()->QuadsSetRotation(-pi / 2.0f - State.GetAttach()->m_Angle * pi * 2.0f);
@@ -1053,7 +1058,7 @@ void CPlayers::OnRender()
 
 			Frozen = GameClient()->m_aClients[i].m_Predicted.m_FreezeEnd != 0;
 
-			// E-Client
+			// EClient
 			if(g_Config.m_TcFastInput)
 				Frozen = GameClient()->m_aClients[i].m_RegularPredicted.m_FreezeEnd != 0;
 		}
@@ -1190,12 +1195,12 @@ void CPlayers::OnRender()
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 			if(g_Config.m_ClWarList)
 			{
-				if(GameClient()->m_WarList.GetWarData(i).IsWarClan)
+				if(GameClient()->m_WarList.GetWarData(i).m_IsWarClan)
 					Color = GameClient()->m_WarList.GetClanColor(i);
 
-				if(GameClient()->m_WarList.GetWarData(i).IsWarName)
+				if(GameClient()->m_WarList.GetWarData(i).m_IsWarName)
 					Color = GameClient()->m_WarList.GetNameplateColor(i);
-				else if(GameClient()->m_WarList.GetWarData(i).IsWarClan)
+				else if(GameClient()->m_WarList.GetWarData(i).m_IsWarClan)
 					Color = GameClient()->m_WarList.GetClanColor(i);
 			}
 
@@ -1203,7 +1208,7 @@ void CPlayers::OnRender()
 				continue;
 
 			if(!(GameClient()->m_aClients[i].m_FreezeEnd > 0))
-				aRenderInfo[i].m_CustomColoredSkin = 1;
+				aRenderInfo[i].m_CustomColoredSkin = true;
 			aRenderInfo[i].m_ColorBody = Color;
 			aRenderInfo[i].m_ColorFeet = Color;
 		}
@@ -1281,7 +1286,6 @@ void CPlayers::OnRender()
 			OtherTeamIds.push_back(ClientId);
 		else
 			SameTeamIds.push_back(ClientId);
-		
 	}
 	for(int ClientId : OtherTeamIds)
 	{
@@ -1414,7 +1418,7 @@ void CPlayers::OnInit()
 	CreateSpectatorTeeRenderInfo();
 }
 
-void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 BodyPos, const vec2 Vel, const float Alpha)
+void CPlayers::RenderEffects(bool Frozen, bool Local, vec2 BodyPos, vec2 Vel, float Alpha)
 {
 	const bool ShowEffectSelf = g_Config.m_ClEffect ? true : false;
 	const bool ShowEffectOthers = g_Config.m_ClEffectOthers;
@@ -1439,14 +1443,14 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 		{
 			GameClient()->m_Effects.SparkleEffect(BodyPos, Alpha);
 		}
-		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (abs(Vel.x) > 0.15f || abs(Vel.y) > 0.15f))
+		else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL && (std::abs(Vel.x) > 0.15f || std::abs(Vel.y) > 0.15f))
 		{
 			GameClient()->m_Effects.FireTrailEffect(BodyPos, Alpha);
 		}
 		else if(g_Config.m_ClEffect == EFFECT_SWITCH && !Frozen)
 		{
-			static int64_t Change = time_get() + time_freq() * 30;
-			static float Sin = 5;
+			static int64_t s_Change = time_get() + time_freq() * 30;
+			static float s_Sin = 5;
 
 			const float Changer = (round_to_int(static_cast<float>(time_get()) / time_freq() * 750) % 10000 / 100.f);
 
@@ -1454,13 +1458,13 @@ void CPlayers::RenderEffects(const bool Frozen, const bool Local, const vec2 Bod
 			if(Changer > 50.0f)
 				RotSpeed = 50.0f + 100.0f - Changer;
 
-			vec2 Move = vec2(100 * cos(Time / time_freq() * Sin), 15 * sin(Time / time_freq() + RotSpeed));
+			vec2 Move = vec2(100 * std::cos(Time / time_freq() * s_Sin), 15 * std::sin(Time / time_freq() + RotSpeed));
 			vec2 EffectPos = BodyPos + Move;
 
-			if(Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
+			if(s_Change < time_get() && Move.x < 0.1f && Move.x > -0.1f)
 			{
-				Sin = round_to_int(random_float(3.0f, 6.0f));
-				Change = time_get() + time_freq() * 15;
+				s_Sin = round_to_int(random_float(3.0f, 6.0f));
+				s_Change = time_get() + time_freq() * 15;
 			}
 			GameClient()->m_Effects.SwitchEffect(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
 			GameClient()->m_Effects.SwitchEffect(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));

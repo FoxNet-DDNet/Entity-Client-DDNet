@@ -1,17 +1,20 @@
+#include "quick_actions.h"
+
+#include <base/vmath.h>
+
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
+#include <engine/shared/protocol.h>
+#include <engine/textrender.h>
+
+#include <generated/client_data.h>
+#include <generated/protocol.h>
 
 #include <game/client/animstate.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
 
-#include "quick_actions.h"
-#include <engine/shared/protocol.h>
-#include <base/vmath.h>
-#include <generated/client_data.h>
-#include <generated/protocol.h>
-#include <engine/textrender.h>
 #include <array>
 
 CQuickActions::CQuickActions()
@@ -23,7 +26,7 @@ int CQuickActions::GetClosetClientId(vec2 Pos)
 {
 	int ClosestId = -1;
 	if(GameClient()->m_Snap.m_LocalClientId < 0)
-	return ClosestId;
+		return ClosestId;
 
 	float ClosestDistance = std::numeric_limits<float>::max();
 
@@ -46,7 +49,7 @@ int CQuickActions::GetClosetClientId(vec2 Pos)
 		{
 			ClosestDistance = Distance;
 			ClosestId = ClientId;
-}
+		}
 	}
 
 	return ClosestId;
@@ -129,9 +132,9 @@ void CQuickActions::RemoveBind(const char *pName, const char *pCommand)
 	CBind Bind;
 	str_copy(Bind.m_aName, pName);
 	str_copy(Bind.m_aCommand, pCommand);
-	auto it = std::find(m_vBinds.begin(), m_vBinds.end(), Bind);
-	if(it != m_vBinds.end())
-		m_vBinds.erase(it);
+	auto It = std::find(m_vBinds.begin(), m_vBinds.end(), Bind);
+	if(It != m_vBinds.end())
+		m_vBinds.erase(It);
 }
 
 void CQuickActions::RemoveBind(int Index)
@@ -385,7 +388,6 @@ void CQuickActions::OnRender()
 			pName = "Empty";
 			TextRender()->TextColor(0.7f, 0.7f, 0.7f, aAnimationPhase[1]);
 			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, aAnimationPhase[1]);
-
 		}
 		else
 		{
@@ -459,7 +461,7 @@ void CQuickActions::ExecuteBind(int Bind)
 
 	const char *pTemplate = m_vBinds[Bind].m_aCommand;
 	const char *pPlayerName = GameClient()->m_aClients[m_QuickActionId].m_aName;
-	
+
 	char aCmd[(int)QUICKACTIONS_MAX_CMD + (int)MAX_NAME_LENGTH] = "";
 
 	char *pDst = aCmd;

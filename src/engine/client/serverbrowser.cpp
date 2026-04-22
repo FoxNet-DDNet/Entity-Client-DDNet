@@ -739,6 +739,7 @@ void CServerBrowser::SetInfo(CServerEntry *pEntry, const CServerInfo &Info) cons
 	str_copy(pEntry->m_Info.m_aCommunityCountry, TmpInfo.m_aCommunityCountry);
 	str_copy(pEntry->m_Info.m_aCommunityType, TmpInfo.m_aCommunityType);
 	UpdateServerRank(&pEntry->m_Info);
+	pEntry->m_Info.m_GametypeColor = CServerInfo::GametypeColor(pEntry->m_Info.m_aGameType);
 
 	if(pEntry->m_Info.m_ClientScoreKind == CServerInfo::CLIENT_SCORE_KIND_UNSPECIFIED)
 	{
@@ -840,7 +841,7 @@ CServerBrowser::CServerEntry *CServerBrowser::Add(const NETADDR *pAddrs, int Num
 {
 	// create new pEntry
 	CServerEntry *pEntry = m_ServerlistHeap.Allocate<CServerEntry>();
-	mem_zero(pEntry, sizeof(CServerEntry));
+	*pEntry = {};
 
 	// set the info
 	mem_copy(pEntry->m_Info.m_aAddresses, pAddrs, NumAddrs * sizeof(pAddrs[0]));
@@ -1852,15 +1853,11 @@ unsigned CServerBrowser::CurrentCommunitiesHash() const
 
 void CCommunityCache::Update(bool Force)
 {
+	const int CurrentType = m_pServerBrowser->GetCurrentType();
 	const unsigned CommunitiesHash = m_pServerBrowser->CurrentCommunitiesHash();
-	const bool TypeChanged = m_LastType != m_pServerBrowser->GetCurrentType();
-	const bool CurrentCommunitiesChanged = m_LastType == m_pServerBrowser->GetCurrentType() && m_SelectedCommunitiesHash != CommunitiesHash;
-	if(CurrentCommunitiesChanged && m_pServerBrowser->GetCurrentType() >= IServerBrowser::TYPE_FAVORITE_COMMUNITY_1 && m_pServerBrowser->GetCurrentType() <= IServerBrowser::TYPE_FAVORITE_COMMUNITY_5)
-	{
-		// Favorite community was changed while its type is active,
-		// refresh to get correct serverlist for updated community.
-		m_pServerBrowser->Refresh(m_pServerBrowser->GetCurrentType(), true);
-	}
+	const bool TypeChanged = m_LastType != CurrentType;
+	const bool CurrentCommunitiesChanged = m_LastType == CurrentType && m_SelectedCommunitiesHash != CommunitiesHash;
+	const bool FavoriteCommunityType = CurrentType >= IServerBrowser::TYPE_FAVORITE_COMMUNITY_1 && CurrentType <= IServerBrowser::TYPE_FAVORITE_COMMUNITY_5;
 
 	if(!Force && m_InfoSha256 == m_pServerBrowser->DDNetInfoSha256() &&
 		!CurrentCommunitiesChanged && !TypeChanged)
@@ -1869,59 +1866,91 @@ void CCommunityCache::Update(bool Force)
 	}
 
 	m_InfoSha256 = m_pServerBrowser->DDNetInfoSha256();
-	m_LastType = m_pServerBrowser->GetCurrentType();
+	m_LastType = CurrentType;
 	m_SelectedCommunitiesHash = CommunitiesHash;
-	m_vpSelectedCommunities = m_pServerBrowser->CurrentCommunities();
+	m_vSelectedCommunities.clear();
+	for(const CCommunity *pCommunity : m_pServerBrowser->CurrentCommunities())
+	{
+		m_vSelectedCommunities.push_back(*pCommunity);
+	}
 
+	m_vpSelectedCommunities.clear();
+	m_vpSelectedCommunities.reserve(m_vSelectedCommunities.size());
+	for(const CCommunity &Community : m_vSelectedCommunities)
+	{
+		m_vpSelectedCommunities.push_back(&Community);
+	}
+
+	m_vSelectableCountries.clear();
 	m_vpSelectableCountries.clear();
+	m_vSelectableTypes.clear();
 	m_vpSelectableTypes.clear();
 	for(const CCommunity *pCommunity : m_vpSelectedCommunities)
 	{
 		for(const auto &Country : pCommunity->Countries())
 		{
-			const auto ExistingCountry = std::find_if(m_vpSelectableCountries.begin(), m_vpSelectableCountries.end(), [&](const CCommunityCountry *pOther) {
-				return str_comp(Country.Name(), pOther->Name()) == 0 && Country.FlagId() == pOther->FlagId();
+			const auto ExistingCountry = std::find_if(m_vSelectableCountries.begin(), m_vSelectableCountries.end(), [&](const CCommunityCountry &Other) {
+				return str_comp(Country.Name(), Other.Name()) == 0 && Country.FlagId() == Other.FlagId();
 			});
-			if(ExistingCountry == m_vpSelectableCountries.end())
+			if(ExistingCountry == m_vSelectableCountries.end())
 			{
-				m_vpSelectableCountries.push_back(&Country);
+				m_vSelectableCountries.push_back(Country);
 			}
 		}
 		for(const auto &Type : pCommunity->Types())
 		{
-			const auto ExistingType = std::find_if(m_vpSelectableTypes.begin(), m_vpSelectableTypes.end(), [&](const CCommunityType *pOther) {
-				return str_comp(Type.Name(), pOther->Name()) == 0;
+			const auto ExistingType = std::find_if(m_vSelectableTypes.begin(), m_vSelectableTypes.end(), [&](const CCommunityType &Other) {
+				return str_comp(Type.Name(), Other.Name()) == 0;
 			});
-			if(ExistingType == m_vpSelectableTypes.end())
+			if(ExistingType == m_vSelectableTypes.end())
 			{
-				m_vpSelectableTypes.push_back(&Type);
+				m_vSelectableTypes.push_back(Type);
 			}
 		}
 	}
 
-	m_AnyRanksAvailable = std::any_of(m_vpSelectedCommunities.begin(), m_vpSelectedCommunities.end(), [](const CCommunity *pCommunity) {
-		return pCommunity->HasRanks();
+	m_vpSelectableCountries.reserve(m_vSelectableCountries.size());
+	for(const CCommunityCountry &Country : m_vSelectableCountries)
+	{
+		m_vpSelectableCountries.push_back(&Country);
+	}
+
+	m_vpSelectableTypes.reserve(m_vSelectableTypes.size());
+	for(const CCommunityType &Type : m_vSelectableTypes)
+	{
+		m_vpSelectableTypes.push_back(&Type);
+	}
+
+	m_AnyRanksAvailable = std::any_of(m_vSelectedCommunities.begin(), m_vSelectedCommunities.end(), [](const CCommunity &Community) {
+		return Community.HasRanks();
 	});
 
 	// Country/type filters not shown if there are no countries and types, or if only the none-community is selected
 	m_CountryTypesFilterAvailable = (!m_vpSelectableCountries.empty() || !m_vpSelectableTypes.empty()) &&
 					(m_vpSelectedCommunities.size() != 1 || str_comp(m_vpSelectedCommunities[0]->Id(), IServerBrowser::COMMUNITY_NONE) != 0);
 
-	if(m_pServerBrowser->GetCurrentType() >= IServerBrowser::TYPE_FAVORITE_COMMUNITY_1 && m_pServerBrowser->GetCurrentType() <= IServerBrowser::TYPE_FAVORITE_COMMUNITY_5)
+	if(FavoriteCommunityType)
 	{
-		const size_t CommunityIndex = m_pServerBrowser->GetCurrentType() - IServerBrowser::TYPE_FAVORITE_COMMUNITY_1;
+		const size_t CommunityIndex = CurrentType - IServerBrowser::TYPE_FAVORITE_COMMUNITY_1;
 		std::vector<const CCommunity *> vpFavoriteCommunities = m_pServerBrowser->FavoriteCommunities();
 		dbg_assert(CommunityIndex < vpFavoriteCommunities.size(), "Invalid favorite community serverbrowser type");
 		if(vpFavoriteCommunities[CommunityIndex]->Id()[0] != '\0')
-			m_pCountryTypeFilterKey = vpFavoriteCommunities[CommunityIndex]->Id();
+			m_CountryTypeFilterKey = CCommunityId(vpFavoriteCommunities[CommunityIndex]->Id());
 		else
-			m_pCountryTypeFilterKey = IServerBrowser::COMMUNITY_ALL;
+			m_CountryTypeFilterKey = CCommunityId(IServerBrowser::COMMUNITY_ALL);
 	}
 	else
 	{
-		m_pCountryTypeFilterKey = IServerBrowser::COMMUNITY_ALL;
+		m_CountryTypeFilterKey = CCommunityId(IServerBrowser::COMMUNITY_ALL);
 	}
 	m_pServerBrowser->CleanFilters();
+
+	if(CurrentCommunitiesChanged && FavoriteCommunityType)
+	{
+		// Favorite community was changed while its type is active,
+		// refresh to get correct serverlist for updated community.
+		m_pServerBrowser->Refresh(CurrentType, true);
+	}
 }
 
 void CFavoriteCommunityFilterList::Add(const char *pCommunityId)
@@ -2416,6 +2445,43 @@ int CServerInfo::EstimateLatency(int Loc1, int Loc2)
 		return 199;
 	}
 	return 99;
+}
+
+ColorRGBA CServerInfo::GametypeColor(const char *pGametype)
+{
+	ColorHSLA HslaColor;
+	if(str_comp(pGametype, "DM") == 0 || str_comp(pGametype, "TDM") == 0 || str_comp(pGametype, "CTF") == 0 || str_comp(pGametype, "LMS") == 0 || str_comp(pGametype, "LTS") == 0)
+		HslaColor = ColorHSLA(0.33f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "catch"))
+		HslaColor = ColorHSLA(0.17f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "dm") || str_find_nocase(pGametype, "tdm") || str_find_nocase(pGametype, "ctf") || str_find_nocase(pGametype, "lms") || str_find_nocase(pGametype, "lts"))
+	{
+		if(pGametype[0] == 'i' || pGametype[0] == 'g')
+			HslaColor = ColorHSLA(0.0f, 1.0f, 0.75f);
+		else
+			HslaColor = ColorHSLA(0.40f, 1.0f, 0.75f);
+	}
+	else if(str_find_nocase(pGametype, "s-ddracex"))
+		HslaColor = ColorHSLA(1.0f, 1.0f, 0.7f);
+	else if(str_find_nocase(pGametype, "f-ddrace") || str_find_nocase(pGametype, "freeze"))
+		HslaColor = ColorHSLA(0.0f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "fng"))
+		HslaColor = ColorHSLA(0.83f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "gores"))
+		HslaColor = ColorHSLA(0.525f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "BW"))
+		HslaColor = ColorHSLA(0.05f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "ddracenet") || str_find_nocase(pGametype, "ddnet") || str_find_nocase(pGametype, "0xf"))
+		HslaColor = ColorHSLA(0.58f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "ddrace") || str_find_nocase(pGametype, "mkrace"))
+		HslaColor = ColorHSLA(0.75f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "race") || str_find_nocase(pGametype, "fastcap"))
+		HslaColor = ColorHSLA(0.46f, 1.0f, 0.75f);
+	else if(str_find_nocase(pGametype, "foxnet"))
+		HslaColor = ColorHSLA(0.72f, 0.68f, 0.73f);
+	else
+		HslaColor = ColorHSLA(1.0f, 1.0f, 1.0f);
+	return color_cast<ColorRGBA>(HslaColor);
 }
 
 bool CServerInfo::ParseLocation(int *pResult, const char *pString)

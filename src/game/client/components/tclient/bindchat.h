@@ -1,6 +1,13 @@
-﻿#ifndef GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
+#ifndef GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
 #define GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H
+#include <base/str.h>
+
+#include <engine/console.h>
+
 #include <game/client/component.h>
+#include <game/client/components/chat.h>
+
+#include <vector>
 
 class IConfigManager;
 
@@ -22,6 +29,7 @@ class CBindChat : public CComponent
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
 	void ExecuteBind(int Bind, const char *pArgs);
+
 public:
 	class CBind
 	{
@@ -66,4 +74,4 @@ public:
 	bool ValidPrefix(char Prefix) const;
 };
 
-#endif
+#endif // GAME_CLIENT_COMPONENTS_TCLIENT_BINDCHAT_H

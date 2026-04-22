@@ -1,5 +1,5 @@
-#ifndef GAME_CLIENT_COMPONENTS_ENTITY_CHATBUBBLES_H
-#define GAME_CLIENT_COMPONENTS_ENTITY_CHATBUBBLES_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_CHAT_BUBBLES_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_CHAT_BUBBLES_H
 
 #include <base/str.h>
 #include <base/vmath.h>
@@ -11,6 +11,7 @@
 #include <game/client/components/chat.h>
 
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 class CBubble
@@ -31,7 +32,7 @@ public:
 	CBubble(const char *pText, CTextCursor pCursor, int64_t pTime)
 	{
 		str_copy(m_aText, pText, sizeof(m_aText));
-		m_Cursor = pCursor;
+		m_Cursor = std::move(pCursor);
 		m_Time = pTime;
 		m_OffsetY = 0.0f;
 		m_TargetOffsetY = 0.0f;
@@ -60,7 +61,7 @@ class CChatBubbles : public CComponent
 	void UpdateBubbleOffsets(int ClientId, float InputBubbleHeight = 0.0f);
 
 	void AddBubble(int ClientId, int Team, const char *pText);
-	void RemoveBubble(int ClientId, CBubble Bubble);
+	void RemoveBubble(int ClientId, const CBubble &Bubble);
 
 	void ShiftBubbles();
 
@@ -72,12 +73,12 @@ class CChatBubbles : public CComponent
 	void SetupTextcontainer(CBubble &Bubble);
 
 public:
-	virtual void OnMessage(int MsgType, void *pRawMsg) override;
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnRender() override;
-	virtual void OnStateChange(int NewState, int OldState) override;
+	void OnMessage(int MsgType, void *pRawMsg) override;
+	int Sizeof() const override { return sizeof(*this); }
+	void OnRender() override;
+	void OnStateChange(int NewState, int OldState) override;
 
-	virtual void OnWindowResize() override; // so it resets when font is changed
+	void OnWindowResize() override; // so it resets when font is changed
 };
 
-#endif
+#endif // GAME_CLIENT_COMPONENTS_ENTITY_CHAT_BUBBLES_H

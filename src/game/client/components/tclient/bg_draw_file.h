@@ -42,11 +42,11 @@ namespace BgDrawFile
 	[[nodiscard]] bool Write(FILE *pFile, const CBgDrawItemData &Data);
 	[[nodiscard]] bool Read(FILE *pFile, CBgDrawItemData &Data);
 #ifdef BASE_SYSTEM_H
-	[[nodiscard]] bool Write(IOHANDLE File, const CBgDrawItemData &Data)
+	[[nodiscard]] inline bool Write(IOHANDLE File, const CBgDrawItemData &Data)
 	{
 		return Write((FILE *)File, Data);
 	}
-	[[nodiscard]] bool Read(IOHANDLE File, CBgDrawItemData &Data)
+	[[nodiscard]] inline bool Read(IOHANDLE File, CBgDrawItemData &Data)
 	{
 		return Read((FILE *)File, Data);
 	}

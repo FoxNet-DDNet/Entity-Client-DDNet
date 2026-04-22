@@ -4,6 +4,7 @@
 #include "score.h"
 
 #include <base/log.h>
+#include <base/time.h>
 
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
@@ -804,14 +805,7 @@ void CGameContext::ConSwap(IConsole::IResult *pResult, void *pUserData)
 	int TargetClientId = -1;
 	if(pResult->NumArguments() == 1)
 	{
-		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if(pSelf->m_apPlayers[i] && !str_comp(pName, pSelf->Server()->ClientName(i)))
-			{
-				TargetClientId = i;
-				break;
-			}
-		}
+		TargetClientId = pSelf->FindClientIdByName(pName).value_or(-1);
 	}
 	else
 	{
@@ -1175,17 +1169,8 @@ void CGameContext::ConInvite(IConsole::IResult *pResult, void *pUserData)
 	int Team = pController->Teams().m_Core.Team(pResult->m_ClientId);
 	if(Team != TEAM_FLOCK && pController->Teams().IsValidTeamNumber(Team))
 	{
-		int Target = -1;
-		for(int i = 0; i < MAX_CLIENTS; i++)
-		{
-			if(!str_comp(pName, pSelf->Server()->ClientName(i)))
-			{
-				Target = i;
-				break;
-			}
-		}
-
-		if(Target < 0)
+		int Target = pSelf->FindClientIdByName(pName).value_or(-1);
+		if(Target == -1)
 		{
 			log_info("chatresp", "Player not found");
 			return;
@@ -1339,17 +1324,8 @@ void CGameContext::ConJoin(IConsole::IResult *pResult, void *pUserData)
 	if(!CheckClientId(pResult->m_ClientId))
 		return;
 
-	int Target = -1;
 	const char *pName = pResult->GetString(0);
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		if(!str_comp(pName, pSelf->Server()->ClientName(i)))
-		{
-			Target = i;
-			break;
-		}
-	}
-
+	int Target = pSelf->FindClientIdByName(pName).value_or(-1);
 	if(Target == -1)
 	{
 		log_info("chatresp", "Player not found");
@@ -1546,11 +1522,8 @@ void CGameContext::ConSayTime(IConsole::IResult *pResult, void *pUserData)
 
 	if(pResult->NumArguments() > 0)
 	{
-		for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
-			if(str_comp(pResult->GetString(0), pSelf->Server()->ClientName(ClientId)) == 0)
-				break;
-
-		if(ClientId == MAX_CLIENTS)
+		ClientId = pSelf->FindClientIdByName(pResult->GetString(0)).value_or(-1);
+		if(ClientId == -1)
 			return;
 
 		str_format(aBufName, sizeof(aBufName), "%s's", pSelf->Server()->ClientName(ClientId));
@@ -1573,7 +1546,7 @@ void CGameContext::ConSayTime(IConsole::IResult *pResult, void *pUserData)
 	char aBufTime[32];
 	char aBuf[64];
 	int64_t Time = (int64_t)100 * (float)(pSelf->Server()->Tick() - pChr->m_StartTime) / ((float)pSelf->Server()->TickSpeed());
-	str_time(Time, TIME_HOURS, aBufTime, sizeof(aBufTime));
+	str_time(Time, ETimeFormat::HOURS, aBufTime, sizeof(aBufTime));
 	str_format(aBuf, sizeof(aBuf), "%s current race time is %s", aBufName, aBufTime);
 	log_info("chatresp", "%s", aBuf);
 }
@@ -1597,7 +1570,7 @@ void CGameContext::ConSayTimeAll(IConsole::IResult *pResult, void *pUserData)
 	char aBuf[64];
 	int64_t Time = (int64_t)100 * (float)(pSelf->Server()->Tick() - pChr->m_StartTime) / ((float)pSelf->Server()->TickSpeed());
 	const char *pName = pSelf->Server()->ClientName(pResult->m_ClientId);
-	str_time(Time, TIME_HOURS, aBufTime, sizeof(aBufTime));
+	str_time(Time, ETimeFormat::HOURS, aBufTime, sizeof(aBufTime));
 	str_format(aBuf, sizeof(aBuf), "%s's current race time is %s", pName, aBufTime);
 	pSelf->SendChat(-1, TEAM_ALL, aBuf, pResult->m_ClientId);
 }
@@ -1618,7 +1591,7 @@ void CGameContext::ConTime(IConsole::IResult *pResult, void *pUserData)
 	char aBufTime[32];
 	char aBuf[64];
 	int64_t Time = (int64_t)100 * (float)(pSelf->Server()->Tick() - pChr->m_StartTime) / ((float)pSelf->Server()->TickSpeed());
-	str_time(Time, TIME_HOURS, aBufTime, sizeof(aBufTime));
+	str_time(Time, ETimeFormat::HOURS, aBufTime, sizeof(aBufTime));
 	str_format(aBuf, sizeof(aBuf), "Your time is %s", aBufTime);
 	pSelf->SendBroadcast(aBuf, pResult->m_ClientId);
 }
@@ -1815,23 +1788,13 @@ void CGameContext::ConTeleTo(IConsole::IResult *pResult, void *pUserData)
 	}
 	else
 	{
-		// Search for player with this name
-		int ClientId;
-		for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
-		{
-			if(str_comp(pResult->GetString(0), pSelf->Server()->ClientName(ClientId)) == 0)
-				break;
-		}
-		if(ClientId == MAX_CLIENTS)
+		const CPlayer *pDestPlayer = pSelf->FindPlayerByName(pResult->GetString(0));
+		if(!pDestPlayer)
 		{
 			pSelf->SendChatTarget(pCallingPlayer->GetCid(), "No player with this name found.");
 			return;
 		}
-
-		CPlayer *pDestPlayer = pSelf->m_apPlayers[ClientId];
-		if(!pDestPlayer)
-			return;
-		CCharacter *pDestCharacter = pDestPlayer->GetCharacter();
+		const CCharacter *pDestCharacter = pDestPlayer->GetCharacter();
 		if(!pDestCharacter)
 			return;
 
@@ -1954,21 +1917,13 @@ void CGameContext::ConTeleCursor(IConsole::IResult *pResult, void *pUserData)
 	}
 	else if(pResult->NumArguments() > 0)
 	{
-		int ClientId;
-		for(ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
-		{
-			if(str_comp(pResult->GetString(0), pSelf->Server()->ClientName(ClientId)) == 0)
-				break;
-		}
-		if(ClientId == MAX_CLIENTS)
+		const CPlayer *pPlayerTo = pSelf->FindPlayerByName(pResult->GetString(0));
+		if(!pPlayerTo)
 		{
 			pSelf->SendChatTarget(pPlayer->GetCid(), "No player with this name found.");
 			return;
 		}
-		CPlayer *pPlayerTo = pSelf->m_apPlayers[ClientId];
-		if(!pPlayerTo)
-			return;
-		CCharacter *pChrTo = pPlayerTo->GetCharacter();
+		const CCharacter *pChrTo = pPlayerTo->GetCharacter();
 		if(!pChrTo)
 			return;
 		Pos = pChrTo->m_Pos;

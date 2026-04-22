@@ -10,6 +10,7 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 
 enum
 {
@@ -251,6 +252,8 @@ public:
 
 	virtual void ColorParsing(const char *pText, CTextCursor *pCursor, ColorRGBA OriginalCol, STextContainerIndex *pTextContainerIndex = nullptr) = 0;
 	virtual ColorRGBA HSVtoRGB(float h, float s, float v) = 0;
+
+	virtual std::string RemoveColorCodes(const char *pText) = 0;
 };
 
 class IEngineTextRender : public ITextRender

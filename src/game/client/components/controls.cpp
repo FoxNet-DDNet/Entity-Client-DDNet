@@ -3,6 +3,7 @@
 #include "controls.h"
 
 #include <base/math.h>
+#include <base/time.h>
 #include <base/vmath.h>
 
 #include <engine/client.h>
@@ -246,7 +247,7 @@ int CControls::SnapInput(int *pData)
 	{
 		vec2 Pos;
 		if(g_Config.m_ClSubTickAiming && m_aMousePosOnAction[g_Config.m_ClDummy] != vec2(0.0f, 0.0f))
-		{ 
+		{
 			// TClient
 			Pos = GameClient()->m_Controls.m_aMousePosOnAction[g_Config.m_ClDummy];
 			m_aMousePosOnAction[g_Config.m_ClDummy] = vec2(0.0f, 0.0f);
@@ -313,6 +314,7 @@ int CControls::SnapInput(int *pData)
 				pDummyInput->m_Fire++;
 
 			pDummyInput->m_Hook = g_Config.m_ClDummyHook;
+			m_aInputData[!g_Config.m_ClDummy] = *pDummyInput;
 		}
 
 		// stress testing

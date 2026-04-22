@@ -79,6 +79,18 @@ enum
 {
 	GAMEINFO_CURVERSION=11,
 };
+
+// <FoxNet
+enum
+{
+	COSMETIC_FLAG_ANCHORED=1,
+	COSMETIC_FLAG_XFLIP=2,
+
+	// Whether to render the Laser Head at the "from" and/or "to" position
+	COSMETIC_LASER_FLAG_FROM_HEAD=4,
+	COSMETIC_LASER_FLAG_TO_HEAD=8,
+};
+// FoxNet>
 '''
 
 Enums = [
@@ -208,6 +220,7 @@ Objects = [
 		NetIntRange("m_Armor", 0, 10),
 		# -1 is infinite ammo
 		NetIntRange("m_AmmoCount", -1, 10),
+		# -1 means "no weapon"
 		NetIntRange("m_Weapon", -1, 'NUM_WEAPONS-1'),
 		NetIntRange("m_Emote", 0, len(Emotes)),
 		NetIntRange("m_AttackTick", 0, 'max_int'),
@@ -399,6 +412,49 @@ Objects = [
 	NetEventEx("MapSoundWorld:Common", "map-sound-world@netevent.ddnet.org", [
 		NetIntAny("m_SoundId"),
 	]),
+
+	# <FoxNet
+	NetObjectEx("CosmeticPickup", "cosmetic-pickup@foxnet-ddnet.github.io", [
+		NetIntAny("m_X"),
+		NetIntAny("m_Y"),
+		NetIntRange("m_Type", 0, 'max_int'),
+		NetIntRange("m_Subtype", 0, 'max_int'),
+		NetIntRange("m_Owner", -1, 'MAX_CLIENTS-1'),
+		# -1 = Whatever alpha the Rendered Owner has (e.g. if solo, its set to cl_show_others_alpha)
+		# If no owner or set to 0 it gets skipped 
+		NetIntRange("m_Alpha", -1, 100),
+		# Rotation of the Pickup
+		NetIntRange("m_Rotation", 0, 359),
+		NetIntAny("m_Flags", default=3),
+	]),
+
+	NetObjectEx("CosmeticLaser", "cosmetic-laser@foxnet-ddnet.github.io", [
+		NetIntAny("m_ToX"),
+		NetIntAny("m_ToY"),
+		NetIntAny("m_FromX"),
+		NetIntAny("m_FromY"),
+		# Laser "Thickness"
+		NetIntRange("m_TickOffset", 0, 8),
+		NetIntRange("m_Owner", -1, 'MAX_CLIENTS-1'),
+		# -1 = Whatever alpha the Rendered Owner has (e.g. if solo, its set to cl_show_others_alpha)
+		# If no owner or set to 0 it gets skipped 
+		NetIntRange("m_Alpha", -1, 100),
+		NetIntAny("m_Type"),
+		NetIntAny("m_Flags", default=3),
+	]),
+
+	NetObjectEx("CosmeticProjectile", "cosmetic-projectile@foxnet-ddnet.github.io", [
+		NetIntAny("m_X"),
+		NetIntAny("m_Y"),
+		NetIntRange("m_Type", 0, 'max_int'),
+		NetIntRange("m_Owner", -1, 'MAX_CLIENTS-1'),
+		# -1 = Whatever alpha the Rendered Owner has (e.g. if solo, its set to cl_show_others_alpha)
+		# If no owner or set to 0 it gets skipped 
+		NetIntRange("m_Alpha", -1, 100),
+		NetIntRange("m_Rotation", 0, 359),
+		NetIntAny("m_Flags", default=3),
+	]),
+	# FoxNet>
 ]
 
 Messages = [

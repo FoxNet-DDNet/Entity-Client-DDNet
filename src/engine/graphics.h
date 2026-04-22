@@ -8,7 +8,6 @@
 #include "warning.h"
 
 #include <base/color.h>
-#include <base/system.h>
 #include <base/vmath.h>
 
 #include <cstddef>
@@ -346,6 +345,7 @@ public:
 	virtual const char *GetVendorString() = 0;
 	virtual const char *GetVersionString() = 0;
 	virtual const char *GetRendererString() = 0;
+	virtual const char *GetFatalError() const = 0;
 
 	class CLineItem
 	{
@@ -459,7 +459,7 @@ public:
 
 	enum
 	{
-		// E-Client
+		// EClient
 		SIDE_T = 1 << 0,
 		SIDE_R = 1 << 1,
 		SIDE_B = 1 << 2,

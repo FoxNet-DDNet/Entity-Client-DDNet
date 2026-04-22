@@ -1,0 +1,166 @@
+def ToFancy(string) {
+    var len = string.size();
+    var OutStr = "";
+
+    for(var i = 0; i < len; i+=1)
+    {
+        var c = string[i];
+        if(c == '0') {
+            OutStr += "𝟘";
+        } else if(c == '1') {
+            OutStr += "𝟙";
+        } else if(c == '2') {
+            OutStr += "𝟚";
+        } else if(c == '3') {
+            OutStr += "𝟛";
+        } else if(c == '4') {
+            OutStr += "𝟜";
+        } else if(c == '5') {
+            OutStr += "𝟝";
+        } else if(c == '6') {
+            OutStr += "𝟞";
+        } else if(c == '7') {
+            OutStr += "𝟟";
+        } else if(c == '8') {
+            OutStr += "𝟠";
+        } else if(c == '9') {
+            OutStr += "𝟡";
+        } else if(c == 'a') {
+            OutStr += "𝕒";
+        } else if(c == 'b') {
+            OutStr += "𝕓";
+        } else if(c == 'c') {
+            OutStr += "𝕔";
+        } else if(c == 'd') {
+            OutStr += "𝕕";
+        } else if(c == 'e') {
+            OutStr += "𝕖";
+        } else if(c == 'f') {
+            OutStr += "𝕗";
+        } else if(c == 'g') {
+            OutStr += "𝕘";
+        } else if(c == 'h') {
+            OutStr += "𝕙";
+        } else if(c == 'i') {
+            OutStr += "𝕚";
+        } else if(c == 'j') {
+            OutStr += "𝕛";
+        } else if(c == 'k') {
+            OutStr += "𝕜";
+        } else if(c == 'l') {
+            OutStr += "𝕝";
+        } else if(c == 'm') {
+            OutStr += "𝕞";
+        } else if(c == 'n') {
+            OutStr += "𝕟";
+        } else if(c == 'o') {
+            OutStr += "𝕠";
+        } else if(c == 'p') {
+            OutStr += "𝕡";
+        } else if(c == 'q') {
+            OutStr += "𝕢";
+        } else if(c == 'r') {
+            OutStr += "𝕣";
+        } else if(c == 's') {
+            OutStr += "𝕤";
+        } else if(c == 't') {
+            OutStr += "𝕥";
+        } else if(c == 'u') {
+            OutStr += "𝕦";
+        } else if(c == 'v') {
+            OutStr += "𝕧";
+        } else if(c == 'w') {
+            OutStr += "𝕨";
+        } else if(c == 'x') {
+            OutStr += "𝕩";
+        } else if(c == 'y') {
+            OutStr += "𝕪";
+        } else if(c == 'z') {
+            OutStr += "𝕫";
+        } else if(c == 'A') {
+            OutStr += "𝔸";
+        } else if(c == 'B') {
+            OutStr += "𝔹";
+        } else if(c == 'C') {
+            OutStr += "ℂ";
+        } else if(c == 'D') {
+            OutStr += "𝔻";
+        } else if(c == 'E') {
+            OutStr += "𝔼";
+        } else if(c == 'F') {
+            OutStr += "𝔽";
+        } else if(c == 'G') {
+            OutStr += "𝔾";
+        } else if(c == 'H') {
+            OutStr += "ℍ";
+        } else if(c == 'I') {
+            OutStr += "𝕀";
+        } else if(c == 'J') {
+            OutStr += "𝕁";
+        } else if(c == 'K') {
+            OutStr += "𝕂";
+        } else if(c == 'L') {
+            OutStr += "𝕃";
+        } else if(c == 'M') {
+            OutStr += "𝕄";
+        } else if(c == 'N') {
+            OutStr += "ℕ";
+        } else if(c == 'O') {
+            OutStr += "𝕆";
+        } else if(c == 'P') {
+            OutStr += "ℙ";
+        } else if(c == 'Q') {
+            OutStr += "ℚ";
+        } else if(c == 'R') {
+            OutStr += "ℝ";
+        } else if(c == 'S') {
+            OutStr += "𝕊";
+        } else if(c == 'T') {
+            OutStr += "𝕋";
+        } else if(c == 'U') {
+            OutStr += "𝕌";
+        } else if(c == 'V') {
+            OutStr += "𝕍";
+        } else if(c == 'W') {
+            OutStr += "𝕎";
+        } else if(c == 'X') {
+            OutStr += "𝕏";
+        } else if(c == 'Y') {
+            OutStr += "𝕐";
+        } else if(c == 'Z') {
+            OutStr += "ℤ";
+        } else {
+            OutStr += c;
+        }
+    }
+    return OutStr;
+}
+
+def IsWhitespace(c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\r';
+}
+
+def TrimWhitespace(string) {
+    var len = string.size();
+    var start = 0;
+
+    while(start < len && IsWhitespace(string[start])) {
+        start += 1;
+    }
+
+    if(start >= len) {
+        return "";
+    }
+
+    var end = len - 1;
+    while(end >= start && IsWhitespace(string[end])) {
+        end -= 1;
+    }
+
+    var OutStr = "";
+    for(var i = start; i <= end; i += 1) {
+        OutStr += string[i];
+    }
+
+    return OutStr;
+}

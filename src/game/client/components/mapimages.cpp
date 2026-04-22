@@ -2,8 +2,10 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "mapimages.h"
 
+#include <base/color.h>
 #include <base/log.h>
 
+#include <engine/gfx/image_manipulation.h>
 #include <engine/graphics.h>
 #include <engine/map.h>
 #include <engine/storage.h>
@@ -15,6 +17,164 @@
 #include <game/layers.h>
 #include <game/localization.h>
 #include <game/mapitems.h>
+
+// EClient
+class CDominantColorBin
+{
+public:
+	uint64_t m_Weight = 0;
+	uint64_t m_R = 0;
+	uint64_t m_G = 0;
+	uint64_t m_B = 0;
+	uint64_t m_A = 0;
+};
+
+static float GetLuma(const ColorRGBA &Color)
+{
+	return 0.2126f * Color.r + 0.7152f * Color.g + 0.0722f * Color.b;
+}
+
+static float GetSaturation(const ColorRGBA &Color)
+{
+	const float MaxValue = maximum(Color.r, maximum(Color.g, Color.b));
+	const float MinValue = minimum(Color.r, minimum(Color.g, Color.b));
+	if(MaxValue <= 0.0f)
+		return 0.0f;
+	return (MaxValue - MinValue) / MaxValue;
+}
+
+static ColorRGBA GetDominantColor(const CImageInfo &Image, size_t OffsetX, size_t OffsetY, size_t Width, size_t Height)
+{
+	if(Image.m_pData == nullptr || Width == 0 || Height == 0)
+		return ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f);
+
+	const size_t EndX = minimum(OffsetX + Width, Image.m_Width);
+	const size_t EndY = minimum(OffsetY + Height, Image.m_Height);
+	if(OffsetX >= EndX || OffsetY >= EndY)
+		return ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f);
+
+	std::array<CDominantColorBin, 16 * 16 * 16> aBins;
+	size_t BestBinIndex = 0;
+	uint64_t BestWeight = 0;
+
+	auto ResetBins = [&]() {
+		for(CDominantColorBin &Bin : aBins)
+			Bin = {};
+
+		BestBinIndex = 0;
+		BestWeight = 0;
+	};
+
+	auto Accumulate = [&](size_t StartX, size_t StartY, size_t FinalX, size_t FinalY, bool IgnoreHighlights) {
+		for(size_t y = StartY; y < FinalY; ++y)
+		{
+			for(size_t x = StartX; x < FinalX; ++x)
+			{
+				const ColorRGBA PixelColor = Image.PixelColor(x, y);
+
+				const uint8_t Alpha = std::clamp<int>(PixelColor.a * 255.0f + 0.5f, 0, 255);
+				if(Alpha < 32)
+					continue;
+
+				if(IgnoreHighlights)
+				{
+					const float Luma = GetLuma(PixelColor);
+					const float Saturation = GetSaturation(PixelColor);
+					if(Luma > 0.8f && Saturation < 0.15f)
+						continue;
+				}
+
+				const uint8_t Red = std::clamp<int>(PixelColor.r * 255.0f + 0.5f, 0, 255);
+				const uint8_t Green = std::clamp<int>(PixelColor.g * 255.0f + 0.5f, 0, 255);
+				const uint8_t Blue = std::clamp<int>(PixelColor.b * 255.0f + 0.5f, 0, 255);
+
+				const size_t BinIndex = ((size_t)(Red >> 4) << 8) | ((size_t)(Green >> 4) << 4) | (size_t)(Blue >> 4);
+				CDominantColorBin &Bin = aBins[BinIndex];
+
+				Bin.m_Weight += 1;
+				Bin.m_R += Red;
+				Bin.m_G += Green;
+				Bin.m_B += Blue;
+				Bin.m_A += Alpha;
+
+				if(Bin.m_Weight > BestWeight)
+				{
+					BestWeight = Bin.m_Weight;
+					BestBinIndex = BinIndex;
+				}
+			}
+		}
+	};
+
+	const size_t BorderX = Width / 4;
+	const size_t BorderY = Height / 4;
+	const size_t InnerStartX = OffsetX + BorderX;
+	const size_t InnerStartY = OffsetY + BorderY;
+	const size_t InnerEndX = EndX > BorderX ? EndX - BorderX : EndX;
+	const size_t InnerEndY = EndY > BorderY ? EndY - BorderY : EndY;
+
+	ResetBins();
+	if(InnerStartX < InnerEndX && InnerStartY < InnerEndY)
+		Accumulate(InnerStartX, InnerStartY, InnerEndX, InnerEndY, true);
+
+	if(BestWeight == 0)
+	{
+		ResetBins();
+		Accumulate(OffsetX, OffsetY, EndX, EndY, false);
+	}
+
+	if(BestWeight == 0)
+		return ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f);
+
+	const CDominantColorBin &BestBin = aBins[BestBinIndex];
+	return ColorRGBA(
+		BestBin.m_R / (float)BestBin.m_Weight / 255.0f,
+		BestBin.m_G / (float)BestBin.m_Weight / 255.0f,
+		BestBin.m_B / (float)BestBin.m_Weight / 255.0f,
+		BestBin.m_A / (float)BestBin.m_Weight / 255.0f);
+}
+
+static int QuadTypeToTileIndex(EQuadType QuadType)
+{
+	switch(QuadType)
+	{
+	case EQuadType::FREEZE:
+		return TILE_FREEZE;
+	case EQuadType::UNFREEZE:
+		return TILE_UNFREEZE;
+	case EQuadType::DEATH:
+		return TILE_DEATH;
+	case EQuadType::STOPA:
+		return TILE_STOPA;
+	case EQuadType::CFRM:
+		return TILE_TELECHECKINEVIL;
+	case EQuadType::HOOKABLE:
+		return TILE_SOLID;
+	case EQuadType::UNHOOKABLE:
+		return TILE_NOHOOK;
+	case EQuadType::NONE:
+	case EQuadType::NUM:
+		break;
+	}
+
+	return TILE_AIR;
+}
+
+static void UpdateTilesDominantColors(ColorRGBA *pTilesDominantColor, const CImageInfo &Image)
+{
+	const size_t TileWidth = Image.m_Width / 16;
+	const size_t TileHeight = Image.m_Height / 16;
+	if(TileWidth == 0 || TileHeight == 0)
+		return;
+
+	for(int QuadType = 0; QuadType < (int)EQuadType::NUM; ++QuadType)
+	{
+		const int TileIndex = QuadTypeToTileIndex((EQuadType)QuadType);
+		const size_t OffsetX = (size_t)(TileIndex % 16) * TileWidth;
+		const size_t OffsetY = (size_t)(TileIndex / 16) * TileHeight;
+		pTilesDominantColor[QuadType] = GetDominantColor(Image, OffsetX, OffsetY, TileWidth, TileHeight);
+	}
+}
 
 CMapImages::CMapImages()
 {
@@ -40,6 +200,10 @@ void CMapImages::OnInit()
 	}
 
 	Console()->Chain("cl_text_entities_size", ConchainClTextEntitiesSize, this);
+
+	// EClient
+	for(ColorRGBA &Color : m_aTilesDominantColor)
+		Color = ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 void CMapImages::Unload()
@@ -316,6 +480,12 @@ IGraphics::CTextureHandle CMapImages::GetEntities(EMapImageEntityLayerType Entit
 				}
 
 				m_aaEntitiesTextures[(EntitiesModType * 2) + (int)EntitiesAreMasked][LayerType] = Graphics()->LoadTextureRaw(BuildImageInfo, TextureLoadFlag, aPath);
+			}
+
+			// EClient
+			if(EntitiesModType == MAP_IMAGE_MOD_TYPE_DDNET)
+			{
+				UpdateTilesDominantColors(m_aTilesDominantColor, ImgInfo);
 			}
 
 			BuildImageInfo.Free();

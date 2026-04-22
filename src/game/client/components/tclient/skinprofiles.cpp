@@ -1,17 +1,17 @@
-#include <game/client/gameclient.h>
+#include "skinprofiles.h"
+
+#include <base/str.h>
+#include <base/system.h>
+#include <base/types.h>
 
 #include <engine/config.h>
 #include <engine/console.h>
 #include <engine/shared/config.h>
 #include <engine/storage.h>
 
-#include <base/str.h>
-#include <base/system.h>
-#include <base/types.h>
+#include <game/client/gameclient.h>
 
 #include <cstring>
-
-#include "skinprofiles.h"
 
 static void EscapeParam(char *pDst, const char *pSrc, int Size)
 {

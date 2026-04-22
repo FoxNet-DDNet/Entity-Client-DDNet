@@ -436,6 +436,58 @@ bool CMenus::DoLine_RadioMenu(CUIRect &View, const char *pLabel, std::vector<CBu
 	return Pressed;
 }
 
+// EClient
+bool CMenus::DoLine_RadioMenu_Compact(CUIRect &View, const char *pLabel, std::vector<CButtonContainer> &vButtonContainers, const std::vector<const char *> &vLabels, const std::vector<int> &vValues, int &Value, float LabelSpacing, const std::vector<const char *> *pvTooltips)
+{
+	dbg_assert(vButtonContainers.size() == vValues.size(), "vButtonContainers and vValues must have the same size");
+	dbg_assert(vButtonContainers.size() == vLabels.size(), "vButtonContainers and vLabels must have the same size");
+	if(pvTooltips != nullptr)
+		dbg_assert(vButtonContainers.size() == pvTooltips->size(), "vButtonContainers and pvTooltips must have the same size");
+
+	const int N = vButtonContainers.size();
+	dbg_assert(N > 0, "vButtonContainers must not be empty");
+
+	const float TopSpacing = 2.0f;
+	const float ButtonHeight = 20.0f;
+	const float LabelFontSize = 13.0f;
+
+	CUIRect Label, Buttons;
+	View.HSplitTop(TopSpacing, nullptr, &View);
+	View.HSplitTop(ButtonHeight, &Buttons, &View);
+
+	const float LabelWidth = minimum(TextRender()->TextWidth(LabelFontSize, pLabel), maximum(0.0f, Buttons.w - LabelSpacing));
+	Buttons.VSplitLeft(LabelWidth, &Label, &Buttons);
+	Buttons.VSplitLeft(minimum(LabelSpacing, Buttons.w), nullptr, &Buttons);
+	Buttons.HMargin(2.0f, &Buttons);
+
+	Ui()->DoLabel(&Label, pLabel, LabelFontSize, TEXTALIGN_ML);
+
+	const float W = Buttons.w / N;
+	bool Pressed = false;
+	for(int i = 0; i < N; ++i)
+	{
+		CUIRect Button;
+		Buttons.VSplitLeft(W, &Button, &Buttons);
+
+		int Corner = IGraphics::CORNER_NONE;
+		if(i == 0)
+			Corner = IGraphics::CORNER_L;
+		if(i == N - 1)
+			Corner = IGraphics::CORNER_R;
+
+		if(DoButton_Menu(&vButtonContainers[i], vLabels[i], vValues[i] == Value, &Button, BUTTONFLAG_LEFT, nullptr, Corner))
+		{
+			Pressed = true;
+			Value = vValues[i];
+		}
+
+		if(pvTooltips != nullptr && (*pvTooltips)[i] != nullptr && (*pvTooltips)[i][0] != '\0')
+			GameClient()->m_Tooltips.DoToolTip(&vButtonContainers[i], &Button, (*pvTooltips)[i]);
+	}
+
+	return Pressed;
+}
+
 ColorHSLA CMenus::DoLine_ColorPicker(CButtonContainer *pResetId, const float LineSize, const float LabelSize, const float BottomMargin, CUIRect *pMainRect, const char *pText, unsigned int *pColorValue, const ColorRGBA DefaultColor, bool CheckBoxSpacing, int *pCheckBoxValue, bool Alpha)
 {
 	CUIRect Section, ColorPickerButton, ResetButton, Label;
@@ -597,8 +649,8 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			NewPage = PAGE_DEMOS;
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_DemoButton, &Button, Localize("Demos"));
-	
-		// E-Client
+
+		// EClient
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitRight(33.0f, &Box, &Button);
 		static CButtonContainer s_EClientButton;
@@ -615,7 +667,7 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			g_Config.m_EcUnreadNews = false;
 		}
 		GameClient()->m_Tooltips.DoToolTip(&s_EClientButton, &Button, Localize("News"));
-	
+
 		Box.VSplitRight(10.0f, &Box, nullptr);
 		Box.VSplitLeft(33.0f, &Button, &Box);
 
@@ -813,7 +865,6 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			TextRender()->SetRenderFlags(0);
 			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 		}
-
 	}
 
 	if(NewPage != -1)
@@ -861,7 +912,6 @@ void CMenus::RenderLoading(const char *pCaption, const char *pContent, int Incre
 	CUIRect Box;
 	Ui()->Screen()->Margin(160.0f, &Box);
 
-	Graphics()->BlendNormal();
 	Graphics()->TextureClear();
 	Box.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.5f), IGraphics::CORNER_ALL, 15.0f);
 	Box.Margin(20.0f, &Box);
@@ -1008,7 +1058,7 @@ void CMenus::OnInit()
 	Graphics()->QuadContainerAddSprite(m_DirectionQuadContainerIndex, 0.f, 0.f, 22.f);
 	Graphics()->QuadContainerUpload(m_DirectionQuadContainerIndex);
 
-	// E-Client
+	// EClient
 
 	// Rainbow Color again for the preview..
 	m_MenusRainbowColor = g_Config.m_ClPlayerColorBody;
@@ -2666,8 +2716,6 @@ void CMenus::UpdateColors()
 
 void CMenus::RenderBackground()
 {
-	Graphics()->BlendNormal();
-
 	const float ScreenHeight = 300.0f;
 	const float ScreenWidth = ScreenHeight * Graphics()->ScreenAspect();
 	Graphics()->MapScreen(0.0f, 0.0f, ScreenWidth, ScreenHeight);
@@ -2851,7 +2899,7 @@ void CMenus::RefreshBrowserTab(bool Force)
 			UpdateCommunityCache(true);
 		}
 	}
-	UpdateWarlistCache();
+	UpdateWarlistCache(); // EClient
 }
 
 void CMenus::ForceRefreshLanPage()
@@ -2877,4 +2925,52 @@ void CMenus::JoinTutorial()
 	m_JoinTutorial.m_TriedRefresh = false;
 	m_JoinTutorial.m_LocalServerState = CJoinTutorial::ELocalServerState::NOT_TRIED;
 	m_JoinTutorial.m_StateChange = time_get_nanoseconds();
+}
+
+int CMenus::DoButtonForceFontSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+{
+	CUIRect Text = *pRect;
+
+	if(Checked)
+		Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
+
+	if(Fake)
+		Color.a *= 0.5f;
+
+	pRect->Draw(Color, Corners, Rounding);
+
+	Text.HMargin(LineSize / 2.0f, &Text);
+	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
+	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
+	Ui()->DoLabel(&Text, pText, LineSize, TEXTALIGN_MC);
+
+	if(Fake)
+		return 0;
+
+	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
+}
+
+int CMenus::DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake, const char *pImageName, int Corners, float Rounding, float FontFactor, ColorRGBA Color)
+{
+	CUIRect Text = *pRect;
+
+	if(Checked)
+		Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+	Color.a *= Ui()->ButtonColorMul(pButtonContainer);
+
+	if(Fake)
+		Color.a *= 0.5f;
+
+	pRect->Draw(Color, Corners, Rounding);
+
+	Text.HMargin(LineSize / 2.0f, &Text);
+	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
+	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
+	Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+
+	if(Fake)
+		return 0;
+
+	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
 }

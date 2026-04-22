@@ -1,5 +1,7 @@
 #include "envelope_state.h"
 
+#include <base/time.h>
+
 #include <game/client/gameclient.h>
 #include <game/localization.h>
 
@@ -50,11 +52,20 @@ void CEnvelopeState::EnvelopeEval(int TimeOffsetMillis, int EnvelopeIndex, Color
 			static const nanoseconds s_NanosPerTick = nanoseconds(1s) / static_cast<int64_t>(Client()->GameTickSpeed());
 
 			// get the lerp of the current tick and prev
-			const int MinTick = Client()->PrevGameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick;
-			const int CurTick = Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick;
-
-			double TickRatio = mix<double>(0, CurTick - MinTick, (double)Client()->IntraGameTick(g_Config.m_ClDummy));
-			Time = duration_cast<nanoseconds>(TickRatio * s_NanosPerTick) + MinTick * s_NanosPerTick;
+			int EnvelopeTick;
+			double TickRatio;
+			if(Client()->State() == IClient::STATE_DEMOPLAYBACK || !g_Config.m_ClPredict || GameClient()->m_Snap.m_SpecInfo.m_Active)
+			{
+				EnvelopeTick = Client()->PrevGameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick;
+				const int CurTick = Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick;
+				TickRatio = mix<double>(0, CurTick - EnvelopeTick, (double)Client()->IntraGameTick(g_Config.m_ClDummy));
+			}
+			else
+			{
+				EnvelopeTick = Client()->PredGameTick(g_Config.m_ClDummy) - 1 - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick;
+				TickRatio = (double)Client()->PredIntraGameTick(g_Config.m_ClDummy);
+			}
+			Time = duration_cast<nanoseconds>(TickRatio * s_NanosPerTick) + EnvelopeTick * s_NanosPerTick;
 		}
 		else
 		{

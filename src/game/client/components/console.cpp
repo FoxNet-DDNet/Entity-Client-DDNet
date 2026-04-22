@@ -1318,7 +1318,7 @@ void CGameConsole::OnRender()
 			pConsole->m_LastInputHeight = pConsole->m_BoundingBox.m_H;
 		if(pConsole->m_Input.HasSelection() && !pConsole->m_Searching)
 			pConsole->m_HasSelection = false; // Clear console selection if we have a line input selection
-		
+
 		if(pConsole->m_LastInputHeight != pConsole->m_BoundingBox.m_H)
 		{
 			pConsole->m_HasSelection = false;
@@ -1599,11 +1599,11 @@ void CGameConsole::OnRender()
 		// render version
 		str_copy(aBuf, "v" GAME_VERSION " on " CONF_PLATFORM_STRING " " CONF_ARCH_STRING);
 		TextRender()->Text(Screen.w - TextRender()->TextWidth(FONT_SIZE, aBuf) - 10.0f, FONT_SIZE / 2.f, FONT_SIZE, aBuf);
-		
+
 		//<E-Client
 		const char *pClientVersion = CLIENT_NAME " v" ECLIENT_VERSION;
 		TextRender()->Text(Screen.w - TextRender()->TextWidth(FONT_SIZE, pClientVersion) - 10.0f, FONT_SIZE * 1.55f, FONT_SIZE, pClientVersion);
-		// E-Client>
+		// EClient>
 	}
 }
 

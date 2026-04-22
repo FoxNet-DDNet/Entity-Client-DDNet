@@ -1,11 +1,12 @@
 /* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "render.h"
-#include "gameclient.h"
 
 #include "animstate.h"
+#include "gameclient.h"
 
 #include <base/math.h>
+#include <base/str.h>
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
@@ -16,7 +17,6 @@
 #include <generated/protocol7.h>
 
 #include <game/client/skin.h>
-
 #include <game/mapitems.h>
 
 #include <cmath>

@@ -246,7 +246,7 @@ container.sounds.Add(SoundSet("ctf_capture", ["audio/sfx_ctf_cap_pl.wv"]))
 
 container.sounds.Add(SoundSet("menu", ["audio/music_menu.wv"]))
 
-# E-Client
+# EClient
 image_generic_ghost = Image("generic_ghost", "entity/icons/generic_ghost.png")
 image_muted_icon = Image("muted_icon", "entity/icons/muted_icon.png")
 image_settings_icon = Image("settings_icon", "entity/icons/settings_icon.png")
@@ -282,7 +282,7 @@ container.images.Add(image_hud)
 container.images.Add(image_extras)
 container.images.Add(Image("raceflag", "race_flag.png"))
 
-# E-Client
+# EClient
 container.images.Add(image_generic_ghost)
 container.images.Add(image_muted_icon)
 container.images.Add(image_settings_icon)
@@ -309,7 +309,7 @@ set_strongweak = SpriteSet("strongweak", image_strongweak, 3, 1)
 set_hud = SpriteSet("hud", image_hud, 16, 16)
 set_extras = SpriteSet("extras", image_extras, 16, 16)
 
-# E-Client
+# EClient
 set_generic_ghost = SpriteSet("generic_ghost", image_generic_ghost, 1, 1)
 set_muted_icon = SpriteSet("muted_icon", image_muted_icon, 1, 1)
 set_settings_icon = SpriteSet("settings_icon", image_settings_icon, 1, 1)
@@ -328,7 +328,7 @@ container.spritesets.Add(set_strongweak)
 container.spritesets.Add(set_hud)
 container.spritesets.Add(set_extras)
 
-# E-Client
+# EClient
 container.spritesets.Add(set_generic_ghost)
 container.spritesets.Add(set_settings_icon)
 container.spritesets.Add(set_muted_icon)
@@ -460,7 +460,7 @@ container.sprites.Add(Sprite("guiicon_friend", set_guiicons, 8, 0, 4, 2))
 
 container.sprites.Add(Sprite("audio_source", set_audio_source, 0, 0, 1, 1))
 
-# E-Client
+# EClient
 container.sprites.Add(Sprite("generic_ghost", set_generic_ghost, 0, 0, 1, 1))
 container.sprites.Add(Sprite("settings_icon", set_settings_icon, 0, 0, 1, 1))
 container.sprites.Add(Sprite("muted_icon", set_muted_icon, 0, 0, 1, 1))

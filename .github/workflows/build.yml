@@ -19,13 +19,13 @@ jobs:
         include:
         - name: ubuntu-latest-fancy
           os: ubuntu-latest
-          cmake-args: -G Ninja -DDISCORD=ON
+          cmake-args: -G Ninja -DDISCORD=ON -DPREFER_BUNDLED_LIBS=ON
           cmake-init-env: CXXFLAGS=-Werror
           package-file: "*-linux_x86_64.tar.xz"
         - name: ubuntu-22.04
           os: ubuntu-22.04
           cmake-path: /usr/bin/
-          cmake-args: -G "Unix Makefiles" -DTEST_MYSQL=ON -DDISCORD=ON
+          cmake-args: -G "Unix Makefiles" -DTEST_MYSQL=ON -DDISCORD=ON -DPREFER_BUNDLED_LIBS=ON
           cmake-init-env: CXXFLAGS=-Werror
           gtest-env: GTEST_FILTER=-*SQLite*
           package-file: "*-linux_x86_64.tar.xz"
@@ -103,7 +103,7 @@ jobs:
       if: contains(matrix.os, 'macOS')
       run: |
         brew update
-        brew install ffmpeg molten-vk ninja pkg-config rust sdl2
+        brew install ffmpeg molten-vk ninja pkg-config sdl2
         brew upgrade freetype
         pip3 install --break-system-packages dmgbuild
         echo /Library/Frameworks/Python.framework/Versions/3.12/bin >> $GITHUB_PATH

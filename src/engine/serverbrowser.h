@@ -5,8 +5,9 @@
 
 #include "kernel.h"
 
+#include <base/color.h>
 #include <base/hash.h>
-#include <base/system.h>
+#include <base/str.h>
 
 #include <engine/map.h>
 #include <engine/shared/protocol.h>
@@ -114,6 +115,7 @@ public:
 	int m_Latency; // in ms
 	ERankState m_HasRank;
 	char m_aGameType[16];
+	ColorRGBA m_GametypeColor;
 	char m_aName[64];
 	char m_aMap[MAX_MAP_LENGTH];
 	int m_MapCrc;
@@ -126,6 +128,7 @@ public:
 
 	static int EstimateLatency(int Loc1, int Loc2);
 	static bool ParseLocation(int *pResult, const char *pString);
+	static ColorRGBA GametypeColor(const char *pGametype);
 };
 
 class CCommunityCountryServer

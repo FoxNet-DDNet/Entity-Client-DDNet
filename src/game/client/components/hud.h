@@ -170,7 +170,7 @@ private:
 	int m_Team0ModeOffset;
 	int m_LockModeOffset;
 
-	// E-Client
+	// EClient
 	void FreezeHelpers();
 };
 

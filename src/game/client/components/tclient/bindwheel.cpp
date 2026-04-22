@@ -1,3 +1,5 @@
+#include "bindwheel.h"
+
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 
@@ -5,8 +7,6 @@
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
-
-#include "bindwheel.h"
 
 CBindWheel::CBindWheel()
 {
@@ -88,9 +88,9 @@ void CBindWheel::RemoveBind(const char *pName, const char *pCommand)
 	CBind Bind;
 	str_copy(Bind.m_aName, pName);
 	str_copy(Bind.m_aCommand, pCommand);
-	auto it = std::find(m_vBinds.begin(), m_vBinds.end(), Bind);
-	if(it != m_vBinds.end())
-		m_vBinds.erase(it);
+	auto It = std::find(m_vBinds.begin(), m_vBinds.end(), Bind);
+	if(It != m_vBinds.end())
+		m_vBinds.erase(It);
 }
 
 void CBindWheel::RemoveBind(int Index)

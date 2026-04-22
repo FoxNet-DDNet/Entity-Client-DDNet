@@ -14,6 +14,7 @@
 #include <base/aio.h>
 #include <base/logger.h>
 #include <base/math.h>
+#include <base/str.h>
 #include <base/system.h>
 
 #include <engine/console.h>
@@ -216,6 +217,39 @@ const CCharacter *CGameContext::GetPlayerChar(int ClientId) const
 	if(ClientId < 0 || ClientId >= MAX_CLIENTS || !m_apPlayers[ClientId])
 		return nullptr;
 	return m_apPlayers[ClientId]->GetCharacter();
+}
+
+const CPlayer *CGameContext::FindPlayerByName(const char *pName) const
+{
+	std::optional<int> ClientId = FindClientIdByName(pName);
+	if(!ClientId.has_value())
+		return nullptr;
+	return m_apPlayers[ClientId.value()];
+}
+
+CPlayer *CGameContext::FindPlayerByName(const char *pName)
+{
+	std::optional<int> ClientId = FindClientIdByName(pName);
+	if(!ClientId.has_value())
+		return nullptr;
+	return m_apPlayers[ClientId.value()];
+}
+
+std::optional<int> CGameContext::FindClientIdByName(const char *pName) const
+{
+	if(!pName)
+		return std::nullopt;
+
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		if(!Server()->ClientIngame(ClientId))
+			continue;
+		if(str_comp(pName, Server()->ClientName(ClientId)))
+			continue;
+
+		return ClientId;
+	}
+	return std::nullopt;
 }
 
 bool CGameContext::EmulateBug(int Bug) const
@@ -1031,50 +1065,55 @@ void CGameContext::SendTuningParams(int ClientId, int Zone)
 
 	CheckPureTuning();
 
-	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
-	int *pParams = (int *)&(m_aTuningList[Zone]);
+	dbg_assert(0 <= ClientId && ClientId < MAX_CLIENTS, "Invalid ClientId: %d", ClientId);
+	dbg_assert(m_apPlayers[ClientId], "client %d without player", ClientId);
 
+	CTuningParams Params = m_aTuningList[Zone];
+
+	CCharacter *pCharacter = m_apPlayers[ClientId]->GetCharacter();
+	int NeededFakeTuning = pCharacter ? pCharacter->NeededFaketuning() : 0;
+
+	if(NeededFakeTuning & FAKETUNE_SOLO)
+	{
+		Params.m_PlayerCollision = 0;
+		Params.m_PlayerHooking = 0;
+	}
+
+	if(NeededFakeTuning & FAKETUNE_NOCOLL)
+	{
+		Params.m_PlayerCollision = 0;
+	}
+
+	if(NeededFakeTuning & FAKETUNE_NOHOOK)
+	{
+		Params.m_PlayerHooking = 0;
+	}
+
+	if(NeededFakeTuning & FAKETUNE_NOJUMP)
+	{
+		Params.m_GroundJumpImpulse = 0;
+	}
+
+	if(NeededFakeTuning & FAKETUNE_JETPACK)
+	{
+		Params.m_JetpackStrength = 0;
+	}
+
+	if(NeededFakeTuning & FAKETUNE_NOHAMMER)
+	{
+		Params.m_HammerStrength = 0;
+	}
+
+	CMsgPacker Msg(NETMSGTYPE_SV_TUNEPARAMS);
+	const int *pParams = Params.NetworkArray();
 	for(int i = 0; i < CTuningParams::Num(); i++)
 	{
-		if(m_apPlayers[ClientId] && m_apPlayers[ClientId]->GetCharacter())
+		static_assert(offsetof(CTuningParams, m_LaserDamage) / sizeof(CTuneParam) == 30);
+		if(i == 30 && Server()->IsSixup(ClientId)) // laser_damage was removed in 0.7
 		{
-			if((i == 30) // laser_damage is removed from 0.7
-				&& (Server()->IsSixup(ClientId)))
-			{
-				continue;
-			}
-			else if((i == 31) // collision
-				&& (m_apPlayers[ClientId]->GetCharacter()->NeededFaketuning() & FAKETUNE_SOLO || m_apPlayers[ClientId]->GetCharacter()->NeededFaketuning() & FAKETUNE_NOCOLL))
-			{
-				Msg.AddInt(0);
-			}
-			else if((i == 32) // hooking
-				&& (m_apPlayers[ClientId]->GetCharacter()->NeededFaketuning() & FAKETUNE_SOLO || m_apPlayers[ClientId]->GetCharacter()->NeededFaketuning() & FAKETUNE_NOHOOK))
-			{
-				Msg.AddInt(0);
-			}
-			else if((i == 3) // ground jump impulse
-				&& m_apPlayers[ClientId]->GetCharacter()->NeededFaketuning() & FAKETUNE_NOJUMP)
-			{
-				Msg.AddInt(0);
-			}
-			else if((i == 33) // jetpack
-				&& m_apPlayers[ClientId]->GetCharacter()->NeededFaketuning() & FAKETUNE_JETPACK)
-			{
-				Msg.AddInt(0);
-			}
-			else if((i == 36) // hammer hit
-				&& m_apPlayers[ClientId]->GetCharacter()->NeededFaketuning() & FAKETUNE_NOHAMMER)
-			{
-				Msg.AddInt(0);
-			}
-			else
-			{
-				Msg.AddInt(pParams[i]);
-			}
+			continue;
 		}
-		else
-			Msg.AddInt(pParams[i]); // if everything is normal just send true tunings
+		Msg.AddInt(pParams[i]);
 	}
 	Server()->SendMsg(&Msg, MSGFLAG_VITAL, ClientId);
 }
@@ -2703,7 +2742,7 @@ void CGameContext::OnSetTeamNetMessage(const CNetMsg_Cl_SetTeam *pMsg, int Clien
 		pPlayer->m_LastSetTeam = Server()->Tick();
 		int TimeLeft = (pPlayer->m_TeamChangeTick - Server()->Tick()) / Server()->TickSpeed();
 		char aTime[32];
-		str_time((int64_t)TimeLeft * 100, TIME_HOURS, aTime, sizeof(aTime));
+		str_time((int64_t)TimeLeft * 100, ETimeFormat::HOURS, aTime, sizeof(aTime));
 		char aBuf[128];
 		str_format(aBuf, sizeof(aBuf), "Time to wait before changing team: %s", aTime);
 		SendBroadcast(aBuf, ClientId);
@@ -5060,13 +5099,7 @@ void CGameContext::Whisper(int ClientId, char *pStr)
 			*pDst = '\0';
 			pStr++;
 
-			for(Victim = 0; Victim < MAX_CLIENTS; Victim++)
-			{
-				if(Server()->ClientIngame(Victim) && str_comp(pName, Server()->ClientName(Victim)) == 0)
-				{
-					break;
-				}
-			}
+			Victim = FindClientIdByName(pName).value_or(-1);
 		}
 	}
 	else
@@ -5082,16 +5115,11 @@ void CGameContext::Whisper(int ClientId, char *pStr)
 			if(pStr[0] == ' ')
 			{
 				pStr[0] = '\0';
-				for(Victim = 0; Victim < MAX_CLIENTS; Victim++)
-				{
-					if(Server()->ClientIngame(Victim) && str_comp(pName, Server()->ClientName(Victim)) == 0)
-					{
-						break;
-					}
-				}
+
+				Victim = FindClientIdByName(pName).value_or(-1);
 
 				pStr[0] = ' ';
-				if(Victim < MAX_CLIENTS)
+				if(Victim != -1)
 					break;
 			}
 			pStr++;

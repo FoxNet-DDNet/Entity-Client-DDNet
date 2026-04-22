@@ -266,7 +266,7 @@ private:
 		{
 			return g_Config.m_ClDummyName;
 		}
-		// E-Client>
+		// EClient>
 
 		throw std::string("No state with name '") + Str + std::string("'");
 	}
@@ -359,7 +359,7 @@ private:
 		}
 		else if(Str == "muted")
 		{
-			return GameClient()->m_WarList.GetWarData(ClientId).IsMuted;
+			return GameClient()->m_WarList.GetWarData(ClientId).m_IsMuted;
 		}
 		else if(Str == "auth_level")
 		{
@@ -368,7 +368,7 @@ private:
 
 		throw std::string("No state with name '") + Str + std::string("'");
 	}
-	// E-Client>
+	// EClient>
 
 	CScriptingCtx::Any ToLower(const std::string &Str)
 	{
@@ -412,13 +412,19 @@ public:
 			return ClientInfo(Str, Arg);
 		});
 
-		// E-Client>
+		// EClient>
+		m_ScriptingCtx.SaveState();
 	}
 	void Run(const char *pFilename, const char *pArgs)
 	{
 		m_ScriptingCtx.Run(Storage(), pFilename, pArgs);
 	}
 };
+
+CScripting::~CScripting()
+{
+	delete m_pRunner;
+}
 
 void CScripting::ConExecScript(IConsole::IResult *pResult, void *pUserData)
 {
@@ -428,8 +434,9 @@ void CScripting::ConExecScript(IConsole::IResult *pResult, void *pUserData)
 
 void CScripting::ExecScript(const char *pFilename, const char *pArgs)
 {
-	CScriptRunner Runner(GameClient());
-	Runner.Run(pFilename, pArgs);
+	if(!m_pRunner)
+		m_pRunner = new CScriptRunner(GameClient());
+	m_pRunner->Run(pFilename, pArgs);
 }
 
 void CScripting::OnConsoleInit()

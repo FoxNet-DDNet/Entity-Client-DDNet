@@ -56,7 +56,7 @@ class CBinds : public CComponent
 public:
 	CBindSlot GetBindSlot(const char *pBindString) const;
 
-	const char *GetKeyBinding(int modifierMask, int key) const { return m_aapKeyBindings[modifierMask][key]; } // E-Client
+	const char *GetKeyBinding(int ModifierMask, int Key) const { return m_aapKeyBindings[ModifierMask][Key]; } // EClient
 
 	CBinds();
 	~CBinds() override;

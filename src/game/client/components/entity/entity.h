@@ -1,17 +1,21 @@
-#ifndef GAME_CLIENT_COMPONENTS_ENTITY_H
-#define GAME_CLIENT_COMPONENTS_ENTITY_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_ENTITY_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_ENTITY_H
+#include <base/math.h>
 #include <base/system.h>
+
 #include <engine/console.h>
-#include <game/client/component.h>
-#include <vector>
 #include <engine/shared/protocol.h>
+
+#include <game/client/component.h>
+
+#include <atomic>
+#include <vector>
 
 class CEClient : public CComponent
 {
 	bool m_AttemptedJoinTeam;
 	bool m_JoinedTeam;
 
-	bool m_WeaponsGot;
 	bool m_GoresServer;
 
 	// Reply to Ping
@@ -25,12 +29,12 @@ class CEClient : public CComponent
 	CLastPing m_aLastPing;
 
 	void OnChatMessage(int ClientId, int Team, const char *pMsg);
-	virtual void OnMessage(int MsgType, void *pRawMsg) override;
+	void OnMessage(int MsgType, void *pRawMsg) override;
 
 	int m_LastReplyId = -1;
 
 	// Console Commands
-	virtual void OnConsoleInit() override;
+	void OnConsoleInit() override;
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
@@ -54,15 +58,20 @@ class CEClient : public CComponent
 
 	static void ConReplyLast(IConsole::IResult *pResult, void *pUserData);
 
-	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
-
 	static void ConSpectateId(IConsole::IResult *pResult, void *pUserData);
 
-	static void ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
+	static void ConchainDDNetProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+	static void ConchainDiscordProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+
+	static void DiscordPriorityThread(void *pUserData);
+
 public:
+	bool m_WeaponsGot;
 	int m_KillCount;
 
 	void Votekick(const char *pName, const char *pReason);
@@ -97,9 +106,9 @@ public:
 
 	int getIntFromColor(float Hue, float Sat, float LhT)
 	{
-		int R = round(255 * Hue);
-		int G = round(255 * Sat);
-		int B = round(255 * LhT);
+		int R = round_to_int(255 * Hue);
+		int G = round_to_int(255 * Sat);
+		int B = round_to_int(255 * LhT);
 		R = (R << 16) & 0x00FF0000;
 		G = (G << 8) & 0x0000FF00;
 		B = B & 0x000000FF;
@@ -109,10 +118,6 @@ public:
 	int64_t m_RainbowDelay;
 
 	void GoresMode();
-
-	void GoresModeSave();
-	void GoresModeRestore();
-	void ToggleGoresMode(bool Value);
 
 	int64_t m_JoinTeam;
 	void AutoJoinTeam();
@@ -127,14 +132,22 @@ public:
 
 	bool m_FirstLaunch = false;
 
+	void SetDDNetProcessPriority(bool Set);
+	std::atomic<int64_t> m_DiscordPriorityDelay{0};
+	std::atomic_bool m_DiscordPriorityThreadRunning{false};
+	void *m_pDiscordPriorityThread = nullptr;
+	void StartDiscordPriorityThread();
+	void SetDiscordProcessesNormalPriority();
+
 private:
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnInit() override;
-	virtual void OnRender() override;
-	virtual void OnStateChange(int NewState, int OldState) override;
-	virtual void OnNewSnapshot() override;
-	virtual void OnShutdown() override;
-	virtual void OnSelfDeath() override;
+	int Sizeof() const override { return sizeof(*this); }
+	void OnInit() override;
+	void OnRender() override;
+	void OnStateChange(int NewState, int OldState) override;
+	void OnNewSnapshot() override;
+	void OnShutdown() override;
+	void OnSelfDeath() override;
+	void OnFocusChange(bool IsFocused) override;
 };
 
-#endif
+#endif // GAME_CLIENT_COMPONENTS_ENTITY_ENTITY_H

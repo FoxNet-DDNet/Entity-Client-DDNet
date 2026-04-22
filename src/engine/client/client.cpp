@@ -1,4 +1,4 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 
 #include "client.h"
@@ -9,13 +9,18 @@
 
 #include <base/bytes.h>
 #include <base/crashdump.h>
+#include <base/fs.h>
 #include <base/hash.h>
 #include <base/hash_ctxt.h>
+#include <base/io.h>
 #include <base/log.h>
 #include <base/logger.h>
 #include <base/math.h>
+#include <base/os.h>
 #include <base/process.h>
+#include <base/secure.h>
 #include <base/str.h>
+#include <base/time.h>
 #include <base/windows.h>
 
 #include <engine/config.h>
@@ -74,6 +79,7 @@
 #endif
 
 #include <chrono>
+#include <exception>
 #include <limits>
 #include <stack>
 #include <thread>
@@ -99,7 +105,7 @@ CClient::CClient() :
 	for(auto &SnapshotStorage : m_aSnapshotStorage)
 		SnapshotStorage.Init();
 	mem_zero(m_aDemorecSnapshotHolders, sizeof(m_aDemorecSnapshotHolders));
-	mem_zero(&m_CurrentServerInfo, sizeof(m_CurrentServerInfo));
+	m_CurrentServerInfo = {};
 	mem_zero(&m_Checksum, sizeof(m_Checksum));
 	for(auto &GameTime : m_aGameTime)
 		GameTime.Init(0);
@@ -213,6 +219,12 @@ void CClient::SendqxdInfo(int Conn)
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
+void CClient::SendSupportsCosmeticSnapInfo(int Conn)
+{
+	CMsgPacker Msg(NETMSG_FOXNET_COSMETIC_SNAPS, true);
+	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
+}
+
 void CClient::SendFastInputsInfo(int Conn)
 {
 	CMsgPacker Msg(NETMSG_FOXNET_FASTINPUTS, true);
@@ -223,7 +235,7 @@ void CClient::SendFastInputsInfo(int Conn)
 
 void CClient::SendInfo(int Conn)
 {
-	SendqxdInfo(Conn); // E-Client
+	SendqxdInfo(Conn); // EClient
 
 	CMsgPacker MsgVer(NETMSG_CLIENTVER, true);
 	MsgVer.AddRaw(&m_ConnectionId, sizeof(m_ConnectionId));
@@ -251,6 +263,10 @@ void CClient::SendEnterGame(int Conn)
 {
 	CMsgPacker Msg(NETMSG_ENTERGAME, true);
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH);
+
+	// <FoxNet
+	SendSupportsCosmeticSnapInfo(Conn);
+	// FoxNet>
 }
 
 void CClient::SendReady(int Conn)
@@ -446,10 +462,7 @@ void CClient::SetState(EClientState State)
 	if(State == IClient::STATE_ONLINE)
 	{
 		const bool Registered = m_ServerBrowser.IsRegistered(ServerAddress());
-		CServerInfo CurrentServerInfo;
-		GetServerInfo(&CurrentServerInfo);
-
-		Discord()->SetGameInfo(CurrentServerInfo, GameClient()->Map()->BaseName(), g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
+		Discord()->SetGameInfo(m_CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
 		Steam()->SetGameInfo(ServerAddress(), GameClient()->Map()->BaseName(), Registered);
 	}
 	else if(OldState == IClient::STATE_ONLINE)
@@ -473,7 +486,7 @@ void CClient::DiscordRPCchange()
 		CServerInfo CurrentServerInfo;
 		GetServerInfo(&CurrentServerInfo);
 
-		Discord()->SetGameInfo(CurrentServerInfo, GameClient()->Map()->BaseName(), g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
+		Discord()->SetGameInfo(CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{
@@ -802,7 +815,7 @@ void CClient::DisconnectWithReason(const char *pReason)
 	ResetMapDownload(true);
 
 	// clear the current server info
-	mem_zero(&m_CurrentServerInfo, sizeof(m_CurrentServerInfo));
+	m_CurrentServerInfo = {};
 
 	// clear snapshots
 	m_aapSnapshots[0][SNAP_CURRENT] = nullptr;
@@ -913,13 +926,22 @@ bool CClient::DummyAllowed() const
 
 void CClient::GetServerInfo(CServerInfo *pServerInfo) const
 {
-	mem_copy(pServerInfo, &m_CurrentServerInfo, sizeof(m_CurrentServerInfo));
+	*pServerInfo = m_CurrentServerInfo;
 }
 
 void CClient::ServerInfoRequest()
 {
-	mem_zero(&m_CurrentServerInfo, sizeof(m_CurrentServerInfo));
+	m_CurrentServerInfo = {};
 	m_CurrentServerInfoRequestTime = 0;
+}
+
+void CClient::SetCurrentServerInfo(const CServerInfo &ServerInfo)
+{
+	m_CurrentServerInfo = ServerInfo;
+	m_CurrentServerInfoRequestTime = -1;
+	str_copy(m_CurrentServerInfo.m_aMap, GameClient()->Map()->BaseName());
+	m_CurrentServerInfo.m_MapCrc = GameClient()->Map()->Crc();
+	m_CurrentServerInfo.m_MapSize = GameClient()->Map()->Size();
 }
 
 void CClient::LoadDebugFont()
@@ -1523,9 +1545,8 @@ void CClient::ProcessServerInfo(int RawType, NETADDR *pFrom, const void *pData, 
 			// us.
 			if(SavedType >= m_CurrentServerInfo.m_Type)
 			{
-				m_CurrentServerInfo = Info;
-				m_CurrentServerInfoRequestTime = -1;
-				Discord()->UpdateServerInfo(Info, GameClient()->Map()->BaseName());
+				SetCurrentServerInfo(Info);
+				Discord()->UpdateServerInfo(m_CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus);
 			}
 
 			bool ValidPong = false;
@@ -2371,15 +2392,16 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 			m_ExpectedMaplistEntries = -1;
 		}
 		// <FoxNet
-		else if(Conn == CONN_MAIN && (pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 && Msg == NETMSG_FOXNET_INFO)
+		else if((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 && Msg == NETMSG_FOXNET_INFO)
 		{
 			const int Version = Unpacker.GetInt();
 			if(Unpacker.Error() || Version < 0)
 				return;
 			log_info("foxnet", "server is running FoxNet version %d", Version);
 			m_FoxNetVersion = Version;
-			SendFastInputsInfo(CONN_MAIN);
+			SendFastInputsInfo(Conn);
 		}
+		// FoxNet>
 	}
 	// the client handles only vital messages https://github.com/ddnet/ddnet/issues/11178
 	else if((pPacket->m_Flags & NET_CHUNKFLAG_VITAL) != 0 || Msg == NETMSGTYPE_SV_PREINPUT)
@@ -2412,6 +2434,15 @@ int CClient::UnpackAndValidateSnapshot(CSnapshot *pFrom, CSnapshot *pTo)
 		const void *pData = pFromItem->Data();
 		Unpacker.Reset(pData, FromItemSize);
 
+		if(ItemType <= 0)
+		{
+			// Don't add extended item type descriptions, they get
+			// added implicitly (== 0).
+			//
+			// Don't add items of unknown item types either (< 0).
+			continue;
+		}
+
 		void *pRawObj = pNetObjHandler->SecureUnpackObj(ItemType, &Unpacker);
 		if(!pRawObj)
 		{
@@ -2425,7 +2456,7 @@ int CClient::UnpackAndValidateSnapshot(CSnapshot *pFrom, CSnapshot *pTo)
 		}
 		const int ItemSize = pNetObjHandler->GetUnpackedObjSize(ItemType);
 
-		void *pObj = Builder.NewItem(pFromItem->Type(), pFromItem->Id(), ItemSize);
+		void *pObj = Builder.NewItem(ItemType, pFromItem->Id(), ItemSize);
 		if(!pObj)
 			return -4;
 
@@ -3028,7 +3059,7 @@ void CClient::Update()
 			}
 
 			ResetDDNetInfoTask();
-			GameClient()->OnServerBrowserRefresh(); // E-Client
+			GameClient()->OnServerBrowserRefresh(); // EClient
 		}
 		else if(m_pDDNetInfoTask->State() == EHttpState::ERROR || m_pDDNetInfoTask->State() == EHttpState::ABORTED)
 		{
@@ -3198,8 +3229,20 @@ void CClient::Run()
 		if(!Success)
 		{
 			log_error("client", "Failed to initialize the graphics (see details above)");
-			std::string Message = std::string("Failed to initialize the graphics. See details below.\n\n") + MemoryLogger.ConcatenatedLines();
-			ShowMessageBox({.m_pTitle = "Graphics Error", .m_pMessage = Message.c_str()});
+			const std::string Message = std::string(
+							    "Failed to initialize the graphics. See details below.\n\n"
+							    "For detailed troubleshooting instructions please read our Wiki:\n"
+							    "https://wiki.ddnet.org/wiki/GFX_Troubleshooting\n\n") +
+						    MemoryLogger.ConcatenatedLines();
+			const std::vector<IGraphics::CMessageBoxButton> vButtons = {
+				{.m_pLabel = "Show Wiki"},
+				{.m_pLabel = "OK", .m_Confirm = true, .m_Cancel = true},
+			};
+			const std::optional<int> MessageResult = ShowMessageBox({.m_pTitle = "Graphics Initialization Error", .m_pMessage = Message.c_str(), .m_vButtons = vButtons});
+			if(MessageResult && *MessageResult == 0)
+			{
+				ViewLink("https://wiki.ddnet.org/wiki/GFX_Troubleshooting");
+			}
 			return;
 		}
 	}
@@ -4074,7 +4117,7 @@ const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType)
 	}
 
 	// setup current server info
-	mem_zero(&m_CurrentServerInfo, sizeof(m_CurrentServerInfo));
+	m_CurrentServerInfo = {};
 	str_copy(m_CurrentServerInfo.m_aMap, pMapInfo->m_aName);
 	m_CurrentServerInfo.m_MapCrc = pMapInfo->m_Crc;
 	m_CurrentServerInfo.m_MapSize = pMapInfo->m_Size;
@@ -4285,7 +4328,6 @@ void CClient::UpdateAndSwap()
 void CClient::ServerBrowserUpdate()
 {
 	m_ServerBrowser.RequestResort();
-	GameClient()->OnServerBrowserRefresh(); // E-Client
 }
 
 void CClient::ConchainServerBrowserUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -4643,7 +4685,7 @@ void CClient::RegisterCommands()
 	m_pConsole->Chain("loglevel", ConchainLoglevel, this);
 	m_pConsole->Chain("stdout_output_level", ConchainStdoutOutputLevel, this);
 
-	// E-Client
+	// EClient
 	m_pConsole->Register("discord_rpc_reload", "", CFGFLAG_CLIENT, ConDiscordRPCchange, this, "Reloads The Discord RPC");
 }
 
@@ -4733,6 +4775,7 @@ int SDL_main(int argc, char *argv2[])
 #else
 int main(int argc, const char **argv)
 #endif
+try
 {
 	const int64_t MainStart = time_get();
 
@@ -4844,22 +4887,58 @@ int main(int argc, const char **argv)
 	dbg_assert_set_handler([MainThreadId, pClient](const char *pMsg) {
 		if(MainThreadId != std::this_thread::get_id())
 			return;
+
+		const char *pGraphicsError = pClient->Graphics() == nullptr ? "" : pClient->Graphics()->GetFatalError();
+		const bool GotGraphicsError = pGraphicsError[0] != '\0';
+		const char *pTitle;
+		const char *pPreamble;
+		const char *pPostamble;
+		if(GotGraphicsError)
+		{
+			pTitle = "Graphics Error";
+			pPreamble =
+				"A graphics error occurred. Please see details and instructions below.\n\n";
+			pPostamble =
+				"For detailed troubleshooting instructions please read our Wiki:\n"
+				"https://wiki.ddnet.org/wiki/GFX_Troubleshooting\n\n"
+				"If this did not resolve the issue, please take a screenshot and report this error.\n"
+				"Please also share the assert log"
+#if defined(CONF_CRASHDUMP)
+				" and crash log"
+#endif
+				" found in the 'dumps' folder in your config directory.\n\n";
+			// This is more human readable and we don't care about the source location here,
+			// because all graphics assertions come from CGraphicsBackend_Threaded::ProcessError
+			// and the original message is also logged separately by the assertion system.
+			pMsg = pGraphicsError;
+		}
+		else
+		{
+			pTitle = "Assertion Error";
+			pPreamble =
+				"An assertion error occurred. Please take a screenshot and report this error.\n"
+				"Please also share the assert log"
+#if defined(CONF_CRASHDUMP)
+				" and crash log"
+#endif
+				" found in the 'dumps' folder in your config directory.\n\n";
+			pPostamble = "";
+		}
+
 		char aOsVersionString[128];
 		if(!os_version_str(aOsVersionString, sizeof(aOsVersionString)))
 		{
 			str_copy(aOsVersionString, "unknown");
 		}
+
 		char aGpuInfo[512];
 		pClient->GetGpuInfoString(aGpuInfo);
+
 		char aMessage[2048];
 		str_format(aMessage, sizeof(aMessage),
-			"An assertion error occurred. Please write down or take a screenshot of the following information and report this error.\n"
-			"Please also share the assert log"
-#if defined(CONF_CRASHDUMP)
-			" and crash log"
-#endif
-			" which you should find in the 'dumps' folder in your config directory.\n\n"
+			"%s"
 			"%s\n\n"
+			"%s"
 			"Platform: %s (%s)\n"
 			"Configuration: base"
 #if defined(CONF_AUTOUPDATE)
@@ -4884,7 +4963,9 @@ int main(int argc, const char **argv)
 			"Game version: %s %s %s\n"
 			"OS version: %s\n\n"
 			"%s", // GPU info
+			pPreamble,
 			pMsg,
+			pPostamble,
 			CONF_PLATFORM_STRING, CONF_ARCH_ENDIAN_STRING,
 			GAME_NAME, GAME_RELEASE_VERSION, GIT_SHORTREV_HASH != nullptr ? GIT_SHORTREV_HASH : "",
 			aOsVersionString,
@@ -4892,6 +4973,10 @@ int main(int argc, const char **argv)
 		// Also log all of this information to the assertion log file
 		log_error("assertion", "%s", aMessage);
 		std::vector<IGraphics::CMessageBoxButton> vButtons;
+		if(GotGraphicsError)
+		{
+			vButtons.push_back({.m_pLabel = "Show Wiki"});
+		}
 		// Storage may not have been initialized yet and viewing files is not supported on Android yet
 #if !defined(CONF_PLATFORM_ANDROID)
 		if(pClient->Storage() != nullptr)
@@ -4900,16 +4985,18 @@ int main(int argc, const char **argv)
 		}
 #endif
 		vButtons.push_back({.m_pLabel = "OK", .m_Confirm = true, .m_Cancel = true});
-		const std::optional<int> MessageResult = pClient->ShowMessageBox({.m_pTitle = "Assertion Error", .m_pMessage = aMessage, .m_vButtons = vButtons});
+		const std::optional<int> MessageResult = pClient->ShowMessageBox({.m_pTitle = pTitle, .m_pMessage = aMessage, .m_vButtons = vButtons});
+		if(GotGraphicsError && MessageResult && *MessageResult == 0)
+		{
+			pClient->ViewLink("https://wiki.ddnet.org/wiki/GFX_Troubleshooting");
+		}
 #if !defined(CONF_PLATFORM_ANDROID)
-		if(pClient->Storage() != nullptr && MessageResult && *MessageResult == 0)
+		if(pClient->Storage() != nullptr && MessageResult && *MessageResult == (GotGraphicsError ? 1 : 0))
 		{
 			char aDumpsPath[IO_MAX_PATH_LENGTH];
 			pClient->Storage()->GetCompletePath(IStorage::TYPE_SAVE, "dumps", aDumpsPath, sizeof(aDumpsPath));
 			pClient->ViewFile(aDumpsPath);
 		}
-#else
-		(void)MessageResult;
 #endif
 		// Client will crash due to assertion, don't call PerformAllCleanup in this inconsistent state
 	});
@@ -4944,11 +5031,20 @@ int main(int argc, const char **argv)
 	pFutureAssertionLogger->Set(CreateAssertionLogger(pStorage, GAME_NAME));
 
 	{
-		char aBufPath[IO_MAX_PATH_LENGTH];
+		char aTimestamp[20];
+		str_timestamp(aTimestamp, sizeof(aTimestamp));
+
 		char aBufName[IO_MAX_PATH_LENGTH];
-		char aDate[64];
-		str_timestamp(aDate, sizeof(aDate));
-		str_format(aBufName, sizeof(aBufName), "dumps/" GAME_NAME "_%s_crash_log_%s_%d_%s.RTP", CONF_PLATFORM_STRING, aDate, process_id(), GIT_SHORTREV_HASH != nullptr ? GIT_SHORTREV_HASH : "");
+		str_format(aBufName, sizeof(aBufName), "dumps/%s_%s_%s_%s_crash_log_%s_%d_%s.RTP",
+			GAME_NAME,
+			GAME_RELEASE_VERSION,
+			CONF_PLATFORM_STRING,
+			CONF_ARCH_STRING,
+			aTimestamp,
+			process_id(),
+			GIT_SHORTREV_HASH != nullptr ? GIT_SHORTREV_HASH : "");
+
+		char aBufPath[IO_MAX_PATH_LENGTH];
 		pStorage->GetCompletePath(IStorage::TYPE_SAVE, aBufName, aBufPath, sizeof(aBufPath));
 		crashdump_init_if_available(aBufPath);
 	}
@@ -5145,6 +5241,18 @@ int main(int argc, const char **argv)
 	PerformFinalCleanup();
 
 	return 0;
+}
+catch(const std::exception &Exception)
+{
+	log_error("client", "Unhandled exception: %s", Exception.what());
+	ShowMessageBoxWithoutGraphics({.m_pTitle = "Unhandled Exception", .m_pMessage = Exception.what()});
+	return -1;
+}
+catch(...)
+{
+	log_error("client", "Unhandled unknown exception");
+	ShowMessageBoxWithoutGraphics({.m_pTitle = "Unhandled Exception", .m_pMessage = "An unknown exception occurred."});
+	return -1;
 }
 
 // DDRace
@@ -5354,7 +5462,7 @@ static bool ViewLinkImpl(const char *pLink)
 	log_error("client", "Failed to open link '%s' (%s)", pLink, SDL_GetError());
 	return false;
 #else
-	if(open_link(pLink))
+	if(os_open_link(pLink))
 	{
 		return true;
 	}
@@ -5462,27 +5570,26 @@ void CClient::GetGpuInfoString(char (&aGpuInfo)[512])
 	if(m_pGraphics == nullptr || !m_pGraphics->IsBackendInitialized())
 	{
 		str_format(aGpuInfo, std::size(aGpuInfo),
-			"Graphics backend: %s %d.%d.%d\n"
+			"Configured graphics backend: %s %d.%d.%d\n"
 			"Graphics %s not yet initialized.",
 			g_Config.m_GfxBackend, g_Config.m_GfxGLMajor, g_Config.m_GfxGLMinor, g_Config.m_GfxGLPatch,
 			m_pGraphics == nullptr ? "were" : "backend was");
 	}
 	else
 	{
-		// TODO: Even better would be if the backend could return its name and version, because the config variables can be outdated when the client was not restarted.
 		str_format(aGpuInfo, std::size(aGpuInfo),
-			"Graphics backend: %s %d.%d.%d\n"
+			"Configured graphics backend: %s %d.%d.%d\n"
 			"GPU: %s - %s - %s\n"
-			"Texture: %" PRIu64 " MiB, "
-			"Buffer: %" PRIu64 " MiB, "
-			"Streamed: %" PRIu64 " MiB, "
-			"Staging: %" PRIu64 " MiB",
+			"Texture: %.2f MiB, "
+			"Buffer: %.2f MiB, "
+			"Streamed: %.2f MiB, "
+			"Staging: %.2f MiB",
 			g_Config.m_GfxBackend, g_Config.m_GfxGLMajor, g_Config.m_GfxGLMinor, g_Config.m_GfxGLPatch,
 			m_pGraphics->GetVendorString(), m_pGraphics->GetRendererString(), m_pGraphics->GetVersionString(),
-			m_pGraphics->TextureMemoryUsage() / 1024 / 1024,
-			m_pGraphics->BufferMemoryUsage() / 1024 / 1024,
-			m_pGraphics->StreamedMemoryUsage() / 1024 / 1024,
-			m_pGraphics->StagingMemoryUsage() / 1024 / 1024);
+			m_pGraphics->TextureMemoryUsage() / 1024.0 / 1024.0,
+			m_pGraphics->BufferMemoryUsage() / 1024.0 / 1024.0,
+			m_pGraphics->StreamedMemoryUsage() / 1024.0 / 1024.0,
+			m_pGraphics->StagingMemoryUsage() / 1024.0 / 1024.0);
 	}
 }
 

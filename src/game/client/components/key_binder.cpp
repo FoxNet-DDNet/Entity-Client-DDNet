@@ -31,8 +31,6 @@ bool CKeyBinder::OnInput(const IInput::CEvent &Event)
 	return true;
 }
 
-
-
 CKeyBinder::CKeyReaderResult CKeyBinder::DoKeyReader(CButtonContainer *pReaderButton, CButtonContainer *pClearButton, const CUIRect *pRect, const CBindSlot &CurrentBind, bool Activate)
 {
 	CKeyReaderResult Result = {CurrentBind, false};

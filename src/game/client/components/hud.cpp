@@ -4,42 +4,42 @@
 
 #include "camera.h"
 #include "controls.h"
+#include "tclient/warlist.h"
 #include "voting.h"
 
 #include <base/color.h>
-
-#include <engine/font_icons.h>
-#include <engine/graphics.h>
-#include <engine/shared/config.h>
-#include <engine/textrender.h>
-
-#include <generated/client_data.h>
-#include <generated/protocol.h>
-
-#include <game/client/animstate.h>
-#include <game/client/components/scoreboard.h>
-#include <game/client/gameclient.h>
-#include <game/client/prediction/entities/character.h>
-#include <game/localization.h>
-
-#include <cmath>
-#include <algorithm>
-#include <cstdint>
-#include <vector>
-#include <generated/data_types.h>
-#include <generated/protocol7.h>
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
 #include <base/time.h>
 #include <base/vmath.h>
+
 #include <engine/client.h>
+#include <engine/font_icons.h>
+#include <engine/graphics.h>
+#include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/shared/video.h>
-#include "tclient/warlist.h"
+#include <engine/textrender.h>
+
+#include <generated/client_data.h>
+#include <generated/data_types.h>
+#include <generated/protocol.h>
+#include <generated/protocol7.h>
+
+#include <game/client/animstate.h>
+#include <game/client/components/scoreboard.h>
+#include <game/client/gameclient.h>
+#include <game/client/prediction/entities/character.h>
 #include <game/client/render.h>
 #include <game/client/skin.h>
 #include <game/gamecore.h>
+#include <game/localization.h>
+
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
+#include <vector>
 
 CHud::CHud()
 {
@@ -154,7 +154,7 @@ void CHud::RenderGameTimer()
 		else
 			Time = (Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick) / Client()->GameTickSpeed();
 
-		str_time((int64_t)Time * 100, TIME_DAYS, aBuf, sizeof(aBuf));
+		str_time((int64_t)Time * 100, ETimeFormat::DAYS, aBuf, sizeof(aBuf));
 		float FontSize = 10.0f;
 		static float s_TextWidthM = TextRender()->TextWidth(FontSize, "00:00", -1, -1.0f);
 		static float s_TextWidthH = TextRender()->TextWidth(FontSize, "00:00:00", -1, -1.0f);
@@ -358,7 +358,7 @@ void CHud::RenderScoreHud()
 				if(apPlayerInfo[t])
 				{
 					if(Client()->IsSixup() && GameClient()->m_Snap.m_pGameInfoObj->m_GameFlags & protocol7::GAMEFLAG_RACE)
-						str_time((int64_t)absolute(apPlayerInfo[t]->m_Score) / 10, TIME_MINS_CENTISECS, aScore[t], sizeof(aScore[t]));
+						str_time((int64_t)absolute(apPlayerInfo[t]->m_Score) / 10, ETimeFormat::MINS_CENTISECS, aScore[t], sizeof(aScore[t]));
 					else if(GameClient()->m_GameInfo.m_TimeScore)
 					{
 						CGameClient::CClientData &ClientData = GameClient()->m_aClients[apPlayerInfo[t]->m_ClientId];
@@ -367,11 +367,11 @@ void CHud::RenderScoreHud()
 							int64_t TimeSeconds = static_cast<int64_t>(absolute(ClientData.m_FinishTimeSeconds));
 							int64_t TimeMillis = TimeSeconds * 1000 + (absolute(ClientData.m_FinishTimeMillis) % 1000);
 
-							str_time(TimeMillis / 10, TIME_HOURS, aScore[t], sizeof(aScore[t]));
+							str_time(TimeMillis / 10, ETimeFormat::HOURS, aScore[t], sizeof(aScore[t]));
 						}
 						else if(apPlayerInfo[t]->m_Score != FinishTime::NOT_FINISHED_TIMESCORE)
 						{
-							str_time((int64_t)absolute(apPlayerInfo[t]->m_Score) * 100, TIME_HOURS, aScore[t], sizeof(aScore[t]));
+							str_time((int64_t)absolute(apPlayerInfo[t]->m_Score) * 100, ETimeFormat::HOURS, aScore[t], sizeof(aScore[t]));
 						}
 						else
 							aScore[t][0] = 0;
@@ -866,18 +866,7 @@ void CHud::RenderPlayerState(const int ClientId)
 		int AvailableJumpsToDisplay;
 		if(GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
 		{
-			bool Grounded = false;
-			if(Collision()->CheckPoint(pPlayer->m_X + CCharacterCore::PhysicalSize() / 2,
-				   pPlayer->m_Y + CCharacterCore::PhysicalSize() / 2 + 5))
-			{
-				Grounded = true;
-			}
-			if(Collision()->CheckPoint(pPlayer->m_X - CCharacterCore::PhysicalSize() / 2,
-				   pPlayer->m_Y + CCharacterCore::PhysicalSize() / 2 + 5))
-			{
-				Grounded = true;
-			}
-
+			const bool Grounded = Collision()->IsOnGround(vec2(pPlayer->m_X, pPlayer->m_Y), CCharacterCore::PhysicalSize());
 			int UsedJumps = pCharacter->m_JumpedTotal;
 			if(pCharacter->m_Jumps > 1)
 			{
@@ -1815,7 +1804,7 @@ void CHud::RenderDDRaceEffects()
 		char aTime[32];
 		if(m_ShowFinishTime && m_FinishTimeLastReceivedTick + Client()->GameTickSpeed() * 6 > Client()->GameTick(g_Config.m_ClDummy))
 		{
-			str_time(m_DDRaceTime, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+			str_time(m_DDRaceTime, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 			str_format(aBuf, sizeof(aBuf), "Finish time: %s", aTime);
 
 			// calculate alpha (4 sec 1 than get lower the next 2 sec)
@@ -1835,13 +1824,13 @@ void CHud::RenderDDRaceEffects()
 			{
 				if(m_FinishTimeDiff < 0)
 				{
-					str_time_float(-m_FinishTimeDiff, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+					str_time_float(-m_FinishTimeDiff, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 					str_format(aBuf, sizeof(aBuf), "-%s", aTime);
 					TextRender()->TextColor(0.5f, 1.0f, 0.5f, Alpha); // green
 				}
 				else
 				{
-					str_time_float(m_FinishTimeDiff, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+					str_time_float(m_FinishTimeDiff, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 					str_format(aBuf, sizeof(aBuf), "+%s", aTime);
 					TextRender()->TextColor(1.0f, 0.5f, 0.5f, Alpha); // red
 				}
@@ -1862,12 +1851,12 @@ void CHud::RenderDDRaceEffects()
 		{
 			if(m_TimeCpDiff < 0)
 			{
-				str_time_float(-m_TimeCpDiff, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+				str_time_float(-m_TimeCpDiff, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 				str_format(aBuf, sizeof(aBuf), "-%s", aTime);
 			}
 			else
 			{
-				str_time_float(m_TimeCpDiff, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+				str_time_float(m_TimeCpDiff, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 				str_format(aBuf, sizeof(aBuf), "+%s", aTime);
 			}
 
@@ -1910,7 +1899,7 @@ void CHud::RenderRecord()
 		TextRender()->Text(5, 75, 6, Localize("Server best:"), -1.0f);
 		char aTime[32];
 		int64_t TimeCentiseconds = static_cast<int64_t>(GameClient()->m_MapBestTimeSeconds) * 100 + static_cast<int64_t>(GameClient()->m_MapBestTimeMillis) / 10;
-		str_time(TimeCentiseconds, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+		str_time(TimeCentiseconds, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 		str_format(aBuf, sizeof(aBuf), "%s%s", GameClient()->m_MapBestTimeSeconds > 3600 ? "" : "   ", aTime);
 		TextRender()->Text(53, 75, 6, aBuf, -1.0f);
 	}
@@ -1925,7 +1914,7 @@ void CHud::RenderRecord()
 			char aTime[32];
 			const int PlayerTimeMillis = GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_FinishTimeMillis;
 			int64_t TimeCentiseconds = static_cast<int64_t>(PlayerTimeSeconds) * 100 + static_cast<int64_t>(PlayerTimeMillis) / 10;
-			str_time(TimeCentiseconds, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+			str_time(TimeCentiseconds, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 			str_format(aBuf, sizeof(aBuf), "%s%s", PlayerTimeSeconds > 3600 ? "" : "   ", aTime);
 			TextRender()->Text(53, 82, 6, aBuf, -1.0f);
 		}
@@ -1938,7 +1927,7 @@ void CHud::RenderRecord()
 			char aBuf[64];
 			TextRender()->Text(5, 82, 6, Localize("Personal best:"), -1.0f);
 			char aTime[32];
-			str_time_float(PlayerRecord, TIME_HOURS_CENTISECS, aTime, sizeof(aTime));
+			str_time_float(PlayerRecord, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 			str_format(aBuf, sizeof(aBuf), "%s%s", PlayerRecord > 3600 ? "" : "   ", aTime);
 			TextRender()->Text(53, 82, 6, aBuf, -1.0f);
 		}
@@ -1977,7 +1966,7 @@ void CHud::FreezeHelpers()
 				char aBuf[64];
 				str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClNotifyWhenLastText);
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClNotifyWhenLastColor)));
-				TextRender()->Text(170, 4, 14, aBuf, -1.0f);
+				TextRender()->Text(170, 4, 14, aBuf, -1);
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 			}
 		}
@@ -1990,7 +1979,7 @@ void CHud::FreezeHelpers()
 		if(g_Config.m_ClShowFrozenText > 0)
 			TextRender()->Text(m_Width / 2 - TextRender()->TextWidth(10, aBuf, -1, -1.0f) / 2, 12, 10, aBuf, -1.0f);
 
-		// I told the clanker to rewrite this 
+		// I told the clanker to rewrite this
 		if(g_Config.m_ClShowFrozenHud > 0 && !GameClient()->m_Scoreboard.IsActive() && !(LocalTeamID == 0 && g_Config.m_ClFrozenHudTeamOnly))
 		{
 			CTeeRenderInfo FreezeInfo;
@@ -2081,26 +2070,26 @@ void CHud::FreezeHelpers()
 				5.0f,
 				IGraphics::CORNER_B);
 			Graphics()->QuadsEnd();
-			
-			float progressiveOffset = 0.0f;
+
+			float ProgressiveOffset = 0.0f;
 			int NumInRow = 0;
 			int CurrentRow = 0;
 
 			for(int n = 0; n < NumDisplayable; ++n)
 			{
-				const int i = vOrdered[n];
+				const int Id = vOrdered[n];
 
-				bool Frozen = GameClient()->m_aClients[i].m_FreezeEnd > 0 || GameClient()->m_aClients[i].m_DeepFrozen;
+				bool Frozen = GameClient()->m_aClients[Id].m_FreezeEnd > 0 || GameClient()->m_aClients[Id].m_DeepFrozen;
 
 				NumInRow++;
 				if(NumInRow > MaxTees)
 				{
 					NumInRow = 1;
-					progressiveOffset = 0.0f;
+					ProgressiveOffset = 0.0f;
 					CurrentRow++;
 				}
 
-				CTeeRenderInfo TeeInfo = GameClient()->m_aClients[i].m_RenderInfo;
+				CTeeRenderInfo TeeInfo = GameClient()->m_aClients[Id].m_RenderInfo;
 				if(Frozen && !g_Config.m_ClShowFrozenHudSkins)
 				{
 					TeeInfo = FreezeInfo;
@@ -2109,10 +2098,10 @@ void CHud::FreezeHelpers()
 				TeeInfo.m_Size = TeeSize;
 				const CAnimState *pIdleState = CAnimState::GetIdle();
 				vec2 OffsetToMid;
-				RenderTools()->GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
-				vec2 TeeRenderPos(StartPos + progressiveOffset, TeeSize * 0.7f + CurrentRow * TeeSize);
+				CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
+				vec2 TeeRenderPos(StartPos + ProgressiveOffset, TeeSize * 0.7f + CurrentRow * TeeSize);
 				float Alpha = 1.0f;
-				CNetObj_Character CurChar = GameClient()->m_aClients[i].m_RenderCur;
+				CNetObj_Character CurChar = GameClient()->m_aClients[Id].m_RenderCur;
 
 				if(g_Config.m_ClShowFrozenHudSkins && Frozen)
 				{
@@ -2129,7 +2118,7 @@ void CHud::FreezeHelpers()
 				else
 					RenderTools()->RenderTee(pIdleState, &TeeInfo, CurChar.m_Emote, vec2(1.0f, 0.0f), TeeRenderPos);
 
-				progressiveOffset += TeeSize;
+				ProgressiveOffset += TeeSize;
 			}
 		}
 	}

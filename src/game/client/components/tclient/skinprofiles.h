@@ -1,10 +1,10 @@
 #ifndef GAME_CLIENT_COMPONENTS_TCLIENT_SKINPROFILES_H
 #define GAME_CLIENT_COMPONENTS_TCLIENT_SKINPROFILES_H
 
-#include <game/client/component.h>
-
 #include <engine/console.h>
 #include <engine/shared/protocol.h>
+
+#include <game/client/component.h>
 
 #include <vector>
 
@@ -32,8 +32,8 @@ public:
 	void AddProfile(int BodyColor, int FeetColor, int CountryFlag, int Emote, const char *pSkinName, const char *pName, const char *pClan);
 	void ApplyProfile(int Dummy, const CProfile &Profile);
 
-	virtual int Sizeof() const override { return sizeof(*this); }
+	int Sizeof() const override { return sizeof(*this); }
 
-	virtual void OnConsoleInit() override;
+	void OnConsoleInit() override;
 };
 #endif

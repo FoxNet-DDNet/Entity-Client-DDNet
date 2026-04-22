@@ -2,6 +2,8 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "scoreboard.h"
 
+#include <base/time.h>
+
 #include <engine/console.h>
 #include <engine/demo.h>
 #include <engine/font_icons.h>
@@ -9,8 +11,8 @@
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
 
-#include <generated/client_data7.h>
 #include <generated/client_data.h>
+#include <generated/client_data7.h>
 #include <generated/protocol.h>
 
 #include <game/client/animstate.h>
@@ -416,7 +418,9 @@ void CScoreboard::RenderSpectators(CUIRect Spectators)
 					m_ScoreboardPopupContext.m_IsLocal ? 30.0f : 60.0f, &m_ScoreboardPopupContext, CScoreboardPopupContext::Render);
 			}
 
-			if(Ui()->HotItem() == &m_aPlayers[pInfo->m_ClientId].m_PlayerButtonId || Ui()->HotItem() == &m_aPlayers[pInfo->m_ClientId].m_SpectatorSecondLineButtonId)
+			if(Ui()->HotItem() == &m_aPlayers[pInfo->m_ClientId].m_PlayerButtonId ||
+				Ui()->HotItem() == &m_aPlayers[pInfo->m_ClientId].m_SpectatorSecondLineButtonId ||
+				(Ui()->IsPopupOpen(&m_ScoreboardPopupContext) && m_ScoreboardPopupContext.m_ClientId == pInfo->m_ClientId))
 			{
 				if(!LineBreakDetected)
 				{
@@ -554,17 +558,16 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			const CNetObj_PlayerInfo *pInfo = GameClient()->m_Snap.m_apInfoByDDTeamScore[i];
 			if(!pInfo || pInfo->m_Team != Team)
 				continue;
-
-			if(CountRendered++ < CountStart)
-				continue;
-
-			int DDTeam = GameClient()->m_Teams.Team(pInfo->m_ClientId);
-			int NextDDTeam = 0;
 			bool IsDead = Client()->m_TranslationContext.m_aClients[pInfo->m_ClientId].m_PlayerFlags7 & protocol7::PLAYERFLAG_DEAD;
 			if(!RenderDead && IsDead)
 				continue;
 			if(RenderDead && !IsDead)
 				continue;
+			if(CountRendered++ < CountStart)
+				continue;
+
+			int DDTeam = GameClient()->m_Teams.Team(pInfo->m_ClientId);
+			int NextDDTeam = 0;
 
 			ColorRGBA TextColor = TextRender()->DefaultTextColor();
 			TextColor.a = RenderDead ? 0.5f : 1.0f;
@@ -610,8 +613,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				}
 				if(NextDDTeam != DDTeam)
 					TeamRectCorners |= IGraphics::CORNER_B;
-
-
 
 				RowAndSpacing.Draw(Color, TeamRectCorners, RoundRadius);
 
@@ -682,7 +683,8 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 						m_ScoreboardPopupContext.m_IsLocal ? 58.5f : 87.5f, &m_ScoreboardPopupContext, CScoreboardPopupContext::Render);
 				}
 
-				if(Ui()->HotItem() == &m_aPlayers[pInfo->m_ClientId].m_PlayerButtonId)
+				if(Ui()->HotItem() == &m_aPlayers[pInfo->m_ClientId].m_PlayerButtonId ||
+					(Ui()->IsPopupOpen(&m_ScoreboardPopupContext) && m_ScoreboardPopupContext.m_ClientId == pInfo->m_ClientId))
 				{
 					Row.Draw(ColorRGBA(0.7f, 0.7f, 0.7f, 0.7f), IGraphics::CORNER_ALL, RoundRadius);
 				}
@@ -717,7 +719,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			if(pGameInfoObj && (pGameInfoObj->m_GameFlags & GAMEFLAG_FLAGS) &&
 				pGameDataObj && (pGameDataObj->m_FlagCarrierRed == pInfo->m_ClientId || pGameDataObj->m_FlagCarrierBlue == pInfo->m_ClientId))
 			{
-				Graphics()->BlendNormal();
 				Graphics()->TextureSet(pGameDataObj->m_FlagCarrierBlue == pInfo->m_ClientId ? GameClient()->m_GameSkin.m_SpriteFlagBlue : GameClient()->m_GameSkin.m_SpriteFlagRed);
 				Graphics()->QuadsBegin();
 				Graphics()->QuadsSetSubset(1.0f, 0.0f, 0.0f, 1.0f);
@@ -731,7 +732,6 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			// skin
 			if(RenderDead)
 			{
-				Graphics()->BlendNormal();
 				Graphics()->TextureSet(m_DeadTeeTexture);
 				Graphics()->QuadsBegin();
 				if(GameClient()->IsTeamPlay())
@@ -809,7 +809,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					TextRender()->TextEx(&Cursor, "✓");
 				}
 
-				if(pInfo->m_ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].IsMuted)
+				if(pInfo->m_ClientId >= 0 && GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].m_IsMuted)
 				{
 					ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
 
@@ -869,6 +869,8 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			if(CountRendered == CountEnd)
 				break;
 		}
+		if(CountRendered == CountEnd)
+			break;
 	}
 }
 
@@ -880,7 +882,7 @@ void CScoreboard::RenderRecordingNotification(float x)
 		if(GameClient()->DemoRecorder(Recorder)->IsRecording())
 		{
 			char aTime[32];
-			str_time((int64_t)GameClient()->DemoRecorder(Recorder)->Length() * 100, TIME_HOURS, aTime, sizeof(aTime));
+			str_time((int64_t)GameClient()->DemoRecorder(Recorder)->Length() * 100, ETimeFormat::HOURS, aTime, sizeof(aTime));
 			str_append(aBuf, pName);
 			str_append(aBuf, " ");
 			str_append(aBuf, aTime);
@@ -1198,7 +1200,7 @@ CUi::EPopupMenuFunctionResult CScoreboard::CScoreboardPopupContext::Render(void 
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);
 		Container.VSplitLeft(ActionSize, &Action, &Container);
 
-		bool Muted = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].IsMuted; // E-Client
+		bool Muted = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].m_IsMuted; // EClient
 
 		if(pUi->DoButton_FontIcon(&pPopupContext->m_MuteAction, FontIcon::BAN, Muted, &Action, BUTTONFLAG_LEFT, ActionCorners))
 		{
@@ -1207,7 +1209,7 @@ CUi::EPopupMenuFunctionResult CScoreboard::CScoreboardPopupContext::Render(void 
 			else
 				pScoreboard->GameClient()->m_WarList.RemoveMute(Client.m_aName);
 		}
-		// E-Client
+		// EClient
 		pScoreboard->GameClient()->m_Tooltips.DoToolTip(&pPopupContext->m_MuteAction, &Action, Muted ? Localize("Unmute") : Localize("Mute"));
 
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);

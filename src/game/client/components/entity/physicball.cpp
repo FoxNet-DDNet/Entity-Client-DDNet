@@ -52,35 +52,44 @@ void CPhysicBalls::OnConsoleInit()
 	Console()->Register("physic_balls_reset", "", CFGFLAG_CLIENT, ConResetPhysicBalls, this, "Reset all physic balls");
 }
 
+void CPhysicBalls::NewBallPlayer(float Size)
+{
+	if(Client()->State() != IClient::STATE_ONLINE)
+		return;
+
+	vec2 Pos = PlayerPos(Size);
+
+	m_vBalls.emplace_back(Pos, vec2(), Size);
+}
+
+void CPhysicBalls::NewBallCursor(float Size)
+{
+	if(Client()->State() != IClient::STATE_ONLINE)
+		return;
+
+	vec2 Pos = GameClient()->GetCursorWorldPos();
+	vec2 OutPos;
+	if(GetNearestAirPos(Pos, Pos, &OutPos, Size))
+		Pos = OutPos;
+
+	m_vBalls.emplace_back(Pos, vec2(), Size);
+}
+
 void CPhysicBalls::ConNewPhysicBall(IConsole::IResult *pResult, void *pUserData)
 {
 	CPhysicBalls *pSelf = static_cast<CPhysicBalls *>(pUserData);
-
-	if(pSelf->Client()->State() != IClient::STATE_ONLINE)
-		return;
-
 	float Size = pResult->NumArguments() > 0 ? pResult->GetFloat(0) : PhysicBallSize;
 
-	vec2 Pos = pSelf->PlayerPos(Size);
-
-	pSelf->m_vBalls.push_back(CBall(Pos, vec2(), Size));
+	pSelf->NewBallPlayer(Size);
 }
 
 void CPhysicBalls::ConNewPhysicBallAtCursor(IConsole::IResult *pResult, void *pUserData)
 {
 	CPhysicBalls *pSelf = static_cast<CPhysicBalls *>(pUserData);
 
-	if(pSelf->Client()->State() != IClient::STATE_ONLINE)
-		return;
-
 	float Size = pResult->NumArguments() > 0 ? pResult->GetFloat(0) : PhysicBallSize;
 
-	vec2 Pos = pSelf->GameClient()->GetCursorWorldPos();
-	vec2 OutPos;
-	if(pSelf->GetNearestAirPos(Pos, Pos, &OutPos, Size))
-		Pos = OutPos;
-
-	pSelf->m_vBalls.push_back(CBall(Pos, vec2(), Size));
+	pSelf->NewBallCursor(Size);
 }
 
 void CPhysicBalls::ConRemovePhysicBallsAtCursor(IConsole::IResult *pResult, void *pUserData)
@@ -149,7 +158,7 @@ bool CPhysicBalls::IsBallVisible(const CBall *pBall)
 
 void CPhysicBalls::RenderBall(const CBall *pBall)
 {
-	const CSkin *pSkin = GameClient()->m_Skins.Find(g_Config.m_EcVolleyBallBetterBallSkin);
+	const CSkin *pSkin = GameClient()->m_Skins.Find(g_Config.m_ClPhysicBallsSkin);
 	if(!pSkin)
 		return;
 
@@ -407,8 +416,8 @@ bool CPhysicBalls::KillBall(const CBall *pBall)
 	if(!pBall)
 		return false;
 
-	auto it = std::find_if(m_vBalls.begin(), m_vBalls.end(), [&](const CBall &b) { return &b == pBall; });
-	if(it != m_vBalls.end())
+	auto It = std::find_if(m_vBalls.begin(), m_vBalls.end(), [&](const CBall &b) { return &b == pBall; });
+	if(It != m_vBalls.end())
 	{
 		for(int i = 0; i < 16; i++)
 		{
@@ -431,7 +440,7 @@ bool CPhysicBalls::KillBall(const CBall *pBall)
 			GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &Particle);
 		}
 
-		m_vBalls.erase(it);
+		m_vBalls.erase(It);
 		return true;
 	}
 	return false;
@@ -458,12 +467,12 @@ void CPhysicBalls::DoBallPhysics(CBall *pBall, float DtTicks)
 
 	pBall->m_Vel.y += GameClient()->m_aClients[LocalId].m_Predicted.m_Tuning.m_Gravity * DtTicks;
 
-	float groundFriction = 0.96f;
-	float airFriction = 0.98f;
+	float GroundFriction = 0.96f;
+	float AirFriction = 0.98f;
 
-	float friction = pBall->m_Grounded ? groundFriction : airFriction;
+	float Friction = pBall->m_Grounded ? GroundFriction : AirFriction;
 
-	pBall->m_Vel.x *= powf(friction, DtTicks);
+	pBall->m_Vel.x *= powf(Friction, DtTicks);
 
 	if(pBall->m_Grounded)
 	{

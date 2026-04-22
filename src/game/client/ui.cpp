@@ -1796,7 +1796,6 @@ bool CUi::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, 
 	return false;
 }
 
-
 void CUi::RenderProgressBar(CUIRect ProgressBar, float Progress)
 {
 	const float Rounding = minimum(5.0f, ProgressBar.h / 2.0f);
@@ -1812,7 +1811,7 @@ void CUi::RenderTime(CUIRect TimeRect, float FontSize, int Seconds, bool NotFini
 
 	char aBuf[128];
 
-	str_time(((int64_t)absolute(Seconds)) * 100, TIME_HOURS, aBuf, sizeof(aBuf));
+	str_time(((int64_t)absolute(Seconds)) * 100, ETimeFormat::HOURS, aBuf, sizeof(aBuf));
 
 	// align in vertical middle
 	vec2 Cursor = TimeRect.TopLeft();
@@ -1855,7 +1854,7 @@ void CUi::RenderTime(CUIRect TimeRect, float FontSize, int Seconds, bool NotFini
 	}
 	else
 	{
-		str_time(((int64_t)absolute(Seconds)) * 100, TIME_HOURS, aBuf, sizeof(aBuf));
+		str_time(((int64_t)absolute(Seconds)) * 100, ETimeFormat::HOURS, aBuf, sizeof(aBuf));
 		TextRender()->Text(Cursor.x, Cursor.y, FontSize, aBuf);
 	}
 }
@@ -2136,14 +2135,12 @@ CUi::EPopupMenuFunctionResult CUi::PopupSelection(void *pContext, CUIRect View, 
 	CUi *pUI = pSelectionPopup->m_pUI;
 	CScrollRegion *pScrollRegion = pSelectionPopup->m_pScrollRegion;
 
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollbarWidth = 10.0f;
 	ScrollParams.m_ScrollbarMargin = SPopupMenu::POPUP_MARGIN;
 	ScrollParams.m_ScrollbarNoMarginRight = true;
 	ScrollParams.m_ScrollUnit = 3 * (pSelectionPopup->m_EntryHeight + pSelectionPopup->m_EntrySpacing);
-	pScrollRegion->Begin(&View, &ScrollOffset, &ScrollParams);
-	View.y += ScrollOffset.y;
+	pScrollRegion->Begin(&View, &ScrollParams);
 
 	CUIRect Slot;
 	if(pSelectionPopup->m_aMessage[0] != '\0')
@@ -2617,17 +2614,16 @@ float CUi::DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, f
 			}
 		}
 
-	if(!pColorInner && (InsideHandle || Grabbed) && (CheckActiveItem(pId) || HotItem() == pId))
-	{
-		Handle.h += 3.0f;
-		Handle.y -= 1.5f;
-	}
-	
+		if(!pColorInner && (InsideHandle || Grabbed) && (CheckActiveItem(pId) || HotItem() == pId))
+		{
+			Handle.h += 3.0f;
+			Handle.y -= 1.5f;
+		}
 
-	if(InsideRail && !MouseButton(0))
-	{
-		SetHotItem(pId);
-	}
+		if(InsideRail && !MouseButton(0))
+		{
+			SetHotItem(pId);
+		}
 	}
 
 	float ReturnValue = Current;
@@ -2640,7 +2636,7 @@ float CUi::DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, f
 	}
 
 	// render
-	
+
 	const ColorRGBA HandleColor = ms_ScrollBarColorFunction.GetColor(CheckActiveItem(pId), HotItem() == pId);
 	if(pColorInner)
 	{

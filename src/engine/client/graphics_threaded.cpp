@@ -110,7 +110,7 @@ CGraphics_Threaded::CGraphics_Threaded()
 	m_State.m_ClipW = 0;
 	m_State.m_ClipH = 0;
 	m_State.m_Texture = -1;
-	m_State.m_BlendMode = EBlendMode::NONE;
+	m_State.m_BlendMode = EBlendMode::ALPHA;
 	m_State.m_WrapMode = EWrapMode::REPEAT;
 
 	m_CurrentCommandBuffer = 0;
@@ -1327,17 +1327,17 @@ void CGraphics_Threaded::DrawRectOutline(float x, float y, float w, float h, Col
 
 	std::vector<IGraphics::CLineItem> Lines;
 
-	auto AddCornerArc = [&](float cx, float cy, float startAngle, int cornerFlag) {
-		if((Corners & cornerFlag) && Rounding > 0.0f)
+	auto AddCornerArc = [&](float Cx, float Cy, float StartAngle, int CornerFlag) {
+		if((Corners & CornerFlag) && Rounding > 0.0f)
 		{
 			for(int i = 0; i < NumSegments; ++i)
 			{
-				float a0 = startAngle + i * AngleStep;
-				float a1 = startAngle + (i + 1) * AngleStep;
-				float x0 = cx + std::cos(a0) * Rounding;
-				float y0 = cy + std::sin(a0) * Rounding;
-				float x1 = cx + std::cos(a1) * Rounding;
-				float y1 = cy + std::sin(a1) * Rounding;
+				float a0 = StartAngle + i * AngleStep;
+				float a1 = StartAngle + (i + 1) * AngleStep;
+				float x0 = Cx + std::cos(a0) * Rounding;
+				float y0 = Cy + std::sin(a0) * Rounding;
+				float x1 = Cx + std::cos(a1) * Rounding;
+				float y1 = Cy + std::sin(a1) * Rounding;
 				Lines.emplace_back(x0, y0, x1, y1);
 			}
 		}
@@ -2995,6 +2995,11 @@ const char *CGraphics_Threaded::GetVersionString()
 const char *CGraphics_Threaded::GetRendererString()
 {
 	return m_pBackend->GetRendererString();
+}
+
+const char *CGraphics_Threaded::GetFatalError() const
+{
+	return m_pBackend == nullptr ? "" : m_pBackend->GetFatalError();
 }
 
 TGLBackendReadPresentedImageData &CGraphics_Threaded::GetReadPresentedImageDataFuncUnsafe()

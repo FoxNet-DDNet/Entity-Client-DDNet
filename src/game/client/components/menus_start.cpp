@@ -241,7 +241,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 	}
 	Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
-	#elif defined(CONF_INFORM_UPDATE)
+#elif defined(CONF_INFORM_UPDATE)
 	if(str_comp(Client()->LatestVersion(), "0") != 0)
 	{
 		CUIRect DownloadButton;
@@ -261,7 +261,7 @@ void CMenusStart::RenderStartMenu(CUIRect MainView)
 		Ui()->DoLabel(&VersionUpdate, aBuf, 14.0f, TEXTALIGN_ML, UpdateLabelProps);
 	}
 #endif
-	if(g_Config.m_ClInformUpdate &&str_comp(GameClient()->m_EntityInfo.m_aVersionStr, "0") != 0)
+	if(g_Config.m_ClInformUpdate && str_comp(GameClient()->m_EntityInfo.m_aVersionStr, "0") != 0)
 	{
 		char aBuf[64];
 		str_format(aBuf, sizeof(aBuf), Localize(CLIENT_NAME " v%s is out!"), GameClient()->m_EntityInfo.m_aVersionStr);

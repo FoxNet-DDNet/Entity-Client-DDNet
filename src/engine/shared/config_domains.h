@@ -7,7 +7,7 @@
 
 CONFIG_DOMAIN(DDNET, "settings_ddnet.cfg", true)
 CONFIG_DOMAIN(ENTITY, "settings_entity.cfg", true)
-// E-Client
+// EClient
 CONFIG_DOMAIN(ENTITYBINDHWEEL, "entity_bindwheel.cfg", false)
 CONFIG_DOMAIN(ENTITYQUICKACTIONS, "entity_quickactions.cfg", false)
 // T-Client

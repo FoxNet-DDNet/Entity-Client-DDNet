@@ -548,7 +548,7 @@ Are you sure that you want to disconnect your dummy?
 == 더미 연결을 해제하시겠습니까?
 
 Welcome to DDNet
-== DDNet에 오신 것을 환영합니다.
+== DDNet에 오신 것을 환영합니다
 
 DDraceNetwork is a cooperative online game where the goal is for you and your group of tees to reach the finish line of the map. As a newcomer you should start on Novice servers, which host the easiest maps. Consider the ping to choose a server close to you.
 == DDraceNetwork는 온라인 협동 게임으로, 당신과 당신의 Tee 동료들이 맵의 결승선에 도달하는 것이 목표입니다. 당신이 초보자라면 가장 난이도가 낮은 맵들로 구성된 Novice 서버에서 시작할 것을 권장합니다. 핑을 고려해 당신의 근처에 있는 서버를 선택하십시오.
@@ -1127,9 +1127,6 @@ auto
 Tutorial
 == 튜토리얼
 
-Can't find a Tutorial server
-== 튜토리얼 서버를 찾을 수 없음
-
 Choose default eyes when joining a server
 == 서버 입장 시의 기본 눈을 선택합니다.
 
@@ -1321,20 +1318,8 @@ Hook collision line
 Hook collision line opacity
 == 갈고리 보조선 불투명도
 
-Colors of the hook collision line, in case of a possible collision with:
-== 갈고리 보조선 색상:
-
 Your movements are not taken into account when calculating the line colors
 == 당신의 움직임은 색상 계산에 고려되지 않습니다.
-
-Nothing hookable
-== 갈고리 불가
-
-Something hookable
-== 갈고리 가능
-
-A Tee
-== Tee 대상
 
 Loading assets
 == 에셋 로딩 중
@@ -1460,9 +1445,6 @@ Are you sure that you want to delete the demo '%s'?
 Unable to delete the demo '%s'
 == 데모 '%s'을(를) 삭제할 수 없음
 
-Save power by lowering refresh rate (higher input latency)
-== 화면 주사율을 낮춰 전력 절약 (입력 지연 증가)
-
 Open the settings file
 == 설정 파일을 엽니다.
 
@@ -1559,10 +1541,10 @@ Click to select server. Double click to join your friend.
 == 클릭해 서버를 선택합니다. 더블클릭해 친구가 있는 서버에 입장합니다.
 
 Click to remove this player from your friends list.
-== 클릭해 해당 플레이어를 친구 목록에서 제거합니다.
+== 클릭해 이 플레이어를 친구 목록에서 제거합니다.
 
 Click to remove this clan from your friends list.
-== 클릭해 해당 클랜을 친구 목록에서 제거합니다.
+== 클릭해 이 클랜을 친구 목록에서 제거합니다.
 
 Add friends by entering their name below or by clicking their name in the player list.
 == 아래에 이름을 입력하거나 플레이어 목록에서 이름을 클릭해 친구를 추가합니다.
@@ -1745,10 +1727,10 @@ Aim
 == 조준
 
 Active: Fire
-== 발사 활성화
+== 발사 활성 상태
 
 Active: Hook
-== 갈고리 활성화
+== 갈고리 활성 상태
 
 Moved ingame
 == 게임 내에서 이동됨
@@ -1806,11 +1788,11 @@ Unavailable for this player
 
 [Auto camera]
 Inactive
-== 비활성화
+== 비활성 상태
 
 [Auto camera]
 Active
-== 활성화
+== 활성 상태
 
 Match %d of %d
 == 경기 %d / %d
@@ -1995,7 +1977,7 @@ Disabled
 
 [Direct touch input]
 Active action
-== 동작 활성화
+== 활성 동작
 
 [Direct touch input]
 Aim
@@ -2013,16 +1995,16 @@ Direct touch input while spectating
 == 관전 중 직접 터치 입력
 
 Error loading touch controls
-== 터치 조작 로딩 오류
+== 터치 조작 설정 로딩 오류
 
 Could not load touch controls from file. See local console for details.
-== 파일로부터 터치 조작을 로딩할 수 없습니다. 세부사항은 로컬 콘솔을 확인하십시오.
+== 파일로부터 터치 조작 설정을 불러올 수 없습니다. 세부사항은 로컬 콘솔을 확인하십시오.
 
 Could not load default touch controls from file. See local console for details.
-== 파일로부터 기본 터치 조작을 로딩할 수 없습니다. 세부사항은 로컬 콘솔을 확인하십시오.
+== 파일로부터 기본 터치 조작 설정을 불러올 수 없습니다. 세부사항은 로컬 콘솔을 확인하십시오.
 
 Could not load touch controls from clipboard. See local console for details.
-== 클립보드로부터 터치 조작을 로딩할 수 없습니다. 세부사항은 로컬 콘솔을 확인하십시오.
+== 클립보드로부터 터치 조작 설정을 불러올 수 없습니다. 세부사항은 로컬 콘솔을 확인하십시오.
 
 Community
 == 커뮤니티
@@ -2333,7 +2315,7 @@ Inactive color
 == 비활성화 시 색상
 
 Preview button visibility while the editor is active.
-== 편집기가 활성화 상태일 때 버튼 표시 상태를 미리보기합니다.
+== 편집기 활성화 시의 버튼 표시 상태를 미리보기합니다.
 
 Show all buttons
 == 모든 버튼 표시
@@ -2378,7 +2360,7 @@ Zoom Allowed
 
 [Touch button visibilities]
 Vote Active
-== 투표 활성화
+== 투표 진행 시
 
 [Touch button visibilities]
 Dummy Allowed
@@ -2520,91 +2502,152 @@ Mute emoticons
 == 이모티콘 차단
 
 There's an unsaved change in the touch controls editor, you might want to save it.
-== 
+== 터치 조작 설정 편집기에 저장되지 않은 변경사항이 있습니다. 돌아가 해당 변경사항을 저장하실 수 있습니다.
 
 Start and connect to local server
-== 
+== 로컬 서버 시작 후 연결
 
 Add clan
-== 
+== 클랜 추가
 
 Info
-== 
+== 정보
 
 Button browser
-== 
+== 버튼 브라우저
 
 You can select buttons directly in the list below, or long press on a touch button on the screen to select it. You can also move and resize buttons by touch.
-== 
+== 아래 목록에서 직접 버튼을 선택하거나 화면상의 터치 버튼을 길게 눌러 선택하실 수 있습니다. 또한 터치를 통해 버튼의 위치와 크기를 조절하실 수 있습니다.
 
 Preview visibilities
-== 
+== 미리보기 표시
 
 You can manage your touch controls settings on this page. Only changes that are saved will be available after restarting the client. You can share your touch controls with others by exporting them to the clipboard.\n\nYou can find more detailed information about the touch controls on the DDNet Wiki.
-== 
+== 이 페이지에서 터치 조작 설정을 관리하실 수 있습니다. 클라이언트를 재시작한 후에는 저장된 변경사항만이 유지됩니다. 터치 조작을 클립보드로 내보내면 다른 사람에게 공유할 수 있습니다.\n\nDDNet 위키에서 터치 조작에 대한 더 자세한 정보를 찾으실 수 있습니다.
 
 Open DDNet Wiki
-== 
+== DDNet 위키 열기
 
 Buttons with this behavior execute console commands like regular key binds.
-== 
+== 이 행위에 대한 버튼은 콘솔 명령어 일반 키 바인드와 같은 콘솔 명령어를 실행합니다.
 
 Buttons with this behavior cycle between executing one of two or more specified commands.
-== 
+== 이 행위에 대한 버튼은 하나 또는 둘 이상의 특정 명령어를 순환하며 실행합니다.
 
 Buttons with this behavior execute some predefined actions.
-== 
+== 이 행위에 대한 버튼은 미리 정의된 동작을 실행합니다.
 
 Opens the ingame menu immediately when released.
-== 
+== 버튼을 놓을 시 인게임 메뉴를 엽니다.
 
 The extra menu button which toggles visibility of buttons with "Extra Menu" visibilities. Also opens the ingame menu on long press.
-== 
+== "기타 메뉴" 표시 상태를 가진 버튼들의 표시 여부를 전환하는 기타 메뉴 버튼입니다. 또한 길게 눌러 인게임 메뉴를 여실 수 있습니다.
 
 Opens the emoticon selector (this does not work with binds).
-== 
+== 이모티콘 선택창을 엽니다. (바인드로는 작동하지 않음)
 
 Opens the spectator menu (this does not work with binds).
-== 
+== 관전자 메뉴를 엽니다. (바인드로는 작동하지 않음)
 
 Swaps the active action (fire and hook) for direct touch input and virtual joysticks.
-== 
+== 직접 터치 입력과 가상 조이스틱의 활성 동작(발사 및 갈고리)을 전환합니다.
 
 Uses the active action with the current aiming position.
-== 
+== 현재 조준 위치에서 활성 동작을 실행합니다.
 
 Virtual joystick which uses the active action.
-== 
+== 활성 동작을 사용하는 가상 조이스틱
 
 Virtual joystick which only aims without using an action.
-== 
+== 동작 없이 조준만 하는 가상 조이스틱
 
 Virtual joystick which always uses fire.
-== 
+== 항상 무기를 발사하는 가상 조이스틱
 
 Virtual joystick which always uses hook.
-== 
+== 항상 갈고리를 사용하는 가상 조이스틱
 
 Player is ingame, i.e. not spectating.
-== 
+== 플레이어가 관전 상태가 아니며, 게임 중입니다.
 
 Zoom is allowed on this server.
-== 
+== 이 서버는 시야 조절을 허용합니다.
 
 A vote is currently active.
-== 
+== 현재 투표가 진행되고 있습니다.
 
 Dummy is allowed on this server.
-== 
+== 이 서버는 더미를 허용합니다.
 
 Dummy is currently connected.
-== 
+== 더미가 현재 연결돼 있습니다.
 
 Player is currently authed in rcon.
-== 
+== 플레이어가 현재 원격 콘솔에 인증돼 있습니다.
 
 Demo player is currently active.
-== 
+== 데모 재생기가 현재 활성 상태입니다.
 
 The extra menu with the given number is activated.
-== 
+== 지정된 번호의 기타 메뉴가 활성화됐습니다.
+
+Joining Tutorial server
+== 튜토리얼 서버에 입장 중
+
+There are no Tutorial servers available
+== 현재 접속이 가능한 튜토리얼 서버가 없습니다.
+
+Retrying…
+== 재시도 중…
+
+Error joining Tutorial server
+== 튜토리얼 서버 연결 오류
+
+Could not find a Tutorial server. Check your internet connection.
+== 튜토리얼 서버를 찾을 수 없습니다. 인터넷 연결 상태를 확인하십시오.
+
+You're playing on a local server because no online Tutorial server could be found.\n\nYour record will only be saved locally.
+== 현재 온라인 튜토리얼 서버가 발견되지 않아, 로컬 서버에서 플레이하고 있습니다.\n\n당신의 기록은 로컬 파일에만 저장될 것입니다.
+
+Could not find online Tutorial server.\nStarting and connecting to local server…
+== 온라인 튜토리얼 서버를 찾을 수 없습니다.\n로컬 서버 시작 및 연결 중…
+
+Waiting for local server to stop…
+== 로컬 서버 종료 대기 중…
+
+Waiting for local server to start…
+== 로컬 서버 시작 대기 중…
+
+Error loading communities
+== 커뮤니티 로딩 오류
+
+Click to remove this community from your favorites.
+== 클릭해 이 커뮤니티를 즐겨찾기에서 제거합니다.
+
+Click to add this community to your favorites.
+== 클릭해 이 커뮤니티를 즐겨찾기에 추가합니다.
+
+Update Rate
+== 업데이트 빈도
+
+Save power by lowering update rate (higher input latency)
+== 업데이트 빈도를 줄여 전력 절약 (입력 지연 시간 증가)
+
+Colors of the hook collision line:
+== 갈고리 보조선 색상:
+
+[Hook collision line color]
+When nothing is hookable
+== 갈고리 불가 시
+
+[Hook collision line color]
+When something is hookable
+== 갈고리 가능 시
+
+[Hook collision line color]
+When a Tee is hookable
+== Tee 대상 시
+
+[Hook collision line color]
+Hook collision line tip
+== 갈고리 끝부분

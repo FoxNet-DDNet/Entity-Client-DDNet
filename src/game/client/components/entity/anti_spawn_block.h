@@ -1,5 +1,5 @@
-#ifndef GAME_CLIENT_COMPONENTS_ENTITY_ANTISPAWNBLOCK_H
-#define GAME_CLIENT_COMPONENTS_ENTITY_ANTISPAWNBLOCK_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_ANTI_SPAWN_BLOCK_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_ANTI_SPAWN_BLOCK_H
 #include <game/client/component.h>
 
 class CAntiSpawnBlock : public CComponent
@@ -18,10 +18,10 @@ public:
 
 	void Reset(int Stat);
 
-	virtual int Sizeof() const override { return sizeof(*this); }
-	virtual void OnRender() override;
-	virtual void OnSelfDeath() override { Reset(STATE_NONE); }
-	virtual void OnStateChange(int NewState, int OldState) override;
+	int Sizeof() const override { return sizeof(*this); }
+	void OnRender() override;
+	void OnSelfDeath() override { Reset(STATE_NONE); }
+	void OnStateChange(int NewState, int OldState) override;
 };
 
-#endif
+#endif // GAME_CLIENT_COMPONENTS_ENTITY_ANTI_SPAWN_BLOCK_H

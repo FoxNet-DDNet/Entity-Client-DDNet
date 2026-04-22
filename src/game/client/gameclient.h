@@ -67,7 +67,6 @@
 #include "components/tooltips.h"
 #include "components/touch_controls.h"
 #include "components/voting.h"
-#include <memory>
 
 // Entity
 #include "components/entity/anti_spawn_block.h"
@@ -76,6 +75,7 @@
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
 #include "components/entity/map_overview.h"
+#include "components/entity/moving_tiles.h"
 #include "components/entity/physicball.h"
 #include "components/entity/quick_actions.h"
 
@@ -93,6 +93,7 @@
 #include "components/tclient/skinprofiles.h"
 #include "components/tclient/statusbar.h"
 #include "components/tclient/trails.h"
+#include "components/tclient/translate.h"
 #include "components/tclient/warlist.h"
 #include "ui.h"
 
@@ -256,6 +257,9 @@ public:
 	CPhysicBalls m_PhysicBalls;
 	CQuickActions m_QuickActions;
 
+	CMovingTiles m_MovingTilesBackground = CMovingTiles{false};
+	CMovingTiles m_MovingTilesForeground = CMovingTiles{true};
+
 	// T-Client
 	CBindChat m_Bindchat;
 	CBindWheel m_Bindwheel;
@@ -267,6 +271,7 @@ public:
 	CSkinProfiles m_SkinProfiles;
 	CStatusBar m_StatusBar;
 	CTrails m_Trails;
+	CTranslate m_Translate;
 	CWarList m_WarList;
 	CScripting m_Scripting;
 	CCustomCommunities m_CustomCommunities;
@@ -749,6 +754,8 @@ public:
 	void SendKill() const;
 	void SendReadyChange7();
 
+	// EClient
+	bool GetDummyFastInput(CNetObj_PlayerInput &DummyFastInput, const CNetObj_PlayerInput *pDummyInputData, const CCharacter *pDummyChar, int LocalTee, int DummyTee) const;
 	void ApplyPreInputs(int Tick, bool Direct, CGameWorld &GameWorld);
 
 	int m_aNextChangeInfo[NUM_DUMMIES];
@@ -787,6 +794,8 @@ public:
 	CGameWorld m_PredictedWorld;
 	CGameWorld m_PrevPredictedWorld;
 	// TClient
+	CGameWorld m_RegularPredictedWorld;
+	CGameWorld m_PrevRegularPredictedWorld;
 	CGameWorld m_ExtraPredictedWorld;
 	CGameWorld m_PredSmoothingWorld;
 
@@ -1070,8 +1079,7 @@ public:
 	std::optional<CServerInfo> m_ConnectServerInfo = std::nullopt;
 	void SetConnectInfo(const NETADDR *pAddress) override;
 
-
-	// E-Client
+	// EClient
 	void OnSelfDeath() override;
 
 	void OnServerBrowserRefresh() override;
@@ -1086,6 +1094,8 @@ public:
 	int GetClientId(const char *pName) override;
 	const char *GetClientName(int ClientId) override { return m_aClients[ClientId].m_aName; }
 	vec2 GetCursorWorldPos() const;
+
+	int m_WasWindowActive = 1;
 };
 
 ColorRGBA CalculateNameColor(ColorHSLA TextColorHSL);

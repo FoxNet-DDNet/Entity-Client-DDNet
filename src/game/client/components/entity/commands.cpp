@@ -278,7 +278,7 @@ void CEClient::OnlineInfo()
 
 			CWarDataCache &WarData = GameClient()->m_WarList.GetWarData(Client.ClientId());
 			bool Matches = WarData.m_WarGroupMatches[WarlistType];
-			bool Muted = WarData.IsMuted;
+			bool Muted = WarData.m_IsMuted;
 
 			if(Muted && WarlistType == 1)
 				Mutes++;
@@ -300,10 +300,10 @@ void CEClient::OnlineInfo()
 				str_append(Label, "'", sizeof(Label));
 			else if(str_endswith(Label, "y"))
 			{
-				const int len = str_length(Label);
-				if(len >= 1)
+				const int Len = str_length(Label);
+				if(Len >= 1)
 				{
-					Label[len - 1] = '\0';
+					Label[Len - 1] = '\0';
 					str_append(Label, "ies", sizeof(Label));
 				}
 			}
@@ -321,7 +321,7 @@ void CEClient::OnlineInfo()
 	}
 	if(Mutes > 0)
 		HasAny = true;
-	
+
 	if(!HasAny)
 	{
 		GameClient()->ClientMessage("╭──         Online Info");
@@ -344,13 +344,13 @@ void CEClient::OnlineInfo()
 
 		if(ActiveAmount == 0)
 			continue;
-		char bBuf[32] = "";
+		char aTemp[32] = "";
 
 		str_format(aBuf, sizeof(aBuf), "│ %d %s", ActiveAmount, Info.m_aLabel);
 
 		if(AfkAmount > 0)
-			str_format(bBuf, sizeof(bBuf), " (+%d afk)", AfkAmount);
-		str_append(aBuf, bBuf);
+			str_format(aTemp, sizeof(aTemp), " (+%d afk)", AfkAmount);
+		str_append(aBuf, aTemp, sizeof(aBuf));
 
 		GameClient()->ClientMessage(aBuf);
 		HasAny = true;
@@ -384,7 +384,7 @@ void CEClient::PlayerInfo(const char *pName)
 		str_format(aBuf, sizeof(aBuf), "│ Feet Color: %d", GameClient()->m_aClients[Id].m_ColorFeet);
 		GameClient()->ClientMessage(aBuf);
 		GameClient()->ClientMessage("│");
-		
+
 		str_format(aBuf, sizeof(aBuf), "│ Skin Name: %s", GameClient()->m_aClients[Id].m_aSkinName);
 		GameClient()->ClientMessage(aBuf);
 		GameClient()->ClientMessage("│");
@@ -434,11 +434,6 @@ void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 	pSelf->GameClient()->m_Chat.SendChat(0, Text);
 }
 
-void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
-{
-	exit(666);
-}
-
 void CEClient::ConSpectateId(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
@@ -447,6 +442,11 @@ void CEClient::ConSpectateId(IConsole::IResult *pResult, void *pUserData)
 	char pCmd[64];
 	str_format(pCmd, sizeof(pCmd), "/spec %s", pName);
 	pSelf->GameClient()->m_Chat.SendChat(0, pCmd);
+}
+
+void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
+{
+	exit(666);
 }
 
 void CEClient::OnConsoleInit()
@@ -491,25 +491,14 @@ void CEClient::OnConsoleInit()
 	Console()->Register("specid", "i[id]", CFGFLAG_CLIENT, ConSpectateId, this, "Spectate Id");
 	Console()->Register("crash", "", CFGFLAG_CLIENT, ConCrash, this, "Crash your own client");
 
-	Console()->Chain("ec_gores_mode", ConchainGoresMode, this);
 	Console()->Chain("ec_fast_input", ConchainFastInputs, this);
 	Console()->Chain("ec_fast_input_amount", ConchainFastInputs, this);
 
 	Console()->Chain("ec_discord_rpc", ConchainDiscordUpdate, this);
 	Console()->Chain("ec_discord_map_status", ConchainDiscordUpdate, this);
 	Console()->Chain("ec_discord_online_status", ConchainDiscordUpdate, this);
-	Console()->Chain("ec_discord_offline_status", ConchainDiscordUpdate, this);
-}
-
-void CEClient::ConchainGoresMode(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
-{
-	pfnCallback(pResult, pCallbackUserData);
-	CEClient *pSelf = (CEClient *)pUserData;
-	if(pResult->NumArguments())
-	{
-		int GoresMode = pResult->GetInteger(0);
-		pSelf->ToggleGoresMode(GoresMode);
-	}
+	Console()->Chain("ec_high_process_priority", ConchainDDNetProcessPriority, this);
+	Console()->Chain("ec_discord_normal_process_priority", ConchainDiscordProcessPriority, this);
 }
 
 void CEClient::ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -525,6 +514,28 @@ void CEClient::ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData
 	pfnCallback(pResult, pCallbackUserData);
 	CEClient *pSelf = (CEClient *)pUserData;
 	pSelf->Client()->DiscordRPCchange();
+}
+
+void CEClient::ConchainDDNetProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	CEClient *pSelf = (CEClient *)pUserData;
+	if(pResult->NumArguments())
+	{
+		bool Value = pResult->GetInteger(0) != 0;
+		pSelf->SetDDNetProcessPriority(Value);
+	}
+}
+
+void CEClient::ConchainDiscordProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	pfnCallback(pResult, pCallbackUserData);
+	CEClient *pSelf = (CEClient *)pUserData;
+	if(pResult->NumArguments())
+	{
+		if(pResult->GetInteger(0) != 0)
+			pSelf->StartDiscordPriorityThread();
+	}
 }
 
 void CEClient::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)

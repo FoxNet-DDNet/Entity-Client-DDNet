@@ -34,6 +34,7 @@ public:
 	{
 		AddFunctionInternal(pName, std::function(Function));
 	}
+	void SaveState();
 	void Run(IStorage *pStorage, const char *pFilename, const char *pArgs);
 };
 

@@ -1,8 +1,10 @@
 ﻿#include "entity.h"
 
+#include <base/log.h>
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
+#include <base/thread.h>
 #include <base/vmath.h>
 
 #include <engine/client.h>
@@ -27,7 +29,22 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
-#include <base/log.h>
+#if defined(CONF_FAMILY_WINDOWS)
+#include <Windows.h>
+#endif
+
+#if defined(CONF_FAMILY_WINDOWS)
+#include <TlHelp32.h>
+#include <processthreadsapi.h>
+
+static bool IsDiscordProcessName(const wchar_t *pProcessName)
+{
+	return _wcsicmp(pProcessName, L"Discord.exe") == 0 ||
+	       _wcsicmp(pProcessName, L"DiscordCanary.exe") == 0 ||
+	       _wcsicmp(pProcessName, L"DiscordPTB.exe") == 0 ||
+	       _wcsicmp(pProcessName, L"DiscordSystemHelper.exe") == 0;
+}
+#endif
 
 void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 {
@@ -49,7 +66,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(Client()->DummyConnected() && !str_comp(aName, GameClient()->m_aClients[GameClient()->m_aLocalIds[1]].m_aName))
 		return;
 
-	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted || (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1]));
+	bool HiddenMessage = GameClient()->m_WarList.m_WarPlayers[ClientId].m_IsMuted || (g_Config.m_ClHideEnemyChat && (GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1]));
 
 	if(!HiddenMessage)
 	{
@@ -64,7 +81,7 @@ void CEClient::OnChatMessage(int ClientId, int Team, const char *pMsg)
 	if(ClientId != m_LastReplyId)
 	{
 		char Reply[MAX_LINE_LENGTH];
-		if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].IsMuted)
+		if(g_Config.m_ClReplyMuted && GameClient()->m_WarList.m_WarPlayers[ClientId].m_IsMuted)
 		{
 			str_format(Reply, sizeof(Reply), "%s: %s", aName, g_Config.m_ClAutoReplyMutedMsg);
 
@@ -134,18 +151,18 @@ void CEClient::AutoJoinTeam()
 					return;
 
 				int Team = GameClient()->m_Teams.Team(ClientId);
-				char TeamChar[256];
+				char TeamChar[8];
 				str_format(TeamChar, sizeof(TeamChar), "%d", Team);
 
 				int PrevTeam = -1;
 
 				if(!GameClient()->m_Teams.SameTeam(Local, ClientId) && (Team > 0) && !m_JoinedTeam)
 				{
-					char aBuf[2048] = "/team ";
+					char aBuf[48] = "/team ";
 					str_append(aBuf, TeamChar);
 					GameClient()->m_Chat.SendChat(0, aBuf);
 
-					char Joined[2048] = "attempting to auto Join ";
+					char Joined[48] = "attempting to auto Join ";
 					str_append(Joined, GameClient()->m_aClients[ClientId].m_aName);
 					GameClient()->ClientMessage(Joined);
 
@@ -154,7 +171,7 @@ void CEClient::AutoJoinTeam()
 				}
 				if(GameClient()->m_Teams.SameTeam(Local, ClientId) && m_JoinedTeam)
 				{
-					char Joined[2048] = "Successfully Joined The Team of ";
+					char Joined[48] = "Successfully Joined The Team of ";
 					str_append(Joined, GameClient()->m_aClients[ClientId].m_aName);
 					GameClient()->ClientMessage(Joined);
 
@@ -166,7 +183,7 @@ void CEClient::AutoJoinTeam()
 				}
 				if(!GameClient()->m_Teams.SameTeam(Local, ClientId) && m_AttemptedJoinTeam)
 				{
-					char Joined[2048] = "Couldn't Join The Team of ";
+					char Joined[48] = "Couldn't Join The Team of ";
 					str_append(Joined, GameClient()->m_aClients[ClientId].m_aName);
 					GameClient()->ClientMessage(Joined);
 
@@ -185,9 +202,7 @@ void CEClient::AutoJoinTeam()
 				}
 				if(LocalTeam != Team)
 				{
-					PrevTeam = Team;
 					m_AttemptedJoinTeam = false;
-					LocalTeam = GameClient()->m_Teams.Team(Local);
 				}
 				return;
 			}
@@ -217,74 +232,8 @@ void CEClient::GoresMode()
 			return;
 	}
 
-	int Key = g_Config.m_ClGoresModeKey;
-	if(Key < KEY_FIRST || Key >= KEY_LAST)
-	{
-		g_Config.m_ClGoresMode = 0;
-		dbg_msg("E-Client", "Invalid key: %d", Key);
-		return;
-	}
-	const char *pKeyName = Input()->KeyName(Key);
-	const CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
-	const char *pBind = GameClient()->m_Binds.GetKeyBinding(BindSlot.m_ModifierMask, BindSlot.m_Key);
-	if(!pBind)
-		return;
-
-	bool GoresBind = false;
-
-	if(!str_comp(pBind, "+fire;+prevweapon"))
-		GoresBind = true;
-
-	if(!GoresBind)
-		return;
-
-	if(GoresBind)
-	{
-		if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon == 0)
-		{
-			GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = 2;
-		}
-	}
-}
-
-void CEClient::GoresModeSave()
-{
-	int Key = g_Config.m_ClGoresModeKey;
-	if(Key < KEY_FIRST || Key >= KEY_LAST)
-	{
-		g_Config.m_ClGoresMode = 0;
-		dbg_msg("E-Client", "Invalid key: %d", Key);
-		return;
-	}
-	const char *pKeyName = Input()->KeyName(Key);
-
-	const CBindSlot BindSlot = GameClient()->m_Binds.GetBindSlot(pKeyName);
-	const char *pBind = GameClient()->m_Binds.GetKeyBinding(BindSlot.m_ModifierMask, BindSlot.m_Key);
-	if(!pBind)
-		return;
-	str_copy(g_Config.m_ClGoresModeSaved, pBind);
-
-	GameClient()->m_Binds.Bind(Key, "+fire;+prevweapon");
-}
-
-void CEClient::GoresModeRestore()
-{
-	int Key = g_Config.m_ClGoresModeKey;
-	if(Key < KEY_FIRST || Key >= KEY_LAST)
-	{
-		g_Config.m_ClGoresMode = 0;
-		dbg_msg("E-Client", "Invalid key: %d", Key);
-		return;
-	}
-	GameClient()->m_Binds.Bind(Key, g_Config.m_ClGoresModeSaved);
-}
-
-void CEClient::ToggleGoresMode(bool Value)
-{
-	if(Value)
-		GoresModeSave();
-	else
-		GoresModeRestore();
+	if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon == 0)
+		GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = WEAPON_GUN + 1;
 }
 
 void CEClient::OnConnect()
@@ -295,8 +244,8 @@ void CEClient::OnConnect()
 	// if current server is type "Gores", turn the config on, else turn it off
 	CServerInfo CurrentServerInfo;
 	Client()->GetServerInfo(&CurrentServerInfo);
-	static bool SentInfoMessage = false;
-	if(m_FirstLaunch && SentInfoMessage)
+	static bool s_SentInfoMessage = false;
+	if(m_FirstLaunch && !s_SentInfoMessage)
 	{
 		GameClient()->ClientMessage("╭──                 E-Client Info");
 		GameClient()->ClientMessage("│ Seems like it's your first time running the client!");
@@ -309,13 +258,13 @@ void CEClient::OnConnect()
 		GameClient()->ClientMessage("│ which means no one will see them.");
 		GameClient()->ClientMessage("│ Messages that start with \"!\" will be sent");
 		GameClient()->ClientMessage("╰───────────────────────");
-		SentInfoMessage = true;
+		s_SentInfoMessage = true;
 	}
 	else
 	{
 		if(g_Config.m_ClAutoEnableGoresMode)
 		{
-			if(str_find(CurrentServerInfo.m_aGameType, "Gores"))
+			if(str_find_nocase(CurrentServerInfo.m_aGameType, "Gores"))
 			{
 				m_GoresServer = true;
 				g_Config.m_ClGoresMode = 1;
@@ -368,8 +317,8 @@ void CEClient::NotifyOnMove()
 			const CNetObj_Character *pOtherChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
 			vec2 OtherPos = GameClient()->m_aClients[ClientId].m_RenderPos;
 
-			float dist = distance(LocalPos, OtherPos);
-			if(dist < MaxDist + MaxDist)
+			float Dist = distance(LocalPos, OtherPos);
+			if(Dist < MaxDist + MaxDist)
 				Moved = true;
 
 			// check if the player is hooked to the local player
@@ -378,8 +327,8 @@ void CEClient::NotifyOnMove()
 
 			// Check for hammer firing
 			bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
-			dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
-			if(Hammering && dist < 70.0f)
+			Dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
+			if(Hammering && Dist < 70.0f)
 				Moved = true;
 		}
 
@@ -410,26 +359,25 @@ void CEClient::UpdateVolleyball()
 
 void CEClient::UpdateRainbow()
 {
-	static bool m_RainbowWasOn = false;
+	static bool s_RainbowWasOn = false;
 
-	if(g_Config.m_ClServerRainbow && !m_RainbowWasOn)
+	if(g_Config.m_ClServerRainbow && !s_RainbowWasOn)
 	{
-		m_RainbowWasOn = false;
+		s_RainbowWasOn = true;
 	}
-	if(m_RainbowWasOn && !g_Config.m_ClServerRainbow)
+	if(s_RainbowWasOn && !g_Config.m_ClServerRainbow)
 	{
 		GameClient()->SendInfo(false);
 		GameClient()->SendDummyInfo(false);
-		m_RainbowWasOn = false;
+		s_RainbowWasOn = false;
 	}
 	// Makes the slider look smoother
-	static float Speed = 1.0f;
-	Speed = Speed + m_RainbowSpeed * Client()->FrameTimeAverage() * 0.1f;
+	static float s_Speed = 1.0f;
+	s_Speed = s_Speed + m_RainbowSpeed * Client()->FrameTimeAverage() * 0.1f;
 
-	if(Speed > 255.f * 10) // Reset if Value gets highish, why? why not :D
-		Speed = 1.0f;
-
-	float h = round_to_int(Speed) % 255 / 255.f;
+	if(s_Speed > 255.f * 10) // Reset if Value gets highish, why? why not :D
+		s_Speed = 1.0f;
+	float h = round_to_int(s_Speed) % 255 / 255.f;
 	float s = abs(m_RainbowSat[g_Config.m_ClDummy] - 255);
 	float l = abs(m_RainbowLht[g_Config.m_ClDummy] - 255);
 
@@ -484,8 +432,97 @@ void CEClient::OnShutdown()
 	g_Config.m_ClKillCounter = m_KillCount;
 }
 
+void CEClient::SetDDNetProcessPriority(bool Set)
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	if(!SetPriorityClass(GetCurrentProcess(), Set ? HIGH_PRIORITY_CLASS : NORMAL_PRIORITY_CLASS))
+	{
+		log_info("entity-client", Set ? "Failed to set process priority" : "Failed to reset process priority");
+		return;
+	}
+	if(!SetThreadPriority(GetCurrentThread(), Set ? THREAD_PRIORITY_HIGHEST : THREAD_PRIORITY_NORMAL))
+	{
+		log_info("entity-client", Set ? "Failed to set thread priority" : "Failed to reset thread priority");
+		return;
+	}
+#endif
+}
+
+void CEClient::DiscordPriorityThread(void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+	pSelf->SetDiscordProcessesNormalPriority();
+	pSelf->m_DiscordPriorityDelay.store(time_get() + time_freq() * 30);
+	pSelf->m_DiscordPriorityThreadRunning.store(false);
+}
+
+void CEClient::StartDiscordPriorityThread()
+{
+	// Don't start the thread if it's already running
+	if(m_DiscordPriorityThreadRunning.load())
+		return;
+
+	if(m_pDiscordPriorityThread)
+	{
+		thread_wait(m_pDiscordPriorityThread);
+		m_pDiscordPriorityThread = nullptr;
+	}
+
+	m_DiscordPriorityDelay.store(0);
+	m_DiscordPriorityThreadRunning.store(true);
+	m_pDiscordPriorityThread = thread_init(DiscordPriorityThread, this, "discord-priority");
+}
+
+void CEClient::SetDiscordProcessesNormalPriority()
+{
+#if defined(CONF_FAMILY_WINDOWS)
+	HANDLE hSnapshot = CreateToolhelp32Snapshot(TH32CS_SNAPPROCESS, 0);
+	if(hSnapshot == INVALID_HANDLE_VALUE)
+	{
+		log_info("entity-client", "Failed to create process snapshot");
+		return;
+	}
+
+	PROCESSENTRY32 Entry;
+	mem_zero(&Entry, sizeof(Entry));
+	Entry.dwSize = sizeof(Entry);
+
+	int Changed = 0;
+	int Failed = 0;
+
+	if(Process32First(hSnapshot, &Entry))
+	{
+		do
+		{
+			if(!IsDiscordProcessName(Entry.szExeFile))
+				continue;
+
+			HANDLE hProcess = OpenProcess(PROCESS_SET_INFORMATION | PROCESS_QUERY_LIMITED_INFORMATION, FALSE, Entry.th32ProcessID);
+			if(!hProcess)
+			{
+				Failed++;
+				continue;
+			}
+
+			if(SetPriorityClass(hProcess, NORMAL_PRIORITY_CLASS))
+				Changed++;
+			else
+				Failed++;
+
+			CloseHandle(hProcess);
+		} while(Process32Next(hSnapshot, &Entry));
+	}
+
+	CloseHandle(hSnapshot);
+#endif
+}
+
 void CEClient::OnInit()
 {
+	SetDDNetProcessPriority(g_Config.m_ClHighProcessPriority);
+	if(g_Config.m_ClDiscordNormalProcessPriority)
+		StartDiscordPriorityThread();
+
 	// On client load
 	TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 
@@ -530,7 +567,11 @@ void CEClient::OnStateChange(int NewState, int OldState)
 
 void CEClient::OnRender()
 {
-	UpdateRainbow();
+	const int64_t DiscordPriorityDelay = m_DiscordPriorityDelay.load();
+	if(g_Config.m_ClDiscordNormalProcessPriority && !m_DiscordPriorityThreadRunning.load() && DiscordPriorityDelay < time_get())
+	{
+		StartDiscordPriorityThread();
+	}
 
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return;
@@ -547,4 +588,9 @@ void CEClient::OnRender()
 void CEClient::OnSelfDeath()
 {
 	m_KillCount++;
+}
+
+void CEClient::OnFocusChange(bool IsFocused)
+{
+	SetDDNetProcessPriority(g_Config.m_ClHighProcessPriority);
 }

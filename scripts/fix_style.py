@@ -42,7 +42,15 @@ def find_clang_format(version):
 		"clang-format",
 		f"clang-format-{version}",
 		f"/opt/clang-format-static/clang-format-{version}",
-	):
+	]
+
+	exact_paths = [
+		f"clang-format-{version}",
+		f"/opt/clang-format-static/clang-format-{version}",
+		"clang-format",
+	]
+
+	for binary in exact_paths:
 		try:
 			out = subprocess.check_output([binary, "--version"])
 			version_output = out.decode("utf-8")
@@ -50,7 +58,7 @@ def find_clang_format(version):
 				return binary
 		except (FileNotFoundError, subprocess.CalledProcessError):
 			continue
-	
+
 	# If exact version not found, try to find any working clang-format
 	print(f"Warning: clang-format version {version} not found, trying any available version...")
 	for binary in common_paths:
@@ -61,7 +69,7 @@ def find_clang_format(version):
 			return binary
 		except (FileNotFoundError, subprocess.CalledProcessError):
 			continue
-	
+
 	print(f"Found no clang-format (looking for version {version})")
 	sys.exit(-1)
 

@@ -1,3 +1,8 @@
+#include "anti_spawn_block.h"
+
+#include <base/system.h>
+#include <base/vmath.h>
+
 #include <engine/client.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
@@ -6,11 +11,6 @@
 #include <game/client/components/chat.h>
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
-
-#include <base/system.h>
-#include <base/vmath.h>
-
-#include "anti_spawn_block.h"
 
 void CAntiSpawnBlock::Reset(int State)
 {

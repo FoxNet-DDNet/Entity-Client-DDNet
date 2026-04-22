@@ -1,6 +1,7 @@
 #include "bg_draw.h"
 
-#include <base/log.h>
+#include <base/io.h>
+#include <base/system.h>
 
 #include <engine/client.h>
 #include <engine/external/spt.h>
@@ -90,7 +91,7 @@ private:
 	void AddQuads(IGraphics::CFreeformItem *pFreeformItem, int Count, ColorRGBA Color)
 	{
 		m_QuadCount += Count;
-		if(m_vQuadContainerIndexes.size() == 0)
+		if(m_vQuadContainerIndexes.empty())
 		{
 			m_vQuadContainerIndexes.push_back(m_Graphics.CreateQuadContainer(false));
 		}
@@ -128,7 +129,7 @@ public:
 	void Update(const CBgDrawItemData &Data)
 	{
 		Clear();
-		if(Data.size() == 0)
+		if(Data.empty())
 		{
 			return;
 		}
@@ -358,23 +359,23 @@ static IOHANDLE BgDrawOpenFile(CGameClient &This, const char *pFilename, int Fla
 	{
 		// Create folder
 		if(!This.Storage()->CreateFolder("bgdraw", IStorage::TYPE_SAVE))
-			This.Echo(Localize("Failed to create bgdraw folder", "bgdraw"));
+			This.Echo(("Failed to create bgdraw folder"));
 	}
 	return This.Storage()->OpenFile(aFilename, Flags, IStorage::TYPE_SAVE);
 }
 
 bool CBgDraw::Save(const char *pFilename, bool Verbose)
 {
-	if(m_pvItems->size() == 0)
+	if(m_pvItems->empty())
 	{
 		if(Verbose)
-			GameClient()->ClientMessage(Localize("No items to write", "bgdraw"));
+			GameClient()->Echo(("No items to write"));
 		return false;
 	}
 	if(!m_Dirty)
 	{
 		if(Verbose)
-			GameClient()->ClientMessage(Localize("No changes since last save", "bgdraw"));
+			GameClient()->Echo(("No changes since last save"));
 		return false;
 	}
 	m_Dirty = false;
@@ -388,8 +389,8 @@ bool CBgDraw::Save(const char *pFilename, bool Verbose)
 	{
 		if(!BgDrawFile::Write(Handle, Item.Data()))
 		{
-			str_format(aMsg, sizeof(aMsg), Localize("Writing item %d failed", "bgdraw"), Written);
-			GameClient()->ClientMessage(aMsg);
+			str_format(aMsg, sizeof(aMsg), ("Writing item %d failed"), Written);
+			GameClient()->Echo(aMsg);
 			Success = false;
 			break;
 		}
@@ -397,8 +398,8 @@ bool CBgDraw::Save(const char *pFilename, bool Verbose)
 	}
 	if(Verbose || !Success)
 	{
-		str_format(aMsg, sizeof(aMsg), Localize("Written %d items", "bgdraw"), Written);
-		GameClient()->ClientMessage(aMsg);
+		str_format(aMsg, sizeof(aMsg), ("Written %d items"), Written);
+		GameClient()->Echo(aMsg);
 	}
 	io_close(Handle);
 	return Success;
@@ -434,10 +435,10 @@ bool CBgDraw::Load(const char *pFilename, bool Verbose)
 	{
 		char aInfo[256];
 		if(ItemsDiscarded == 0)
-			str_format(aInfo, sizeof(aInfo), Localize("Loaded %d items", "bgdraw"), ItemsLoaded);
+			str_format(aInfo, sizeof(aInfo), "Loaded %d items", ItemsLoaded);
 		else
-			str_format(aInfo, sizeof(aInfo), Localize("Loaded %d items (discarded %d items)", "bgdraw"), ItemsLoaded - ItemsDiscarded, ItemsDiscarded);
-		GameClient()->ClientMessage(aInfo);
+			str_format(aInfo, sizeof(aInfo), "Loaded %d items (discarded %d items)", ItemsLoaded - ItemsDiscarded, ItemsDiscarded);
+		GameClient()->Echo(aInfo);
 	}
 
 	return true;
@@ -594,7 +595,7 @@ void CBgDraw::OnStateChange(int NewState, int OldState)
 	if(OldState == IClient::STATE_ONLINE || OldState == IClient::STATE_DEMOPLAYBACK)
 	{
 		if(g_Config.m_TcBgDrawAutoSaveLoad > 0)
-			Save(nullptr, true);
+			Save(nullptr, false);
 	}
 	Reset();
 	m_NextAutoSave = AUTO_SAVE_INTERVAL;

@@ -3,6 +3,8 @@
 #ifndef GAME_CLIENT_COMPONENTS_COUNTRYFLAGS_H
 #define GAME_CLIENT_COMPONENTS_COUNTRYFLAGS_H
 
+#include <base/str.h>
+
 #include <engine/graphics.h>
 
 #include <game/client/component.h>
@@ -15,7 +17,7 @@ public:
 	struct CCountryFlag
 	{
 		int m_CountryCode;
-		char m_aCountryCodeString[16]; // E-Client
+		char m_aCountryCodeString[16]; // EClient
 		IGraphics::CTextureHandle m_Texture;
 
 		bool operator<(const CCountryFlag &Other) const { return str_comp(m_aCountryCodeString, Other.m_aCountryCodeString) < 0; }
@@ -33,7 +35,7 @@ public:
 private:
 	enum
 	{
-		CODE_LB = -999, // E-Client
+		CODE_LB = -999, // EClient
 		CODE_UB = 999,
 		CODE_RANGE = CODE_UB - CODE_LB + 1,
 	};

@@ -4,6 +4,10 @@
 
 #include "ui.h"
 
+#include <base/dbg.h>
+#include <base/mem.h>
+#include <base/str.h>
+
 #include <engine/keys.h>
 #include <engine/shared/config.h>
 
@@ -476,7 +480,7 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_SelectionStart = str_utf8_offset_bytes_to_chars(pDisplayStr, DisplayCursorOffset);
 			Cursor.m_SelectionEnd = str_utf8_offset_bytes_to_chars(pDisplayStr, DisplayCompositionEnd);
 			TextRender()->TextSelectionColor(1.0f, 1.0f, 1.0f, 0.8f);
-			// E-Client
+			// EClient
 			if(g_Config.m_ClChatColorParsing)
 				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
 			else
@@ -493,7 +497,7 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_CalculateSelectionMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_SELECTION_MODE_CALCULATE : TEXT_CURSOR_SELECTION_MODE_SET;
 			Cursor.m_SelectionStart = str_utf8_offset_bytes_to_chars(pDisplayStr, Start);
 			Cursor.m_SelectionEnd = str_utf8_offset_bytes_to_chars(pDisplayStr, End);
-			// E-Client
+			// EClient
 			if(g_Config.m_ClChatColorParsing)
 				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
 			else
@@ -504,7 +508,7 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_CursorMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_CURSOR_MODE_CALCULATE : TEXT_CURSOR_CURSOR_MODE_SET;
 			Cursor.m_CursorCharacter = str_utf8_offset_bytes_to_chars(pDisplayStr, CaretOffset);
 			Cursor.m_CalculateSelectionMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_SELECTION_MODE_CALCULATE : TEXT_CURSOR_SELECTION_MODE_NONE;
-			// E-Client
+			// EClient
 			if(g_Config.m_ClChatColorParsing)
 				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
 			else
@@ -606,7 +610,6 @@ void CLineInput::RenderCandidates()
 
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
-	Graphics()->BlendNormal();
 
 	// Draw window shadow
 	Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.8f);

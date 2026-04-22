@@ -66,6 +66,11 @@ class CPhysicBalls : public CComponent
 	bool TestBox(vec2 Pos, float Size) const;
 
 public:
+	size_t GetBallCount() const { return m_vBalls.size(); }
+
+	void NewBallPlayer(float Size);
+	void NewBallCursor(float Size);
+
 	void OnExplosion(vec2 Pos, bool SameTeam);
 
 	int Sizeof() const override { return sizeof(*this); }

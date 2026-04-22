@@ -38,7 +38,7 @@ class CVoting : public CComponent
 	void RenderBars(CUIRect Bars) const;
 
 public:
-	void Callvote(const char *pType, const char *pValue, const char *pReason); // E-Client
+	void Callvote(const char *pType, const char *pValue, const char *pReason); // EClient
 
 	CVoting();
 	int Sizeof() const override { return sizeof(*this); }

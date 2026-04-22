@@ -137,7 +137,7 @@ public:
 	int m_FreezeAccumulation;
 	int m_AliveAccumulation;
 	// TClient
-	CNetObj_PlayerInput *LatestInput() { return &m_LatestInput; };
+	CNetObj_PlayerInput *LatestInput() { return &m_LatestInput; }
 
 private:
 	// weapon info

@@ -3,6 +3,8 @@
 
 #include "effects.h"
 
+#include <base/time.h>
+
 #include <engine/demo.h>
 #include <engine/shared/config.h>
 
@@ -513,7 +515,7 @@ void CEffects::OnRender()
 	}
 	else
 		m_AddXhz = false;
-		
+
 	if(m_Add50hz)
 		GameClient()->m_Flow.Update();
 }

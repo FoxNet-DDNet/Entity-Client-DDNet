@@ -1,7 +1,11 @@
-﻿/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
+/* (c) Magnus Auvinen. See licence.txt in the root of the distribution for more information. */
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #include "menus.h"
 
+#include <base/log.h>
+#include <base/time.h>
+
+#include <engine/engine.h>
 #include <engine/favorites.h>
 #include <engine/font_icons.h>
 #include <engine/friends.h>
@@ -18,7 +22,7 @@
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
-static constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f; // E-Client
+static constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f; // EClient
 static constexpr ColorRGBA HIGHLIGHTED_TEXT_COLOR = ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f);
 
 static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Inside)
@@ -59,43 +63,6 @@ static void FormatServerbrowserPing(char (&aBuffer)[N], const CServerInfo *pInfo
 static ColorRGBA GetPingTextColor(int Latency)
 {
 	return color_cast<ColorRGBA>(ColorHSLA((300.0f - std::clamp(Latency, 0, 300)) / 1000.0f, 1.0f, 0.5f));
-}
-
-static ColorRGBA GetGametypeTextColor(const char *pGametype)
-{
-	ColorHSLA HslaColor;
-	if(str_comp(pGametype, "DM") == 0 || str_comp(pGametype, "TDM") == 0 || str_comp(pGametype, "CTF") == 0 || str_comp(pGametype, "LMS") == 0 || str_comp(pGametype, "LTS") == 0)
-		HslaColor = ColorHSLA(0.33f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "catch"))
-		HslaColor = ColorHSLA(0.17f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "dm") || str_find_nocase(pGametype, "tdm") || str_find_nocase(pGametype, "ctf") || str_find_nocase(pGametype, "lms") || str_find_nocase(pGametype, "lts"))
-	{
-		if(pGametype[0] == 'i' || pGametype[0] == 'g')
-			HslaColor = ColorHSLA(0.0f, 1.0f, 0.75f);
-		else
-			HslaColor = ColorHSLA(0.40f, 1.0f, 0.75f);
-	}
-	else if(str_find_nocase(pGametype, "f-ddrace") || str_find_nocase(pGametype, "freeze"))
-		HslaColor = ColorHSLA(0.0f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "fng"))
-		HslaColor = ColorHSLA(0.83f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "gores"))
-		HslaColor = ColorHSLA(0.525f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "BW"))
-		HslaColor = ColorHSLA(0.05f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "ddracenet") || str_find_nocase(pGametype, "ddnet") || str_find_nocase(pGametype, "0xf"))
-		HslaColor = ColorHSLA(0.58f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "ddrace") || str_find_nocase(pGametype, "mkrace"))
-		HslaColor = ColorHSLA(0.75f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "race") || str_find_nocase(pGametype, "fastcap"))
-		HslaColor = ColorHSLA(0.46f, 1.0f, 0.75f);
-	else if(str_find_nocase(pGametype, "s-ddr"))
-		HslaColor = ColorHSLA(1.0f, 1.0f, 0.7f);
-	else if(str_find_nocase(pGametype, "FoxNetwork"))
-		HslaColor = ColorHSLA(0.72f, 0.68f, 0.73f);
-	else
-		HslaColor = ColorHSLA(1.0f, 1.0f, 1.0f);
-	return color_cast<ColorRGBA>(HslaColor);
 }
 
 void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemActivated)
@@ -407,7 +374,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				Props.m_EnableWidthCheck = false;
 				if(g_Config.m_UiColorizeGametype)
 				{
-					TextRender()->TextColor(GetGametypeTextColor(pItem->m_aGameType));
+					TextRender()->TextColor(pItem->m_GametypeColor);
 				}
 				Ui()->DoLabelStreamed(*pUiElement->Rect(UI_ELEM_GAMETYPE), &Button, pItem->m_aGameType, FontSize, TEXTALIGN_ML, Props);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
@@ -567,7 +534,7 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 			s_FilterInput.SelectAll();
 		}
 		if(Ui()->DoClearableEditBox(&s_FilterInput, &QuickSearch, 12.0f))
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 	}
 
 	// render quick exclude
@@ -596,7 +563,7 @@ void CMenus::RenderServerbrowserStatusBox(CUIRect StatusBox, bool WasListboxItem
 			s_ExcludeInput.SelectAll();
 		}
 		if(Ui()->DoClearableEditBox(&s_ExcludeInput, &QuickExclude, 12.0f))
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 	}
 
 	// render status
@@ -758,7 +725,7 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 	Button.VSplitRight(60.0f, nullptr, &Button);
 	static CLineInput s_GametypeInput(g_Config.m_BrFilterGametype, sizeof(g_Config.m_BrFilterGametype));
 	if(Ui()->DoEditBox(&s_GametypeInput, &Button, FontSize))
-		Client()->ServerBrowserUpdate();
+		ServerBrowserUpdate();
 
 	// server address
 	View.HSplitTop(6.0f, nullptr, &View);
@@ -768,7 +735,7 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 	Button.VSplitRight(60.0f, nullptr, &Button);
 	static CLineInput s_FilterServerAddressInput(g_Config.m_BrFilterServerAddress, sizeof(g_Config.m_BrFilterServerAddress));
 	if(Ui()->DoEditBox(&s_FilterServerAddressInput, &Button, FontSize))
-		Client()->ServerBrowserUpdate();
+		ServerBrowserUpdate();
 
 	// player country
 	{
@@ -806,7 +773,10 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		{
 			g_Config.m_BrIndicateFinished ^= 1;
 			if(g_Config.m_BrIndicateFinished)
+			{
 				ServerBrowser()->Refresh(ServerBrowser()->GetCurrentType());
+				UpdateWarlistCache(); // EClient
+			}
 		}
 
 		if(g_Config.m_BrIndicateFinished)
@@ -902,7 +872,7 @@ void CMenus::ResetServerbrowserFilters()
 		UpdateCommunityCache(true);
 	}
 
-	Client()->ServerBrowserUpdate();
+	ServerBrowserUpdate();
 }
 
 void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
@@ -915,13 +885,11 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 {
 	vItemIds.resize(MaxItems);
 
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollbarWidth = 10.0f;
 	ScrollParams.m_ScrollbarMargin = 3.0f;
 	ScrollParams.m_ScrollUnit = 2.0f * ItemHeight;
-	ScrollRegion.Begin(&View, &ScrollOffset, &ScrollParams);
-	View.y += ScrollOffset.y;
+	ScrollRegion.Begin(&View, &ScrollParams);
 
 	CUIRect Row;
 	int ColumnIndex = 0;
@@ -999,7 +967,7 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 				}
 			}
 
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 			if(UpdateCommunityCacheOnChange)
 				UpdateCommunityCache(true);
 		}
@@ -1010,7 +978,7 @@ void CMenus::RenderServerbrowserDDNetFilter(CUIRect View,
 			{
 				Filter.Remove(GetItemName(j));
 			}
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 			if(UpdateCommunityCacheOnChange)
 				UpdateCommunityCache(true);
 		}
@@ -1196,7 +1164,7 @@ CUi::EPopupMenuFunctionResult CMenus::PopupCountrySelection(void *pContext, CUIR
 	{
 		g_Config.m_BrFilterCountry = 1;
 		g_Config.m_BrFilterCountryIndex = pPopupContext->m_Selection;
-		pMenus->Client()->ServerBrowserUpdate();
+		pMenus->ServerBrowserUpdate();
 		return CUi::POPUP_CLOSE_CURRENT;
 	}
 
@@ -1258,7 +1226,7 @@ void CMenus::RenderServerbrowserInfo(CUIRect View)
 						Favorites()->AllowPing(pSelectedServer->m_aAddresses, pSelectedServer->m_NumAddresses, true);
 					}
 				}
-				Client()->ServerBrowserUpdate();
+				ServerBrowserUpdate();
 			}
 			if(pSelectedServer->m_Favorite != TRISTATE::NONE)
 			{
@@ -1266,7 +1234,7 @@ void CMenus::RenderServerbrowserInfo(CUIRect View)
 				if(DoButton_CheckBox_Tristate(&s_LeakIpButton, Localize("Leak IP"), pSelectedServer->m_FavoriteAllowPing, &ButtonLeakIp))
 				{
 					Favorites()->AllowPing(pSelectedServer->m_aAddresses, pSelectedServer->m_NumAddresses, pSelectedServer->m_FavoriteAllowPing == TRISTATE::NONE);
-					Client()->ServerBrowserUpdate();
+					ServerBrowserUpdate();
 				}
 			}
 		}
@@ -1368,7 +1336,7 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 
 			if(Time.has_value())
 			{
-				str_time((int64_t)Time.value() * 100, TIME_HOURS, aTemp, sizeof(aTemp));
+				str_time((int64_t)Time.value() * 100, ETimeFormat::HOURS, aTemp, sizeof(aTemp));
 			}
 			else
 			{
@@ -1431,7 +1399,10 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 					if(Warlist.m_ServerIndex != pSelectedServer->m_ServerIndex)
 						continue;
 
-					if(str_comp(pName, Warlist.m_aName) == 0 || (str_comp(CurrentClient.m_aClan, Warlist.m_aClan) == 0 && CurrentClient.m_aClan[0] != '\0'))
+					bool NameMatch = str_comp(pName, Warlist.m_aName) == 0;
+					bool ClanMatch = str_comp(CurrentClient.m_aClan, Warlist.m_aClan) == 0 && CurrentClient.m_aClan[0] != '\0' && Warlist.m_aName[0] == '\0' && Warlist.m_aClan[0] != '\0';
+
+					if((NameMatch || ClanMatch))
 					{
 						TextRender()->TextColor(Warlist.m_pWarType->m_Color);
 						TextRender()->TextEx(&NameCursor, g_Config.m_ClWarlistPrefix, -1);
@@ -1475,7 +1446,7 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 		else
 			GameClient()->Friends()->AddFriend(SelectedClient.m_aName, SelectedClient.m_aClan);
 		FriendlistOnUpdate();
-		Client()->ServerBrowserUpdate();
+		ServerBrowserUpdate();
 	}
 }
 
@@ -1531,14 +1502,12 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 
 	// friends list
 	static CScrollRegion s_ScrollRegion;
-	vec2 ScrollOffset(0.0f, 0.0f);
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollbarWidth = 16.0f;
 	ScrollParams.m_ScrollbarMargin = 5.0f;
 	ScrollParams.m_ScrollUnit = 80.0f;
 	ScrollParams.m_Flags = CScrollRegionParams::FLAG_CONTENT_STATIC_WIDTH;
-	s_ScrollRegion.Begin(&List, &ScrollOffset, &ScrollParams);
-	List.y += ScrollOffset.y;
+	s_ScrollRegion.Begin(&List, &ScrollParams);
 
 	char aBuf[256];
 	for(size_t FriendType = 0; FriendType < NUM_FRIEND_TYPES; ++FriendType)
@@ -1797,7 +1766,7 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 			s_NameInput.Clear();
 			s_ClanInput.Clear();
 			FriendlistOnUpdate();
-			Client()->ServerBrowserUpdate();
+			ServerBrowserUpdate();
 		}
 	}
 }
@@ -1811,7 +1780,7 @@ void CMenus::PopupConfirmRemoveFriend()
 {
 	GameClient()->Friends()->RemoveFriend(m_pRemoveFriend->FriendState() == IFriends::FRIEND_PLAYER ? m_pRemoveFriend->Name() : "", m_pRemoveFriend->Clan());
 	FriendlistOnUpdate();
-	Client()->ServerBrowserUpdate();
+	ServerBrowserUpdate();
 	m_pRemoveFriend = nullptr;
 }
 
@@ -1889,6 +1858,12 @@ void CMenus::RenderServerbrowserToolBox(CUIRect ToolBox)
 void CMenus::RenderServerbrowser(CUIRect MainView)
 {
 	UpdateCommunityCache(false);
+
+	if(m_WarlistCacheDirty)
+	{
+		UpdateWarlistCache();
+		m_WarlistCacheDirty = false;
+	}
 
 	switch(g_Config.m_UiPage)
 	{
@@ -2006,7 +1981,7 @@ void CMenus::ConchainFriendlistUpdate(IConsole::IResult *pResult, void *pUserDat
 	if(pResult->NumArguments() >= 1 && (pThis->Client()->State() == IClient::STATE_OFFLINE || pThis->Client()->State() == IClient::STATE_ONLINE))
 	{
 		pThis->FriendlistOnUpdate();
-		pThis->Client()->ServerBrowserUpdate();
+		pThis->ServerBrowserUpdate();
 	}
 }
 
@@ -2014,7 +1989,10 @@ void CMenus::ConchainFavoritesUpdate(IConsole::IResult *pResult, void *pUserData
 {
 	pfnCallback(pResult, pCallbackUserData);
 	if(pResult->NumArguments() >= 1 && g_Config.m_UiPage == PAGE_FAVORITES)
+	{
 		((CMenus *)pUserData)->ServerBrowser()->Refresh(IServerBrowser::TYPE_FAVORITES);
+		((CMenus *)pUserData)->UpdateWarlistCache(); // EClient
+	}
 }
 
 void CMenus::ConchainCommunitiesUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
@@ -2024,7 +2002,7 @@ void CMenus::ConchainCommunitiesUpdate(IConsole::IResult *pResult, void *pUserDa
 	if(pResult->NumArguments() >= 1 && (g_Config.m_UiPage == PAGE_INTERNET || g_Config.m_UiPage == PAGE_FAVORITES || (g_Config.m_UiPage >= PAGE_FAVORITE_COMMUNITY_1 && g_Config.m_UiPage <= PAGE_FAVORITE_COMMUNITY_5)))
 	{
 		pThis->UpdateCommunityCache(true);
-		pThis->Client()->ServerBrowserUpdate();
+		pThis->ServerBrowserUpdate();
 	}
 }
 
@@ -2064,8 +2042,10 @@ void CMenus::UpdateCommunityCache(bool Force)
 void CMenus::UpdateWarlistCache()
 {
 	m_vWarlistCache.clear();
-	std::unordered_map<std::string, std::pair<const CServerInfo::CClient *, const CServerInfo *>> NameMap;
-	std::unordered_map<std::string, std::pair<const CServerInfo::CClient *, const CServerInfo *>> ClanMap;
+
+	using SWarlistMatch = std::pair<const CServerInfo::CClient *, const CServerInfo *>;
+	std::unordered_map<std::string, std::vector<SWarlistMatch>> NameMap;
+	std::unordered_map<std::string, std::vector<SWarlistMatch>> ClanMap;
 
 	for(int ServerIdx = 0; ServerIdx < ServerBrowser()->NumSortedServers(); ++ServerIdx)
 	{
@@ -2074,9 +2054,9 @@ void CMenus::UpdateWarlistCache()
 		{
 			const CServerInfo::CClient *pClient = &pCurServer->m_aClients[ClientIdx];
 			if(pClient->m_aName[0])
-				NameMap[pClient->m_aName] = {pClient, pCurServer};
+				NameMap[pClient->m_aName].emplace_back(pClient, pCurServer);
 			if(pClient->m_aClan[0])
-				ClanMap[pClient->m_aClan] = {pClient, pCurServer};
+				ClanMap[pClient->m_aClan].emplace_back(pClient, pCurServer);
 		}
 	}
 
@@ -2084,26 +2064,42 @@ void CMenus::UpdateWarlistCache()
 
 	for(CWarEntry &Entry : GameClient()->m_WarList.m_vWarEntries)
 	{
-		if(Entry.m_aName[0] && NameMap.count(Entry.m_aName))
+		if(Entry.m_aName[0])
 		{
-			const CServerInfo::CClient *pClient = NameMap[Entry.m_aName].first;
-			if(MatchedClients.find(pClient) == MatchedClients.end())
+			const auto It = NameMap.find(Entry.m_aName);
+			if(It != NameMap.end())
 			{
-				m_vWarlistCache.push_back({&Entry, pClient, NameMap[Entry.m_aName].second});
-				MatchedClients.insert(pClient);
-				continue;
+				for(const auto &[pClient, pServer] : It->second)
+				{
+					if(MatchedClients.contains(pClient))
+						continue;
+
+					m_vWarlistCache.emplace_back(&Entry, pClient, pServer);
+					MatchedClients.insert(pClient);
+				}
 			}
 		}
-		if(Entry.m_aClan[0] && ClanMap.count(Entry.m_aClan))
+		else if(Entry.m_aClan[0])
 		{
-			const CServerInfo::CClient *pClient = ClanMap[Entry.m_aClan].first;
-			if(MatchedClients.find(pClient) == MatchedClients.end())
+			const auto It = ClanMap.find(Entry.m_aClan);
+			if(It != ClanMap.end())
 			{
-				m_vWarlistCache.push_back({&Entry, pClient, ClanMap[Entry.m_aClan].second});
-				MatchedClients.insert(pClient);
+				for(const auto &[pClient, pServer] : It->second)
+				{
+					if(MatchedClients.contains(pClient))
+						continue;
+
+					m_vWarlistCache.emplace_back(&Entry, pClient, pServer);
+					MatchedClients.insert(pClient);
+				}
 			}
 		}
 	}
+}
+void CMenus::ServerBrowserUpdate()
+{
+	Client()->ServerBrowserUpdate();
+	m_WarlistCacheDirty = true;
 }
 
 void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &ScrollRegion)
