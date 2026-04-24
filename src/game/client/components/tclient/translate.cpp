@@ -39,6 +39,43 @@ static void UrlEncode(const char *pText, char *pOut, size_t Length)
 	pOut[OutPos] = '\0';
 }
 
+static std::string UrlDecode(std::string_view Encoded)
+{
+	std::string Decoded;
+	Decoded.reserve(Encoded.size());
+	for(size_t i = 0; i < Encoded.size(); ++i)
+	{
+		const char c = Encoded[i];
+		if(c == '%' && i + 2 < Encoded.size())
+		{
+			auto HexToInt = [](char Hex) -> int {
+				if(Hex >= '0' && Hex <= '9')
+					return Hex - '0';
+				if(Hex >= 'a' && Hex <= 'f')
+					return 10 + (Hex - 'a');
+				if(Hex >= 'A' && Hex <= 'F')
+					return 10 + (Hex - 'A');
+				return -1;
+			};
+			const int High = HexToInt(Encoded[i + 1]);
+			const int Low = HexToInt(Encoded[i + 2]);
+			if(High >= 0 && Low >= 0)
+			{
+				Decoded.push_back((char)((High << 4) | Low));
+				i += 2;
+				continue;
+			}
+		}
+		else if(c == '+')
+		{
+			Decoded.push_back(' ');
+			continue;
+		}
+		Decoded.push_back(c);
+	}
+	return Decoded;
+}
+
 static void NormalizeTranslatedText(char *pText, size_t Size)
 {
 	if(!pText || Size == 0 || pText[0] == '\0')
@@ -54,135 +91,15 @@ static void NormalizeTranslatedText(char *pText, size_t Size)
 	if(EscapedSequenceCount == 0)
 		return;
 
-	const bool Encoded = EscapedSequenceCount >= 2 || str_find(pText, "%20") || str_find(pText, "%3D") || str_find(pText, "%2F") || str_find(pText, "%3A");
-	if(!Encoded)
+	const bool LooksEncoded = EscapedSequenceCount >= 2 || str_find(pText, "%20") || str_find(pText, "%3D") || str_find(pText, "%2F") || str_find(pText, "%3A");
+	if(!LooksEncoded)
 		return;
 
-	char aBuf[sizeof(((CTranslateResponse *)0)->m_Text)];
-	size_t OutPos = 0;
+	const std::string Decoded = UrlDecode(pText);
+	if(Decoded.empty() || str_comp(Decoded.c_str(), pText) == 0)
+		return;
 
-	for(size_t i = 0; pText[i] != '\0' && OutPos < std::size(aBuf) - 1; ++i)
-	{
-		if(pText[i] == '%' && pText[i + 1] != '\0' && pText[i + 2] != '\0' &&
-			std::isxdigit((unsigned char)pText[i + 1]) && std::isxdigit((unsigned char)pText[i + 2]))
-		{
-			char aHex[3] = {pText[i + 1], pText[i + 2], '\0'};
-			unsigned char Value = 0;
-			if(str_hex_decode(&Value, 1, aHex) == 0)
-			{
-				aBuf[OutPos++] = (char)Value;
-				i += 2;
-				continue;
-			}
-		}
-
-		aBuf[OutPos++] = pText[i];
-	}
-
-	aBuf[OutPos] = '\0';
-	str_copy(pText, aBuf, Size);
-}
-
-static bool HasInvalidUtf8OrReplacementCharacter(const char *pText)
-{
-	if(!pText)
-		return true;
-
-	const char *pCursor = pText;
-	while(*pCursor != '\0')
-	{
-		const int Codepoint = str_utf8_decode(&pCursor);
-		if(Codepoint < 0 || Codepoint == 0xFFFD)
-			return true;
-	}
-
-	return false;
-}
-
-static int CountUtf8Codepoints(const char *pText)
-{
-	if(!pText)
-		return 0;
-
-	int Count = 0;
-	const char *pCursor = pText;
-	while(*pCursor != '\0')
-	{
-		const int Codepoint = str_utf8_decode(&pCursor);
-		if(Codepoint <= 0)
-			break;
-		++Count;
-	}
-
-	return Count;
-}
-
-static bool HasSuspiciousTrailingLanguageMarker(const char *pText)
-{
-	if(!pText || pText[0] == '\0')
-		return false;
-
-	const char *pEnd = pText + str_length(pText);
-	while(pEnd > pText && std::isspace((unsigned char)pEnd[-1]))
-		--pEnd;
-
-	if(pEnd - pText < 5 || pEnd[-1] != ']')
-		return false;
-
-	const char *pOpen = pEnd - 1;
-	while(pOpen > pText && *pOpen != '[')
-		--pOpen;
-
-	if(*pOpen != '[')
-		return false;
-	if(pOpen > pText && !std::isspace((unsigned char)pOpen[-1]))
-		return false;
-
-	int LetterCount = 0;
-	for(const char *p = pOpen + 1; p < pEnd - 1; ++p)
-	{
-		if(*p == '-')
-			continue;
-		if(!std::isalpha((unsigned char)*p))
-			return false;
-		++LetterCount;
-	}
-
-	return LetterCount >= 2 && LetterCount <= 8;
-}
-
-static bool IsAbnormallyShortTranslation(const char *pSourceText, const char *pTranslatedText)
-{
-	const int SourceChars = CountUtf8Codepoints(pSourceText);
-	const int TranslatedChars = CountUtf8Codepoints(pTranslatedText);
-
-	if(SourceChars < 48)
-		return false;
-
-	return TranslatedChars <= 24 && TranslatedChars * 4 < SourceChars;
-}
-
-static bool ValidateTranslatedText(const char *pSourceText, const char *pTranslatedText, char *pError, size_t ErrorSize)
-{
-	if(HasInvalidUtf8OrReplacementCharacter(pTranslatedText))
-	{
-		str_copy(pError, "Invalid translated UTF-8", ErrorSize);
-		return false;
-	}
-
-	if(HasSuspiciousTrailingLanguageMarker(pTranslatedText))
-	{
-		str_copy(pError, "Suspicious trailing language marker", ErrorSize);
-		return false;
-	}
-
-	if(IsAbnormallyShortTranslation(pSourceText, pTranslatedText))
-	{
-		str_copy(pError, "Translation is suspiciously short", ErrorSize);
-		return false;
-	}
-
-	return true;
+	str_copy(pText, Decoded.c_str(), Size);
 }
 
 static void NormalizeLanguageCode(const char *pLanguage, char *pOut, size_t Size)
@@ -645,29 +562,11 @@ public:
 class CTranslateBackendGoogle : public ITranslateBackendHttp
 {
 private:
-	char m_aSourceText[MAX_LINE_LENGTH] = "";
-
 	bool ParseResponseJson(const json_value *pObj, CTranslateResponse &Out)
 	{
 		if(!pObj)
 		{
 			str_copy(Out.m_Text, "Response is not JSON");
-			return false;
-		}
-
-		if(pObj->type == json_object)
-		{
-			const json_value *pError = json_object_get(pObj, "error");
-			if(pError != &json_value_none)
-			{
-				if(pError->type == json_string)
-					str_copy(Out.m_Text, pError->u.string.ptr);
-				else
-					str_copy(Out.m_Text, "Google error");
-				return false;
-			}
-
-			str_copy(Out.m_Text, "Response is not array");
 			return false;
 		}
 
@@ -704,20 +603,8 @@ private:
 			return false;
 		}
 
-		// Decode into temporary buffer first to avoid truncation mid-sequence
-		char aTempBuf[sizeof(Out.m_Text) * 3]; // Large enough for worst-case percent-encoding
-		str_copy(aTempBuf, Result.c_str(), sizeof(aTempBuf));
-		NormalizeTranslatedText(aTempBuf, sizeof(aTempBuf));
-
-		char aValidationError[128];
-		if(!ValidateTranslatedText(m_aSourceText, aTempBuf, aValidationError, sizeof(aValidationError)))
-		{
-			str_copy(Out.m_Text, aValidationError);
-			return false;
-		}
-
-		// Now copy the decoded text (may truncate, but at UTF-8 boundary)
-		str_copy(Out.m_Text, aTempBuf, sizeof(Out.m_Text));
+		str_copy(Out.m_Text, Result.c_str(), sizeof(Out.m_Text));
+		NormalizeTranslatedText(Out.m_Text, sizeof(Out.m_Text));
 
 		const json_value *pDetectedLanguage = json_array_get(pObj, 2);
 		if(pDetectedLanguage && pDetectedLanguage->type == json_string)
@@ -745,11 +632,9 @@ public:
 
 	CTranslateBackendGoogle(IHttp &Http, const char *pText)
 	{
-		str_copy(m_aSourceText, pText, sizeof(m_aSourceText));
-
 		char aBuf[4096];
-		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&ie=UTF-8&oe=UTF-8&q=",
-			EncodeTarget(g_Config.m_EcTranslateTarget));
+		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dt=t&q=",
+			"auto", EncodeTarget(g_Config.m_EcTranslateTarget));
 		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
 		CreateHttpRequest(Http, aBuf);
 	}
@@ -889,6 +774,9 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 
 void CTranslate::OnRender()
 {
+	if(m_vJobs.empty())
+		return;
+
 	const auto Time = time();
 	auto ForEach = [&](CTranslateJob &Job) {
 		if(Job.m_pLine->m_pTranslateResponse != Job.m_pTranslateResponse)
@@ -919,6 +807,7 @@ void CTranslate::OnRender()
 			else if(str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
 			{
 				Job.m_pTranslateResponse->m_Text[0] = '\0';
+				Job.m_pTranslateResponse->m_Language[0] = '\0';
 			}
 		}
 		else
