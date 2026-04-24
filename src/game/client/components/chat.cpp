@@ -1536,7 +1536,8 @@ void CChat::OnPrepareLines(float y)
 			TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, Lang.c_str());
 			RawMessage += pText;
 			RawMessage += Lang;
-			log_error("translate", "%s", pTranslatedError);
+			if(g_Config.m_EcTranslateLogErrors)
+				log_error("translate", "%s", pTranslatedError);
 		}
 		else
 		{

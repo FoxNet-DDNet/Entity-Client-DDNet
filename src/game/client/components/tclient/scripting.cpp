@@ -89,17 +89,19 @@ private:
 			else if(GameClient()->m_ConnectServerInfo)
 				return GameClient()->m_ConnectServerInfo->m_aMap;
 			else
-				return nullptr;
+				return "";
 		}
 		else if(Str == "server_ip")
 		{
 			const NETADDR *pAddress = nullptr;
 			if(Client()->State() == IClient::STATE_ONLINE)
 				pAddress = &Client()->ServerAddress();
+			else if(Client()->ConnectAddressString())
+				return Client()->ConnectAddressString();
 			else if(GameClient()->m_ConnectServerInfo)
 				pAddress = &GameClient()->m_ConnectServerInfo->m_aAddresses[0];
 			else
-				return nullptr;
+				return "";
 			char Addr[128];
 			net_addr_str(pAddress, Addr, sizeof(Addr), true);
 			return Addr;
@@ -112,7 +114,7 @@ private:
 			{
 				const CServerInfo *pServerInfo = GetServerInfo();
 				if(!pServerInfo)
-					return nullptr;
+					return -1;
 				return pServerInfo->m_NumClients;
 			}
 		}
@@ -120,27 +122,27 @@ private:
 		{
 			const CServerInfo *pServerInfo = GetServerInfo();
 			if(!pServerInfo)
-				return nullptr;
+				return -1;
 			return pServerInfo->m_MaxClients;
 		}
 		else if(Str == "server_name")
 		{
 			const CServerInfo *pServerInfo = GetServerInfo();
 			if(!pServerInfo)
-				return nullptr;
+				return "";
 			return pServerInfo->m_aName;
 		}
 		else if(Str == "community")
 		{
 			const CServerInfo *pServerInfo = GetServerInfo();
 			if(!pServerInfo)
-				return nullptr;
+				return "";
 			return pServerInfo->m_aCommunityId;
 		}
 		else if(Str == "location")
 		{
 			if(GameClient()->m_GameInfo.m_Race)
-				return nullptr;
+				return "";
 			float w = 100.0f, h = 100.0;
 			float x = 50.0f, y = 50.0f;
 			const CLayers *pLayers = GameClient()->m_MapLayersForeground.m_pLayers;
@@ -209,7 +211,7 @@ private:
 				if(str_comp_nocase(Name.c_str(), Client.m_aName) == 0)
 					return Client.ClientId();
 			}
-			return nullptr;
+			return -1;
 		}
 		else if(Str == "name")
 		{
@@ -254,7 +256,7 @@ private:
 		{
 			const CServerInfo *pServerInfo = GetServerInfo();
 			if(!pServerInfo)
-				return nullptr;
+				return false;
 			const bool Passworded = (pServerInfo->m_Flags & SERVER_FLAG_PASSWORD) != 0;
 			return Passworded;
 		}
