@@ -807,6 +807,7 @@ void CTranslate::OnRender()
 			else if(str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0) // Check for no translation difference
 			{
 				Job.m_pTranslateResponse->m_Text[0] = '\0';
+				Job.m_pTranslateResponse->m_Language[0] = '\0';
 			}
 		}
 		else
