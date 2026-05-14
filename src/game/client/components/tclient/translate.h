@@ -41,9 +41,9 @@ public:
 	void OnConsoleInit() override;
 	void OnRender() override;
 
-	void Translate(int Id, bool ShowProgress = true);
-	void Translate(const char *pName, bool ShowProgress = true);
-	void Translate(CChat::CLine &Line, bool ShowProgress = true);
+	void Translate(int Id, bool Manual);
+	void Translate(const char *pName, bool Manual);
+	void Translate(CChat::CLine &Line, bool Manual);
 
 	void AutoTranslate(CChat::CLine &Line);
 };

@@ -84,6 +84,7 @@ MACRO_CONFIG_INT(ClWarListIndicatorEnemy, ec_warlist_indicator_enemy, 1, 0, 1, C
 MACRO_CONFIG_INT(ClWarListIndicatorTeam, ec_warlist_indicator_team, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from second group")
 
 MACRO_CONFIG_INT(ClWarListSwapNameReason, ec_warlist_swap_name_reason, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If a Player has a Reason, their Name will be switched with the Reason")
+MACRO_CONFIG_INT(ClWarListColorJoinLeave, ec_warlist_color_join_leave, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color a players name in the join/leave message")
 
 // Server Browser
 MACRO_CONFIG_INT(ClWarlistBrowser, ec_warlist_browser, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show online warlist players in the server browser or not")
@@ -367,7 +368,7 @@ MACRO_CONFIG_STR(ClStatusBarScheme, ec_statusbar_scheme, 16, "ac pf r", CFGFLAG_
 MACRO_CONFIG_INT(ClInfoUrlType, ec_info_url_type, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "What Url info.cpp should use (0 = Github, 1 = entity)")
 
 // Custom Communities
-MACRO_CONFIG_STR(ClCustomCommunitiesUrl, ec_custom_communities_url, 256, "https://raw.githubusercontent.com/SollyBunny/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to fetch custom communities from (must be https), empty to disable")
+MACRO_CONFIG_STR(ClCustomCommunitiesUrl, ec_custom_communities_url, 256, "https://raw.githubusercontent.com/TaterClient/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to fetch custom communities from (must be https), empty to disable")
 
 // Bg Draw
 MACRO_CONFIG_INT(TcBgDrawWidth, ec_bg_draw_width, 5, 1, 50, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Width of background draw strokes")
@@ -427,8 +428,17 @@ MACRO_CONFIG_STR(ClPhysicBallsSkin, ec_physic_balls_skin, 24, "volleyball", CFGF
 // Moving Tiles
 MACRO_CONFIG_INT(ClShowMovingTilesEntities, ec_show_moving_tiles_entities, 1, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show server-side moving tiles in entities | 1 = map design | 2 = use entities color | 3 = map design with entities color")
 
-MACRO_CONFIG_INT(ClHighProcessPriority, ec_high_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set DDNets process priority to High")
+MACRO_CONFIG_INT(ClHighProcessPriority, ec_high_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set DDNets process priority to high")
 MACRO_CONFIG_INT(ClDiscordNormalProcessPriority, ec_discord_normal_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set Discord process priority to normal")
+
+// Media Island
+MACRO_CONFIG_INT(ClMediaIsland, ec_media_island, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media island")
+MACRO_CONFIG_INT(ClMediaIslandSize, ec_media_island_size, 5, 0, 10, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Media island Size")
+MACRO_CONFIG_INT(ClMediaIslandAnimation, ec_media_island_animation, 100, 0, 300, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How fast the media island animation is (0 = disabled)")
+MACRO_CONFIG_INT(ClMediaIslandVisualizer, ec_media_island_visualizer, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media island visualizer")
+MACRO_CONFIG_INT(ClMediaIslandVisualizerAlignment, ec_media_island_visualizer_alignment, 2, 1, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "1 = align bottom | 2 = align center")
+MACRO_CONFIG_INT(ClMediaIslandVisualizerColorDynamic, ec_media_island_visualizer_color_dynamic, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable dynamic color for media island visualizer")
+MACRO_CONFIG_COL(ClMediaIslandVisualizerColor, ec_media_island_visualizer_color, 10485663 /* Blue-ish */, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of the media island visualizer")
 
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet

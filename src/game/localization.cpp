@@ -18,6 +18,11 @@ const char *Localize(const char *pStr, const char *pContext)
 	return pNewStr ? pNewStr : pStr;
 }
 
+const char *EcLocalize(const char *pStr, const char *pContext)
+{
+	return pStr;
+}
+
 void CLocalizationDatabase::LoadIndexfile(IStorage *pStorage, IConsole *pConsole)
 {
 	m_vLanguages.clear();

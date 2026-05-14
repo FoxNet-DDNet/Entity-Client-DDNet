@@ -28,10 +28,11 @@ public:
 	char m_Language[16] = "";
 
 	bool m_Auto = false;
-	bool m_Blacklisted = false;
 };
 
 constexpr auto SAVES_FILE = "ddnet-saves.txt";
+
+class CHud;
 
 enum
 {
@@ -205,6 +206,7 @@ class CChat : public CComponent
 	friend class CBindChat;
 	friend class CTranslate;
 	friend class CChatBubbles;
+	friend class CHud;
 
 public:
 	CChat();
@@ -225,6 +227,8 @@ public:
 	void OnStateChange(int NewState, int OldState) override;
 	void OnRender() override;
 	void OnPrepareLines(float y);
+	int GetLinesToSkipForSelection() const; // EClient
+	int GetMaxBacklogCurLine() const;
 	void Reset();
 	void OnRelease() override;
 	void OnMessage(int MsgType, void *pRawMsg) override;
@@ -272,6 +276,7 @@ public:
 	// <EClient
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
+	void ColorizeLine(const CLine &Line, CTextCursor &Cursor);
 	void AddHistoryEntry(const char *pLine);
 
 private:

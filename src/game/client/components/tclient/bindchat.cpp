@@ -263,7 +263,6 @@ void CBindChat::OnConsoleInit()
 	AddDefaultBind("translate_id", "translate_id");
 
 	AddDefaultBind("firetext", "chai entity/builtinscripts/firetext.chai");
-	AddDefaultBind("antiad", "chai entity/builtinscripts/anti-bot-ad.chai");
 }
 
 void CBindChat::OnInit()

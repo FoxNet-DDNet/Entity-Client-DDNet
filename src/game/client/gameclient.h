@@ -75,6 +75,7 @@
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
 #include "components/entity/map_overview.h"
+#include "components/entity/mediaplayer/media_player.h"
 #include "components/entity/moving_tiles.h"
 #include "components/entity/physicball.h"
 #include "components/entity/quick_actions.h"
@@ -254,6 +255,7 @@ public:
 	CFreezeKill m_FreezeKill;
 	CEntityInfo m_EntityInfo;
 	CMapOverview m_MapOverview;
+	CMediaViewer m_MediaViewer;
 	CPhysicBalls m_PhysicBalls;
 	CQuickActions m_QuickActions;
 

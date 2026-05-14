@@ -198,7 +198,7 @@ void CUi::OnCursorMove(float X, float Y)
 	m_UpdatedMouseDelta += vec2(X, Y);
 }
 
-void CUi::Update(vec2 MouseWorldPos)
+void CUi::Update(vec2 MouseWorldPos, bool IsChat)
 {
 	const vec2 WindowSize = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight());
 	const CUIRect *pScreen = Screen();
@@ -268,7 +268,7 @@ void CUi::Update(vec2 MouseWorldPos)
 	if(Enabled())
 	{
 		CLineInput *pActiveInput = CLineInput::GetActiveInput();
-		if(pActiveInput && m_pLastActiveItem && pActiveInput != m_pLastActiveItem)
+		if(!IsChat && pActiveInput && m_pLastActiveItem && pActiveInput != m_pLastActiveItem)
 			pActiveInput->Deactivate();
 	}
 	else

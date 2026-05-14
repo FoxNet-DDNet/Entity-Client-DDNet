@@ -254,11 +254,22 @@ void CStatusBar::LabelRender(const char *pLabel)
 	str_format(aBuf, sizeof(aBuf), "%s:", pLabel);
 	TextRender()->Text(m_CursorX, m_CursorY, m_FontSize, aBuf);
 }
+
 float CStatusBar::LabelWidth(const char *pLabel)
 {
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "%s:", pLabel);
 	return TextRender()->TextWidth(m_FontSize, aBuf);
+}
+
+float CStatusBar::GetCachedLabelWidth(const CStatusItem *pItem)
+{
+	if(pItem->m_CachedFontSize != m_FontSize || pItem->m_CachedLabelWidth <= 0.0f)
+	{
+		pItem->m_CachedLabelWidth = LabelWidth(pItem->m_aDisplayName);
+		pItem->m_CachedFontSize = m_FontSize;
+	}
+	return pItem->m_CachedLabelWidth;
 }
 
 void CStatusBar::ApplyStatusBarScheme(const char *pScheme)
@@ -327,7 +338,7 @@ void CStatusBar::OnRender()
 		{
 			float ItemWidth = Item->m_GetWidth();
 			if(g_Config.m_ClStatusBarLabels && Item->m_ShowLabel && ItemWidth > 0.0f)
-				ItemWidth += LabelWidth(Item->m_aDisplayName);
+				ItemWidth += GetCachedLabelWidth(Item);
 			UsedWidth += ItemWidth;
 		}
 	}
@@ -354,7 +365,7 @@ void CStatusBar::OnRender()
 			if(g_Config.m_ClStatusBarLabels && Item->m_ShowLabel)
 			{
 				LabelRender(Item->m_aDisplayName);
-				m_CursorX += LabelWidth(Item->m_aDisplayName);
+				m_CursorX += GetCachedLabelWidth(Item);
 			}
 			Item->m_RenderItem();
 		}

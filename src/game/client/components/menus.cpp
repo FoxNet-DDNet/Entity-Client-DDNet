@@ -2849,7 +2849,6 @@ void CMenus::SetMenuPage(int NewPage)
 			RefreshBrowserTab(ForceRefresh);
 		}
 	}
-	m_ResetTeePos = true;
 }
 
 void CMenus::RefreshBrowserTab(bool Force)

@@ -8,6 +8,7 @@
 #include "voting.h"
 
 #include <base/color.h>
+#include <base/log.h>
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
@@ -55,6 +56,9 @@ CHud::CHud()
 		m_aPlayerPositionContainers[i].Reset();
 		m_aPlayerPrevPosition[i] = -INFINITY;
 	}
+
+	// EClient
+	m_Island.Reset();
 }
 
 void CHud::ResetHudContainers()
@@ -80,6 +84,9 @@ void CHud::ResetHudContainers()
 		TextRender()->DeleteTextContainer(m_aPlayerPositionContainers[i]);
 		m_aPlayerPrevPosition[i] = -INFINITY;
 	}
+
+	// EClient
+	m_Island.Reset();
 }
 
 void CHud::OnWindowResize()
@@ -131,14 +138,31 @@ void CHud::OnInit()
 	Graphics()->QuadContainerUpload(m_HudQuadContainerIndex);
 }
 
-void CHud::RenderGameTimer()
+float CHud::GameTimerWidth(float Size, int Time)
 {
-	float Half = m_Width / 2.0f;
-
+	static float s_TextSize = Size;
+	static float s_TextWidthM = TextRender()->TextWidth(s_TextSize, "00:00", -1, -1.0f);
+	static float s_TextWidthH = TextRender()->TextWidth(s_TextSize, "00:00:00", -1, -1.0f);
+	static float s_TextWidth0D = TextRender()->TextWidth(s_TextSize, "0d 00:00:00", -1, -1.0f);
+	static float s_TextWidth00D = TextRender()->TextWidth(s_TextSize, "00d 00:00:00", -1, -1.0f);
+	static float s_TextWidth000D = TextRender()->TextWidth(s_TextSize, "000d 00:00:00", -1, -1.0f);
+	if(s_TextSize != Size)
+	{
+		s_TextSize = Size;
+		s_TextWidthM = TextRender()->TextWidth(s_TextSize, "00:00", -1, -1.0f);
+		s_TextWidthH = TextRender()->TextWidth(s_TextSize, "00:00:00", -1, -1.0f);
+		s_TextWidth0D = TextRender()->TextWidth(s_TextSize, "0d 00:00:00", -1, -1.0f);
+		s_TextWidth00D = TextRender()->TextWidth(s_TextSize, "00d 00:00:00", -1, -1.0f);
+		s_TextWidth000D = TextRender()->TextWidth(s_TextSize, "000d 00:00:00", -1, -1.0f);
+	}
+	float w = Time >= 3600 * 24 * 100 ? s_TextWidth000D : (Time >= 3600 * 24 * 10 ? s_TextWidth00D : (Time >= 3600 * 24 ? s_TextWidth0D : (Time >= 3600 ? s_TextWidthH : s_TextWidthM)));
+	return w;
+}
+int CHud::GameTimerTime()
+{
+	int Time = 0;
 	if(!(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_SUDDENDEATH))
 	{
-		char aBuf[32];
-		int Time = 0;
 		if(GameClient()->m_Snap.m_pGameInfoObj->m_TimeLimit && (GameClient()->m_Snap.m_pGameInfoObj->m_WarmupTimer <= 0))
 		{
 			Time = GameClient()->m_Snap.m_pGameInfoObj->m_TimeLimit * 60 - ((Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick) / Client()->GameTickSpeed());
@@ -153,22 +177,25 @@ void CHud::RenderGameTimer()
 		}
 		else
 			Time = (Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick) / Client()->GameTickSpeed();
+	}
+	return Time;
+}
 
+void CHud::RenderGameTimer(vec2 Pos, float Size)
+{
+	if(!(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_SUDDENDEATH))
+	{
+		char aBuf[32];
+		int Time = GameTimerTime();
 		str_time((int64_t)Time * 100, ETimeFormat::DAYS, aBuf, sizeof(aBuf));
-		float FontSize = 10.0f;
-		static float s_TextWidthM = TextRender()->TextWidth(FontSize, "00:00", -1, -1.0f);
-		static float s_TextWidthH = TextRender()->TextWidth(FontSize, "00:00:00", -1, -1.0f);
-		static float s_TextWidth0D = TextRender()->TextWidth(FontSize, "0d 00:00:00", -1, -1.0f);
-		static float s_TextWidth00D = TextRender()->TextWidth(FontSize, "00d 00:00:00", -1, -1.0f);
-		static float s_TextWidth000D = TextRender()->TextWidth(FontSize, "000d 00:00:00", -1, -1.0f);
-		float w = Time >= 3600 * 24 * 100 ? s_TextWidth000D : (Time >= 3600 * 24 * 10 ? s_TextWidth00D : (Time >= 3600 * 24 ? s_TextWidth0D : (Time >= 3600 ? s_TextWidthH : s_TextWidthM)));
+		float w = GameTimerWidth(Size, Time);
 		// last 60 sec red, last 10 sec blink
 		if(GameClient()->m_Snap.m_pGameInfoObj->m_TimeLimit && Time <= 60 && (GameClient()->m_Snap.m_pGameInfoObj->m_WarmupTimer <= 0))
 		{
 			float Alpha = Time <= 10 && (2 * time() / time_freq()) % 2 ? 0.5f : 1.0f;
 			TextRender()->TextColor(1.0f, 0.25f, 0.25f, Alpha);
 		}
-		TextRender()->Text(Half - w / 2, 2, FontSize, aBuf, -1.0f);
+		TextRender()->Text(Pos.x - w / 2, Pos.y, Size, aBuf, -1.0f);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 }
@@ -567,6 +594,7 @@ void CHud::RenderTextInfo()
 		CTextCursor Cursor;
 		Cursor.SetPosition(vec2(m_Width - 10 - s_aTextWidth[DigitIndex], 5));
 		Cursor.m_FontSize = 12.0f;
+		m_FPSPos = vec2(m_Width - 10 - s_TextWidth00000, 5);
 		auto OldFlags = TextRender()->GetRenderFlags();
 		TextRender()->SetRenderFlags(OldFlags | TEXT_RENDER_FLAG_ONE_TIME_USE);
 		if(m_FPSTextContainerIndex.Valid())
@@ -579,6 +607,9 @@ void CHud::RenderTextInfo()
 			TextRender()->RenderTextContainer(m_FPSTextContainerIndex, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor());
 		}
 	}
+	else
+		m_FPSPos = vec2(0, 0);
+
 	if(g_Config.m_ClShowpred && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
 		str_format(aBuf, sizeof(aBuf), "%d", Client()->GetPredictionTime());
@@ -662,6 +693,30 @@ void CHud::RenderCursor()
 		TargetPos = ScreenPos / ClampFactor + Center;
 		if(ClampFactor != 1.0f)
 			Alpha /= 2.0f;
+	}
+
+	// check if cursor is on island, if so, fade it out while island is expanding
+	constexpr float Padding = 38.0f;
+	const vec2 IslandPosHud = this->IslandPos();
+	const vec2 IslandSizeHud = this->IslandSize();
+	const float WorldWidth = aPoints[2] - aPoints[0];
+	const float WorldHeight = aPoints[3] - aPoints[1];
+	const vec2 IslandPos(
+		aPoints[0] + (IslandPosHud.x / m_Width) * WorldWidth,
+		aPoints[1] + (IslandPosHud.y / m_Height) * WorldHeight);
+	const vec2 IslandSize(
+		(IslandSizeHud.x / m_Width) * WorldWidth,
+		(IslandSizeHud.y / m_Height) * WorldHeight);
+
+	if(TargetPos.x >= IslandPos.x - Padding &&
+		TargetPos.x <= IslandPos.x + IslandSize.x + Padding &&
+		TargetPos.y >= IslandPos.y - Padding &&
+		TargetPos.y <= IslandPos.y + IslandSize.y + Padding)
+	{
+		const float ExpandProgress = m_Island.m_AnimProgress;
+		const float HideProgress = std::clamp((ExpandProgress - 0.3f) / 0.4f, 0.0f, 1.0f);
+
+		Alpha *= 1.0f - HideProgress;
 	}
 
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
@@ -1616,7 +1671,7 @@ void CHud::RenderSpectatorHud()
 
 void CHud::RenderLocalTime(float x)
 {
-	if(!g_Config.m_ClShowLocalTimeAlways && !GameClient()->m_Scoreboard.IsActive())
+	if(!RenderLocalTime())
 		return;
 
 	const bool Seconds = g_Config.m_TcShowLocalTimeSeconds; // TClient
@@ -1729,8 +1784,9 @@ void CHud::OnRender()
 			RenderSpectatorHud();
 		}
 
-		if(g_Config.m_ClShowhudTimer)
-			RenderGameTimer();
+		// EClient
+		//if(g_Config.m_ClShowhudTimer)
+		//	RenderGameTimer();
 		RenderPauseNotification();
 		RenderSuddenDeath();
 		if(g_Config.m_ClShowhudScore)
@@ -1738,8 +1794,13 @@ void CHud::OnRender()
 		RenderDummyActions();
 		RenderWarmupTimer();
 		RenderTextInfo();
+
+		// EClient
+		// RenderLocalTime((m_Width / 7) * 3);
+		RenderIsland();
+
 		FreezeHelpers();
-		RenderLocalTime((m_Width / 7) * 3);
+
 		if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 			RenderConnectionWarning();
 		RenderTeambalanceWarning();
@@ -1937,189 +1998,988 @@ void CHud::RenderRecord()
 void CHud::FreezeHelpers()
 {
 	// render team in freeze text and last notify
-	if((g_Config.m_ClShowFrozenText > 0 || g_Config.m_ClShowFrozenHud > 0 || g_Config.m_ClNotifyWhenLast) && GameClient()->m_GameInfo.m_EntitiesDDRace)
+
+	if(g_Config.m_ClShowFrozenText <= 0 && g_Config.m_ClShowFrozenHud <= 0 && !g_Config.m_ClNotifyWhenLast)
+		return;
+
+	if(!GameClient()->m_GameInfo.m_EntitiesDDRace)
+		return;
+
+	int NumInTeam = 0;
+	int NumFrozen = 0;
+	int LocalTeamID = GameClient()->m_Snap.m_SpecInfo.m_Active == 1 && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId != -1 ?
+				  GameClient()->m_Teams.Team(GameClient()->m_Snap.m_SpecInfo.m_SpectatorId) :
+				  GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId);
+
+	for(int i = 0; i < MAX_CLIENTS; i++)
 	{
-		int NumInTeam = 0;
-		int NumFrozen = 0;
-		int LocalTeamID = GameClient()->m_Snap.m_SpecInfo.m_Active == 1 && GameClient()->m_Snap.m_SpecInfo.m_SpectatorId != -1 ?
-					  GameClient()->m_Teams.Team(GameClient()->m_Snap.m_SpecInfo.m_SpectatorId) :
-					  GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId);
+		if(!GameClient()->m_Snap.m_apPlayerInfos[i])
+			continue;
+
+		if(GameClient()->m_Teams.Team(i) == LocalTeamID)
+		{
+			NumInTeam++;
+			if(GameClient()->m_aClients[i].m_FreezeEnd > 0 || GameClient()->m_aClients[i].m_DeepFrozen)
+				NumFrozen++;
+		}
+	}
+
+	constexpr float OverlapPadding = 2.0f;
+	int Showfps = g_Config.m_ClShowfps;
+#if defined(CONF_VIDEORECORDER)
+	if(IVideo::Current())
+		Showfps = 0;
+#endif
+	const bool HasFpsRect = Showfps && m_FPSTextContainerIndex.Valid();
+	const STextBoundingBox FpsBounds = HasFpsRect ? TextRender()->GetBoundingBoxTextContainer(m_FPSTextContainerIndex) : STextBoundingBox{};
+	auto OverlapsY = [](float Y, float Height, float RectY, float RectHeight) {
+		return Height > 0.0f && RectHeight > 0.0f && Y < RectY + RectHeight && Y + Height > RectY;
+	};
+	auto GetReservedRight = [&](float Y, float Height) {
+		float ReservedRight = 0.0f;
+
+		vec2 Pos = IslandPos();
+		vec2 Size = IslandSize();
+
+		if(Size.x > 0.0f && Size.y > 0.0f && OverlapsY(Y, Height, Pos.y, Size.y))
+			ReservedRight = maximum(ReservedRight, Pos.x + Size.x + OverlapPadding);
+
+		return ReservedRight;
+	};
+	auto GetAvailableRight = [&](float Y, float Height) {
+		float AvailableRight = m_Width;
+		if(HasFpsRect && OverlapsY(Y, Height, m_FPSPos.y, FpsBounds.m_H))
+		{
+			AvailableRight = minimum(AvailableRight, m_FPSPos.x - OverlapPadding);
+		}
+		return AvailableRight;
+	};
+	auto PlaceRightOfReserved = [&](float DefaultX, float Y, float Width, float Height) {
+		const float ReservedRight = GetReservedRight(Y, Height);
+		const float AvailableRight = GetAvailableRight(Y, Height);
+		float X = DefaultX;
+		if(X < ReservedRight && X + Width > ReservedRight)
+		{
+			X = ReservedRight;
+		}
+		if(X + Width > AvailableRight)
+		{
+			X = maximum(ReservedRight, AvailableRight - Width);
+		}
+		return X;
+	};
+
+	// Notify when last
+	if(g_Config.m_ClNotifyWhenLast)
+	{
+		if(NumInTeam > 1 && NumInTeam - NumFrozen == 1)
+		{
+			char aBuf[64];
+			str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClNotifyWhenLastText);
+			const float FontSize = 14.0f;
+			const float NotifyY = 4.0f;
+			const float NotifyWidth = TextRender()->TextWidth(FontSize, aBuf, -1, -1.0f);
+			const float NotifyX = PlaceRightOfReserved(170.0f, NotifyY, NotifyWidth, FontSize);
+			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClNotifyWhenLastColor)));
+			TextRender()->Text(NotifyX, NotifyY, FontSize, aBuf, -1);
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+		}
+	}
+	// Show freeze text
+	char aBuf[64];
+	if(g_Config.m_ClShowFrozenText == 1)
+		str_format(aBuf, sizeof(aBuf), "%d / %d", NumInTeam - NumFrozen, NumInTeam);
+	else if(g_Config.m_ClShowFrozenText == 2)
+		str_format(aBuf, sizeof(aBuf), "%d / %d", NumFrozen, NumInTeam);
+	if(g_Config.m_ClShowFrozenText > 0)
+	{
+		const float FontSize = 10.0f;
+		const float TextWidth = TextRender()->TextWidth(FontSize, aBuf, -1, -1.0f);
+		const float TextY = 12.0f;
+		const float TextX = PlaceRightOfReserved(m_Width / 2 - TextWidth / 2, TextY, TextWidth, FontSize);
+		TextRender()->Text(TextX, TextY, FontSize, aBuf, -1.0f);
+	}
+
+	// I told the clanker to rewrite this
+	if(g_Config.m_ClShowFrozenHud > 0 && !GameClient()->m_Scoreboard.IsActive() && !(LocalTeamID == 0 && g_Config.m_ClFrozenHudTeamOnly))
+	{
+		CTeeRenderInfo FreezeInfo;
+		const CSkin *pSkin = GameClient()->m_Skins.Find("x_ninja");
+		FreezeInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
+		FreezeInfo.m_ColorableRenderSkin = pSkin->m_ColorableSkin;
+		FreezeInfo.m_BloodColor = pSkin->m_BloodColor;
+		FreezeInfo.m_SkinMetrics = pSkin->m_Metrics;
+		FreezeInfo.m_ColorBody = ColorRGBA(1, 1, 1);
+		FreezeInfo.m_ColorFeet = ColorRGBA(1, 1, 1);
+		FreezeInfo.m_CustomColoredSkin = false;
+
+		float TeeSize = g_Config.m_ClFrozenHudTeeSize;
+		int MaxTees = (int)(8.3f * (m_Width / m_Height) * 13.0f / TeeSize);
+		if(!g_Config.m_ClShowfps && !g_Config.m_ClShowpred)
+			MaxTees = (int)(9.5f * (m_Width / m_Height) * 13.0f / TeeSize);
+		int MaxRows = g_Config.m_ClFrozenMaxRows;
+		const float DefaultHudX = m_Width / 2 + 38.0f * (m_Width / m_Height) / 1.78f - TeeSize / 2.0f;
+		const float HudY = 0.0f;
+		const float ReservedRight = GetReservedRight(HudY, TeeSize);
+		const float AvailableRight = GetAvailableRight(HudY, TeeSize);
+		const float HudX = maximum(DefaultHudX, ReservedRight);
+		MaxTees = minimum(MaxTees, maximum(round_truncate((AvailableRight - HudX) / TeeSize), 0));
+		if(MaxTees <= 0)
+			return;
+		float StartPos = HudX + TeeSize / 2.0f;
+
+		std::vector<int> vDisplayClients;
+		vDisplayClients.reserve(MAX_CLIENTS);
 
 		for(int i = 0; i < MAX_CLIENTS; i++)
 		{
 			if(!GameClient()->m_Snap.m_apPlayerInfos[i])
 				continue;
+			if(GameClient()->m_Teams.Team(i) != LocalTeamID)
+				continue;
 
-			if(GameClient()->m_Teams.Team(i) == LocalTeamID)
+			if(g_Config.m_ClWarList && g_Config.m_ClWarlistFrozenTeeFlags != 0 && i != GameClient()->m_aLocalIds[0] && i != GameClient()->m_aLocalIds[1])
 			{
-				NumInTeam++;
-				if(GameClient()->m_aClients[i].m_FreezeEnd > 0 || GameClient()->m_aClients[i].m_DeepFrozen)
-					NumFrozen++;
+				const CWarDataCache *pWarData = &GameClient()->m_WarList.GetWarData(i);
+				const bool ShowNoneType = IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, 0) && pWarData->m_WarTypeIndex == -1;
+
+				if(!IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, pWarData->m_WarTypeIndex) && !ShowNoneType)
+					continue;
 			}
+
+			vDisplayClients.push_back(i);
 		}
 
-		// Notify when last
-		if(g_Config.m_ClNotifyWhenLast)
+		const int TotalCandidates = (int)vDisplayClients.size();
+		if(TotalCandidates == 0)
+			return;
+
+		bool Overflow = TotalCandidates > MaxTees * MaxRows;
+
+		// We keep the original semantics: if overflowing, first row(s) are frozen, then non-frozen
+		std::vector<int> vOrdered;
+		vOrdered.reserve(TotalCandidates);
+
+		if(Overflow)
 		{
-			if(NumInTeam > 1 && NumInTeam - NumFrozen == 1)
+			// first all frozen
+			for(int Idx : vDisplayClients)
 			{
-				char aBuf[64];
-				str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClNotifyWhenLastText);
-				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClNotifyWhenLastColor)));
-				TextRender()->Text(170, 4, 14, aBuf, -1);
-				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+				bool Frozen = GameClient()->m_aClients[Idx].m_FreezeEnd > 0 || GameClient()->m_aClients[Idx].m_DeepFrozen;
+				if(Frozen)
+					vOrdered.push_back(Idx);
+			}
+			// then all non-frozen
+			for(int Idx : vDisplayClients)
+			{
+				bool Frozen = GameClient()->m_aClients[Idx].m_FreezeEnd > 0 || GameClient()->m_aClients[Idx].m_DeepFrozen;
+				if(!Frozen)
+					vOrdered.push_back(Idx);
 			}
 		}
-		// Show freeze text
+		else
+		{
+			vOrdered = vDisplayClients;
+		}
+
+		const int NumDisplayable = std::min((int)vOrdered.size(), MaxTees * MaxRows);
+
+		int TotalRows = (NumDisplayable + MaxTees - 1) / MaxTees;
+		TotalRows = std::min(TotalRows, MaxRows);
+
+		int FirstRowCount = NumDisplayable >= MaxTees ? MaxTees : NumDisplayable;
+
+		Graphics()->TextureClear();
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.4f);
+		Graphics()->DrawRectExt(HudX,
+			HudY,
+			TeeSize * FirstRowCount,
+			TeeSize + 3.0f + (TotalRows - 1) * TeeSize,
+			5.0f,
+			IGraphics::CORNER_B);
+		Graphics()->QuadsEnd();
+
+		float ProgressiveOffset = 0.0f;
+		int NumInRow = 0;
+		int CurrentRow = 0;
+
+		for(int n = 0; n < NumDisplayable; ++n)
+		{
+			const int Id = vOrdered[n];
+
+			bool Frozen = GameClient()->m_aClients[Id].m_FreezeEnd > 0 || GameClient()->m_aClients[Id].m_DeepFrozen;
+
+			NumInRow++;
+			if(NumInRow > MaxTees)
+			{
+				NumInRow = 1;
+				ProgressiveOffset = 0.0f;
+				CurrentRow++;
+			}
+
+			CTeeRenderInfo TeeInfo = GameClient()->m_aClients[Id].m_RenderInfo;
+			if(Frozen && !g_Config.m_ClShowFrozenHudSkins)
+			{
+				TeeInfo = FreezeInfo;
+			}
+
+			TeeInfo.m_Size = TeeSize;
+			const CAnimState *pIdleState = CAnimState::GetIdle();
+			vec2 OffsetToMid;
+			CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
+			vec2 TeeRenderPos(StartPos + ProgressiveOffset, HudY + TeeSize * 0.7f + CurrentRow * TeeSize);
+			float Alpha = 1.0f;
+			CNetObj_Character CurChar = GameClient()->m_aClients[Id].m_RenderCur;
+
+			if(g_Config.m_ClShowFrozenHudSkins && Frozen)
+			{
+				Alpha = 0.6f;
+				TeeInfo.m_ColorBody.r *= 0.4f;
+				TeeInfo.m_ColorBody.g *= 0.4f;
+				TeeInfo.m_ColorBody.b *= 0.4f;
+				TeeInfo.m_ColorFeet.r *= 0.4f;
+				TeeInfo.m_ColorFeet.g *= 0.4f;
+				TeeInfo.m_ColorFeet.b *= 0.4f;
+			}
+			if(Frozen)
+				RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_PAIN, vec2(1.0f, 0.0f), TeeRenderPos, Alpha);
+			else
+				RenderTools()->RenderTee(pIdleState, &TeeInfo, CurChar.m_Emote, vec2(1.0f, 0.0f), TeeRenderPos);
+
+			ProgressiveOffset += TeeSize;
+		}
+	}
+}
+
+bool CHud::RenderLocalTime() const
+{
+	return g_Config.m_ClShowLocalTimeAlways || GameClient()->m_Scoreboard.IsActive();
+}
+
+static float RoundedArtInset(float LocalX, float W, float Radius)
+{
+	if(Radius <= 0.0f || W <= 0.0f)
+		return 0.0f;
+
+	if(LocalX < Radius)
+	{
+		const float X = Radius - LocalX;
+		return Radius - sqrtf(maximum(0.0f, Radius * Radius - X * X));
+	}
+	if(LocalX > W - Radius)
+	{
+		const float X = LocalX - (W - Radius);
+		return Radius - sqrtf(maximum(0.0f, Radius * Radius - X * X));
+	}
+	return 0.0f;
+}
+
+inline bool MediaSourceContainsI(std::string_view Text, std::string_view Needle)
+{
+	if(Text.empty() || Needle.empty() || Needle.size() > Text.size())
+		return false;
+
+	return std::search(Text.begin(), Text.end(), Needle.begin(), Needle.end(),
+		       [](char Left, char Right) {
+			       return std::tolower((unsigned char)Left) == std::tolower((unsigned char)Right);
+		       }) != Text.end();
+}
+
+static CArtCropProfile MusicArtCropProfile(std::string_view ServiceId)
+{
+	CArtCropProfile Profile;
+	if(MediaSourceContainsI(ServiceId, "spotify"))
+	{
+		// Spotify overlays a branded strip/logo near the bottom edge on some covers.
+		// Bias the crop downward so the artwork fills the frame and the branding stays outside.
+		Profile.m_Bottom = 0.20f;
+	}
+	return Profile;
+}
+
+static void DrawRoundedTexture(IGraphics *pGraphics, const CUIRect &Rect, float Alpha, float Rounding, const CMediaViewer::CAlbumArt &AlbumArt, const CArtCropProfile &CropProfile)
+{
+	if(pGraphics == nullptr || !AlbumArt.m_Texture.IsValid() || Rect.w <= 0.0f || Rect.h <= 0.0f)
+		return;
+
+	const float Radius = minimum(minimum(Rounding, minimum(Rect.w, Rect.h) * 0.5f), 64.0f);
+	constexpr int NUM_SLICES = 32;
+	float U0 = 0.0f;
+	float U1 = 1.0f;
+	float V0 = 0.0f;
+	float V1 = 1.0f;
+	U0 = std::clamp(CropProfile.m_Left, 0.0f, 0.45f);
+	U1 = 1.0f - std::clamp(CropProfile.m_Right, 0.0f, 0.45f);
+	V0 = std::clamp(CropProfile.m_Top, 0.0f, 0.45f);
+	V1 = 1.0f - std::clamp(CropProfile.m_Bottom, 0.0f, 0.45f);
+
+	if(U1 <= U0 || V1 <= V0)
+		return;
+
+	if(AlbumArt.m_Width > 0 && AlbumArt.m_Height > 0)
+	{
+		const float TargetAspect = Rect.w / maximum(Rect.h, 0.001f);
+		const float CroppedWidth = AlbumArt.m_Width * (U1 - U0);
+		const float CroppedHeight = AlbumArt.m_Height * (V1 - V0);
+		const float CroppedAspect = CroppedWidth / maximum(CroppedHeight, 0.001f);
+
+		if(CroppedAspect > TargetAspect)
+		{
+			const float VisibleWidth = CroppedHeight * TargetAspect;
+			const float CropWidth = maximum(CroppedWidth - VisibleWidth, 0.0f);
+			const float CropTexels = CropWidth / maximum(AlbumArt.m_Width, 1);
+			U0 += CropTexels * 0.5f;
+			U1 -= CropTexels * 0.5f;
+		}
+		else if(CroppedAspect < TargetAspect)
+		{
+			const float VisibleHeight = CroppedWidth / maximum(TargetAspect, 0.001f);
+			const float CropHeight = maximum(CroppedHeight - VisibleHeight, 0.0f);
+			const float CropTexels = CropHeight / maximum(AlbumArt.m_Height, 1);
+			V0 += CropTexels * 0.5f;
+			V1 -= CropTexels * 0.5f;
+		}
+	}
+
+	pGraphics->TextureSet(AlbumArt.m_Texture);
+	pGraphics->QuadsBegin();
+	pGraphics->SetColor(1.0f, 1.0f, 1.0f, Alpha);
+	for(int i = 0; i < NUM_SLICES; ++i)
+	{
+		const float SliceT0 = i / (float)NUM_SLICES;
+		const float SliceT1 = (i + 1) / (float)NUM_SLICES;
+		const float MixU0 = mix(U0, U1, SliceT0);
+		const float MixU1 = mix(U0, U1, SliceT1);
+		const float LocalX0 = Rect.w * SliceT0;
+		const float LocalX1 = Rect.w * SliceT1;
+		const float Inset0 = RoundedArtInset(LocalX0, Rect.w, Radius);
+		const float Inset1 = RoundedArtInset(LocalX1, Rect.w, Radius);
+		const float RenderX0 = Rect.x + LocalX0;
+		const float RenderX1 = Rect.x + LocalX1;
+
+		const vec2 TopLeft(RenderX0, Rect.y + Inset0);
+		const vec2 TopRight(RenderX1, Rect.y + Inset1);
+		const vec2 BottomLeft(RenderX0, Rect.y + Rect.h - Inset0);
+		const vec2 BottomRight(RenderX1, Rect.y + Rect.h - Inset1);
+
+		const float RenderV0Top = std::clamp((TopLeft.y - Rect.y) / maximum(Rect.h, 0.001f), 0.0f, 1.0f);
+		const float RenderV1Top = std::clamp((TopRight.y - Rect.y) / maximum(Rect.h, 0.001f), 0.0f, 1.0f);
+		const float RenderV0Bottom = std::clamp((BottomLeft.y - Rect.y) / maximum(Rect.h, 0.001f), 0.0f, 1.0f);
+		const float RenderV1Bottom = std::clamp((BottomRight.y - Rect.y) / maximum(Rect.h, 0.001f), 0.0f, 1.0f);
+		const float V0Top = mix(V0, V1, RenderV0Top);
+		const float V1Top = mix(V0, V1, RenderV1Top);
+		const float V0Bottom = mix(V0, V1, RenderV0Bottom);
+		const float V1Bottom = mix(V0, V1, RenderV1Bottom);
+
+		pGraphics->QuadsSetSubsetFree(MixU0, V0Top, MixU1, V1Top, MixU0, V0Bottom, MixU1, V1Bottom);
+		const IGraphics::CFreeformItem Item(TopLeft, TopRight, BottomLeft, BottomRight);
+		pGraphics->QuadsDrawFreeform(&Item, 1);
+	}
+	pGraphics->QuadsEnd();
+	pGraphics->TextureClear();
+}
+
+static float MediaIslandEaseInOut(float Progress)
+{
+	Progress = std::clamp(Progress, 0.0f, 1.0f);
+	return Progress * Progress * (3.0f - 2.0f * Progress);
+}
+
+static float GetLerpAmount(float DeltaTime)
+{
+	const float LerpSpeed = 5.0f + g_Config.m_ClMediaIslandAnimation * 0.1f;
+	return std::clamp(DeltaTime * LerpSpeed, 0.0f, 1.0f);
+}
+
+static float GetMediaIslandSizeScale(int MediaIslandSize)
+{
+	return std::clamp(1.0f + (MediaIslandSize - DefaultConfig::ClMediaIslandSize) * 0.1f, 0.5f, 1.5f);
+}
+
+static ColorRGBA LerpColor(const ColorRGBA &A, const ColorRGBA &B, float Amount)
+{
+	Amount = std::clamp(Amount, 0.0f, 1.0f);
+	return ColorRGBA(
+		std::lerp(A.r, B.r, Amount),
+		std::lerp(A.g, B.g, Amount),
+		std::lerp(A.b, B.b, Amount),
+		A.a);
+}
+
+void CHud::RenderIsland()
+{
+	const bool MediaIsland = g_Config.m_ClMediaIsland;
+
+	CMediaIsland &Island = m_Island;
+
+	const bool LocalTime = RenderLocalTime();
+	const bool HudTimer = g_Config.m_ClShowhudTimer;
+
+	const float CenterX = m_Width * 0.5f; // Center of the island in virtual coordinates
+	if(!MediaIsland)
+	{
+		RenderLocalTime((m_Width / 7) * 3);
+		if(HudTimer)
+			RenderGameTimer(vec2(CenterX, 2.0f), 10.0f);
+		Island.m_AnimProgress = 0.0f;
+		Island.ResetPosSize();
+		return; // Default rendering
+	}
+
+	const int MediaIslandSize = g_Config.m_ClMediaIslandSize;
+	const float SizeScale = GetMediaIslandSizeScale(MediaIslandSize);
+
+	const float Rounding = 3.5f * SizeScale;
+	const float Padding = 3.0f * SizeScale;
+	const float IslandY = 1.0f * SizeScale;
+	const float ExpandedControlsHeight = 4.0f * SizeScale;
+	const float ButtonSize = 8.0f * SizeScale;
+	const float ButtonSpacing = 4.0f * SizeScale;
+	const float CollapsedMediaSize = 13.0f * SizeScale;
+	const float HoveredMediaSize = 17.0f * SizeScale;
+
+	const float GameTimerSize = 8.0f * SizeScale;
+	const float LocalTimeSize = 5.0f * SizeScale;
+
+	const float TitleTextSize = 8.0f * SizeScale;
+	const float ArtistTextSize = 5.0f * SizeScale;
+
+	CMediaViewer::CState MediaState;
+	const bool HasMediaState = MediaIsland && GameClient()->m_MediaViewer.GetStateSnapshot(MediaState);
+
+	const bool SizeChanged = !Island.m_Initialized || absolute(Island.m_SizeScale - SizeScale) > 0.001f;
+	const bool StateChanged = Island.m_CurState != MediaState || !Island.m_Initialized;
+	const bool AlbumArtChanged = !Island.m_Initialized ||
+				     Island.m_CurState.m_AlbumArt.m_Texture.Id() != MediaState.m_AlbumArt.m_Texture.Id() ||
+				     Island.m_CurState.m_PrevAlbumArt.m_Texture.Id() != MediaState.m_PrevAlbumArt.m_Texture.Id();
+
+	if(StateChanged || AlbumArtChanged || SizeChanged)
+	{
+		if(!Island.m_Initialized)
+		{
+			Island.m_CurState = MediaState;
+			Island.Reset();
+			Island.m_Initialized = true;
+		}
+
+		if(StateChanged || SizeChanged)
+		{
+			Island.m_TitleTextWidth = TextRender()->TextWidth(TitleTextSize, MediaState.m_Title.c_str());
+			Island.m_ArtistTextWidth = TextRender()->TextWidth(ArtistTextSize, MediaState.m_Artist.c_str());
+			Island.m_TitleScroll.Reset();
+			Island.m_ArtistScroll.Reset();
+		}
+
+		if(AlbumArtChanged)
+		{
+			Island.m_Changed = true;
+			Island.m_ChangedAnim = 0.0f;
+		}
+
+		Island.m_CurState = MediaState;
+		Island.m_SizeScale = SizeScale;
+
+		Island.m_PrevCropProfile = Island.m_CropProfile;
+		Island.m_CropProfile = MusicArtCropProfile(Island.m_CurState.m_ServiceId);
+	}
+
+	const bool ShowSeconds = g_Config.m_TcShowLocalTimeSeconds; // TClient
+	const float LocalTimeWidth = LocalTime ? TextRender()->TextBoundingBox(LocalTimeSize, ShowSeconds ? "00:00.00" : "00:00").m_W : 0.0f;
+	const float NoGameTimerLocalTimeWidth = LocalTime ? TextRender()->TextBoundingBox(GameTimerSize, ShowSeconds ? "00:00.00" : "00:00").m_W : 0.0f;
+
+	float TimerSidePadding = (HudTimer || LocalTime ? 9.0f : 2.0f) * SizeScale;
+
+	float GameTimerWidth = 0.0f;
+	if(HudTimer)
+	{
 		char aBuf[64];
-		if(g_Config.m_ClShowFrozenText == 1)
-			str_format(aBuf, sizeof(aBuf), "%d / %d", NumInTeam - NumFrozen, NumInTeam);
-		else if(g_Config.m_ClShowFrozenText == 2)
-			str_format(aBuf, sizeof(aBuf), "%d / %d", NumFrozen, NumInTeam);
-		if(g_Config.m_ClShowFrozenText > 0)
-			TextRender()->Text(m_Width / 2 - TextRender()->TextWidth(10, aBuf, -1, -1.0f) / 2, 12, 10, aBuf, -1.0f);
+		int Time = GameTimerTime();
+		str_time((int64_t)Time * 100, ETimeFormat::DAYS, aBuf, sizeof(aBuf));
+		GameTimerWidth = this->GameTimerWidth(GameTimerSize, Time);
+	}
+	if(LocalTime)
+	{
+		GameTimerWidth = HudTimer ? maximum(GameTimerWidth, LocalTimeWidth) : NoGameTimerLocalTimeWidth;
+	}
 
-		// I told the clanker to rewrite this
-		if(g_Config.m_ClShowFrozenHud > 0 && !GameClient()->m_Scoreboard.IsActive() && !(LocalTeamID == 0 && g_Config.m_ClFrozenHudTeamOnly))
+	const bool ShowArt = HasMediaState;
+	const bool ShowVisualizer = HasMediaState && g_Config.m_ClMediaIslandVisualizer && MediaState.m_Visualizer.m_Active;
+	const float ArtistTitleWidth = Island.m_ArtistTextWidth > Island.m_TitleTextWidth ? Island.m_ArtistTextWidth : Island.m_TitleTextWidth;
+	const float CollapsedWidth = GameTimerWidth;
+	const float ExpandedWidth = std::clamp(ArtistTitleWidth, 40.0f * SizeScale, 100.0f * SizeScale);
+	const float CollapsedIslandHeight = CollapsedMediaSize + Padding * 2.0f;
+	const float ExpandedIslandHeight = HoveredMediaSize + ExpandedControlsHeight + Padding;
+	const float DeltaTime = Client()->RenderFrameTime() * 1.2f;
+
+	bool HasMousePos = false;
+	vec2 MousePos(0.0f, 0.0f);
+	const auto ToHudSpaceFromUi = [&](vec2 UiPos) {
+		const CUIRect *pUiScreen = Ui()->Screen();
+		if(pUiScreen->w <= 0.0f || pUiScreen->h <= 0.0f)
+			return vec2(0.0f, 0.0f);
+		return vec2(UiPos.x / pUiScreen->w * m_Width, UiPos.y / pUiScreen->h * m_Height);
+	};
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
+	{
+		if(GameClient()->m_Menus.IsMenuActive() && !GameClient()->m_Menus.m_DemoControlsRect.Inside(Ui()->MousePos()) && GameClient()->m_Menus.GetPopup() == GameClient()->m_Menus.POPUP_NONE)
 		{
-			CTeeRenderInfo FreezeInfo;
-			const CSkin *pSkin = GameClient()->m_Skins.Find("x_ninja");
-			FreezeInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
-			FreezeInfo.m_ColorableRenderSkin = pSkin->m_ColorableSkin;
-			FreezeInfo.m_BloodColor = pSkin->m_BloodColor;
-			FreezeInfo.m_SkinMetrics = pSkin->m_Metrics;
-			FreezeInfo.m_ColorBody = ColorRGBA(1, 1, 1);
-			FreezeInfo.m_ColorFeet = ColorRGBA(1, 1, 1);
-			FreezeInfo.m_CustomColoredSkin = false;
+			MousePos = ToHudSpaceFromUi(Ui()->MousePos());
+			HasMousePos = true;
+		}
+	}
+	else if(GameClient()->m_Chat.IsActive())
+	{
+		const vec2 WindowSize((float)Graphics()->WindowWidth(), (float)Graphics()->WindowHeight());
+		if(WindowSize.x > 0.0f && WindowSize.y > 0.0f)
+		{
+			MousePos = GameClient()->m_Chat.m_SelectorMouse / WindowSize * vec2(m_Width, m_Height);
+			HasMousePos = true;
+		}
+	}
+	else if(GameClient()->m_Scoreboard.IsActive() && GameClient()->m_Scoreboard.m_MouseUnlocked)
+	{
+		MousePos = ToHudSpaceFromUi(Ui()->MousePos());
+		HasMousePos = true;
+	}
 
-			float TeeSize = g_Config.m_ClFrozenHudTeeSize;
-			int MaxTees = (int)(8.3f * (m_Width / m_Height) * 13.0f / TeeSize);
-			if(!g_Config.m_ClShowfps && !g_Config.m_ClShowpred)
-				MaxTees = (int)(9.5f * (m_Width / m_Height) * 13.0f / TeeSize);
-			int MaxRows = g_Config.m_ClFrozenMaxRows;
-			float StartPos = m_Width / 2 + 38.0f * (m_Width / m_Height) / 1.78f;
+	auto MakeIslandRect = [&](float CurrentTimerWidth, float CurrentHeight, float CurrentMediaSize, float VisUnavailableWidth) {
+		const float LeftWidth = ShowArt ? CurrentMediaSize + TimerSidePadding : 0.0f;
+		const float RightWidth = ShowVisualizer ? CurrentMediaSize + TimerSidePadding : VisUnavailableWidth;
+		return CUIRect{
+			CenterX - CurrentTimerWidth * 0.5f - LeftWidth - Padding,
+			IslandY,
+			LeftWidth + CurrentTimerWidth + RightWidth + Padding * 2.0f,
+			CurrentHeight};
+	};
 
-			std::vector<int> vDisplayClients;
-			vDisplayClients.reserve(MAX_CLIENTS);
+	const CUIRect CollapsedIslandRect = MakeIslandRect(CollapsedWidth, CollapsedIslandHeight, CollapsedMediaSize, 0.0f);
+	const CUIRect ExpandedIslandRect = MakeIslandRect(ExpandedWidth, ExpandedIslandHeight, HoveredMediaSize, TimerSidePadding);
+	const float HoverPaddingX = 8.0f * SizeScale;
+	const float HoverPaddingY = 8.0f * SizeScale;
+	const CUIRect CollapsedHoverRect = {
+		CollapsedIslandRect.x - HoverPaddingX,
+		CollapsedIslandRect.y - HoverPaddingY,
+		CollapsedIslandRect.w + HoverPaddingX * 2.0f,
+		ExpandedIslandRect.h + HoverPaddingY * 2.0f};
+	const CUIRect ExpandedHoverRect = {
+		ExpandedIslandRect.x - HoverPaddingX,
+		ExpandedIslandRect.y - HoverPaddingY * 1.5f,
+		ExpandedIslandRect.w + HoverPaddingX * 2.0f,
+		ExpandedIslandRect.h + HoverPaddingY * 3.0f};
+	Island.m_Hovered = HasMediaState && HasMousePos && (CollapsedHoverRect.Inside(MousePos) || (Island.m_PrevHovered && ExpandedHoverRect.Inside(MousePos)));
+	const bool Hovered = Island.m_Hovered;
 
-			for(int i = 0; i < MAX_CLIENTS; i++)
+	Island.m_VisualState = Hovered ? CMediaIsland::EVisualState::EXPANDED : CMediaIsland::EVisualState::MINIMIZED;
+
+	const float CurrentTimerWidth = Hovered ? ExpandedWidth : CollapsedWidth;
+	const float CurrentMediaSize = Hovered ? HoveredMediaSize : CollapsedMediaSize;
+	const float CurrentMainRowHeight = CurrentMediaSize;
+
+	CUIRect TimerRect = {CenterX - CurrentTimerWidth * 0.5f, IslandY, CurrentTimerWidth, CurrentMainRowHeight};
+	const CUIRect WantedIslandRect = Hovered ? ExpandedIslandRect : CollapsedIslandRect;
+
+	const float MinWidth = 7.0f * SizeScale;
+	if(WantedIslandRect.w < MinWidth)
+	{
+		Island.ResetPosSize();
+		return;
+	}
+
+	Island.m_Rect.m_WantedPos = vec2(WantedIslandRect.x, WantedIslandRect.y);
+	Island.m_Rect.m_WantedSize = vec2(WantedIslandRect.w, WantedIslandRect.h);
+	Island.m_Rect.Update(DeltaTime);
+
+	const float HeightRange = ExpandedIslandRect.h - CollapsedIslandRect.h;
+	if(HeightRange > 0.0f)
+	{
+		Island.m_AnimProgress = std::clamp((Island.m_Rect.m_Size.y - CollapsedIslandRect.h) / HeightRange, 0.0f, 1.0f);
+	}
+	else
+	{
+		Island.m_AnimProgress = Hovered ? 1.0f : 0.0f;
+	}
+
+	CUIRect IslandRect = {Island.m_Rect.m_Pos.x, Island.m_Rect.m_Pos.y, Island.m_Rect.m_Size.x, Island.m_Rect.m_Size.y};
+	IslandRect.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_ALL, Rounding);
+
+	CUIRect ContentRect;
+	IslandRect.Margin(Padding, &ContentRect);
+	CUIRect MainRowRect = ContentRect;
+	CUIRect ControlsRect;
+	const bool ShowExpandedLayout = Hovered || Island.m_AnimProgress > 0.0f;
+	if(ShowExpandedLayout)
+	{
+		CUIRect MainRowWithGap;
+		ContentRect.HSplitBottom(ExpandedControlsHeight, &MainRowWithGap, &ControlsRect);
+		MainRowWithGap.HSplitTop(CurrentMainRowHeight, &MainRowRect, nullptr);
+	}
+
+	CUIRect ArtSlot;
+	CUIRect VisualizerSlot;
+	TimerRect = {CenterX - CurrentTimerWidth * 0.5f, MainRowRect.y, CurrentTimerWidth, MainRowRect.h};
+	if(ShowArt)
+	{
+		ArtSlot = {
+			TimerRect.x - TimerSidePadding - CurrentMediaSize,
+			MainRowRect.y,
+			CurrentMediaSize,
+			MainRowRect.h};
+	}
+	if(ShowVisualizer)
+	{
+		VisualizerSlot = {
+			TimerRect.x + TimerRect.w + TimerSidePadding,
+			MainRowRect.y,
+			CurrentMediaSize,
+			MainRowRect.h};
+	}
+
+	float TimerYOff = IslandRect.y + 1.5f * SizeScale;
+
+	const float TextPadding = 4.0f * SizeScale;
+	const float VerticalClipPadding = 2.0f * SizeScale;
+
+	float TitleWantedWidth = (Hovered ? ExpandedWidth : CollapsedWidth);
+	TitleWantedWidth *= std::clamp(Island.m_AnimProgress, 0.0f, 1.0f);
+	const float CurrentAnimatedTextWidth = maximum(TitleWantedWidth, CollapsedWidth);
+
+	CUIRect TitleRect = {TimerRect.x - TextPadding, TimerYOff, TimerRect.w + TextPadding * 2.0f, GameTimerSize};
+	CUIRect ArtistRect = {TimerRect.x - TextPadding, TimerYOff + GameTimerSize + 1.0f * SizeScale, TimerRect.w + TextPadding * 2.0f, LocalTimeSize};
+
+	CUIRect ClipRectTitle = {
+		TimerRect.Center().x - CurrentAnimatedTextWidth * 0.5f - TextPadding,
+		TitleRect.y - VerticalClipPadding,
+		CurrentAnimatedTextWidth + TextPadding * 2.0f,
+		TitleRect.h + VerticalClipPadding * 2.0f};
+
+	CUIRect ClipRectArtist = {
+		TimerRect.Center().x - CurrentAnimatedTextWidth * 0.5f - TextPadding,
+		ArtistRect.y - VerticalClipPadding,
+		CurrentAnimatedTextWidth + TextPadding * 2.0f,
+		ArtistRect.h + VerticalClipPadding * 2.0f};
+
+	if(Hovered)
+	{
+		auto RenderScrollingText = [&](const CUIRect &ClipRect, const CUIRect &TextRect, const char *pText, float TextWidth, float FontSize, ColorRGBA Color, CMediaIsland::CTextScrollState &ScrollState) {
+			if(pText == nullptr || pText[0] == '\0' || TextRect.w <= 0.0f || TextRect.h <= 0.0f)
 			{
-				if(!GameClient()->m_Snap.m_apPlayerInfos[i])
-					continue;
-				if(GameClient()->m_Teams.Team(i) != LocalTeamID)
-					continue;
-
-				if(g_Config.m_ClWarList && g_Config.m_ClWarlistFrozenTeeFlags != 0 && i != GameClient()->m_aLocalIds[0] && i != GameClient()->m_aLocalIds[1])
-				{
-					const CWarDataCache *pWarData = &GameClient()->m_WarList.GetWarData(i);
-					const bool ShowNoneType = IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, 0) && pWarData->m_WarTypeIndex == -1;
-
-					if(!IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, pWarData->m_WarTypeIndex) && !ShowNoneType)
-						continue;
-				}
-
-				vDisplayClients.push_back(i);
+				ScrollState.Reset();
+				return;
 			}
 
-			const int TotalCandidates = (int)vDisplayClients.size();
-			if(TotalCandidates == 0)
-				return;
-
-			bool Overflow = TotalCandidates > MaxTees * MaxRows;
-
-			// We keep the original semantics: if overflowing, first row(s) are frozen, then non-frozen
-			std::vector<int> vOrdered;
-			vOrdered.reserve(TotalCandidates);
-
-			if(Overflow)
+			float TextX = TextRect.Center().x - TextWidth * 0.5f;
+			if(TextWidth > TextRect.w)
 			{
-				// first all frozen
-				for(int Idx : vDisplayClients)
+				const float OverflowWidth = TextWidth - TextRect.w;
+				constexpr float ScrollHoldTime = 1.2f;
+				const float ScrollSpeed = 18.0f * SizeScale;
+				const float FrameTime = minimum(Client()->RenderFrameTime(), 0.1f);
+				if(absolute(ScrollState.m_Overflow - OverflowWidth) > 0.01f)
 				{
-					bool Frozen = GameClient()->m_aClients[Idx].m_FreezeEnd > 0 || GameClient()->m_aClients[Idx].m_DeepFrozen;
-					if(Frozen)
-						vOrdered.push_back(Idx);
+					ScrollState.Reset();
+					ScrollState.m_Overflow = OverflowWidth;
+					ScrollState.m_HoldTime = ScrollHoldTime;
 				}
-				// then all non-frozen
-				for(int Idx : vDisplayClients)
+				else
 				{
-					bool Frozen = GameClient()->m_aClients[Idx].m_FreezeEnd > 0 || GameClient()->m_aClients[Idx].m_DeepFrozen;
-					if(!Frozen)
-						vOrdered.push_back(Idx);
+					ScrollState.m_Overflow = OverflowWidth;
 				}
+
+				if(ScrollState.m_HoldTime > 0.0f)
+				{
+					ScrollState.m_HoldTime = maximum(ScrollState.m_HoldTime - FrameTime, 0.0f);
+				}
+				else
+				{
+					const float TravelTime = maximum(OverflowWidth / ScrollSpeed, 0.001f);
+					ScrollState.m_Progress = minimum(ScrollState.m_Progress + FrameTime / TravelTime, 1.0f);
+					if(ScrollState.m_Progress >= 1.0f)
+					{
+						ScrollState.m_Progress = 0.0f;
+						ScrollState.m_HoldTime = ScrollHoldTime;
+						ScrollState.m_Forward = !ScrollState.m_Forward;
+					}
+				}
+
+				const float EasedProgress = MediaIslandEaseInOut(ScrollState.m_Progress);
+				ScrollState.m_Offset = ScrollState.m_Forward ? OverflowWidth * EasedProgress : OverflowWidth * (1.0f - EasedProgress);
+				TextX = TextRect.x - ScrollState.m_Offset;
 			}
 			else
 			{
-				vOrdered = vDisplayClients;
+				ScrollState.Reset();
 			}
 
-			const int NumDisplayable = std::min((int)vOrdered.size(), MaxTees * MaxRows);
+			const float ClipScaleX = Graphics()->ScreenWidth() / m_Width;
+			const float ClipScaleY = Graphics()->ScreenHeight() / m_Height;
+			Graphics()->ClipEnable(
+				round_to_int(ClipRect.x * ClipScaleX),
+				round_to_int(ClipRect.y * ClipScaleY),
+				round_to_int(ClipRect.w * ClipScaleX),
+				round_to_int(ClipRect.h * ClipScaleY));
+			TextRender()->TextColor(Color);
+			TextRender()->Text(TextX, TextRect.y, FontSize, pText, -1.0f);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
+			Graphics()->ClipDisable();
+		};
 
-			int TotalRows = (NumDisplayable + MaxTees - 1) / MaxTees;
-			TotalRows = std::min(TotalRows, MaxRows);
+		const char *pTitle = Island.m_CurState.m_Title.c_str();
+		const char *pArtist = Island.m_CurState.m_Artist.c_str();
 
-			int FirstRowCount = NumDisplayable >= MaxTees ? MaxTees : NumDisplayable;
+		RenderScrollingText(ClipRectTitle, TitleRect, pTitle, Island.m_TitleTextWidth, TitleTextSize, TextRender()->DefaultTextColor(), Island.m_TitleScroll);
+		RenderScrollingText(ClipRectArtist, ArtistRect, pArtist, Island.m_ArtistTextWidth, ArtistTextSize, ColorRGBA(0.6f, 0.6f, 0.8f, 1.0f), Island.m_ArtistScroll);
+	}
+	else
+	{
+		if(HudTimer)
+		{
+			if(!LocalTime)
+				TimerYOff += LocalTimeSize - 2.0f * SizeScale;
 
-			Graphics()->TextureClear();
-			Graphics()->QuadsBegin();
-			Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.4f);
-			Graphics()->DrawRectExt(StartPos - TeeSize / 2,
-				0.0f,
-				TeeSize * FirstRowCount,
-				TeeSize + 3.0f + (TotalRows - 1) * TeeSize,
-				5.0f,
-				IGraphics::CORNER_B);
-			Graphics()->QuadsEnd();
-
-			float ProgressiveOffset = 0.0f;
-			int NumInRow = 0;
-			int CurrentRow = 0;
-
-			for(int n = 0; n < NumDisplayable; ++n)
+			RenderGameTimer(vec2(TimerRect.Center().x, TimerYOff), GameTimerSize);
+			TimerYOff += GameTimerSize + 1.0f * SizeScale;
+		}
+		if(LocalTime)
+		{
+			char aTimeStr[16];
+			str_timestamp_format(aTimeStr, sizeof(aTimeStr), ShowSeconds ? "%H:%M.%S" : "%H:%M");
+			if(!HudTimer)
 			{
-				const int Id = vOrdered[n];
-
-				bool Frozen = GameClient()->m_aClients[Id].m_FreezeEnd > 0 || GameClient()->m_aClients[Id].m_DeepFrozen;
-
-				NumInRow++;
-				if(NumInRow > MaxTees)
-				{
-					NumInRow = 1;
-					ProgressiveOffset = 0.0f;
-					CurrentRow++;
-				}
-
-				CTeeRenderInfo TeeInfo = GameClient()->m_aClients[Id].m_RenderInfo;
-				if(Frozen && !g_Config.m_ClShowFrozenHudSkins)
-				{
-					TeeInfo = FreezeInfo;
-				}
-
-				TeeInfo.m_Size = TeeSize;
-				const CAnimState *pIdleState = CAnimState::GetIdle();
-				vec2 OffsetToMid;
-				CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeInfo, OffsetToMid);
-				vec2 TeeRenderPos(StartPos + ProgressiveOffset, TeeSize * 0.7f + CurrentRow * TeeSize);
-				float Alpha = 1.0f;
-				CNetObj_Character CurChar = GameClient()->m_aClients[Id].m_RenderCur;
-
-				if(g_Config.m_ClShowFrozenHudSkins && Frozen)
-				{
-					Alpha = 0.6f;
-					TeeInfo.m_ColorBody.r *= 0.4f;
-					TeeInfo.m_ColorBody.g *= 0.4f;
-					TeeInfo.m_ColorBody.b *= 0.4f;
-					TeeInfo.m_ColorFeet.r *= 0.4f;
-					TeeInfo.m_ColorFeet.g *= 0.4f;
-					TeeInfo.m_ColorFeet.b *= 0.4f;
-				}
-				if(Frozen)
-					RenderTools()->RenderTee(pIdleState, &TeeInfo, EMOTE_PAIN, vec2(1.0f, 0.0f), TeeRenderPos, Alpha);
-				else
-					RenderTools()->RenderTee(pIdleState, &TeeInfo, CurChar.m_Emote, vec2(1.0f, 0.0f), TeeRenderPos);
-
-				ProgressiveOffset += TeeSize;
+				TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f));
+				TextRender()->Text(TimerRect.Center().x - NoGameTimerLocalTimeWidth * 0.5f, IslandRect.y + CollapsedIslandRect.h * 0.25f, GameTimerSize, aTimeStr, -1.0f);
+				TextRender()->TextColor(TextRender()->DefaultTextColor());
+			}
+			else
+			{
+				TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f));
+				TextRender()->Text(TimerRect.Center().x - LocalTimeWidth * 0.5f, TimerYOff, LocalTimeSize, aTimeStr, -1.0f);
+				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
 		}
+	}
+
+	if(HasMediaState)
+	{
+		if(Island.m_Changed)
+		{
+			const float LerpAmount = GetLerpAmount(DeltaTime * 0.5f);
+			if(Island.m_ChangedAnim >= 0.99f)
+			{
+				Island.m_ChangedAnim = 1.0f;
+				Island.m_Changed = false;
+			}
+			else
+				Island.m_ChangedAnim = std::lerp(Island.m_ChangedAnim, 1.0f, LerpAmount);
+		}
+
+		{
+			ArtSlot.HMargin(maximum((ArtSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &ArtSlot);
+			if(Hovered)
+			{
+				const float HoveredArtExpansion = 1.0f * SizeScale;
+				ArtSlot.w += HoveredArtExpansion;
+				ArtSlot.h += HoveredArtExpansion;
+			}
+			Island.m_AlbumArt.m_WantedPos = vec2(ArtSlot.x, ArtSlot.y);
+			Island.m_AlbumArt.m_WantedSize = vec2(ArtSlot.w, ArtSlot.h);
+
+			Island.m_AlbumArt.Update(DeltaTime);
+			CUIRect ArtRect = {Island.m_AlbumArt.m_Pos.x, Island.m_AlbumArt.m_Pos.y, Island.m_AlbumArt.m_Size.x, Island.m_AlbumArt.m_Size.y};
+
+			const float ArtRounding = minimum(4.0f * SizeScale, minimum(ArtRect.w, ArtRect.h) * 0.22f);
+
+			const CMediaViewer::CAlbumArt &PrevAlbumArt = Island.m_CurState.m_PrevAlbumArt;
+			if(Island.m_Changed && PrevAlbumArt.m_Texture.IsValid())
+			{
+				DrawRoundedTexture(Graphics(), ArtRect, 1.0f - Island.m_ChangedAnim, ArtRounding, PrevAlbumArt, Island.m_PrevCropProfile);
+			}
+
+			if(Island.m_CurState.m_AlbumArt.m_Texture.IsValid())
+			{
+				const float Alpha = Island.m_Changed && PrevAlbumArt.m_Texture.IsValid() ? Island.m_ChangedAnim : 1.0f;
+				DrawRoundedTexture(Graphics(), ArtRect, Alpha, ArtRounding, Island.m_CurState.m_AlbumArt, Island.m_CropProfile);
+			}
+			else
+			{
+				const float Alpha = Island.m_Changed ? Island.m_ChangedAnim : 1.0f;
+
+				ArtRect.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, Alpha), IGraphics::CORNER_ALL, ArtRounding);
+				constexpr const char *pDefaultArtIcon = "♫";
+				const STextBoundingBox TextBoundingBox = TextRender()->TextBoundingBox(TitleTextSize, pDefaultArtIcon, -1, -1.0f);
+
+				TextRender()->TextColor(ColorRGBA(0.0f, 0.0f, 0.0f, Alpha));
+				TextRender()->Text(ArtRect.Center().x - TextBoundingBox.m_W * 0.5f, ArtRect.Center().y - TextBoundingBox.m_H * 0.5f, TextBoundingBox.m_H, pDefaultArtIcon, -1.0f);
+				TextRender()->TextColor(TextRender()->DefaultTextColor());
+			}
+		}
+
+		if(ShowVisualizer)
+		{
+			if(g_Config.m_ClMediaIslandVisualizerAlignment == 2)
+				VisualizerSlot.HMargin(maximum((VisualizerSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &VisualizerSlot);
+			else
+				VisualizerSlot.HSplitBottom(CurrentMediaSize, nullptr, &VisualizerSlot);
+
+			Island.m_Visualizer.m_WantedPos = vec2(VisualizerSlot.x, VisualizerSlot.y);
+			Island.m_Visualizer.m_WantedSize = vec2(VisualizerSlot.w, VisualizerSlot.h);
+
+			Island.m_Visualizer.Update(DeltaTime);
+
+			CUIRect VisualizerRect = {Island.m_Visualizer.m_Pos.x, Island.m_Visualizer.m_Pos.y, Island.m_Visualizer.m_Size.x, Island.m_Visualizer.m_Size.y};
+
+			float a = Island.m_Changed ? Island.m_ChangedAnim : 1.0f;
+
+			ColorRGBA PrimaryColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMediaIslandVisualizerColor));
+			ColorRGBA SecondaryColor = ColorRGBA(1.0f, 1.0f, 1.0f);
+
+			if(g_Config.m_ClMediaIslandVisualizerColorDynamic)
+			{
+				if(Island.m_CurState.m_AlbumArt.m_Colors.m_HasPrimary)
+					PrimaryColor = LerpColor(Island.m_CurState.m_PrevAlbumArt.m_Colors.GetPrimary(), Island.m_CurState.m_AlbumArt.m_Colors.GetPrimary(), a);
+				if(Island.m_CurState.m_AlbumArt.m_Colors.m_HasSecondary)
+					SecondaryColor = LerpColor(Island.m_CurState.m_PrevAlbumArt.m_Colors.GetSecondary(), Island.m_CurState.m_AlbumArt.m_Colors.GetSecondary(), a);
+			}
+			else
+				SecondaryColor = PrimaryColor;
+
+			RenderVisualizer(MediaState, PrimaryColor, SecondaryColor, VisualizerRect.TopLeft(), VisualizerRect.Size(), 5);
+		}
+
+		if(ShowExpandedLayout)
+		{
+			CUIRect ButtonRow = ControlsRect;
+			ButtonRow.HMargin(maximum((ButtonRow.h - ButtonSize) * 0.5f, 0.0f), &ButtonRow);
+			const float ButtonRowWidth = ButtonSize * 3.0f + ButtonSpacing * 2.0f;
+			ButtonRow = {
+				TimerRect.Center().x - ButtonRowWidth * 0.5f,
+				ButtonRow.y - Padding * 0.5f,
+				ButtonRowWidth,
+				ButtonSize};
+
+			CUIRect PrevButton;
+			CUIRect PlayPauseButton;
+			CUIRect NextButton;
+			CUIRect Remaining = ButtonRow;
+			Remaining.VSplitLeft(ButtonSize, &PrevButton, &Remaining);
+			Remaining.VSplitLeft(ButtonSpacing, nullptr, &Remaining);
+			Remaining.VSplitLeft(ButtonSize, &PlayPauseButton, &Remaining);
+			Remaining.VSplitLeft(ButtonSpacing, nullptr, &Remaining);
+			Remaining.VSplitLeft(ButtonSize, &NextButton, nullptr);
+
+			auto DrawControlButton = [&](CButtonContainer *pButtonContainer, const CUIRect &ButtonRect, const char *pIcon, bool Enabled) {
+				const bool ButtonHovered = HasMousePos && ButtonRect.Inside(MousePos);
+				const float IconSize = 7.0f * SizeScale;
+
+				const bool Holding = ButtonHovered && Ui()->MouseButton(0);
+				const bool WasHolding = Ui()->LastMouseButton(0);
+
+				const float ExpandProgress = Island.m_AnimProgress;
+
+				const float Alpha = std::clamp((ExpandProgress - 0.6f) / 0.4f, 0.0f, 1.0f);
+
+				TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+				const float IconWidth = TextRender()->TextWidth(IconSize, pIcon, -1, -1.0f);
+				ColorRGBA IconColor = Enabled ? ColorRGBA(1.0f, 1.0f, 1.0f, ButtonHovered && !Holding ? 0.9f : 0.65f) : ColorRGBA(1.0f, 1.0f, 1.0f, 0.35f);
+				ColorRGBA DefaultOutline = TextRender()->DefaultTextOutlineColor();
+				TextRender()->TextColor(IconColor.WithMultipliedAlpha(Alpha));
+				TextRender()->TextOutlineColor(DefaultOutline.WithMultipliedAlpha(Alpha));
+				TextRender()->Text(ButtonRect.Center().x - IconWidth * 0.5f, ButtonRect.Center().y - IconSize * 0.5f, IconSize, pIcon, -1.0f);
+				TextRender()->TextColor(TextRender()->DefaultTextColor());
+				TextRender()->TextOutlineColor(DefaultOutline);
+				TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+
+				if(WasHolding && !Holding && ButtonHovered)
+					return true;
+
+				return false;
+			};
+
+			static CButtonContainer s_aButtons[3];
+			if(DrawControlButton(&s_aButtons[0], PrevButton, FontIcon::BACKWARD_STEP, MediaState.m_CanPrev))
+				GameClient()->m_MediaViewer.Previous();
+			if(DrawControlButton(&s_aButtons[1], PlayPauseButton, MediaState.m_Playing ? FontIcon::PAUSE : FontIcon::PLAY, MediaState.m_CanPause || MediaState.m_CanPlay))
+				GameClient()->m_MediaViewer.PlayPause();
+			if(DrawControlButton(&s_aButtons[2], NextButton, FontIcon::FORWARD_STEP, MediaState.m_CanNext))
+				GameClient()->m_MediaViewer.Next();
+		}
+	}
+	Island.m_PrevHovered = false;
+	if(Hovered)
+		Island.m_PrevHovered = true;
+}
+
+void CHud::RenderVisualizer(const CMediaViewer::CState &State, ColorRGBA Primary, ColorRGBA Secondary, vec2 Pos, vec2 Size, int NumBands)
+{
+	if(!g_Config.m_ClMediaIslandVisualizer || NumBands <= 0)
+		return;
+	if(!State.m_Visualizer.m_Active)
+		return;
+
+	constexpr int TotalBars = CMediaViewer::CVisualizer::NUM_FREQUENCY_BANDS;
+
+	const float BarWidth = Size.x / NumBands;
+	const float BarSpacing = BarWidth * 0.2f;
+	const float ActualBarWidth = BarWidth - BarSpacing;
+
+	float aVisualizerBands[TotalBars];
+	std::vector<float> vRenderedBands(NumBands);
+	vRenderedBands.reserve(NumBands);
+
+	State.m_Visualizer.GetBands(aVisualizerBands, TotalBars);
+	// Average bands into rendered bands
+	for(int i = 0; i < NumBands; ++i)
+	{
+		float Sum = 0.0f;
+		int Count = 0;
+		for(int j = i * (TotalBars / NumBands); j < (i + 1) * (TotalBars / NumBands) && j < TotalBars; ++j)
+		{
+			Sum += aVisualizerBands[j];
+			Count++;
+		}
+		vRenderedBands[i] = Count > 0 ? Sum / Count : 0.0f;
+	}
+
+	for(int i = 0; i < NumBands; ++i)
+	{
+		const bool AlignCenter = g_Config.m_ClMediaIslandVisualizerAlignment == 2;
+		float Height = 0.2f + vRenderedBands[i] * 0.8f;
+		float BarHeight = Height * Size.y;
+
+		float X = Pos.x + i * BarWidth;
+		float Y = AlignCenter ? Pos.y + (Size.y - BarHeight) * 0.5f : Pos.y + (Size.y - BarHeight);
+
+		float a = i / (float)NumBands;
+
+		ColorRGBA Color = LerpColor(Primary, Secondary, a);
+
+		float Rounding = minimum(ActualBarWidth * 0.5f, 2.0f);
+
+		Graphics()->DrawRect(X, Y, ActualBarWidth, BarHeight, Color, IGraphics::CORNER_ALL, Rounding);
+	}
+}
+
+void CHud::CMediaIsland::CPosSize::Update(float DeltaTime)
+{
+	if(!m_Initialized || g_Config.m_ClMediaIslandAnimation == 0)
+	{
+		m_Pos = m_WantedPos;
+		m_Size = m_WantedSize;
+		m_Initialized = true;
+	}
+	else
+	{
+		const float LerpAmount = GetLerpAmount(DeltaTime);
+		m_Pos = vec2(
+			std::lerp(m_Pos.x, m_WantedPos.x, LerpAmount),
+			std::lerp(m_Pos.y, m_WantedPos.y, LerpAmount));
+		m_Size = vec2(
+			std::lerp(m_Size.x, m_WantedSize.x, LerpAmount),
+			std::lerp(m_Size.y, m_WantedSize.y, LerpAmount));
+
+		if(distance(m_Pos, m_WantedPos) < 0.01f)
+			m_Pos = m_WantedPos;
+		if(distance(m_Size, m_WantedSize) < 0.01f)
+			m_Size = m_WantedSize;
 	}
 }

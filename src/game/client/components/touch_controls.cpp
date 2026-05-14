@@ -311,18 +311,21 @@ void CTouchControls::CTouchButton::Render(std::optional<bool> Selected, std::opt
 	ScreenRect.Margin(10.0f, &LabelRect);
 	SLabelProperties LabelProps;
 	LabelProps.m_MaxWidth = LabelRect.w;
+	const unsigned OldRenderFlags = m_pTouchControls->TextRender()->GetRenderFlags();
 	if(LabelData.m_Type == CButtonLabel::EType::ICON)
 	{
 		m_pTouchControls->TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-		m_pTouchControls->TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
+		m_pTouchControls->TextRender()->SetRenderFlags(OldRenderFlags | ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
 		m_pTouchControls->Ui()->DoLabel(&LabelRect, LabelData.m_pLabel, FontSize, TEXTALIGN_MC, LabelProps);
-		m_pTouchControls->TextRender()->SetRenderFlags(0);
+		m_pTouchControls->TextRender()->SetRenderFlags(OldRenderFlags);
 		m_pTouchControls->TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 	}
 	else
 	{
 		const char *pLabel = LabelData.m_Type == CButtonLabel::EType::LOCALIZED ? Localize(LabelData.m_pLabel) : LabelData.m_pLabel;
+		m_pTouchControls->TextRender()->SetRenderFlags(OldRenderFlags | ETextRenderFlags::TEXT_RENDER_FLAG_NO_FIRST_CHARACTER_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_LAST_CHARACTER_ADVANCE);
 		m_pTouchControls->Ui()->DoLabel(&LabelRect, pLabel, FontSize, TEXTALIGN_MC, LabelProps);
+		m_pTouchControls->TextRender()->SetRenderFlags(OldRenderFlags);
 	}
 }
 

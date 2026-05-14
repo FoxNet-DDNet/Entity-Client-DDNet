@@ -105,6 +105,7 @@ public:
 	static void RenderCandidates();
 
 	static CLineInput *GetActiveInput() { return ms_pActiveInput; }
+	static EInputPriority GetActiveInputPriority() { return ms_ActiveInputPriority; }
 
 	CLineInput()
 	{

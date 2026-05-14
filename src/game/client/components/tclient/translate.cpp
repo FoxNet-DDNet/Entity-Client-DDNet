@@ -633,8 +633,8 @@ public:
 	CTranslateBackendGoogle(IHttp &Http, const char *pText)
 	{
 		char aBuf[4096];
-		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=%s&tl=%s&dt=t&q=",
-			"auto", EncodeTarget(g_Config.m_EcTranslateTarget));
+		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=",
+			EncodeTarget(g_Config.m_EcTranslateTarget));
 		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
 		CreateHttpRequest(Http, aBuf);
 	}
@@ -649,13 +649,13 @@ void CTranslate::ConTranslate(IConsole::IResult *pResult, void *pUserData)
 		pName = pResult->GetString(0);
 
 	CTranslate *pThis = static_cast<CTranslate *>(pUserData);
-	pThis->Translate(pName);
+	pThis->Translate(pName, true);
 }
 
 void CTranslate::ConTranslateId(IConsole::IResult *pResult, void *pUserData)
 {
 	CTranslate *pThis = static_cast<CTranslate *>(pUserData);
-	pThis->Translate(pResult->GetInteger(0));
+	pThis->Translate(pResult->GetInteger(0), true);
 }
 
 void CTranslate::OnConsoleInit()
@@ -664,7 +664,7 @@ void CTranslate::OnConsoleInit()
 	Console()->Register("translate_id", "v[id]", CFGFLAG_CLIENT, ConTranslateId, this, "Translate last message of the person with this id");
 }
 
-void CTranslate::Translate(int Id, bool ShowProgress)
+void CTranslate::Translate(int Id, bool Manual)
 {
 	if(Id < 0 || Id > (int)std::size(GameClient()->m_aClients))
 	{
@@ -677,10 +677,10 @@ void CTranslate::Translate(int Id, bool ShowProgress)
 		GameClient()->m_Chat.Echo("ID not connected");
 		return;
 	}
-	Translate(Player.m_aName, ShowProgress);
+	Translate(Player.m_aName, Manual);
 }
 
-void CTranslate::Translate(const char *pName, bool ShowProgress)
+void CTranslate::Translate(const char *pName, bool Manual)
 {
 	CChat::CLine *pLineBest = nullptr;
 	if(GameClient()->m_Chat.m_CurrentLine > 0)
@@ -689,8 +689,15 @@ void CTranslate::Translate(const char *pName, bool ShowProgress)
 		for(int i = 0; i < MAX_LINES; i++)
 		{
 			CChat::CLine *pLine = &GameClient()->m_Chat.m_aLines[((GameClient()->m_Chat.m_CurrentLine - i) + MAX_LINES) % MAX_LINES];
-			if(pLine->m_pTranslateResponse != nullptr)
-				continue;
+			if(pLine->m_pTranslateResponse)
+			{
+				if(pLine->m_pTranslateResponse->m_Auto && Manual)
+				{
+					pLine->m_pTranslateResponse->m_Auto = false;
+				}
+				else
+					continue;
+			}
 			if(pLine->m_ClientId == CChat::CLIENT_MSG)
 				continue;
 			if(pLine->m_ClientId == CChat::ECLIENT_MSG)
@@ -725,10 +732,10 @@ void CTranslate::Translate(const char *pName, bool ShowProgress)
 		return;
 	}
 
-	Translate(*pLineBest, ShowProgress);
+	Translate(*pLineBest, Manual);
 }
 
-void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
+void CTranslate::Translate(CChat::CLine &Line, bool Manual)
 {
 	if(m_vJobs.size() > 15)
 	{
@@ -754,7 +761,7 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 		return;
 	}
 
-	if(ShowProgress)
+	if(Manual)
 	{
 		str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("%s translating to %s", "translate"), Job.m_pBackend->Name(), g_Config.m_EcTranslateTarget);
 		Job.m_pLine->m_Time = time();
@@ -764,11 +771,11 @@ void CTranslate::Translate(CChat::CLine &Line, bool ShowProgress)
 		Job.m_pTranslateResponse->m_Text[0] = '\0';
 	}
 
-	Job.m_pTranslateResponse->m_Auto = ShowProgress;
+	Job.m_pTranslateResponse->m_Auto = !Manual;
 
 	m_vJobs.emplace_back(std::move(Job));
 
-	if(ShowProgress)
+	if(Manual)
 		GameClient()->m_Chat.RebuildChat();
 }
 
@@ -786,21 +793,19 @@ void CTranslate::OnRender()
 			return false; // Keep ongoing tasks
 		if(*Done)
 		{
-			if(!Job.m_pTranslateResponse->m_Auto)
+			if(Job.m_pTranslateResponse->m_Auto)
 			{
 				if(!HandleLanguageWhitelist(Job.m_pTranslateResponse->m_Language))
 				{
 					Job.m_pTranslateResponse->m_Text[0] = '\0';
 				}
 
-				if(HandleLanguageBlacklist(Job.m_pTranslateResponse->m_Language))
+				else if(HandleLanguageBlacklist(Job.m_pTranslateResponse->m_Language))
 				{
 					Job.m_pTranslateResponse->m_Text[0] = '\0';
-					Job.m_pTranslateResponse->m_Blacklisted = true;
 				}
 			}
-
-			else if(Job.m_pBackend->CompareTargets(Job.m_pTranslateResponse->m_Language, g_Config.m_EcTranslateTarget))
+			if(Job.m_pBackend->CompareTargets(Job.m_pTranslateResponse->m_Language, g_Config.m_EcTranslateTarget))
 			{
 				Job.m_pTranslateResponse->m_Text[0] = '\0';
 			}

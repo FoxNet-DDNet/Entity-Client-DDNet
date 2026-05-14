@@ -19,6 +19,8 @@ public:
 	char m_aDesc[128];
 	char m_aLetters[STATUSBAR_TYPE_LETTERS] = {};
 	bool m_ShowLabel = true;
+	mutable float m_CachedLabelWidth = -1.0f;
+	mutable float m_CachedFontSize = -1.0f;
 	CStatusItem(std::function<void()> Render, std::function<float()> Width, const char *pLetters, const char *pName, const char *pDisplayName, const char *pDesc, bool ShowLabel = true);
 };
 
@@ -102,6 +104,7 @@ private:
 
 	void LabelRender(const char *pLabel);
 	float LabelWidth(const char *pLabel);
+	float GetCachedLabelWidth(const CStatusItem *pItem);
 };
 
 #endif

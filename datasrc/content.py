@@ -251,7 +251,6 @@ image_generic_ghost = Image("generic_ghost", "entity/icons/generic_ghost.png")
 image_muted_icon = Image("muted_icon", "entity/icons/muted_icon.png")
 image_settings_icon = Image("settings_icon", "entity/icons/settings_icon.png")
 image_foxnet_flags = Image("foxnet_flags", "entity/icons/foxnet_flags.png")
-
 image_null = Image("null", "")
 image_particles = Image("particles", "particles.png")
 image_game = Image("game", "game.png")
@@ -314,7 +313,6 @@ set_generic_ghost = SpriteSet("generic_ghost", image_generic_ghost, 1, 1)
 set_muted_icon = SpriteSet("muted_icon", image_muted_icon, 1, 1)
 set_settings_icon = SpriteSet("settings_icon", image_settings_icon, 1, 1)
 set_foxnet_flags = SpriteSet("foxnet_flags", image_foxnet_flags, 4, 2)
-
 
 container.spritesets.Add(set_particles)
 container.spritesets.Add(set_game)

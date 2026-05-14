@@ -2050,7 +2050,7 @@ void CMenus::UpdateWarlistCache()
 	for(int ServerIdx = 0; ServerIdx < ServerBrowser()->NumSortedServers(); ++ServerIdx)
 	{
 		const CServerInfo *pCurServer = ServerBrowser()->SortedGet(ServerIdx);
-		for(int ClientIdx = 0; ClientIdx < pCurServer->m_NumClients; ++ClientIdx)
+		for(int ClientIdx = 0; ClientIdx < minimum(pCurServer->m_NumClients, (int)SERVERINFO_MAX_CLIENTS); ++ClientIdx)
 		{
 			const CServerInfo::CClient *pClient = &pCurServer->m_aClients[ClientIdx];
 			if(pClient->m_aName[0])

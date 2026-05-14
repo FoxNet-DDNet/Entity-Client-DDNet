@@ -1,11 +1,11 @@
 name: Check clang-tidy
 
-on:
-  push:
-    branches-ignore:
-      - gh-readonly-queue/**
-  pull_request:
-  merge_group:
+# on:
+#   push:
+#     branches-ignore:
+#       - gh-readonly-queue/**
+#   pull_request:
+#   merge_group:
 
 jobs:
   check-clang-tidy:

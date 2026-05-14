@@ -793,6 +793,14 @@ void CItems::RenderCosmeticLaser(const CNetObj_CosmeticLaser *pPrev, const CNetO
 	const int Flags = pCurrent->m_Flags;
 	const bool Anchored = Flags & COSMETIC_FLAG_ANCHORED;
 	const int Owner = pCurrent->m_Owner;
+	if(Owner >= 0 && Anchored)
+	{
+		const CGameClient::CClientData &ClientData = GameClient()->m_aClients[Owner];
+		if(!ClientData.m_Active || !ClientData.m_RenderInfo.Valid())
+			return;
+		if(!GameClient()->m_Snap.m_aCharacters[Owner].m_Active)
+			return;
+	}
 
 	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
 
@@ -844,12 +852,11 @@ void CItems::RenderCosmeticLaser(const CNetObj_CosmeticLaser *pPrev, const CNetO
 		break;
 	}
 
-	bool IsOtherTeam = Owner >= 0 && GameClient()->IsOtherTeam(Owner);
+	bool IsOtherTeam = GameClient()->IsOtherTeam(Owner) || Owner < 0;
 
 	float Alpha = pCurrent->m_Alpha * 0.01f;
 	if(pCurrent->m_Alpha == -1)
 		Alpha = IsOtherTeam ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
-
 	if(Alpha <= 0)
 		return; // Invisible
 
@@ -966,6 +973,14 @@ void CItems::RenderCosmeticPickup(const CNetObj_CosmeticPickup *pPrev, const CNe
 	const int Flags = pCurrent->m_Flags;
 	const bool Anchored = Flags & COSMETIC_FLAG_ANCHORED;
 	const int Owner = pCurrent->m_Owner;
+	if(Owner >= 0 && Anchored)
+	{
+		const CGameClient::CClientData &ClientData = GameClient()->m_aClients[Owner];
+		if(!ClientData.m_Active || !ClientData.m_RenderInfo.Valid())
+			return;
+		if(!GameClient()->m_Snap.m_aCharacters[Owner].m_Active)
+			return;
+	}
 
 	int CurWeapon = std::clamp(pCurrent->m_Subtype, 0, NUM_WEAPONS - 1);
 	int QuadOffset = 2;
@@ -1009,8 +1024,8 @@ void CItems::RenderCosmeticPickup(const CNetObj_CosmeticPickup *pPrev, const CNe
 		Graphics()->TextureSet(GameClient()->m_GameSkin.m_aSpritePickupWeaponArmor[pCurrent->m_Type - POWERUP_ARMOR_SHOTGUN]);
 	}
 	Graphics()->QuadsSetRotation(0);
-	bool IsOtherTeam = (pCurrent->m_Owner >= 0 && GameClient()->IsOtherTeam(pCurrent->m_Owner));
 
+	bool IsOtherTeam = GameClient()->IsOtherTeam(Owner) || Owner < 0;
 	float Alpha = pCurrent->m_Alpha * 0.01f;
 	if(pCurrent->m_Alpha == -1)
 		Alpha = IsOtherTeam ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
@@ -1053,6 +1068,14 @@ void CItems::RenderCosmeticProjectile(const CNetObj_CosmeticProjectile *pPrev, c
 	const int Flags = pCurrent->m_Flags;
 	const bool Anchored = Flags & COSMETIC_FLAG_ANCHORED;
 	const int Owner = pCurrent->m_Owner;
+	if(Owner >= 0 && Anchored)
+	{
+		const CGameClient::CClientData &ClientData = GameClient()->m_aClients[Owner];
+		if(!ClientData.m_Active || !ClientData.m_RenderInfo.Valid())
+			return;
+		if(!GameClient()->m_Snap.m_aCharacters[Owner].m_Active)
+			return;
+	}
 
 	int CurWeapon = std::clamp(pCurrent->m_Type, 0, NUM_WEAPONS - 1);
 	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
@@ -1070,14 +1093,13 @@ void CItems::RenderCosmeticProjectile(const CNetObj_CosmeticProjectile *pPrev, c
 	vec2 Pos = mix(PrevPos, CurPos, IntraTick);
 	vec2 Vel = CurPos - PrevPos;
 
-	bool IsOtherTeam = Owner >= 0 && GameClient()->IsOtherTeam(Owner);
+	bool IsOtherTeam = (Owner >= 0 && GameClient()->IsOtherTeam(Owner)) || Owner < 0;
 
 	float Alpha = pCurrent->m_Alpha * 0.01f;
 	if(pCurrent->m_Alpha == -1)
 		Alpha = IsOtherTeam ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
-
-	if(Alpha <= 0.0f)
-		return;
+	if(Alpha <= 0)
+		return; // Invisible
 
 	if(CurWeapon == WEAPON_GRENADE)
 		GameClient()->m_Effects.SmokeTrail(Pos, Vel * -1, Alpha, 0.0f);

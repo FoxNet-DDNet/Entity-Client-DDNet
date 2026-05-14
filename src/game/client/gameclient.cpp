@@ -143,6 +143,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Trails, // TClient
 					      &m_Translate, // TClient
 					      &m_Ghost,
+					      &m_MediaViewer, // EClient
 					      &m_Players,
 					      &m_PhysicBalls, // EClient
 					      &m_MovingTilesBackground, // EClient

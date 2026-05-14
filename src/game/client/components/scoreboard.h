@@ -93,6 +93,9 @@ public:
 	bool OnInput(const IInput::CEvent &Event) override;
 
 	bool IsActive() const;
+
+	// EClient
+	friend class CHud;
 };
 
 #endif

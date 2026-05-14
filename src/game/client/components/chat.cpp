@@ -1000,10 +1000,17 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		return;
 	}
 
-	// Track new lines while selecting to prevent scroll offset issues
+	// Keep the visible line mapping stable only while actively dragging a selection.
+	// Once a finished selection exists, any new incoming line invalidates it because
+	// the cached selection coordinates no longer match the live chat backlog.
 	if(m_Selecting || m_HasSelection)
 	{
 		m_NewLineCounter++;
+	}
+	else
+	{
+		m_SelectionText.clear();
+		m_NewLineCounter = 0;
 	}
 
 	m_CurrentLine = (m_CurrentLine + 1) % MAX_LINES;
@@ -1101,7 +1108,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	FChatMsgCheckAndPrint(CurrentLine);
 
 	if(m_BacklogCurLine > 0)
-		m_BacklogCurLine = minimum(m_BacklogCurLine + 1, maximum(0, NumInitializedLines() - 1));
+		m_BacklogCurLine = minimum(m_BacklogCurLine + 1, GetMaxBacklogCurLine());
 
 	// play sound
 	int64_t Now = time();
@@ -1169,6 +1176,7 @@ void CChat::OnPrepareLines(float y)
 {
 	float x = 5.0f;
 	float FontSize = this->FontSize();
+	const int LinesToSkipForSelection = GetLinesToSkipForSelection();
 
 	const bool IsScoreBoardOpen = GameClient()->m_Scoreboard.IsActive() && (Graphics()->ScreenAspect() > 1.7f); // only assume scoreboard when screen ratio is widescreen(something around 16:9)
 	const bool ShowLargeArea = m_Show || (m_Mode != MODE_NONE && g_Config.m_ClShowChat == 1) || g_Config.m_ClShowChat == 2;
@@ -1196,7 +1204,6 @@ void CChat::OnPrepareLines(float y)
 	float TextBegin = Begin + RealMsgPaddingX / 2.0f;
 	int OffsetType = IsScoreBoardOpen ? 1 : 0;
 	m_LinesRendered = 0;
-	int LinesSkipped = 0;
 
 	for(int i = 0; i < MAX_LINES; i++)
 	{
@@ -1206,11 +1213,12 @@ void CChat::OnPrepareLines(float y)
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
 			break;
 
-		if(LinesSkipped < m_BacklogCurLine)
-		{
-			LinesSkipped++;
+		if(i < LinesToSkipForSelection)
 			continue;
-		}
+
+		const int AdjustedIndex = i - LinesToSkipForSelection;
+		if(AdjustedIndex < m_BacklogCurLine)
+			continue;
 
 		const bool NeedsYOffsetRecalc = Line.m_aYOffset[OffsetType] < 0.0f;
 		const bool NeedsContainerRecreate = ForceRecreate || !Line.m_TextContainerIndex.Valid() || Line.m_RenderedOffsetType != OffsetType;
@@ -1284,8 +1292,6 @@ void CChat::OnPrepareLines(float y)
 						pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
 				}
 			}
-			else if(Line.m_pTranslateResponse->m_Language[0] != '\0' && g_Config.m_EcTranslateAutoShowLanguage)
-				pTranslatedLanguage = Line.m_pTranslateResponse->m_Language;
 		}
 
 		// get the y offset (calculate it if we haven't done that yet)
@@ -1362,13 +1368,6 @@ void CChat::OnPrepareLines(float y)
 					TextRender()->ColorParsing(pText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
 				else
 					TextRender()->TextEx(&AppendCursor, pText);
-
-				if(pTranslatedLanguage && !Line.m_pTranslateResponse->m_Blacklisted)
-				{
-					TextRender()->TextEx(&AppendCursor, " [");
-					TextRender()->TextEx(&AppendCursor, pTranslatedLanguage);
-					TextRender()->TextEx(&AppendCursor, "]");
-				}
 			}
 
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
@@ -1541,23 +1540,12 @@ void CChat::OnPrepareLines(float y)
 		}
 		else
 		{
+			ColorizeLine(Line, AppendCursor);
 			if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
 				TextRender()->ColorParsing(pText, &AppendCursor, Color, &Line.m_TextContainerIndex);
 			else
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
 			RawMessage += TextRender()->RemoveColorCodes(pText);
-
-			if(pTranslatedLanguage && !Line.m_pTranslateResponse->m_Blacklisted)
-			{
-				std::string Lang = " [" + std::string(pTranslatedLanguage) + "]";
-				ColorRGBA ColorLang = Color;
-				ColorLang.r *= 0.8f;
-				ColorLang.g *= 0.8f;
-				ColorLang.b *= 0.8f;
-				TextRender()->TextColor(ColorLang);
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, Lang.c_str());
-				RawMessage += Lang;
-			}
 		}
 
 		AppendCursor.m_vColorSplits.clear();
@@ -1590,6 +1578,20 @@ void CChat::OnPrepareLines(float y)
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 }
 
+int CChat::GetLinesToSkipForSelection() const
+{
+	const bool IsSelecting = m_Mode != MODE_NONE && (m_Selecting || m_HasSelection);
+	if(!IsSelecting || m_BacklogCurLine != 0 || m_NewLineCounter <= 0)
+		return 0;
+
+	return minimum(m_NewLineCounter, maximum(0, NumInitializedLines() - 1));
+}
+
+int CChat::GetMaxBacklogCurLine() const
+{
+	return maximum(0, NumInitializedLines() - maximum(1, m_LinesRendered));
+}
+
 void CChat::OnRender()
 {
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
@@ -1598,6 +1600,7 @@ void CChat::OnRender()
 	if(m_Mode != MODE_NONE)
 	{
 		Ui()->StartCheck();
+		Ui()->Update(vec2(-1, -1), true);
 	}
 
 	// send pending chat messages
@@ -1645,6 +1648,7 @@ void CChat::OnRender()
 		if(!m_Selecting && MousePressed && MousePos.y < ChatInputAreaY)
 		{
 			m_Selecting = true;
+			m_NewLineCounter = 0;
 			m_SelectionMousePress = MousePos;
 			m_SelectionMouseRelease = m_SelectionMousePress;
 			m_HasSelection = false;
@@ -1669,6 +1673,7 @@ void CChat::OnRender()
 		{
 			m_HasSelection = false;
 			m_SelectionText.clear();
+			m_NewLineCounter = 0;
 		}
 	}
 	else
@@ -1679,6 +1684,7 @@ void CChat::OnRender()
 			m_Selecting = false;
 			m_HasSelection = false;
 			m_SelectionText.clear();
+			m_NewLineCounter = 0;
 		}
 	}
 
@@ -1770,7 +1776,7 @@ void CChat::OnRender()
 #endif
 		return;
 
-	m_BacklogCurLine = std::clamp(m_BacklogCurLine, 0, maximum(0, NumInitializedLines() - 1));
+	m_BacklogCurLine = std::clamp(m_BacklogCurLine, 0, GetMaxBacklogCurLine());
 
 	y -= ScaledFontSize;
 
@@ -1797,11 +1803,7 @@ void CChat::OnRender()
 
 	// When selecting, skip rendering new lines to keep the view stable
 	// Instead of adjusting mouse positions, we simply don't show the new messages until selection ends
-	int LinesToSkipForSelection = 0;
-	if(IsSelecting && m_NewLineCounter > 0 && m_BacklogCurLine == 0)
-	{
-		LinesToSkipForSelection = m_NewLineCounter;
-	}
+	const int LinesToSkipForSelection = GetLinesToSkipForSelection();
 	// Only reset counter when not selecting
 	if(!IsSelecting)
 		m_NewLineCounter = 0;
@@ -2096,53 +2098,59 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 	if(Client()->State() == CClient::STATE_DEMOPLAYBACK)
 		return false;
 
+	auto FindName = [&](int Idx = 0) -> std::string {
+		if(Idx < 0)
+			return "";
+
+		const char *pSearch = pLine;
+		for(int i = 0; i <= Idx; ++i)
+		{
+			const char *pFindName = str_find_nocase(pSearch, "'");
+			if(!pFindName)
+				return "";
+
+			const char *pNameEnd = str_find_nocase(pFindName + 1, "'");
+			if(!pNameEnd || pNameEnd <= pFindName + 1)
+				return "";
+
+			if(i == Idx)
+				return std::string(pFindName + 1, pNameEnd);
+
+			pSearch = pNameEnd + 1;
+		}
+
+		return "";
+	};
+
 	if(ClientId == SERVER_MSG)
 	{
 		if(g_Config.m_ClAutoAddOnNameChange)
 		{
-			if(str_find_nocase(pLine, "' changed name to '"))
+			if(str_find_nocase(pLine, "changed name to"))
 			{
-				char aNewName[MAX_NAME_LENGTH];
-				char aOldName[MAX_NAME_LENGTH];
-				{
-					const char *pName = str_find_nocase(pLine, " '");
-					const char *pOldName = str_find_nocase(pLine, "'");
-					const char *pNameLength = str_find_nocase(pLine, "' ");
+				std::string NameBefore = FindName(0);
+				std::string NameAfter = FindName(1);
 
-					std::string NewName(pName);
-					NewName.erase(NewName.begin() + str_length(pName) - 1);
-					NewName.erase(NewName.begin());
-					NewName.erase(NewName.begin());
-
-					str_copy(aNewName, NewName.c_str(), sizeof(aNewName));
-
-					std::string OldName(pOldName);
-					OldName.erase(str_length(pOldName) - str_length(pNameLength));
-					OldName.erase(OldName.begin());
-
-					str_copy(aOldName, OldName.c_str(), sizeof(aOldName));
-				}
-
-				int PlayerCid = GameClient()->GetClientId(aOldName);
+				int PlayerCid = GameClient()->GetClientId(NameBefore.c_str());
 
 				if(PlayerCid >= 0)
 				{
 					const CWarDataCache Cache = GameClient()->m_WarList.GetWarData(PlayerCid);
-					const CWarEntry *ExistingEntry = GameClient()->m_WarList.FindWarEntryWithName(aNewName);
-					const CWarEntry *OldEntry = GameClient()->m_WarList.FindWarEntryWithName(aOldName);
+					const CWarEntry *ExistingEntry = GameClient()->m_WarList.FindWarEntryWithName(NameAfter.c_str());
+					const CWarEntry *OldEntry = GameClient()->m_WarList.FindWarEntryWithName(NameBefore.c_str());
 
-					if(ExistingEntry && OldEntry && ExistingEntry->m_pWarType == OldEntry->m_pWarType && str_comp(ExistingEntry->m_aName, aNewName) == 0)
+					if(ExistingEntry && OldEntry && ExistingEntry->m_pWarType == OldEntry->m_pWarType && str_comp(ExistingEntry->m_aName, NameAfter.c_str()) == 0)
 						return false; // Already exists with the new name
 
 					char aBuf[128];
 					char aReason[128] = "";
-					str_copy(aReason, aOldName);
+					str_copy(aReason, NameBefore.c_str());
 					if(OldEntry && OldEntry->m_aReason[0] != '\0')
 						str_copy(aReason, OldEntry->m_aReason);
 
 					if(ExistingEntry && ExistingEntry->m_pWarType->m_Index == 2)
 					{
-						str_format(aBuf, sizeof(aBuf), "'%s' changed their name to a Teammates ['%s']", aOldName, aNewName);
+						str_format(aBuf, sizeof(aBuf), "'%s' changed their name to a Teammates ['%s']", NameBefore.c_str(), NameAfter.c_str());
 						if(g_Config.m_ClAutoAddOnNameChange == 2)
 							GameClient()->ClientMessage(aBuf);
 					}
@@ -2155,16 +2163,16 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 						if(Cache.m_WarGroupMatches[WarlistType])
 						{
-							GameClient()->m_WarList.AddWarEntry(aNewName, "", aReason, pWarName, true);
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp '%s' list", aNewName, pWarName);
+							GameClient()->m_WarList.AddWarEntry(NameAfter.c_str(), "", aReason, pWarName, true);
+							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp '%s' list", NameAfter.c_str(), pWarName);
 							if(g_Config.m_ClAutoAddOnNameChange == 2)
 								GameClient()->ClientMessage(aBuf);
 						}
 					}
 					if(Cache.m_IsMuted)
 					{
-						GameClient()->m_WarList.AddMute(aNewName, true, true);
-						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", aNewName);
+						GameClient()->m_WarList.AddMute(NameAfter.c_str(), true, true);
+						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", NameAfter.c_str());
 						if(g_Config.m_ClAutoAddOnNameChange == 2)
 							GameClient()->ClientMessage(aBuf);
 					}
@@ -2172,60 +2180,33 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 			}
 		}
 
-		if(g_Config.m_ClAutoJoinTeam)
+		if(g_Config.m_ClAutoJoinTeam && g_Config.m_ClAutoJoinTeamName[0] != '\0')
 		{
-			if(str_find_nocase(pLine, "' joined team "))
+			std::string Name = FindName();
+			if(str_find_nocase(pLine, "joined team "))
 			{
-				const char *PName = str_find_nocase(pLine, "'");
-				const char *NameLength = str_find_nocase(pLine, "' ");
-				if(str_find_nocase(pLine, g_Config.m_ClAutoJoinTeamName))
+				if(!str_comp(Name.c_str(), g_Config.m_ClAutoJoinTeamName))
 				{
-					int Length = str_length(PName) - str_length(NameLength);
-					std::string Name(PName);
-					Name.erase(Length);
-					Name.erase(Name.begin());
+					char aBuf[2048] = "/Join ";
+					str_append(aBuf, Name.c_str());
+					GameClient()->m_Chat.SendChat(0, aBuf);
+					char Joined[2048] = "Auto Joined ";
+					str_append(Joined, Name.c_str());
 
-					char PlayerName[16];
-					str_copy(PlayerName, Name.c_str(), sizeof(PlayerName));
-					if(!str_comp(g_Config.m_ClAutoJoinTeamName, PlayerName))
-					{
-						char aBuf[2048] = "/Join ";
-						str_append(aBuf, PlayerName);
-						GameClient()->m_Chat.SendChat(0, aBuf);
-						char Joined[2048] = "Auto Joined ";
-						str_append(Joined, PlayerName);
-
-						GameClient()->ClientMessage(Joined);
-					}
+					GameClient()->ClientMessage(Joined);
 				}
 			}
 		}
 
-		if(g_Config.m_ClNotifyOnJoin)
+		if(g_Config.m_ClNotifyOnJoin && g_Config.m_ClAutoNotifyName[0] != '\0')
 		{
-			if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
+			std::string Name = FindName();
+			if(str_find_nocase(pLine, "entered and joined the game"))
 			{
-				if(str_find_nocase(pLine, "entered and joined the game"))
+				if(!str_comp(Name.c_str(), g_Config.m_ClAutoNotifyName))
 				{
-					const char *PName = str_find_nocase(pLine, "'");
-					const char *NameLength = str_find_nocase(pLine, "' ");
-					if(str_find_nocase(pLine, g_Config.m_ClAutoNotifyName))
-					{
-						int Length = str_length(PName) - str_length(NameLength);
-						std::string Name(PName);
-						Name.erase(Length);
-						Name.erase(Name.begin());
-
-						char PlayerName[16];
-						str_copy(PlayerName, Name.c_str(), sizeof(PlayerName));
-
-						int NameToJoin = str_comp(g_Config.m_ClAutoNotifyName, PlayerName);
-						if(NameToJoin == 0)
-						{
-							GameClient()->ClientMessage(g_Config.m_ClAutoNotifyMsg);
-							GameClient()->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.6f);
-						}
-					}
+					GameClient()->ClientMessage(g_Config.m_ClAutoNotifyMsg);
+					GameClient()->m_Sounds.Play(CSounds::CHN_GUI, SOUND_CTF_CAPTURE, 0.3f);
 				}
 			}
 		}
@@ -2285,6 +2266,45 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 		}
 	}
 	return false;
+}
+
+void CChat::ColorizeLine(const CLine &Line, CTextCursor &Cursor)
+{
+	if(!g_Config.m_ClWarListColorJoinLeave)
+		return;
+
+	const char *pLine = Line.m_aText;
+
+	int ClientId = Line.m_ClientId;
+	if(ClientId != SERVER_MSG)
+		return;
+
+	if(!str_find_nocase(pLine, "entered and joined the game") && !str_find_nocase(pLine, "has left the game"))
+		return;
+
+	const char *pNameBeginQuote = str_find(pLine, "'");
+	if(!pNameBeginQuote)
+		return;
+
+	const char *pNameStart = pNameBeginQuote + 1;
+	const char *pNameEndQuote = str_find(pNameStart, "'");
+	if(!pNameEndQuote || pNameEndQuote <= pNameStart)
+		return;
+
+	std::string Name(pNameStart, pNameEndQuote);
+	if(Name.empty())
+		return;
+
+	const CWarEntry *ExistingEntry = GameClient()->m_WarList.FindWarEntryWithName(Name.c_str());
+	if(!ExistingEntry || ExistingEntry->m_pWarType == nullptr)
+		return;
+
+	const int SplitIndex = Cursor.m_CharCount + (int)(pNameStart - 1 - pLine);
+	const int SplitLength = (int)(pNameEndQuote + 2 - pNameStart);
+	if(SplitLength <= 0)
+		return;
+
+	Cursor.m_vColorSplits.emplace_back(SplitIndex, SplitLength, ExistingEntry->m_pWarType->m_Color);
 }
 
 void CChat::ConSetChatInput(IConsole::IResult *pResult, void *pUserData)

@@ -901,6 +901,16 @@ void CScoreboard::RenderRecordingNotification(float x)
 	const float FontSize = 10.0f;
 
 	CUIRect Rect = {x, 0.0f, TextRender()->TextWidth(FontSize, aBuf) + 30.0f, 25.0f};
+
+	const CUIRect *pUiScreen = Ui()->Screen();
+	const vec2 HudSize(300.0f * Graphics()->ScreenAspect(), 300.0f);
+	const vec2 Scale(pUiScreen->w / HudSize.x, pUiScreen->h / HudSize.y);
+
+	vec2 FPSPos = GameClient()->m_Hud.FpsPos() * Scale;
+
+	if(Rect.x + Rect.w > FPSPos.x)
+		return; // don't render if it would overlap with the FPS counter
+
 	Rect.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_B, 7.5f);
 	Rect.VSplitLeft(10.0f, nullptr, &Rect);
 	Rect.VSplitRight(5.0f, &Rect, nullptr);
@@ -1078,7 +1088,22 @@ void CScoreboard::OnRender()
 	}
 	RenderSpectators(Spectators);
 
-	RenderRecordingNotification((Screen.w / 7) * 4 + 10);
+	float NotificationX = (Screen.w / 7) * 4 + 10;
+
+	const CUIRect *pUiScreen = Ui()->Screen();
+	const vec2 HudSize(300.0f * Graphics()->ScreenAspect(), 300.0f);
+	const vec2 Scale(pUiScreen->w / HudSize.x, pUiScreen->h / HudSize.y);
+
+	float IslandX = GameClient()->m_Hud.IslandPos().x * Scale.x;
+	float IslandW = GameClient()->m_Hud.IslandSize().x * Scale.x;
+
+	if(IslandX > 0.0f && IslandW > 0.0f)
+	{
+		if(NotificationX < IslandX + IslandW + 10.0f)
+			NotificationX = IslandX + IslandW + 10.0f;
+	}
+
+	RenderRecordingNotification(NotificationX);
 
 	if(!GameClient()->m_Menus.IsActive() && !GameClient()->m_Chat.IsActive())
 	{

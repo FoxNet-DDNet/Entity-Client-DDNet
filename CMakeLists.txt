@@ -538,6 +538,10 @@ find_package(PNG)
 find_package(Python3)
 find_package(Rust)
 find_package(SDL2)
+if(CLIENT AND TARGET_OS STREQUAL "linux")
+  find_package(DBus REQUIRED)
+  find_package(PulseAudio)
+endif()
 find_package(SQLite3)
 if(DISCORD)
   find_package(DiscordSdk)
@@ -717,7 +721,7 @@ endif()
 
 if(TARGET_OS STREQUAL "windows")
   set(PLATFORM_CLIENT)
-  set(PLATFORM_CLIENT_LIBS opengl32.lib winmm.lib imm32.lib)
+  set(PLATFORM_CLIENT_LIBS opengl32.lib winmm.lib imm32.lib WindowsApp.lib)
   set(PLATFORM_LIBS)
   list(APPEND PLATFORM_LIBS shlwapi.lib) # PathIsRelativeW
   list(APPEND PLATFORM_LIBS version.lib) # GetFileVersionInfoSizeW
@@ -1487,7 +1491,6 @@ set(EXPECTED_DATA
   emoticons.png
   entity/binds/.extra.cfg
   entity/binds/.help.cfg
-  entity/builtinscripts/anti-bot-ad.chai
   entity/builtinscripts/firetext.chai
   entity/builtinscripts/smartspec.chai
   entity/builtinscripts/str.chai
@@ -2260,6 +2263,7 @@ set_src(ENGINE_EXTERNAL GLOB src/engine/external
   regex.h
   spt.cpp
   spt.h
+  stb_image.h
 )
 
 # ChaiScript
@@ -2500,6 +2504,11 @@ if(CLIENT)
     components/entity/info.h
     components/entity/map_overview.cpp
     components/entity/map_overview.h 
+    components/entity/mediaplayer/media_player.cpp
+    components/entity/mediaplayer/media_player.h
+    components/entity/mediaplayer/media_player_dbus.cpp
+    components/entity/mediaplayer/media_player_impl.h
+    components/entity/mediaplayer/media_player_winrt.cpp
     components/entity/menus_entity.cpp 
     components/entity/moving_tiles.cpp
     components/entity/moving_tiles.h 
@@ -2770,6 +2779,9 @@ if(CLIENT)
     ${GLEW_LIBRARIES}
     ${PNG_LIBRARIES}
     ${SDL2_LIBRARIES}
+    ${CURL_LIBRARIES}
+    ${DBUS_LIBRARIES}
+    ${PULSEAUDIO_LIBRARIES}
     ${WAVPACK_LIBRARIES}
     ${FFMPEG_LIBRARIES}
 
@@ -2866,6 +2878,8 @@ if(CLIENT)
     ${OPUS_INCLUDE_DIRS}
     ${PNG_INCLUDE_DIRS}
     ${SDL2_INCLUDE_DIRS}
+    ${DBUS_INCLUDE_DIRS}
+    ${PULSEAUDIO_INCLUDE_DIRS}
     ${WAVPACK_INCLUDE_DIRS}
     ${FFMPEG_INCLUDE_DIRS}
     ${DISCORDSDK_INCLUDE_DIRS}
@@ -2906,6 +2920,14 @@ if(CLIENT)
 
   if(VULKAN)
     target_compile_definitions(game-client PRIVATE CONF_BACKEND_VULKAN)
+  endif()
+
+  if(TARGET_OS STREQUAL "linux" AND DBus_FOUND)
+    target_compile_definitions(game-client PRIVATE MEDIA_PLAYER_DBUS=1)
+  endif()
+
+  if(TARGET_OS STREQUAL "linux" AND PulseAudio_FOUND)
+    target_compile_definitions(game-client PRIVATE MEDIA_PLAYER_PULSEAUDIO=1)
   endif()
 
   list(APPEND TARGETS_OWN game-client)

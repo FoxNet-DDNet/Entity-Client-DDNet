@@ -306,6 +306,7 @@ void CMenus::RenderDemoPlayer(CUIRect MainView)
 	if(DemoControls.x < MainView.w - DemoControls.w && DemoControls.y < MainView.h - DemoControls.h)
 		Corners |= IGraphics::CORNER_BR;
 	DemoControls.Draw(ms_ColorTabbarActive, Corners, 10.0f);
+	m_DemoControlsRect = DemoControls;
 	const CUIRect DemoControlsDragRect = DemoControls;
 
 	CUIRect SeekBar, ButtonBar, NameBar, SpeedBar;

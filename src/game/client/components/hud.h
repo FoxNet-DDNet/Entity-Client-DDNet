@@ -2,13 +2,30 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_COMPONENTS_HUD_H
 #define GAME_CLIENT_COMPONENTS_HUD_H
-#include <engine/client.h>
+#include "entity/mediaplayer/media_player.h"
+
+#include <base/color.h>
+#include <base/vmath.h>
+
+#include <engine/client/enums.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
 
 #include <generated/protocol.h>
 
 #include <game/client/component.h>
+
+#include <cstdint>
+
+// EClient
+class CArtCropProfile
+{
+public:
+	float m_Left = 0.01f;
+	float m_Right = 0.01f;
+	float m_Top = 0.01f;
+	float m_Bottom = 0.01f;
+};
 
 struct SScoreInfo
 {
@@ -94,7 +111,10 @@ class CHud : public CComponent
 	};
 	class CMovementInformation GetMovementInformation(int ClientId, int Conn) const;
 
-	void RenderGameTimer();
+	float GameTimerWidth(float Size, int Time);
+	int GameTimerTime();
+
+	void RenderGameTimer(vec2 Pos, float Size);
 	void RenderPauseNotification();
 	void RenderSuddenDeath();
 
@@ -171,7 +191,109 @@ private:
 	int m_LockModeOffset;
 
 	// EClient
+	bool RenderLocalTime() const;
+
 	void FreezeHelpers();
+
+	void RenderIsland();
+
+	void RenderVisualizer(const CMediaViewer::CState &State, ColorRGBA Primary, ColorRGBA Secondary, vec2 Pos, vec2 Size, int NumBands);
+
+	class CMediaIsland
+	{
+	public:
+		class CTextScrollState
+		{
+		public:
+			float m_Offset = 0.0f;
+			float m_Overflow = 0.0f;
+			float m_Progress = 0.0f;
+			float m_HoldTime = 0.0f;
+			bool m_Forward = true;
+
+			void Reset()
+			{
+				m_Offset = 0.0f;
+				m_Overflow = 0.0f;
+				m_Progress = 0.0f;
+				m_HoldTime = 0.0f;
+				m_Forward = true;
+			}
+		};
+
+		class CPosSize
+		{
+		public:
+			vec2 m_Pos = vec2();
+			vec2 m_Size = vec2();
+
+			vec2 m_WantedPos = vec2();
+			vec2 m_WantedSize = vec2();
+			bool m_Initialized = false;
+			void Update(float DeltaTime);
+		};
+
+		enum class EVisualState
+		{
+			MINIMIZED,
+			EXPANDED,
+		};
+
+		EVisualState m_VisualState = EVisualState::MINIMIZED;
+		float m_AnimProgress = 0.0f; // 0.0f to 1.0f
+
+		bool m_Changed = false;
+		float m_ChangedAnim = 0.0f; // 0.0f to 1.0f, used to animate changes in the media state
+
+		CMediaViewer::CState m_CurState;
+
+		CTextScrollState m_TitleScroll;
+		CTextScrollState m_ArtistScroll;
+
+		float m_TitleTextWidth = 0.0f;
+		float m_ArtistTextWidth = 0.0f;
+		float m_SizeScale = 1.0f;
+
+		bool m_Hovered = false;
+		bool m_PrevHovered = false;
+
+		CArtCropProfile m_CropProfile;
+		CArtCropProfile m_PrevCropProfile;
+
+		// Position and size of the island rect
+		CPosSize m_Rect;
+		CPosSize m_AlbumArt;
+		CPosSize m_Visualizer;
+
+		bool m_Initialized = false;
+
+		void ResetPosSize()
+		{
+			m_Rect = CPosSize();
+			m_AlbumArt = CPosSize();
+			m_Visualizer = CPosSize();
+		}
+
+		void Reset()
+		{
+			m_VisualState = EVisualState::MINIMIZED;
+			m_AnimProgress = 0.0f;
+			m_TitleScroll.Reset();
+			m_ArtistScroll.Reset();
+
+			m_Hovered = false;
+			m_PrevHovered = false;
+
+			ResetPosSize();
+		}
+
+	} m_Island;
+	vec2 m_FPSPos;
+
+public:
+	vec2 IslandPos() const { return m_Island.m_Rect.m_Pos; }
+	vec2 IslandSize() const { return m_Island.m_Rect.m_Size; }
+	vec2 FpsPos() const { return m_FPSPos; }
 };
 
 #endif
