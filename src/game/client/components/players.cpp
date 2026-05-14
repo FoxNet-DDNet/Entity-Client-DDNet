@@ -1041,7 +1041,7 @@ void CPlayers::OnRender()
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
 			if(GameClient()->m_aClients[i].m_Solo && i != LocalClientId)
 				continue;
-			
+
 		aRenderInfo[i] = GameClient()->m_aClients[i].m_RenderInfo;
 		aRenderInfo[i].m_TeeRenderFlags = 0;
 
@@ -1239,7 +1239,7 @@ void CPlayers::OnRender()
 		}
 
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
-			if( GameClient()->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
+			if(GameClient()->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
 				continue;
 
 		RenderHook(&GameClient()->m_aClients[ClientId].m_RenderPrev, &GameClient()->m_aClients[ClientId].m_RenderCur, &aRenderInfo[ClientId], ClientId);
@@ -1251,7 +1251,7 @@ void CPlayers::OnRender()
 	}
 
 	// render spectating players
-	for(const auto &Clients :  GameClient()->m_aClients)
+	for(const auto &Clients : GameClient()->m_aClients)
 	{
 		if(!Clients.m_SpecCharPresent)
 		{
@@ -1292,7 +1292,7 @@ void CPlayers::OnRender()
 		if(Client()->State() == IClient::STATE_DEMOPLAYBACK && g_Config.m_ClDemoHideIfSolo)
 			if(GameClient()->m_aClients[ClientId].m_Solo && ClientId != LocalClientId)
 				continue;
-				
+
 		RenderHookCollLine(&GameClient()->m_aClients[ClientId].m_RenderPrev, &GameClient()->m_aClients[ClientId].m_RenderCur, ClientId);
 
 		if(!in_range(GameClient()->m_aClients[ClientId].m_RenderPos.x, ScreenX0, ScreenX1) || !in_range(GameClient()->m_aClients[ClientId].m_RenderPos.y, ScreenY0, ScreenY1))

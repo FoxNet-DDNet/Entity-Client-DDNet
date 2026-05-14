@@ -4376,18 +4376,17 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 	MainView.HSplitTop(LineSize * 1.1f, &TabBar, &MainView);
 	const float TabWidth = TabBar.w / TabCount;
 	static CButtonContainer s_aPageTabs[NUMBER_OF_PG1921_TABS] = {};
-	const char *apTabNames[NUMBER_OF_PG1921_TABS] = 
-	{
-		Localize("PRO_Gaming1921"),
-	};
+	const char *apTabNames[NUMBER_OF_PG1921_TABS] =
+		{
+			Localize("PRO_Gaming1921"),
+		};
 
 	for(int Tab = 0; Tab < NUMBER_OF_PG1921_TABS; ++Tab)
 	{
-
 		TabBar.VSplitLeft(TabWidth, &Button, &TabBar);
 
 		int Corners = Tab == 0 ? IGraphics::CORNER_L : Tab == 1 ? IGraphics::CORNER_R :
-										       IGraphics::CORNER_NONE;
+									  IGraphics::CORNER_NONE;
 		if(NUMBER_OF_PG1921_TABS == 1)
 			Corners = IGraphics::CORNER_ALL;
 
@@ -4458,11 +4457,10 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 
 				DoButton_CheckBoxAutoVMarginAndSet(&s_CustomColorSwitch, Localize("Change Feet Color"), &s_CustomColorSwitch, &AllPlayerSettings, LineSize);
 
-
 				AllPlayerSettings.VSplitLeft(52, &Button, &AllPlayerSettings);
 				if(s_CustomColorSwitch)
 					RenderHslaScrollbars(&AllPlayerSettings, &g_Config.m_ClChangeAllColorFeet, false, ColorHSLA::DARKEST_LGT, false);
-				else 
+				else
 					RenderHslaScrollbars(&AllPlayerSettings, &g_Config.m_ClChangeAllColorBody, false, ColorHSLA::DARKEST_LGT, false);
 				AllPlayerSettings.VSplitLeft(-140, &Button, &AllPlayerSettings);
 
@@ -4493,7 +4491,7 @@ void CMenus::RenderSettingsProGaming(CUIRect MainView)
 				CurSkin.VSplitLeft(90.0f, &AllPlayerSettings, &CurSkin);
 				CurSkin.VSplitLeft(Length, &CurSkin, &Button);
 				static CButtonContainer s_NewestRelGithub;
-				if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Use Current Tee Settings"), 0, &CurSkin, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f,-2))
+				if(DoButtonLineSize_Menu(&s_NewestRelGithub, Localize("Use Current Tee Settings"), 0, &CurSkin, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, -2))
 				{
 					str_copy(g_Config.m_ClChangeAllSkinName, g_Config.m_ClPlayerSkin);
 					g_Config.m_ClChangeAllCustomCol = g_Config.m_ClPlayerUseCustomColor;
