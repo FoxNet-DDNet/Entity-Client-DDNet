@@ -4365,13 +4365,6 @@ enum
 
 void CMenus::RenderSettingsProGaming(CUIRect MainView)
 {
-	s_Time += Client()->RenderFrameTime() * (1.0f / 100.0f);
-	if(!s_StartedTime)
-	{
-		s_StartedTime = true;
-		s_Time = (float)rand() / (float)RAND_MAX;
-	}
-
 	static int s_CurTab = 0;
 
 	CUIRect TabBar, Button, Label;
