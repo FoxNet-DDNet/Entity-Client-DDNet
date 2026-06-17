@@ -74,6 +74,7 @@
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
+#include "components/entity/local_practice.h"
 #include "components/entity/map_overview.h"
 #include "components/entity/mediaplayer/media_player.h"
 #include "components/entity/moving_tiles.h"
@@ -263,8 +264,9 @@ public:
 	CEClient m_EClient;
 	CChatBubbles m_ChatBubbles;
 	CAntiSpawnBlock m_AntiSpawnBlock;
-	CFreezeKill m_FreezeKill;
 	CEntityInfo m_EntityInfo;
+	CFreezeKill m_FreezeKill;
+	CLocalPractice m_LocalPractice;
 	CMapOverview m_MapOverview;
 	CMediaViewer m_MediaViewer;
 	CPerformanceStatistics m_PerformanceStatistics;
@@ -768,7 +770,7 @@ public:
 	bool GotWantedSkin7(bool Dummy);
 	void SendInfo(bool Start);
 	void SendDummyInfo(bool Start) override;
-	void SendKill() const;
+	void SendKill();
 	void SendReadyChange7();
 
 	// EClient

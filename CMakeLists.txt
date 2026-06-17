@@ -2599,6 +2599,8 @@ if(CLIENT)
     components/entity/freeze_kill.h 
     components/entity/info.cpp
     components/entity/info.h
+    components/entity/local_practice.cpp
+    components/entity/local_practice.h 
     components/entity/map_overview.cpp
     components/entity/map_overview.h 
     components/entity/mediaplayer/media_player.cpp
