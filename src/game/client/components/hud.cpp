@@ -198,8 +198,24 @@ void CHud::RenderGameTimer(vec2 Pos, float Size)
 			float Alpha = Time <= 10 && (2 * time() / time_freq()) % 2 ? 0.5f : 1.0f;
 			TextRender()->TextColor(1.0f, 0.25f, 0.25f, Alpha);
 		}
-		TextRender()->Text(Pos.x - w / 2, Pos.y, Size, aBuf, -1.0f);
+
+
+		CTextCursor Cursor;
+		Cursor.SetPosition(vec2(Pos.x - w / 2, Pos.y));
+		Cursor.m_FontSize = Size;
+		Cursor.m_Flags = TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END;
+
+		TextRender()->TextEx(&Cursor, aBuf);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+		if(g_Config.m_ClShowHudTimerStartedFlag && !(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_SUDDENDEATH) && (GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_RACETIME))
+		{
+			Cursor.m_FontSize = Size * 0.55f;
+			Cursor.SetPosition(vec2(Pos.x + w * 0.5f, Pos.y + Size * 0.25f));
+			TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+			TextRender()->TextEx(&Cursor, FontIcon::FLAG_CHECKERED);
+			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+		}
 	}
 }
 
