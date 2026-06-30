@@ -114,7 +114,7 @@ class CHud : public CComponent
 	float GameTimerWidth(float Size, int Time);
 	int GameTimerTime();
 
-	void RenderGameTimer(vec2 Pos, float Size);
+	void RenderGameTimer(vec2 Pos, float Size, float ClipRight = -1.0f);
 	void RenderPauseNotification();
 	void RenderSuddenDeath();
 

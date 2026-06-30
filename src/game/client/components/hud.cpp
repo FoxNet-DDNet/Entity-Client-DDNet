@@ -184,7 +184,7 @@ int CHud::GameTimerTime()
 	return Time;
 }
 
-void CHud::RenderGameTimer(vec2 Pos, float Size)
+void CHud::RenderGameTimer(vec2 Pos, float Size, float ClipRight)
 {
 	if(!(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_SUDDENDEATH))
 	{
@@ -199,11 +199,11 @@ void CHud::RenderGameTimer(vec2 Pos, float Size)
 			TextRender()->TextColor(1.0f, 0.25f, 0.25f, Alpha);
 		}
 
-
 		CTextCursor Cursor;
 		Cursor.SetPosition(vec2(Pos.x - w / 2, Pos.y));
 		Cursor.m_FontSize = Size;
 		Cursor.m_Flags = TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END;
+		Cursor.m_LineWidth = ClipRight > 0.0f ? maximum(ClipRight - Cursor.m_X, 0.001f) : -1.0f;
 
 		TextRender()->TextEx(&Cursor, aBuf);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -212,6 +212,7 @@ void CHud::RenderGameTimer(vec2 Pos, float Size)
 		{
 			Cursor.m_FontSize = Size * 0.55f;
 			Cursor.SetPosition(vec2(Pos.x + w * 0.5f, Pos.y + Size * 0.25f));
+			Cursor.m_LineWidth = ClipRight > 0.0f ? maximum(ClipRight - Cursor.m_X, 0.001f) : -1.0f;
 			TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 			TextRender()->TextEx(&Cursor, FontIcon::FLAG_CHECKERED);
 			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
@@ -1971,8 +1972,23 @@ void CHud::RenderDDRaceEffects()
 			else if(!m_TimeCpDiff)
 				TextRender()->TextColor(1, 1, 1, Alpha); // white
 
+			float TextY = 12.0f;
+			const vec2 IslandPos = this->IslandPos();
+			const vec2 IslandSize = this->IslandSize();
+			if(IslandSize.x > 0.0f && IslandSize.y > 0.0f)
+			{
+				const bool OverlapY = TextY < IslandPos.y + IslandSize.y && TextY + 10 > IslandPos.y;
+				if(OverlapY)
+				{
+					constexpr float OverlapPadding = 2.0f;
+					TextY = IslandPos.y + IslandSize.y + OverlapPadding;
+				}
+			}
+			if(g_Config.m_ClShowFrozenText > 0 && !GameClient()->m_Scoreboard.IsActive())
+				TextY += 12.0f;
+
 			CTextCursor Cursor;
-			Cursor.SetPosition(vec2(150 * Graphics()->ScreenAspect() - TextRender()->TextWidth(10, aBuf) / 2, 20));
+			Cursor.SetPosition(vec2(150 * Graphics()->ScreenAspect() - TextRender()->TextWidth(10, aBuf) / 2, TextY));
 			Cursor.m_FontSize = 10.0f;
 			TextRender()->RecreateTextContainer(m_DDRaceEffectsTextContainerIndex, &Cursor, aBuf);
 
@@ -2535,7 +2551,8 @@ void CHud::RenderIsland()
 	const float LocalTimeWidth = LocalTime ? TextRender()->TextBoundingBox(LocalTimeSize, ShowSeconds ? "00:00.00" : "00:00").m_W : 0.0f;
 	const float NoGameTimerLocalTimeWidth = LocalTime ? TextRender()->TextBoundingBox(GameTimerSize, ShowSeconds ? "00:00.00" : "00:00").m_W : 0.0f;
 
-	float TimerSidePadding = (HudTimer || LocalTime ? 9.0f : 2.0f) * SizeScale;
+	const float CollapsedTimerSidePadding = (HudTimer || LocalTime ? 9.0f : 2.0f) * SizeScale;
+	const float ExpandedTimerSidePadding = 9.0f * SizeScale;
 
 	float GameTimerWidth = 0.0f;
 	if(HudTimer)
@@ -2590,7 +2607,7 @@ void CHud::RenderIsland()
 		HasMousePos = true;
 	}
 
-	auto MakeIslandRect = [&](float CurrentTimerWidth, float CurrentHeight, float CurrentMediaSize, float VisUnavailableWidth) {
+	auto MakeIslandRect = [&](float CurrentTimerWidth, float CurrentHeight, float CurrentMediaSize, float TimerSidePadding, float VisUnavailableWidth) {
 		const float LeftWidth = ShowArt ? CurrentMediaSize + TimerSidePadding : 0.0f;
 		const float RightWidth = ShowVisualizer ? CurrentMediaSize + TimerSidePadding : VisUnavailableWidth;
 		return CUIRect{
@@ -2600,8 +2617,8 @@ void CHud::RenderIsland()
 			CurrentHeight};
 	};
 
-	const CUIRect CollapsedIslandRect = MakeIslandRect(CollapsedWidth, CollapsedIslandHeight, CollapsedMediaSize, 0.0f);
-	const CUIRect ExpandedIslandRect = MakeIslandRect(ExpandedWidth, ExpandedIslandHeight, HoveredMediaSize, TimerSidePadding);
+	const CUIRect CollapsedIslandRect = MakeIslandRect(CollapsedWidth, CollapsedIslandHeight, CollapsedMediaSize, CollapsedTimerSidePadding, 0.0f);
+	const CUIRect ExpandedIslandRect = MakeIslandRect(ExpandedWidth, ExpandedIslandHeight, HoveredMediaSize, ExpandedTimerSidePadding, ExpandedTimerSidePadding);
 	const float HoverPaddingX = 8.0f * SizeScale;
 	const float HoverPaddingY = 8.0f * SizeScale;
 	const CUIRect CollapsedHoverRect = {
@@ -2622,6 +2639,7 @@ void CHud::RenderIsland()
 	const float CurrentTimerWidth = Hovered ? ExpandedWidth : CollapsedWidth;
 	const float CurrentMediaSize = Hovered ? HoveredMediaSize : CollapsedMediaSize;
 	const float CurrentMainRowHeight = CurrentMediaSize;
+	const float CurrentTimerSidePadding = Hovered ? ExpandedTimerSidePadding : CollapsedTimerSidePadding;
 
 	CUIRect TimerRect = {CenterX - CurrentTimerWidth * 0.5f, IslandY, CurrentTimerWidth, CurrentMainRowHeight};
 	const CUIRect WantedIslandRect = Hovered ? ExpandedIslandRect : CollapsedIslandRect;
@@ -2668,7 +2686,7 @@ void CHud::RenderIsland()
 	if(ShowArt)
 	{
 		ArtSlot = {
-			TimerRect.x - TimerSidePadding - CurrentMediaSize,
+			TimerRect.x - CurrentTimerSidePadding - CurrentMediaSize,
 			MainRowRect.y,
 			CurrentMediaSize,
 			MainRowRect.h};
@@ -2676,10 +2694,40 @@ void CHud::RenderIsland()
 	if(ShowVisualizer)
 	{
 		VisualizerSlot = {
-			TimerRect.x + TimerRect.w + TimerSidePadding,
+			TimerRect.x + TimerRect.w + CurrentTimerSidePadding,
 			MainRowRect.y,
 			CurrentMediaSize,
 			MainRowRect.h};
+	}
+
+	CUIRect ArtRect = {IslandRect.x, IslandRect.y, 0.0f, IslandRect.h};
+	CUIRect VisualizerRect = {IslandRect.x + IslandRect.w, IslandRect.y, 0.0f, IslandRect.h};
+	if(HasMediaState)
+	{
+		ArtSlot.HMargin(maximum((ArtSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &ArtSlot);
+		if(Hovered)
+		{
+			const float HoveredArtExpansion = 1.0f * SizeScale;
+			ArtSlot.w += HoveredArtExpansion;
+			ArtSlot.h += HoveredArtExpansion;
+		}
+		Island.m_AlbumArt.m_WantedPos = vec2(ArtSlot.x, ArtSlot.y);
+		Island.m_AlbumArt.m_WantedSize = vec2(ArtSlot.w, ArtSlot.h);
+		Island.m_AlbumArt.Update(DeltaTime);
+		ArtRect = {Island.m_AlbumArt.m_Pos.x, Island.m_AlbumArt.m_Pos.y, Island.m_AlbumArt.m_Size.x, Island.m_AlbumArt.m_Size.y};
+
+		if(ShowVisualizer)
+		{
+			if(g_Config.m_ClMediaIslandVisualizerAlignment == 2)
+				VisualizerSlot.HMargin(maximum((VisualizerSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &VisualizerSlot);
+			else
+				VisualizerSlot.HSplitBottom(CurrentMediaSize, nullptr, &VisualizerSlot);
+
+			Island.m_Visualizer.m_WantedPos = vec2(VisualizerSlot.x, VisualizerSlot.y);
+			Island.m_Visualizer.m_WantedSize = vec2(VisualizerSlot.w, VisualizerSlot.h);
+			Island.m_Visualizer.Update(DeltaTime);
+			VisualizerRect = {Island.m_Visualizer.m_Pos.x, Island.m_Visualizer.m_Pos.y, Island.m_Visualizer.m_Size.x, Island.m_Visualizer.m_Size.y};
+		}
 	}
 
 	float TimerYOff = IslandRect.y + 1.5f * SizeScale;
@@ -2705,6 +2753,40 @@ void CHud::RenderIsland()
 		ArtistRect.y - VerticalClipPadding,
 		CurrentAnimatedTextWidth + TextPadding * 2.0f,
 		ArtistRect.h + VerticalClipPadding * 2.0f};
+
+	const float TextClipLeft = ShowArt ? ArtRect.x + ArtRect.w : IslandRect.x;
+	const float TextClipRight = ShowVisualizer ? VisualizerRect.x : IslandRect.x + IslandRect.w;
+	const CUIRect TextClipBounds = {
+		TextClipLeft,
+		IslandRect.y,
+		maximum(TextClipRight - TextClipLeft, 0.0f),
+		IslandRect.h};
+
+	auto IntersectClipRect = [](const CUIRect &Rect, const CUIRect &Clip) {
+		const float X = maximum(Rect.x, Clip.x);
+		const float Y = maximum(Rect.y, Clip.y);
+		const float Right = minimum(Rect.x + Rect.w, Clip.x + Clip.w);
+		const float Bottom = minimum(Rect.y + Rect.h, Clip.y + Clip.h);
+		return CUIRect{X, Y, maximum(Right - X, 0.0f), maximum(Bottom - Y, 0.0f)};
+	};
+	auto RenderClipped = [&](const CUIRect &ClipRect, auto &&RenderFunc) {
+		const CUIRect ActualClipRect = IntersectClipRect(ClipRect, TextClipBounds);
+		if(ActualClipRect.w <= 0.0f || ActualClipRect.h <= 0.0f)
+			return;
+
+		const float ClipScaleX = Graphics()->ScreenWidth() / m_Width;
+		const float ClipScaleY = Graphics()->ScreenHeight() / m_Height;
+		const int ClipX = round_to_int(ActualClipRect.x * ClipScaleX);
+		const int ClipY = round_to_int(ActualClipRect.y * ClipScaleY);
+		const int ClipW = round_to_int(ActualClipRect.w * ClipScaleX);
+		const int ClipH = round_to_int(ActualClipRect.h * ClipScaleY);
+		if(ClipW <= 0 || ClipH <= 0)
+			return;
+
+		Graphics()->ClipEnable(ClipX, ClipY, ClipW, ClipH);
+		RenderFunc();
+		Graphics()->ClipDisable();
+	};
 
 	if(Hovered)
 	{
@@ -2758,17 +2840,11 @@ void CHud::RenderIsland()
 				ScrollState.Reset();
 			}
 
-			const float ClipScaleX = Graphics()->ScreenWidth() / m_Width;
-			const float ClipScaleY = Graphics()->ScreenHeight() / m_Height;
-			Graphics()->ClipEnable(
-				round_to_int(ClipRect.x * ClipScaleX),
-				round_to_int(ClipRect.y * ClipScaleY),
-				round_to_int(ClipRect.w * ClipScaleX),
-				round_to_int(ClipRect.h * ClipScaleY));
-			TextRender()->TextColor(Color);
-			TextRender()->Text(TextX, TextRect.y, FontSize, pText, -1.0f);
-			TextRender()->TextColor(TextRender()->DefaultTextColor());
-			Graphics()->ClipDisable();
+			RenderClipped(ClipRect, [&]() {
+				TextRender()->TextColor(Color);
+				TextRender()->Text(TextX, TextRect.y, FontSize, pText, -1.0f);
+				TextRender()->TextColor(TextRender()->DefaultTextColor());
+			});
 		};
 
 		const char *pTitle = Island.m_CurState.m_Title.c_str();
@@ -2784,7 +2860,14 @@ void CHud::RenderIsland()
 			if(!LocalTime)
 				TimerYOff += LocalTimeSize - 2.0f * SizeScale;
 
-			RenderGameTimer(vec2(TimerRect.Center().x, TimerYOff), GameTimerSize);
+			const CUIRect GameTimerClipRect = {
+				TextClipBounds.x,
+				TimerYOff - VerticalClipPadding,
+				TextClipBounds.w,
+				GameTimerSize + VerticalClipPadding * 2.0f};
+			RenderClipped(GameTimerClipRect, [&]() {
+				RenderGameTimer(vec2(TimerRect.Center().x, TimerYOff), GameTimerSize, GameTimerClipRect.x + GameTimerClipRect.w);
+			});
 			TimerYOff += GameTimerSize + 1.0f * SizeScale;
 		}
 		if(LocalTime)
@@ -2794,13 +2877,29 @@ void CHud::RenderIsland()
 			if(!HudTimer)
 			{
 				TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f));
-				TextRender()->Text(TimerRect.Center().x - NoGameTimerLocalTimeWidth * 0.5f, IslandRect.y + CollapsedIslandRect.h * 0.25f, GameTimerSize, aTimeStr, -1.0f);
+				const CUIRect LocalTimeClipRect = {
+					TextClipBounds.x,
+					IslandRect.y + CollapsedIslandRect.h * 0.25f - VerticalClipPadding,
+					TextClipBounds.w,
+					GameTimerSize + VerticalClipPadding * 2.0f};
+				RenderClipped(LocalTimeClipRect, [&]() {
+					const float TextX = TimerRect.Center().x - NoGameTimerLocalTimeWidth * 0.5f;
+					TextRender()->Text(TextX, IslandRect.y + CollapsedIslandRect.h * 0.25f, GameTimerSize, aTimeStr, maximum(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
+				});
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
 			else
 			{
 				TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f));
-				TextRender()->Text(TimerRect.Center().x - LocalTimeWidth * 0.5f, TimerYOff, LocalTimeSize, aTimeStr, -1.0f);
+				const CUIRect LocalTimeClipRect = {
+					TextClipBounds.x,
+					TimerYOff - VerticalClipPadding,
+					TextClipBounds.w,
+					LocalTimeSize + VerticalClipPadding * 2.0f};
+				RenderClipped(LocalTimeClipRect, [&]() {
+					const float TextX = TimerRect.Center().x - LocalTimeWidth * 0.5f;
+					TextRender()->Text(TextX, TimerYOff, LocalTimeSize, aTimeStr, maximum(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
+				});
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
 		}
@@ -2821,19 +2920,6 @@ void CHud::RenderIsland()
 		}
 
 		{
-			ArtSlot.HMargin(maximum((ArtSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &ArtSlot);
-			if(Hovered)
-			{
-				const float HoveredArtExpansion = 1.0f * SizeScale;
-				ArtSlot.w += HoveredArtExpansion;
-				ArtSlot.h += HoveredArtExpansion;
-			}
-			Island.m_AlbumArt.m_WantedPos = vec2(ArtSlot.x, ArtSlot.y);
-			Island.m_AlbumArt.m_WantedSize = vec2(ArtSlot.w, ArtSlot.h);
-
-			Island.m_AlbumArt.Update(DeltaTime);
-			CUIRect ArtRect = {Island.m_AlbumArt.m_Pos.x, Island.m_AlbumArt.m_Pos.y, Island.m_AlbumArt.m_Size.x, Island.m_AlbumArt.m_Size.y};
-
 			const float ArtRounding = minimum(4.0f * SizeScale, minimum(ArtRect.w, ArtRect.h) * 0.22f);
 
 			const CMediaViewer::CAlbumArt &PrevAlbumArt = Island.m_CurState.m_PrevAlbumArt;
@@ -2863,18 +2949,6 @@ void CHud::RenderIsland()
 
 		if(ShowVisualizer)
 		{
-			if(g_Config.m_ClMediaIslandVisualizerAlignment == 2)
-				VisualizerSlot.HMargin(maximum((VisualizerSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &VisualizerSlot);
-			else
-				VisualizerSlot.HSplitBottom(CurrentMediaSize, nullptr, &VisualizerSlot);
-
-			Island.m_Visualizer.m_WantedPos = vec2(VisualizerSlot.x, VisualizerSlot.y);
-			Island.m_Visualizer.m_WantedSize = vec2(VisualizerSlot.w, VisualizerSlot.h);
-
-			Island.m_Visualizer.Update(DeltaTime);
-
-			CUIRect VisualizerRect = {Island.m_Visualizer.m_Pos.x, Island.m_Visualizer.m_Pos.y, Island.m_Visualizer.m_Size.x, Island.m_Visualizer.m_Size.y};
-
 			float a = Island.m_Changed ? Island.m_ChangedAnim : 1.0f;
 
 			ColorRGBA PrimaryColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMediaIslandVisualizerColor));
