@@ -107,7 +107,7 @@ bool CEditorMap::Save(const char *pFilename, const FErrorHandler &ErrorHandler)
 				Size += str_length(Setting.m_aCommand) + 1;
 			}
 
-			char *pSettings = (char *)malloc(maximum(Size, 1));
+			char *pSettings = (char *)malloc(std::max(Size, 1));
 			char *pNext = pSettings;
 			for(const auto &Setting : m_vSettings)
 			{
@@ -389,10 +389,10 @@ bool CEditorMap::Save(const char *pFilename, const FErrorHandler &ErrorHandler)
 			break;
 	}
 
-	CEnvPoint *pPoints = (CEnvPoint *)calloc(maximum(PointCount, 1), sizeof(CEnvPoint));
+	CEnvPoint *pPoints = (CEnvPoint *)calloc(std::max(PointCount, 1), sizeof(CEnvPoint));
 	CEnvPointBezier *pPointsBezier = nullptr;
 	if(BezierUsed)
-		pPointsBezier = (CEnvPointBezier *)calloc(maximum(PointCount, 1), sizeof(CEnvPointBezier));
+		pPointsBezier = (CEnvPointBezier *)calloc(std::max(PointCount, 1), sizeof(CEnvPointBezier));
 	PointCount = 0;
 
 	for(const auto &pEnvelope : m_vpEnvelopes)
@@ -1201,6 +1201,7 @@ bool CEditorMap::Append(const char *pFilename, int StorageType, bool IgnoreHisto
 		m_EditorHistory.RecordAction(std::make_shared<CEditorActionAppendMap>(this, pFilename, Info, IndexMap));
 
 	CheckIntegrity();
+	OnModify();
 
 	// all done \o/
 	return true;
