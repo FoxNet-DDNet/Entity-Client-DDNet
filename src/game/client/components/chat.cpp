@@ -354,11 +354,11 @@ int CChat::GetLinesToScroll(int Direction, int LinesToScroll) const
 	int LinesToSkip = Direction == -1 ? m_BacklogCurLine + m_LinesRendered : m_BacklogCurLine - 1;
 	LinesToSkip = std::clamp(LinesToSkip, 0, RenderableLines);
 
-	int RemainingAbove = maximum(0, RenderableLines - LinesToSkip);
-	int Amount = Direction == -1 ? minimum(RemainingAbove, maximum(LinesToScroll, 0)) : minimum(m_BacklogCurLine, maximum(LinesToScroll, 0));
+	int RemainingAbove = std::max(0, RenderableLines - LinesToSkip);
+	int Amount = Direction == -1 ? std::min(RemainingAbove, std::max(LinesToScroll, 0)) : std::min(m_BacklogCurLine, std::max(LinesToScroll, 0));
 	if(LinesToScroll <= 0)
 		Amount = Direction == -1 ? RemainingAbove : m_BacklogCurLine;
-	return maximum(0, Amount);
+	return std::max(0, Amount);
 }
 
 int CChat::NumInitializedLines() const
@@ -386,12 +386,12 @@ void CChat::ScrollToBottom()
 
 void CChat::ScrollPageUp()
 {
-	m_BacklogCurLine += GetLinesToScroll(-1, maximum(1, m_LinesRendered));
+	m_BacklogCurLine += GetLinesToScroll(-1, std::max(1, m_LinesRendered));
 }
 
 void CChat::ScrollPageDown()
 {
-	m_BacklogCurLine -= GetLinesToScroll(1, maximum(1, m_LinesRendered));
+	m_BacklogCurLine -= GetLinesToScroll(1, std::max(1, m_LinesRendered));
 	if(m_BacklogCurLine < 0)
 		m_BacklogCurLine = 0;
 }
@@ -672,9 +672,9 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 	}
 
 	if(m_BacklogCurLine != BacklogPrevLine)
-		m_BacklogCurLine = maximum(0, m_BacklogCurLine);
+		m_BacklogCurLine = std::max(0, m_BacklogCurLine);
 
-	const int MaxBacklogCurLine = maximum(0, NumInitializedLines() - 1);
+	const int MaxBacklogCurLine = std::max(0, NumInitializedLines() - 1);
 	if(m_BacklogCurLine > MaxBacklogCurLine)
 		m_BacklogCurLine = MaxBacklogCurLine;
 
@@ -1111,7 +1111,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 	FChatMsgCheckAndPrint(CurrentLine);
 
 	if(m_BacklogCurLine > 0)
-		m_BacklogCurLine = minimum(m_BacklogCurLine + 1, GetMaxBacklogCurLine());
+		m_BacklogCurLine = std::min(m_BacklogCurLine + 1, GetMaxBacklogCurLine());
 
 	// play sound
 	int64_t Now = time();
@@ -1589,12 +1589,12 @@ int CChat::GetLinesToSkipForSelection() const
 	if(!IsSelecting || m_BacklogCurLine != 0 || m_NewLineCounter <= 0)
 		return 0;
 
-	return minimum(m_NewLineCounter, maximum(0, NumInitializedLines() - 1));
+	return std::min(m_NewLineCounter, std::max(0, NumInitializedLines() - 1));
 }
 
 int CChat::GetMaxBacklogCurLine() const
 {
-	return maximum(0, NumInitializedLines() - maximum(1, m_LinesRendered));
+	return std::max(0, NumInitializedLines() - std::max(1, m_LinesRendered));
 }
 
 void CChat::OnRender()
@@ -1814,8 +1814,8 @@ void CChat::OnRender()
 		m_NewLineCounter = 0;
 
 	// Determine selection Y range
-	float SelectionMinY = minimum(m_SelectionMousePress.y, m_SelectionMouseRelease.y);
-	float SelectionMaxY = maximum(m_SelectionMousePress.y, m_SelectionMouseRelease.y);
+	float SelectionMinY = std::min(m_SelectionMousePress.y, m_SelectionMouseRelease.y);
+	float SelectionMaxY = std::max(m_SelectionMousePress.y, m_SelectionMouseRelease.y);
 
 	// Track lines for building selection text (we process from newest to oldest, so we need to reverse later)
 	struct SLineSelectionInfo
@@ -1919,7 +1919,7 @@ void CChat::OnRender()
 		float Begin = x;
 		float TextBegin = Begin + RealMsgPaddingX / 2.0f;
 
-		float LineWidth = (IsScoreBoardOpen ? maximum(85.0f, (FontSize() * 85.0f / 6.0f)) : g_Config.m_ClChatWidth) - (RealMsgPaddingX * 1.5f) - RealMsgPaddingTee;
+		float LineWidth = (IsScoreBoardOpen ? std::max(85.0f, (FontSize() * 85.0f / 6.0f)) : g_Config.m_ClChatWidth) - (RealMsgPaddingX * 1.5f) - RealMsgPaddingTee;
 
 		m_SelectionText.clear();
 		bool AnySelection = false;
@@ -1960,8 +1960,8 @@ void CChat::OnRender()
 			int SelStart = -1;
 			int SelEnd = -1;
 
-			int LineSelStart = minimum(LineCursor.m_SelectionStart, LineCursor.m_SelectionEnd);
-			int LineSelEnd = maximum(LineCursor.m_SelectionStart, LineCursor.m_SelectionEnd);
+			int LineSelStart = std::min(LineCursor.m_SelectionStart, LineCursor.m_SelectionEnd);
+			int LineSelEnd = std::max(LineCursor.m_SelectionStart, LineCursor.m_SelectionEnd);
 
 			// Combine selections
 			if(LineSelStart >= 0 && LineSelEnd > LineSelStart)

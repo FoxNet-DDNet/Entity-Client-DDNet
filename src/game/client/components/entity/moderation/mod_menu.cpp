@@ -368,7 +368,7 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 	MainView.Margin(10.0f, &MainView);
 
 	CUIRect LeftView, RightView, Header, Label, Button, PlayerList;
-	const float RightWidth = minimum(360.0f, MainView.w * 0.4f);
+	const float RightWidth = std::min(360.0f, MainView.w * 0.4f);
 	MainView.VSplitRight(RightWidth, &LeftView, &RightView);
 	LeftView.VSplitRight(10.0f, &LeftView, nullptr);
 
@@ -619,8 +619,8 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 				if(AnchorIt != vOnlinePlayers.end())
 				{
 					const int AnchorIndex = AnchorIt - vOnlinePlayers.begin();
-					const int Start = minimum(AnchorIndex, Index);
-					const int End = maximum(AnchorIndex, Index);
+					const int Start = std::min(AnchorIndex, Index);
+					const int End = std::max(AnchorIndex, Index);
 					for(int RangeIndex = Start; RangeIndex <= End; ++RangeIndex)
 						s_aSelectedPlayers[vOnlinePlayers[RangeIndex]] = true;
 				}
@@ -644,8 +644,8 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 				if(AnchorIt != vOnlinePlayers.end())
 				{
 					const int AnchorIndex = AnchorIt - vOnlinePlayers.begin();
-					const int Start = minimum(AnchorIndex, Index);
-					const int End = maximum(AnchorIndex, Index);
+					const int Start = std::min(AnchorIndex, Index);
+					const int End = std::max(AnchorIndex, Index);
 					for(int RangeIndex = Start; RangeIndex <= End; ++RangeIndex)
 						s_aSelectedPlayers[vOnlinePlayers[RangeIndex]] = false;
 				}

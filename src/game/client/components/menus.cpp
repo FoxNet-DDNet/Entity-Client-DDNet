@@ -459,9 +459,9 @@ bool CMenus::DoLine_RadioMenu_Compact(CUIRect &View, const char *pLabel, std::ve
 	View.HSplitTop(TopSpacing, nullptr, &View);
 	View.HSplitTop(ButtonHeight, &Buttons, &View);
 
-	const float LabelWidth = minimum(TextRender()->TextWidth(LabelFontSize, pLabel), maximum(0.0f, Buttons.w - LabelSpacing));
+	const float LabelWidth = std::min(TextRender()->TextWidth(LabelFontSize, pLabel), std::max(0.0f, Buttons.w - LabelSpacing));
 	Buttons.VSplitLeft(LabelWidth, &Label, &Buttons);
-	Buttons.VSplitLeft(minimum(LabelSpacing, Buttons.w), nullptr, &Buttons);
+	Buttons.VSplitLeft(std::max(LabelSpacing, Buttons.w), nullptr, &Buttons);
 	Buttons.HMargin(2.0f, &Buttons);
 
 	Ui()->DoLabel(&Label, pLabel, LabelFontSize, TEXTALIGN_ML);

@@ -54,10 +54,10 @@ void CMapOverview::CCoverage::Rebuild(const std::vector<CPoint> &vPoints)
 
 	for(const CPoint &P : vPoints)
 	{
-		MinX = minimum(MinX, P.m_Pos.x - P.m_TileDist);
-		MinY = minimum(MinY, P.m_Pos.y - P.m_TileDist);
-		MaxX = maximum(MaxX, P.m_Pos.x + P.m_TileDist);
-		MaxY = maximum(MaxY, P.m_Pos.y + P.m_TileDist);
+		MinX = std::min(MinX, P.m_Pos.x - P.m_TileDist);
+		MinY = std::min(MinY, P.m_Pos.y - P.m_TileDist);
+		MaxX = std::max(MaxX, P.m_Pos.x + P.m_TileDist);
+		MaxY = std::max(MaxY, P.m_Pos.y + P.m_TileDist);
 	}
 
 	m_MinX = MinX;
@@ -80,7 +80,7 @@ void CMapOverview::CCoverage::Rebuild(const std::vector<CPoint> &vPoints)
 
 	for(const CPoint &P : vPoints)
 	{
-		const int Dist = maximum(P.m_TileDist, 0);
+		const int Dist = std::max(P.m_TileDist, 0);
 
 		const int X0 = P.m_Pos.x - Dist - m_MinX;
 		const int Y0 = P.m_Pos.y - Dist - m_MinY;

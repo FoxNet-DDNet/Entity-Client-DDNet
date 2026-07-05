@@ -421,7 +421,7 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 
 	auto PrepareSelectionCursor = [&](const CNewsLine &Line, bool Render) {
 		CTextCursor Cursor;
-		const float TextYOffset = maximum(0.0f, (Line.m_Rect.h - Line.m_TextHeight) / 2.0f);
+		const float TextYOffset = std::max(0.0f, (Line.m_Rect.h - Line.m_TextHeight) / 2.0f);
 		Cursor.SetPosition(vec2(Line.m_Rect.x, Line.m_Rect.y + TextYOffset));
 		Cursor.m_FontSize = Line.m_FontSize;
 		Cursor.m_Flags = TEXTFLAG_RENDER;
@@ -505,8 +505,8 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 		if(WrapStartOffset > 0.0f)
 			MeasureCursor.m_StartX = WrapStartOffset;
 		TextRender()->TextEx(&MeasureCursor, LineText.c_str(), -1);
-		const float MeasuredHeight = maximum(LineFontSize, MeasureCursor.Height());
-		LineHeight = maximum(LineHeight, MeasuredHeight);
+		const float MeasuredHeight = std::max(LineFontSize, MeasureCursor.Height());
+		LineHeight = std::max(LineHeight, MeasuredHeight);
 
 		ContentView.HSplitTop(LineHeight, &Label, &ContentView);
 
@@ -514,7 +514,7 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 		{
 			TextRender()->TextColor(TextColor);
 			CTextCursor RenderCursor;
-			const float TextYOffset = maximum(0.0f, (Label.h - MeasuredHeight) / 2.0f);
+			const float TextYOffset = std::max(0.0f, (Label.h - MeasuredHeight) / 2.0f);
 			RenderCursor.SetPosition(vec2(Label.x, Label.y + TextYOffset));
 			RenderCursor.m_FontSize = LineFontSize;
 			RenderCursor.m_Flags = TEXTFLAG_RENDER;
@@ -538,8 +538,8 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 
 	if(s_Selecting)
 	{
-		const float SelectionMinY = minimum(s_SelectionMousePress.y, s_SelectionMouseRelease.y);
-		const float SelectionMaxY = maximum(s_SelectionMousePress.y, s_SelectionMouseRelease.y);
+		const float SelectionMinY = std::min(s_SelectionMousePress.y, s_SelectionMouseRelease.y);
+		const float SelectionMaxY = std::max(s_SelectionMousePress.y, s_SelectionMouseRelease.y);
 
 		std::vector<CSelectedNewsLine> vSelectedLines;
 		std::string SelectionText;
@@ -561,8 +561,8 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 			TextRender()->TextEx(&Cursor, Line.m_Text.c_str(), -1);
 			TextRender()->TextColor(TextRender()->DefaultTextColor());
 
-			const int SelectionStart = minimum(Cursor.m_SelectionStart, Cursor.m_SelectionEnd);
-			const int SelectionEnd = maximum(Cursor.m_SelectionStart, Cursor.m_SelectionEnd);
+			const int SelectionStart = std::min(Cursor.m_SelectionStart, Cursor.m_SelectionEnd);
+			const int SelectionEnd = std::max(Cursor.m_SelectionStart, Cursor.m_SelectionEnd);
 
 			if(SelectionStart < 0 || SelectionEnd <= SelectionStart)
 				continue;
@@ -1368,7 +1368,7 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 	MainView.HSplitTop(MarginBetweenSections, nullptr, &MainView);
 	MainView.VSplitLeft(MainView.w / 2.1f, &LeftView, &RightView);
 
-	const float Radius = minimum(RightView.w, RightView.h) / 2.0f;
+	const float Radius = std::min(RightView.w, RightView.h) / 2.0f;
 	vec2 Pos{RightView.x + RightView.w / 2.0f, RightView.y + RightView.h / 2.0f};
 	// Draw Circle
 	Graphics()->TextureClear();
@@ -1567,7 +1567,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	MainView.HSplitTop(MarginBetweenSections, nullptr, &MainView);
 	MainView.VSplitLeft(MainView.w / 2.1f, &LeftView, &RightView);
 
-	const float Radius = minimum(RightView.w, RightView.h) / 2.0f;
+	const float Radius = std::min(RightView.w, RightView.h) / 2.0f;
 	vec2 Pos{RightView.x + RightView.w / 2.0f, RightView.y + RightView.h / 2.0f};
 	// Draw Circle
 	Graphics()->TextureClear();

@@ -1434,8 +1434,8 @@ void CPlayers::RenderEffects(bool Frozen, bool Local, vec2 BodyPos, vec2 Vel, fl
 				s_Sin = round_to_int(random_float(3.0f, 6.0f));
 				s_Change = time_get() + time_freq() * 15;
 			}
-			GameClient()->m_Effects.SwitchEffect(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
-			GameClient()->m_Effects.SwitchEffect(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, minimum(0.2f, maximum(0.0f, Alpha))));
+			GameClient()->m_Effects.SwitchEffect(EffectPos + Move, ColorRGBA(0.7f, 0.7f, 0.3f), mix(0.6f, 0.0f, std::min(0.2f, std::max(0.0f, Alpha))));
+			GameClient()->m_Effects.SwitchEffect(EffectPos - Move, ColorRGBA(0.3f, 0.4f, 0.7f), mix(0.6f, 0.0f, std::min(0.2f, std::max(0.0f, Alpha))));
 		}
 	}
 }

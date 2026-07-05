@@ -1674,7 +1674,7 @@ bool CUi::DoScrollbarOptionRender(const void *pId, int *pOption, const CUIRect *
 	if(MultiLine)
 		pRect->HSplitMid(&Label, &ScrollBar);
 	else
-		pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
+		pRect->VSplitMid(&Label, &ScrollBar, std::min(10.0f, pRect->w * 0.05f));
 
 	Value = pScale->ToAbsolute(DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max), nullptr, false), Min, Max);
 	if(NoClampValue && ((Value == Min && *pOption < Min) || (Value == Max && *pOption > Max)))
@@ -1726,7 +1726,7 @@ bool CUi::DoSliderWithScaledValue(const void *pId, int *pOption, const CUIRect *
 	}
 
 	CUIRect Label, ScrollBar;
-	pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
+	pRect->VSplitMid(&Label, &ScrollBar, std::min(10.0f, pRect->w * 0.05f));
 
 	const float LabelFontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
 	DoLabel(&Label, aBuf, LabelFontSize, TEXTALIGN_ML);
@@ -1798,7 +1798,7 @@ bool CUi::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, 
 	if(MultiLine)
 		pRect->HSplitMid(&Label, &ScrollBar);
 	else
-		pRect->VSplitMid(&Label, &ScrollBar, minimum(10.0f, pRect->w * 0.05f));
+		pRect->VSplitMid(&Label, &ScrollBar, std::min(10.0f, pRect->w * 0.05f));
 
 	const float aFontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
 	DoLabel(&Label, aBuf, aFontSize, TEXTALIGN_ML);

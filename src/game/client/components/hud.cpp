@@ -203,7 +203,7 @@ void CHud::RenderGameTimer(vec2 Pos, float Size, float ClipRight)
 		Cursor.SetPosition(vec2(Pos.x - w / 2, Pos.y));
 		Cursor.m_FontSize = Size;
 		Cursor.m_Flags = TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END;
-		Cursor.m_LineWidth = ClipRight > 0.0f ? maximum(ClipRight - Cursor.m_X, 0.001f) : -1.0f;
+		Cursor.m_LineWidth = ClipRight > 0.0f ? std::max(ClipRight - Cursor.m_X, 0.001f) : -1.0f;
 
 		TextRender()->TextEx(&Cursor, aBuf);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -212,7 +212,7 @@ void CHud::RenderGameTimer(vec2 Pos, float Size, float ClipRight)
 		{
 			Cursor.m_FontSize = Size * 0.55f;
 			Cursor.SetPosition(vec2(Pos.x + w * 0.5f, Pos.y + Size * 0.25f));
-			Cursor.m_LineWidth = ClipRight > 0.0f ? maximum(ClipRight - Cursor.m_X, 0.001f) : -1.0f;
+			Cursor.m_LineWidth = ClipRight > 0.0f ? std::max(ClipRight - Cursor.m_X, 0.001f) : -1.0f;
 			TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 			TextRender()->TextEx(&Cursor, FontIcon::FLAG_CHECKERED);
 			TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
@@ -2096,7 +2096,7 @@ void CHud::FreezeHelpers()
 		vec2 Size = IslandSize();
 
 		if(Size.x > 0.0f && Size.y > 0.0f && OverlapsY(Y, Height, Pos.y, Size.y))
-			ReservedRight = maximum(ReservedRight, Pos.x + Size.x + OverlapPadding);
+			ReservedRight = std::max(ReservedRight, Pos.x + Size.x + OverlapPadding);
 
 		return ReservedRight;
 	};
@@ -2104,7 +2104,7 @@ void CHud::FreezeHelpers()
 		float AvailableRight = m_Width;
 		if(HasFpsRect && OverlapsY(Y, Height, m_FPSPos.y, FpsBounds.m_H))
 		{
-			AvailableRight = minimum(AvailableRight, m_FPSPos.x - OverlapPadding);
+			AvailableRight = std::min(AvailableRight, m_FPSPos.x - OverlapPadding);
 		}
 		return AvailableRight;
 	};
@@ -2118,7 +2118,7 @@ void CHud::FreezeHelpers()
 		}
 		if(X + Width > AvailableRight)
 		{
-			X = maximum(ReservedRight, AvailableRight - Width);
+			X = std::max(ReservedRight, AvailableRight - Width);
 		}
 		return X;
 	};
@@ -2188,8 +2188,8 @@ void CHud::FreezeHelpers()
 		const float HudY = 0.0f;
 		const float ReservedRight = GetReservedRight(HudY, TeeSize);
 		const float AvailableRight = GetAvailableRight(HudY, TeeSize);
-		const float HudX = maximum(DefaultHudX, ReservedRight);
-		MaxTees = minimum(MaxTees, maximum(round_truncate((AvailableRight - HudX) / TeeSize), 0));
+		const float HudX = std::max(DefaultHudX, ReservedRight);
+		MaxTees = std::min(MaxTees, std::max(round_truncate((AvailableRight - HudX) / TeeSize), 0));
 		if(MaxTees <= 0)
 			return;
 		float StartPos = HudX + TeeSize / 2.0f;
@@ -2331,12 +2331,12 @@ static float RoundedArtInset(float LocalX, float W, float Radius)
 	if(LocalX < Radius)
 	{
 		const float X = Radius - LocalX;
-		return Radius - sqrtf(maximum(0.0f, Radius * Radius - X * X));
+		return Radius - sqrtf(std::max(0.0f, Radius * Radius - X * X));
 	}
 	if(LocalX > W - Radius)
 	{
 		const float X = LocalX - (W - Radius);
-		return Radius - sqrtf(maximum(0.0f, Radius * Radius - X * X));
+		return Radius - sqrtf(std::max(0.0f, Radius * Radius - X * X));
 	}
 	return 0.0f;
 }
@@ -2369,7 +2369,7 @@ static void DrawRoundedTexture(IGraphics *pGraphics, const CUIRect &Rect, float 
 	if(pGraphics == nullptr || !AlbumArt.m_Texture.IsValid() || Rect.w <= 0.0f || Rect.h <= 0.0f)
 		return;
 
-	const float Radius = minimum(minimum(Rounding, minimum(Rect.w, Rect.h) * 0.5f), 64.0f);
+	const float Radius = std::min(std::min(Rounding, std::min(Rect.w, Rect.h) * 0.5f), 64.0f);
 	constexpr int NUM_SLICES = 32;
 	float U0 = 0.0f;
 	float U1 = 1.0f;
@@ -2385,24 +2385,24 @@ static void DrawRoundedTexture(IGraphics *pGraphics, const CUIRect &Rect, float 
 
 	if(AlbumArt.m_Width > 0 && AlbumArt.m_Height > 0)
 	{
-		const float TargetAspect = Rect.w / maximum(Rect.h, 0.001f);
+		const float TargetAspect = Rect.w / std::max(Rect.h, 0.001f);
 		const float CroppedWidth = AlbumArt.m_Width * (U1 - U0);
 		const float CroppedHeight = AlbumArt.m_Height * (V1 - V0);
-		const float CroppedAspect = CroppedWidth / maximum(CroppedHeight, 0.001f);
+		const float CroppedAspect = CroppedWidth / std::max(CroppedHeight, 0.001f);
 
 		if(CroppedAspect > TargetAspect)
 		{
 			const float VisibleWidth = CroppedHeight * TargetAspect;
-			const float CropWidth = maximum(CroppedWidth - VisibleWidth, 0.0f);
-			const float CropTexels = CropWidth / maximum(AlbumArt.m_Width, 1);
+			const float CropWidth = std::max(CroppedWidth - VisibleWidth, 0.0f);
+			const float CropTexels = CropWidth / std::max(AlbumArt.m_Width, 1);
 			U0 += CropTexels * 0.5f;
 			U1 -= CropTexels * 0.5f;
 		}
 		else if(CroppedAspect < TargetAspect)
 		{
-			const float VisibleHeight = CroppedWidth / maximum(TargetAspect, 0.001f);
-			const float CropHeight = maximum(CroppedHeight - VisibleHeight, 0.0f);
-			const float CropTexels = CropHeight / maximum(AlbumArt.m_Height, 1);
+			const float VisibleHeight = CroppedWidth / std::max(TargetAspect, 0.001f);
+			const float CropHeight = std::max(CroppedHeight - VisibleHeight, 0.0f);
+			const float CropTexels = CropHeight / std::max(AlbumArt.m_Height, 1);
 			V0 += CropTexels * 0.5f;
 			V1 -= CropTexels * 0.5f;
 		}
@@ -2429,10 +2429,10 @@ static void DrawRoundedTexture(IGraphics *pGraphics, const CUIRect &Rect, float 
 		const vec2 BottomLeft(RenderX0, Rect.y + Rect.h - Inset0);
 		const vec2 BottomRight(RenderX1, Rect.y + Rect.h - Inset1);
 
-		const float RenderV0Top = std::clamp((TopLeft.y - Rect.y) / maximum(Rect.h, 0.001f), 0.0f, 1.0f);
-		const float RenderV1Top = std::clamp((TopRight.y - Rect.y) / maximum(Rect.h, 0.001f), 0.0f, 1.0f);
-		const float RenderV0Bottom = std::clamp((BottomLeft.y - Rect.y) / maximum(Rect.h, 0.001f), 0.0f, 1.0f);
-		const float RenderV1Bottom = std::clamp((BottomRight.y - Rect.y) / maximum(Rect.h, 0.001f), 0.0f, 1.0f);
+		const float RenderV0Top = std::clamp((TopLeft.y - Rect.y) / std::max(Rect.h, 0.001f), 0.0f, 1.0f);
+		const float RenderV1Top = std::clamp((TopRight.y - Rect.y) / std::max(Rect.h, 0.001f), 0.0f, 1.0f);
+		const float RenderV0Bottom = std::clamp((BottomLeft.y - Rect.y) / std::max(Rect.h, 0.001f), 0.0f, 1.0f);
+		const float RenderV1Bottom = std::clamp((BottomRight.y - Rect.y) / std::max(Rect.h, 0.001f), 0.0f, 1.0f);
 		const float V0Top = mix(V0, V1, RenderV0Top);
 		const float V1Top = mix(V0, V1, RenderV1Top);
 		const float V0Bottom = mix(V0, V1, RenderV0Bottom);
@@ -2567,7 +2567,7 @@ void CHud::RenderIsland()
 	}
 	if(LocalTime)
 	{
-		GameTimerWidth = HudTimer ? maximum(GameTimerWidth, LocalTimeWidth) : NoGameTimerLocalTimeWidth;
+		GameTimerWidth = HudTimer ? std::max(GameTimerWidth, LocalTimeWidth) : NoGameTimerLocalTimeWidth;
 	}
 
 	const bool ShowArt = HasMediaState;
@@ -2707,7 +2707,7 @@ void CHud::RenderIsland()
 	CUIRect VisualizerRect = {IslandRect.x + IslandRect.w, IslandRect.y, 0.0f, IslandRect.h};
 	if(HasMediaState)
 	{
-		ArtSlot.HMargin(maximum((ArtSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &ArtSlot);
+		ArtSlot.HMargin(std::max((ArtSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &ArtSlot);
 		if(Hovered)
 		{
 			const float HoveredArtExpansion = 1.0f * SizeScale;
@@ -2722,7 +2722,7 @@ void CHud::RenderIsland()
 		if(ShowVisualizer)
 		{
 			if(g_Config.m_ClMediaIslandVisualizerAlignment == 2)
-				VisualizerSlot.HMargin(maximum((VisualizerSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &VisualizerSlot);
+				VisualizerSlot.HMargin(std::max((VisualizerSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &VisualizerSlot);
 			else
 				VisualizerSlot.HSplitBottom(CurrentMediaSize, nullptr, &VisualizerSlot);
 
@@ -2740,7 +2740,7 @@ void CHud::RenderIsland()
 
 	float TitleWantedWidth = (Hovered ? ExpandedWidth : CollapsedWidth);
 	TitleWantedWidth *= std::clamp(Island.m_AnimProgress, 0.0f, 1.0f);
-	const float CurrentAnimatedTextWidth = maximum(TitleWantedWidth, CollapsedWidth);
+	const float CurrentAnimatedTextWidth = std::max(TitleWantedWidth, CollapsedWidth);
 
 	CUIRect TitleRect = {TimerRect.x - TextPadding, TimerYOff, TimerRect.w + TextPadding * 2.0f, GameTimerSize};
 	CUIRect ArtistRect = {TimerRect.x - TextPadding, TimerYOff + GameTimerSize + 1.0f * SizeScale, TimerRect.w + TextPadding * 2.0f, LocalTimeSize};
@@ -2762,15 +2762,15 @@ void CHud::RenderIsland()
 	const CUIRect TextClipBounds = {
 		TextClipLeft,
 		IslandRect.y,
-		maximum(TextClipRight - TextClipLeft, 0.0f),
+		std::max(TextClipRight - TextClipLeft, 0.0f),
 		IslandRect.h};
 
 	auto IntersectClipRect = [](const CUIRect &Rect, const CUIRect &Clip) {
-		const float X = maximum(Rect.x, Clip.x);
-		const float Y = maximum(Rect.y, Clip.y);
-		const float Right = minimum(Rect.x + Rect.w, Clip.x + Clip.w);
-		const float Bottom = minimum(Rect.y + Rect.h, Clip.y + Clip.h);
-		return CUIRect{X, Y, maximum(Right - X, 0.0f), maximum(Bottom - Y, 0.0f)};
+		const float X = std::max(Rect.x, Clip.x);
+		const float Y = std::max(Rect.y, Clip.y);
+		const float Right = std::min(Rect.x + Rect.w, Clip.x + Clip.w);
+		const float Bottom = std::min(Rect.y + Rect.h, Clip.y + Clip.h);
+		return CUIRect{X, Y, std::max(Right - X, 0.0f), std::max(Bottom - Y, 0.0f)};
 	};
 	auto RenderClipped = [&](const CUIRect &ClipRect, auto &&RenderFunc) {
 		const CUIRect ActualClipRect = IntersectClipRect(ClipRect, TextClipBounds);
@@ -2806,7 +2806,7 @@ void CHud::RenderIsland()
 				const float OverflowWidth = TextWidth - TextRect.w;
 				constexpr float ScrollHoldTime = 1.2f;
 				const float ScrollSpeed = 18.0f * SizeScale;
-				const float FrameTime = minimum(Client()->RenderFrameTime(), 0.1f);
+				const float FrameTime = std::min(Client()->RenderFrameTime(), 0.1f);
 				if(absolute(ScrollState.m_Overflow - OverflowWidth) > 0.01f)
 				{
 					ScrollState.Reset();
@@ -2820,12 +2820,12 @@ void CHud::RenderIsland()
 
 				if(ScrollState.m_HoldTime > 0.0f)
 				{
-					ScrollState.m_HoldTime = maximum(ScrollState.m_HoldTime - FrameTime, 0.0f);
+					ScrollState.m_HoldTime = std::max(ScrollState.m_HoldTime - FrameTime, 0.0f);
 				}
 				else
 				{
-					const float TravelTime = maximum(OverflowWidth / ScrollSpeed, 0.001f);
-					ScrollState.m_Progress = minimum(ScrollState.m_Progress + FrameTime / TravelTime, 1.0f);
+					const float TravelTime = std::max(OverflowWidth / ScrollSpeed, 0.001f);
+					ScrollState.m_Progress = std::min(ScrollState.m_Progress + FrameTime / TravelTime, 1.0f);
 					if(ScrollState.m_Progress >= 1.0f)
 					{
 						ScrollState.m_Progress = 0.0f;
@@ -2887,7 +2887,7 @@ void CHud::RenderIsland()
 					GameTimerSize + VerticalClipPadding * 2.0f};
 				RenderClipped(LocalTimeClipRect, [&]() {
 					const float TextX = TimerRect.Center().x - NoGameTimerLocalTimeWidth * 0.5f;
-					TextRender()->Text(TextX, IslandRect.y + CollapsedIslandRect.h * 0.25f, GameTimerSize, aTimeStr, maximum(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
+					TextRender()->Text(TextX, IslandRect.y + CollapsedIslandRect.h * 0.25f, GameTimerSize, aTimeStr, std::max(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
 				});
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
@@ -2901,7 +2901,7 @@ void CHud::RenderIsland()
 					LocalTimeSize + VerticalClipPadding * 2.0f};
 				RenderClipped(LocalTimeClipRect, [&]() {
 					const float TextX = TimerRect.Center().x - LocalTimeWidth * 0.5f;
-					TextRender()->Text(TextX, TimerYOff, LocalTimeSize, aTimeStr, maximum(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
+					TextRender()->Text(TextX, TimerYOff, LocalTimeSize, aTimeStr, std::max(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
 				});
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
@@ -2923,7 +2923,7 @@ void CHud::RenderIsland()
 		}
 
 		{
-			const float ArtRounding = minimum(4.0f * SizeScale, minimum(ArtRect.w, ArtRect.h) * 0.22f);
+			const float ArtRounding = std::min(4.0f * SizeScale, std::min(ArtRect.w, ArtRect.h) * 0.22f);
 
 			const CMediaViewer::CAlbumArt &PrevAlbumArt = Island.m_CurState.m_PrevAlbumArt;
 			if(Island.m_Changed && PrevAlbumArt.m_Texture.IsValid())
@@ -2973,7 +2973,7 @@ void CHud::RenderIsland()
 		if(ShowExpandedLayout)
 		{
 			CUIRect ButtonRow = ControlsRect;
-			ButtonRow.HMargin(maximum((ButtonRow.h - ButtonSize) * 0.5f, 0.0f), &ButtonRow);
+			ButtonRow.HMargin(std::max((ButtonRow.h - ButtonSize) * 0.5f, 0.0f), &ButtonRow);
 			const float ButtonRowWidth = ButtonSize * 3.0f + ButtonSpacing * 2.0f;
 			ButtonRow = {
 				TimerRect.Center().x - ButtonRowWidth * 0.5f,
@@ -3077,7 +3077,7 @@ void CHud::RenderVisualizer(const CMediaViewer::CState &State, ColorRGBA Primary
 
 		ColorRGBA Color = LerpColor(Primary, Secondary, a);
 
-		float Rounding = minimum(ActualBarWidth * 0.5f, 2.0f);
+		float Rounding = std::min(ActualBarWidth * 0.5f, 2.0f);
 
 		Graphics()->DrawRect(X, Y, ActualBarWidth, BarHeight, Color, IGraphics::CORNER_ALL, Rounding);
 	}

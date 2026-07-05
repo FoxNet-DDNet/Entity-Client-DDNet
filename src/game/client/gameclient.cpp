@@ -6088,7 +6088,7 @@ vec2 CGameClient::GetCursorWorldPos() const
 
 	if(l > 0.0001f) // make sure that this isn't 0
 	{
-		float OffsetAmount = maximum(l - m_Snap.m_SpecInfo.m_Deadzone, 0.0f) * (m_Snap.m_SpecInfo.m_FollowFactor / 100.0f);
+		float OffsetAmount = std::max(l - m_Snap.m_SpecInfo.m_Deadzone, 0.0f) * (m_Snap.m_SpecInfo.m_FollowFactor / 100.0f);
 		TargetCameraOffset = normalize(Target) * OffsetAmount;
 	}
 

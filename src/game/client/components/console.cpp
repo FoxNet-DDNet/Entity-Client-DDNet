@@ -1324,7 +1324,7 @@ void CGameConsole::OnRender()
 			pConsole->m_LastInputHeight = pConsole->m_BoundingBox.m_H;
 		}
 
-		float InputHeight = maximum(pConsole->m_BoundingBox.m_H, FONT_SIZE);
+		float InputHeight = std::max(pConsole->m_BoundingBox.m_H, FONT_SIZE);
 		y -= InputHeight - FONT_SIZE;
 
 		// render possible commands

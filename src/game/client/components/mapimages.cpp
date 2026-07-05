@@ -38,8 +38,8 @@ static float GetLuma(const ColorRGBA &Color)
 
 static float GetSaturation(const ColorRGBA &Color)
 {
-	const float MaxValue = maximum(Color.r, maximum(Color.g, Color.b));
-	const float MinValue = minimum(Color.r, minimum(Color.g, Color.b));
+	const float MaxValue = std::max(Color.r, std::max(Color.g, Color.b));
+	const float MinValue = std::min(Color.r, std::min(Color.g, Color.b));
 	if(MaxValue <= 0.0f)
 		return 0.0f;
 	return (MaxValue - MinValue) / MaxValue;
@@ -50,8 +50,8 @@ static ColorRGBA GetDominantColor(const CImageInfo &Image, size_t OffsetX, size_
 	if(Image.m_pData == nullptr || Width == 0 || Height == 0)
 		return ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f);
 
-	const size_t EndX = minimum(OffsetX + Width, Image.m_Width);
-	const size_t EndY = minimum(OffsetY + Height, Image.m_Height);
+	const size_t EndX = std::min(OffsetX + Width, Image.m_Width);
+	const size_t EndY = std::min(OffsetY + Height, Image.m_Height);
 	if(OffsetX >= EndX || OffsetY >= EndY)
 		return ColorRGBA(0.0f, 0.0f, 0.0f, 1.0f);
 
