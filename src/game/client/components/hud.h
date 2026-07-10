@@ -82,6 +82,10 @@ class CHud : public CComponent
 	STextContainerIndex m_aPlayerPositionContainers[2];
 	float m_aPlayerPrevPosition[2];
 
+	// EClient
+	STextContainerIndex m_PlayerCheckpointTextContainerIndex;
+	int m_PlayerPrevCheckpoint;
+
 	void RenderCursor();
 
 	void RenderTextInfo();

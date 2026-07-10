@@ -47,7 +47,9 @@ CHud::CHud()
 	m_FPSTextContainerIndex.Reset();
 	m_DDRaceEffectsTextContainerIndex.Reset();
 	m_PlayerAngleTextContainerIndex.Reset();
+	m_PlayerCheckpointTextContainerIndex.Reset(); // EClient
 	m_PlayerPrevAngle = -INFINITY;
+	m_PlayerPrevCheckpoint = -1; // EClient
 
 	for(int i = 0; i < 2; i++)
 	{
@@ -76,6 +78,7 @@ void CHud::ResetHudContainers()
 	TextRender()->DeleteTextContainer(m_FPSTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_DDRaceEffectsTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_PlayerAngleTextContainerIndex);
+	TextRender()->DeleteTextContainer(m_PlayerCheckpointTextContainerIndex); // EClient
 	m_PlayerPrevAngle = -INFINITY;
 	for(int i = 0; i < 2; i++)
 	{
@@ -1354,6 +1357,11 @@ void CHud::RenderNinjaBarPos(const float x, float y, const float Width, const fl
 	Graphics()->WrapNormal();
 }
 
+inline static bool HasMovementInformationBox()
+{
+	return g_Config.m_ClShowhudPlayerPosition || g_Config.m_ClShowhudPlayerSpeed || g_Config.m_ClShowhudPlayerAngle || g_Config.m_ClShowhudPlayerCheckpoint;
+}
+
 void CHud::RenderSpectatorCount()
 {
 	if(!g_Config.m_ClShowhudSpectatorCount)
@@ -1405,7 +1413,7 @@ void CHud::RenderSpectatorCount()
 
 	float StartX = m_Width - BoxWidth;
 	float StartY = 285.0f - BoxHeight - 4; // 4 units distance to the next display;
-	if(g_Config.m_ClShowhudPlayerPosition || g_Config.m_ClShowhudPlayerSpeed || g_Config.m_ClShowhudPlayerAngle)
+	if(HasMovementInformationBox())
 	{
 		StartY -= 4;
 	}
@@ -1444,7 +1452,7 @@ void CHud::RenderDummyActions()
 
 	float StartX = m_Width - BoxWidth;
 	float StartY = 285.0f - BoxHeight - 4; // 4 units distance to the next display;
-	if(g_Config.m_ClShowhudPlayerPosition || g_Config.m_ClShowhudPlayerSpeed || g_Config.m_ClShowhudPlayerAngle)
+	if(HasMovementInformationBox())
 	{
 		StartY -= 4;
 	}
@@ -1495,10 +1503,19 @@ inline float CHud::GetMovementInformationBoxHeight()
 	if(GameClient()->m_Snap.m_SpecInfo.m_Active && (GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW || GameClient()->m_aClients[GameClient()->m_Snap.m_SpecInfo.m_SpectatorId].m_SpecCharPresent))
 		return g_Config.m_ClShowhudPlayerPosition ? 3.0f * MOVEMENT_INFORMATION_LINE_HEIGHT + 2.0f : 0.0f;
 	float BoxHeight = 3.0f * MOVEMENT_INFORMATION_LINE_HEIGHT * (g_Config.m_ClShowhudPlayerPosition + g_Config.m_ClShowhudPlayerSpeed) + 2.0f * MOVEMENT_INFORMATION_LINE_HEIGHT * g_Config.m_ClShowhudPlayerAngle;
-	if(g_Config.m_ClShowhudPlayerPosition || g_Config.m_ClShowhudPlayerSpeed || g_Config.m_ClShowhudPlayerAngle)
+	if(HasMovementInformationBox())
 	{
 		BoxHeight += 2.0f;
 	}
+
+	// EClient
+	const int ClientId = GameClient()->m_Snap.m_SpecInfo.m_Active ? GameClient()->m_Snap.m_SpecInfo.m_SpectatorId : GameClient()->m_Snap.m_LocalClientId;
+	const CCharacter *pCharacter = GameClient()->m_GameWorld.GetCharacterById(ClientId);
+	if(g_Config.m_ClShowhudPlayerCheckpoint && pCharacter)
+	{
+		BoxHeight += MOVEMENT_INFORMATION_LINE_HEIGHT;
+	}
+
 	return BoxHeight;
 }
 
@@ -1582,7 +1599,7 @@ void CHud::RenderMovementInformation()
 	const bool PosOnly = ClientId == SPEC_FREEVIEW || (GameClient()->m_aClients[ClientId].m_SpecCharPresent);
 	// Draw the information depending on settings: Position, speed and target angle
 	// This display is only to present the available information from the last snapshot, not to interpolate or predict
-	if(!g_Config.m_ClShowhudPlayerPosition && (PosOnly || (!g_Config.m_ClShowhudPlayerSpeed && !g_Config.m_ClShowhudPlayerAngle)))
+	if(!HasMovementInformationBox())
 	{
 		return;
 	}
@@ -1590,6 +1607,10 @@ void CHud::RenderMovementInformation()
 	const float Fontsize = 6.0f;
 
 	float BoxHeight = GetMovementInformationBoxHeight();
+
+	if(BoxHeight <= 0.0f)
+		return;
+
 	const float BoxWidth = 62.0f;
 
 	float StartX = m_Width - BoxWidth;
@@ -1607,31 +1628,30 @@ void CHud::RenderMovementInformation()
 	const float LeftX = StartX + 2.0f;
 	const float RightX = m_Width - 2.0f;
 
+	const char aaCoordinates[][4] = {"X:", "Y:"};
+
 	if(g_Config.m_ClShowhudPlayerPosition)
 	{
 		TextRender()->Text(LeftX, y, Fontsize, Localize("Position:"), -1.0f);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
-		TextRender()->Text(LeftX, y, Fontsize, "X:", -1.0f);
-		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[0], Fontsize, Info.m_Pos.x, m_aPlayerPrevPosition[0]);
-		RenderMovementInformationTextContainer(m_aPlayerPositionContainers[0], TextRender()->DefaultTextColor(), RightX, y);
-		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
-
-		TextRender()->Text(LeftX, y, Fontsize, "Y:", -1.0f);
-		UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[1], Fontsize, Info.m_Pos.y, m_aPlayerPrevPosition[1]);
-		RenderMovementInformationTextContainer(m_aPlayerPositionContainers[1], TextRender()->DefaultTextColor(), RightX, y);
-		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+		for(int i = 0; i < 2; i++)
+		{
+			TextRender()->Text(LeftX, y, Fontsize, aaCoordinates[i], -1.0f);
+			UpdateMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Fontsize, i == 0 ? Info.m_Pos.x : Info.m_Pos.y, m_aPlayerPrevPosition[i]);
+			RenderMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], TextRender()->DefaultTextColor(), RightX, y);
+			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+		}
+		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
 	if(PosOnly)
 		return;
-
 	if(g_Config.m_ClShowhudPlayerSpeed)
 	{
 		TextRender()->Text(LeftX, y, Fontsize, Localize("Speed:"), -1.0f);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
-		const char aaCoordinates[][4] = {"X:", "Y:"};
 		for(int i = 0; i < 2; i++)
 		{
 			ColorRGBA Color(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1655,6 +1675,35 @@ void CHud::RenderMovementInformation()
 
 		UpdateMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, Fontsize, Info.m_Angle, m_PlayerPrevAngle);
 		RenderMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, TextRender()->DefaultTextColor(), RightX, y);
+		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+	}
+
+	auto RenderSoloInfo = [this](const char *pLabel, float FontSize, STextContainerIndex &TextContainer, int Value, int &PrevValue, float LeftX, float RightX, float y) {
+		TextRender()->Text(LeftX, y, FontSize, Localize(pLabel), -1.0f);
+
+		if(!TextContainer.Valid() || PrevValue != Value)
+		{
+			PrevValue = Value;
+
+			char aBuf[8];
+			str_format(aBuf, sizeof(aBuf), "%d", Value);
+
+			CTextCursor Cursor;
+			Cursor.m_FontSize = FontSize;
+			TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
+		}
+		if(TextContainer.Valid())
+			TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), RightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, y);
+	};
+
+	if(g_Config.m_ClShowhudPlayerCheckpoint)
+	{
+		const CCharacter *pCharacter = GameClient()->m_GameWorld.GetCharacterById(ClientId);
+		if(pCharacter)
+		{
+			const int CheckPoint = pCharacter->m_TeleCheckpoint;
+			RenderSoloInfo("Checkpoint:", Fontsize, m_PlayerCheckpointTextContainerIndex, CheckPoint, m_PlayerPrevCheckpoint, LeftX, RightX, y);
+		}
 	}
 }
 
