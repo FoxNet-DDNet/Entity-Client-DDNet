@@ -459,7 +459,6 @@ MACRO_CONFIG_INT(ClStatisticsShowFps, ec_statistics_show_fps, 0, 0, 1, CFGFLAG_C
 MACRO_CONFIG_INT(ClStatisticsShowPing, ec_statistics_show_ping, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show Ping in the statistics")
 MACRO_CONFIG_INT(ClStatisticsShowSnapRate, ec_statistics_show_snap_rate, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show Snap Rate in the statistics")
 
-
 // Player HUD
 // Timer
 MACRO_CONFIG_INT(ClShowHudTimerStartedFlag, ec_showhud_timer_started_flag, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show a flag if the timer has started")
