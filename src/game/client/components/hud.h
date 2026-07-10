@@ -86,6 +86,13 @@ class CHud : public CComponent
 	STextContainerIndex m_PlayerCheckpointTextContainerIndex;
 	int m_PlayerPrevCheckpoint;
 
+	// EClient: compact player info
+	STextContainerIndex m_aPlayerInfoTextContainers[2]; // 0 = Position, 1 = Speed
+	vec2 m_PlayerInfoPrevPosition;
+	vec2 m_PlayerInfoPrevSpeed;
+	ColorRGBA m_aPlayerInfoPrevPositionColor[2];
+	ColorRGBA m_aPlayerInfoPrevSpeedColor[2];
+
 	void RenderCursor();
 
 	void RenderTextInfo();
@@ -105,6 +112,11 @@ class CHud : public CComponent
 
 	void UpdateMovementInformationTextContainer(STextContainerIndex &TextContainer, float FontSize, float Value, float &PrevValue);
 	void RenderMovementInformationTextContainer(STextContainerIndex &TextContainer, const ColorRGBA &Color, float X, float Y);
+
+	// EClient
+	void RenderCompactPlayerInfo();
+	void UpdatePlayerInfoVecTextContainer(STextContainerIndex &TextContainer, float FontSize, vec2 Value, vec2 &PrevValue, const ColorRGBA aColors[2], ColorRGBA aPrevColors[2]);
+	void RenderSoloInfo(const char *pLabel, float FontSize, STextContainerIndex &TextContainer, int Value, int &PrevValue, float LeftX, float RightX, float y);
 
 	class CMovementInformation
 	{

@@ -61,6 +61,13 @@ CHud::CHud()
 
 	// EClient
 	m_Island.Reset();
+
+	for(size_t i = 0; i < std::size(m_aPlayerInfoTextContainers); i++)
+	{
+		m_aPlayerInfoTextContainers[i].Reset();
+	}
+	m_PlayerInfoPrevPosition = vec2(-INFINITY, -INFINITY);
+	m_PlayerInfoPrevSpeed = vec2(-INFINITY, -INFINITY);
 }
 
 void CHud::ResetHudContainers()
@@ -90,6 +97,13 @@ void CHud::ResetHudContainers()
 
 	// EClient
 	m_Island.Reset();
+
+	for(size_t i = 0; i < std::size(m_aPlayerInfoTextContainers); i++)
+	{
+		TextRender()->DeleteTextContainer(m_aPlayerInfoTextContainers[i]);
+	}
+	m_PlayerInfoPrevPosition = vec2(-INFINITY, -INFINITY);
+	m_PlayerInfoPrevSpeed = vec2(-INFINITY, -INFINITY);
 }
 
 void CHud::OnWindowResize()
@@ -1500,9 +1514,14 @@ inline int CHud::GetDigitsIndex(int Value, int Max)
 
 inline float CHud::GetMovementInformationBoxHeight()
 {
+	// EClient: the compact HUD puts each category (Position, Speed, Angle) on a single line
+	// instead of a label line plus one line per component, so it needs fewer line-heights.
+	const float PositionAndSpeedLines = g_Config.m_ClShowhudPlayerCompact ? 1.0f : 3.0f;
+	const float AngleLines = g_Config.m_ClShowhudPlayerCompact ? 1.0f : 2.0f;
+
 	if(GameClient()->m_Snap.m_SpecInfo.m_Active && (GameClient()->m_Snap.m_SpecInfo.m_SpectatorId == SPEC_FREEVIEW || GameClient()->m_aClients[GameClient()->m_Snap.m_SpecInfo.m_SpectatorId].m_SpecCharPresent))
-		return g_Config.m_ClShowhudPlayerPosition ? 3.0f * MOVEMENT_INFORMATION_LINE_HEIGHT + 2.0f : 0.0f;
-	float BoxHeight = 3.0f * MOVEMENT_INFORMATION_LINE_HEIGHT * (g_Config.m_ClShowhudPlayerPosition + g_Config.m_ClShowhudPlayerSpeed) + 2.0f * MOVEMENT_INFORMATION_LINE_HEIGHT * g_Config.m_ClShowhudPlayerAngle;
+		return g_Config.m_ClShowhudPlayerPosition ? PositionAndSpeedLines * MOVEMENT_INFORMATION_LINE_HEIGHT + 2.0f : 0.0f;
+	float BoxHeight = PositionAndSpeedLines * MOVEMENT_INFORMATION_LINE_HEIGHT * (g_Config.m_ClShowhudPlayerPosition + g_Config.m_ClShowhudPlayerSpeed) + AngleLines * MOVEMENT_INFORMATION_LINE_HEIGHT * g_Config.m_ClShowhudPlayerAngle;
 	if(HasMovementInformationBox())
 	{
 		BoxHeight += 2.0f;
@@ -1540,6 +1559,78 @@ void CHud::RenderMovementInformationTextContainer(STextContainerIndex &TextConta
 	{
 		TextRender()->RenderTextContainer(TextContainer, Color, TextRender()->DefaultTextOutlineColor(), X - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, Y);
 	}
+}
+
+// EClient: renders an integer value on the same line as its label, e.g. for the compact HUD
+void CHud::RenderSoloInfo(const char *pLabel, float FontSize, STextContainerIndex &TextContainer, int Value, int &PrevValue, float LeftX, float RightX, float y)
+{
+	TextRender()->Text(LeftX, y, FontSize, Localize(pLabel), -1.0f);
+
+	if(!TextContainer.Valid() || PrevValue != Value)
+	{
+		PrevValue = Value;
+
+		char aBuf[8];
+		str_format(aBuf, sizeof(aBuf), "%d", Value);
+
+		CTextCursor Cursor;
+		Cursor.m_FontSize = FontSize;
+		TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
+	}
+	if(TextContainer.Valid())
+		TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), RightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, y);
+}
+
+// EClient: drops decimal places as the magnitude grows (2dp below 10, 1dp below 100, 0dp above)
+// so a value on the compact HUD stays a handful of characters wide no matter how large it gets,
+// instead of pushing e.g. "1234.56" into the label next to it.
+static float CompactValuePrecisionRound(float Value)
+{
+	const float AbsValue = std::fabs(Value);
+	float Factor = 100.0f; // 2 decimals
+	if(AbsValue >= 100.0f)
+		Factor = 1.0f; // 0 decimals
+	else if(AbsValue >= 10.0f)
+		Factor = 10.0f; // 1 decimal
+	return std::round(Value * Factor) / Factor;
+}
+
+static void FormatCompactValue(char *pBuf, int BufSize, float Value)
+{
+	const float AbsValue = std::fabs(Value);
+	if(AbsValue >= 100.0f)
+		str_format(pBuf, BufSize, "%.0f", Value);
+	else if(AbsValue >= 10.0f)
+		str_format(pBuf, BufSize, "%.1f", Value);
+	else
+		str_format(pBuf, BufSize, "%.2f", Value);
+}
+
+// EClient: bakes X and Y into a single "X | Y" text container with independent colors per half,
+// so the compact HUD doesn't need two lines (or two containers) per vector value.
+// Only recreates the container when the rounded value or either half's color actually changes.
+void CHud::UpdatePlayerInfoVecTextContainer(STextContainerIndex &TextContainer, float FontSize, vec2 Value, vec2 &PrevValue, const ColorRGBA aColors[2], ColorRGBA aPrevColors[2])
+{
+	Value = vec2(CompactValuePrecisionRound(Value.x), CompactValuePrecisionRound(Value.y));
+	if(TextContainer.Valid() && PrevValue == Value && aPrevColors[0] == aColors[0] && aPrevColors[1] == aColors[1])
+		return;
+	PrevValue = Value;
+	aPrevColors[0] = aColors[0];
+	aPrevColors[1] = aColors[1];
+
+	char aBufX[16];
+	FormatCompactValue(aBufX, sizeof(aBufX), Value.x);
+	char aBufY[16];
+	FormatCompactValue(aBufY, sizeof(aBufY), Value.y);
+
+	char aText[40];
+	str_format(aText, sizeof(aText), "%s | %s", aBufX, aBufY);
+
+	CTextCursor Cursor;
+	Cursor.m_FontSize = FontSize;
+	Cursor.m_vColorSplits.emplace_back(0, str_length(aBufX), aColors[0]);
+	Cursor.m_vColorSplits.emplace_back(str_length(aText) - str_length(aBufY), str_length(aBufY), aColors[1]);
+	TextRender()->RecreateTextContainer(TextContainer, &Cursor, aText);
 }
 
 CHud::CMovementInformation CHud::GetMovementInformation(int ClientId, int Conn) const
@@ -1595,6 +1686,12 @@ CHud::CMovementInformation CHud::GetMovementInformation(int ClientId, int Conn) 
 
 void CHud::RenderMovementInformation()
 {
+	if(g_Config.m_ClShowhudPlayerCompact)
+	{
+		RenderCompactPlayerInfo();
+		return;
+	}
+
 	const int ClientId = GameClient()->m_Snap.m_SpecInfo.m_Active ? GameClient()->m_Snap.m_SpecInfo.m_SpectatorId : GameClient()->m_Snap.m_LocalClientId;
 	const bool PosOnly = ClientId == SPEC_FREEVIEW || (GameClient()->m_aClients[ClientId].m_SpecCharPresent);
 	// Draw the information depending on settings: Position, speed and target angle
@@ -1677,24 +1774,6 @@ void CHud::RenderMovementInformation()
 		RenderMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, TextRender()->DefaultTextColor(), RightX, y);
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 	}
-
-	auto RenderSoloInfo = [this](const char *pLabel, float FontSize, STextContainerIndex &TextContainer, int Value, int &PrevValue, float LeftX, float RightX, float y) {
-		TextRender()->Text(LeftX, y, FontSize, Localize(pLabel), -1.0f);
-
-		if(!TextContainer.Valid() || PrevValue != Value)
-		{
-			PrevValue = Value;
-
-			char aBuf[8];
-			str_format(aBuf, sizeof(aBuf), "%d", Value);
-
-			CTextCursor Cursor;
-			Cursor.m_FontSize = FontSize;
-			TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
-		}
-		if(TextContainer.Valid())
-			TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), RightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, y);
-	};
 
 	if(g_Config.m_ClShowhudPlayerCheckpoint)
 	{
@@ -3154,5 +3233,93 @@ void CHud::CMediaIsland::CPosSize::Update(float DeltaTime)
 			m_Pos = m_WantedPos;
 		if(distance(m_Size, m_WantedSize) < 0.01f)
 			m_Size = m_WantedSize;
+	}
+}
+
+void CHud::RenderCompactPlayerInfo()
+{
+	const float FontSize = 6.0f;
+	const int ClientId = GameClient()->m_Snap.m_SpecInfo.m_Active ? GameClient()->m_Snap.m_SpecInfo.m_SpectatorId : GameClient()->m_Snap.m_LocalClientId;
+	const bool PosOnly = ClientId == SPEC_FREEVIEW || (GameClient()->m_aClients[ClientId].m_SpecCharPresent);
+
+	const float LineSpacer = 1.0f; // above and below each entry
+	const float LineHeight = FontSize + LineSpacer * 2.0f;
+
+	// GetMovementInformationBoxHeight() already accounts for the compact layout (one line per category)
+	const float BoxHeight = GetMovementInformationBoxHeight();
+
+	if(BoxHeight <= 0.0f)
+		return;
+
+	const float BoxWidth = 62.0;
+
+	float StartX = m_Width - BoxWidth;
+	float StartY = 285.0f - BoxHeight - 4.0f; // 4 units distance to the next display;
+	if(g_Config.m_ClShowhudScore)
+	{
+		StartY -= 56.0f;
+	}
+
+	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_L, 5.0f);
+
+	const CMovementInformation Info = GetMovementInformation(ClientId, g_Config.m_ClDummy);
+
+	float y = StartY + LineSpacer * 2.0f;
+	const float LeftX = StartX + 2.0f;
+	const float RightX = m_Width - 2.0f;
+
+	if(g_Config.m_ClShowhudPlayerPosition)
+	{
+		TextRender()->Text(LeftX, y, FontSize, Localize("Pos:"), -1.0f);
+
+		const ColorRGBA aColors[2] = {TextRender()->DefaultTextColor(), TextRender()->DefaultTextColor()};
+		UpdatePlayerInfoVecTextContainer(m_aPlayerInfoTextContainers[0], FontSize, Info.m_Pos, m_PlayerInfoPrevPosition, aColors, m_aPlayerInfoPrevPositionColor);
+		RenderMovementInformationTextContainer(m_aPlayerInfoTextContainers[0], TextRender()->DefaultTextColor(), RightX, y);
+		y += LineHeight;
+
+		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+
+	if(PosOnly)
+		return;
+
+	if(g_Config.m_ClShowhudPlayerSpeed)
+	{
+		TextRender()->Text(LeftX, y, FontSize, Localize("Vel:"), -1.0f);
+
+		ColorRGBA aColors[2];
+		for(int i = 0; i < 2; i++)
+		{
+			aColors[i] = TextRender()->DefaultTextColor();
+			if(m_aLastPlayerSpeedChange[i] == ESpeedChange::INCREASE)
+				aColors[i] = ColorRGBA(0.0f, 1.0f, 0.0f, 1.0f);
+			if(m_aLastPlayerSpeedChange[i] == ESpeedChange::DECREASE)
+				aColors[i] = ColorRGBA(1.0f, 0.5f, 0.5f, 1.0f);
+		}
+
+		UpdatePlayerInfoVecTextContainer(m_aPlayerInfoTextContainers[1], FontSize, Info.m_Speed, m_PlayerInfoPrevSpeed, aColors, m_aPlayerInfoPrevSpeedColor);
+		RenderMovementInformationTextContainer(m_aPlayerInfoTextContainers[1], TextRender()->DefaultTextColor(), RightX, y);
+		y += LineHeight;
+
+		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+	}
+
+	if(g_Config.m_ClShowhudPlayerAngle)
+	{
+		TextRender()->Text(LeftX, y, FontSize, Localize("Ang:"), -1.0f);
+
+		UpdateMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, FontSize, Info.m_Angle, m_PlayerPrevAngle);
+		RenderMovementInformationTextContainer(m_PlayerAngleTextContainerIndex, TextRender()->DefaultTextColor(), RightX, y);
+		y += LineHeight;
+	}
+
+	if(g_Config.m_ClShowhudPlayerCheckpoint)
+	{
+		const CCharacter *pCharacter = GameClient()->m_GameWorld.GetCharacterById(ClientId);
+		if(pCharacter)
+		{
+			const int CheckPoint = pCharacter->m_TeleCheckpoint;
+			RenderSoloInfo("Cp:", FontSize, m_PlayerCheckpointTextContainerIndex, CheckPoint, m_PlayerPrevCheckpoint, LeftX, RightX, y);
+		}
 	}
 }

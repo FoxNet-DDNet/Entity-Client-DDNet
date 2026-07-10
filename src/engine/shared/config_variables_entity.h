@@ -464,6 +464,7 @@ MACRO_CONFIG_INT(ClStatisticsShowSnapRate, ec_statistics_show_snap_rate, 0, 0, 1
 // Timer
 MACRO_CONFIG_INT(ClShowHudTimerStartedFlag, ec_showhud_timer_started_flag, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show a flag if the timer has started")
 MACRO_CONFIG_INT(ClShowhudPlayerCheckpoint, ec_showhud_player_checkpoint, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ingame HUD (Player Checkpoint)")
+MACRO_CONFIG_INT(ClShowhudPlayerCompact, ec_showhud_player_compact, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Player Hud compact version")
 
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
