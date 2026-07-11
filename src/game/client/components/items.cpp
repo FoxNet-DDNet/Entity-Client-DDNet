@@ -912,7 +912,7 @@ void CItems::RenderCosmeticLaser(const CNetObj_CosmeticLaser *pPrev, const CNetO
 			Graphics()->SetColor(OuterColor);
 			Graphics()->RenderQuadContainerAsSprite(m_ItemsQuadContainerIndex, m_FreezeHeadOffset, Pos.x, Pos.y, 6.f / 5.f * Pulsation, 6.f / 5.f * Pulsation);
 			Graphics()->TextureSet(GameClient()->m_ExtrasSkin.m_SpriteParticleSnowflake);
-			Graphics()->SetColor(ColorRGBA(1.f, 1.f, 1.f));
+			Graphics()->SetColor(ColorRGBA(1.0f, 1.0f, 1.0f, Alpha));
 			Graphics()->RenderQuadContainerAsSprite(m_ItemsQuadContainerIndex, m_FreezeHeadOffset, Pos.x, Pos.y, Pulsation, Pulsation);
 		}
 		else
