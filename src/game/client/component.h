@@ -313,6 +313,14 @@ public:
 	virtual void OnFocusChange(bool Focused)
 	{
 	}
+
+	/*
+	 * Called once 10 snapshots have been received after connecting to the server.
+	 * @param Conn sates whether the main player or the dummy connected.
+	 */
+	virtual void OnConnect(int Conn)
+	{
+	}
 };
 
 #endif

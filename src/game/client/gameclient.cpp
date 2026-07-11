@@ -6036,9 +6036,10 @@ void CGameClient::ClientMessage(const char *pString)
 	m_Chat.AddLine(-3, 0, pString);
 }
 
-void CGameClient::OnJoinInfo()
+void CGameClient::OnConnect(int Conn)
 {
-	m_EClient.OnConnect();
+	for(auto &pComponent : m_vpAll)
+		pComponent->OnConnect(Conn);
 }
 
 void CGameClient::RequestEClientInfo()

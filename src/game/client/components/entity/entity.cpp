@@ -29,6 +29,7 @@
 #include <algorithm>
 #include <cmath>
 #include <cstring>
+#include <memory>
 #if defined(CONF_FAMILY_WINDOWS)
 #include <Windows.h>
 #endif
@@ -236,14 +237,11 @@ void CEClient::GoresMode()
 		GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = WEAPON_GUN + 1;
 }
 
-void CEClient::OnConnect()
+void CEClient::OnConnect(int Conn)
 {
-	if(g_Config.m_ClDummy)
+	if(Conn != IClient::CONN_MAIN)
 		return;
 
-	// if current server is type "Gores", turn the config on, else turn it off
-	CServerInfo CurrentServerInfo;
-	Client()->GetServerInfo(&CurrentServerInfo);
 	static bool s_SentInfoMessage = false;
 	if(m_FirstLaunch && !s_SentInfoMessage)
 	{
@@ -262,9 +260,13 @@ void CEClient::OnConnect()
 	}
 	else
 	{
+		// if current server is type "Gores", turn the config on, else turn it off
 		if(g_Config.m_ClAutoEnableGoresMode)
 		{
-			if(str_find_nocase(CurrentServerInfo.m_aGameType, "Gores"))
+			// CServerInfo is large (embeds per-client skin data for all slots), so keep it off this function's stack frame
+			auto pCurrentServerInfo = std::make_unique<CServerInfo>();
+			Client()->GetServerInfo(pCurrentServerInfo.get());
+			if(str_find_nocase(pCurrentServerInfo->m_aGameType, "Gores"))
 			{
 				m_GoresServer = true;
 				g_Config.m_ClGoresMode = 1;

@@ -1133,7 +1133,7 @@ public:
 	void OnServerBrowserRefresh() override;
 
 	void ClientMessage(const char *pString) override;
-	void OnJoinInfo() override;
+	void OnConnect(int Conn) override;
 	void SetLastMovementTime() override;
 
 	void RequestEClientInfo() override;

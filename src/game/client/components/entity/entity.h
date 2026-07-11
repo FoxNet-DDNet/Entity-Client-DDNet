@@ -128,7 +128,6 @@ public:
 
 	int64_t m_JoinTeam;
 	void AutoJoinTeam();
-	void OnConnect();
 
 	/* Last Movement
 	 *	+left
@@ -155,6 +154,7 @@ private:
 	void OnShutdown() override;
 	void OnSelfDeath() override;
 	void OnFocusChange(bool IsFocused) override;
+	void OnConnect(int Conn) override;
 };
 
 #endif // GAME_CLIENT_COMPONENTS_ENTITY_ENTITY_H

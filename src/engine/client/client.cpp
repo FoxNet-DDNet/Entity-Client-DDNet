@@ -565,7 +565,7 @@ void CClient::EnterGame(int Conn)
 	m_aDidPostConnect[Conn] = false;
 
 	m_aCodeRunAfterJoinConsole[Conn] = false;
-	m_aOnJoinInfo[CONN_MAIN] = false;
+	m_aOnConnect[CONN_MAIN] = false;
 
 	// now we will wait for two snapshots
 	// to finish the connection
@@ -2378,13 +2378,13 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 						m_pConsole->ExecuteLine(g_Config.m_ClRunOnJoinConsole, IConsole::CLIENT_ID_UNSPECIFIED);
 						m_aCodeRunAfterJoinConsole[Conn] = true;
 					}
-					if(!m_aOnJoinInfo[CONN_MAIN])
+					if(!m_aOnConnect[CONN_MAIN])
 					{
 						GameClient()->SetLastMovementTime();
 						if(m_aReceivedSnapshots[Conn] > 10)
 						{
-							GameClient()->OnJoinInfo();
-							m_aOnJoinInfo[CONN_MAIN] = true;
+							GameClient()->OnConnect(Conn);
+							m_aOnConnect[CONN_MAIN] = true;
 						}
 					}
 
