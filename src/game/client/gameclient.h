@@ -75,6 +75,7 @@
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
+#include "components/entity/map_finish_browser.h"
 #include "components/entity/map_overview.h"
 #include "components/entity/mediaplayer/media_player.h"
 #include "components/entity/moving_tiles.h"
@@ -266,6 +267,7 @@ public:
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CFreezeKill m_FreezeKill;
 	CEntityInfo m_EntityInfo;
+	CMapFinishBrowser m_MapFinishBrowser;
 	CMapOverview m_MapOverview;
 	CMediaViewer m_MediaViewer;
 	CPerformanceStatistics m_PerformanceStatistics;

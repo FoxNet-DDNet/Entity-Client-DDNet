@@ -123,6 +123,7 @@ void CGameClient::OnConsoleInit()
 	m_vpAll.insert(m_vpAll.end(), {
 					      &m_Skins,
 					      &m_Skins7,
+					      &m_MapFinishBrowser,
 					      &m_CountryFlags,
 					      &m_MapImages,
 					      &m_Effects, // doesn't render anything, just updates effects

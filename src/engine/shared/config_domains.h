@@ -10,6 +10,7 @@ CONFIG_DOMAIN(ENTITY, "settings_entity.cfg", true)
 // EClient
 CONFIG_DOMAIN(ENTITYBINDHWEEL, "entity_bindwheel.cfg", false)
 CONFIG_DOMAIN(ENTITYQUICKACTIONS, "entity_quickactions.cfg", false)
+CONFIG_DOMAIN(ENTITYMAPFINISHES, "entity_map_finishes.cfg", false)
 // T-Client
 CONFIG_DOMAIN(TCLIENTPROFILES, "tclient_profiles.cfg", false)
 CONFIG_DOMAIN(TCLIENTCHATBINDS, "tclient_chatbinds.cfg", false)

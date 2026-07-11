@@ -396,7 +396,14 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 					CUIRect Icon;
 					Button.VMargin(4.0f, &Button);
 					Button.VSplitLeft(Button.h, &Icon, &Button);
-					if(g_Config.m_BrIndicateFinished && pItem->m_HasRank == CServerInfo::RANK_RANKED)
+
+					bool HasFinish = pItem->m_HasRank == CServerInfo::RANK_RANKED;
+					if(!HasFinish)
+					{
+						HasFinish = GameClient()->m_MapFinishBrowser.HasEntry(g_Config.m_PlayerName, pItem->m_aMap, pItem->m_aCommunityId);
+					}
+
+					if(g_Config.m_BrIndicateFinished && HasFinish)
 					{
 						Icon.Margin(2.0f, &Icon);
 						RenderBrowserIcons(*pUiElement->Rect(UI_ELEM_FINISH_ICON), &Icon, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), FontIcon::FLAG_CHECKERED, TEXTALIGN_MC);
