@@ -48,6 +48,9 @@ android {
 			shrinkResources = false
 		}
 	}
+	aaptOptions {
+		ignoreAssetsPattern = ''
+	}
 	packagingOptions {
 		doNotStrip '**/*.so'
 		jniLibs {
