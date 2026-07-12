@@ -92,7 +92,7 @@ void CCustomCommunities::OnInit()
 void CCustomCommunities::OnConsoleInit()
 {
 	Console()->Chain(
-		"tc_custom_communities_url", [](IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData) {
+		"ec_custom_communities_url", [](IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData) {
 			pfnCallback(pResult, pCallbackUserData);
 			if(pResult->NumArguments() > 0)
 				((CCustomCommunities *)pUserData)->DownloadCustomCommunitiesDDNetInfo();

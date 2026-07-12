@@ -8,6 +8,7 @@
 #include <base/str.h>
 
 #include <engine/graphics.h>
+#include <engine/shared/config.h>
 
 #include <game/localization.h>
 
@@ -270,6 +271,10 @@ CUi::EPopupMenuFunctionResult CUi::PopupSelection(void *pContext, CUIRect View, 
 	size_t Index = 0;
 	for(const auto &Entry : pSelectionPopup->m_vEntries)
 	{
+		// TClient
+		if(pSelectionPopup->m_SpecialFontRenderMode)
+			pUI->TextRender()->SetCustomFace(Entry.c_str());
+
 		if(pSelectionPopup->m_aMessage[0] != '\0' || Index != 0)
 			View.HSplitTop(pSelectionPopup->m_EntrySpacing, nullptr, &View);
 		View.HSplitTop(pSelectionPopup->m_EntryHeight, &Slot, &View);
@@ -283,6 +288,9 @@ CUi::EPopupMenuFunctionResult CUi::PopupSelection(void *pContext, CUIRect View, 
 		}
 		++Index;
 	}
+	// TClient
+	if(pSelectionPopup->m_SpecialFontRenderMode)
+		pUI->TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 
 	pScrollRegion->End();
 
@@ -643,4 +651,118 @@ void CUi::ShowPopupColorPicker(float X, float Y, SColorPickerPopupContext *pCont
 	if(pContext->m_ColorMode == SColorPickerPopupContext::MODE_UNSET)
 		pContext->m_ColorMode = SColorPickerPopupContext::MODE_HSVA;
 	DoPopupMenu(pContext, X, Y, 160.0f + 10.0f, 209.0f + 10.0f, pContext, PopupColorPicker);
+}
+
+void CUi::UpdatePopupMenuOffset(const SSelectionPopupContext *pContext, float NewX, float NewY)
+{
+	auto PopupMenu = std::find_if(m_vPopupMenus.begin(), m_vPopupMenus.end(), [pContext](const SPopupMenu pMenu) { return pMenu.m_pId == pContext; });
+	if(PopupMenu != m_vPopupMenus.end())
+	{
+		PopupMenu->m_Rect.x = NewX;
+		PopupMenu->m_Rect.y = NewY + pContext->m_AlignmentHeight;
+	}
+}
+
+float CUi::DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner, bool Draggable)
+{
+	Current = std::clamp(Current, 0.0f, 1.0f);
+
+	// layout
+	CUIRect Rail;
+	Rail = *pRect;
+
+	CUIRect Handle;
+	Rail.VSplitLeft(pColorInner ? 8.0f : std::clamp(33.0f, Rail.h, Rail.w / 3.0f), &Handle, nullptr);
+	Handle.x += (Rail.w - Handle.w) * Current;
+
+	CUIRect HandleArea = Handle;
+	if(!pColorInner)
+	{
+		HandleArea.h = pRect->h * 0.9f;
+		HandleArea.y = pRect->y + pRect->h * 0.05f;
+		HandleArea.w += 6.0f;
+		HandleArea.x -= 3.0f;
+	}
+
+	// logic
+	const bool InsideRail = MouseHovered(&Rail);
+	const bool InsideHandle = MouseHovered(&HandleArea);
+	bool Grabbed = false; // whether to apply the offset
+
+	if(Draggable)
+	{
+		if(CheckActiveItem(pId))
+		{
+			if(MouseButton(0))
+			{
+				Grabbed = true;
+				if(Input()->ShiftIsPressed())
+					m_MouseSlow = true;
+			}
+			else
+			{
+				SetActiveItem(nullptr);
+			}
+		}
+		else if(HotItem() == pId)
+		{
+			if(InsideHandle)
+			{
+				if(MouseButton(0))
+				{
+					SetActiveItem(pId);
+					m_pLastActiveScrollbar = pId;
+					m_ActiveScrollbarOffset = MouseX() - Handle.x;
+					Grabbed = true;
+				}
+			}
+			else if(MouseButtonClicked(0))
+			{
+				SetActiveItem(pId);
+				m_pLastActiveScrollbar = pId;
+				m_ActiveScrollbarOffset = Handle.w / 2.0f;
+				Grabbed = true;
+			}
+		}
+
+		if(!pColorInner && (InsideHandle || Grabbed) && (CheckActiveItem(pId) || HotItem() == pId))
+		{
+			Handle.h += 3.0f;
+			Handle.y -= 1.5f;
+		}
+
+		if(InsideRail && !MouseButton(0))
+		{
+			SetHotItem(pId);
+		}
+	}
+
+	float ReturnValue = Current;
+	if(Grabbed)
+	{
+		const float Min = Rail.x;
+		const float Max = Rail.w - Handle.w;
+		const float Cur = MouseX() - m_ActiveScrollbarOffset;
+		ReturnValue = std::clamp((Cur - Min) / Max, 0.0f, 1.0f);
+	}
+
+	// render
+
+	const ColorRGBA HandleColor = ms_ScrollBarColorFunction.GetColor(CheckActiveItem(pId), HotItem() == pId);
+	if(pColorInner)
+	{
+		CUIRect Slider;
+		Handle.VMargin(-2.0f, &Slider);
+		Slider.HMargin(-3.0f, &Slider);
+		Slider.Draw(ColorRGBA(0.15f, 0.15f, 0.15f, 1.0f).Multiply(HandleColor), IGraphics::CORNER_ALL, 5.0f);
+		Slider.Margin(2.0f, &Slider);
+		Slider.Draw(pColorInner->Multiply(HandleColor), IGraphics::CORNER_ALL, 3.0f);
+	}
+	else
+	{
+		Rail.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.25f), IGraphics::CORNER_ALL, Rail.h / 2.0f);
+		Handle.Draw(HandleColor, IGraphics::CORNER_ALL, Rail.h / 2.0f);
+	}
+
+	return ReturnValue;
 }
