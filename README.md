@@ -187,8 +187,8 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 <img width="1668" height="987" alt="Bindwheel" src="https://github.com/user-attachments/assets/22346c8a-e8a0-4e2e-bb8a-b32c41970219" />
 
 #
-### Quickactions
-<img width="1668" height="987" alt="Quick actions" src="https://github.com/user-attachments/assets/b9796271-3535-4960-a306-5325033d467d" />
+### Player actions
+<img width="1668" height="987" alt="Player actions" src="https://github.com/user-attachments/assets/b9796271-3535-4960-a306-5325033d467d" />
 
 #
 ### Info
@@ -472,7 +472,7 @@ ec_chat_bubble_showtime
 ec_chat_bubble_fadeout
 ec_chat_bubble_fadein
 
-ec_reset_quickaction_mouse
+ec_reset_playeraction_mouse
 
 ec_statusbar
 ec_statusbar_12_hour_clock

@@ -321,7 +321,7 @@ void CChat::OnConsoleInit()
 	Console()->Register("message", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClientMessage, this, "Echo the text in chat window");
 	Console()->Register("clear_chat", "", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClearChat, this, "Clear chat messages");
 
-	Console()->Register("set_input", "r[input]", CFGFLAG_CLIENT, ConSetChatInput, this, "Opens chat and sets the input as the message"); // EClient [Quick Actions]
+	Console()->Register("set_input", "r[input]", CFGFLAG_CLIENT, ConSetChatInput, this, "Opens chat and sets the input as the message"); // EClient [Player Actions]
 	Console()->Register("say_queued", "r[message]", CFGFLAG_CLIENT, ConSayQueued, this, "Say in queue chat"); // EClient
 }
 

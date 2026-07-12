@@ -1684,10 +1684,10 @@ void CHud::RenderMovementInformation()
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
-	auto RenderSoloInfo = [this](const char *pLabel, float FontSize, STextContainerIndex &TextContainer, int Value, int &PrevValue, float LeftX, float RightX, float &y) {
-		TextRender()->Text(LeftX, y, FontSize, Localize(pLabel), -1.0f);
+	auto RenderSoloInfo = [this](const char *pLabel, float FontSize, STextContainerIndex &TextContainer, int Value, int &PrevValue, float OffLeftX, float OffRightX, float &OffY) {
+		TextRender()->Text(OffLeftX, OffY, FontSize, Localize(pLabel), -1.0f);
 		if(!g_Config.m_ClShowhudPlayerCompact)
-			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+			OffY += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		if(!TextContainer.Valid() || PrevValue != Value)
 		{
@@ -1701,14 +1701,14 @@ void CHud::RenderMovementInformation()
 			TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
 		}
 		if(TextContainer.Valid())
-			TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), RightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, y);
-		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+			TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), OffRightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, OffY);
+		OffY += MOVEMENT_INFORMATION_LINE_HEIGHT;
 	};
 
-	auto RenderSoloInfoFloat = [this](const char *pLabel, float FontSize, STextContainerIndex &TextContainer, float Value, float &PrevValue, float LeftX, float RightX, float &y) {
-		TextRender()->Text(LeftX, y, FontSize, Localize(pLabel), -1.0f);
+	auto RenderSoloInfoFloat = [this](const char *pLabel, float FontSize, STextContainerIndex &TextContainer, float Value, float &PrevValue, float OffLeftX, float OffRightX, float &OffY) {
+		TextRender()->Text(OffLeftX, OffY, FontSize, Localize(pLabel), -1.0f);
 		if(!g_Config.m_ClShowhudPlayerCompact)
-			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+			OffY += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		if(!TextContainer.Valid() || PrevValue != Value)
 		{
@@ -1722,8 +1722,8 @@ void CHud::RenderMovementInformation()
 			TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
 		}
 		if(TextContainer.Valid())
-			TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), RightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, y);
-		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
+			TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), OffRightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, OffY);
+		OffY += MOVEMENT_INFORMATION_LINE_HEIGHT;
 	};
 
 	if(g_Config.m_ClShowhudPlayerAngle)

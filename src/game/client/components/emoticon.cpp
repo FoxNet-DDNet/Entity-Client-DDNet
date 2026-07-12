@@ -27,7 +27,7 @@ void CEmoticon::ConKeyEmoticon(IConsole::IResult *pResult, void *pUserData)
 
 	if(pSelf->Client()->State() != IClient::STATE_DEMOPLAYBACK)
 	{
-		if(pSelf->GameClient()->m_Bindwheel.IsActive() || pSelf->GameClient()->m_QuickActions.IsActive())
+		if(pSelf->GameClient()->m_Bindwheel.IsActive() || pSelf->GameClient()->m_PlayerActions.IsActive())
 			pSelf->m_Active = false;
 		else
 			pSelf->m_Active = pResult->GetInteger(0) != 0;

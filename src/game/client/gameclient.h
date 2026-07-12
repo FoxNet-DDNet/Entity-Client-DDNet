@@ -81,7 +81,7 @@
 #include "components/entity/moving_tiles.h"
 #include "components/entity/performance_statistics.h"
 #include "components/entity/physicball.h"
-#include "components/entity/quick_actions.h"
+#include "components/entity/player_actions.h"
 
 // Tater
 #include "component.h"
@@ -272,7 +272,7 @@ public:
 	CMediaViewer m_MediaViewer;
 	CPerformanceStatistics m_PerformanceStatistics;
 	CPhysicBalls m_PhysicBalls;
-	CQuickActions m_QuickActions;
+	CPlayerActions m_PlayerActions;
 
 	CMovingTiles m_MovingTilesBackground = CMovingTiles{false};
 	CMovingTiles m_MovingTilesForeground = CMovingTiles{true};

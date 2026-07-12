@@ -5215,10 +5215,22 @@ try
 		pConsole->ExecuteFile(AUTOEXEC_FILE, IConsole::CLIENT_ID_UNSPECIFIED);
 	}
 
+	// EClient: migrate legacy entity_quickactions.cfg to entity_playeractions.cfg
+	if(!pStorage->FileExists("entity_playeractions.cfg", IStorage::TYPE_SAVE) && pStorage->FileExists("entity_quickactions.cfg", IStorage::TYPE_ALL))
+		pConsole->ExecuteFile("entity_quickactions.cfg", IConsole::CLIENT_ID_UNSPECIFIED);
+
 	// EClient
 	pConsole->Deregister("ec_self_murder_count");
 	pConsole->Deregister("death_counter");
 	pConsole->Deregister("playtime");
+
+	// EClient: legacy player action aliases (quick actions), only needed while loading old configs.
+	// +quickactions is intentionally kept registered since it may live in existing key binds.
+	pConsole->Deregister("add_quickaction");
+	pConsole->Deregister("remove_quickaction");
+	pConsole->Deregister("reset_all_quickactions");
+	pConsole->Deregister("delete_all_quickactions");
+	pConsole->Deregister("ec_reset_quickaction_mouse");
 
 	if(g_Config.m_ClConfigVersion < 1)
 	{

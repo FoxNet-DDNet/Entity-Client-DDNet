@@ -1,4 +1,4 @@
-#include "quick_actions.h"
+#include "player_actions.h"
 
 #include <base/vmath.h>
 
@@ -18,12 +18,12 @@
 
 #include <array>
 
-CQuickActions::CQuickActions()
+CPlayerActions::CPlayerActions()
 {
 	OnReset();
 }
 
-int CQuickActions::GetClosestClientId(vec2 Pos)
+int CPlayerActions::GetClosestClientId(vec2 Pos)
 {
 	int ClosestId = -1;
 	if(GameClient()->m_Snap.m_LocalClientId < 0)
@@ -91,9 +91,9 @@ int CQuickActions::GetClosestClientId(vec2 Pos)
 	return ClosestId;
 }
 
-void CQuickActions::ConOpenQuickActionMenu(IConsole::IResult *pResult, void *pUserData)
+void CPlayerActions::ConOpenPlayerActionMenu(IConsole::IResult *pResult, void *pUserData)
 {
-	CQuickActions *pThis = (CQuickActions *)pUserData;
+	CPlayerActions *pThis = (CPlayerActions *)pUserData;
 	if(pThis->Client()->State() == IClient::STATE_DEMOPLAYBACK)
 		return;
 
@@ -114,45 +114,45 @@ void CQuickActions::ConOpenQuickActionMenu(IConsole::IResult *pResult, void *pUs
 	if(!pThis->m_Active)
 	{
 		const vec2 Pos = pThis->GameClient()->GetCursorWorldPos();
-		pThis->m_QuickActionId = pThis->GetClosestClientId(Pos);
-		if(pThis->m_QuickActionId < 0 || pThis->m_QuickActionId >= MAX_CLIENTS)
-			pThis->m_QuickActionId = -1;
+		pThis->m_PlayerActionId = pThis->GetClosestClientId(Pos);
+		if(pThis->m_PlayerActionId < 0 || pThis->m_PlayerActionId >= MAX_CLIENTS)
+			pThis->m_PlayerActionId = -1;
 		pThis->m_Active = true;
 	}
 }
 
-void CQuickActions::ConAddQuickAction(IConsole::IResult *pResult, void *pUserData)
+void CPlayerActions::ConAddPlayerAction(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *aName = pResult->GetString(0);
 	const char *aCommand = pResult->GetString(1);
 
-	CQuickActions *pThis = static_cast<CQuickActions *>(pUserData);
+	CPlayerActions *pThis = static_cast<CPlayerActions *>(pUserData);
 	pThis->AddBind(aName, aCommand);
 }
 
-void CQuickActions::ConRemoveQuickAction(IConsole::IResult *pResult, void *pUserData)
+void CPlayerActions::ConRemovePlayerAction(IConsole::IResult *pResult, void *pUserData)
 {
 	const char *aName = pResult->GetString(0);
 	const char *aCommand = pResult->GetString(1);
 
-	CQuickActions *pThis = static_cast<CQuickActions *>(pUserData);
+	CPlayerActions *pThis = static_cast<CPlayerActions *>(pUserData);
 	pThis->RemoveBind(aName, aCommand);
 }
 
-void CQuickActions::ConResetAllQuickActions(IConsole::IResult *pResult, void *pUserData)
+void CPlayerActions::ConResetAllPlayerActions(IConsole::IResult *pResult, void *pUserData)
 {
-	CQuickActions *pThis = static_cast<CQuickActions *>(pUserData);
+	CPlayerActions *pThis = static_cast<CPlayerActions *>(pUserData);
 	pThis->RemoveAllBinds();
 	pThis->AddDefaultBinds();
 }
 
-void CQuickActions::ConRemoveAllQuickActions(IConsole::IResult *pResult, void *pUserData)
+void CPlayerActions::ConRemoveAllPlayerActions(IConsole::IResult *pResult, void *pUserData)
 {
-	CQuickActions *pThis = static_cast<CQuickActions *>(pUserData);
+	CPlayerActions *pThis = static_cast<CPlayerActions *>(pUserData);
 	pThis->RemoveAllBinds();
 }
 
-void CQuickActions::AddBind(const char *pName, const char *pCommand)
+void CPlayerActions::AddBind(const char *pName, const char *pCommand)
 {
 	if((pName[0] == '\0' && pCommand[0] == '\0') || m_vBinds.size() >= BINDWHEEL_MAX_BINDS)
 		return;
@@ -163,7 +163,7 @@ void CQuickActions::AddBind(const char *pName, const char *pCommand)
 	m_vBinds.push_back(Bind);
 }
 
-void CQuickActions::RemoveBind(const char *pName, const char *pCommand)
+void CPlayerActions::RemoveBind(const char *pName, const char *pCommand)
 {
 	CBind Bind;
 	str_copy(Bind.m_aName, pName);
@@ -173,7 +173,7 @@ void CQuickActions::RemoveBind(const char *pName, const char *pCommand)
 		m_vBinds.erase(It);
 }
 
-void CQuickActions::RemoveBind(int Index)
+void CPlayerActions::RemoveBind(int Index)
 {
 	if(Index >= static_cast<int>(m_vBinds.size()) || Index < 0)
 		return;
@@ -181,25 +181,40 @@ void CQuickActions::RemoveBind(int Index)
 	m_vBinds.erase(Pos);
 }
 
-void CQuickActions::RemoveAllBinds()
+void CPlayerActions::RemoveAllBinds()
 {
 	m_vBinds.clear();
 }
 
-void CQuickActions::OnConsoleInit()
+void CPlayerActions::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	if(pConfigManager)
-		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::ENTITYQUICKACTIONS);
+		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::ENTITYPLAYERACTIONS);
 
-	Console()->Register("+quickactions", "", CFGFLAG_CLIENT, ConOpenQuickActionMenu, this, "Open quick action menu");
-	Console()->Register("add_quickaction", "s[name] r[command]", CFGFLAG_CLIENT, ConAddQuickAction, this, "Add a bind to the quick action menu");
-	Console()->Register("remove_quickaction", "s[name] r[command]", CFGFLAG_CLIENT, ConRemoveQuickAction, this, "Remove a bind from the quick action menu");
-	Console()->Register("reset_all_quickactions", "", CFGFLAG_CLIENT, ConResetAllQuickActions, this, "Resets quick actions to the default ones");
-	Console()->Register("delete_all_quickactions", "", CFGFLAG_CLIENT, ConRemoveAllQuickActions, this, "Removes all quick actions");
+	Console()->Register("+playeractions", "", CFGFLAG_CLIENT, ConOpenPlayerActionMenu, this, "Open player action menu");
+	Console()->Register("add_playeraction", "s[name] r[command]", CFGFLAG_CLIENT, ConAddPlayerAction, this, "Add a bind to the player action menu");
+	Console()->Register("remove_playeraction", "s[name] r[command]", CFGFLAG_CLIENT, ConRemovePlayerAction, this, "Remove a bind from the player action menu");
+	Console()->Register("reset_all_playeractions", "", CFGFLAG_CLIENT, ConResetAllPlayerActions, this, "Resets player actions to the default ones");
+	Console()->Register("delete_all_playeractions", "", CFGFLAG_CLIENT, ConRemoveAllPlayerActions, this, "Removes all player actions");
+
+	// Legacy aliases (quick actions -> player actions) for backwards compatibility.
+	// +quickactions is kept permanently since it may live in existing key binds.
+	// The rest only appear in saved config files and are deregistered after config load.
+	Console()->Register("+quickactions", "", CFGFLAG_CLIENT, ConOpenPlayerActionMenu, this, "Legacy alias for +playeractions");
+	Console()->Register("add_quickaction", "s[name] r[command]", CFGFLAG_CLIENT, ConAddPlayerAction, this, "Legacy alias for add_playeraction");
+	Console()->Register("remove_quickaction", "s[name] r[command]", CFGFLAG_CLIENT, ConRemovePlayerAction, this, "Legacy alias for remove_playeraction");
+	Console()->Register("reset_all_quickactions", "", CFGFLAG_CLIENT, ConResetAllPlayerActions, this, "Legacy alias for reset_all_playeractions");
+	Console()->Register("delete_all_quickactions", "", CFGFLAG_CLIENT, ConRemoveAllPlayerActions, this, "Legacy alias for delete_all_playeractions");
+	Console()->Register("ec_reset_quickaction_mouse", "i[0|1]", CFGFLAG_CLIENT, ConLegacyResetPlayerActionMouse, this, "Legacy alias for ec_reset_playeraction_mouse");
 }
 
-void CQuickActions::AddDefaultBinds()
+void CPlayerActions::ConLegacyResetPlayerActionMouse(IConsole::IResult *pResult, void *pUserData)
+{
+	g_Config.m_ClResetPlayerActionMouse = pResult->GetInteger(0);
+}
+
+void CPlayerActions::AddDefaultBinds()
 {
 	AddBind("Add War", "war_name_index 0 1 \"%s\"");
 	AddBind("Add Team", "war_name_index 0 2 \"%s\"");
@@ -213,40 +228,40 @@ void CQuickActions::AddDefaultBinds()
 	AddBind("Mute", "addmute \"%s\"");
 }
 
-void CQuickActions::OnInit()
+void CPlayerActions::OnInit()
 {
 	if(m_vBinds.empty())
 		AddDefaultBinds();
 }
 
-void CQuickActions::OnStateChange(int NewState, int OldState)
+void CPlayerActions::OnStateChange(int NewState, int OldState)
 {
 	if(OldState == NewState)
 	{
 		m_Active = false;
 		m_WasActive = false;
 		m_SelectedBind = -1;
-		m_QuickActionId = -1;
+		m_PlayerActionId = -1;
 	}
 }
 
-void CQuickActions::OnReset()
+void CPlayerActions::OnReset()
 {
 	m_WasActive = false;
 	m_Active = false;
 	m_SelectedBind = -1;
 }
 
-void CQuickActions::OnRelease()
+void CPlayerActions::OnRelease()
 {
 	m_Active = false;
 }
 
-bool CQuickActions::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
+bool CPlayerActions::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
 {
 	if(!m_Active)
 		return false;
-	if(m_QuickActionId < 0 || m_QuickActionId >= MAX_CLIENTS)
+	if(m_PlayerActionId < 0 || m_PlayerActionId >= MAX_CLIENTS)
 		return false;
 
 	Ui()->ConvertMouseMove(&x, &y, CursorType);
@@ -254,7 +269,7 @@ bool CQuickActions::OnCursorMove(float x, float y, IInput::ECursorType CursorTyp
 	return true;
 }
 
-bool CQuickActions::OnInput(const IInput::CEvent &Event)
+bool CPlayerActions::OnInput(const IInput::CEvent &Event)
 {
 	if(IsActive() && Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_ESCAPE)
 	{
@@ -264,14 +279,14 @@ bool CQuickActions::OnInput(const IInput::CEvent &Event)
 	return false;
 }
 
-void CQuickActions::OnRender()
+void CPlayerActions::OnRender()
 {
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
 	// DrawDebugLines();
 
-	if(m_QuickActionId < 0 || m_QuickActionId >= MAX_CLIENTS)
+	if(m_PlayerActionId < 0 || m_PlayerActionId >= MAX_CLIENTS)
 		return;
 
 	static const auto QuadEaseInOut = [](float t) -> float {
@@ -310,7 +325,7 @@ void CQuickActions::OnRender()
 		{
 			if(!BindsEmpty)
 			{
-				if(g_Config.m_ClResetQuickActionMouse)
+				if(g_Config.m_ClResetPlayerActionMouse)
 					GameClient()->m_Emoticon.m_SelectorMouse = vec2(0.0f, 0.0f);
 				if(m_SelectedBind != -1)
 					ExecuteBind(m_SelectedBind);
@@ -447,12 +462,12 @@ void CQuickActions::OnRender()
 	{
 		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(FontSize, "Empty") / 2.0f, Screen.h / 2.0f - FontSize / 2, FontSize, "Empty");
 	}
-	else if(m_QuickActionId >= 0 && m_QuickActionId < MAX_CLIENTS)
+	else if(m_PlayerActionId >= 0 && m_PlayerActionId < MAX_CLIENTS)
 	{
-		const CGameClient::CClientData Target = GameClient()->m_aClients[m_QuickActionId];
-		const CNetObj_Character TargetRender = GameClient()->m_aClients[m_QuickActionId].m_RenderCur;
+		const CGameClient::CClientData Target = GameClient()->m_aClients[m_PlayerActionId];
+		const CNetObj_Character TargetRender = GameClient()->m_aClients[m_PlayerActionId].m_RenderCur;
 
-		const CNetObj_DDNetCharacter *pExtendedData = &GameClient()->m_Snap.m_aCharacters[m_QuickActionId].m_ExtendedData;
+		const CNetObj_DDNetCharacter *pExtendedData = &GameClient()->m_Snap.m_aCharacters[m_PlayerActionId].m_ExtendedData;
 		const vec2 Direction = vec2(pExtendedData->m_TargetX, pExtendedData->m_TargetY);
 		const vec2 Middle = vec2(Screen.w / 2.0f, Screen.h / 2.0f) + vec2(0.0f, 10.0f) * aAnimationPhase[2];
 		CAnimState State;
@@ -488,17 +503,17 @@ void CQuickActions::OnRender()
 	RenderTools()->RenderCursor(GameClient()->m_Emoticon.m_SelectorMouse + vec2(Screen.w, Screen.h) / 2.0f, 24.0f, aAnimationPhase[0]);
 }
 
-void CQuickActions::ExecuteBind(int Bind)
+void CPlayerActions::ExecuteBind(int Bind)
 {
-	if(m_QuickActionId < 0 || m_QuickActionId >= MAX_CLIENTS)
+	if(m_PlayerActionId < 0 || m_PlayerActionId >= MAX_CLIENTS)
 		return;
 	if(Bind < 0 || Bind >= (int)m_vBinds.size())
 		return;
 
 	const char *pTemplate = m_vBinds[Bind].m_aCommand;
-	const char *pPlayerName = GameClient()->m_aClients[m_QuickActionId].m_aName;
+	const char *pPlayerName = GameClient()->m_aClients[m_PlayerActionId].m_aName;
 
-	char aCmd[(int)QUICKACTIONS_MAX_CMD + (int)MAX_NAME_LENGTH] = "";
+	char aCmd[(int)PLAYERACTIONS_MAX_CMD + (int)MAX_NAME_LENGTH] = "";
 
 	char *pDst = aCmd;
 	size_t DstRemain = sizeof(aCmd) - 1;
@@ -536,7 +551,7 @@ void CQuickActions::ExecuteBind(int Bind)
 			else if(p[1] == 'd' || p[1] == 'i')
 			{
 				char aId[12];
-				str_format(aId, sizeof(aId), "%d", m_QuickActionId);
+				str_format(aId, sizeof(aId), "%d", m_PlayerActionId);
 				size_t IdLen = str_length(aId);
 				if(IdLen > DstRemain)
 					IdLen = DstRemain;
@@ -566,7 +581,7 @@ void CQuickActions::ExecuteBind(int Bind)
 	Console()->ExecuteLine(aCmd, IConsole::CLIENT_ID_UNSPECIFIED);
 }
 
-void CQuickActions::DrawDebugLines()
+void CPlayerActions::DrawDebugLines()
 {
 	const vec2 TargetPos = GameClient()->GetCursorWorldPos();
 	const int Id = GetClosestClientId(TargetPos);
@@ -589,16 +604,16 @@ void CQuickActions::DrawDebugLines()
 	Graphics()->LinesEnd();
 }
 
-void CQuickActions::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
+void CPlayerActions::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
 {
-	CQuickActions *pThis = (CQuickActions *)pUserData;
+	CPlayerActions *pThis = (CPlayerActions *)pUserData;
 
 	for(CBind &Bind : pThis->m_vBinds)
 	{
 		char aBuf[BINDWHEEL_MAX_CMD * 2] = "";
 		char *pEnd = aBuf + sizeof(aBuf);
 		char *pDst;
-		str_append(aBuf, "add_quickaction \"");
+		str_append(aBuf, "add_playeraction \"");
 		// Escape name
 		pDst = aBuf + str_length(aBuf);
 		str_escape(&pDst, Bind.m_aName, pEnd);
@@ -607,6 +622,6 @@ void CQuickActions::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUs
 		pDst = aBuf + str_length(aBuf);
 		str_escape(&pDst, Bind.m_aCommand, pEnd);
 		str_append(aBuf, "\"");
-		pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITYQUICKACTIONS);
+		pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITYPLAYERACTIONS);
 	}
 }

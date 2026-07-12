@@ -899,7 +899,7 @@ private:
 	void RenderSettingsProfiles(CUIRect MainView);
 	void RenderSettingsVisual(CUIRect MainView);
 	void RenderSettingsStatusbar(CUIRect MainView);
-	void RenderSettingsQuickActions(CUIRect MainView);
+	void RenderSettingsPlayerActions(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderEClientInfoPage(CUIRect MainView);
 	void RenderEClientNewsPage(CUIRect MainView);

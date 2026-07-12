@@ -328,7 +328,7 @@ void CBinds::SetDefaults()
 	Bind(KEY_P, "say /pause");
 
 	Bind(KEY_Q, "+bindwheel"); // TClient
-	Bind(KEY_Y, "+quickactions"); // EClient
+	Bind(KEY_Y, "+playeractions"); // EClient
 
 	g_Config.m_ClDDRaceBindsSet = 0;
 	SetDDRaceBinds(false);

@@ -43,7 +43,7 @@ enum SettingTab
 	WARLIST,
 	STATUSBAR,
 	BINDWHEEL,
-	QUICKACTION,
+	PLAYERACTION,
 	INFO,
 	NUM_TABS,
 };
@@ -269,7 +269,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		EcLocalize("Warlist"),
 		EcLocalize("Status bar"),
 		EcLocalize("Bindwheel"),
-		EcLocalize("Quick actions"),
+		EcLocalize("Player actions"),
 		EcLocalize("Info"),
 	};
 
@@ -327,9 +327,9 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	{
 		RenderSettingsBindwheel(MainView);
 	}
-	if(s_CurTab == SettingTab::QUICKACTION)
+	if(s_CurTab == SettingTab::PLAYERACTION)
 	{
-		RenderSettingsQuickActions(MainView);
+		RenderSettingsPlayerActions(MainView);
 	}
 	if(s_CurTab == SettingTab::INFO)
 	{
@@ -686,9 +686,9 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindwheel, EcLocalize("Bindwheel"), &s_ShowBindwheel, &LeftView, LineSize);
 	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::BINDWHEEL, s_ShowBindwheel);
 
-	static int s_ShowQuickActions = IsFlagSet(g_Config.m_ClEClientSettingsTabs, SettingTab::QUICKACTION);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowQuickActions, EcLocalize("Quick Actions"), &s_ShowQuickActions, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::QUICKACTION, s_ShowQuickActions);
+	static int s_ShowPlayerActions = IsFlagSet(g_Config.m_ClEClientSettingsTabs, SettingTab::PLAYERACTION);
+	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowPlayerActions, EcLocalize("Player Actions"), &s_ShowPlayerActions, &LeftView, LineSize);
+	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::PLAYERACTION, s_ShowPlayerActions);
 
 	char aDeathBuf[32];
 	str_format(aDeathBuf, sizeof(aDeathBuf), "Deaths: %" PRId64, GameClient()->m_EClient.DeathCount());
@@ -1361,7 +1361,7 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 	if(!StatusItemActive)
 		s_SelectedItem = std::max(-1, s_SelectedItem);
 }
-void CMenus::RenderSettingsQuickActions(CUIRect MainView)
+void CMenus::RenderSettingsPlayerActions(CUIRect MainView)
 {
 	CUIRect LeftView, RightView, Button, Label;
 
@@ -1377,21 +1377,21 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 	Graphics()->DrawCircle(Pos.x, Pos.y, Radius, 64);
 	Graphics()->QuadsEnd();
 
-	static char s_aBindName[QUICKACTIONS_MAX_NAME];
-	static char s_aBindCommand[QUICKACTIONS_MAX_CMD];
+	static char s_aBindName[PLAYERACTIONS_MAX_NAME];
+	static char s_aBindCommand[PLAYERACTIONS_MAX_CMD];
 
 	static int s_SelectedBindIndex = -1;
 	int HoveringIndex = -1;
 
 	float MouseDist = distance(Pos, Ui()->MousePos());
-	if(GameClient()->m_QuickActions.m_vBinds.empty())
+	if(GameClient()->m_PlayerActions.m_vBinds.empty())
 	{
 		float Size = 20.0f;
 		TextRender()->Text(Pos.x - TextRender()->TextWidth(Size, "Empty") / 2.0f, Pos.y - Size / 2, Size, "Empty");
 	}
 	else if(MouseDist < Radius && MouseDist > Radius * 0.25f)
 	{
-		int SegmentCount = GameClient()->m_QuickActions.m_vBinds.size();
+		int SegmentCount = GameClient()->m_PlayerActions.m_vBinds.size();
 		float SegmentAngle = 2 * pi / SegmentCount;
 
 		float HoveringAngle = angle(Ui()->MousePos() - Pos) + SegmentAngle / 2;
@@ -1402,17 +1402,17 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 		if(Ui()->MouseButtonClicked(0))
 		{
 			s_SelectedBindIndex = HoveringIndex;
-			str_copy(s_aBindName, GameClient()->m_QuickActions.m_vBinds[HoveringIndex].m_aName);
-			str_copy(s_aBindCommand, GameClient()->m_QuickActions.m_vBinds[HoveringIndex].m_aCommand);
+			str_copy(s_aBindName, GameClient()->m_PlayerActions.m_vBinds[HoveringIndex].m_aName);
+			str_copy(s_aBindCommand, GameClient()->m_PlayerActions.m_vBinds[HoveringIndex].m_aCommand);
 		}
 		else if(Ui()->MouseButtonClicked(1) && s_SelectedBindIndex >= 0 && HoveringIndex >= 0 && HoveringIndex != s_SelectedBindIndex)
 		{
-			CQuickActions::CBind BindA = GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex];
-			CQuickActions::CBind BindB = GameClient()->m_QuickActions.m_vBinds[HoveringIndex];
-			str_copy(GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex].m_aName, BindB.m_aName);
-			str_copy(GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex].m_aCommand, BindB.m_aCommand);
-			str_copy(GameClient()->m_QuickActions.m_vBinds[HoveringIndex].m_aName, BindA.m_aName);
-			str_copy(GameClient()->m_QuickActions.m_vBinds[HoveringIndex].m_aCommand, BindA.m_aCommand);
+			CPlayerActions::CBind BindA = GameClient()->m_PlayerActions.m_vBinds[s_SelectedBindIndex];
+			CPlayerActions::CBind BindB = GameClient()->m_PlayerActions.m_vBinds[HoveringIndex];
+			str_copy(GameClient()->m_PlayerActions.m_vBinds[s_SelectedBindIndex].m_aName, BindB.m_aName);
+			str_copy(GameClient()->m_PlayerActions.m_vBinds[s_SelectedBindIndex].m_aCommand, BindB.m_aCommand);
+			str_copy(GameClient()->m_PlayerActions.m_vBinds[HoveringIndex].m_aName, BindA.m_aName);
+			str_copy(GameClient()->m_PlayerActions.m_vBinds[HoveringIndex].m_aCommand, BindA.m_aCommand);
 		}
 		else if(Ui()->MouseButtonClicked(2))
 		{
@@ -1426,10 +1426,10 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 		str_copy(s_aBindCommand, "");
 	}
 
-	if(!GameClient()->m_QuickActions.m_vBinds.empty())
+	if(!GameClient()->m_PlayerActions.m_vBinds.empty())
 	{
-		const float Theta = pi * 2.0f / GameClient()->m_QuickActions.m_vBinds.size();
-		for(int i = 0; i < static_cast<int>(GameClient()->m_QuickActions.m_vBinds.size()); i++)
+		const float Theta = pi * 2.0f / GameClient()->m_PlayerActions.m_vBinds.size();
+		for(int i = 0; i < static_cast<int>(GameClient()->m_PlayerActions.m_vBinds.size()); i++)
 		{
 			float FontSizes = 12.0f;
 			if(i == s_SelectedBindIndex)
@@ -1440,7 +1440,7 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 			else if(i == HoveringIndex)
 				FontSizes = 14.0f;
 
-			const CQuickActions::CBind Bind = GameClient()->m_QuickActions.m_vBinds[i];
+			const CPlayerActions::CBind Bind = GameClient()->m_PlayerActions.m_vBinds[i];
 			const float Angle = Theta * i;
 			vec2 TextPos = direction(Angle);
 			TextPos *= Radius * 0.75f;
@@ -1476,14 +1476,14 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
 	if(DoButton_Menu(&s_OverrideButton, EcLocalize("Override Selected"), 0, &Button) && s_SelectedBindIndex >= 0)
 	{
-		CQuickActions::CBind TempBind;
+		CPlayerActions::CBind TempBind;
 		if(str_length(s_aBindName) == 0)
 			str_copy(TempBind.m_aName, "*");
 		else
 			str_copy(TempBind.m_aName, s_aBindName);
 
-		str_copy(GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex].m_aName, TempBind.m_aName);
-		str_copy(GameClient()->m_QuickActions.m_vBinds[s_SelectedBindIndex].m_aCommand, s_aBindCommand);
+		str_copy(GameClient()->m_PlayerActions.m_vBinds[s_SelectedBindIndex].m_aName, TempBind.m_aName);
+		str_copy(GameClient()->m_PlayerActions.m_vBinds[s_SelectedBindIndex].m_aCommand, s_aBindCommand);
 	}
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
@@ -1491,18 +1491,18 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 	Button.VSplitMid(&ButtonRemove, &ButtonAdd, MarginSmall);
 	if(DoButton_Menu(&s_AddButton, EcLocalize("Add Bind"), 0, &ButtonAdd))
 	{
-		CQuickActions::CBind TempBind;
+		CPlayerActions::CBind TempBind;
 		if(str_length(s_aBindName) == 0)
 			str_copy(TempBind.m_aName, "*");
 		else
 			str_copy(TempBind.m_aName, s_aBindName);
 
-		GameClient()->m_QuickActions.AddBind(TempBind.m_aName, s_aBindCommand);
-		s_SelectedBindIndex = static_cast<int>(GameClient()->m_QuickActions.m_vBinds.size()) - 1;
+		GameClient()->m_PlayerActions.AddBind(TempBind.m_aName, s_aBindCommand);
+		s_SelectedBindIndex = static_cast<int>(GameClient()->m_PlayerActions.m_vBinds.size()) - 1;
 	}
 	if(DoButton_Menu(&s_RemoveButton, EcLocalize("Remove Bind"), 0, &ButtonRemove) && s_SelectedBindIndex >= 0)
 	{
-		GameClient()->m_QuickActions.RemoveBind(s_SelectedBindIndex);
+		GameClient()->m_PlayerActions.RemoveBind(s_SelectedBindIndex);
 		s_SelectedBindIndex = -1;
 	}
 
@@ -1553,11 +1553,11 @@ void CMenus::RenderSettingsQuickActions(CUIRect MainView)
 	Button.VSplitLeft(250.0f, &KeyLabel, &Button);
 
 	static CButtonContainer s_ReaderButtonWheel, s_ClearButtonWheel;
-	DoLine_KeyReader(KeyLabel, s_ReaderButtonWheel, s_ClearButtonWheel, EcLocalize("Quick Actions Key:"), "+quickactions");
+	DoLine_KeyReader(KeyLabel, s_ReaderButtonWheel, s_ClearButtonWheel, EcLocalize("Player Actions Key:"), "+playeractions");
 
 	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
 
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetQuickActionMouse, EcLocalize("Reset position of mouse when opening the quick actions menu"), &g_Config.m_ClResetQuickActionMouse, &Button, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClResetPlayerActionMouse, EcLocalize("Reset position of mouse when opening the player actions menu"), &g_Config.m_ClResetPlayerActionMouse, &Button, LineSize);
 }
 
 void CMenus::RenderSettingsBindwheel(CUIRect MainView)

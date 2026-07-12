@@ -170,7 +170,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Hud,
 					      &m_Spectator,
 					      &m_Emoticon,
-					      &m_QuickActions, // EClient
+					      &m_PlayerActions, // EClient
 					      &m_Bindchat, // TClient
 					      &m_Bindwheel, // TClient
 					      &m_WarList, // TClient
@@ -205,7 +205,7 @@ void CGameClient::OnConsoleInit()
 						  &m_Motd, // for pressing esc to remove it
 						  &m_Spectator,
 						  &m_Bindwheel,
-						  &m_QuickActions,
+						  &m_PlayerActions,
 						  &m_Emoticon,
 						  &m_ImportantAlert,
 						  &m_Menus,

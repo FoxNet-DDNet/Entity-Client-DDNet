@@ -2613,8 +2613,8 @@ if(CLIENT)
     components/entity/performance_statistics.h
     components/entity/physicball.cpp
     components/entity/physicball.h 
-    components/entity/quick_actions.cpp
-    components/entity/quick_actions.h
+    components/entity/player_actions.cpp
+    components/entity/player_actions.h
     components/envelope_state.cpp
     components/envelope_state.h
     components/flow.cpp

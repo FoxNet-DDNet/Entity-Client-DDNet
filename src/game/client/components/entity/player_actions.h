@@ -1,5 +1,5 @@
-#ifndef GAME_CLIENT_COMPONENTS_ENTITY_QUICK_ACTIONS_H
-#define GAME_CLIENT_COMPONENTS_ENTITY_QUICK_ACTIONS_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_PLAYER_ACTIONS_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_PLAYER_ACTIONS_H
 #include <base/system.h>
 #include <base/vmath.h>
 
@@ -13,30 +13,32 @@ class IConfigManager;
 
 enum
 {
-	QUICKACTIONS_MAX_NAME = 32,
-	QUICKACTIONS_MAX_CMD = 1024,
-	QUICKACTIONS_MAX_BINDS = 16
+	PLAYERACTIONS_MAX_NAME = 32,
+	PLAYERACTIONS_MAX_CMD = 1024,
+	PLAYERACTIONS_MAX_BINDS = 16
 };
 
-class CQuickActions : public CComponent
+class CPlayerActions : public CComponent
 {
 	float m_AnimationTime = 0.0f;
-	float m_aAnimationTimeItems[QUICKACTIONS_MAX_BINDS] = {0};
+	float m_aAnimationTimeItems[PLAYERACTIONS_MAX_BINDS] = {0};
 
 	bool m_Active = false;
 	bool m_WasActive = false;
 
-	int m_QuickActionId;
+	int m_PlayerActionId;
 
 	int m_SelectedBind;
 
 	int GetClosestClientId(vec2 Pos);
 
-	static void ConOpenQuickActionMenu(IConsole::IResult *pResult, void *pUserData);
-	static void ConAddQuickAction(IConsole::IResult *pResult, void *pUserData);
-	static void ConRemoveQuickAction(IConsole::IResult *pResult, void *pUserData);
-	static void ConResetAllQuickActions(IConsole::IResult *pResult, void *pUserData);
-	static void ConRemoveAllQuickActions(IConsole::IResult *pResult, void *pUserData);
+	static void ConOpenPlayerActionMenu(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddPlayerAction(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemovePlayerAction(IConsole::IResult *pResult, void *pUserData);
+	static void ConResetAllPlayerActions(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveAllPlayerActions(IConsole::IResult *pResult, void *pUserData);
+	// Legacy alias for ec_reset_playeraction_mouse, deregistered after config load
+	static void ConLegacyResetPlayerActionMouse(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
@@ -46,8 +48,8 @@ public:
 	class CBind
 	{
 	public:
-		char m_aName[QUICKACTIONS_MAX_NAME] = "*";
-		char m_aCommand[QUICKACTIONS_MAX_CMD] = "";
+		char m_aName[PLAYERACTIONS_MAX_NAME] = "*";
+		char m_aCommand[PLAYERACTIONS_MAX_CMD] = "";
 
 		bool operator==(const CBind &Other) const
 		{
@@ -57,7 +59,7 @@ public:
 
 	std::vector<CBind> m_vBinds;
 
-	CQuickActions();
+	CPlayerActions();
 	int Sizeof() const override { return sizeof(*this); }
 
 	void OnReset() override;
@@ -81,4 +83,4 @@ public:
 	void ExecuteBind(int Bind);
 };
 
-#endif // GAME_CLIENT_COMPONENTS_ENTITY_QUICK_ACTIONS_H
+#endif // GAME_CLIENT_COMPONENTS_ENTITY_PLAYER_ACTIONS_H
