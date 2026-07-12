@@ -113,11 +113,6 @@ class CHud : public CComponent
 	void UpdateMovementInformationTextContainer(STextContainerIndex &TextContainer, float FontSize, float Value, float &PrevValue);
 	void RenderMovementInformationTextContainer(STextContainerIndex &TextContainer, const ColorRGBA &Color, float X, float Y);
 
-	// EClient
-	void RenderCompactPlayerInfo();
-	void UpdatePlayerInfoVecTextContainer(STextContainerIndex &TextContainer, float FontSize, vec2 Value, vec2 &PrevValue, const ColorRGBA aColors[2], ColorRGBA aPrevColors[2]);
-	void RenderSoloInfo(const char *pLabel, float FontSize, STextContainerIndex &TextContainer, int Value, int &PrevValue, float LeftX, float RightX, float y);
-
 	class CMovementInformation
 	{
 	public:
