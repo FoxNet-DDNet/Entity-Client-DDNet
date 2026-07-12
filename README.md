@@ -168,31 +168,32 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 <summary>Setting Pages</summary>
 
 ### Main Settings
-<img width="1668" height="1719" alt="Settings" src="https://github.com/user-attachments/assets/56762cfe-c360-4fd0-853a-919c9cf19214" />
+<img width="1920" height="1854" alt="Settings" src="https://github.com/user-attachments/assets/9a9ea2cc-96bd-44b0-a4e5-fe68ed319ca1" />
 
 #
 ### Visuals
-<img width="1668" height="1702" alt="Visuals" src="https://github.com/user-attachments/assets/cb677e97-71fc-4f78-87a0-64e4f991f1ff" />
+<img width="1920" height="2792" alt="menu_2026-07-12_13-12-28" src="https://github.com/user-attachments/assets/91d2b82f-d013-476a-af10-2fd31de2869f" />
 
 #
 ### Warlist
-<img width="1668" height="987" alt="Warlist" src="https://github.com/user-attachments/assets/e512dedf-7b94-4e11-9de1-86353bbb6c5f" />
+<img width="1920" height="1080" alt="menu_2026-07-12_13-44-18" src="https://github.com/user-attachments/assets/4a8138c0-817b-452e-b29e-dcdd96643ce6" />
 
 #
 ### Status bar
-<img width="1668" height="987" alt="Status bar" src="https://github.com/user-attachments/assets/f39b763b-4391-4e85-89b7-1abb5a6fbe6f" />
+<img width="1920" height="1080" alt="menu_2026-07-12_13-12-30" src="https://github.com/user-attachments/assets/26d4ec2f-2e23-4c78-98e5-c96bde360418" />
 
 #
 ### Bindwheel
-<img width="1668" height="987" alt="Bindwheel" src="https://github.com/user-attachments/assets/22346c8a-e8a0-4e2e-bb8a-b32c41970219" />
+<img width="1920" height="1080" alt="menu_2026-07-12_13-12-32" src="https://github.com/user-attachments/assets/942384fe-32a7-44c1-af8b-e54a5ccf01f9" />
 
 #
 ### Player actions
-<img width="1668" height="987" alt="Player actions" src="https://github.com/user-attachments/assets/b9796271-3535-4960-a306-5325033d467d" />
+<img width="1920" height="1080" alt="menu_2026-07-12_13-12-33" src="https://github.com/user-attachments/assets/46436731-b867-4e71-a496-eaaf2b9b0bf7" />
 
 #
 ### Info
-<img width="1667" height="987" alt="Info" src="https://github.com/user-attachments/assets/279e9cf8-4574-4ca5-974b-733ed8466e4d" />
+<img width="1920" height="1080" alt="menu_2026-07-12_13-45-47" src="https://github.com/user-attachments/assets/09b589d4-3472-4ddd-98bd-04e0d5d7f7b9" />
+
 
 </details>
 
