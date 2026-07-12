@@ -662,7 +662,7 @@ def client_can_connect(test_env):
 	if "sixup=0" not in join:
 		raise AssertionError(f"sixup=0 not found in {join!r}")
 	server.exit()
-	client.wait_for_log_exact("client: offline error='Server shutdown'")
+	client.wait_for_log_exact("client: offline error='Server shutdown'", timeout=10)
 	client.exit()
 	server.wait_for_exit()
 	client.wait_for_exit()
@@ -678,7 +678,7 @@ def client_can_connect_7(test_env):
 	if "sixup=1" not in join:
 		raise AssertionError(f"sixup=0 not found in {join!r}")
 	server.exit()
-	client.wait_for_log_exact("client: offline error='Server shutdown'")
+	client.wait_for_log_exact("client: offline error='Server shutdown'", timeout=10)
 	client.exit()
 	server.wait_for_exit()
 	client.wait_for_exit()
@@ -696,7 +696,7 @@ def client_can_connect_websockets(test_env):
 	if "sixup=0" not in join:
 		raise AssertionError(f"sixup=0 not found in {join!r}")
 	server.exit()
-	client.wait_for_log_exact("client: offline error='Server shutdown'")
+	client.wait_for_log_exact("client: offline error='Server shutdown'", timeout=10)
 	client.exit()
 	server.wait_for_exit()
 	client.wait_for_exit()
