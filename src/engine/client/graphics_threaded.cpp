@@ -724,7 +724,66 @@ void CGraphics_Threaded::ScreenshotDirect(bool *pSwapped)
 
 	if(Image.m_pData)
 	{
-		m_pEngine->AddJob(std::make_shared<CScreenshotSaveJob>(m_pStorage, m_aScreenshotName, std::move(Image)));
+		if(m_StitchScreenshotGrab)
+		{
+			m_StitchScreenshotGrab = false;
+			// Blit the captured slice into the accumulator instead of saving it directly.
+			if(m_StitchScreenshotImage.m_pData != nullptr &&
+				Image.m_Width == m_StitchScreenshotImage.m_Width &&
+				Image.m_Format == m_StitchScreenshotImage.m_Format &&
+				m_StitchScreenshotDstY >= 0 &&
+				(size_t)m_StitchScreenshotDstY < m_StitchScreenshotImage.m_Height)
+			{
+				const size_t CopyRows = std::min<size_t>(Image.m_Height, m_StitchScreenshotImage.m_Height - (size_t)m_StitchScreenshotDstY);
+				m_StitchScreenshotImage.CopyRectFrom(Image, 0, 0, Image.m_Width, CopyRows, 0, m_StitchScreenshotDstY);
+			}
+			Image.Free();
+		}
+		else
+		{
+			m_pEngine->AddJob(std::make_shared<CScreenshotSaveJob>(m_pStorage, m_aScreenshotName, std::move(Image)));
+		}
+	}
+}
+
+void CGraphics_Threaded::StitchScreenshotBegin(int Width, int Height)
+{
+	m_StitchScreenshotImage.Free();
+	if(Width <= 0 || Height <= 0)
+	{
+		m_StitchScreenshotActive = false;
+		return;
+	}
+	m_StitchScreenshotImage.m_Width = Width;
+	m_StitchScreenshotImage.m_Height = Height;
+	m_StitchScreenshotImage.m_Format = CImageInfo::FORMAT_RGBA;
+	m_StitchScreenshotImage.AllocateFillZero();
+	m_StitchScreenshotActive = true;
+	m_StitchScreenshotGrab = false;
+}
+
+void CGraphics_Threaded::StitchScreenshotTile(int DstY)
+{
+	if(!m_StitchScreenshotActive)
+		return;
+	m_StitchScreenshotDstY = DstY;
+	m_StitchScreenshotGrab = true;
+	m_DoScreenshot = true;
+}
+
+void CGraphics_Threaded::StitchScreenshotFinish(const char *pFilename)
+{
+	if(!m_StitchScreenshotActive)
+		return;
+	m_StitchScreenshotActive = false;
+	m_StitchScreenshotGrab = false;
+	if(m_StitchScreenshotImage.m_pData != nullptr)
+	{
+		char aFilename[IO_MAX_PATH_LENGTH];
+		char aDate[20];
+		str_timestamp(aDate, sizeof(aDate));
+		str_format(aFilename, sizeof(aFilename), "screenshots/%s_%s.png", pFilename ? pFilename : "menu", aDate);
+		m_pEngine->AddJob(std::make_shared<CScreenshotSaveJob>(m_pStorage, aFilename, std::move(m_StitchScreenshotImage)));
 	}
 	else
 	{

@@ -212,6 +212,30 @@ protected:
 	bool m_ShowStart;
 	bool m_MenuActive;
 
+	// Full-page menu screenshot: renders the current menu page in vertical slices and
+	// stitches them into a single tall image, as if the window were tall enough to fit all
+	// scrollable content. Triggered by the bindable "menu_screenshot" console command.
+	struct SFullPageScreenshot
+	{
+		enum class EState
+		{
+			NONE,
+			CAPTURING,
+			FINISH,
+		};
+		EState m_State = EState::NONE;
+		bool m_Requested = false;
+		bool m_WasUiEnabled = true;
+		int m_Tile = 0;
+		int m_NumTiles = 0;
+		int m_TileHeightPx = 0;
+		float m_FullHeight = 0.0f;
+	};
+	SFullPageScreenshot m_FullPageScreenshot;
+	void TriggerFullPageScreenshot() { m_FullPageScreenshot.m_Requested = true; }
+	bool RenderFullPageScreenshot();
+	static void ConFullPageScreenshot(IConsole::IResult *pResult, void *pUserData);
+
 	bool m_DummyNamePlatePreview = false;
 
 	class CJoinTutorial
@@ -737,6 +761,7 @@ public:
 
 	void OnInterfacesInit(CGameClient *pClient) override;
 	void OnInit() override;
+	void OnConsoleInit() override;
 
 	void OnStateChange(int NewState, int OldState) override;
 	void OnWindowResize() override;

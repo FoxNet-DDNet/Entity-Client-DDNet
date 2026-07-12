@@ -788,6 +788,14 @@ class CGraphics_Threaded : public IEngineGraphics
 	bool m_DoScreenshot;
 	char m_aScreenshotName[IO_MAX_PATH_LENGTH];
 
+	// Stitched screenshot (used for full-page menu screenshots): the current frame's
+	// backbuffer is grabbed into this accumulator at m_StitchScreenshotDstY on the next
+	// swap instead of being saved to a file directly.
+	bool m_StitchScreenshotActive = false;
+	bool m_StitchScreenshotGrab = false;
+	int m_StitchScreenshotDstY = 0;
+	CImageInfo m_StitchScreenshotImage;
+
 	CTextureHandle m_NullTexture;
 
 	std::vector<int> m_vTextureIndices;
@@ -1246,6 +1254,9 @@ public:
 	void ReadPixel(ivec2 Position, ColorRGBA *pColor) override;
 	void TakeScreenshot(const char *pFilename) override;
 	void TakeCustomScreenshot(const char *pFilename) override;
+	void StitchScreenshotBegin(int Width, int Height) override;
+	void StitchScreenshotTile(int DstY) override;
+	void StitchScreenshotFinish(const char *pFilename) override;
 	void RenderNightShift();
 	void Swap() override;
 	bool SetVSync(bool State) override;

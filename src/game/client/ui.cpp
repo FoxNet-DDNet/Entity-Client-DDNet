@@ -483,17 +483,37 @@ float CUi::ButtonColorMul(const void *pId)
 
 const CUIRect *CUi::Screen()
 {
-	m_Screen.h = 600.0f;
+	m_Screen.h = SCREENSHOT_BASE_HEIGHT;
 	m_Screen.w = Graphics()->ScreenAspect() * m_Screen.h;
+	if(m_FullPageScreenshotActive)
+	{
+		// Lay out as if the screen were tall enough to fit all content. The width keeps
+		// its aspect-based value (computed from the base height) so nothing is stretched.
+		m_Screen.h = m_FullPageScreenshotHeight;
+	}
 	return &m_Screen;
 }
 
 void CUi::MapScreen()
 {
 	const CUIRect *pScreen = Screen();
+	if(m_FullPageScreenshotActive)
+	{
+		CScreenRect ScreenRect = { pScreen->x, m_FullPageScreenshotTileTop, pScreen->w, SCREENSHOT_BASE_HEIGHT };
+		// Only map the current slice of the tall layout to the window.
+		Graphics()->MapScreen(ScreenRect);
+		return;
+	}
 
 	// x and y are supposed to be 0
 	Graphics()->MapScreenToSize(pScreen->w, pScreen->h);
+}
+
+void CUi::SetFullPageScreenshot(bool Active, float FullHeight, float TileTop)
+{
+	m_FullPageScreenshotActive = Active;
+	m_FullPageScreenshotHeight = FullHeight;
+	m_FullPageScreenshotTileTop = TileTop;
 }
 
 float CUi::PixelSize()
@@ -539,10 +559,14 @@ void CUi::UpdateClipping()
 	{
 		const CUIRect *pRect = ClipArea();
 		const float XScale = Graphics()->ScreenWidth() / Screen()->w;
-		const float YScale = Graphics()->ScreenHeight() / Screen()->h;
+		// During a full-page screenshot the window shows only one slice of the tall layout,
+		// so the clip region must be scaled and offset relative to that slice instead of the
+		// whole (tall) virtual screen.
+		const float YScale = m_FullPageScreenshotActive ? (Graphics()->ScreenHeight() / SCREENSHOT_BASE_HEIGHT) : (Graphics()->ScreenHeight() / Screen()->h);
+		const float ClipY = m_FullPageScreenshotActive ? (pRect->y - m_FullPageScreenshotTileTop) : pRect->y;
 
 		const float ScaledX = pRect->x * XScale;
-		const float ScaledY = pRect->y * YScale;
+		const float ScaledY = ClipY * YScale;
 		const float RoundX = std::round(ScaledX);
 		const float RoundY = std::round(ScaledY);
 		Graphics()->ClipEnable(RoundX, RoundY, std::round(pRect->w * XScale + (ScaledX - RoundX)), std::round(pRect->h * YScale + (ScaledY - RoundY)));

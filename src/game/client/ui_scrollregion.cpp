@@ -57,6 +57,11 @@ void CScrollRegion::End()
 {
 	Ui()->ClipDisable();
 
+	// Report how much this (vertical) scroll region overflows, so a full-page screenshot
+	// can grow the layout by that amount to fit all content without scrolling.
+	if(!m_Params.m_ScrollHorizontal)
+		Ui()->ReportScrollOverflow(m_ContentSize - ContentAreaSize());
+
 	// only show scrollbar if content overflows
 	if(!ContentOverflows())
 		return;

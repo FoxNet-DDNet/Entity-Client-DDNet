@@ -581,6 +581,20 @@ public:
 	virtual void ReadPixel(ivec2 Position, ColorRGBA *pColor) = 0;
 	virtual void TakeScreenshot(const char *pFilename) = 0;
 	virtual void TakeCustomScreenshot(const char *pFilename) = 0;
+
+	/**
+	 * Stitched screenshot: captures an image that is larger than the window by
+	 * rendering it in multiple vertical slices and combining them into one image.
+	 *
+	 * Usage: call `StitchScreenshotBegin` with the final pixel size, then for each
+	 * frame render one slice and call `StitchScreenshotTile` with the destination
+	 * pixel offset to grab the current backbuffer into the accumulator at the next
+	 * swap. Finally call `StitchScreenshotFinish` to save the combined image.
+	 */
+	virtual void StitchScreenshotBegin(int Width, int Height) = 0;
+	virtual void StitchScreenshotTile(int DstY) = 0;
+	virtual void StitchScreenshotFinish(const char *pFilename) = 0;
+
 	virtual int GetVideoModes(CVideoMode *pModes, int MaxModes, int Screen) = 0;
 	virtual void GetCurrentVideoMode(CVideoMode &CurMode, int Screen) = 0;
 	virtual void Swap() = 0;

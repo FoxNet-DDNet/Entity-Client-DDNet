@@ -461,6 +461,17 @@ private:
 
 	CUIRect m_Screen;
 
+	// Full-page screenshot: when active, the UI is laid out as if the screen were
+	// m_FullPageScreenshotHeight tall (so scrollable content is not clipped), while only
+	// the slice [m_FullPageScreenshotTileTop, +SCREENSHOT_BASE_HEIGHT] is mapped to the
+	// window for the current frame. m_MaxScrollOverflow tracks the largest amount that any
+	// vertical scroll region overflowed during normal rendering, used to size the capture.
+	static constexpr float SCREENSHOT_BASE_HEIGHT = 600.0f;
+	bool m_FullPageScreenshotActive = false;
+	float m_FullPageScreenshotHeight = SCREENSHOT_BASE_HEIGHT;
+	float m_FullPageScreenshotTileTop = 0.0f;
+	float m_MaxScrollOverflow = 0.0f;
+
 	std::vector<CUIRect> m_vClips;
 	void UpdateClipping();
 
@@ -618,6 +629,18 @@ public:
 	const CUIRect *Screen();
 	void MapScreen();
 	float PixelSize();
+
+	// Full-page screenshot support (see member documentation).
+	static constexpr float FullPageScreenshotBaseHeight() { return SCREENSHOT_BASE_HEIGHT; }
+	void SetFullPageScreenshot(bool Active, float FullHeight, float TileTop);
+	bool FullPageScreenshotActive() const { return m_FullPageScreenshotActive; }
+	void ResetScrollOverflow() { m_MaxScrollOverflow = 0.0f; }
+	void ReportScrollOverflow(float Overflow)
+	{
+		if(Overflow > m_MaxScrollOverflow)
+			m_MaxScrollOverflow = Overflow;
+	}
+	float MaxScrollOverflow() const { return m_MaxScrollOverflow; }
 
 	void ClipEnable(const CUIRect *pRect);
 	void ClipDisable();

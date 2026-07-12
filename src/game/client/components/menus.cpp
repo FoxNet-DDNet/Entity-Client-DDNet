@@ -986,6 +986,17 @@ void CMenus::OnInterfacesInit(CGameClient *pClient)
 	m_CommunityIcons.OnInterfacesInit(pClient);
 }
 
+void CMenus::ConFullPageScreenshot(IConsole::IResult *pResult, void *pUserData)
+{
+	CMenus *pSelf = static_cast<CMenus *>(pUserData);
+	pSelf->TriggerFullPageScreenshot();
+}
+
+void CMenus::OnConsoleInit()
+{
+	Console()->Register("menu_screenshot", "", CFGFLAG_CLIENT, ConFullPageScreenshot, this, "Save a screenshot of the whole current menu page, including content that is normally scrolled off-screen");
+}
+
 void CMenus::OnInit()
 {
 	if(g_Config.m_ClShowWelcome)
@@ -1208,7 +1219,9 @@ void CMenus::Render()
 	}
 	else
 	{
-		if(!GameClient()->m_MenuBackground.Render())
+		// During a full-page screenshot the background is cleared to a solid color instead,
+		// so the stitched slices don't show a repeating/seaming animated background.
+		if(!Ui()->FullPageScreenshotActive() && !GameClient()->m_MenuBackground.Render())
 		{
 			RenderBackground();
 		}
@@ -2597,14 +2610,34 @@ void CMenus::OnRender()
 		}
 	}
 
+	// Full-page screenshot: while capturing, the UI must not react to input so the
+	// captured slices are neutral (no hover/active highlights), hence disable it before
+	// Ui()->Update() clears the hot/active items.
+	const bool CapturingScreenshot = m_FullPageScreenshot.m_State == SFullPageScreenshot::EState::CAPTURING ||
+					 (m_FullPageScreenshot.m_State == SFullPageScreenshot::EState::NONE && m_FullPageScreenshot.m_Requested && IsActive());
+	if(CapturingScreenshot)
+	{
+		if(m_FullPageScreenshot.m_State == SFullPageScreenshot::EState::NONE)
+			m_FullPageScreenshot.m_WasUiEnabled = Ui()->Enabled();
+		Ui()->SetEnabled(false);
+	}
+
 	Ui()->StartCheck();
 	UpdateColors();
 
 	Ui()->Update();
 
+	if(RenderFullPageScreenshot())
+	{
+		Ui()->FinishCheck();
+		Ui()->ClearHotkeys();
+		return;
+	}
+
 	if(IsActive())
 		Ui()->DoBackButton();
 
+	Ui()->ResetScrollOverflow();
 	Render();
 
 	if(IsActive())
@@ -2622,6 +2655,68 @@ void CMenus::OnRender()
 
 	Ui()->FinishCheck();
 	Ui()->ClearHotkeys();
+}
+
+// Renders one slice of the full-page screenshot per frame and stitches them together.
+// Returns true while a capture is in progress (the caller should then skip normal menu
+// rendering for this frame).
+bool CMenus::RenderFullPageScreenshot()
+{
+	// Start a new capture: size it from the amount the current page overflowed while it was
+	// rendered normally on the previous frame(s).
+	if(m_FullPageScreenshot.m_State == SFullPageScreenshot::EState::NONE)
+	{
+		if(!m_FullPageScreenshot.m_Requested)
+			return false;
+		m_FullPageScreenshot.m_Requested = false;
+		if(!IsActive())
+			return false;
+
+		const float BaseHeight = CUi::FullPageScreenshotBaseHeight();
+		const float Overflow = std::max(0.0f, Ui()->MaxScrollOverflow());
+		const int CanvasWidth = Graphics()->ScreenWidth();
+		const int CanvasHeight = Graphics()->ScreenHeight();
+		if(CanvasWidth <= 0 || CanvasHeight <= 0)
+			return false;
+
+		m_FullPageScreenshot.m_FullHeight = BaseHeight + Overflow;
+		m_FullPageScreenshot.m_NumTiles = (int)std::ceil(m_FullPageScreenshot.m_FullHeight / BaseHeight);
+		m_FullPageScreenshot.m_TileHeightPx = CanvasHeight;
+		m_FullPageScreenshot.m_Tile = 0;
+
+		const int OutputHeight = (int)std::round(m_FullPageScreenshot.m_FullHeight / BaseHeight * CanvasHeight);
+		Graphics()->StitchScreenshotBegin(CanvasWidth, OutputHeight);
+		m_FullPageScreenshot.m_State = SFullPageScreenshot::EState::CAPTURING;
+	}
+
+	if(m_FullPageScreenshot.m_State == SFullPageScreenshot::EState::CAPTURING)
+	{
+		const float BaseHeight = CUi::FullPageScreenshotBaseHeight();
+		const float TileTop = m_FullPageScreenshot.m_Tile * BaseHeight;
+
+		// Clear to the menu color so the stitched background is uniform (the animated menu
+		// background would otherwise repeat/seam between slices).
+		Graphics()->Clear(ms_GuiColor.r, ms_GuiColor.g, ms_GuiColor.b);
+
+		Ui()->SetFullPageScreenshot(true, m_FullPageScreenshot.m_FullHeight, TileTop);
+		Ui()->ResetScrollOverflow();
+		Render();
+		Ui()->SetFullPageScreenshot(false, m_FullPageScreenshot.m_FullHeight, 0.0f);
+
+		// Grab this slice into the accumulator at the next swap.
+		Graphics()->StitchScreenshotTile(m_FullPageScreenshot.m_Tile * m_FullPageScreenshot.m_TileHeightPx);
+
+		m_FullPageScreenshot.m_Tile++;
+		if(m_FullPageScreenshot.m_Tile >= m_FullPageScreenshot.m_NumTiles)
+			m_FullPageScreenshot.m_State = SFullPageScreenshot::EState::FINISH;
+		return true;
+	}
+
+	// FINISH: the last slice was captured on the previous frame's swap; save the result.
+	Graphics()->StitchScreenshotFinish("menu");
+	m_FullPageScreenshot.m_State = SFullPageScreenshot::EState::NONE;
+	Ui()->SetEnabled(m_FullPageScreenshot.m_WasUiEnabled);
+	return false;
 }
 
 void CMenus::UpdateColors()
