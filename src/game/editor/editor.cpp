@@ -858,7 +858,7 @@ void CEditor::UpdateHotSoundSource(const CLayerSounds *pLayer)
 	const void *pMinSourceId = nullptr;
 
 	const auto UpdateMinimum = [&](vec2 Position, const void *pId) {
-		const float CurrDist = length_squared((Position - MouseWorld) / MapView()->MouseWorldScale());
+		const float CurrDist = distance_squared(Position, MouseWorld) / (MapView()->MouseWorldScale() * MapView()->MouseWorldScale());
 		if(CurrDist < MinDist)
 		{
 			MinDist = CurrDist;
@@ -1397,7 +1397,7 @@ void CEditor::DoQuad(int LayerIndex, const std::shared_ptr<CLayerQuads> &pLayer,
 		{
 			if(s_Operation == OP_SELECT)
 			{
-				if(length_squared(s_MouseStart - Ui()->MousePos()) > 20.0f)
+				if(distance_squared(s_MouseStart, Ui()->MousePos()) > 20.0f)
 				{
 					if(!Map()->IsQuadSelected(Index))
 						Map()->SelectQuad(Index);
@@ -1697,7 +1697,7 @@ void CEditor::DoQuadPoint(int LayerIndex, const std::shared_ptr<CLayerQuads> &pL
 		{
 			if(s_Operation == OP_SELECT)
 			{
-				if(length_squared(s_MouseStart - Ui()->MousePos()) > 20.0f)
+				if(distance_squared(s_MouseStart, Ui()->MousePos()) > 20.0f)
 				{
 					if(!Map()->IsQuadPointSelected(QuadIndex, V))
 						Map()->SelectQuadPoint(QuadIndex, V);
@@ -2102,7 +2102,7 @@ void CEditor::UpdateHotQuadPoint(const CLayerQuads *pLayer)
 	const void *pMinPointId = nullptr;
 
 	const auto UpdateMinimum = [&](vec2 Position, const void *pId) {
-		const float CurrDist = length_squared((Position - MouseWorld) / MapView()->MouseWorldScale());
+		const float CurrDist = distance_squared(Position, MouseWorld) / (MapView()->MouseWorldScale() * MapView()->MouseWorldScale());
 		if(CurrDist < MinDist)
 		{
 			MinDist = CurrDist;
@@ -2929,7 +2929,7 @@ bool CEditor::ReplaceImage(const char *pFilename, int StorageType, bool CheckDup
 	ConvertToRgba(*pImg);
 	DilateImage(*pImg);
 
-	pImg->m_AutoMapper.Load(pImg->m_aName);
+	pImg->m_Automapper.Load(pImg->m_aName);
 	int TextureLoadFlag = Graphics()->TextureLoadFlags();
 	if(pImg->m_Width % 16 != 0 || pImg->m_Height % 16 != 0)
 		TextureLoadFlag = 0;
@@ -2989,7 +2989,7 @@ bool CEditor::AddImage(const char *pFilename, int StorageType, void *pUser)
 		TextureLoadFlag = 0;
 	pImg->m_Texture = pEditor->Graphics()->LoadTextureRaw(*pImg, TextureLoadFlag, pFilename);
 	str_copy(pImg->m_aName, aBuf);
-	pImg->m_AutoMapper.Load(pImg->m_aName);
+	pImg->m_Automapper.Load(pImg->m_aName);
 	pEditor->Map()->m_vpImages.push_back(pImg);
 	pEditor->Map()->SortImages();
 	pEditor->Map()->SelectImage(pImg);
@@ -3845,7 +3845,7 @@ void CEditor::Render()
 			static bool s_ShowServerSettingsEditorLast = false;
 			if(m_ActiveExtraEditor == EXTRAEDITOR_ENVELOPES)
 			{
-				RenderEnvelopeEditor(ExtraEditor);
+				m_EnvelopeEditor.Render(ExtraEditor);
 			}
 			else if(m_ActiveExtraEditor == EXTRAEDITOR_SERVER_SETTINGS)
 			{
@@ -4398,7 +4398,6 @@ void CEditor::Reset(bool CreateDefault)
 	m_ActiveEnvelopePreview = EEnvelopePreview::NONE;
 	m_QuadEnvelopePointOperation = EQuadEnvelopePointOperation::NONE;
 
-	m_ResetZoomEnvelope = true;
 	m_SettingsCommandInput.Clear();
 	m_MapSettingsCommandContext.Reset();
 	m_RenderLayersState.Reset();
@@ -4465,10 +4464,9 @@ void CEditor::Init()
 		OnInput(Event);
 	});
 	m_RenderMap.Init(m_pGraphics, m_pTextRender);
-	m_ZoomEnvelopeX.OnInit(this);
-	m_ZoomEnvelopeY.OnInit(this);
 
 	m_vComponents.emplace_back(m_MapView);
+	m_vComponents.emplace_back(m_EnvelopeEditor);
 	m_vComponents.emplace_back(m_MapSettingsBackend);
 	m_vComponents.emplace_back(m_LayerSelector);
 	m_vComponents.emplace_back(m_FileBrowser);
