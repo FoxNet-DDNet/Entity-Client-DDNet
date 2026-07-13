@@ -506,6 +506,8 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 	});
 
 	static bool s_aSelectedPlayers[MAX_CLIENTS] = {false};
+	static char s_aaSelectedNames[MAX_CLIENTS][MAX_NAME_LENGTH] = {{0}};
+	static char s_aaSelectedClans[MAX_CLIENTS][MAX_CLAN_LENGTH] = {{0}};
 	static int s_aPlayerItemIds[MAX_CLIENTS] = {0};
 	static int s_LastSelectedClientId = -1;
 	static CScrollRegion s_PlayerScrollRegion;
@@ -517,10 +519,28 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 		s_CommandInitialized = true;
 	}
 
+	// Remember the identity of a selected player so the selection can be dropped
+	// once the client id is recycled. Client ids are reused when a player leaves
+	// and another joins, and this menu is only rendered while the moderation page
+	// is open, so we cannot rely on observing an empty slot: otherwise a stale
+	// selection would silently move onto whoever reuses the id and a command
+	// could be executed on an innocent player.
+	auto SelectPlayer = [&](int ClientId) {
+		s_aSelectedPlayers[ClientId] = true;
+		str_copy(s_aaSelectedNames[ClientId], GameClient()->m_aClients[ClientId].m_aName);
+		str_copy(s_aaSelectedClans[ClientId], GameClient()->m_aClients[ClientId].m_aClan);
+	};
+
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{
-		if(!GameClient()->m_Snap.m_apPlayerInfos[i])
+		if(!s_aSelectedPlayers[i])
+			continue;
+		if(!GameClient()->m_Snap.m_apPlayerInfos[i] ||
+			str_comp(GameClient()->m_aClients[i].m_aName, s_aaSelectedNames[i]) != 0 ||
+			str_comp(GameClient()->m_aClients[i].m_aClan, s_aaSelectedClans[i]) != 0)
+		{
 			s_aSelectedPlayers[i] = false;
+		}
 	}
 	if(s_LastSelectedClientId >= 0 && !GameClient()->m_Snap.m_apPlayerInfos[s_LastSelectedClientId])
 		s_LastSelectedClientId = -1;
@@ -622,16 +642,16 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 					const int Start = std::min(AnchorIndex, Index);
 					const int End = std::max(AnchorIndex, Index);
 					for(int RangeIndex = Start; RangeIndex <= End; ++RangeIndex)
-						s_aSelectedPlayers[vOnlinePlayers[RangeIndex]] = true;
+						SelectPlayer(vOnlinePlayers[RangeIndex]);
 				}
 				else
 				{
-					s_aSelectedPlayers[ClientId] = true;
+					SelectPlayer(ClientId);
 				}
 			}
 			else
 			{
-				s_aSelectedPlayers[ClientId] = true;
+				SelectPlayer(ClientId);
 			}
 
 			s_LastSelectedClientId = ClientId;
