@@ -1624,7 +1624,7 @@ void CHud::RenderMovementInformation()
 
 	float BoxHeight = GetMovementInformationBoxHeight();
 
-	if(BoxHeight <= 0.0f)
+	if(BoxHeight <= MOVEMENT_INFORMATION_LINE_HEIGHT)
 		return;
 
 	const float BoxWidth = 62.0f;
