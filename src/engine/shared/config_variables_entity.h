@@ -139,6 +139,7 @@ MACRO_CONFIG_INT(ClPlayerIndicator, ec_player_indicator, 0, 0, 1, CFGFLAG_CLIENT
 MACRO_CONFIG_INT(ClPlayerIndicatorFreeze, ec_player_indicator_freeze, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show frozen tees in indicator")
 MACRO_CONFIG_INT(ClIndicatorHideOnScreen, ec_indicator_hide_on_screen, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides the Indicator if Tee is on Screen (might be a lil buggy on bigger/smaller monitors")
 MACRO_CONFIG_INT(ClIndicatorOnlyTeammates, ec_indicator_only_teammates, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only shows teammates on the indicator")
+MACRO_CONFIG_INT(ClIndicatorHideAfk, ec_indicator_hide_afk, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides AFK players on the indicator")
 
 MACRO_CONFIG_INT(ClIndicatorTeamOnly, ec_indicator_inteam, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Only show indicator while in team")
 MACRO_CONFIG_INT(ClIndicatorTees, ec_indicator_tees, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show tees instead of circles")

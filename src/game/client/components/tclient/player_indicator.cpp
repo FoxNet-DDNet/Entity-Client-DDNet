@@ -54,6 +54,9 @@ void CPlayerIndicator::OnRender()
 				if(g_Config.m_ClPlayerIndicatorFreeze && !(OtherTee.m_FreezeEnd > 0 || OtherTee.m_DeepFrozen))
 					continue;
 
+				if(g_Config.m_ClIndicatorHideAfk && OtherTee.m_Afk)
+					continue;
+
 				// Hide tees on our screen if the config is set to do so
 				float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
 				Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
