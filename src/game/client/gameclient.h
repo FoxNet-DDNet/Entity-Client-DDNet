@@ -1133,6 +1133,7 @@ public:
 	void OnSelfDeath() override;
 
 	void OnServerBrowserRefresh() override;
+	bool HasMapFinish(const char *pPlayerName, const char *pMapName, const char *pCommunity) const override { return m_MapFinishBrowser.HasEntry(pPlayerName, pMapName, pCommunity); }
 
 	void ClientMessage(const char *pString) override;
 	void OnConnect(int Conn) override;

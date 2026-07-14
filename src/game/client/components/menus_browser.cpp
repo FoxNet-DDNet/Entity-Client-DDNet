@@ -398,10 +398,8 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 					Button.VSplitLeft(Button.h, &Icon, &Button);
 
 					bool HasFinish = pItem->m_HasRank == CServerInfo::RANK_RANKED;
-					if(!HasFinish)
-					{
+					if(!HasFinish && g_Config.m_ClClientSideMapFinishes)
 						HasFinish = GameClient()->m_MapFinishBrowser.HasEntry(g_Config.m_PlayerName, pItem->m_aMap, pItem->m_aCommunityId);
-					}
 
 					if(g_Config.m_BrIndicateFinished && HasFinish)
 					{
@@ -786,7 +784,7 @@ void CMenus::RenderServerbrowserFilters(CUIRect View)
 		g_Config.m_BrFilterConnectingPlayers ^= 1;
 
 	// map finish filters
-	if(ServerBrowser()->CommunityCache().AnyRanksAvailable())
+	if(ServerBrowser()->CommunityCache().AnyRanksAvailable() || g_Config.m_ClClientSideMapFinishes)
 	{
 		View.HSplitTop(RowHeight, &Button, &View);
 		if(DoButton_CheckBox(&g_Config.m_BrIndicateFinished, Localize("Indicate map finish"), g_Config.m_BrIndicateFinished, &Button))

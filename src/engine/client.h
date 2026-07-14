@@ -466,6 +466,7 @@ public:
 	virtual void OnSelfDeath() = 0;
 
 	virtual void OnServerBrowserRefresh() = 0;
+	virtual bool HasMapFinish(const char *pPlayerName, const char *pMapName, const char *pCommunity) const = 0;
 	virtual void ClientMessage(const char *pString) = 0;
 	virtual void OnConnect(int Conn) = 0;
 	virtual void SetLastMovementTime() = 0;

@@ -13,6 +13,7 @@
 #include <base/str.h>
 #include <base/time.h>
 
+#include <engine/client.h>
 #include <engine/console.h>
 #include <engine/engine.h>
 #include <engine/favorites.h>
@@ -93,6 +94,7 @@ void CServerBrowser::SetBaseInfo(class CNetClient *pClient, const char *pNetVers
 	m_pConsole = Kernel()->RequestInterface<IConsole>();
 	m_pConfigManager = Kernel()->RequestInterface<IConfigManager>();
 	m_pEngine = Kernel()->RequestInterface<IEngine>();
+	m_pGameClient = Kernel()->RequestInterface<IGameClient>();
 	m_pFavorites = Kernel()->RequestInterface<IFavorites>();
 	m_pFriends = Kernel()->RequestInterface<IFriends>();
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
@@ -450,6 +452,10 @@ void CServerBrowser::Filter()
 		CServerInfo &Info = m_vpServerlist[ServerIndex]->m_Info;
 		bool Filtered = false;
 
+		bool HasFinish = Info.m_HasRank == CServerInfo::RANK_RANKED;
+		if(!HasFinish && g_Config.m_ClClientSideMapFinishes && m_pGameClient != nullptr)
+			HasFinish = m_pGameClient->HasMapFinish(g_Config.m_PlayerName, Info.m_aMap, Info.m_aCommunityId);
+
 		if(g_Config.m_BrFilterEmpty && Info.m_NumFilteredPlayers == 0)
 			Filtered = true;
 		else if(g_Config.m_BrFilterFull && Players(Info) == Max(Info))
@@ -462,7 +468,7 @@ void CServerBrowser::Filter()
 			Filtered = true;
 		else if(!g_Config.m_BrFilterGametypeStrict && g_Config.m_BrFilterGametype[0] && !str_utf8_find_nocase(Info.m_aGameType, g_Config.m_BrFilterGametype))
 			Filtered = true;
-		else if(g_Config.m_BrFilterUnfinishedMap && Info.m_HasRank == CServerInfo::RANK_RANKED)
+		else if(g_Config.m_BrFilterUnfinishedMap && HasFinish)
 			Filtered = true;
 		else if(g_Config.m_BrFilterLogin && Info.m_RequiresLogin)
 			Filtered = true;

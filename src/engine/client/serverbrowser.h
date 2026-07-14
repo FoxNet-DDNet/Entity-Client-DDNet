@@ -17,6 +17,7 @@
 
 typedef struct _json_value json_value;
 class CNetClient;
+class IGameClient;
 class IConfigManager;
 class IConsole;
 class IEngine;
@@ -328,6 +329,7 @@ private:
 	IConfigManager *m_pConfigManager = nullptr;
 	IConsole *m_pConsole = nullptr;
 	IEngine *m_pEngine = nullptr;
+	IGameClient *m_pGameClient = nullptr;
 	IFriends *m_pFriends = nullptr;
 	IFavorites *m_pFavorites = nullptr;
 	IStorage *m_pStorage = nullptr;
