@@ -1654,8 +1654,8 @@ void CHud::RenderMovementInformation()
 		for(int i = 0; i < 2; i++)
 		{
 			TextRender()->Text(LeftX, y, Fontsize, aaCoordinates[i], -1.0f);
-			UpdateMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Fontsize, i == 0 ? Info.m_Pos.x : Info.m_Pos.y, m_aPlayerPrevPosition[i]);
-			RenderMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], TextRender()->DefaultTextColor(), RightX, y);
+			UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[i], Fontsize, i == 0 ? Info.m_Pos.x : Info.m_Pos.y, m_aPlayerPrevPosition[i]);
+			RenderMovementInformationTextContainer(m_aPlayerPositionContainers[i], TextRender()->DefaultTextColor(), RightX, y);
 			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 		}
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
