@@ -775,7 +775,9 @@ void CHud::RenderCursor()
 
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, Alpha);
 	Graphics()->TextureSet(GameClient()->m_GameSkin.m_aSpriteWeaponCursors[CurWeapon]);
-	Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_aCursorOffset[CurWeapon], TargetPos.x, TargetPos.y);
+	const float SizeMult = g_Config.m_ClCursorSize * 0.01f;
+
+	Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_aCursorOffset[CurWeapon], TargetPos.x, TargetPos.y, SizeMult, SizeMult);
 }
 
 void CHud::PrepareAmmoHealthAndArmorQuads()

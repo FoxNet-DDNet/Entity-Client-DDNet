@@ -465,6 +465,7 @@ MACRO_CONFIG_INT(ClStatisticsShowSnapRate, ec_statistics_show_snap_rate, 0, 0, 1
 MACRO_CONFIG_INT(ClShowHudTimerStartedFlag, ec_showhud_timer_started_flag, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show a flag if the timer has started")
 MACRO_CONFIG_INT(ClShowhudPlayerCheckpoint, ec_showhud_player_checkpoint, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ingame HUD (Player Checkpoint)")
 MACRO_CONFIG_INT(ClShowhudPlayerCompact, ec_showhud_player_compact, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Player Hud compact version")
+MACRO_CONFIG_INT(ClCursorSize, ec_cursor_size, 100, 5, 500, CFGFLAG_SAVE | CFGFLAG_CLIENT, "Cursor size in %")
 
 // Finish Times
 MACRO_CONFIG_INT(ClClientSideMapFinishes, ec_client_side_map_finishes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show map finishes saved on the client in the server browser")
