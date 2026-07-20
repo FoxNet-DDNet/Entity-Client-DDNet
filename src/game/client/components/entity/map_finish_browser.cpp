@@ -113,16 +113,23 @@ void CMapFinishBrowser::OnRender()
 		return pPlayerInfo->m_Score;
 	};
 
+	const float ConnectedSince = Client()->LocalTime();
+
 	for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
 	{
 		const int LocalId = GameClient()->m_aLocalIds[Dummy];
+		if(LocalId < 0)
+			continue;
 
 		std::optional<int> TimeScore = GetTimeScore(LocalId);
 
 		auto &FinishTime = m_aFinishTime[Dummy];
 
 		if(FinishTime == TimeScore)
-			return;
+			continue;
+
+		if(!TimeScore.has_value() && ConnectedSince < 3.0f)
+			continue;
 
 		auto pCurrentServerInfo = std::make_unique<CServerInfo>();
 		Client()->GetServerInfo(pCurrentServerInfo.get());
@@ -131,12 +138,12 @@ void CMapFinishBrowser::OnRender()
 		const char *pMapName = pCurrentServerInfo->m_aMap;
 
 		if(pCommunityId[0] == '\0' && str_comp(pCommunityId, "None") != 0)
-			return;
+			continue;
 		if(pMapName[0] == '\0')
-			return;
+			continue;
 		const CCommunity *pCommunity = ServerBrowser()->Community(pCommunityId);
 		if(!pCommunity || pCommunity->HasRanks())
-			return;
+			continue;
 
 		const char *pPlayerName = Dummy == (int)IClient::CONN_MAIN ? g_Config.m_PlayerName : g_Config.m_ClDummyName;
 		bool Exists = HasEntry(pPlayerName, pMapName, pCommunityId);
