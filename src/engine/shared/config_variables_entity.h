@@ -470,6 +470,9 @@ MACRO_CONFIG_INT(ClCursorSize, ec_cursor_size, 100, 5, 500, CFGFLAG_SAVE | CFGFL
 // Finish Times
 MACRO_CONFIG_INT(ClClientSideMapFinishes, ec_client_side_map_finishes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show map finishes saved on the client in the server browser")
 
+// Finish Times
+MACRO_CONFIG_INT(ClSpectatorRadioShowDelay, ec_specradio_show_delay, 200, 0, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long it takes until the spectator radio shows up fully, its usable before it shows up")
+
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
 

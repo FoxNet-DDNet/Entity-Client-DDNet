@@ -82,6 +82,7 @@
 #include "components/entity/performance_statistics.h"
 #include "components/entity/physicball.h"
 #include "components/entity/player_actions.h"
+#include "components/entity/spec_pause_radio.h"
 
 // Tater
 #include "component.h"
@@ -273,6 +274,7 @@ public:
 	CPerformanceStatistics m_PerformanceStatistics;
 	CPhysicBalls m_PhysicBalls;
 	CPlayerActions m_PlayerActions;
+	CSpecPauseRadio m_SpecPauseRadio;
 
 	CMovingTiles m_MovingTilesBackground = CMovingTiles{false};
 	CMovingTiles m_MovingTilesForeground = CMovingTiles{true};

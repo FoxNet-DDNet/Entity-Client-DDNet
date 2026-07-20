@@ -2615,6 +2615,8 @@ if(CLIENT)
     components/entity/physicball.h 
     components/entity/player_actions.cpp
     components/entity/player_actions.h
+    components/entity/spec_pause_radio.cpp
+    components/entity/spec_pause_radio.h
     components/envelope_state.cpp
     components/envelope_state.h
     components/flow.cpp

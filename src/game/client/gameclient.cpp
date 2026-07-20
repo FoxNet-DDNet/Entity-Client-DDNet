@@ -171,8 +171,9 @@ void CGameClient::OnConsoleInit()
 					      &m_Spectator,
 					      &m_Emoticon,
 					      &m_PlayerActions, // EClient
-					      &m_Bindchat, // TClient
+					      &m_SpecPauseRadio, // EClient
 					      &m_Bindwheel, // TClient
+					      &m_Bindchat, // TClient
 					      &m_WarList, // TClient
 					      &m_StatusBar, // TClient
 					      &m_InfoMessages,
@@ -206,6 +207,7 @@ void CGameClient::OnConsoleInit()
 						  &m_Spectator,
 						  &m_Bindwheel,
 						  &m_PlayerActions,
+						  &m_SpecPauseRadio,
 						  &m_Emoticon,
 						  &m_ImportantAlert,
 						  &m_Menus,
