@@ -273,7 +273,9 @@ public:
 	// It uses team or public chat depending on m_Mode.
 	void SendChatQueued(const char *pLine);
 
-	// <EClient
+	// EClient
+	bool MathSuggestion(char *pSuggestion, size_t SuggestionSize) const;
+
 	bool LineHighlighted(int ClientId, const char *pLine);
 	bool ChatDetection(int ClientId, int Team, const char *pLine);
 	void ColorizeLine(const CLine &Line, CTextCursor &Cursor);

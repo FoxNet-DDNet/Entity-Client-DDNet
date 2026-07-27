@@ -333,6 +333,7 @@ MACRO_CONFIG_INT(EcUnreadNews, ec_unread_news, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG
 
 // Chat
 MACRO_CONFIG_INT(ClChatColorParsing, ec_chat_color_parsing, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allows you to use &00-&99 to chang the color of your text, &x marks the end of the color")
+MACRO_CONFIG_INT(ClChatMath, ec_chat_math, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Suggest the result of a math expression ending with '=' in the chat, press Tab to insert it")
 
 // Chat Bubbles
 MACRO_CONFIG_INT(ClChatBubbles, ec_chat_bubbles, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show Chatbubbles above players")

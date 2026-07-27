@@ -20,6 +20,7 @@
 #include <engine/client/client.h>
 #include <engine/console.h>
 #include <engine/editor.h>
+#include <engine/external/tinyexpr.h>
 #include <engine/graphics.h>
 #include <engine/input.h>
 #include <engine/keys.h>
@@ -44,6 +45,7 @@
 #include <game/teamscore.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdint>
 #include <optional>
 #include <ranges>
@@ -396,6 +398,62 @@ void CChat::ScrollPageDown()
 		m_BacklogCurLine = 0;
 }
 
+// <EClient
+static bool ContainsMathOperator(const char *pStr)
+{
+	for(const char *pChar = pStr; *pChar != '\0'; ++pChar)
+	{
+		if(*pChar == '+' || *pChar == '-' || *pChar == '*' || *pChar == '/' || *pChar == '^' || *pChar == '%' || *pChar == '(')
+			return true;
+	}
+	return false;
+}
+
+bool CChat::MathSuggestion(char *pSuggestion, size_t SuggestionSize) const
+{
+	if(!g_Config.m_ClChatMath)
+		return false;
+
+	const char *pInput = m_Input.GetString();
+	int Length = str_length(pInput);
+
+	while(Length > 0 && pInput[Length - 1] == ' ')
+		--Length;
+	if(Length < 2 || pInput[Length - 1] != '=')
+		return false;
+	--Length;
+
+	char aExpression[MAX_LINE_LENGTH];
+	str_truncate(aExpression, sizeof(aExpression), pInput, Length);
+
+	double Value = 0.0;
+	bool Found = false;
+	for(const char *pStart = aExpression; *pStart != '\0'; ++pStart)
+	{
+		if(*pStart == ' ' || (pStart != aExpression && *(pStart - 1) != ' '))
+			continue;
+
+		if(!ContainsMathOperator(pStart))
+			continue;
+
+		int Error = 0;
+		Value = te_interp(pStart, &Error);
+		if(Error == 0 && std::isfinite(Value))
+		{
+			Found = true;
+			break;
+		}
+	}
+	if(!Found)
+		return false;
+
+	char aValue[64];
+	str_format(aValue, sizeof(aValue), "%.10g", Value);
+	str_format(pSuggestion, (int)SuggestionSize, "%s%s", pInput[str_length(pInput) - 1] == ' ' ? "" : " ", aValue);
+	return true;
+}
+// EClient>
+
 bool CChat::OnInput(const IInput::CEvent &Event)
 {
 	if(m_Mode == MODE_NONE)
@@ -499,6 +557,19 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 	}
 	if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_TAB)
 	{
+		// <EClient
+		char aMathSuggestion[64];
+		if(MathSuggestion(aMathSuggestion, sizeof(aMathSuggestion)))
+		{
+			char aBuf[MAX_LINE_LENGTH];
+			str_copy(aBuf, m_Input.GetString());
+			str_append(aBuf, aMathSuggestion);
+			m_Input.Set(aBuf);
+			m_Input.SetCursorOffset(str_length(aBuf));
+			return true;
+		}
+		// EClient>
+
 		const bool ShiftPressed = Input()->ShiftIsPressed();
 
 		// fill the completion buffer
@@ -1755,6 +1826,7 @@ void CChat::OnRender()
 		m_Input.SetScrollOffsetChange(ScrollOffsetChange);
 
 		const std::vector<CCommand> &vChatCommands = GameClient()->m_Bindchat.m_vChatCommands;
+		const float HintStartX = InputCursor.m_X; // EClient
 
 		// Autocompletion hint
 		if(GameClient()->m_Bindchat.ValidPrefix(m_Input.GetString()[0]) && m_Input.GetString()[1] != '\0' && !vChatCommands.empty())
@@ -1763,7 +1835,7 @@ void CChat::OnRender()
 			{
 				if(str_startswith_nocase(Command.m_aName, m_Input.GetString()))
 				{
-					InputCursor.m_X = InputCursor.m_X + TextRender()->TextWidth(InputCursor.m_FontSize, m_Input.GetString(), -1, InputCursor.m_LineWidth);
+					InputCursor.m_X = HintStartX + TextRender()->TextWidth(InputCursor.m_FontSize, m_Input.GetString(), -1, InputCursor.m_LineWidth);
 					InputCursor.m_Y = m_Input.GetCaretPosition().y;
 					TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
 					TextRender()->TextEx(&InputCursor, Command.m_aName + str_length(m_Input.GetString()));
@@ -1772,6 +1844,19 @@ void CChat::OnRender()
 				}
 			}
 		}
+
+		// <EClient
+		// Math expression hint
+		char aMathSuggestion[64];
+		if(MathSuggestion(aMathSuggestion, sizeof(aMathSuggestion)))
+		{
+			InputCursor.m_X = HintStartX + TextRender()->TextWidth(InputCursor.m_FontSize, m_Input.GetString(), -1, InputCursor.m_LineWidth);
+			InputCursor.m_Y = m_Input.GetCaretPosition().y;
+			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 0.5f);
+			TextRender()->TextEx(&InputCursor, aMathSuggestion);
+			TextRender()->TextColor(TextRender()->DefaultTextColor());
+		}
+		// EClient>
 	}
 
 #if defined(CONF_VIDEORECORDER)

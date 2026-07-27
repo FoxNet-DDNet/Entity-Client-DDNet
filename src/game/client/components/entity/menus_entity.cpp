@@ -2736,9 +2736,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Chat Settings */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
-		{"chat", "bubble", "show", "mute", "console", "hide", "enemy", "friend", "spec", "server", "client", "warlist", "client", "id", "preview"},
+		{"chat", "bubble", "show", "mute", "console", "hide", "enemy", "friend", "spec", "server", "client", "warlist", "client", "id", "preview", "math", "expression", "calculator"},
 		[](bool HasSearch) {
-			return 395.0f;
+			return 415.0f;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -2753,6 +2753,10 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowMutedInConsole, ("Show Messages of Muted People in The Console"), &g_Config.m_ClShowMutedInConsole, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideEnemyChat, ("Hide Enemy Chat (Shows in Console)"), &g_Config.m_ClHideEnemyChat, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowIdsChat, ("Show Client Ids in Chat"), &g_Config.m_ClShowIdsChat, &ModuleRect, LineSize);
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				if(DoButton_CheckBox(&g_Config.m_ClChatMath, ("Suggest Math Results in Chat"), g_Config.m_ClChatMath, &Button))
+					g_Config.m_ClChatMath ^= 1;
+				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClChatMath, &Button, "End a message with '=' to get the result suggested, press Tab to insert it");
 
 				ModuleRect.HSplitTop(-10.0f, &Button, &ModuleRect);
 
