@@ -1,4 +1,4 @@
-﻿#include "physicball.h"
+#include "physicball.h"
 
 #include <base/color.h>
 #include <base/log.h>
@@ -31,6 +31,21 @@
 
 constexpr float PhysicBallSize = 60.0f;
 
+constexpr float PhysicBallKillMargin = 200.0f * 32.0f;
+
+constexpr float PhysicBallRestSpeed = 30.0f;
+constexpr float PhysicBallRestDuration = 0.4f;
+
+static uint64_t PackCell(int CellX, int CellY)
+{
+	return ((uint64_t)(uint32_t)CellX << 32) | (uint64_t)(uint32_t)CellY;
+}
+
+static uint32_t HashCell(int CellX, int CellY)
+{
+	return (uint32_t)CellX * 73856093u ^ (uint32_t)CellY * 19349663u;
+}
+
 void CPhysicBalls::OnStateChange(int NewState, int OldState)
 {
 	if(NewState != OldState)
@@ -45,7 +60,6 @@ void CPhysicBalls::Reset()
 
 void CPhysicBalls::OnConsoleInit()
 {
-	// Collision breaks if size is changed
 	Console()->Register("physic_ball_new", "?f[size]", CFGFLAG_CLIENT, ConNewPhysicBall, this, "Summon a new physic ball");
 	Console()->Register("physic_ball_new_cursor", "?f[size]", CFGFLAG_CLIENT, ConNewPhysicBallAtCursor, this, "Summon a new physic ball at the cursor");
 	Console()->Register("physic_balls_remove_cursor", "?f[radius]", CFGFLAG_CLIENT, ConRemovePhysicBallsAtCursor, this, "Removes ball at cursor");
@@ -60,6 +74,7 @@ void CPhysicBalls::NewBallPlayer(float Size)
 	vec2 Pos = PlayerPos(Size);
 
 	m_vBalls.emplace_back(Pos, vec2(), Size);
+	WakeAll();
 }
 
 void CPhysicBalls::NewBallCursor(float Size)
@@ -73,6 +88,7 @@ void CPhysicBalls::NewBallCursor(float Size)
 		Pos = OutPos;
 
 	m_vBalls.emplace_back(Pos, vec2(), Size);
+	WakeAll();
 }
 
 void CPhysicBalls::ConNewPhysicBall(IConsole::IResult *pResult, void *pUserData)
@@ -102,16 +118,13 @@ void CPhysicBalls::ConRemovePhysicBallsAtCursor(IConsole::IResult *pResult, void
 	const float Radius = pResult->NumArguments() > 0 ? pResult->GetFloat(0) : 20.0f;
 	const vec2 CursorPos = pSelf->GameClient()->GetCursorWorldPos();
 
-	for(int i = (int)pSelf->m_vBalls.size() - 1; i >= 0; --i)
+	for(const CBall &Ball : pSelf->m_vBalls)
 	{
-		const CBall &Ball = pSelf->m_vBalls[i];
-		const vec2 Delta = Ball.m_Pos - CursorPos;
-		const float Distance = length(Delta);
-		const float BallRadius = Ball.m_Size * 0.5f;
-
-		if(Distance < Radius + BallRadius)
-			pSelf->KillBall(&pSelf->m_vBalls[i]);
+		const float Distance = length(Ball.m_Pos - CursorPos);
+		if(Distance < Radius + Ball.m_Size * 0.5f)
+			pSelf->KillBall(&Ball);
 	}
+	pSelf->PruneDeadBalls();
 }
 
 void CPhysicBalls::ConResetPhysicBalls(IConsole::IResult *pResult, void *pUserData)
@@ -143,53 +156,60 @@ vec2 CPhysicBalls::PlayerPos(float BallSize) const
 	return Pos;
 }
 
-bool CPhysicBalls::IsBallVisible(const CBall *pBall)
+void CPhysicBalls::RenderBalls()
 {
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	if(m_vBalls.empty())
+		return;
 
-	const float HalfSize = pBall->m_Size * 0.75f;
-
-	return pBall->m_Pos.x + HalfSize >= ScreenX0 &&
-	       pBall->m_Pos.x - HalfSize <= ScreenX1 &&
-	       pBall->m_Pos.y + HalfSize >= ScreenY0 &&
-	       pBall->m_Pos.y - HalfSize <= ScreenY1;
-}
-
-void CPhysicBalls::RenderBall(const CBall *pBall)
-{
 	const CSkin *pSkin = GameClient()->m_Skins.Find(g_Config.m_ClPhysicBallsSkin);
 	if(!pSkin)
 		return;
 
-	// Render at current position (variable timestep physics updates per frame).
-	vec2 Position = pBall->m_Pos;
+	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
+	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
 
-	float Alpha = 1.0f;
+	m_vpVisibleBalls.clear();
+	for(const CBall &Ball : m_vBalls)
+	{
+		const float HalfSize = Ball.m_Size * 0.75f;
+		if(Ball.m_Pos.x + HalfSize < ScreenX0 || Ball.m_Pos.x - HalfSize > ScreenX1 ||
+			Ball.m_Pos.y + HalfSize < ScreenY0 || Ball.m_Pos.y - HalfSize > ScreenY1)
+			continue;
+		m_vpVisibleBalls.push_back(&Ball);
+	}
 
-	const float Size = pBall->m_Size;
-	Graphics()->TextureSet(pSkin->m_OriginalSkin.m_BodyOutline);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(ColorRGBA(1.0f, 1.0f, 1.0f, Alpha));
-	IEngineGraphics::CQuadItem QuadOutline{Position.x, Position.y, Size, Size};
-	Graphics()->QuadsSetRotation(pBall->m_Rotation);
-	Graphics()->QuadsDraw(&QuadOutline, 1);
-	Graphics()->QuadsEnd();
-	Graphics()->TextureSet(pSkin->m_OriginalSkin.m_Body);
-	Graphics()->QuadsBegin();
-	Graphics()->SetColor(ColorRGBA(1.0f, 1.0f, 1.0f, Alpha));
-	Graphics()->QuadsSetRotation(pBall->m_Rotation);
-	IEngineGraphics::CQuadItem Quad{Position.x, Position.y, Size, Size};
-	Graphics()->QuadsDraw(&Quad, 1);
-	Graphics()->QuadsEnd();
+	if(m_vpVisibleBalls.empty())
+		return;
+
+	for(int Pass = 0; Pass < 2; Pass++)
+	{
+		Graphics()->TextureSet(Pass == 0 ? pSkin->m_OriginalSkin.m_BodyOutline : pSkin->m_OriginalSkin.m_Body);
+		Graphics()->QuadsBegin();
+		Graphics()->SetColor(ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f));
+		for(const CBall *pBall : m_vpVisibleBalls)
+		{
+			Graphics()->QuadsSetRotation(pBall->m_Rotation);
+			IEngineGraphics::CQuadItem Quad{pBall->m_Pos.x, pBall->m_Pos.y, pBall->m_Size, pBall->m_Size};
+			Graphics()->QuadsDraw(&Quad, 1);
+		}
+		Graphics()->QuadsEnd();
+	}
 }
 
-void CPhysicBalls::DoPlayerCollisions(CBall *pBall, float Dt, float Elasticity) const
+void CPhysicBalls::UpdateStepState()
 {
-	const float BallRadius = pBall->m_Size * 0.5f;
-	const float SeparationPadding = 0.5f;
+	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
 
-	int LocalId = GameClient()->m_Snap.m_LocalClientId;
+	m_Gravity = LocalId >= 0 ?
+			    (float)GameClient()->m_aClients[LocalId].m_Predicted.m_Tuning.m_Gravity :
+			    (float)GameClient()->m_aTuning[g_Config.m_ClDummy].m_Gravity;
+
+	m_CursorWorldPos = GameClient()->GetCursorWorldPos();
+	m_FireHeld = HoldingFire();
+	m_FirePressed = PressedFire();
+	m_Weapon = GameClient()->m_Snap.m_SpecInfo.m_Active ? WEAPON_GUN : CurrentWeapon();
+
+	m_vPlayerColliders.clear();
 	if(LocalId < 0 || !GameClient()->m_Snap.m_apPlayerInfos[LocalId])
 		return;
 
@@ -213,16 +233,31 @@ void CPhysicBalls::DoPlayerCollisions(CBall *pBall, float Dt, float Elasticity) 
 				continue;
 		}
 
-		vec2 PlayerPos = Client.m_RenderPos;
-		vec2 Delta = pBall->m_Pos - PlayerPos;
-		float Distance = length(Delta);
-		const float CombinedRadius = (BallRadius + CCharacterCore::PhysicalSize() * 0.5f) * 0.75f;
+		m_vPlayerColliders.push_back({Client.m_RenderPos, Client.m_Predicted.m_Vel});
+	}
+}
 
-		if(Distance >= CombinedRadius)
+void CPhysicBalls::DoPlayerCollisions(CBall *pBall, float Elasticity) const
+{
+	if(m_vPlayerColliders.empty())
+		return;
+
+	const float BallRadius = pBall->Radius();
+	const float CombinedRadius = BallRadius + CCharacterCore::PhysicalSize() * 0.5f;
+	const float SeparationPadding = 0.5f;
+
+	for(const CPlayerCollider &Player : m_vPlayerColliders)
+	{
+		const vec2 Delta = pBall->m_Pos - Player.m_Pos;
+		const float DistanceSq = dot(Delta, Delta);
+		if(DistanceSq >= CombinedRadius * CombinedRadius)
 			continue;
 
-		vec2 Normal = Distance > 0.0001f ? Delta / Distance : vec2(0.0f, -1.0f);
+		const float Distance = std::sqrt(DistanceSq);
+		const vec2 Normal = Distance > 0.0001f ? Delta / Distance : vec2(0.0f, -1.0f);
 		const float Penetration = CombinedRadius - Distance + SeparationPadding;
+
+		pBall->WakeUp();
 
 		vec2 NewPos = pBall->m_Pos + Normal * Penetration;
 
@@ -231,7 +266,7 @@ void CPhysicBalls::DoPlayerCollisions(CBall *pBall, float Dt, float Elasticity) 
 		if(TestBox(vec2(pBall->m_Pos.x, NewPos.y), BallRadius))
 			NewPos.y = pBall->m_Pos.y;
 
-		const vec2 RelativeVel = pBall->m_Vel - Client.m_Predicted.m_Vel;
+		const vec2 RelativeVel = pBall->m_Vel - Player.m_Vel;
 		const float RelativeNormalVel = dot(RelativeVel, Normal);
 		if(RelativeNormalVel < 0.0f)
 			pBall->m_Vel -= Normal * ((1.0f + Elasticity) * RelativeNormalVel);
@@ -240,76 +275,197 @@ void CPhysicBalls::DoPlayerCollisions(CBall *pBall, float Dt, float Elasticity) 
 	}
 }
 
-void CPhysicBalls::DoBallCollisions(CBall *pBall, float Dt, float Elasticity)
+void CPhysicBalls::CellOf(vec2 Pos, int *pCellX, int *pCellY) const
 {
-	const float BallRadius = pBall->m_Size * 0.55f;
-	const float SeparationPadding = 0.5f;
+	const float x = std::isfinite(Pos.x) ? std::clamp(Pos.x / m_GridCellSize, -1.0e6f, 1.0e6f) : 0.0f;
+	const float y = std::isfinite(Pos.y) ? std::clamp(Pos.y / m_GridCellSize, -1.0e6f, 1.0e6f) : 0.0f;
+	*pCellX = (int)std::floor(x);
+	*pCellY = (int)std::floor(y);
+}
 
-	for(auto &OtherBall : m_vBalls)
+void CPhysicBalls::BuildBroadphase()
+{
+	const size_t NumBalls = m_vBalls.size();
+
+	float MaxRadius = 1.0f;
+	for(const CBall &Ball : m_vBalls)
+		MaxRadius = std::max(MaxRadius, Ball.Radius());
+	m_GridCellSize = MaxRadius * 2.0f;
+
+	uint32_t NumBuckets = 64;
+	while(NumBuckets < NumBalls * 2)
+		NumBuckets <<= 1;
+	m_BucketMask = NumBuckets - 1;
+
+	m_vBallCellKeys.resize(NumBalls);
+	m_vBucketBalls.resize(NumBalls);
+	m_vBucketStart.assign(NumBuckets + 1, 0);
+
+	for(size_t i = 0; i < NumBalls; i++)
 	{
-		if(&OtherBall == pBall)
-			continue;
+		int CellX, CellY;
+		CellOf(m_vBalls[i].m_Pos, &CellX, &CellY);
+		m_vBallCellKeys[i] = PackCell(CellX, CellY);
+		m_vBucketStart[(HashCell(CellX, CellY) & m_BucketMask) + 1]++;
+	}
+	for(uint32_t Bucket = 0; Bucket < NumBuckets; Bucket++)
+		m_vBucketStart[Bucket + 1] += m_vBucketStart[Bucket];
 
-		// Process each pair once and update both balls.
-		if(&OtherBall < pBall)
-			continue;
+	m_vBucketCursor = m_vBucketStart;
+	for(size_t i = 0; i < NumBalls; i++)
+	{
+		const uint64_t Key = m_vBallCellKeys[i];
+		const uint32_t Bucket = HashCell((int)(uint32_t)(Key >> 32), (int)(uint32_t)Key) & m_BucketMask;
+		m_vBucketBalls[m_vBucketCursor[Bucket]++] = (int)i;
+	}
+}
 
-		const float OtherRadius = OtherBall.m_Size * 0.55f;
-		vec2 Delta = pBall->m_Pos - OtherBall.m_Pos;
-		float Distance = length(Delta);
-		const float CombinedRadius = (BallRadius + OtherRadius) * 0.5f;
+bool CPhysicBalls::ResolveBallPair(CBall *pA, CBall *pB, float Elasticity, bool ApplyImpulse) const
+{
+	const float RadiusA = pA->Radius();
+	const float RadiusB = pB->Radius();
+	const float ContactDistance = RadiusA + RadiusB;
 
-		if(Distance >= CombinedRadius)
-			continue;
+	const float TouchDistance = ContactDistance + 1.0f;
 
-		vec2 Normal = Distance > 0.0001f ? Delta / Distance : vec2(0.0f, -1.0f);
-		const float Penetration = CombinedRadius - Distance + SeparationPadding;
+	const vec2 Delta = pA->m_Pos - pB->m_Pos;
+	const float DistanceSq = dot(Delta, Delta);
+	if(DistanceSq >= TouchDistance * TouchDistance)
+		return false;
 
-		const float BallMass = pBall->m_Size;
-		const float OtherMass = OtherBall.m_Size;
-		const float MassSum = BallMass + OtherMass;
+	const float Distance = std::sqrt(DistanceSq);
+	const vec2 Normal = Distance > 0.0001f ? Delta / Distance : vec2(0.0f, -1.0f);
 
+	if(Normal.y < -0.4f && (pB->m_Grounded || pB->m_Asleep))
+		pA->m_Supported = true;
+	if(Normal.y > 0.4f && (pA->m_Grounded || pA->m_Asleep))
+		pB->m_Supported = true;
+
+	if(Distance >= ContactDistance)
+		return false;
+
+	if(pA->m_Asleep && pB->m_Asleep)
+		return false;
+
+	pA->WakeUp();
+	pB->WakeUp();
+
+	const float MassA = pA->m_Size;
+	const float MassB = pB->m_Size;
+	const float MassSum = MassA + MassB;
+	if(MassSum <= 0.0001f)
+		return false;
+
+	constexpr float Slop = 0.5f;
+	constexpr float CorrectionRate = 0.8f;
+	const float Penetration = std::max(ContactDistance - Distance - Slop, 0.0f) * CorrectionRate;
+	if(Penetration > 0.0f)
+	{
 		const vec2 Correction = Normal * Penetration;
-		vec2 NewPos = pBall->m_Pos + Correction * (OtherMass / MassSum);
-		vec2 NewOtherPos = OtherBall.m_Pos - Correction * (BallMass / MassSum);
+		vec2 NewPosA = pA->m_Pos + Correction * (MassB / MassSum);
+		vec2 NewPosB = pB->m_Pos - Correction * (MassA / MassSum);
 
-		if(TestBox(vec2(NewPos.x, pBall->m_Pos.y), BallRadius))
-			NewPos.x = pBall->m_Pos.x;
-		if(TestBox(vec2(pBall->m_Pos.x, NewPos.y), BallRadius))
-			NewPos.y = pBall->m_Pos.y;
+		if(TestBox(vec2(NewPosA.x, pA->m_Pos.y), RadiusA))
+			NewPosA.x = pA->m_Pos.x;
+		if(TestBox(vec2(pA->m_Pos.x, NewPosA.y), RadiusA))
+			NewPosA.y = pA->m_Pos.y;
 
-		if(TestBox(vec2(NewOtherPos.x, OtherBall.m_Pos.y), OtherRadius))
-			NewOtherPos.x = OtherBall.m_Pos.x;
-		if(TestBox(vec2(OtherBall.m_Pos.x, NewOtherPos.y), OtherRadius))
-			NewOtherPos.y = OtherBall.m_Pos.y;
+		if(TestBox(vec2(NewPosB.x, pB->m_Pos.y), RadiusB))
+			NewPosB.x = pB->m_Pos.x;
+		if(TestBox(vec2(pB->m_Pos.x, NewPosB.y), RadiusB))
+			NewPosB.y = pB->m_Pos.y;
 
-		pBall->m_Pos = NewPos;
-		OtherBall.m_Pos = NewOtherPos;
+		pA->m_Pos = NewPosA;
+		pB->m_Pos = NewPosB;
+	}
 
-		const vec2 RelativeVel = pBall->m_Vel - OtherBall.m_Vel;
+	if(ApplyImpulse)
+	{
+		const vec2 RelativeVel = pA->m_Vel - pB->m_Vel;
 		const float RelativeNormalVel = dot(RelativeVel, Normal);
 		if(RelativeNormalVel < 0.0f)
 		{
 			const vec2 Impulse = Normal * ((1.0f + Elasticity) * RelativeNormalVel);
-			pBall->m_Vel -= Impulse * (OtherMass / MassSum);
-			OtherBall.m_Vel += Impulse * (BallMass / MassSum);
+			pA->m_Vel -= Impulse * (MassB / MassSum);
+			pB->m_Vel += Impulse * (MassA / MassSum);
 		}
 	}
+
+	return true;
 }
+
+void CPhysicBalls::DoBallCollisions(float Elasticity)
+{
+	const int NumBalls = (int)m_vBalls.size();
+	if(NumBalls < 2)
+		return;
+
+	BuildBroadphase();
+
+	for(int Iteration = 0; Iteration < 2; Iteration++)
+	{
+		const bool ApplyImpulse = Iteration == 0;
+		bool AnyContact = false;
+
+		for(int i = 0; i < NumBalls; i++)
+		{
+			const uint64_t Key = m_vBallCellKeys[i];
+			const int CellX = (int)(uint32_t)(Key >> 32);
+			const int CellY = (int)(uint32_t)Key;
+
+			for(int OffsetY = -1; OffsetY <= 1; OffsetY++)
+			{
+				for(int OffsetX = -1; OffsetX <= 1; OffsetX++)
+				{
+					const int NeighbourX = CellX + OffsetX;
+					const int NeighbourY = CellY + OffsetY;
+					const uint64_t NeighbourKey = PackCell(NeighbourX, NeighbourY);
+					const uint32_t Bucket = HashCell(NeighbourX, NeighbourY) & m_BucketMask;
+
+					for(uint32_t k = m_vBucketStart[Bucket]; k < m_vBucketStart[Bucket + 1]; k++)
+					{
+						const int j = m_vBucketBalls[k];
+
+						if(j <= i)
+							continue;
+
+						if(m_vBallCellKeys[j] != NeighbourKey)
+							continue;
+
+						if(ResolveBallPair(&m_vBalls[i], &m_vBalls[j], Elasticity, ApplyImpulse))
+							AnyContact = true;
+					}
+				}
+			}
+		}
+
+		if(!AnyContact)
+			break;
+	}
+}
+
 void CPhysicBalls::DoMapCollisions(CBall *pBall, float Dt, float Elasticity) const
 {
+	const float BallRadius = pBall->Radius();
+
 	const vec2 StartPos = pBall->m_PrevPos;
 	const vec2 TargetPos = pBall->m_Pos + pBall->m_Vel * Dt;
 	const vec2 FullDelta = TargetPos - StartPos;
 	const float Distance = length(FullDelta);
-	const int Steps = Distance > 0.0f ? std::clamp((int)Distance, 1, 64) : 1; // cap substeps to avoid huge loops
+
+	if(Distance < 0.0001f)
+	{
+		pBall->m_Pos = StartPos;
+		return;
+	}
+
+	const float MaxStep = std::clamp(BallRadius, 4.0f, 16.0f);
+	const int Steps = std::clamp((int)std::ceil(Distance / MaxStep), 1, 32);
 
 	bool Grounded = false;
 
 	vec2 Pos = StartPos;
 	vec2 Vel = pBall->m_Vel;
-
-	const float BallSize = pBall->m_Size * 0.5f;
 
 	for(int i = 0; i < Steps; i++)
 	{
@@ -318,12 +474,12 @@ void CPhysicBalls::DoMapCollisions(CBall *pBall, float Dt, float Elasticity) con
 		if(NextPos == Pos)
 			break;
 
-		if(TestBox(vec2(NextPos.x, NextPos.y), BallSize))
+		if(TestBox(NextPos, BallRadius))
 		{
 			int Hits = 0;
 
 			// Y axis
-			if(TestBox(vec2(Pos.x, NextPos.y), BallSize))
+			if(TestBox(vec2(Pos.x, NextPos.y), BallRadius))
 			{
 				if(Vel.y > 0)
 					Grounded = true;
@@ -333,7 +489,7 @@ void CPhysicBalls::DoMapCollisions(CBall *pBall, float Dt, float Elasticity) con
 			}
 
 			// X axis
-			if(TestBox(vec2(NextPos.x, Pos.y), BallSize))
+			if(TestBox(vec2(NextPos.x, Pos.y), BallRadius))
 			{
 				NextPos.x = Pos.x;
 				Vel.x *= -Elasticity;
@@ -359,30 +515,20 @@ void CPhysicBalls::DoMapCollisions(CBall *pBall, float Dt, float Elasticity) con
 	pBall->m_Vel = Vel;
 	pBall->m_Grounded = Grounded;
 }
+
 void CPhysicBalls::DoWeaponFireEffects(CBall *pBall, float Dt) const
 {
-	bool Holding = HoldingFire();
-
-	int Weapon = CurrentWeapon();
-	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
-	{
-		Weapon = WEAPON_GUN;
-	}
-	if(!Holding)
-		return;
-	if(Weapon == -1)
+	if(!m_FireHeld || m_Weapon == -1)
 		return;
 
-	if(Weapon == WEAPON_GUN)
+	if(m_Weapon == WEAPON_GUN)
 	{
-		vec2 CursorPos = GameClient()->GetCursorWorldPos();
-		vec2 ToCursor = CursorPos - pBall->m_Pos;
-		vec2 ForceDir = normalize(ToCursor);
+		const vec2 ForceDir = normalize(m_CursorWorldPos - pBall->m_Pos);
 
-		float ForceStrength = 2.0f;
+		const float ForceStrength = 2.0f;
 		pBall->m_Vel += (ForceDir * (ForceStrength * Dt));
 	}
-	else if(Weapon == WEAPON_HAMMER && PressedFire())
+	else if(m_Weapon == WEAPON_HAMMER && m_FirePressed)
 	{
 		const int LocalId = GameClient()->m_Snap.m_LocalClientId;
 		if(LocalId < 0 || !GameClient()->m_Snap.m_apPlayerInfos[LocalId])
@@ -396,11 +542,10 @@ void CPhysicBalls::DoWeaponFireEffects(CBall *pBall, float Dt) const
 		const vec2 HitPos = LocalPos + InputDir * CCharacterCore::PhysicalSize();
 		const float Strength = GameClient()->m_aClients[LocalId].m_Predicted.m_Tuning.m_HammerStrength;
 
-		vec2 Delta = pBall->m_Pos - HitPos;
-		float Distance = length(Delta);
-		const float CombinedRadius = (pBall->m_Size * 0.5f + CCharacterCore::PhysicalSize() * 0.5f) * 0.75f;
+		const vec2 Delta = pBall->m_Pos - HitPos;
+		const float CombinedRadius = pBall->Radius() + CCharacterCore::PhysicalSize() * 0.5f;
 
-		if(Distance < CombinedRadius)
+		if(dot(Delta, Delta) < CombinedRadius * CombinedRadius)
 		{
 			vec2 Temp = pBall->m_Vel + normalize(InputDir + vec2(0.f, -0.3f)) * 8.0f;
 			Temp = ClampVel(0, Temp);
@@ -413,85 +558,155 @@ void CPhysicBalls::DoWeaponFireEffects(CBall *pBall, float Dt) const
 
 bool CPhysicBalls::KillBall(const CBall *pBall)
 {
-	if(!pBall)
+	if(!pBall || pBall < m_vBalls.data() || pBall >= m_vBalls.data() + m_vBalls.size())
 		return false;
 
-	auto It = std::find_if(m_vBalls.begin(), m_vBalls.end(), [&](const CBall &b) { return &b == pBall; });
-	if(It != m_vBalls.end())
+	CBall *pTarget = m_vBalls.data() + (pBall - m_vBalls.data());
+	if(pTarget->m_Dead)
+		return false;
+	pTarget->m_Dead = true;
+
+	for(int i = 0; i < 16; i++)
 	{
-		for(int i = 0; i < 16; i++)
-		{
-			const ColorRGBA Color = ColorRGBA(random_float(1.0f), random_float(1.0f), random_float(1.0f), 1.0f);
+		const ColorRGBA Color = ColorRGBA(random_float(1.0f), random_float(1.0f), random_float(1.0f), 1.0f);
 
-			CParticle Particle;
-			Particle.SetDefault();
-			Particle.m_Spr = SPRITE_PART_SPLAT01 + (rand() % 3);
-			Particle.m_Pos = pBall->m_Pos;
-			Particle.m_Vel = random_direction() * (random_float(0.1f, 1.1f) * 900.0f);
-			Particle.m_LifeSpan = random_float(0.3f, 0.6f);
-			Particle.m_StartSize = random_float(24.0f, 40.0f);
-			Particle.m_EndSize = 0.0f;
-			Particle.m_Rot = random_angle();
-			Particle.m_Rotspeed = random_float(-0.5f, 0.5f) * pi;
-			Particle.m_Gravity = 800.0f;
-			Particle.m_Friction = 0.8f;
-			Particle.m_Color = Color.Multiply(random_float(0.75f, 1.0f));
-			Particle.m_StartAlpha = 1.0f;
-			GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &Particle);
-		}
-
-		m_vBalls.erase(It);
-		return true;
+		CParticle Particle;
+		Particle.SetDefault();
+		Particle.m_Spr = SPRITE_PART_SPLAT01 + (rand() % 3);
+		Particle.m_Pos = pBall->m_Pos;
+		Particle.m_Vel = random_direction() * (random_float(0.1f, 1.1f) * 900.0f);
+		Particle.m_LifeSpan = random_float(0.3f, 0.6f);
+		Particle.m_StartSize = random_float(24.0f, 40.0f);
+		Particle.m_EndSize = 0.0f;
+		Particle.m_Rot = random_angle();
+		Particle.m_Rotspeed = random_float(-0.5f, 0.5f) * pi;
+		Particle.m_Gravity = 800.0f;
+		Particle.m_Friction = 0.8f;
+		Particle.m_Color = Color.Multiply(random_float(0.75f, 1.0f));
+		Particle.m_StartAlpha = 1.0f;
+		GameClient()->m_Particles.Add(CParticles::GROUP_GENERAL, &Particle);
 	}
-	return false;
+
+	return true;
 }
 
-void CPhysicBalls::DoBallPhysics(CBall *pBall, float DtTicks)
+void CPhysicBalls::PruneDeadBalls()
 {
-	pBall->m_PrevPos = pBall->m_Pos;
+	const auto It = std::remove_if(m_vBalls.begin(), m_vBalls.end(), [](const CBall &Ball) { return Ball.m_Dead; });
+	if(It == m_vBalls.end())
+		return;
 
-	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
+	m_vBalls.erase(It, m_vBalls.end());
+	WakeAll();
+}
 
-	int CurrentIndex = Collision()->GetMapIndex(pBall->m_Pos);
+void CPhysicBalls::WakeAll()
+{
+	for(CBall &Ball : m_vBalls)
+		Ball.WakeUp();
+}
+
+void CPhysicBalls::UpdateSleepState(CBall *pBall, float Dt) const
+{
+	if(Dt <= 0.0f)
+		return;
+
+	if(!pBall->m_Grounded && !pBall->m_Supported)
+	{
+		pBall->m_RestTime = 0.0f;
+		return;
+	}
+
+	if(length(pBall->m_Pos - pBall->m_PrevPos) > PhysicBallRestSpeed * Dt)
+	{
+		pBall->m_RestTime = 0.0f;
+		return;
+	}
+
+	pBall->m_RestTime += Dt;
+	if(pBall->m_RestTime < PhysicBallRestDuration)
+		return;
+
+	pBall->m_Asleep = true;
+	pBall->m_Vel = vec2(0.0f, 0.0f);
+}
+
+void CPhysicBalls::DoBallPhysics(CBall *pBall, float Dt, float Elasticity)
+{
+	const int CurrentIndex = Collision()->GetMapIndex(pBall->m_Pos);
 	pBall->m_TuneZone = Collision()->IsTune(CurrentIndex);
 
-	float Elasticity = 0.66f;
-
-	DoBallCollisions(pBall, DtTicks, Elasticity);
-	DoPlayerCollisions(pBall, DtTicks, Elasticity);
-
-	DtTicks *= (float)SERVER_TICK_SPEED;
+	const float DtTicks = Dt * (float)SERVER_TICK_SPEED;
 
 	DoWeaponFireEffects(pBall, DtTicks);
 	DoMapCollisions(pBall, DtTicks, Elasticity);
 
-	pBall->m_Vel.y += GameClient()->m_aClients[LocalId].m_Predicted.m_Tuning.m_Gravity * DtTicks;
+	pBall->m_Vel.y += m_Gravity * DtTicks;
 
-	float GroundFriction = 0.96f;
-	float AirFriction = 0.98f;
+	pBall->m_Vel.x *= pBall->m_Grounded ? m_GroundFriction : m_AirFriction;
 
-	float Friction = pBall->m_Grounded ? GroundFriction : AirFriction;
-
-	pBall->m_Vel.x *= powf(Friction, DtTicks);
-
+	float RollRadius;
 	if(pBall->m_Grounded)
-	{
-		const float Radius = pBall->m_Size * 0.3f;
-		if(Radius > 0.0001f)
-			pBall->m_Rotation += (pBall->m_Vel.x / Radius) * DtTicks;
-	}
+		RollRadius = pBall->m_Size * 0.3f;
 	else if(Collision()->CheckPoint(pBall->m_Pos + vec2(0, pBall->m_Size / 2.2f)) && pBall->m_Vel.y < 6.0f)
-	{
-		const float Radius = pBall->m_Size * 0.5f;
-		if(Radius > 0.0001f)
-			pBall->m_Rotation += (pBall->m_Vel.x / Radius) * DtTicks;
-	}
+		RollRadius = pBall->m_Size * 0.5f;
 	else
+		RollRadius = pBall->m_Size * 0.7f;
+
+	if(RollRadius > 0.0001f)
+		pBall->m_Rotation += (pBall->m_Vel.x / RollRadius) * DtTicks;
+
+	if(pBall->m_Rotation > 2.0f * pi || pBall->m_Rotation < -2.0f * pi)
+		pBall->m_Rotation = std::fmod(pBall->m_Rotation, 2.0f * pi);
+}
+
+void CPhysicBalls::Update(float Dt)
+{
+	if(m_vBalls.empty())
+		return;
+
+	const float Elasticity = 0.66f;
+
+	UpdateStepState();
+
+	const float DtTicks = Dt * (float)SERVER_TICK_SPEED;
+	m_GroundFriction = std::pow(0.96f, DtTicks);
+	m_AirFriction = std::pow(0.98f, DtTicks);
+
+	if(m_FireHeld && (m_Weapon == WEAPON_GUN || (m_Weapon == WEAPON_HAMMER && m_FirePressed)))
+		WakeAll();
+
+	bool AnyAwake = false;
+	for(CBall &Ball : m_vBalls)
 	{
-		const float Radius = pBall->m_Size * 0.7f;
-		if(Radius > 0.0001f)
-			pBall->m_Rotation += (pBall->m_Vel.x / Radius) * DtTicks;
+		Ball.m_PrevPos = Ball.m_Pos;
+		Ball.m_Supported = false;
+		AnyAwake = AnyAwake || !Ball.m_Asleep;
 	}
+
+	if(AnyAwake)
+		DoBallCollisions(Elasticity);
+
+	const float MaxX = (float)Collision()->GetWidth() * 32.0f + PhysicBallKillMargin;
+	const float MaxY = (float)Collision()->GetHeight() * 32.0f + PhysicBallKillMargin;
+
+	for(CBall &Ball : m_vBalls)
+	{
+		DoPlayerCollisions(&Ball, Elasticity);
+
+		if(!Ball.m_Asleep)
+		{
+			DoBallPhysics(&Ball, Dt, Elasticity);
+			UpdateSleepState(&Ball, Dt);
+		}
+
+		// Written inverted so that a non finite position is dropped as well.
+		if(!(Ball.m_Pos.x > -PhysicBallKillMargin && Ball.m_Pos.x < MaxX &&
+			   Ball.m_Pos.y > -PhysicBallKillMargin && Ball.m_Pos.y < MaxY))
+			Ball.m_Dead = true;
+	}
+
+	PruneDeadBalls();
 }
 
 void CPhysicBalls::OnRender()
@@ -504,40 +719,24 @@ void CPhysicBalls::OnRender()
 	{
 		m_LastPhysicsTime = Now;
 	}
-	else
+	else if(Now > m_LastPhysicsTime)
 	{
-		int64_t Delta = Now - m_LastPhysicsTime;
-		if(Delta > 0)
-		{
-			m_LastPhysicsTime = Now;
+		const int64_t Delta = Now - m_LastPhysicsTime;
+		m_LastPhysicsTime = Now;
 
-			// Convert to seconds, clamp to avoid giant jumps if a frame stalls
-			const float Dt = std::clamp((float)Delta / (float)time_freq(), 0.0f, 1.0f / 20.0f); // max 50 ms
+		const float Dt = std::clamp((float)Delta / (float)time_freq(), 0.0f, 1.0f / 20.0f); // max 50 ms
 
-			for(auto &Ball : m_vBalls)
-			{
-				DoBallPhysics(&Ball, Dt);
-				if(round_to_int(Ball.m_Pos.y) / 32 > Collision()->GetHeight() + 200)
-					KillBall(&Ball);
-			}
-		}
+		Update(Dt);
 	}
 
-	for(auto &Ball : m_vBalls)
-	{
-		// Dont render if ball is outside of view
-		if(!IsBallVisible(&Ball))
-			continue;
-
-		RenderBall(&Ball);
-	}
+	RenderBalls();
 }
 
 bool CPhysicBalls::GetNearestAirPos(vec2 Pos, vec2 PrevPos, vec2 *pOutPos, float BallSize) const
 {
-	const float Size = BallSize * 0.5f;
+	const float Radius = BallSize * PhysicBallRadiusScale;
 
-	if(!TestBox(Pos, Size))
+	if(!TestBox(Pos, Radius))
 	{
 		*pOutPos = Pos;
 		return true;
@@ -546,34 +745,42 @@ bool CPhysicBalls::GetNearestAirPos(vec2 Pos, vec2 PrevPos, vec2 *pOutPos, float
 	static constexpr int SearchRadius = 12;
 	static constexpr float Step = 16.0f;
 
-	float BestDist = std::numeric_limits<float>::max();
+	float BestDistSq = std::numeric_limits<float>::max();
 	vec2 BestPos = Pos;
 
-	for(int y = -SearchRadius; y <= SearchRadius; y++)
+	for(int Ring = 1; Ring <= SearchRadius; Ring++)
 	{
-		for(int x = -SearchRadius; x <= SearchRadius; x++)
+		for(int y = -Ring; y <= Ring; y++)
 		{
-			vec2 Candidate = Pos + vec2(x * Step, y * Step);
-			if(TestBox(Candidate, Size))
-				continue;
-
-			float Dist = distance(Pos, Candidate);
-			if(Dist < BestDist)
+			for(int x = -Ring; x <= Ring; x++)
 			{
-				BestDist = Dist;
-				BestPos = Candidate;
+				if(std::max(std::abs(x), std::abs(y)) != Ring)
+					continue;
+
+				const vec2 Candidate = Pos + vec2(x * Step, y * Step);
+				if(TestBox(Candidate, Radius))
+					continue;
+
+				const vec2 Delta = Candidate - Pos;
+				const float DistSq = dot(Delta, Delta);
+				if(DistSq < BestDistSq)
+				{
+					BestDistSq = DistSq;
+					BestPos = Candidate;
+				}
 			}
 		}
-	}
 
-	if(BestDist < std::numeric_limits<float>::max())
-	{
-		*pOutPos = BestPos;
-		return true;
+		if(BestDistSq < std::numeric_limits<float>::max())
+		{
+			*pOutPos = BestPos;
+			return true;
+		}
 	}
 
 	return false;
 }
+
 bool CPhysicBalls::HoldingHook() const
 {
 	return GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Hook == 1;
@@ -599,29 +806,27 @@ int CPhysicBalls::CurrentWeapon() const
 	return GameClient()->m_aClients[LocalId].m_Predicted.m_ActiveWeapon;
 }
 
-bool CPhysicBalls::TestBox(vec2 Pos, float Size) const
+bool CPhysicBalls::TestBox(vec2 Pos, float HalfExtent) const
 {
-	const bool TestBox = Collision()->TestBox(Pos, vec2(Size, Size));
-
-	if(TestBox)
-		return true;
-
-	if(Size <= 32.0f)
+	const int MaxX = Collision()->GetWidth() - 1;
+	const int MaxY = Collision()->GetHeight() - 1;
+	if(MaxX < 0 || MaxY < 0)
 		return false;
 
-	// For larger sizes, test multiple points in the box to avoid tunneling through thin walls.
-	const int NumPoints = 4;
-	for(int y = 0; y < NumPoints; y++)
+	const int TileX0 = std::clamp(round_to_int(Pos.x - HalfExtent) / 32, 0, MaxX);
+	const int TileX1 = std::clamp(round_to_int(Pos.x + HalfExtent) / 32, 0, MaxX);
+	const int TileY0 = std::clamp(round_to_int(Pos.y - HalfExtent) / 32, 0, MaxY);
+	const int TileY1 = std::clamp(round_to_int(Pos.y + HalfExtent) / 32, 0, MaxY);
+
+	for(int y = TileY0; y <= TileY1; y++)
 	{
-		for(int x = 0; x < NumPoints; x++)
+		for(int x = TileX0; x <= TileX1; x++)
 		{
-			vec2 Offset = vec2(
-				((float)x / (float)(NumPoints - 1) - 0.5f) * Size,
-				((float)y / (float)(NumPoints - 1) - 0.5f) * Size);
-			if(Collision()->CheckPoint(Pos + Offset))
+			if(Collision()->IsSolid(x * 32 + 16, y * 32 + 16))
 				return true;
 		}
 	}
+
 	return false;
 }
 
@@ -636,16 +841,18 @@ void CPhysicBalls::OnExplosion(vec2 Pos, bool SameTeam)
 	constexpr float InnerRadius = 64.0f;
 	constexpr float Strength = 12.0f;
 
-	for(auto &Ball : m_vBalls)
+	for(CBall &Ball : m_vBalls)
 	{
-		vec2 Diff = Ball.m_Pos - Pos;
-		float Dist = length(Diff);
-		if(Dist <= 0.0001f || Dist > Radius)
+		const vec2 Diff = Ball.m_Pos - Pos;
+		const float DistSq = dot(Diff, Diff);
+		if(DistSq <= 0.0001f * 0.0001f || DistSq > Radius * Radius)
 			continue;
 
-		vec2 Dir = normalize(Diff);
-		float Falloff = 1.0f - std::clamp((Dist - InnerRadius) / (Radius - InnerRadius), 0.0f, 1.0f);
+		const float Dist = std::sqrt(DistSq);
+		const vec2 Dir = Diff / Dist;
+		const float Falloff = 1.0f - std::clamp((Dist - InnerRadius) / (Radius - InnerRadius), 0.0f, 1.0f);
 
 		Ball.m_Vel += Dir * (Strength * Falloff);
+		Ball.WakeUp();
 	}
 }
