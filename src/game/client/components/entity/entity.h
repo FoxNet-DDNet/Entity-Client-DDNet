@@ -58,8 +58,6 @@ class CEClient : public CComponent
 
 	static void ConSpectateId(IConsole::IResult *pResult, void *pUserData);
 
-	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
-
 	static void ConViewLink(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConSetDeathCounter(IConsole::IResult *pResult, void *pUserData);
@@ -70,6 +68,10 @@ class CEClient : public CComponent
 
 	static void ConchainDDNetProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainDiscordProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
+
+	static void ConCrash(IConsole::IResult *pResult, void *pUserData);
+
+	static void ConCalc(IConsole::IResult *pResult, void *pUserData);
 
 	static void DiscordPriorityThread(void *pUserData);
 

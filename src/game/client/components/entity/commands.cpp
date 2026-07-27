@@ -8,6 +8,7 @@
 #include <engine/client/enums.h>
 #include <engine/config.h>
 #include <engine/console.h>
+#include <engine/external/tinyexpr.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 
@@ -486,6 +487,16 @@ void CEClient::ConCrash(IConsole::IResult *pResult, void *pUserData)
 	exit(666);
 }
 
+void CEClient::ConCalc(IConsole::IResult *pResult, void *pUserData)
+{
+	int Error = 0;
+	double Out = te_interp(pResult->GetString(0), &Error);
+	if(Out == NAN || Error != 0)
+		log_info("tclient", "Calc error: %d", Error);
+	else
+		log_info("tclient", "Calc result: %lf", Out);
+}
+
 void CEClient::OnConsoleInit()
 {
 	IConfigManager *pConfigManager = Kernel()->RequestInterface<IConfigManager>();
@@ -494,6 +505,7 @@ void CEClient::OnConsoleInit()
 		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::ENTITY);
 
 	// Misc
+	Console()->Register("calc", "r[expression]", CFGFLAG_CLIENT, ConCalc, this, "Evaluate an expression");
 	Console()->Register("votekick", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConVotekick, this, "Call a votekick");
 	Console()->Register("onlineinfo", "", CFGFLAG_CLIENT, ConOnlineInfo, this, "Shows you how many people of default lists are on the current server");
 	Console()->Register("playerinfo", "r[name]", CFGFLAG_CLIENT, ConPlayerInfo, this, "Get Info of a Player");

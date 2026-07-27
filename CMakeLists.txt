@@ -2339,6 +2339,8 @@ set_src(ENGINE_EXTERNAL GLOB src/engine/external
   spt.cpp
   spt.h
   stb_image.h
+  tinyexpr.cpp
+  tinyexpr.h
 )
 
 # ChaiScript
