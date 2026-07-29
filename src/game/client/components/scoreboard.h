@@ -81,6 +81,7 @@ class CScoreboard : public CComponent
 
 		CCachedText m_Score;
 		CCachedText m_ScoreMillis;
+		CCachedText m_ClientId;
 		CCachedText m_Name;
 		CCachedText m_ReadyMark;
 		CCachedText m_Clan;

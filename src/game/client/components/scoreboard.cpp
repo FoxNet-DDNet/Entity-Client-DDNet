@@ -120,6 +120,7 @@ void CScoreboard::ResetTexts()
 	{
 		Player.m_Score.Reset(TextRender());
 		Player.m_ScoreMillis.Reset(TextRender());
+		Player.m_ClientId.Reset(TextRender());
 		Player.m_Name.Reset(TextRender());
 		Player.m_ReadyMark.Reset(TextRender());
 		Player.m_Clan.Reset(TextRender());
@@ -805,17 +806,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 
 			// name
 			{
-				if(g_Config.m_ClShowIds)
-				{
-					char aClientId[16];
-					GameClient()->FormatClientId(pInfo->m_ClientId, aClientId, EClientIdFormat::INDENT_AUTO);
-					str_copy(aBuf, aClientId);
-					str_append(aBuf, ClientData.m_aName);
-				}
-				else
-				{
-					str_copy(aBuf, ClientData.m_aName);
-				}
+				str_copy(aBuf, ClientData.m_aName);
 
 				float Alpha = TextColor.a;
 				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
@@ -834,10 +825,28 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					NameWidth -= PrefixWidth;
 				}
 
-				ColorRGBA NameColor = TextColor;
+				// The authed color applies to the client id as well, the name-only
+				// colors below do not.
+				ColorRGBA IdColor = TextColor;
 				if(ClientData.m_AuthLevel)
-					NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClAuthedPlayerColor));
+					IdColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClAuthedPlayerColor));
 
+				if(g_Config.m_ClShowIds)
+				{
+					char aClientId[16];
+					GameClient()->FormatClientId(pInfo->m_ClientId, aClientId, EClientIdFormat::INDENT_AUTO);
+					Player.m_ClientId.Update(TextRender(), aClientId, FontSize);
+					Player.m_ClientId.Render(TextRender(), vec2(NameX, TextY), IdColor.WithAlpha(Alpha));
+
+					NameX += Player.m_ClientId.Width();
+					NameWidth -= Player.m_ClientId.Width();
+				}
+				else
+				{
+					Player.m_ClientId.Reset(TextRender());
+				}
+
+				ColorRGBA NameColor = IdColor;
 				if(g_Config.m_ClScoreboardFriendColor && ClientData.m_Friend)
 					NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 
