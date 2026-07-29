@@ -98,7 +98,7 @@ MACRO_CONFIG_INT(ClWarlistPrefixesServerInfo, ec_warlist_prefixes_server_info, 1
 // Run on Join
 MACRO_CONFIG_STR(ClExecuteOnConnect, ec_execute_on_connect, 100, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Run a console command before connect")
 MACRO_CONFIG_STR(ClRunOnJoinConsole, ec_run_on_join_console, 128, "onlineinfo", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
-MACRO_CONFIG_INT(ClRunOnJoinConsoleDelay, ec_run_on_join_delay, 2, 7, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
+MACRO_CONFIG_INT(ClRunOnJoinConsoleDelay, ec_run_on_join_delay, 2, 1, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 
 // Limit Mouse
 MACRO_CONFIG_INT(ClLimitMouseToScreen, ec_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundaries")
@@ -444,10 +444,10 @@ MACRO_CONFIG_INT(ClForceSevenSkin, ec_force_seven_skin, 0, 0, 1, CFGFLAG_CLIENT 
 
 // Decouple mouse sensitivity
 MACRO_CONFIG_INT(ClDecoupleMouseSens, ec_decouple_mouse_sens, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to decouple mouse sensitivity")
-MACRO_CONFIG_INT(ClMouseSensXIngame, ec_mouse_sens_x_ingame, -1, 1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for X axis when decoupled")
-MACRO_CONFIG_INT(ClMouseSensYIngame, ec_mouse_sens_y_ingame, -1, 1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for Y axis when decoupled")
-MACRO_CONFIG_INT(ClMouseSensXUi, ec_mouse_sens_x_ui, -1, 1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for X axis when decoupled")
-MACRO_CONFIG_INT(ClMouseSensYUi, ec_mouse_sens_y_ui, -1, 1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for Y axis when decoupled")
+MACRO_CONFIG_INT(ClMouseSensXIngame, ec_mouse_sens_x_ingame, -1, -1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for X axis when decoupled")
+MACRO_CONFIG_INT(ClMouseSensYIngame, ec_mouse_sens_y_ingame, -1, -1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for Y axis when decoupled")
+MACRO_CONFIG_INT(ClMouseSensXUi, ec_mouse_sens_x_ui, -1, -1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for X axis when decoupled")
+MACRO_CONFIG_INT(ClMouseSensYUi, ec_mouse_sens_y_ui, -1, -1, 100000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Mouse sensitivity for Y axis when decoupled")
 
 // Client Indicator
 MACRO_CONFIG_INT(ClClientUsersBrowser, ec_client_users_browser, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show a list of people using EClient in the server browser")
