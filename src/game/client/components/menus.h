@@ -919,6 +919,8 @@ private:
 	void RenderEClientNewsPage(CUIRect MainView);
 
 	void RenderModerationMenu(CUIRect MainView);
+	CCachedText m_aModMenuScore[MAX_CLIENTS];
+	CCachedText m_aModMenuScoreMillis[MAX_CLIENTS];
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();

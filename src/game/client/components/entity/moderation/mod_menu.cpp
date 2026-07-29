@@ -713,16 +713,19 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 		if(Race7)
 		{
 			const int Score = GameClient()->m_Snap.m_apPlayerInfos[ClientId]->m_Score;
-			Ui()->RenderTime(RankRect, 10.0f, Score / 1000, Score == protocol7::FinishTime::NOT_FINISHED, Score % 1000, true);
+			Ui()->RenderTime(RankRect, 10.0f, Score / 1000, Score == protocol7::FinishTime::NOT_FINISHED, Score % 1000, true,
+				m_aModMenuScore[ClientId], m_aModMenuScoreMillis[ClientId], TextRender()->DefaultTextColor());
 		}
 		else if(MillisecondScore)
 		{
-			Ui()->RenderTime(RankRect, 10.0f, GameClient()->m_aClients[ClientId].m_FinishTimeSeconds, GameClient()->m_aClients[ClientId].m_FinishTimeSeconds == FinishTime::NOT_FINISHED_MILLIS, GameClient()->m_aClients[ClientId].m_FinishTimeMillis, true);
+			Ui()->RenderTime(RankRect, 10.0f, GameClient()->m_aClients[ClientId].m_FinishTimeSeconds, GameClient()->m_aClients[ClientId].m_FinishTimeSeconds == FinishTime::NOT_FINISHED_MILLIS, GameClient()->m_aClients[ClientId].m_FinishTimeMillis, true,
+				m_aModMenuScore[ClientId], m_aModMenuScoreMillis[ClientId], TextRender()->DefaultTextColor());
 		}
 		else if(TimeScore)
 		{
 			const int Score = GameClient()->m_Snap.m_apPlayerInfos[ClientId]->m_Score;
-			Ui()->RenderTime(RankRect, 10.0f, Score, Score == FinishTime::NOT_FINISHED_TIMESCORE, -1, false);
+			Ui()->RenderTime(RankRect, 10.0f, Score, Score == FinishTime::NOT_FINISHED_TIMESCORE, -1, false,
+				m_aModMenuScore[ClientId], m_aModMenuScoreMillis[ClientId], TextRender()->DefaultTextColor());
 		}
 		else
 		{
