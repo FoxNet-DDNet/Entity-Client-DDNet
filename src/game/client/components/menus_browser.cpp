@@ -1307,11 +1307,11 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 	s_ListBox.DoAutoSpacing(2.0f);
 	s_ListBox.SetScrollbarWidth(16.0f);
 	s_ListBox.SetScrollbarMargin(5.0f);
-	s_ListBox.DoStart(25.0f, pSelectedServer->m_NumReceivedClients, 1, 3, -1, &View, false, IGraphics::CORNER_NONE, true);
+	s_ListBox.DoStart(25.0f, (int)pSelectedServer->m_vClients.size(), 1, 3, -1, &View, false, IGraphics::CORNER_NONE, true);
 
-	for(int i = 0; i < pSelectedServer->m_NumReceivedClients; i++)
+	for(size_t i = 0; i < pSelectedServer->m_vClients.size(); i++)
 	{
-		const CServerInfo::CClient &CurrentClient = pSelectedServer->m_aClients[i];
+		const CServerInfo::CClient &CurrentClient = pSelectedServer->m_vClients[i];
 		const CListboxItem Item = s_ListBox.DoNextItem(&CurrentClient);
 		if(!Item.m_Visible)
 			continue;
@@ -1464,7 +1464,7 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 	const int NewSelected = s_ListBox.DoEnd();
 	if(s_ListBox.WasItemSelected())
 	{
-		const CServerInfo::CClient &SelectedClient = pSelectedServer->m_aClients[NewSelected];
+		const CServerInfo::CClient &SelectedClient = pSelectedServer->m_vClients[NewSelected];
 		if(SelectedClient.m_FriendState == IFriends::FRIEND_PLAYER)
 			GameClient()->Friends()->RemoveFriend(SelectedClient.m_aName, SelectedClient.m_aClan);
 		else
@@ -1508,9 +1508,8 @@ void CMenus::RenderServerbrowserFriends(CUIRect View)
 		if(pEntry->m_FriendState == IFriends::FRIEND_NO)
 			continue;
 
-		for(int ClientIndex = 0; ClientIndex < pEntry->m_NumClients; ++ClientIndex)
+		for(const CServerInfo::CClient &CurrentClient : pEntry->m_vClients)
 		{
-			const CServerInfo::CClient &CurrentClient = pEntry->m_aClients[ClientIndex];
 			if(CurrentClient.m_FriendState == IFriends::FRIEND_NO)
 				continue;
 			const int FriendIndex = CurrentClient.m_FriendState == IFriends::FRIEND_PLAYER ? FRIEND_PLAYER_ON : FRIEND_CLAN_ON;
@@ -2090,9 +2089,9 @@ void CMenus::UpdateOnlinePlayerCache()
 	for(int ServerIdx = 0; ServerIdx < ServerBrowser()->NumSortedServers(); ++ServerIdx)
 	{
 		const CServerInfo *pCurServer = ServerBrowser()->SortedGet(ServerIdx);
-		for(int ClientIdx = 0; ClientIdx < std::min(pCurServer->m_NumClients, (int)SERVERINFO_MAX_CLIENTS); ++ClientIdx)
+		for(const CServerInfo::CClient &CurrentClient : pCurServer->m_vClients)
 		{
-			const CServerInfo::CClient *pClient = &pCurServer->m_aClients[ClientIdx];
+			const CServerInfo::CClient *pClient = &CurrentClient;
 
 			ColorIdentifier Body, Feet;
 			Body.m_Color = pClient->m_CustomSkinColorBody;

@@ -131,11 +131,10 @@ void CMapFinishBrowser::OnRender()
 		if(!TimeScore.has_value() && ConnectedSince < 3.0f)
 			continue;
 
-		auto pCurrentServerInfo = std::make_unique<CServerInfo>();
-		Client()->GetServerInfo(pCurrentServerInfo.get());
+		const CServerInfo &CurrentServerInfo = Client()->ServerInfo();
 
-		const char *pCommunityId = pCurrentServerInfo->m_aCommunityId;
-		const char *pMapName = pCurrentServerInfo->m_aMap;
+		const char *pCommunityId = CurrentServerInfo.m_aCommunityId;
+		const char *pMapName = CurrentServerInfo.m_aMap;
 
 		if(pCommunityId[0] == '\0' && str_comp(pCommunityId, "None") != 0)
 			continue;

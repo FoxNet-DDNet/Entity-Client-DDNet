@@ -756,6 +756,12 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					RenderTools()->RenderTee(CAnimState::GetSpec(), &TeeInfo, EMOTE_BLINK, vec2(1.0f, 0.0f), TeeRenderPos);
 				else
 					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, EMOTE_NORMAL, vec2(1.0f, 0.0f), TeeRenderPos);
+
+				if(m_MouseUnlocked)
+				{
+					const CUIRect SkinRect = {TeeOffset, Row.y, TeeLength, Row.h};
+					GameClient()->m_Tooltips.DoToolTip(&m_aPlayers[pInfo->m_ClientId].m_PlayerButtonId, &SkinRect, ClientData.m_aSkinName);
+				}
 			}
 
 			// name

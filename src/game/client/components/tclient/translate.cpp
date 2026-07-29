@@ -2,6 +2,7 @@
 
 #include <base/log.h>
 
+#include <engine/http.h>
 #include <engine/shared/json.h>
 #include <engine/shared/jsonwriter.h>
 #include <engine/shared/protocol.h>
@@ -190,13 +191,13 @@ bool ITranslateBackend::CompareTargets(const char *pA, const char *pB) const
 class ITranslateBackendHttp : public ITranslateBackend
 {
 protected:
-	std::shared_ptr<CHttpRequest> m_pHttpRequest = nullptr;
+	std::shared_ptr<IHttpRequest> m_pHttpRequest = nullptr;
 	virtual bool ParseResponse(CTranslateResponse &Out) = 0;
 	virtual bool ParseHttpError() const { return false; }
 
 	void CreateHttpRequest(IHttp &Http, const char *pUrl)
 	{
-		auto pGet = std::make_shared<CHttpRequest>(pUrl);
+		std::shared_ptr<IHttpRequest> pGet = ::CreateHttpRequest(pUrl);
 		pGet->LogProgress(HTTPLOG::FAILURE);
 		pGet->FailOnErrorStatus(false);
 		pGet->Timeout(CTimeout{10000, 0, 500, 10});

@@ -263,10 +263,7 @@ void CEClient::OnConnect(int Conn)
 		// if current server is type "Gores", turn the config on, else turn it off
 		if(g_Config.m_ClAutoEnableGoresMode)
 		{
-			// CServerInfo is large (embeds per-client skin data for all slots), so keep it off this function's stack frame
-			auto pCurrentServerInfo = std::make_unique<CServerInfo>();
-			Client()->GetServerInfo(pCurrentServerInfo.get());
-			if(str_find_nocase(pCurrentServerInfo->m_aGameType, "Gores"))
+			if(str_find_nocase(Client()->ServerInfo().m_aGameType, "Gores"))
 			{
 				m_GoresServer = true;
 				g_Config.m_ClGoresMode = 1;

@@ -17,10 +17,10 @@
 #include <engine/client/updater.h>
 #include <engine/editor.h>
 #include <engine/graphics.h>
+#include <engine/http.h>
 #include <engine/shared/config.h>
 #include <engine/shared/demo.h>
 #include <engine/shared/fifo.h>
-#include <engine/shared/http.h>
 #include <engine/shared/network.h>
 #include <engine/textrender.h>
 #include <engine/warning.h>
@@ -143,7 +143,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 
 	// map download
 	char m_aMapDownloadUrl[256] = "";
-	std::shared_ptr<CHttpRequest> m_pMapdownloadTask = nullptr;
+	std::shared_ptr<IHttpRequest> m_pMapdownloadTask = nullptr;
 	char m_aMapdownloadFilename[256] = "";
 	char m_aMapdownloadFilenameTemp[256] = "";
 	char m_aMapdownloadName[256] = "";
@@ -166,7 +166,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	std::optional<CMapDetails> m_MapDetails;
 
 	EInfoState m_InfoState = EInfoState::ERROR;
-	std::shared_ptr<CHttpRequest> m_pDDNetInfoTask = nullptr;
+	std::shared_ptr<IHttpRequest> m_pDDNetInfoTask = nullptr;
 
 	// time
 	CSmoothTime m_aGameTime[NUM_DUMMIES];
@@ -348,7 +348,7 @@ public:
 	bool DummyConnectingDelayed() const override;
 	bool DummyAllowed() const override;
 
-	void GetServerInfo(CServerInfo *pServerInfo) const override;
+	const CServerInfo &ServerInfo() const override;
 	void ServerInfoRequest();
 	void SetCurrentServerInfo(const CServerInfo &ServerInfo);
 
@@ -381,7 +381,7 @@ public:
 
 	int TranslateSysMsg(int *pMsgId, bool System, CUnpacker *pUnpacker, CPacker *pPacker, CNetChunk *pPacket, bool *pIsExMsg);
 
-	void PreprocessConnlessPacket7(CNetChunk *pPacket);
+	bool PreprocessConnlessPacket7(CNetChunk *pPacket);
 	void ProcessConnlessPacket(CNetChunk *pPacket);
 	void ProcessServerInfo(int Type, NETADDR *pFrom, const void *pData, int DataSize);
 	void ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy);

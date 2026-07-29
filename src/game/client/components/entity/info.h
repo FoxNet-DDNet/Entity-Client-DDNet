@@ -1,6 +1,6 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_INFO_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_INFO_H
-#include <engine/shared/http.h>
+#include <engine/http.h>
 
 #include <game/client/component.h>
 
@@ -10,7 +10,7 @@
 class CEntityInfo : public CComponent
 {
 public:
-	std::shared_ptr<CHttpRequest> m_pEClientInfoTask = nullptr;
+	std::shared_ptr<IHttpRequest> m_pEClientInfoTask = nullptr;
 	void FetchEClientInfo();
 	void FinishEClientInfo();
 	void ResetEClientInfoTask();

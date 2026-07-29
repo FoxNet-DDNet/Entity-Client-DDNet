@@ -694,15 +694,22 @@ void CSnapshotStorage::Add(int Tick, int64_t Tagtime, size_t DataSize, const voi
 	pHolder->m_pNext = nullptr;
 	pHolder->m_pPrev = m_pLast;
 	if(m_pLast)
+	{
+		dbg_assert(m_pLast->m_Tick < Tick, "snapshots inserted into CSnapshotStorage with non-increasing tick %d >= %d", m_pLast->m_Tick, Tick);
 		m_pLast->m_pNext = pHolder;
+	}
 	else
+	{
 		m_pFirst = pHolder;
+	}
 	m_pLast = pHolder;
 }
 
 int CSnapshotStorage::Get(int Tick, int64_t *pTagtime, const CSnapshot **ppData, const CSnapshot **ppAltData) const
 {
-	CHolder *pHolder = m_pFirst;
+	// the list is sorted by tick and the queried tick is usually one of the
+	// most recently added ones, so search backwards starting at the newest
+	CHolder *pHolder = m_pLast;
 
 	while(pHolder)
 	{
@@ -716,8 +723,10 @@ int CSnapshotStorage::Get(int Tick, int64_t *pTagtime, const CSnapshot **ppData,
 				*ppAltData = pHolder->m_pAltSnap;
 			return pHolder->m_SnapSize;
 		}
+		if(pHolder->m_Tick < Tick)
+			return -1; // all remaining snapshots are even older
 
-		pHolder = pHolder->m_pNext;
+		pHolder = pHolder->m_pPrev;
 	}
 
 	return -1;

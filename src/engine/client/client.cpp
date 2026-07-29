@@ -33,6 +33,7 @@
 #include <engine/external/json-parser/json.h>
 #include <engine/favorites.h>
 #include <engine/graphics.h>
+#include <engine/http.h>
 #include <engine/input.h>
 #include <engine/keys.h>
 #include <engine/map.h>
@@ -44,7 +45,6 @@
 #include <engine/shared/demo.h>
 #include <engine/shared/fifo.h>
 #include <engine/shared/filecollection.h>
-#include <engine/shared/http.h>
 #include <engine/shared/masterserver.h>
 #include <engine/shared/network.h>
 #include <engine/shared/packer.h>
@@ -504,10 +504,7 @@ void CClient::DiscordRPCchange()
 	if(State() == IClient::STATE_ONLINE)
 	{
 		const bool Registered = m_ServerBrowser.IsRegistered(ServerAddress());
-		CServerInfo CurrentServerInfo;
-		GetServerInfo(&CurrentServerInfo);
-
-		Discord()->SetGameInfo(CurrentServerInfo, g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
+		Discord()->SetGameInfo(ServerInfo(), g_Config.m_ClDiscordOnlineStatus, g_Config.m_ClDiscordMapStatus, Registered);
 	}
 	else if(State() == IClient::STATE_OFFLINE)
 	{
@@ -945,9 +942,9 @@ bool CClient::DummyAllowed() const
 	return m_ServerCapabilities.m_AllowDummy;
 }
 
-void CClient::GetServerInfo(CServerInfo *pServerInfo) const
+const CServerInfo &CClient::ServerInfo() const
 {
-	*pServerInfo = m_CurrentServerInfo;
+	return m_CurrentServerInfo;
 }
 
 void CClient::ServerInfoRequest()
@@ -1521,10 +1518,10 @@ void CClient::ProcessServerInfo(int RawType, NETADDR *pFrom, const void *pData, 
 	}
 
 	bool IgnoreError = false;
-	for(int i = 0; i < MAX_CLIENTS && Info.m_NumReceivedClients < MAX_CLIENTS && !Up.Error(); i++)
+	for(int i = 0; i < MAX_CLIENTS && (int)Info.m_vClients.size() < MAX_CLIENTS && !Up.Error(); i++)
 	{
-		CServerInfo::CClient *pClient = &Info.m_aClients[Info.m_NumReceivedClients];
-		GET_STRING(pClient->m_aName);
+		CServerInfo::CClient Client = {};
+		GET_STRING(Client.m_aName);
 		if(Up.Error())
 		{
 			// Packet end, no problem unless it happens during one
@@ -1532,14 +1529,14 @@ void CClient::ProcessServerInfo(int RawType, NETADDR *pFrom, const void *pData, 
 			IgnoreError = true;
 			break;
 		}
-		GET_STRING(pClient->m_aClan);
-		GET_INT(pClient->m_Country);
-		if(!in_range(pClient->m_Country, CountryCode::MINIMUM, CountryCode::MAXIMUM))
+		GET_STRING(Client.m_aClan);
+		GET_INT(Client.m_Country);
+		if(!in_range(Client.m_Country, CountryCode::MINIMUM, CountryCode::MAXIMUM))
 		{
-			pClient->m_Country = CountryCode::DEFAULT;
+			Client.m_Country = CountryCode::DEFAULT;
 		}
-		GET_INT(pClient->m_Score);
-		GET_INT(pClient->m_Player);
+		GET_INT(Client.m_Score);
+		GET_INT(Client.m_Player);
 		if(SavedType == SERVERINFO_EXTENDED)
 		{
 			Up.GetString(); // extra info, reserved
@@ -1552,12 +1549,12 @@ void CClient::ProcessServerInfo(int RawType, NETADDR *pFrom, const void *pData, 
 				if(!(Info.m_ReceivedPackets & Flag))
 				{
 					Info.m_ReceivedPackets |= Flag;
-					Info.m_NumReceivedClients++;
+					Info.m_vClients.push_back(Client);
 				}
 			}
 			else
 			{
-				Info.m_NumReceivedClients++;
+				Info.m_vClients.push_back(Client);
 			}
 		}
 	}
@@ -2780,8 +2777,8 @@ void CClient::PumpNetwork()
 		{
 			if(Packet.m_ClientId == -1)
 			{
-				if(ResponseToken != NET_SECURITY_TOKEN_UNKNOWN)
-					PreprocessConnlessPacket7(&Packet);
+				if(ResponseToken != NET_SECURITY_TOKEN_UNKNOWN && !PreprocessConnlessPacket7(&Packet))
+					continue;
 
 				ProcessConnlessPacket(&Packet);
 				continue;

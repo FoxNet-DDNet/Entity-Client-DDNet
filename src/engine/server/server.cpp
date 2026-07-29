@@ -16,6 +16,7 @@
 #include <engine/config.h>
 #include <engine/console.h>
 #include <engine/engine.h>
+#include <engine/http.h>
 #include <engine/map.h>
 #include <engine/server.h>
 #include <engine/server/authmanager.h>
@@ -27,7 +28,6 @@
 #include <engine/shared/fifo.h>
 #include <engine/shared/filecollection.h>
 #include <engine/shared/host_lookup.h>
-#include <engine/shared/http.h>
 #include <engine/shared/json.h>
 #include <engine/shared/jsonwriter.h>
 #include <engine/shared/linereader.h>
@@ -1061,9 +1061,14 @@ void CServer::DoSnapshot()
 
 			int Crc = Data.AsSnapshot()->Crc();
 
-			// remove old snapshots
-			// keep 3 seconds worth of snapshots
-			m_aClients[i].m_Snapshots.PurgeUntil(m_CurrentGameTick - TickSpeed() * 3);
+			// Remove old snapshots. Only the last acked snapshot
+			// is still needed as delta base, keep at most 3
+			// seconds worth for clients that aren't acking.
+			//
+			// This also works for the sentinel value -1 of
+			// `m_LastAckedSnapshot` (before the first ack):
+			// the max then falls back to the 3 second cap.
+			m_aClients[i].m_Snapshots.PurgeUntil(std::max(m_CurrentGameTick - TickSpeed() * 3, m_aClients[i].m_LastAckedSnapshot));
 
 			// save the snapshot
 			m_aClients[i].m_Snapshots.Add(m_CurrentGameTick, time_get(), SnapshotSize, Data.AsSnapshot(), 0, nullptr);
