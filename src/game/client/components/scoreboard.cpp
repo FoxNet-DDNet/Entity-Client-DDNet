@@ -808,15 +808,11 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 			{
 				str_copy(aBuf, ClientData.m_aName);
 
-				float Alpha = TextColor.a;
-				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
-					Alpha = 0.4f;
-
 				float NameX = NameOffset;
 				float NameWidth = NameLength;
 				if(g_Config.m_ClSpectatePrefix && Paused)
 				{
-					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)).WithAlpha(Alpha));
+					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
 					TextRender()->Text(NameX, TextY, FontSize, g_Config.m_ClSpecPrefix);
 					TextRender()->TextColor(TextColor);
 
@@ -836,7 +832,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					char aClientId[16];
 					GameClient()->FormatClientId(pInfo->m_ClientId, aClientId, EClientIdFormat::INDENT_AUTO);
 					Player.m_ClientId.Update(TextRender(), aClientId, FontSize);
-					Player.m_ClientId.Render(TextRender(), vec2(NameX, TextY), IdColor.WithAlpha(Alpha));
+					Player.m_ClientId.Render(TextRender(), vec2(NameX, TextY), IdColor);
 
 					NameX += Player.m_ClientId.Width();
 					NameWidth -= Player.m_ClientId.Width();
@@ -855,6 +851,11 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					if(GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
 						NameColor = GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId);
 				}
+
+				float Alpha = TextColor.a;
+				if(g_Config.m_ClDoAfkColors && ClientData.m_Afk)
+					Alpha = 0.5f;
+
 				NameColor.a = Alpha;
 
 				Player.m_Name.Update(TextRender(), aBuf, FontSize, NameWidth, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
