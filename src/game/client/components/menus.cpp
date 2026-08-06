@@ -1290,7 +1290,7 @@ void CMenus::Render()
 			}
 			else if(m_GamePage == PAGE_MODERATION)
 			{
-				RenderModerationMenu(MainView);
+				GameClient()->m_MenusModeration.Render(MainView);
 			}
 			else
 			{
@@ -2529,11 +2529,6 @@ void CMenus::OnStateChange(int NewState, int OldState)
 void CMenus::OnWindowResize()
 {
 	TextRender()->DeleteTextContainer(m_MotdTextContainerIndex);
-	for(int i = 0; i < MAX_CLIENTS; i++)
-	{
-		m_aModMenuScore[i].Reset(TextRender());
-		m_aModMenuScoreMillis[i].Reset(TextRender());
-	}
 }
 
 void CMenus::OnRender()

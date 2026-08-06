@@ -895,6 +895,8 @@ private:
 	CCommunityIcons m_CommunityIcons;
 	CMenusIngameTouchControls m_MenusIngameTouchControls;
 	friend CMenusIngameTouchControls;
+	// The moderation page is a component, it only borrows the menu button helpers
+	friend class CMenusModeration;
 	CMenusSettingsControls m_MenusSettingsControls;
 	friend CMenusSettingsControls;
 	CMenusStart m_MenusStart;
@@ -917,11 +919,6 @@ private:
 	void RenderSettingsBindwheel(CUIRect MainView);
 	void RenderEClientInfoPage(CUIRect MainView);
 	void RenderEClientNewsPage(CUIRect MainView);
-
-	void RenderModerationMenu(CUIRect MainView);
-	void RenderModerationQuickActions(CUIRect View, CLineInput *pCommandInput, const bool (&aSelectedPlayers)[MAX_CLIENTS]);
-	CCachedText m_aModMenuScore[MAX_CLIENTS];
-	CCachedText m_aModMenuScoreMillis[MAX_CLIENTS];
 
 	const CWarType *m_pRemoveWarType = nullptr;
 	void PopupConfirmRemoveWarType();
