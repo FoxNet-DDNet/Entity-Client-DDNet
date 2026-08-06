@@ -99,8 +99,7 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	CTextCursor Cursor;
 
 	// Create Text at default zoom
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	const CScreenRect ScreenRect = Graphics()->GetScreen();
 	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
 
 	SetupTextCursor(Cursor);
@@ -129,7 +128,7 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	m_avChatBubbles[ClientId].insert(m_avChatBubbles[ClientId].begin(), Bubble);
 
 	UpdateBubbleOffsets(ClientId);
-	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+	Graphics()->MapScreen(ScreenRect);
 }
 
 void CChatBubbles::RemoveBubble(int ClientId, const CBubble &Bubble)
@@ -158,15 +157,14 @@ void CChatBubbles::RenderCurInput(float y)
 	STextContainerIndex TextContainerIndex;
 
 	// Create Text at default zoom
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+	const CScreenRect ScreenRect = Graphics()->GetScreen();
 	Graphics()->MapScreenToInterface(GameClient()->m_Camera.m_Center.x, GameClient()->m_Camera.m_Center.y);
 
 	SetupTextCursor(Cursor);
 
 	TextRender()->CreateOrAppendTextContainer(TextContainerIndex, &Cursor, pText);
 
-	Graphics()->MapScreen(ScreenX0, ScreenY0, ScreenX1, ScreenY1);
+	Graphics()->MapScreen(ScreenRect);
 
 	if(TextContainerIndex.Valid())
 	{

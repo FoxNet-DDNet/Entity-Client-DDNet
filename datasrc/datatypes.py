@@ -1,7 +1,7 @@
 def only(x):
 	if len(x) != 1:
 		raise ValueError
-	return list(x)[0]
+	return next(iter(x))
 
 
 GlobalIdCounter = 0
@@ -133,10 +133,8 @@ class Array(BaseType):
 		BaseType.EmitPreDefinition(self, target_name)
 
 		lines = []
-		i = 0
-		for item in self.items:
-			lines += item.EmitPreDefinition(f"{self.Identifier()}[{int(i)}]")
-			i += 1
+		for i, item in enumerate(self.items):
+			lines += item.EmitPreDefinition(f"{self.Identifier()}[{i}]")
 
 		if self.items:
 			lines += [f"static {self.TypeName()} {self.Identifier()}[] = {{"]
@@ -531,6 +529,11 @@ class NetTick(NetIntAny):
 
 	def emit_dump(self, offset):
 		return NetVariable(self.name).emit_dump(offset) + [f'dbg_msg("snapshot", "%s\\t{self.name}=%d (NetTick)", aRawData, pObj->{self.name});']
+
+
+class NetTickStrict(NetIntRange):
+	def __init__(self, name, *, default=None):
+		NetIntRange.__init__(self, name, "MIN_TICK", "MAX_TICK", default=default)
 
 
 class NetArray(NetVariable):

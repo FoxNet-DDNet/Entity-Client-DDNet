@@ -1889,6 +1889,7 @@ void CMenus::RenderPopupFullscreen(CUIRect Screen)
 		if(DoButton_Menu(&s_SkipTutorialButton, Localize("Skip Tutorial"), 0, &Skip) || Ui()->ConsumeHotkey(CUi::HOTKEY_ESCAPE))
 		{
 			Client()->RequestDDNetInfo();
+			m_JoinTutorial.m_Queued = false;
 			m_Popup = g_Config.m_BrIndicateFinished ? POPUP_POINTS : POPUP_NONE;
 		}
 
@@ -2619,7 +2620,7 @@ void CMenus::RenderBackground()
 {
 	const float ScreenHeight = 300.0f;
 	const float ScreenWidth = ScreenHeight * Graphics()->ScreenAspect();
-	Graphics()->MapScreen(0.0f, 0.0f, ScreenWidth, ScreenHeight);
+	Graphics()->MapScreenToSize(ScreenWidth, ScreenHeight);
 
 	// render background color
 	Graphics()->TextureClear();
@@ -2697,17 +2698,13 @@ int CMenus::MenuImageScan(const char *pName, int IsDir, int DirType, void *pUser
 	CImageInfo Info;
 	if(!pSelf->Graphics()->LoadPng(Info, aPath, DirType))
 	{
-		char aError[IO_MAX_PATH_LENGTH + 64];
-		str_format(aError, sizeof(aError), "Failed to load menu image from '%s'", aPath);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "menus", aError);
+		log_error("menus", "Failed to load menu image from '%s'", aPath);
 		return 0;
 	}
 	if(Info.m_Format != CImageInfo::FORMAT_RGBA)
 	{
 		Info.Free();
-		char aError[IO_MAX_PATH_LENGTH + 64];
-		str_format(aError, sizeof(aError), "Failed to load menu image from '%s': must be an RGBA image", aPath);
-		pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_ADDINFO, "menus", aError);
+		log_error("menus", "Failed to load menu image from '%s': must be an RGBA image", aPath);
 		return 0;
 	}
 

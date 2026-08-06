@@ -706,9 +706,8 @@ void CHud::RenderCursor()
 	float Alpha = 1.0f;
 
 	const vec2 Center = GameClient()->m_Camera.m_Center;
-	float aPoints[4];
-	Graphics()->MapScreenToWorld(Center.x, Center.y, 100.0f, 100.0f, 100.0f, 0, 0, Graphics()->ScreenAspect(), 1.0f, aPoints);
-	Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
+	CScreenRect ScreenRect = Graphics()->MapScreenToWorld(Center.x, Center.y, 100.0f, 100.0f, 100.0f, 0, 0, Graphics()->ScreenAspect(), 1.0f);
+	Graphics()->MapScreen(ScreenRect);
 
 	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && GameClient()->m_Snap.m_pLocalCharacter)
 	{
@@ -735,7 +734,7 @@ void CHud::RenderCursor()
 			return;
 
 		// Calculate factor to keep cursor on screen
-		const vec2 HalfSize = vec2(Center.x - aPoints[0], Center.y - aPoints[1]);
+		const vec2 HalfSize = Center - ScreenRect.m_TopLeft;
 		const vec2 ScreenPos = (GameClient()->m_CursorInfo.WorldTarget() - Center) / GameClient()->m_Camera.m_Zoom;
 		const float ClampFactor = std::max({
 			1.0f,
@@ -753,11 +752,11 @@ void CHud::RenderCursor()
 	constexpr float Padding = 38.0f;
 	const vec2 IslandPosHud = this->IslandPos();
 	const vec2 IslandSizeHud = this->IslandSize();
-	const float WorldWidth = aPoints[2] - aPoints[0];
-	const float WorldHeight = aPoints[3] - aPoints[1];
+	const float WorldWidth = ScreenRect.Width();
+	const float WorldHeight = ScreenRect.Height();
 	const vec2 IslandPos(
-		aPoints[0] + (IslandPosHud.x / m_Width) * WorldWidth,
-		aPoints[1] + (IslandPosHud.y / m_Height) * WorldHeight);
+		ScreenRect.m_TopLeft.x + (IslandPosHud.x / m_Width) * WorldWidth,
+		ScreenRect.m_TopLeft.y + (IslandPosHud.y / m_Height) * WorldHeight);
 	const vec2 IslandSize(
 		(IslandSizeHud.x / m_Width) * WorldWidth,
 		(IslandSizeHud.y / m_Height) * WorldHeight);
@@ -1863,7 +1862,7 @@ void CHud::OnRender()
 
 	m_Width = 300.0f * Graphics()->ScreenAspect();
 	m_Height = 300.0f;
-	Graphics()->MapScreen(0.0f, 0.0f, m_Width, m_Height);
+	Graphics()->MapScreenToSize(m_Width, m_Height);
 
 #if defined(CONF_VIDEORECORDER)
 	if((IVideo::Current() && g_Config.m_ClVideoShowhud) || (!IVideo::Current() && g_Config.m_ClShowhud))

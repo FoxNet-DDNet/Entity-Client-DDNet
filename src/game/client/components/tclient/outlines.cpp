@@ -145,12 +145,11 @@ void COutlines::OnRender()
 
 	const float Scale = 32.0f;
 
-	float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-	Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
-	int StartY = (int)(ScreenY0 / Scale) - 1;
-	int StartX = (int)(ScreenX0 / Scale) - 1;
-	int EndY = (int)(ScreenY1 / Scale) + 1;
-	int EndX = (int)(ScreenX1 / Scale) + 1;
+	const CScreenRect ScreenRect = Graphics()->GetScreen();
+	int StartY = (int)(ScreenRect.m_TopLeft.y / Scale) - 1;
+	int StartX = (int)(ScreenRect.m_TopLeft.x / Scale) - 1;
+	int EndY = (int)(ScreenRect.m_BottomRight.y / Scale) + 1;
+	int EndX = (int)(ScreenRect.m_BottomRight.x / Scale) + 1;
 	int MaxScale = 12;
 	if(EndX - StartX > Graphics()->ScreenWidth() / MaxScale || EndY - StartY > Graphics()->ScreenHeight() / MaxScale)
 	{

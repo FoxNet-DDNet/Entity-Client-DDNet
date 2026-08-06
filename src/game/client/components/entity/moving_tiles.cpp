@@ -148,15 +148,14 @@ void CMovingTiles::OnRender()
 		{
 			Graphics()->MapScreenToInterface(Center.x, Center.y, Zoom);
 
-			float ScreenX0, ScreenY0, ScreenX1, ScreenY1;
-			Graphics()->GetScreen(&ScreenX0, &ScreenY0, &ScreenX1, &ScreenY1);
+			const CScreenRect ScreenRect = Graphics()->GetScreen();
 
-			const float ScreenWidth = ScreenX1 - ScreenX0;
-			const float ScreenHeight = ScreenY1 - ScreenY0;
-			const float Left = pGroup->m_ClipX - ScreenX0;
-			const float Top = pGroup->m_ClipY - ScreenY0;
-			const float Right = pGroup->m_ClipX + pGroup->m_ClipW - ScreenX0;
-			const float Bottom = pGroup->m_ClipY + pGroup->m_ClipH - ScreenY0;
+			const float ScreenWidth = ScreenRect.Width();
+			const float ScreenHeight = ScreenRect.Height();
+			const float Left = pGroup->m_ClipX - ScreenRect.m_TopLeft.x;
+			const float Top = pGroup->m_ClipY - ScreenRect.m_TopLeft.y;
+			const float Right = pGroup->m_ClipX + pGroup->m_ClipW - ScreenRect.m_TopLeft.x;
+			const float Bottom = pGroup->m_ClipY + pGroup->m_ClipH - ScreenRect.m_TopLeft.y;
 
 			if(Right < 0.0f || Left > ScreenWidth || Bottom < 0.0f || Top > ScreenHeight)
 				return false;
@@ -170,13 +169,12 @@ void CMovingTiles::OnRender()
 		}
 
 		const int ParallaxZoom = std::clamp(std::max(pGroup->m_ParallaxX, pGroup->m_ParallaxY), 0, 100);
-		float aPoints[4];
-		Graphics()->MapScreenToWorld(
+		const CScreenRect WorldRect = Graphics()->MapScreenToWorld(
 			Center.x, Center.y,
 			pGroup->m_ParallaxX, pGroup->m_ParallaxY, (float)ParallaxZoom,
 			pGroup->m_OffsetX, pGroup->m_OffsetY,
-			Graphics()->ScreenAspect(), Zoom, aPoints);
-		Graphics()->MapScreen(aPoints[0], aPoints[1], aPoints[2], aPoints[3]);
+			Graphics()->ScreenAspect(), Zoom);
+		Graphics()->MapScreen(WorldRect);
 
 		return true;
 	};

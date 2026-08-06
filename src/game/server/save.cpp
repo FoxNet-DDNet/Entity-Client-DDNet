@@ -3,6 +3,8 @@
 #include "player.h"
 #include "teams.h"
 
+#include <base/log.h>
+
 #include <engine/server.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
@@ -352,11 +354,11 @@ char *CSaveTee::GetString(const CSaveTeam *pTeam)
 	return m_aString;
 }
 
-int CSaveTee::FromString(const char *pString)
+bool CSaveTee::FromString(const char *pString, int MembersCount)
 {
 	int Num;
 	Num = sscanf(pString,
-		"%[^\t]\t%d\t%d\t%d\t%d\t%d\t"
+		"%15[^\t]\t%d\t%d\t%d\t%d\t%d\t"
 		// weapons
 		"%d\t%d\t%d\t%d\t"
 		"%d\t%d\t%d\t%d\t"
@@ -467,12 +469,48 @@ int CSaveTee::FromString(const char *pString)
 		m_Ninja.m_OldVelAmount = 0;
 		[[fallthrough]];
 	case 115:
-		return 0;
+		break;
 	default:
 		dbg_msg("load", "failed to load tee-string");
 		dbg_msg("load", "loaded %d vars", Num);
-		return Num + 1; // never 0 here
+		return false;
 	}
+
+	if(m_LastWeapon < 0 || m_LastWeapon >= NUM_WEAPONS)
+	{
+		log_error("load", "savegame: tee has an invalid last weapon: %d", m_LastWeapon);
+		return false;
+	}
+	// -1 is valid, it means that no weapon is queued
+	if(m_QueuedWeapon < -1 || m_QueuedWeapon >= NUM_WEAPONS)
+	{
+		log_error("load", "savegame: tee has an invalid queued weapon: %d", m_QueuedWeapon);
+		return false;
+	}
+	if(m_ActiveWeapon < 0 || m_ActiveWeapon >= NUM_WEAPONS)
+	{
+		log_error("load", "savegame: tee has an invalid active weapon: %d", m_ActiveWeapon);
+		return false;
+	}
+	if(m_TuneZone < 0 || m_TuneZone >= TuneZone::NUM)
+	{
+		log_error("load", "savegame: tee has an invalid tune zone: %d", m_TuneZone);
+		return false;
+	}
+	// TuneZone::OVERRIDE_NONE is valid, it means that no zone leave message is shown
+	if(m_TuneZoneOld < TuneZone::OVERRIDE_NONE || m_TuneZoneOld >= TuneZone::NUM)
+	{
+		log_error("load", "savegame: tee has an invalid old tune zone: %d", m_TuneZoneOld);
+		return false;
+	}
+	// -1 is valid, it means that no player is hooked
+	if(m_HookedPlayer < -1 || m_HookedPlayer >= MembersCount)
+	{
+		log_error("load", "savegame: tee has an invalid hooked player: %d", m_HookedPlayer);
+		return false;
+	}
+
+	return true;
 }
 
 void CSaveTee::LoadHookedPlayer(const CSaveTeam *pTeam)
@@ -756,9 +794,9 @@ int CSaveTeam::FromString(const char *pString)
 		m_pSavedTees = nullptr;
 	}
 
-	if(m_MembersCount > 64)
+	if(m_MembersCount < 0 || m_MembersCount > SERVER_MAX_CLIENTS)
 	{
-		dbg_msg("load", "savegame: team has too many players");
+		dbg_msg("load", "savegame: team has an invalid number of players: %d", m_MembersCount);
 		return 1;
 	}
 	else if(m_MembersCount)
@@ -788,11 +826,9 @@ int CSaveTeam::FromString(const char *pString)
 		if(StrSize < sizeof(aSaveTee))
 		{
 			str_copy(aSaveTee, pCopyPos, StrSize);
-			int Num = m_pSavedTees[n].FromString(aSaveTee);
-			if(Num)
+			if(!m_pSavedTees[n].FromString(aSaveTee, m_MembersCount))
 			{
 				dbg_msg("load", "failed to load tee");
-				dbg_msg("load", "loaded %d vars", Num - 1);
 				return 1;
 			}
 		}
@@ -807,6 +843,12 @@ int CSaveTeam::FromString(const char *pString)
 	{
 		delete[] m_pSwitchers;
 		m_pSwitchers = nullptr;
+	}
+
+	if(m_HighestSwitchNumber < 0 || m_HighestSwitchNumber > 255)
+	{
+		dbg_msg("load", "savegame: team has an invalid highest switch number: %d", m_HighestSwitchNumber);
+		return 1;
 	}
 
 	if(m_HighestSwitchNumber)

@@ -2180,6 +2180,7 @@ set_src(BASE GLOB_RECURSE src/base
   lock.h
   log.cpp
   log.h
+  log_color.h
   logger.h
   math.h
   mem.cpp
@@ -3443,6 +3444,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     mapitems_test.cpp
     math_test.cpp
     mem_test.cpp
+    mutes_test.cpp
     name_ban_test.cpp
     net_test.cpp
     netaddr_test.cpp
