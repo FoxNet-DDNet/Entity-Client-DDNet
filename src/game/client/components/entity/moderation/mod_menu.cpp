@@ -19,6 +19,7 @@
 #include <game/client/components/chat.h>
 #include <game/client/components/countryflags.h>
 #include <game/client/components/entity/mediaplayer/media_player_impl.h>
+#include <game/client/components/entity/moderation/mod_quick_actions.h>
 #include <game/client/components/menus.h>
 #include <game/client/components/skins.h>
 #include <game/client/components/tclient/statusbar.h>
@@ -104,6 +105,11 @@ std::string ReplaceClientIdPlaceholder(std::string_view Command, int ClientId)
 	}
 
 	return Result;
+}
+
+bool CommandTargetsPlayers(const char *pCommandTemplate)
+{
+	return str_find(pCommandTemplate, "%d") != nullptr;
 }
 
 std::vector<std::string> BuildRconCommandChunks(const char *pCommandTemplate, const bool (&aSelectedPlayers)[MAX_CLIENTS])
@@ -616,6 +622,9 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 		GameClient()->m_GameConsole.SetRemoteConsoleInput(vCommandChunks.front().c_str());
 	}
 
+	LeftView.HSplitTop(12.0f, nullptr, &LeftView);
+	RenderModerationQuickActions(LeftView, &s_CommandInput, s_aSelectedPlayers);
+
 	CScrollRegionParams ScrollParams;
 	ScrollParams.m_ScrollUnit = 90.0f;
 	s_PlayerScrollRegion.Begin(&PlayerList, &ScrollParams);
@@ -762,5 +771,365 @@ void CMenus::RenderModerationMenu(CUIRect MainView)
 		for(bool &Selected : s_aSelectedPlayers)
 			Selected = false;
 		s_LastSelectedClientId = -1;
+	}
+}
+
+void CMenus::RenderModerationQuickActions(CUIRect View, CLineInput *pCommandInput, const bool (&aSelectedPlayers)[MAX_CLIENTS])
+{
+	static bool s_EditMode = false;
+	static int s_SelectedAction = -1;
+	static int s_LoadedAction = -1;
+	static char s_aEditName[MODQUICKACTION_MAX_NAME] = "";
+	static char s_aEditCommand[MODQUICKACTION_MAX_CMD] = "";
+	static char s_aHoveredCommand[MODQUICKACTION_MAX_CMD] = "";
+	static int s_DraggedAction = -1;
+	static bool s_Dragging = false;
+	static vec2 s_DragStartPos = vec2(0.0f, 0.0f);
+	static CScrollRegion s_ActionScrollRegion;
+	static CButtonContainer s_aActionButtons[MODQUICKACTION_MAX_ACTIONS];
+
+	static CLineInput s_NameInput;
+	static CLineInput s_ActionCommandInput;
+	s_NameInput.SetBuffer(s_aEditName, sizeof(s_aEditName));
+	s_NameInput.SetEmptyText(EcLocalize("Button name"));
+	s_ActionCommandInput.SetBuffer(s_aEditCommand, sizeof(s_aEditCommand));
+	s_ActionCommandInput.SetEmptyText(EcLocalize("Command, %d is replaced by the client id"));
+
+	CModQuickActions *pQuickActions = &GameClient()->m_ModQuickActions;
+	if(s_SelectedAction >= (int)pQuickActions->m_vActions.size())
+		s_SelectedAction = -1;
+
+	CUIRect Header, Hint, EditButton;
+	View.HSplitTop(24.0f, &Header, &View);
+	View.HSplitTop(2.0f, nullptr, &View);
+	View.HSplitTop(14.0f, &Hint, &View);
+	View.HSplitTop(6.0f, nullptr, &View);
+
+	Header.VSplitRight(70.0f, &Header, &EditButton);
+	Header.VSplitRight(5.0f, &Header, nullptr);
+	Ui()->DoLabel(&Header, EcLocalize("Quick Actions"), 18.0f, TEXTALIGN_ML);
+
+	// The moderation page keeps rendering when the rcon authentication is lost, so
+	// the quick actions are gated here as well and not only by the menu tab.
+	if(!Client()->RconAuthed())
+	{
+		s_EditMode = false;
+		s_SelectedAction = -1;
+		s_DraggedAction = -1;
+		s_Dragging = false;
+		TextRender()->TextColor(ColorRGBA(1.0f, 1.0f, 1.0f, 0.45f));
+		Ui()->DoLabel(&Hint, EcLocalize("Quick actions require rcon authentication"), 11.0f, TEXTALIGN_ML);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+		return;
+	}
+
+	static CButtonContainer s_EditModeButton;
+	if(DoButton_Menu(&s_EditModeButton, s_EditMode ? EcLocalize("Done") : EcLocalize("Edit"), s_EditMode, &EditButton))
+	{
+		s_EditMode = !s_EditMode;
+		s_SelectedAction = -1;
+		s_DraggedAction = -1;
+		s_Dragging = false;
+	}
+
+	TextRender()->TextColor(ColorRGBA(1.0f, 1.0f, 1.0f, 0.45f));
+	Ui()->DoLabel(&Hint, s_EditMode ? EcLocalize("Click to edit an action, drag it to move it somewhere else") : EcLocalize("Left click runs the action on the selection, right click copies it above"), 11.0f, TEXTALIGN_ML);
+	TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+	// Load the selected action into the edit buffers before anything can change the
+	// selection again, so that editing never writes into the previously selected one.
+	if(s_SelectedAction != s_LoadedAction)
+	{
+		if(s_SelectedAction >= 0)
+		{
+			s_NameInput.Set(pQuickActions->m_vActions[s_SelectedAction].m_aName);
+			s_ActionCommandInput.Set(pQuickActions->m_vActions[s_SelectedAction].m_aCommand);
+		}
+		else
+		{
+			s_NameInput.Clear();
+			s_ActionCommandInput.Clear();
+		}
+		s_LoadedAction = s_SelectedAction;
+	}
+
+	if(s_EditMode)
+	{
+		CUIRect Editor, Row, Label, Input, AddButton, DeleteButton;
+		View.HSplitBottom(68.0f, &View, &Editor);
+		View.HSplitBottom(8.0f, &View, nullptr);
+
+		Editor.HSplitTop(20.0f, &Row, &Editor);
+		Row.VSplitLeft(70.0f, &Label, &Input);
+		Ui()->DoLabel(&Label, EcLocalize("Name"), 12.0f, TEXTALIGN_ML);
+		Ui()->DoEditBox(&s_NameInput, &Input, 11.0f);
+
+		// The syntax check is only a hint, a command is never rejected: servers can
+		// have commands that this client does not know about.
+		bool ExactCommandMatch = false;
+		std::string DisplayedCommandName;
+		const IConsole::ICommandInfo *pCommandInfo = FindDisplayedCommandInfo(Console(), Client(), s_aEditCommand, ExactCommandMatch, DisplayedCommandName);
+		const bool CommandSyntaxValid = s_aEditCommand[0] == '\0' || (ExactCommandMatch && ValidateCommandSyntax(s_aEditCommand, pCommandInfo));
+
+		Editor.HSplitTop(4.0f, nullptr, &Editor);
+		Editor.HSplitTop(20.0f, &Row, &Editor);
+		Row.VSplitLeft(70.0f, &Label, &Input);
+		Ui()->DoLabel(&Label, EcLocalize("Command"), 12.0f, TEXTALIGN_ML);
+		std::vector<STextColorSplit> vCommandColorSplits;
+		if(!CommandSyntaxValid)
+			vCommandColorSplits.emplace_back(0, -1, ColorRGBA(1.0f, 0.4f, 0.4f, 1.0f));
+		Ui()->DoEditBox(&s_ActionCommandInput, &Input, 11.0f, IGraphics::CORNER_ALL, vCommandColorSplits);
+
+		if(s_aEditCommand[0] != '\0')
+		{
+			// The tooltip only keeps the pointer around, so the text has to outlive the frame.
+			static char s_aCommandTooltip[IConsole::CMDLINE_LENGTH + IConsole::TEMPCMD_PARAMS_LENGTH + IConsole::TEMPCMD_HELP_LENGTH + 8];
+			if(pCommandInfo == nullptr)
+			{
+				str_copy(s_aCommandTooltip, EcLocalize("Unknown rcon command"));
+			}
+			else
+			{
+				if(pCommandInfo->Params()[0] != '\0')
+					str_format(s_aCommandTooltip, sizeof(s_aCommandTooltip), "%s %s", DisplayedCommandName.c_str(), pCommandInfo->Params());
+				else
+					str_copy(s_aCommandTooltip, DisplayedCommandName.c_str());
+				if(pCommandInfo->Help()[0] != '\0')
+				{
+					str_append(s_aCommandTooltip, "\n");
+					str_append(s_aCommandTooltip, pCommandInfo->Help());
+				}
+			}
+			GameClient()->m_Tooltips.DoToolTip(&s_ActionCommandInput, &Input, s_aCommandTooltip, 200.0f);
+		}
+
+		if(s_SelectedAction >= 0)
+		{
+			str_copy(pQuickActions->m_vActions[s_SelectedAction].m_aName, s_aEditName);
+			str_copy(pQuickActions->m_vActions[s_SelectedAction].m_aCommand, s_aEditCommand);
+		}
+
+		Editor.HSplitTop(4.0f, nullptr, &Editor);
+		Editor.HSplitTop(20.0f, &Row, &Editor);
+		Row.VSplitMid(&AddButton, &DeleteButton, 5.0f);
+
+		// Adding takes over whatever is in the input fields, so an action can be
+		// written out first and then added without losing what was typed.
+		static CButtonContainer s_AddActionButton;
+		const bool AddDisabled = (int)pQuickActions->m_vActions.size() >= MODQUICKACTION_MAX_ACTIONS;
+		if(DoButtonForceFontSize_Menu(&s_AddActionButton, EcLocalize("Add Action"), 0, &AddButton, 11.0f, AddDisabled))
+			s_SelectedAction = pQuickActions->AddAction(s_aEditName[0] != '\0' ? s_aEditName : "New Action", s_aEditCommand);
+
+		static CButtonContainer s_DeleteActionButton;
+		if(DoButtonForceFontSize_Menu(&s_DeleteActionButton, EcLocalize("Delete Action"), 0, &DeleteButton, 11.0f, s_SelectedAction < 0))
+		{
+			pQuickActions->RemoveAction(s_SelectedAction);
+			s_SelectedAction = -1;
+			s_DraggedAction = -1;
+			s_Dragging = false;
+		}
+	}
+
+	if(View.h < 20.0f)
+		return;
+
+	if(pQuickActions->m_vActions.empty())
+	{
+		CUIRect EmptyLabel;
+		View.HSplitTop(20.0f, &EmptyLabel, nullptr);
+		TextRender()->TextColor(ColorRGBA(1.0f, 1.0f, 1.0f, 0.35f));
+		Ui()->DoLabel(&EmptyLabel, s_EditMode ? EcLocalize("Use \"Add Action\" to create a quick action") : EcLocalize("No quick actions yet, use \"Edit\" to add one"), 11.0f, TEXTALIGN_MC);
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+		return;
+	}
+
+	CScrollRegionParams ScrollParams;
+	ScrollParams.m_ScrollUnit = 60.0f;
+	s_ActionScrollRegion.Begin(&View, &ScrollParams);
+
+	// The tiles are laid out into as many columns as the available width fits, so
+	// the grid grows with the amount of actions instead of using a fixed layout.
+	const float Spacing = 4.0f;
+	const float TileHeight = 22.0f;
+	const float MinTileWidth = 92.0f;
+	const int NumActions = (int)pQuickActions->m_vActions.size();
+	const int Columns = std::max(1, (int)((View.w + Spacing) / (MinTileWidth + Spacing)));
+	const float TileWidth = (View.w - (Columns - 1) * Spacing) / Columns;
+
+	std::vector<CUIRect> vTiles;
+	vTiles.reserve(NumActions);
+	CUIRect Row = View;
+	for(int Index = 0; Index < NumActions; ++Index)
+	{
+		if(Index % Columns == 0)
+		{
+			CUIRect SpacedRow;
+			View.HSplitTop(TileHeight + Spacing, &SpacedRow, &View);
+			s_ActionScrollRegion.AddRect(SpacedRow);
+			SpacedRow.HSplitTop(TileHeight, &Row, nullptr);
+		}
+
+		CUIRect Tile;
+		Row.VSplitLeft(TileWidth, &Tile, &Row);
+		Row.VSplitLeft(Spacing, nullptr, &Row);
+		vTiles.push_back(Tile);
+	}
+
+	int HoveredAction = -1;
+	for(int Index = 0; Index < NumActions; ++Index)
+	{
+		if(Ui()->MouseHovered(&vTiles[Index]))
+		{
+			HoveredAction = Index;
+			break;
+		}
+	}
+
+	const bool HasSelectedPlayers = CountSelectedPlayers(aSelectedPlayers) > 0;
+	int MoveFrom = -1;
+	int MoveTo = -1;
+
+	for(int Index = 0; Index < NumActions; ++Index)
+	{
+		const CUIRect &Tile = vTiles[Index];
+		if(s_ActionScrollRegion.RectClipped(Tile))
+			continue;
+
+		const CModQuickActions::CAction &Action = pQuickActions->m_vActions[Index];
+		const bool TargetsPlayers = CommandTargetsPlayers(Action.m_aCommand);
+		const bool CanExecute = Action.m_aCommand[0] != '\0' && (!TargetsPlayers || HasSelectedPlayers);
+
+		if(s_EditMode)
+		{
+			bool Clicked = false;
+			bool Abrupted = false;
+			Ui()->DoDraggableButtonLogic(&s_aActionButtons[Index], 0, &Tile, &Clicked, &Abrupted);
+
+			// DoDraggableButtonLogic returns 0 on the frame the tile is pressed, so the
+			// active item is used to detect the start of a possible drag.
+			if(s_DraggedAction != Index && Ui()->ActiveItem() == &s_aActionButtons[Index])
+			{
+				s_DraggedAction = Index;
+				s_DragStartPos = Ui()->MousePos();
+				s_Dragging = false;
+			}
+
+			if(s_DraggedAction == Index)
+			{
+				if(distance(Ui()->MousePos(), s_DragStartPos) > 5.0f)
+					s_Dragging = true;
+
+				if(Abrupted)
+				{
+					s_DraggedAction = -1;
+					s_Dragging = false;
+				}
+				else if(Clicked)
+				{
+					if(s_Dragging)
+					{
+						if(HoveredAction >= 0 && HoveredAction != Index)
+						{
+							MoveFrom = Index;
+							MoveTo = HoveredAction;
+						}
+					}
+					else
+					{
+						s_SelectedAction = s_SelectedAction == Index ? -1 : Index;
+					}
+					s_DraggedAction = -1;
+					s_Dragging = false;
+				}
+			}
+		}
+		else
+		{
+			const int Result = Ui()->DoButtonLogic(&s_aActionButtons[Index], 0, &Tile, BUTTONFLAG_LEFT | BUTTONFLAG_RIGHT);
+			if(Result == 1 && CanExecute)
+			{
+				if(TargetsPlayers)
+				{
+					for(const std::string &Chunk : BuildRconCommandChunks(Action.m_aCommand, aSelectedPlayers))
+						Client()->Rcon(Chunk.c_str());
+				}
+				else
+				{
+					Client()->Rcon(Action.m_aCommand);
+				}
+			}
+			else if(Result == 2 && Action.m_aCommand[0] != '\0')
+			{
+				pCommandInput->Set(Action.m_aCommand);
+				pCommandInput->SetCursorOffset(str_length(Action.m_aCommand));
+				pCommandInput->SelectNothing();
+			}
+		}
+
+		const bool Hovered = Ui()->HotItem() == &s_aActionButtons[Index];
+		const bool Selected = s_EditMode && s_SelectedAction == Index;
+		const bool DropTarget = s_Dragging && HoveredAction == Index && s_DraggedAction != Index;
+
+		// Same base color and hover/press response as the other menu buttons
+		ColorRGBA TileColor(1.0f, 1.0f, 1.0f, 0.5f);
+		if(Selected)
+			TileColor = ColorRGBA(0.5f, 0.95f, 0.7f, 0.5f);
+		else if(DropTarget)
+			TileColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.85f);
+		TileColor.a *= Ui()->ButtonColorMul(&s_aActionButtons[Index]);
+		if(!s_EditMode && !CanExecute)
+			TileColor.a *= 0.5f;
+		if(s_Dragging && s_DraggedAction == Index)
+			TileColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.15f);
+		Tile.Draw(TileColor, IGraphics::CORNER_ALL, 5.0f);
+
+		if(Hovered && Action.m_aCommand[0] != '\0')
+		{
+			// The tooltip only keeps the pointer around, and only the hovered tile can
+			// show one, so a single shared buffer is enough to keep it valid.
+			str_copy(s_aHoveredCommand, Action.m_aCommand);
+			GameClient()->m_Tooltips.DoToolTip(&s_aActionButtons[Index], &Tile, s_aHoveredCommand);
+		}
+
+		CUIRect TileLabel;
+		Tile.VMargin(4.0f, &TileLabel);
+		SLabelProperties LabelProps;
+		LabelProps.m_MaxWidth = TileLabel.w;
+		LabelProps.m_EllipsisAtEnd = true;
+		Ui()->DoLabel(&TileLabel, Action.m_aName[0] != '\0' ? Action.m_aName : Action.m_aCommand, 11.0f, TEXTALIGN_MC, LabelProps);
+	}
+
+	// Stop dragging when the tile stopped being the active element without being
+	// released on top of the grid, for example when it was scrolled out of view.
+	if(s_DraggedAction >= 0 && (s_DraggedAction >= NumActions || Ui()->ActiveItem() != &s_aActionButtons[s_DraggedAction]))
+	{
+		s_DraggedAction = -1;
+		s_Dragging = false;
+	}
+
+	if(s_Dragging && s_DraggedAction >= 0)
+	{
+		const CModQuickActions::CAction &Action = pQuickActions->m_vActions[s_DraggedAction];
+		CUIRect Floating = vTiles[s_DraggedAction];
+		Floating.x = Ui()->MousePos().x - Floating.w / 2.0f;
+		Floating.y = Ui()->MousePos().y - Floating.h / 2.0f;
+		Floating.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.85f), IGraphics::CORNER_ALL, 5.0f);
+
+		CUIRect FloatingLabel;
+		Floating.VMargin(4.0f, &FloatingLabel);
+		SLabelProperties LabelProps;
+		LabelProps.m_MaxWidth = FloatingLabel.w;
+		LabelProps.m_EllipsisAtEnd = true;
+		Ui()->DoLabel(&FloatingLabel, Action.m_aName[0] != '\0' ? Action.m_aName : Action.m_aCommand, 11.0f, TEXTALIGN_MC, LabelProps);
+	}
+
+	s_ActionScrollRegion.End();
+
+	// Moving shifts the indices of the other actions, so a selection that is not the
+	// moved one is dropped instead of pointing at a different action afterwards.
+	if(MoveFrom >= 0)
+	{
+		pQuickActions->MoveAction(MoveFrom, MoveTo);
+		s_SelectedAction = s_SelectedAction == MoveFrom ? MoveTo : -1;
 	}
 }

@@ -919,6 +919,7 @@ private:
 	void RenderEClientNewsPage(CUIRect MainView);
 
 	void RenderModerationMenu(CUIRect MainView);
+	void RenderModerationQuickActions(CUIRect View, CLineInput *pCommandInput, const bool (&aSelectedPlayers)[MAX_CLIENTS]);
 	CCachedText m_aModMenuScore[MAX_CLIENTS];
 	CCachedText m_aModMenuScoreMillis[MAX_CLIENTS];
 

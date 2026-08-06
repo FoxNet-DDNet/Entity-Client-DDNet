@@ -2626,6 +2626,8 @@ if(CLIENT)
     components/entity/mediaplayer/media_player_winrt.cpp
     components/entity/menus_entity.cpp
     components/entity/moderation/mod_menu.cpp
+    components/entity/moderation/mod_quick_actions.cpp
+    components/entity/moderation/mod_quick_actions.h
     components/entity/moving_tiles.cpp
     components/entity/moving_tiles.h 
     components/entity/performance_statistics.cpp

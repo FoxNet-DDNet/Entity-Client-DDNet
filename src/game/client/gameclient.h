@@ -78,6 +78,7 @@
 #include "components/entity/map_finish_browser.h"
 #include "components/entity/map_overview.h"
 #include "components/entity/mediaplayer/media_player.h"
+#include "components/entity/moderation/mod_quick_actions.h"
 #include "components/entity/moving_tiles.h"
 #include "components/entity/performance_statistics.h"
 #include "components/entity/physicball.h"
@@ -271,6 +272,7 @@ public:
 	CMapFinishBrowser m_MapFinishBrowser;
 	CMapOverview m_MapOverview;
 	CMediaViewer m_MediaViewer;
+	CModQuickActions m_ModQuickActions;
 	CPerformanceStatistics m_PerformanceStatistics;
 	CPhysicBalls m_PhysicBalls;
 	CPlayerActions m_PlayerActions;
