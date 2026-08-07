@@ -353,7 +353,7 @@ MACRO_CONFIG_INT(ClResetPlayerActionMouse, ec_reset_playeraction_mouse, 0, 0, 1,
 MACRO_CONFIG_INT(ClStatusBar, ec_statusbar, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable status bar")
 
 MACRO_CONFIG_INT(ClStatusBar12HourClock, ec_statusbar_12_hour_clock, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use 12 hour clock in local time")
-MACRO_CONFIG_INT(ClStatusBarLocalTimeSeocnds, ec_statusbar_local_time_seconds, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show seconds in local time")
+MACRO_CONFIG_INT(ClStatusBarLocalTimeSeconds, ec_statusbar_local_time_seconds, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show seconds in local time")
 MACRO_CONFIG_INT(ClStatusBarHeight, ec_statusbar_height, 8, 1, 16, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Height of the status bar")
 
 MACRO_CONFIG_COL(ClStatusBarColor, ec_statusbar_color, 3221225472, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Status bar background color")

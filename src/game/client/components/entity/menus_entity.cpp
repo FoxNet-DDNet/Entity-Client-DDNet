@@ -1159,7 +1159,7 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 	Ui()->DoLabel(&Label, EcLocalize("Local Time"), HeadlineFontSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatusBar12HourClock, EcLocalize("Use 12 hour clock"), &g_Config.m_ClStatusBar12HourClock, &LeftView, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatusBarLocalTimeSeocnds, EcLocalize("Show seconds on clock"), &g_Config.m_ClStatusBarLocalTimeSeocnds, &LeftView, LineSize);
+	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatusBarLocalTimeSeconds, EcLocalize("Show seconds on clock"), &g_Config.m_ClStatusBarLocalTimeSeconds, &LeftView, LineSize);
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
 
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
@@ -3938,7 +3938,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 					pLineInput->SetBuffer(pBuffer, BufferSize);
 					pLineInput->SetEmptyText(pEmptyText);
 					if(Ui()->DoEditBox(pLineInput, &EditRect, EditBoxFontSize))
-						Client()->DiscordRPCchange();
+						Client()->DiscordRPCUpdate();
 				};
 
 				static CLineInput s_OnlineInput;

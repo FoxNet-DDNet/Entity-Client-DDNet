@@ -397,7 +397,7 @@ public:
 	bool m_IsLocalFrozen = false;
 
 	// EClient
-	virtual void DiscordRPCchange() = 0;
+	virtual void DiscordRPCUpdate() = 0;
 	virtual void SendFastInputsInfo(int Conn) = 0;
 	int m_FoxNetVersion = 0;
 };

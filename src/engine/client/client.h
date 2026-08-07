@@ -552,7 +552,7 @@ public:
 
 	// <E-Client
 private:
-	static void ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData);
+	static void ConDiscordRPCUpdate(IConsole::IResult *pResult, void *pUserData);
 	bool m_aCodeRunAfterJoinConsole[NUM_DUMMIES] = {false, false};
 	bool m_aOnConnect[NUM_DUMMIES] = {false, false};
 
@@ -560,7 +560,7 @@ private:
 	void SendSupportsCosmeticSnapInfo(int Conn);
 
 public:
-	void DiscordRPCchange() override;
+	void DiscordRPCUpdate() override;
 	void SendFastInputsInfo(int Conn) override;
 	// EClient>
 };

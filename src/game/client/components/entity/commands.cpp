@@ -566,7 +566,7 @@ void CEClient::ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData
 {
 	pfnCallback(pResult, pCallbackUserData);
 	CEClient *pSelf = (CEClient *)pUserData;
-	pSelf->Client()->DiscordRPCchange();
+	pSelf->Client()->DiscordRPCUpdate();
 }
 
 void CEClient::ConchainDDNetProcessPriority(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)

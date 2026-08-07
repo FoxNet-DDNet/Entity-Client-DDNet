@@ -490,16 +490,16 @@ void CClient::SetState(EClientState State)
 	{
 		Steam()->ClearGameInfo();
 	}
-	DiscordRPCchange();
+	DiscordRPCUpdate();
 }
 
-void CClient::ConDiscordRPCchange(IConsole::IResult *pResult, void *pUserData)
+void CClient::ConDiscordRPCUpdate(IConsole::IResult *pResult, void *pUserData)
 {
 	CClient *pSelf = (CClient *)pUserData;
-	pSelf->DiscordRPCchange();
+	pSelf->DiscordRPCUpdate();
 }
 
-void CClient::DiscordRPCchange()
+void CClient::DiscordRPCUpdate()
 {
 	if(State() == IClient::STATE_ONLINE)
 	{
@@ -4758,7 +4758,7 @@ void CClient::RegisterCommands()
 	m_pConsole->Chain("stdout_output_level", ConchainStdoutOutputLevel, this);
 
 	// EClient
-	m_pConsole->Register("discord_rpc_reload", "", CFGFLAG_CLIENT, ConDiscordRPCchange, this, "Reloads The Discord RPC");
+	m_pConsole->Register("discord_rpc_reload", "", CFGFLAG_CLIENT, ConDiscordRPCUpdate, this, "Reloads The Discord RPC");
 }
 
 static CClient *CreateClient()
