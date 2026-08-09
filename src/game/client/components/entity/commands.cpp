@@ -203,6 +203,26 @@ void CEClient::ConSetPlaytime(IConsole::IResult *pResult, void *pUserData)
 	pSelf->m_Playtime = pResult->GetInteger64(0);
 }
 
+void CEClient::ConDumpVotes(IConsole::IResult *pResult, void *pUserData)
+{
+	CEClient *pSelf = (CEClient *)pUserData;
+
+	int Page = pResult->NumArguments() > 0 ? pResult->GetInteger(0) : 0;
+	static const int s_EntriesPerPage = 20;
+	const int Start = Page * s_EntriesPerPage;
+	const int End = (Page + 1) * s_EntriesPerPage;
+
+	int Count = 0;
+	for(const CVoteOptionClient *pOption = pSelf->GameClient()->m_Voting.FirstOption(); pOption; pOption = pOption->m_pNext, Count++)
+	{
+		if(Count < Start || Count >= End)
+		{
+			continue;
+		}
+		log_info("votes", pOption->m_aDescription);
+	}
+}
+
 void CEClient::RestoreSkin()
 {
 	if(g_Config.m_ClDummy)
@@ -510,16 +530,6 @@ void CEClient::OnConsoleInit()
 	Console()->Register("onlineinfo", "", CFGFLAG_CLIENT, ConOnlineInfo, this, "Shows you how many people of default lists are on the current server");
 	Console()->Register("playerinfo", "r[name]", CFGFLAG_CLIENT, ConPlayerInfo, this, "Get Info of a Player");
 
-	// Temporary Lists
-	//Console()->Register("addtempwar", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempWar, this, "temporary War");
-	//Console()->Register("deltempwar", "s[name]", CFGFLAG_CLIENT, ConUnTempWar, this, "remove temporary War");
-
-	//Console()->Register("addtemphelper", "s[name] ?r[reason]", CFGFLAG_CLIENT, ConTempHelper, this, "temporary Helper");
-	//Console()->Register("deltemphelper", "s[name]", CFGFLAG_CLIENT, ConUnTempHelper, this, "remove temporary Helper");
-
-	//Console()->Register("addtempmute", "s[name]", CFGFLAG_CLIENT, ConTempMute, this, "temporary Mute");
-	//Console()->Register("deltempmute", "s[name]", CFGFLAG_CLIENT, ConUnTempMute, this, "remove temporary Mute");
-
 	// Skin Saving/Restoing
 	Console()->Register("restoreskin", "", CFGFLAG_CLIENT, ConRestoreSkin, this, "Restore Your Saved Info");
 	Console()->Register("saveskin", "", CFGFLAG_CLIENT, ConSaveSkin, this, "Save Your Current Info (Skin, name, etc.)");
@@ -543,6 +553,8 @@ void CEClient::OnConsoleInit()
 	Console()->Register("ec_self_murder_count", "l[amount]", CFGFLAG_CLIENT, ConSetDeathCounter, this, "Legacy alias for death_counter");
 	Console()->Register("playtime", "l[amount]", CFGFLAG_CLIENT, ConSetPlaytime, this, "Crash your own client");
 	Console()->Register("death_counter", "l[amount]", CFGFLAG_CLIENT, ConSetDeathCounter, this, "Crash your own client");
+
+	Console()->Register("dump_votes", "?i[offset]", CFGFLAG_CLIENT, ConDumpVotes, this, "Dump 20 votes with optional offset");
 
 	Console()->Chain("ec_fast_input", ConchainFastInputs, this);
 	Console()->Chain("ec_fast_input_amount", ConchainFastInputs, this);

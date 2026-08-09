@@ -63,6 +63,8 @@ class CEClient : public CComponent
 	static void ConSetDeathCounter(IConsole::IResult *pResult, void *pUserData);
 	static void ConSetPlaytime(IConsole::IResult *pResult, void *pUserData);
 
+	static void ConDumpVotes(IConsole::IResult *pResult, void *pUserData);
+
 	static void ConchainFastInputs(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 	static void ConchainDiscordUpdate(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData);
 
