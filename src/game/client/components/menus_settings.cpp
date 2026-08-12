@@ -52,8 +52,8 @@ void CMenus::RenderSettings(CUIRect MainView)
 		Localize("DDNet"),
 		Localize("Assets"),
 		("E-Client"),
-		("Profiles"),
-		Localize("Credits")};
+		("Profiles")};
+
 	static CButtonContainer s_aTabButtons[SETTINGS_LENGTH];
 
 	for(int i = 0; i < SETTINGS_LENGTH; i++)
@@ -126,11 +126,6 @@ void CMenus::RenderSettings(CUIRect MainView)
 	{
 		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_SKINPROFILES);
 		RenderSettingsProfiles(MainView);
-	}
-	else if(g_Config.m_UiSettingsPage == SETTINGS_CREDITS)
-	{
-		GameClient()->m_MenuBackground.ChangePosition(CMenuBackground::POS_SETTINGS_CREDITS);
-		RenderSettingsCredits(MainView);
 	}
 	else
 	{
