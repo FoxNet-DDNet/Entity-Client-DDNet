@@ -17,36 +17,6 @@
 #include <game/teamscore.h>
 #include <game/version.h>
 
-void CGameContext::ConCredits(IConsole::IResult *pResult, void *pUserData)
-{
-	static constexpr const char *CREDITS[] = {
-		"DDNet is run by the DDNet staff (DDNet.org/staff)",
-		"Great maps and many ideas from the great community",
-		"Help and code by eeeee, HMH, east, CookieMichal, Learath2,",
-		"Savander, laxa, Tobii, BeaR, Wohoo, nuborn, timakro, Shiki,",
-		"trml, Soreu, hi_leute_gll, Lady Saavik, Chairn, heinrich5991,",
-		"swick, oy, necropotame, Ryozuki, Redix, d3fault, marcelherd,",
-		"BannZay, ACTom, SiuFuWong, PathosEthosLogos, TsFreddie,",
-		"Jupeyy, noby, ChillerDragon, ZombieToad, weez15, z6zzz,",
-		"Piepow, QingGo, RafaelFF, sctt, jao, daverck, fokkonaut,",
-		"Bojidar, FallenKN, ardadem, archimede67, sirius1242, Aerll,",
-		"trafilaw, Zwelf, Patiga, Konsti, ElXreno, MikiGamer,",
-		"Fireball, Banana090, axblk, yangfl, Kaffeine, Zodiac,",
-		"c0d3d3v, GiuCcc, Ravie, Robyt3, simpygirl, Tater, Cellegen,",
-		"srdante, Nouaa, Voxel, luk51, Vy0x2, Avolicious, louis,",
-		"Marmare314, hus3h, ArijanJ, tarunsamanta2k20, Possseidon,",
-		"+KZ, Teero, furo, dobrykafe, Moiman, JSaurusRex,",
-		"Steinchen, ewancg, gerdoe-jr, melon, KebsCS, bencie,",
-		"DynamoFox, MilkeeyCat, iMilchshake, SchrodingerZhu,",
-		"catseyenebulous, Rei-Tw, Matodor, Emilcha, art0007i, SollyBunny,",
-		"0xfaulty & others",
-		"Based on DDRace by the DDRace developers,",
-		"which is a mod of Teeworlds by the Teeworlds developers.",
-	};
-	for(const char *pLine : CREDITS)
-		log_info("chatresp", "%s", pLine);
-}
-
 void CGameContext::ConInfo(IConsole::IResult *pResult, void *pUserData)
 {
 	log_info("chatresp", "DDraceNetwork Mod. Version: " GAME_VERSION);
@@ -571,27 +541,20 @@ void CGameContext::ConTimeout(IConsole::IResult *pResult, void *pUserData)
 
 	const char *pTimeout = pResult->NumArguments() > 0 ? pResult->GetString(0) : pPlayer->m_aTimeoutCode;
 
-	if(!pSelf->Server()->IsSixup(pResult->m_ClientId))
+	for(int i = 0; i < pSelf->Server()->MaxClients(); i++)
 	{
-		for(int i = 0; i < pSelf->Server()->MaxClients(); i++)
+		if(i == pResult->m_ClientId)
+			continue;
+		if(!pSelf->m_apPlayers[i])
+			continue;
+		if(str_comp(pSelf->m_apPlayers[i]->m_aTimeoutCode, pTimeout))
+			continue;
+		if(pSelf->Server()->SetTimedOut(i, pResult->m_ClientId))
 		{
-			if(i == pResult->m_ClientId)
-				continue;
-			if(!pSelf->m_apPlayers[i])
-				continue;
-			if(str_comp(pSelf->m_apPlayers[i]->m_aTimeoutCode, pTimeout))
-				continue;
-			if(pSelf->Server()->SetTimedOut(i, pResult->m_ClientId))
-			{
-				if(pSelf->m_apPlayers[i]->GetCharacter())
-					pSelf->SendTuningParams(i, pSelf->m_apPlayers[i]->GetCharacter()->m_TuneZone);
-				return;
-			}
+			if(pSelf->m_apPlayers[i]->GetCharacter())
+				pSelf->SendTuningParams(i, pSelf->m_apPlayers[i]->GetCharacter()->m_TuneZone);
+			return;
 		}
-	}
-	else
-	{
-		log_info("chatresp", "Your timeout code has been set. 0.7 clients can not reclaim their tees on timeout; however, a 0.6 client can claim your tee ");
 	}
 
 	pSelf->Server()->SetTimeoutProtected(pResult->m_ClientId);
