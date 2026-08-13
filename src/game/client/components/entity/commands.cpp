@@ -219,7 +219,7 @@ void CEClient::ConDumpVotes(IConsole::IResult *pResult, void *pUserData)
 		{
 			continue;
 		}
-		log_info("votes", pOption->m_aDescription);
+		log_info("votes", "%s", pOption->m_aDescription);
 	}
 }
 
