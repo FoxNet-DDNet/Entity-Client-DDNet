@@ -128,12 +128,14 @@ void CMovingTiles::OnMapLoad()
 
 void CMovingTiles::OnRender()
 {
-	if(g_Config.m_ClOverlayEntities != 100)
+	if(g_Config.m_ClOverlayEntities == 0)
 		return;
 	if(!g_Config.m_ClShowMovingTilesEntities)
 		return;
 	if(m_vQuads.empty())
 		return;
+
+	const float Alpha = g_Config.m_ClOverlayEntities * 0.01f;
 
 	const vec2 Center = GameClient()->m_Camera.m_Center;
 	const float Zoom = GameClient()->m_Camera.m_Zoom;
@@ -256,6 +258,8 @@ void CMovingTiles::OnRender()
 
 				const vec2 Offset(Position.r, Position.g);
 				const float Rotation = Position.b / 180.0f * pi + QuadData.m_Angle;
+
+				Color.a *= Alpha;
 
 				if(g_Config.m_ClShowMovingTilesEntities > 1 || Invisible)
 				{
