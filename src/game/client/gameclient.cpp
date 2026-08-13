@@ -1073,6 +1073,8 @@ bool CGameClient::PredictDummy() const
 
 ColorRGBA CGameClient::GetDDTeamColor(int DDTeam, float Lightness) const
 {
+	DDTeam = DDTeam % 64;
+
 	if(g_Config.m_ClRevertTeamColors)
 		return color_cast<ColorRGBA>(ColorHSLA(DDTeam / 64.0f, 1.0f, Lightness));
 
