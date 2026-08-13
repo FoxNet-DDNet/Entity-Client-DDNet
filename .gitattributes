@@ -1,8 +1,8 @@
-# Normalize all text files to LF in the repository. Git still checks them out
-# with native line endings on Windows when core.autocrlf is enabled.
-# Without this, files committed with CRLF conflict against upstream DDNet (LF)
-# on every line, turning ordinary merges into whole-file conflicts.
-* text=auto
+# Normalize all text files to LF, both in the repository and in the working
+# tree. Without this, files committed with CRLF conflict against upstream DDNet
+# (LF) on every line, turning ordinary merges into whole-file conflicts.
+# eol=lf keeps Windows checkouts LF too, so editors don't reintroduce CRLF.
+* text=auto eol=lf
 
 # Windows scripts need CRLF in the working tree.
 *.bat text eol=crlf
