@@ -1,5 +1,6 @@
 #include "anti_spawn_block.h"
 
+#include <base/math.h>
 #include <base/system.h>
 #include <base/vmath.h>
 
@@ -12,63 +13,106 @@
 #include <game/client/gameclient.h>
 #include <game/gamecore.h>
 
-void CAntiSpawnBlock::Reset(int State)
+void CAntiSpawnBlock::Reset(int Conn, EState State)
 {
-	if(m_State == State)
+	if(m_aConns[Conn].m_State == State)
 		return;
 
-	if(GameClient()->m_Teams.Team(GameClient()->m_Snap.m_LocalClientId) != TEAM_FLOCK)
-		GameClient()->m_Chat.SendChat(0, "/team 0");
+	const int ClientId = GameClient()->m_aLocalIds[Conn];
 
-	m_State = State;
+	if(Client()->State() == IClient::STATE_ONLINE && in_range(ClientId, 0, MAX_CLIENTS - 1) &&
+		GameClient()->m_Teams.Team(ClientId) != TEAM_FLOCK)
+		GameClient()->m_Chat.SendChat(0, "/team 0", Conn);
+
+	m_aConns[Conn].m_State = State;
 }
 
 void CAntiSpawnBlock::OnRender()
 {
-	int LocalId = GameClient()->m_Snap.m_LocalClientId;
-
 	if(!g_Config.m_ClAntiSpawnBlock)
 	{
-		if(m_State != STATE_NONE)
-			Reset(STATE_NONE);
+		for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
+			Reset(Conn, EState::None);
 		return;
 	}
 
-	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
+	if(Client()->State() != IClient::STATE_ONLINE)
+		return;
+
+	for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
+		HandleConn(Conn);
+}
+
+bool CAntiSpawnBlock::GetPos(int Conn, int ClientId, vec2 &Pos) const
+{
+	if(GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
+	{
+		Pos = GameClient()->m_aClients[ClientId].m_Predicted.m_Pos;
+		return true;
+	}
+
+	// Once our other tee sits in its own team it can be missing from the snapshot of the
+	// connection we are playing on, but its own connection always receives it. Without this
+	// we would never see it come back to the start and leave it locked in that team forever.
+	const auto *pCharacter = (const CNetObj_Character *)Client()->SnapFindItem(Conn, IClient::SNAP_CURRENT, NETOBJTYPE_CHARACTER, ClientId);
+	if(!pCharacter)
+		return false;
+
+	Pos = vec2(pCharacter->m_X, pCharacter->m_Y);
+	return true;
+}
+
+void CAntiSpawnBlock::HandleConn(int Conn)
+{
+	if(Conn == IClient::CONN_DUMMY && !Client()->DummyConnected())
+	{
+		m_aConns[Conn].m_State = EState::None;
+		return;
+	}
+
+	const int ClientId = GameClient()->m_aLocalIds[Conn];
+
+	if(!in_range(ClientId, 0, MAX_CLIENTS - 1))
+		return;
+
+	// stop when spectating
+	if(GameClient()->m_aClients[ClientId].m_Paused || GameClient()->m_aClients[ClientId].m_Spec)
 		return;
 
 	// if Can't find Player or Player STARTED the race, stop
-	if(!GameClient()->m_Snap.m_pLocalCharacter || GameClient()->CurrentRaceTime())
+	vec2 Pos;
+	if(!GetPos(Conn, ClientId, Pos) || GameClient()->CurrentRaceTime(Conn))
 		return;
-
-	vec2 Pos = GameClient()->m_PredictedChar.m_Pos;
 
 	if(GameClient()->RaceHelper()->IsNearStart(Pos, 2))
 	{
-		if(GameClient()->m_Teams.Team(LocalId) != 0 && m_State == STATE_IN_TEAM)
+		if(GameClient()->m_Teams.Team(ClientId) != TEAM_FLOCK && m_aConns[Conn].m_State == EState::InTeam)
 		{
-			GameClient()->m_Chat.SendChat(0, "/team 0");
-			m_State = STATE_TEAM_ZERO;
+			GameClient()->m_Chat.SendChat(0, "/team 0", Conn);
+			m_aConns[Conn].m_State = EState::TeamZero;
 		}
 	}
-	else if(m_State == STATE_NONE)
+	else if(m_aConns[Conn].m_State == EState::None)
 	{
-		if(GameClient()->m_Teams.Team(LocalId) != 0)
+		if(GameClient()->m_Teams.Team(ClientId) != TEAM_FLOCK)
 		{
-			m_State = STATE_IN_TEAM;
+			m_aConns[Conn].m_State = EState::InTeam;
 			return;
 		}
 
-		if(m_Delay < time_get())
+		if(m_aConns[Conn].m_Delay < time_get())
 		{
-			GameClient()->m_Chat.SendChat(0, "/mc;team -1;lock"); // multi-command
-			m_Delay = time_get() + time_freq() * 2.5f;
+			GameClient()->m_Chat.SendChat(0, "/mc;team -1;lock", Conn); // multi-command
+			m_aConns[Conn].m_Delay = time_get() + time_freq() * 2.5f;
 		}
 	}
 }
 
 void CAntiSpawnBlock::OnStateChange(int NewState, int OldState)
 {
-	if(NewState != OldState)
-		Reset(STATE_NONE);
+	if(NewState == OldState)
+		return;
+
+	for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
+		Reset(Conn, EState::None);
 }

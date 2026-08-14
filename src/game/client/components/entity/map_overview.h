@@ -49,7 +49,8 @@ public:
 	int Sizeof() const override { return sizeof(*this); }
 	void OnRender() override;
 	void OnStateChange(int NewState, int OldState) override;
-	void OnSelfDeath() override { Reset(); }
+	// the overview tracks the path of the tee we are playing on
+	void OnSelfDeath(bool Dummy) override;
 };
 
 #endif // GAME_CLIENT_COMPONENTS_ENTITY_MAP_OVERVIEW_H

@@ -138,10 +138,18 @@ void CInfoMessages::AddInfoMsg(const CInfoMsg &InfoMsg)
 	DeleteTextContainers(m_aInfoMsgs[m_InfoMsgCurrent]);
 	m_aInfoMsgs[m_InfoMsgCurrent] = InfoMsg;
 	CreateTextContainersIfNotCreated(m_aInfoMsgs[m_InfoMsgCurrent]);
-	if(!str_comp(InfoMsg.m_aVictimName, g_Config.m_ClDummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName))
+
+	for(int i = 0; i < InfoMsg.m_TeamSize; i++)
 	{
-		// Could be abused by servers
-		GameClient()->OnSelfDeath();
+		const int ClientId = InfoMsg.m_aVictimIds[i];
+		for(int Dummy = 0; Dummy < NUM_DUMMIES; Dummy++)
+		{
+			if(ClientId == GameClient()->m_aLocalIds[Dummy])
+			{
+				// Could be abused by servers
+				GameClient()->OnSelfDeath(Dummy);
+			}
+		}
 	}
 
 	Graphics()->MapScreen(ScreenRect);

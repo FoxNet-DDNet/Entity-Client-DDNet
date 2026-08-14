@@ -289,6 +289,10 @@ public:
 	// TODO: Refactor: should redo this a bit i think, too many virtual calls
 	virtual int SnapNumItems(int SnapId) const = 0;
 	virtual const void *SnapFindItem(int SnapId, int Type, int Id) const = 0;
+	// Same as above, but for a specific connection (CONN_MAIN/CONN_DUMMY) instead of the active one.
+	// Only the active connection is unpacked into CGameClient::m_Snap, so this is the only way to
+	// look at the state the server reports to the connection we are currently not playing on.
+	virtual const void *SnapFindItem(int Conn, int SnapId, int Type, int Id) const = 0;
 	virtual CSnapItem SnapGetItem(int SnapId, int Index) const = 0;
 
 	virtual void SnapSetStaticsize(int ItemType, int Size) = 0;
@@ -463,7 +467,8 @@ public:
 	virtual bool CheckNewInput() = 0;
 	virtual void SetConnectInfo(const NETADDR *pAddress) = 0;
 
-	virtual void OnSelfDeath() = 0;
+	// Dummy tells which of our own tees died (CONN_MAIN/CONN_DUMMY)
+	virtual void OnSelfDeath(bool Dummy) = 0;
 
 	virtual void OnServerBrowserRefresh() = 0;
 	virtual bool HasMapFinish(const char *pPlayerName, const char *pMapName, const char *pCommunity) const = 0;

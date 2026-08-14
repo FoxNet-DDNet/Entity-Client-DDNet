@@ -984,10 +984,17 @@ IClient::CSnapItem CClient::SnapGetItem(int SnapId, int Index) const
 
 const void *CClient::SnapFindItem(int SnapId, int Type, int Id) const
 {
-	if(!m_aapSnapshots[g_Config.m_ClDummy][SnapId])
+	return SnapFindItem(g_Config.m_ClDummy, SnapId, Type, Id);
+}
+
+const void *CClient::SnapFindItem(int Conn, int SnapId, int Type, int Id) const
+{
+	dbg_assert(SnapId >= 0 && SnapId < NUM_SNAPSHOT_TYPES, "invalid SnapId");
+	dbg_assert(Conn >= 0 && Conn < NUM_DUMMIES, "invalid Conn");
+	if(!m_aapSnapshots[Conn][SnapId])
 		return nullptr;
 
-	return m_aapSnapshots[g_Config.m_ClDummy][SnapId]->m_pAltSnap->FindItem(Type, Id);
+	return m_aapSnapshots[Conn][SnapId]->m_pAltSnap->FindItem(Type, Id);
 }
 
 int CClient::SnapNumItems(int SnapId) const

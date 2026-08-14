@@ -2128,7 +2128,7 @@ void CChat::EnsureCoherentWidth() const
 
 // ----- send functions -----
 
-void CChat::SendChat(int Team, const char *pLine)
+void CChat::SendChat(int Team, const char *pLine, int Conn)
 {
 	// don't send empty messages
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
@@ -2145,7 +2145,10 @@ void CChat::SendChat(int Team, const char *pLine)
 		Msg7.m_Mode = Team == 1 ? protocol7::CHAT_TEAM : protocol7::CHAT_ALL;
 		Msg7.m_Target = -1;
 		Msg7.m_pMessage = pLine;
-		Client()->SendPackMsgActive(&Msg7, MSGFLAG_VITAL, true);
+		if(Conn < 0)
+			Client()->SendPackMsgActive(&Msg7, MSGFLAG_VITAL, true);
+		else
+			Client()->SendPackMsg(Conn, &Msg7, MSGFLAG_VITAL, true);
 		return;
 	}
 
@@ -2153,7 +2156,10 @@ void CChat::SendChat(int Team, const char *pLine)
 	CNetMsg_Cl_Say Msg;
 	Msg.m_Team = Team;
 	Msg.m_pMessage = pLine;
-	Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
+	if(Conn < 0)
+		Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
+	else
+		Client()->SendPackMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
 void CChat::SendChatQueued(const char *pLine)
@@ -2301,16 +2307,20 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 		if(g_Config.m_ClAntiSpawnBlock)
 		{
-			char aBuf[255];
-			str_format(aBuf, sizeof(aBuf), "'%s' joined team", g_Config.m_ClDummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName);
-			if(str_find_nocase(pLine, aBuf))
+			// anti spawn block runs on both connections, so hide the messages of either of them
+			for(const char *pName : {g_Config.m_PlayerName, g_Config.m_ClDummyName})
 			{
-				return true;
-			}
-			str_format(aBuf, sizeof(aBuf), "'%s' locked your team. After the race starts, killing will kill everyone in your team.", g_Config.m_ClDummy ? g_Config.m_ClDummyName : g_Config.m_PlayerName);
-			if(str_find_nocase(pLine, aBuf))
-			{
-				return true;
+				char aBuf[255];
+				str_format(aBuf, sizeof(aBuf), "'%s' joined team", pName);
+				if(str_find_nocase(pLine, aBuf))
+				{
+					return true;
+				}
+				str_format(aBuf, sizeof(aBuf), "'%s' locked your team. After the race starts, killing will kill everyone in your team.", pName);
+				if(str_find_nocase(pLine, aBuf))
+				{
+					return true;
+				}
 			}
 		}
 	}

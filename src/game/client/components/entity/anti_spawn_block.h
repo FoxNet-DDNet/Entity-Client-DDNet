@@ -1,26 +1,39 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_ANTI_SPAWN_BLOCK_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_ANTI_SPAWN_BLOCK_H
+#include <base/vmath.h>
+
+#include <engine/client/enums.h>
+
 #include <game/client/component.h>
+
+#include <cstdint>
 
 class CAntiSpawnBlock : public CComponent
 {
-	int64_t m_Delay = 0;
-
-public:
-	enum States
+	enum class EState
 	{
-		STATE_NONE = 0,
-		STATE_IN_TEAM,
-		STATE_TEAM_ZERO,
+		None = 0,
+		InTeam,
+		TeamZero,
 	};
 
-	int m_State;
+	class CConnState
+	{
+	public:
+		int64_t m_Delay = 0;
+		EState m_State = EState::None;
+	};
 
-	void Reset(int Stat);
+	CConnState m_aConns[NUM_DUMMIES];
 
+	void Reset(int Conn, EState State);
+	void HandleConn(int Conn);
+	bool GetPos(int Conn, int ClientId, vec2 &Pos) const;
+
+public:
 	int Sizeof() const override { return sizeof(*this); }
 	void OnRender() override;
-	void OnSelfDeath() override { Reset(STATE_NONE); }
+	void OnSelfDeath(bool Dummy) override { Reset(Dummy, EState::None); }
 	void OnStateChange(int NewState, int OldState) override;
 };
 

@@ -664,7 +664,7 @@ void CGameClient::OnReset()
 	std::fill(std::begin(m_aLastNewPredictedTick), std::end(m_aLastNewPredictedTick), -1);
 
 	m_LastRoundStartTick = -1;
-	m_LastRaceTick = -1;
+	std::fill(std::begin(m_aLastRaceTick), std::end(m_aLastRaceTick), -1);
 	m_LastFlagCarrierRed = -4;
 	m_LastFlagCarrierBlue = -4;
 
@@ -837,6 +837,8 @@ void CGameClient::OnRender()
 	// update the local character and spectate position
 	UpdatePositions();
 
+	UpdateInactiveRaceTick();
+
 	// display warnings
 	if(m_Menus.CanDisplayWarning())
 	{
@@ -973,18 +975,48 @@ void CGameClient::OnDummyDisconnect()
 	m_aLastNewPredictedTick[1] = -1;
 }
 
-int CGameClient::LastRaceTick() const
+int CGameClient::LastRaceTick(int Conn) const
 {
-	return m_LastRaceTick;
+	return m_aLastRaceTick[Conn];
 }
 
-int CGameClient::CurrentRaceTime() const
+int CGameClient::CurrentRaceTime(int Conn) const
 {
-	if(m_LastRaceTick < 0)
+	if(m_aLastRaceTick[Conn] < 0)
 	{
 		return 0;
 	}
-	return (Client()->GameTick(g_Config.m_ClDummy) - m_LastRaceTick) / Client()->GameTickSpeed();
+	return (Client()->GameTick(Conn) - m_aLastRaceTick[Conn]) / Client()->GameTickSpeed();
+}
+
+void CGameClient::UpdateInactiveRaceTick()
+{
+	const int Conn = !g_Config.m_ClDummy;
+
+	if(!m_GameInfo.m_Race || Client()->State() != IClient::STATE_ONLINE || !Client()->DummyConnected())
+	{
+		m_aLastRaceTick[Conn] = -1;
+		return;
+	}
+
+	const int LocalId = m_aLocalIds[Conn];
+	if(!in_range(LocalId, 0, MAX_CLIENTS - 1))
+		return;
+
+	// Mirrors the m_Snap based update in OnNewSnapshot, but reads the raw snapshot of the
+	// connection we are not playing on. Like there, the last value is kept while spectating.
+	const auto *pGameInfoObj = (const CNetObj_GameInfo *)Client()->SnapFindItem(Conn, IClient::SNAP_CURRENT, NETOBJTYPE_GAMEINFO, 0);
+	const auto *pPlayerInfo = (const CNetObj_PlayerInfo *)Client()->SnapFindItem(Conn, IClient::SNAP_CURRENT, NETOBJTYPE_PLAYERINFO, LocalId);
+	const void *pCharacter = Client()->SnapFindItem(Conn, IClient::SNAP_CURRENT, NETOBJTYPE_CHARACTER, LocalId);
+	const void *pPrevCharacter = Client()->SnapFindItem(Conn, IClient::SNAP_PREV, NETOBJTYPE_CHARACTER, LocalId);
+
+	if(!pGameInfoObj || !pCharacter || !pPrevCharacter)
+		return;
+	if(pPlayerInfo && pPlayerInfo->m_Team == TEAM_SPECTATORS)
+		return;
+
+	const bool RaceFlag = pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_RACETIME;
+	m_aLastRaceTick[Conn] = RaceFlag ? -pGameInfoObj->m_WarmupTimer : -1;
 }
 
 bool CGameClient::IsTeamPlay() const
@@ -2555,7 +2587,7 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 		}
 	}
 
-	// Record m_LastRaceTick for g_Config.m_ClConfirmDisconnect/QuitTime
+	// Record m_aLastRaceTick for g_Config.m_ClConfirmDisconnect/QuitTime
 	if(m_GameInfo.m_Race &&
 		Client()->State() == IClient::STATE_ONLINE &&
 		m_Snap.m_pGameInfoObj &&
@@ -2564,7 +2596,7 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 		m_Snap.m_pLocalPrevCharacter)
 	{
 		const bool RaceFlag = m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_RACETIME;
-		m_LastRaceTick = RaceFlag ? -m_Snap.m_pGameInfoObj->m_WarmupTimer : -1;
+		m_aLastRaceTick[g_Config.m_ClDummy] = RaceFlag ? -m_Snap.m_pGameInfoObj->m_WarmupTimer : -1;
 	}
 
 	SnapCollectEntities(); // creates a collection that associates EntityEx snap items with the entities they belong to
@@ -6079,10 +6111,10 @@ int CGameClient::GetClientId(const char *pName)
 	return -1;
 }
 
-void CGameClient::OnSelfDeath()
+void CGameClient::OnSelfDeath(bool Dummy)
 {
 	for(auto &pComponent : m_vpAll)
-		pComponent->OnSelfDeath();
+		pComponent->OnSelfDeath(Dummy);
 }
 
 void CGameClient::OnServerBrowserRefresh()

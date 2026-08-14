@@ -342,7 +342,10 @@ private:
 	int m_aLastNewPredictedTick[NUM_DUMMIES];
 
 	int m_LastRoundStartTick;
-	int m_LastRaceTick;
+	int m_aLastRaceTick[NUM_DUMMIES];
+	// Keeps m_aLastRaceTick of the connection we are currently not playing on up to date,
+	// the active one is updated from m_Snap in OnNewSnapshot.
+	void UpdateInactiveRaceTick();
 
 	int m_LastFlagCarrierRed;
 	int m_LastFlagCarrierBlue;
@@ -812,9 +815,13 @@ public:
 
 	int IntersectCharacter(vec2 HookPos, vec2 NewPos, vec2 &NewPos2, int OwnId, vec2 *pPlayerPosition = nullptr);
 
-	int LastRaceTick() const;
-	int CurrentRaceTime() const;
-	bool StartedRace() const { return m_LastRaceTick != -1; }
+	// Conn defaults to the connection we are currently playing on
+	int LastRaceTick(int Conn) const;
+	int LastRaceTick() const { return LastRaceTick(g_Config.m_ClDummy); }
+	int CurrentRaceTime(int Conn) const;
+	int CurrentRaceTime() const { return CurrentRaceTime(g_Config.m_ClDummy); }
+	bool StartedRace(int Conn) const { return m_aLastRaceTick[Conn] != -1; }
+	bool StartedRace() const { return StartedRace(g_Config.m_ClDummy); }
 
 	bool IsTeamPlay() const;
 	bool IsWorldPaused() const;
@@ -1137,7 +1144,7 @@ public:
 	void SetConnectInfo(const NETADDR *pAddress) override;
 
 	// EClient
-	void OnSelfDeath() override;
+	void OnSelfDeath(bool Dummy) override;
 
 	void OnServerBrowserRefresh() override;
 	bool HasMapFinish(const char *pPlayerName, const char *pMapName, const char *pCommunity) const override { return m_MapFinishBrowser.HasEntry(pPlayerName, pMapName, pCommunity); }

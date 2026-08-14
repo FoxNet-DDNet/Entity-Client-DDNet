@@ -302,7 +302,7 @@ public:
 	}
 
 	// <E-Client
-	virtual void OnSelfDeath()
+	virtual void OnSelfDeath(bool Dummy)
 	{
 	}
 

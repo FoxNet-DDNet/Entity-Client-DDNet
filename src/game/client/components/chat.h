@@ -262,7 +262,8 @@ public:
 	//
 	// @param Team MODE_ALL=0 MODE_TEAM=1
 	// @param pLine the chat message
-	void SendChat(int Team, const char *pLine);
+	// @param Conn the connection to send on, -1 for the active one
+	void SendChat(int Team, const char *pLine, int Conn = -1);
 
 	// Sends a chat message to the server.
 	//

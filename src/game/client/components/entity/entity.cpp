@@ -598,8 +598,12 @@ void CEClient::OnRender()
 	}
 }
 
-void CEClient::OnSelfDeath()
+void CEClient::OnSelfDeath(bool Dummy)
 {
+	// only count deaths of the tee we are playing on, like before dummy support
+	if(Dummy != (bool)g_Config.m_ClDummy)
+		return;
+
 	m_DeathCounter++;
 }
 

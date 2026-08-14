@@ -178,6 +178,12 @@ void CMapOverview::OnStateChange(int NewState, int OldState)
 		Reset();
 }
 
+void CMapOverview::OnSelfDeath(bool Dummy)
+{
+	if(Dummy == (bool)g_Config.m_ClDummy)
+		Reset();
+}
+
 void CMapOverview::Reset()
 {
 	m_vPoints.clear();

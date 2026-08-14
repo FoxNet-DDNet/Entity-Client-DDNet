@@ -156,7 +156,7 @@ private:
 	void OnStateChange(int NewState, int OldState) override;
 	void OnNewSnapshot() override;
 	void OnShutdown() override;
-	void OnSelfDeath() override;
+	void OnSelfDeath(bool Dummy) override;
 	void OnFocusChange(bool IsFocused) override;
 	void OnConnect(int Conn) override;
 };
