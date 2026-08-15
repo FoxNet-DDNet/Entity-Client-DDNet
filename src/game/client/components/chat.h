@@ -87,6 +87,7 @@ class CChat : public CComponent
 		std::string m_RenderedText;
 		float m_StartX;
 		float m_LineWidth;
+		float m_RenderWidth; // width of the rendered message background, used for hover detection
 	};
 
 	bool LineShouldHighlight(const char *pLine, const char *pName);
@@ -103,7 +104,8 @@ class CChat : public CComponent
 	vec2 m_SelectionMouseRelease;
 	bool m_HasSelection;
 	std::string m_SelectionText;
-	int m_NewLineCounter; // Track new lines while selecting to adjust mouse position
+	int m_NewLineCounter; // Track new lines while the view is paused to keep it stable
+	bool m_HoveringMessage; // EClient: cursor rests on a rendered message
 
 	CLine m_aLines[MAX_LINES];
 	int m_CurrentLine;
@@ -227,7 +229,10 @@ public:
 	void OnStateChange(int NewState, int OldState) override;
 	void OnRender() override;
 	void OnPrepareLines(float y);
-	int GetLinesToSkipForSelection() const; // EClient
+	// EClient: the view is frozen while selecting text or while hovering a message,
+	// so messages don't move away under the cursor
+	bool IsScrollPaused() const { return m_Mode != MODE_NONE && (m_Selecting || m_HasSelection || m_HoveringMessage); }
+	int GetLinesToSkipWhilePaused() const; // EClient
 	int GetMaxBacklogCurLine() const;
 	void Reset();
 	void OnRelease() override;
@@ -242,6 +247,7 @@ public:
 	int NumInitializedLines() const;
 
 	// EClient
+	void AnchorPausedLines();
 	void ScrollToTop();
 	void ScrollToBottom();
 	void ScrollPageUp();

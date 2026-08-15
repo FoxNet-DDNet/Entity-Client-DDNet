@@ -60,6 +60,7 @@ CChat::CLine::CLine()
 	m_TextContainerIndex.Reset();
 	m_QuadContainerIndex = -1;
 	m_RenderedOffsetType = -1;
+	m_RenderWidth = 0.0f;
 }
 
 void CChat::CLine::Reset(CChat &This)
@@ -82,6 +83,7 @@ void CChat::CLine::Reset(CChat &This)
 	// Selection text
 	m_RenderedName.clear();
 	m_RenderedText.clear();
+	m_RenderWidth = 0.0f;
 }
 
 CChat::CChat()
@@ -97,6 +99,7 @@ CChat::CChat()
 	m_HasSelection = false;
 	m_SelectionText.clear();
 	m_NewLineCounter = 0;
+	m_HoveringMessage = false;
 	m_SelectorMouse = vec2(-1.0f, -1.0f);
 
 	m_Input.SetClipboardLineCallback([this](const char *pStr) {
@@ -225,6 +228,7 @@ void CChat::Reset()
 	m_HasSelection = false;
 	m_SelectionText.clear();
 	m_NewLineCounter = 0;
+	m_HoveringMessage = false;
 
 	for(int64_t &LastSoundPlayed : m_aLastSoundPlayed)
 		LastSoundPlayed = 0;
@@ -377,23 +381,40 @@ int CChat::NumInitializedLines() const
 	return Count;
 }
 
+void CChat::AnchorPausedLines()
+{
+	// While the view is paused, incoming lines are only hidden, the view itself is still at
+	// the bottom. Turn them into a real backlog offset before scrolling, otherwise they would
+	// all pop in at once and the view would jump.
+	const int PendingLines = GetLinesToSkipWhilePaused();
+	if(PendingLines <= 0)
+		return;
+
+	m_BacklogCurLine = std::clamp(m_BacklogCurLine + PendingLines, 0, GetMaxBacklogCurLine());
+	m_NewLineCounter = 0;
+}
+
 void CChat::ScrollToTop()
 {
+	AnchorPausedLines();
 	m_BacklogCurLine += GetLinesToScroll(-1, -1);
 }
 
 void CChat::ScrollToBottom()
 {
 	m_BacklogCurLine = 0;
+	m_NewLineCounter = 0;
 }
 
 void CChat::ScrollPageUp()
 {
+	AnchorPausedLines();
 	m_BacklogCurLine += GetLinesToScroll(-1, std::max(1, m_LinesRendered));
 }
 
 void CChat::ScrollPageDown()
 {
+	AnchorPausedLines();
 	m_BacklogCurLine -= GetLinesToScroll(1, std::max(1, m_LinesRendered));
 	if(m_BacklogCurLine < 0)
 		m_BacklogCurLine = 0;
@@ -536,6 +557,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 	{
 		if(!m_Selecting && !m_HasSelection)
 		{
+			AnchorPausedLines();
 			m_BacklogCurLine += GetLinesToScroll(-1, 1);
 		}
 	}
@@ -543,6 +565,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 	{
 		if(!m_Selecting && !m_HasSelection)
 		{
+			AnchorPausedLines();
 			m_BacklogCurLine -= GetLinesToScroll(1, 1);
 			if(m_BacklogCurLine < 0)
 				m_BacklogCurLine = 0;
@@ -1072,10 +1095,11 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 		return;
 	}
 
-	// Keep the visible line mapping stable only while actively dragging a selection.
+	// Keep the visible line mapping stable while the view is paused, i.e. while dragging
+	// a selection, while a finished selection exists or while the cursor hovers a message.
 	// Once a finished selection exists, any new incoming line invalidates it because
 	// the cached selection coordinates no longer match the live chat backlog.
-	if(m_Selecting || m_HasSelection)
+	if(IsScrollPaused())
 	{
 		m_NewLineCounter++;
 	}
@@ -1248,7 +1272,7 @@ void CChat::OnPrepareLines(float y)
 {
 	float x = 5.0f;
 	float FontSize = this->FontSize();
-	const int LinesToSkipForSelection = GetLinesToSkipForSelection();
+	const int LinesToSkipWhilePaused = GetLinesToSkipWhilePaused();
 
 	const bool IsScoreBoardOpen = GameClient()->m_Scoreboard.IsActive() && (Graphics()->ScreenAspect() > 1.7f); // only assume scoreboard when screen ratio is widescreen(something around 16:9)
 	const bool ShowLargeArea = m_Show || (m_Mode != MODE_NONE && g_Config.m_ClShowChat == 1) || g_Config.m_ClShowChat == 2;
@@ -1285,10 +1309,10 @@ void CChat::OnPrepareLines(float y)
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
 			break;
 
-		if(i < LinesToSkipForSelection)
+		if(i < LinesToSkipWhilePaused)
 			continue;
 
-		const int AdjustedIndex = i - LinesToSkipForSelection;
+		const int AdjustedIndex = i - LinesToSkipWhilePaused;
 		if(AdjustedIndex < m_BacklogCurLine)
 			continue;
 
@@ -1624,17 +1648,19 @@ void CChat::OnPrepareLines(float y)
 
 		AppendCursor.m_vColorSplits.clear();
 
+		float FullWidth = RealMsgPaddingX * 1.5f;
+		if(!IsScoreBoardOpen && !g_Config.m_ClChatOld)
+		{
+			FullWidth += LineCursor.m_LongestLineWidth + AppendCursor.m_LongestLineWidth;
+		}
+		else
+		{
+			FullWidth += std::max(LineCursor.m_LongestLineWidth, AppendCursor.m_LongestLineWidth);
+		}
+		Line.m_RenderWidth = FullWidth; // EClient: needed to detect the cursor hovering this message
+
 		if(!g_Config.m_ClChatOld && (Line.m_aText[0] != '\0' || Line.m_aName[0] != '\0'))
 		{
-			float FullWidth = RealMsgPaddingX * 1.5f;
-			if(!IsScoreBoardOpen && !g_Config.m_ClChatOld)
-			{
-				FullWidth += LineCursor.m_LongestLineWidth + AppendCursor.m_LongestLineWidth;
-			}
-			else
-			{
-				FullWidth += std::max(LineCursor.m_LongestLineWidth, AppendCursor.m_LongestLineWidth);
-			}
 			Graphics()->SetColor(1, 1, 1, 1);
 			Line.m_QuadContainerIndex = Graphics()->CreateRectQuadContainer(Begin, y, FullWidth, Line.m_aYOffset[OffsetType], MessageRounding(), IGraphics::CORNER_ALL);
 		}
@@ -1652,10 +1678,9 @@ void CChat::OnPrepareLines(float y)
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 }
 
-int CChat::GetLinesToSkipForSelection() const
+int CChat::GetLinesToSkipWhilePaused() const
 {
-	const bool IsSelecting = m_Mode != MODE_NONE && (m_Selecting || m_HasSelection);
-	if(!IsSelecting || m_BacklogCurLine != 0 || m_NewLineCounter <= 0)
+	if(!IsScrollPaused() || m_BacklogCurLine != 0 || m_NewLineCounter <= 0)
 		return 0;
 
 	return std::min(m_NewLineCounter, std::max(0, NumInitializedLines() - 1));
@@ -1700,18 +1725,12 @@ void CChat::OnRender()
 	float y = 300.0f - 20.0f * FontSize() / 6.0f;
 	float ScaledFontSize = FontSize() * (8.0f / 6.0f);
 
+	// EClient: cursor position in chat space, used for selection and hover detection
+	const vec2 MousePos = m_SelectorMouse / vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight()) * vec2(Width, Height);
+
 	// Handle mouse selection for chat when chat mode is active
 	if(m_Mode != MODE_NONE)
 	{
-		const vec2 ScreenSize = vec2(Width, Height);
-
-		const auto &&GetMousePosition = [&]() -> vec2 {
-			const vec2 WindowSize = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight());
-			return m_SelectorMouse / WindowSize * ScreenSize;
-		};
-
-		const vec2 MousePos = GetMousePosition();
-
 		// Chat input area bounds (rough estimate - below the input line)
 		const float ChatInputAreaY = y;
 
@@ -1732,7 +1751,7 @@ void CChat::OnRender()
 		// Update release position while selecting
 		if(m_Selecting)
 		{
-			m_SelectionMouseRelease = GetMousePosition();
+			m_SelectionMouseRelease = MousePos;
 		}
 
 		// Check if mouse is released (end selection)
@@ -1760,6 +1779,7 @@ void CChat::OnRender()
 			m_SelectionText.clear();
 			m_NewLineCounter = 0;
 		}
+		m_HoveringMessage = false; // EClient
 	}
 
 	if(m_Mode != MODE_NONE)
@@ -1862,7 +1882,10 @@ void CChat::OnRender()
 #else
 	if(!g_Config.m_ClShowChat)
 #endif
+	{
+		m_HoveringMessage = false; // EClient: no messages are rendered, so nothing can be hovered
 		return;
+	}
 
 	m_BacklogCurLine = std::clamp(m_BacklogCurLine, 0, GetMaxBacklogCurLine());
 
@@ -1889,12 +1912,15 @@ void CChat::OnRender()
 	// For selection handling
 	const bool IsSelecting = m_Mode != MODE_NONE && (m_Selecting || m_HasSelection);
 
-	// When selecting, skip rendering new lines to keep the view stable
-	// Instead of adjusting mouse positions, we simply don't show the new messages until selection ends
-	const int LinesToSkipForSelection = GetLinesToSkipForSelection();
-	// Only reset counter when not selecting
-	if(!IsSelecting)
+	// While the view is paused, skip rendering new lines to keep it stable
+	// Instead of adjusting mouse positions, we simply don't show the new messages until the pause ends
+	const int LinesToSkipWhilePaused = GetLinesToSkipWhilePaused();
+	// Only reset counter while the view is not paused
+	if(!IsScrollPaused())
 		m_NewLineCounter = 0;
+
+	// EClient: the cursor pauses the chat while it rests on a message, recomputed below
+	bool HoveringMessage = false;
 
 	// Determine selection Y range
 	float SelectionMinY = std::min(m_SelectionMousePress.y, m_SelectionMouseRelease.y);
@@ -1920,12 +1946,12 @@ void CChat::OnRender()
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
 			break;
 
-		// Skip new lines that arrived during selection to keep view stable
-		if(i < LinesToSkipForSelection)
+		// Skip new lines that arrived while the view is paused to keep it stable
+		if(i < LinesToSkipWhilePaused)
 			continue;
 
 		// Adjust index for skipped lines when checking backlog
-		const int AdjustedIndex = i - LinesToSkipForSelection;
+		const int AdjustedIndex = i - LinesToSkipWhilePaused;
 		if(AdjustedIndex < m_BacklogCurLine)
 			continue;
 
@@ -1953,6 +1979,14 @@ void CChat::OnRender()
 		// Check if this line is in the selection range
 		const float LineTop = y;
 		const float LineBottom = y + Line.m_aYOffset[OffsetType];
+
+		// EClient: pause the chat while the cursor hovers this message
+		if(m_Mode != MODE_NONE &&
+			MousePos.x >= x && MousePos.x <= x + Line.m_RenderWidth &&
+			MousePos.y >= LineTop && MousePos.y <= LineBottom)
+		{
+			HoveringMessage = true;
+		}
 
 		if(IsSelecting && LineBottom >= SelectionMinY && LineTop <= SelectionMaxY)
 		{
@@ -1993,6 +2027,8 @@ void CChat::OnRender()
 			TextRender()->RenderTextContainer(Line.m_TextContainerIndex, TextColor, TextOutlineColor, 0, (y + RealMsgPaddingY / 2.0f) - Line.m_TextYOffset);
 		}
 	}
+
+	m_HoveringMessage = HoveringMessage; // EClient
 
 	if(IsSelecting && !vSelectedLines.empty())
 	{
