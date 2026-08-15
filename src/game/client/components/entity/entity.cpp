@@ -304,10 +304,10 @@ void CEClient::NotifyOnMove()
 		{
 			if(m_LastPos == LocalPos)
 				continue;
-			CGameClient::CClientData pClient = GameClient()->m_aClients[ClientId];
-			if(ClientId == LocalId || !pClient.m_Active)
+			const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
+			if(ClientId == LocalId || !ClientData.m_Active)
 				continue;
-			if(pClient.m_Solo)
+			if(ClientData.m_Solo)
 				continue;
 			if(!GameClient()->m_Teams.SameTeam(LocalId, ClientId))
 				continue;

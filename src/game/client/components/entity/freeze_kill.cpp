@@ -145,7 +145,7 @@ bool CFreezeKill::HandleClients(int ClientId)
 {
 	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
 
-	CGameClient::CClientData OtherTee = GameClient()->m_aClients[ClientId];
+	const CGameClient::CClientData &OtherTee = GameClient()->m_aClients[ClientId];
 
 	bool Solo = OtherTee.m_Solo;
 	bool Teammate = GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[2];

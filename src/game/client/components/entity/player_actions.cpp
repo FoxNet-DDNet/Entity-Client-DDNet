@@ -464,8 +464,8 @@ void CPlayerActions::OnRender()
 	}
 	else if(m_PlayerActionId >= 0 && m_PlayerActionId < MAX_CLIENTS)
 	{
-		const CGameClient::CClientData Target = GameClient()->m_aClients[m_PlayerActionId];
-		const CNetObj_Character TargetRender = GameClient()->m_aClients[m_PlayerActionId].m_RenderCur;
+		const CGameClient::CClientData &Target = GameClient()->m_aClients[m_PlayerActionId];
+		const CNetObj_Character &TargetRender = GameClient()->m_aClients[m_PlayerActionId].m_RenderCur;
 
 		const CNetObj_DDNetCharacter *pExtendedData = &GameClient()->m_Snap.m_aCharacters[m_PlayerActionId].m_ExtendedData;
 		const vec2 Direction = vec2(pExtendedData->m_TargetX, pExtendedData->m_TargetY);

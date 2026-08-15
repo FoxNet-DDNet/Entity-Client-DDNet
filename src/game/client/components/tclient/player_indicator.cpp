@@ -44,17 +44,17 @@ void CPlayerIndicator::OnRender()
 			if(!GameClient()->m_Snap.m_apPlayerInfos[i] || i == GameClient()->m_Snap.m_LocalClientId)
 				continue;
 
-			CGameClient::CClientData OtherTee = GameClient()->m_aClients[i];
+			CGameClient::CClientData *pOtherTee = &GameClient()->m_aClients[i];
 			CCharacterCore *pOtherCharacter = &GameClient()->m_aClients[i].m_Predicted;
 			if(
-				OtherTee.m_Team == GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_Team &&
-				!OtherTee.m_Spec &&
+				pOtherTee->m_Team == GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_Team &&
+				!pOtherTee->m_Spec &&
 				GameClient()->m_Snap.m_aCharacters[i].m_Active)
 			{
-				if(g_Config.m_ClPlayerIndicatorFreeze && !(OtherTee.m_FreezeEnd > 0 || OtherTee.m_DeepFrozen))
+				if(g_Config.m_ClPlayerIndicatorFreeze && !(pOtherTee->m_FreezeEnd > 0 || pOtherTee->m_DeepFrozen))
 					continue;
 
-				if(g_Config.m_ClIndicatorHideAfk && OtherTee.m_Afk)
+				if(g_Config.m_ClIndicatorHideAfk && pOtherTee->m_Afk)
 					continue;
 
 				// Hide tees on our screen if the config is set to do so
@@ -68,13 +68,13 @@ void CPlayerIndicator::OnRender()
 				if(g_Config.m_ClIndicatorVariableDistance)
 				{
 					Offset = mix((float)g_Config.m_ClIndicatorOffset, (float)g_Config.m_ClIndicatorOffsetMax,
-						std::min(DistanceBetweenTwoPoints(Position, OtherTee.m_RenderPos) / g_Config.m_ClIndicatorMaxDistance, 1.0f));
+						std::min(DistanceBetweenTwoPoints(Position, pOtherTee->m_RenderPos) / g_Config.m_ClIndicatorMaxDistance, 1.0f));
 				}
 
 				vec2 IndicatorPos(Norm.x * Offset + Position.x, Norm.y * Offset + Position.y);
-				CTeeRenderInfo TeeInfo = OtherTee.m_RenderInfo;
+				CTeeRenderInfo TeeInfo = pOtherTee->m_RenderInfo;
 				float Alpha = g_Config.m_ClIndicatorOpacity / 100.0f;
-				if(OtherTee.m_FreezeEnd > 0 || OtherTee.m_DeepFrozen)
+				if(pOtherTee->m_FreezeEnd > 0 || pOtherTee->m_DeepFrozen)
 				{
 					// check if player is frozen or is getting saved
 					if(pOtherCharacter->m_IsInFreeze == 0)
@@ -145,7 +145,7 @@ void CPlayerIndicator::OnRender()
 
 				if(g_Config.m_ClIndicatorTees)
 				{
-					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, OtherTee.m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, Col.a);
+					RenderTools()->RenderTee(CAnimState::GetIdle(), &TeeInfo, pOtherTee->m_RenderCur.m_Emote, vec2(1.0f, 0.0f), IndicatorPos, Col.a);
 				}
 				else
 				{

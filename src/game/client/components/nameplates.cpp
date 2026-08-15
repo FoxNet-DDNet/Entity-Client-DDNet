@@ -93,6 +93,11 @@ class CNamePlatePartText : public CNamePlatePart
 {
 protected:
 	STextContainerIndex m_TextContainerIndex;
+	// Whether the text container is in sync with the text last seen by UpdateNeeded.
+	// This can't be inferred from m_TextContainerIndex.Valid(), because empty text
+	// produces no container at all -- relying on Valid() alone made every nameplate
+	// with an empty clan/reason rebuild its container from scratch every frame.
+	bool m_TextUpToDate = false;
 	virtual bool UpdateNeeded(CGameClient &This, const CNamePlateData &Data) = 0;
 	virtual void UpdateText(CGameClient &This, const CNamePlateData &Data) = 0;
 	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
@@ -105,8 +110,24 @@ protected:
 public:
 	void Update(CGameClient &This, const CNamePlateData &Data) override
 	{
-		if(!UpdateNeeded(This, Data) && m_TextContainerIndex.Valid())
+		const bool NeedsUpdate = UpdateNeeded(This, Data);
+
+		// UpdateNeeded sets m_Visible. An invisible part is neither rendered nor does it
+		// take up space in the layout, so there is no reason to build its text container.
+		if(!m_Visible)
 			return;
+
+		if(!NeedsUpdate && m_TextUpToDate)
+		{
+			// The text is unchanged, so the container is still correct. Empty text
+			// produces no container at all, which means there is nothing to render and
+			// the part must not take up any space in the layout either.
+			if(!m_TextContainerIndex.Valid())
+				m_Visible = false;
+			return;
+		}
+
+		m_TextUpToDate = true;
 
 		// Set flags
 		unsigned int Flags = ETextRenderFlags::TEXT_RENDER_FLAG_NO_FIRST_CHARACTER_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_LAST_CHARACTER_ADVANCE;
@@ -142,6 +163,7 @@ public:
 	void Reset(CGameClient &This) override
 	{
 		This.TextRender()->DeleteTextContainer(m_TextContainerIndex);
+		m_TextUpToDate = false;
 	}
 	void Render(CGameClient &This, vec2 Pos) const override
 	{
