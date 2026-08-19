@@ -46,7 +46,10 @@
 #undef IStorage
 #include <base/system.h>
 
+#include <atomic>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
 #include <string>
 #include <thread>
 #include <vector>
@@ -55,6 +58,43 @@ using namespace winrt::Windows::Media::Control;
 
 namespace
 {
+	// The session thread used to sleep out a fixed interval between polls, which meant a track
+	// change was not noticed until the next one came around. Windows raises events the moment an
+	// app publishes new media state, so the thread now waits on this instead: the handlers do
+	// nothing but signal it, and the interval survives only as a fallback for players that never
+	// raise anything. Keeping every read on the one thread avoids having callbacks touch shared
+	// state from the thread pool.
+	class CSessionWake
+	{
+	public:
+		std::mutex m_Mutex;
+		std::condition_variable m_Condition;
+		bool m_Signalled = false;
+		// Set whenever the metadata itself may have changed, so the next pass refetches it.
+		std::atomic_bool m_PropertiesDirty{true};
+
+		void Signal(bool Properties)
+		{
+			if(Properties)
+				m_PropertiesDirty.store(true, std::memory_order_relaxed);
+			{
+				std::scoped_lock Lock(m_Mutex);
+				m_Signalled = true;
+			}
+			m_Condition.notify_all();
+		}
+
+		// Returns as soon as something has been signalled, and otherwise once the interval is up.
+		void Wait(std::chrono::milliseconds Interval, const std::atomic_bool &StopFlag)
+		{
+			std::unique_lock Lock(m_Mutex);
+			m_Condition.wait_for(Lock, Interval, [&]() {
+				return m_Signalled || StopFlag.load(std::memory_order_relaxed);
+			});
+			m_Signalled = false;
+		}
+	};
+
 	template<typename TAsyncOp>
 	bool WaitForAsync(const TAsyncOp &Operation, const std::atomic_bool &StopFlag)
 	{
@@ -68,7 +108,7 @@ namespace
 				return false;
 			if(StopFlag.load(std::memory_order_relaxed))
 				return false;
-			std::this_thread::sleep_for(std::chrono::milliseconds(20));
+			std::this_thread::sleep_for(std::chrono::milliseconds(5));
 		}
 	}
 
@@ -273,8 +313,17 @@ void CMediaViewer::ThreadMain()
 	constexpr int SessionSleep = 150;
 
 	{
+		// Declared before the revokers below so that it outlives them: the handlers capture it by
+		// reference, and a revoker unhooks its handler when it is destroyed.
+		CSessionWake Wake;
+
 		GlobalSystemMediaTransportControlsSessionManager Manager{nullptr};
 		GlobalSystemMediaTransportControlsSession Session{nullptr};
+		GlobalSystemMediaTransportControlsSession RegisteredSession{nullptr};
+		GlobalSystemMediaTransportControlsSessionManager::CurrentSessionChanged_revoker CurrentSessionRevoker;
+		GlobalSystemMediaTransportControlsSession::MediaPropertiesChanged_revoker MediaPropertiesRevoker;
+		GlobalSystemMediaTransportControlsSession::PlaybackInfoChanged_revoker PlaybackInfoRevoker;
+		GlobalSystemMediaTransportControlsSession::TimelinePropertiesChanged_revoker TimelineRevoker;
 		CPlainState State{};
 		bool HasMedia = false;
 		std::string AlbumArtKey;
@@ -311,6 +360,11 @@ void CMediaViewer::ThreadMain()
 						else
 						{
 							Manager = RequestOp.GetResults();
+							if(Manager)
+							{
+								CurrentSessionRevoker = Manager.CurrentSessionChanged(winrt::auto_revoke,
+									[&Wake](auto &&, auto &&) { Wake.Signal(true); });
+							}
 						}
 					}
 					catch(const winrt::hresult_error &)
@@ -331,6 +385,26 @@ void CMediaViewer::ThreadMain()
 				}
 
 				Session = Manager.GetCurrentSession();
+				if(Session != RegisteredSession)
+				{
+					// Rehook onto whichever session is current now. Revoked first, so handlers
+					// cannot pile up on top of each other as the active player changes.
+					MediaPropertiesRevoker.revoke();
+					PlaybackInfoRevoker.revoke();
+					TimelineRevoker.revoke();
+					RegisteredSession = Session;
+					if(Session)
+					{
+						MediaPropertiesRevoker = Session.MediaPropertiesChanged(winrt::auto_revoke,
+							[&Wake](auto &&, auto &&) { Wake.Signal(true); });
+						PlaybackInfoRevoker = Session.PlaybackInfoChanged(winrt::auto_revoke,
+							[&Wake](auto &&, auto &&) { Wake.Signal(false); });
+						TimelineRevoker = Session.TimelinePropertiesChanged(winrt::auto_revoke,
+							[&Wake](auto &&, auto &&) { Wake.Signal(false); });
+					}
+					Wake.m_PropertiesDirty.store(true, std::memory_order_relaxed);
+				}
+
 				if(!Session)
 				{
 					if(HasMedia)
@@ -338,7 +412,7 @@ void CMediaViewer::ThreadMain()
 						ResetSharedState(m_pShared.get(), State, HasMedia, AlbumArtKey);
 						AlbumArtLoaded = false;
 					}
-					std::this_thread::sleep_for(std::chrono::milliseconds(SessionSleep));
+					Wake.Wait(std::chrono::milliseconds(SessionSleep), m_StopThread);
 					continue;
 				}
 
@@ -350,7 +424,7 @@ void CMediaViewer::ThreadMain()
 						ResetSharedState(m_pShared.get(), State, HasMedia, AlbumArtKey);
 						AlbumArtLoaded = false;
 					}
-					std::this_thread::sleep_for(std::chrono::milliseconds(SessionSleep));
+					Wake.Wait(std::chrono::milliseconds(SessionSleep), m_StopThread);
 					continue;
 				}
 
@@ -362,7 +436,7 @@ void CMediaViewer::ThreadMain()
 						ResetSharedState(m_pShared.get(), State, HasMedia, AlbumArtKey);
 						AlbumArtLoaded = false;
 					}
-					std::this_thread::sleep_for(std::chrono::milliseconds(SessionSleep));
+					Wake.Wait(std::chrono::milliseconds(SessionSleep), m_StopThread);
 					continue;
 				}
 
@@ -380,7 +454,7 @@ void CMediaViewer::ThreadMain()
 						ResetSharedState(m_pShared.get(), State, HasMedia, AlbumArtKey);
 						AlbumArtLoaded = false;
 					}
-					std::this_thread::sleep_for(std::chrono::milliseconds(SessionSleep));
+					Wake.Wait(std::chrono::milliseconds(SessionSleep), m_StopThread);
 					continue;
 				}
 
@@ -394,7 +468,10 @@ void CMediaViewer::ThreadMain()
 				HasMedia = true;
 
 				const auto Now = std::chrono::steady_clock::now();
-				if(Now - LastPropsUpdate >= std::chrono::seconds(1))
+				// Normally driven by the event. The interval is only a backstop for players that
+				// publish state without ever announcing it.
+				const bool PropertiesDirty = Wake.m_PropertiesDirty.exchange(false, std::memory_order_relaxed);
+				if(PropertiesDirty || Now - LastPropsUpdate >= std::chrono::seconds(5))
 				{
 					LastPropsUpdate = Now;
 					try
@@ -501,7 +578,7 @@ void CMediaViewer::ThreadMain()
 				AlbumArtLoaded = false;
 			}
 
-			std::this_thread::sleep_for(std::chrono::milliseconds(SessionSleep));
+			Wake.Wait(std::chrono::milliseconds(SessionSleep), m_StopThread);
 		}
 	}
 
