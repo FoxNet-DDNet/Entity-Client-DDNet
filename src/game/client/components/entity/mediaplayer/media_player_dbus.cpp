@@ -16,7 +16,16 @@
 #include <pulse/pulseaudio.h>
 #include <pulse/simple.h>
 #endif
+// Album art arrives as whatever the player felt like publishing, which in practice is JPEG or
+// PNG. PNG is handled by the engine loader below, which is already linked against libpng for
+// every other image the client loads, so stb_image is only compiled for the one format nothing
+// else in the tree can read. Left unrestricted it also builds decoders for BMP, PSD, TGA, GIF,
+// HDR, PIC and PNM plus its own zlib, none of which is ever reachable from here.
 #define STB_IMAGE_IMPLEMENTATION
+#define STBI_ONLY_JPEG
+#define STBI_NO_STDIO
+#define STBI_NO_LINEAR
+#define STBI_NO_HDR
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wduplicated-branches"
@@ -25,6 +34,9 @@
 #if defined(__GNUC__) && !defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
+
+#include <engine/gfx/image_loader.h>
+#include <engine/gfx/image_manipulation.h>
 #endif
 
 #include "media_player_impl.h"
@@ -36,10 +48,8 @@
 #include <base/system.h>
 
 #include <algorithm>
-#include <array>
 #include <cctype>
 #include <chrono>
-#include <cmath>
 #include <cstdio>
 #include <cstring>
 #include <mutex>
@@ -193,6 +203,43 @@ namespace
 		return MultiResult == CURLM_OK && GotResult && Result == CURLE_OK && !Out.empty();
 	}
 
+	bool IsPng(const std::vector<uint8_t> &Data)
+	{
+		static const uint8_t s_aSignature[] = {0x89, 'P', 'N', 'G', '\r', '\n', 0x1A, '\n'};
+		return Data.size() >= sizeof(s_aSignature) && mem_comp(Data.data(), s_aSignature, sizeof(s_aSignature)) == 0;
+	}
+
+	bool DecodePngFromBuffer(const std::vector<uint8_t> &Data, std::vector<uint8_t> &OutRgba, int &OutWidth, int &OutHeight)
+	{
+		CByteBufferReader Reader(Data.data(), Data.size());
+		CImageInfo Image;
+		int PngliteIncompatible = 0;
+		if(!CImageLoader::LoadPng(Reader, "album art", Image, PngliteIncompatible))
+		{
+			log_info("mediaviewer", "Failed to load png album art");
+			return false;
+		}
+
+		// Cover art is usually opaque, so the loader hands back three channel data more often than
+		// not, while everything downstream of here works in rgba.
+		if(!ConvertToRgba(Image))
+		{
+			log_info("mediaviewer", "Failed to convert png album art to rgba");
+			return false;
+		}
+
+		if(Image.m_Width == 0 || Image.m_Height == 0)
+		{
+			log_info("mediaviewer", "Invalid png dimensions: %dx%d", (int)Image.m_Width, (int)Image.m_Height);
+			return false;
+		}
+
+		OutRgba.assign(Image.m_pData, Image.m_pData + Image.DataSize());
+		OutWidth = (int)Image.m_Width;
+		OutHeight = (int)Image.m_Height;
+		return true;
+	}
+
 	bool DecodeImageFromBuffer(const std::vector<uint8_t> &Data, std::vector<uint8_t> &OutRgba, int &OutWidth, int &OutHeight)
 	{
 		OutWidth = 0;
@@ -205,13 +252,16 @@ namespace
 			return false;
 		}
 
+		if(IsPng(Data))
+			return DecodePngFromBuffer(Data, OutRgba, OutWidth, OutHeight);
+
 		int Channels = 0;
 		int Width = 0;
 		int Height = 0;
 		uint8_t *pImageData = stbi_load_from_memory(Data.data(), (int)Data.size(), &Width, &Height, &Channels, 4);
 		if(!pImageData)
 		{
-			log_info("mediaviewer", "Failed to load image from buffer: %s", stbi_failure_reason());
+			log_info("mediaviewer", "Failed to load jpeg album art: %s", stbi_failure_reason());
 			return false;
 		}
 		if(Width <= 0 || Height <= 0)
@@ -664,7 +714,6 @@ namespace
 	struct CPulseStreamData
 	{
 		CMediaViewer *m_pMediaViewer = nullptr;
-		std::vector<float> m_SampleBuffer;
 		int m_Channels = 0;
 		int m_SampleRate = 0;
 	};
@@ -775,20 +824,10 @@ namespace
 			return;
 
 		const size_t NumFrames = NumFloats / (size_t)pStreamData->m_Channels;
-		for(size_t i = 0; i < NumFrames; ++i)
-		{
-			float Sample = 0.0f;
-			for(int Channel = 0; Channel < pStreamData->m_Channels; ++Channel)
-				Sample += pSamples[i * (size_t)pStreamData->m_Channels + (size_t)Channel];
-			Sample /= (float)pStreamData->m_Channels;
+		if(NumFrames == 0)
+			return;
 
-			pStreamData->m_SampleBuffer.push_back(Sample);
-			if(pStreamData->m_SampleBuffer.size() >= (size_t)FFT::FFT_SIZE)
-			{
-				pStreamData->m_pMediaViewer->ProcessAudioFrame(pStreamData->m_SampleBuffer.data(), (int)pStreamData->m_SampleBuffer.size(), pStreamData->m_SampleRate);
-				pStreamData->m_SampleBuffer.clear();
-			}
-		}
+		pStreamData->m_pMediaViewer->ProcessAudioSamples(pSamples, (int)NumFrames, pStreamData->m_Channels, pStreamData->m_SampleRate);
 	}
 
 	void PulseStreamReadCallback(pa_stream *pStream, size_t Length, void *pUser)
@@ -1201,60 +1240,5 @@ void CMediaViewer::AudioThreadMain()
 
 	ClearAudioCapture(m_pAudioCapture.get());
 #endif
-}
-
-void CMediaViewer::ProcessAudioFrame(const float *pSamples, int NumSamples, int SampleRate)
-{
-	if(!m_pAudioCapture || !pSamples || NumSamples <= 1 || SampleRate <= 0)
-		return;
-
-	std::vector<FFT::CComplex> FftResult;
-	FFT::ComputeFFT(pSamples, NumSamples, FftResult);
-
-	const int NumBands = CVisualizer::NUM_FREQUENCY_BANDS;
-	std::array<float, CVisualizer::NUM_FREQUENCY_BANDS> Bands{};
-
-	const int UsableBins = FFT::FFT_SIZE / 2;
-	const float FreqPerBin = (float)SampleRate / FFT::FFT_SIZE;
-	const float MinFreq = 48000.0f / FFT::FFT_SIZE;
-	const float MaxFreq = 20000.0f;
-	const float LogMin = std::log10(MinFreq);
-	const float LogMax = std::log10(MaxFreq);
-
-	for(int Band = 0; Band < NumBands; ++Band)
-	{
-		const float t0 = (float)Band / NumBands;
-		const float t1 = (float)(Band + 1) / NumBands;
-		const float Freq0 = std::pow(10.0f, LogMin + t0 * (LogMax - LogMin));
-		const float Freq1 = std::pow(10.0f, LogMin + t1 * (LogMax - LogMin));
-
-		const int Bin0 = std::clamp((int)(Freq0 / FreqPerBin), 0, UsableBins - 1);
-		const int Bin1 = std::clamp((int)(Freq1 / FreqPerBin), Bin0 + 1, UsableBins);
-
-		float Sum = 0.0f;
-		int Count = 0;
-		for(int Bin = Bin0; Bin < Bin1; ++Bin)
-		{
-			Sum += FftResult[Bin].Magnitude();
-			++Count;
-		}
-
-		if(Count > 0)
-		{
-			float Magnitude = Sum / Count;
-			Magnitude = std::log10(1.0f + Magnitude * 100.0f) / 2.0f;
-			Bands[Band] = std::clamp(Magnitude, 0.0f, 1.0f);
-		}
-	}
-
-	std::scoped_lock Lock(m_pAudioCapture->m_Mutex);
-	const float Smoothing = 0.7f;
-	for(int i = 0; i < NumBands; ++i)
-	{
-		m_pAudioCapture->m_aFrequencyBands[i] =
-			m_pAudioCapture->m_aFrequencyBands[i] * Smoothing +
-			Bands[i] * (1.0f - Smoothing);
-	}
-	m_pAudioCapture->m_Active = true;
 }
 #endif

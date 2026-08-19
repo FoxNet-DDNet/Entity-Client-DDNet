@@ -126,7 +126,7 @@ public:
 	void Previous();
 	void PlayPause();
 	void Next();
-	void ProcessAudioFrame(const float *pSamples, int NumSamples, int SampleRate);
+	void ProcessAudioSamples(const float *pInterleaved, int NumFrames, int Channels, int SampleRate);
 
 private:
 #if defined(CONF_FAMILY_WINDOWS) && __has_include(<winrt/Windows.Foundation.h>)

@@ -612,6 +612,234 @@ void CMediaViewer::Next()
 #endif
 }
 
+#if MEDIA_PLAYER_WINRT || MEDIA_PLAYER_DBUS
+namespace
+{
+	// Everything above this is inaudible and would only ever add empty bars.
+	constexpr float VISUALIZER_MAX_FREQUENCY = 20000.0f;
+	// Bars snap up to a new peak and then fall under gravity, which reads far livelier than
+	// easing back down. Not quite an instant rise, just enough damping that a single noisy frame
+	// cannot spike a bar. In seconds, and in bar heights per second squared.
+	constexpr float VISUALIZER_ATTACK_TIME = 0.008f;
+	constexpr float VISUALIZER_FALL_ACCELERATION = 20.0f;
+	// A fall starts at this speed rather than from rest, otherwise a bar visibly hangs at its peak
+	// for a moment before gravity gets going, which is what makes the display feel sluggish.
+	constexpr float VISUALIZER_FALL_START_SPEED = 1.5f;
+
+	// How much of a band comes from its loudest bin rather than the average across it. Averaging
+	// alone buries a sharp note among the quiet bins beside it and flattens the whole display.
+	constexpr float VISUALIZER_BAND_PEAK_MIX = 0.75f;
+	// Below this a band is treated as silent, which keeps the release from crawling towards zero
+	// forever and feeding denormals into the mix.
+	constexpr float VISUALIZER_EPSILON = 0.001f;
+
+	// The window the bars show, in dB relative to a full scale tone. Loudness is heard
+	// logarithmically, so a dB scale is what spreads real music across the bar height instead of
+	// bunching it up near the bottom. The ceiling is far above full scale on purpose: no music
+	// ever reaches it, which is what parks normal material in the lower half of the bar and
+	// leaves the punch below room to throw a band upwards without clipping flat against the top.
+	constexpr float VISUALIZER_FLOOR_DB = -54.0f;
+	constexpr float VISUALIZER_CEILING_DB = 36.0f;
+	// Music loses roughly this much energy per octave, so the treble bands sit far below the bass
+	// ones and would hardly ever leave the floor. Lifting each band by the same slope evens that
+	// out, which is what makes the right hand side of the visualizer move at all.
+	constexpr float VISUALIZER_TILT_DB_PER_OCTAVE = 3.0f;
+
+	// A bar sits at the height its band warrants, then how far the band has strayed from where it
+	// has been sitting recently is exaggerated on top of that. This is what makes the display
+	// react to a beat rather than drift with it.
+	constexpr float VISUALIZER_PUNCH = 3.5f;
+	// How far back "sitting at" reaches.
+	constexpr float VISUALIZER_PUNCH_AVERAGE_TIME = 0.7f;
+	// Backstop on how far the baseline may lag the level, so a single band cannot be driven to
+	// an absurd height by a long absence.
+	constexpr float VISUALIZER_PUNCH_MAX_DEVIATION_DB = 14.0f;
+
+	float ToDecibels(float Magnitude)
+	{
+		// The floor keeps log10 away from zero; anything this quiet is silence regardless.
+		return 20.0f * std::log10(std::max(Magnitude, 1e-9f));
+	}
+
+	// Exponential approach towards a target, framed as a time constant rather than a per frame factor.
+	float FollowFactor(float DeltaSeconds, float Time)
+	{
+		return 1.0f - std::exp(-DeltaSeconds / Time);
+	}
+}
+
+void CMediaViewer::CAudioCapture::CBandPlan::Update(int SampleRate)
+{
+	if(SampleRate == m_SampleRate)
+		return;
+
+	m_SampleRate = SampleRate;
+
+	constexpr int NumBands = CVisualizer::NUM_FREQUENCY_BANDS;
+	const float FrequencyPerBin = (float)SampleRate / FFT::FFT_SIZE;
+	const float LogMin = std::log10(FrequencyPerBin);
+	const float LogMax = std::log10(std::min(VISUALIZER_MAX_FREQUENCY, (float)SampleRate * 0.5f));
+
+	for(int Band = 0; Band < NumBands; ++Band)
+	{
+		// Spacing the bands logarithmically matches how pitch is heard, an octave per equal step.
+		const float Frequency0 = std::pow(10.0f, LogMin + (LogMax - LogMin) * ((float)Band / NumBands));
+		const float Frequency1 = std::pow(10.0f, LogMin + (LogMax - LogMin) * ((float)(Band + 1) / NumBands));
+
+		// Bin 0 holds the DC offset rather than anything audible, so it is left out.
+		const int Begin = std::clamp((int)(Frequency0 / FrequencyPerBin), 1, FFT::FFT_BINS - 1);
+		m_aBinBegin[Band] = Begin;
+		// The low bands are narrower than one bin, so every band gets at least one to average.
+		m_aBinEnd[Band] = std::clamp((int)(Frequency1 / FrequencyPerBin), Begin + 1, FFT::FFT_BINS);
+
+		// Referenced to the lowest band, so the tilt only ever lifts and never cuts the bass away.
+		const float Octaves = std::log2(Frequency0 / FrequencyPerBin);
+		m_aTiltDb[Band] = VISUALIZER_TILT_DB_PER_OCTAVE * std::max(Octaves, 0.0f);
+	}
+}
+
+// Transforms whatever is currently in the sliding window and moves the bars towards it.
+static void ProcessAudioWindow(CMediaViewer::CAudioCapture *pCapture, int SampleRate)
+{
+	using CVisualizer = CMediaViewer::CVisualizer;
+
+	pCapture->m_BandPlan.Update(SampleRate);
+	FFT::ComputeFFT(pCapture->m_aWindow.data(), FFT::FFT_SIZE, pCapture->m_FftBuffer);
+
+	// Undo the transform size and the level the window takes away, so a full scale tone reaches
+	// 1.0 regardless of how the FFT is configured.
+	const float MagnitudeScale = 2.0f / (FFT::FFT_SIZE * FFT::Tables().m_WindowGain);
+
+	std::array<float, CVisualizer::NUM_FREQUENCY_BANDS> aBandDb{};
+	for(int Band = 0; Band < CVisualizer::NUM_FREQUENCY_BANDS; ++Band)
+	{
+		const int Begin = pCapture->m_BandPlan.m_aBinBegin[Band];
+		const int End = pCapture->m_BandPlan.m_aBinEnd[Band];
+
+		float Sum = 0.0f;
+		float Peak = 0.0f;
+		for(int Bin = Begin; Bin < End; ++Bin)
+		{
+			const float Magnitude = pCapture->m_FftBuffer[Bin].Magnitude();
+			Sum += Magnitude;
+			Peak = std::max(Peak, Magnitude);
+		}
+		const float Magnitude = std::lerp(Sum / (End - Begin), Peak, VISUALIZER_BAND_PEAK_MIX);
+
+		aBandDb[Band] = ToDecibels(Magnitude * MagnitudeScale) + pCapture->m_BandPlan.m_aTiltDb[Band];
+	}
+
+	// One hop of new audio has arrived since the last update, not one whole window.
+	const float DeltaSeconds = (float)FFT::FFT_HOP / (float)SampleRate;
+	const float InvRangeDb = 1.0f / (VISUALIZER_CEILING_DB - VISUALIZER_FLOOR_DB);
+	const float Attack = FollowFactor(DeltaSeconds, VISUALIZER_ATTACK_TIME);
+	const float AverageFollow = FollowFactor(DeltaSeconds, VISUALIZER_PUNCH_AVERAGE_TIME);
+
+	if(!pCapture->m_AverageSeeded)
+	{
+		for(int Band = 0; Band < CVisualizer::NUM_FREQUENCY_BANDS; ++Band)
+			pCapture->m_aAverageDb[Band] = aBandDb[Band];
+		pCapture->m_AverageSeeded = true;
+	}
+
+	// How far each band has strayed from where it has been sitting.
+	std::array<float, CVisualizer::NUM_FREQUENCY_BANDS> aDeviationDb{};
+	float MeanDeviationDb = 0.0f;
+	for(int Band = 0; Band < CVisualizer::NUM_FREQUENCY_BANDS; ++Band)
+	{
+		float &AverageDb = pCapture->m_aAverageDb[Band];
+		AverageDb += (aBandDb[Band] - AverageDb) * AverageFollow;
+		AverageDb = std::clamp(AverageDb,
+			aBandDb[Band] - VISUALIZER_PUNCH_MAX_DEVIATION_DB,
+			aBandDb[Band] + VISUALIZER_PUNCH_MAX_DEVIATION_DB);
+
+		aDeviationDb[Band] = aBandDb[Band] - AverageDb;
+		MeanDeviationDb += aDeviationDb[Band];
+	}
+	MeanDeviationDb /= CVisualizer::NUM_FREQUENCY_BANDS;
+
+	std::scoped_lock Lock(pCapture->m_Mutex);
+	for(int Band = 0; Band < CVisualizer::NUM_FREQUENCY_BANDS; ++Band)
+	{
+		// Only the part of the movement that this band did and the others did not. A track
+		// starting, stopping or changing volume shifts every band together, so it cancels here
+		// and leaves the bars alone. A beat lands in some bands and not others, so it survives.
+		const float PunchDb = (aDeviationDb[Band] - MeanDeviationDb) * VISUALIZER_PUNCH;
+		const float Target = std::clamp((aBandDb[Band] + PunchDb - VISUALIZER_FLOOR_DB) * InvRangeDb, 0.0f, 1.0f);
+
+		float &Value = pCapture->m_aFrequencyBands[Band];
+		float &FallSpeed = pCapture->m_aFallSpeed[Band];
+		if(Target >= Value)
+		{
+			Value += (Target - Value) * Attack;
+			FallSpeed = VISUALIZER_FALL_START_SPEED;
+		}
+		else
+		{
+			// Left to accumulate across frames, so a long fall keeps picking up speed.
+			FallSpeed += VISUALIZER_FALL_ACCELERATION * DeltaSeconds;
+			Value = std::max(Value - FallSpeed * DeltaSeconds, Target);
+		}
+
+		if(Value < VISUALIZER_EPSILON)
+			Value = 0.0f;
+	}
+	pCapture->m_Active = true;
+}
+
+void CMediaViewer::ProcessAudioSamples(const float *pInterleaved, int NumFrames, int Channels, int SampleRate)
+{
+	if(!m_pAudioCapture || !pInterleaved || NumFrames <= 0 || Channels <= 0 || SampleRate <= 0)
+		return;
+
+	CAudioCapture *pCapture = m_pAudioCapture.get();
+	const float InvChannels = 1.0f / (float)Channels;
+
+	for(int Frame = 0; Frame < NumFrames; ++Frame)
+	{
+		float Sample = 0.0f;
+		for(int Channel = 0; Channel < Channels; ++Channel)
+			Sample += pInterleaved[(size_t)Frame * (size_t)Channels + (size_t)Channel];
+
+		pCapture->m_aWindow[pCapture->m_WindowCount++] = Sample * InvChannels;
+		if(pCapture->m_WindowCount < FFT::FFT_SIZE)
+			continue;
+
+		ProcessAudioWindow(pCapture, SampleRate);
+
+		// Keep the tail so the next transform overlaps this one instead of starting from scratch.
+		std::copy(pCapture->m_aWindow.begin() + FFT::FFT_HOP, pCapture->m_aWindow.end(), pCapture->m_aWindow.begin());
+		pCapture->m_WindowCount = FFT::FFT_SIZE - FFT::FFT_HOP;
+	}
+}
+
+void DecayAudioBands(CMediaViewer::CAudioCapture *pAudioCapture, float DeltaSeconds)
+{
+	if(!pAudioCapture || DeltaSeconds <= 0.0f)
+		return;
+
+	std::scoped_lock Lock(pAudioCapture->m_Mutex);
+	for(int Band = 0; Band < CMediaViewer::CVisualizer::NUM_FREQUENCY_BANDS; ++Band)
+	{
+		float &Value = pAudioCapture->m_aFrequencyBands[Band];
+		float &FallSpeed = pAudioCapture->m_aFallSpeed[Band];
+
+		FallSpeed += VISUALIZER_FALL_ACCELERATION * DeltaSeconds;
+		Value = std::max(Value - FallSpeed * DeltaSeconds, 0.0f);
+		if(Value < VISUALIZER_EPSILON)
+			Value = 0.0f;
+	}
+}
+#else
+void CMediaViewer::ProcessAudioSamples(const float *pInterleaved, int NumFrames, int Channels, int SampleRate)
+{
+	(void)pInterleaved;
+	(void)NumFrames;
+	(void)Channels;
+	(void)SampleRate;
+}
+#endif
+
 void CMediaViewer::CVisualizer::GetBands(float *pOutBands, int NumBands) const
 {
 	const int CopyCount = std::min(NumBands, NUM_FREQUENCY_BANDS);

@@ -2538,9 +2538,11 @@ static float GetLerpAmount(float DeltaTime)
 	return std::clamp(DeltaTime * LerpSpeed, 0.0f, 1.0f);
 }
 
-static float GetMediaIslandSizeScale(int MediaIslandSize)
+static float GetMediaIslandSizeScale(int MediaIslandScale)
 {
-	return std::clamp(1.0f + (MediaIslandSize - DefaultConfig::ClMediaIslandSize) * 0.1f, 0.5f, 1.5f);
+	// The config counts tenths of a step, so a step is worth a tenth of the island size.
+	const float Steps = (MediaIslandScale - DefaultConfig::ClMediaIslandScale) / 10.0f;
+	return std::clamp(1.0f + Steps * 0.1f, 0.5f, 1.5f);
 }
 
 static ColorRGBA LerpColor(const ColorRGBA &A, const ColorRGBA &B, float Amount)
@@ -2573,8 +2575,23 @@ void CHud::RenderIsland()
 		return; // Default rendering
 	}
 
-	const int MediaIslandSize = g_Config.m_ClMediaIslandSize;
-	const float SizeScale = GetMediaIslandSizeScale(MediaIslandSize);
+	const float DeltaTime = Client()->RenderFrameTime() * 1.2f;
+
+	// Every dimension below is derived from this, so animating the scale itself is what carries the
+	// box, the album art, the visualizer and the text sizes along together. Applying the new scale
+	// at once instead left the text snapping to its final size while the box was still lerping.
+	const float WantedSizeScale = GetMediaIslandSizeScale(g_Config.m_ClMediaIslandScale);
+	if(!Island.m_Initialized || g_Config.m_ClMediaIslandAnimation == 0)
+	{
+		Island.m_SizeScale = WantedSizeScale;
+	}
+	else
+	{
+		Island.m_SizeScale = std::lerp(Island.m_SizeScale, WantedSizeScale, GetLerpAmount(DeltaTime));
+		if(absolute(Island.m_SizeScale - WantedSizeScale) < 0.001f)
+			Island.m_SizeScale = WantedSizeScale;
+	}
+	const float SizeScale = Island.m_SizeScale;
 
 	const float Rounding = 3.5f * SizeScale;
 	const float Padding = 3.0f * SizeScale;
@@ -2594,7 +2611,9 @@ void CHud::RenderIsland()
 	CMediaViewer::CState MediaState;
 	const bool HasMediaState = MediaIsland && GameClient()->m_MediaViewer.GetStateSnapshot(MediaState);
 
-	const bool SizeChanged = !Island.m_Initialized || absolute(Island.m_SizeScale - SizeScale) > 0.001f;
+	// Text measurements are in pixels, so they only need redoing when the scale they were taken
+	// at has actually moved.
+	const bool SizeChanged = !Island.m_Initialized || absolute(Island.m_TextSizeScale - SizeScale) > 0.001f;
 	const bool StateChanged = Island.m_CurState != MediaState || !Island.m_Initialized;
 	const bool AlbumArtChanged = !Island.m_Initialized ||
 				     Island.m_CurState.m_AlbumArt.m_Texture.Id() != MediaState.m_AlbumArt.m_Texture.Id() ||
@@ -2613,6 +2632,13 @@ void CHud::RenderIsland()
 		{
 			Island.m_TitleTextWidth = TextRender()->TextWidth(TitleTextSize, MediaState.m_Title.c_str());
 			Island.m_ArtistTextWidth = TextRender()->TextWidth(ArtistTextSize, MediaState.m_Artist.c_str());
+			Island.m_TextSizeScale = SizeScale;
+		}
+
+		if(StateChanged)
+		{
+			// Only a different track restarts the scroll. Resizing must not, or the title would
+			// sit still for as long as the size animation runs.
 			Island.m_TitleScroll.Reset();
 			Island.m_ArtistScroll.Reset();
 		}
@@ -2624,7 +2650,6 @@ void CHud::RenderIsland()
 		}
 
 		Island.m_CurState = MediaState;
-		Island.m_SizeScale = SizeScale;
 
 		Island.m_PrevCropProfile = Island.m_CropProfile;
 		Island.m_CropProfile = MusicArtCropProfile(Island.m_CurState.m_ServiceId);
@@ -2657,7 +2682,6 @@ void CHud::RenderIsland()
 	const float ExpandedWidth = std::clamp(ArtistTitleWidth, 40.0f * SizeScale, 100.0f * SizeScale);
 	const float CollapsedIslandHeight = CollapsedMediaSize + Padding * 2.0f;
 	const float ExpandedIslandHeight = HoveredMediaSize + ExpandedControlsHeight + Padding;
-	const float DeltaTime = Client()->RenderFrameTime() * 1.2f;
 
 	bool HasMousePos = false;
 	vec2 MousePos(0.0f, 0.0f);
@@ -2719,47 +2743,66 @@ void CHud::RenderIsland()
 
 	Island.m_VisualState = Hovered ? CMediaIsland::EVisualState::EXPANDED : CMediaIsland::EVisualState::MINIMIZED;
 
-	const float CurrentTimerWidth = Hovered ? ExpandedWidth : CollapsedWidth;
-	const float CurrentMediaSize = Hovered ? HoveredMediaSize : CollapsedMediaSize;
+	// How far along the collapsed to expanded transition the island is. Driven by the hover state
+	// rather than measured back out of the animated height: the height is only ever chasing its
+	// target, so while the island was still catching up to a smaller size setting it read as
+	// taller than a collapsed island and the expanded layout switched itself on without the island
+	// being hovered at all.
+	const float WantedProgress = Hovered ? 1.0f : 0.0f;
+	if(!Island.m_Initialized || g_Config.m_ClMediaIslandAnimation == 0)
+	{
+		Island.m_AnimProgress = WantedProgress;
+	}
+	else
+	{
+		Island.m_AnimProgress = std::lerp(Island.m_AnimProgress, WantedProgress, GetLerpAmount(DeltaTime));
+		// Snapped once it is close enough, so a collapsed island really reaches zero instead of
+		// approaching it forever and leaving the expanded layout permanently switched on.
+		if(absolute(Island.m_AnimProgress - WantedProgress) < 0.001f)
+			Island.m_AnimProgress = WantedProgress;
+	}
+	const float Progress = Island.m_AnimProgress;
+
+	// Every part of the layout is placed from this one value, so the box and everything sitting
+	// inside it move as a single piece. Giving the box, the album art and the visualizer an
+	// animation each meant the contents were chasing a box that was itself still chasing its own
+	// target, and they visibly slid around inside it on the way.
+	const float CurrentTimerWidth = std::lerp(CollapsedWidth, ExpandedWidth, Progress);
+	const float CurrentMediaSize = std::lerp(CollapsedMediaSize, HoveredMediaSize, Progress);
 	const float CurrentMainRowHeight = CurrentMediaSize;
-	const float CurrentTimerSidePadding = Hovered ? ExpandedTimerSidePadding : CollapsedTimerSidePadding;
+	const float CurrentTimerSidePadding = std::lerp(CollapsedTimerSidePadding, ExpandedTimerSidePadding, Progress);
 
 	CUIRect TimerRect = {CenterX - CurrentTimerWidth * 0.5f, IslandY, CurrentTimerWidth, CurrentMainRowHeight};
-	const CUIRect WantedIslandRect = Hovered ? ExpandedIslandRect : CollapsedIslandRect;
+	const CUIRect IslandRect = {
+		std::lerp(CollapsedIslandRect.x, ExpandedIslandRect.x, Progress),
+		std::lerp(CollapsedIslandRect.y, ExpandedIslandRect.y, Progress),
+		std::lerp(CollapsedIslandRect.w, ExpandedIslandRect.w, Progress),
+		std::lerp(CollapsedIslandRect.h, ExpandedIslandRect.h, Progress)};
 
 	const float MinWidth = 7.0f * SizeScale;
-	if(WantedIslandRect.w < MinWidth)
+	if(IslandRect.w < MinWidth)
 	{
 		Island.ResetPosSize();
 		return;
 	}
 
-	Island.m_Rect.m_WantedPos = vec2(WantedIslandRect.x, WantedIslandRect.y);
-	Island.m_Rect.m_WantedSize = vec2(WantedIslandRect.w, WantedIslandRect.h);
-	Island.m_Rect.Update(DeltaTime);
+	// Kept in step for IslandPos() and IslandSize(), which other components lay out against.
+	Island.m_Rect.m_Pos = vec2(IslandRect.x, IslandRect.y);
+	Island.m_Rect.m_Size = vec2(IslandRect.w, IslandRect.h);
 
-	const float HeightRange = ExpandedIslandRect.h - CollapsedIslandRect.h;
-	if(HeightRange > 0.0f)
-	{
-		Island.m_AnimProgress = std::clamp((Island.m_Rect.m_Size.y - CollapsedIslandRect.h) / HeightRange, 0.0f, 1.0f);
-	}
-	else
-	{
-		Island.m_AnimProgress = Hovered ? 1.0f : 0.0f;
-	}
-
-	CUIRect IslandRect = {Island.m_Rect.m_Pos.x, Island.m_Rect.m_Pos.y, Island.m_Rect.m_Size.x, Island.m_Rect.m_Size.y};
 	IslandRect.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMediaIslandColor, true)), IGraphics::CORNER_ALL, Rounding);
 
 	CUIRect ContentRect;
 	IslandRect.Margin(Padding, &ContentRect);
 	CUIRect MainRowRect = ContentRect;
-	CUIRect ControlsRect;
-	const bool ShowExpandedLayout = Hovered || Island.m_AnimProgress > 0.0f;
+	CUIRect ControlsRect{};
+	const bool ShowExpandedLayout = Progress > 0.0f;
 	if(ShowExpandedLayout)
 	{
+		// Grown with the rest of the layout. Splitting off the full control row the moment the
+		// island started expanding shoved the main row up by its whole height in one frame.
 		CUIRect MainRowWithGap;
-		ContentRect.HSplitBottom(ExpandedControlsHeight, &MainRowWithGap, &ControlsRect);
+		ContentRect.HSplitBottom(ExpandedControlsHeight * Progress, &MainRowWithGap, &ControlsRect);
 		MainRowWithGap.HSplitTop(CurrentMainRowHeight, &MainRowRect, nullptr);
 	}
 
@@ -2788,16 +2831,10 @@ void CHud::RenderIsland()
 	if(HasMediaState)
 	{
 		ArtSlot.HMargin(std::max((ArtSlot.h - CurrentMediaSize) * 0.5f, 0.0f), &ArtSlot);
-		if(Hovered)
-		{
-			const float HoveredArtExpansion = 1.0f * SizeScale;
-			ArtSlot.w += HoveredArtExpansion;
-			ArtSlot.h += HoveredArtExpansion;
-		}
-		Island.m_AlbumArt.m_WantedPos = vec2(ArtSlot.x, ArtSlot.y);
-		Island.m_AlbumArt.m_WantedSize = vec2(ArtSlot.w, ArtSlot.h);
-		Island.m_AlbumArt.Update(DeltaTime);
-		ArtRect = {Island.m_AlbumArt.m_Pos.x, Island.m_AlbumArt.m_Pos.y, Island.m_AlbumArt.m_Size.x, Island.m_AlbumArt.m_Size.y};
+		const float HoveredArtExpansion = 1.0f * SizeScale * Progress;
+		ArtSlot.w += HoveredArtExpansion;
+		ArtSlot.h += HoveredArtExpansion;
+		ArtRect = ArtSlot;
 
 		if(ShowVisualizer)
 		{
@@ -2806,10 +2843,7 @@ void CHud::RenderIsland()
 			else
 				VisualizerSlot.HSplitBottom(CurrentMediaSize, nullptr, &VisualizerSlot);
 
-			Island.m_Visualizer.m_WantedPos = vec2(VisualizerSlot.x, VisualizerSlot.y);
-			Island.m_Visualizer.m_WantedSize = vec2(VisualizerSlot.w, VisualizerSlot.h);
-			Island.m_Visualizer.Update(DeltaTime);
-			VisualizerRect = {Island.m_Visualizer.m_Pos.x, Island.m_Visualizer.m_Pos.y, Island.m_Visualizer.m_Size.x, Island.m_Visualizer.m_Size.y};
+			VisualizerRect = VisualizerSlot;
 		}
 	}
 
@@ -2818,8 +2852,9 @@ void CHud::RenderIsland()
 	const float TextPadding = 4.0f * SizeScale;
 	const float VerticalClipPadding = 2.0f * SizeScale;
 
-	float TitleWantedWidth = (Hovered ? ExpandedWidth : CollapsedWidth);
-	TitleWantedWidth *= std::clamp(Island.m_AnimProgress, 0.0f, 1.0f);
+	// Off the animated width like everything else. Switching between the two widths the instant
+	// the hover changed made the text clip snap while the box around it was still moving.
+	const float TitleWantedWidth = CurrentTimerWidth * Progress;
 	const float CurrentAnimatedTextWidth = std::max(TitleWantedWidth, CollapsedWidth);
 
 	CUIRect TitleRect = {TimerRect.x - TextPadding, TimerYOff, TimerRect.w + TextPadding * 2.0f, GameTimerSize};
@@ -3013,7 +3048,9 @@ void CHud::RenderIsland()
 
 			if(Island.m_CurState.m_AlbumArt.m_Texture.IsValid())
 			{
-				const float Alpha = Island.m_Changed && PrevAlbumArt.m_Texture.IsValid() ? Island.m_ChangedAnim : 1.0f;
+				// Fades in even with no previous art to cross fade from, so the first cover of a
+				// track appears with the island rather than snapping in ahead of it.
+				const float Alpha = Island.m_Changed ? Island.m_ChangedAnim : 1.0f;
 				DrawRoundedTexture(Graphics(), ArtRect, Alpha, ArtRounding, Island.m_CurState.m_AlbumArt, Island.m_CropProfile);
 			}
 			else
@@ -3046,6 +3083,11 @@ void CHud::RenderIsland()
 			}
 			else
 				SecondaryColor = PrimaryColor;
+
+			// Fades in alongside the album art instead of appearing at once beside a box that is
+			// still growing.
+			PrimaryColor.a = a;
+			SecondaryColor.a = a;
 
 			RenderVisualizer(MediaState, PrimaryColor, SecondaryColor, VisualizerRect.TopLeft(), VisualizerRect.Size(), 5);
 		}
@@ -3121,69 +3163,59 @@ void CHud::RenderVisualizer(const CMediaViewer::CState &State, ColorRGBA Primary
 		return;
 
 	constexpr int TotalBars = CMediaViewer::CVisualizer::NUM_FREQUENCY_BANDS;
+	// More bars than the analyzer produces would leave the extra ones empty.
+	NumBands = std::min(NumBands, TotalBars);
+
+	float aVisualizerBands[TotalBars];
+	State.m_Visualizer.GetBands(aVisualizerBands, TotalBars);
+
+	// Fold the analyzer bands down onto the bars actually drawn. The ranges are spread across all
+	// of them so nothing at the top of the spectrum falls off when TotalBars is not a multiple of
+	// NumBands.
+	float aRenderedBands[TotalBars];
+	for(int i = 0; i < NumBands; ++i)
+	{
+		const int Begin = i * TotalBars / NumBands;
+		const int End = (i + 1) * TotalBars / NumBands;
+
+		float Sum = 0.0f;
+		for(int j = Begin; j < End; ++j)
+			Sum += aVisualizerBands[j];
+		aRenderedBands[i] = Sum / (End - Begin);
+	}
 
 	const float BarWidth = Size.x / NumBands;
 	const float BarSpacing = BarWidth * 0.2f;
 	const float ActualBarWidth = BarWidth - BarSpacing;
+	const float Rounding = std::min(ActualBarWidth * 0.5f, 2.0f);
+	const bool AlignCenter = g_Config.m_ClMediaIslandVisualizerAlignment == 2;
 
-	float aVisualizerBands[TotalBars];
-	std::vector<float> vRenderedBands(NumBands);
-	vRenderedBands.reserve(NumBands);
+	// Bars keep a visible stub at rest so the visualizer still reads as a row of bars when nothing
+	// is playing, and stop well short of filling the slot so a peak reads as a peak rather than as
+	// the bar running out of room.
+	constexpr float MIN_BAR_HEIGHT = 0.20f;
+	constexpr float MAX_BAR_HEIGHT = 1.00f;
 
-	State.m_Visualizer.GetBands(aVisualizerBands, TotalBars);
-	// Average bands into rendered bands
+	// One batch for the whole visualizer instead of a draw call per bar.
+	Graphics()->TextureClear();
+	Graphics()->QuadsBegin();
 	for(int i = 0; i < NumBands; ++i)
 	{
-		float Sum = 0.0f;
-		int Count = 0;
-		for(int j = i * (TotalBars / NumBands); j < (i + 1) * (TotalBars / NumBands) && j < TotalBars; ++j)
-		{
-			Sum += aVisualizerBands[j];
-			Count++;
-		}
-		vRenderedBands[i] = Count > 0 ? Sum / Count : 0.0f;
+		const float Height = MIN_BAR_HEIGHT + aRenderedBands[i] * (MAX_BAR_HEIGHT - MIN_BAR_HEIGHT);
+		const float BarHeight = Height * Size.y;
+
+		const float X = Pos.x + i * BarWidth;
+		const float Y = AlignCenter ? Pos.y + (Size.y - BarHeight) * 0.5f : Pos.y + (Size.y - BarHeight);
+
+		// Spread the gradient across the full range, so the last bar really reaches Secondary.
+		const float Blend = NumBands > 1 ? i / (float)(NumBands - 1) : 0.0f;
+
+		// DrawRectExt draws its corner arcs without checking they fit, so a radius taller than half
+		// the bar folds the top and bottom corners into each other and pinches short bars.
+		const float BarRounding = std::min(Rounding, BarHeight * 0.5f);
+
+		Graphics()->SetColor(LerpColor(Primary, Secondary, Blend));
+		Graphics()->DrawRectExt(X, Y, ActualBarWidth, BarHeight, BarRounding, IGraphics::CORNER_ALL);
 	}
-
-	for(int i = 0; i < NumBands; ++i)
-	{
-		const bool AlignCenter = g_Config.m_ClMediaIslandVisualizerAlignment == 2;
-		float Height = 0.2f + vRenderedBands[i] * 0.8f;
-		float BarHeight = Height * Size.y;
-
-		float X = Pos.x + i * BarWidth;
-		float Y = AlignCenter ? Pos.y + (Size.y - BarHeight) * 0.5f : Pos.y + (Size.y - BarHeight);
-
-		float a = i / (float)NumBands;
-
-		ColorRGBA Color = LerpColor(Primary, Secondary, a);
-
-		float Rounding = std::min(ActualBarWidth * 0.5f, 2.0f);
-
-		Graphics()->DrawRect(X, Y, ActualBarWidth, BarHeight, Color, IGraphics::CORNER_ALL, Rounding);
-	}
-}
-
-void CHud::CMediaIsland::CPosSize::Update(float DeltaTime)
-{
-	if(!m_Initialized || g_Config.m_ClMediaIslandAnimation == 0)
-	{
-		m_Pos = m_WantedPos;
-		m_Size = m_WantedSize;
-		m_Initialized = true;
-	}
-	else
-	{
-		const float LerpAmount = GetLerpAmount(DeltaTime);
-		m_Pos = vec2(
-			std::lerp(m_Pos.x, m_WantedPos.x, LerpAmount),
-			std::lerp(m_Pos.y, m_WantedPos.y, LerpAmount));
-		m_Size = vec2(
-			std::lerp(m_Size.x, m_WantedSize.x, LerpAmount),
-			std::lerp(m_Size.y, m_WantedSize.y, LerpAmount));
-
-		if(distance(m_Pos, m_WantedPos) < 0.01f)
-			m_Pos = m_WantedPos;
-		if(distance(m_Size, m_WantedSize) < 0.01f)
-			m_Size = m_WantedSize;
-	}
+	Graphics()->QuadsEnd();
 }

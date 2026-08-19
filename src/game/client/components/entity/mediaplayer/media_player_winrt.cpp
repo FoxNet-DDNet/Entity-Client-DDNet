@@ -46,10 +46,7 @@
 #undef IStorage
 #include <base/system.h>
 
-#include <algorithm>
-#include <array>
 #include <chrono>
-#include <cmath>
 #include <string>
 #include <thread>
 #include <vector>
@@ -553,8 +550,11 @@ void CMediaViewer::AudioThreadMain()
 	const int SampleRate = pWaveFormat ? pWaveFormat->nSamplesPerSec : 48000;
 	const int Channels = pWaveFormat ? pWaveFormat->nChannels : 2;
 
-	std::vector<float> SampleBuffer;
-	SampleBuffer.reserve(FFT::FFT_SIZE);
+	// Loopback capture goes quiet on pause: packets stop arriving entirely, or arrive flagged as
+	// silent. Either way no samples reach the analyzer, so the bands have to be released here
+	// or they stay frozen at whatever they showed when the music stopped.
+	auto LastAudio = std::chrono::steady_clock::now();
+	constexpr auto SILENCE_DELAY = std::chrono::milliseconds(100);
 
 	while(!m_StopAudioThread && SUCCEEDED(hr))
 	{
@@ -570,23 +570,10 @@ void CMediaViewer::AudioThreadMain()
 			hr = pCaptureClient->GetBuffer(&pData, &NumFramesAvailable, &Flags, nullptr, nullptr);
 			if(SUCCEEDED(hr))
 			{
-				if(!(Flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData)
+				if(!(Flags & AUDCLNT_BUFFERFLAGS_SILENT) && pData && NumFramesAvailable > 0)
 				{
-					const float *pFloatData = reinterpret_cast<const float *>(pData);
-					for(UINT32 i = 0; i < NumFramesAvailable; ++i)
-					{
-						float Sample = 0.0f;
-						for(int ch = 0; ch < Channels; ++ch)
-							Sample += pFloatData[i * Channels + ch];
-						Sample /= (float)Channels;
-
-						SampleBuffer.push_back(Sample);
-						if(SampleBuffer.size() >= FFT::FFT_SIZE)
-						{
-							ProcessAudioFrame(SampleBuffer.data(), (int)SampleBuffer.size(), SampleRate);
-							SampleBuffer.clear();
-						}
-					}
+					ProcessAudioSamples(reinterpret_cast<const float *>(pData), (int)NumFramesAvailable, Channels, SampleRate);
+					LastAudio = std::chrono::steady_clock::now();
 				}
 
 				pCaptureClient->ReleaseBuffer(NumFramesAvailable);
@@ -595,7 +582,15 @@ void CMediaViewer::AudioThreadMain()
 			hr = pCaptureClient->GetNextPacketSize(&PacketLength);
 		}
 
-		std::this_thread::sleep_for(std::chrono::milliseconds(1));
+		const auto Now = std::chrono::steady_clock::now();
+		if(Now - LastAudio >= SILENCE_DELAY)
+		{
+			DecayAudioBands(m_pAudioCapture.get(), std::chrono::duration<float>(Now - LastAudio).count());
+			LastAudio = Now;
+		}
+
+		// One FFT frame covers far more time than this, so polling any faster only burns wakeups.
+		std::this_thread::sleep_for(std::chrono::milliseconds(5));
 	}
 
 	if(pAudioClient)
@@ -612,60 +607,5 @@ void CMediaViewer::AudioThreadMain()
 		CoTaskMemFree(pWaveFormat);
 
 	CoUninitialize();
-}
-
-void CMediaViewer::ProcessAudioFrame(const float *pSamples, int NumSamples, int SampleRate)
-{
-	std::vector<FFT::CComplex> FftResult;
-	FFT::ComputeFFT(pSamples, NumSamples, FftResult);
-
-	const int NumBands = CVisualizer::NUM_FREQUENCY_BANDS;
-	std::array<float, CVisualizer::NUM_FREQUENCY_BANDS> Bands{};
-
-	const int UsableBins = FFT::FFT_SIZE / 2;
-	const float FreqPerBin = (float)SampleRate / FFT::FFT_SIZE;
-	const float MinFreq = 48000.0f / FFT::FFT_SIZE;
-	const float MaxFreq = 20000.0f;
-	const float LogMin = std::log10(MinFreq);
-	const float LogMax = std::log10(MaxFreq);
-
-	bool AllZero = true;
-	for(int band = 0; band < NumBands; ++band)
-	{
-		const float t0 = (float)band / NumBands;
-		const float t1 = (float)(band + 1) / NumBands;
-		const float freq0 = std::pow(10.0f, LogMin + t0 * (LogMax - LogMin));
-		const float freq1 = std::pow(10.0f, LogMin + t1 * (LogMax - LogMin));
-
-		const int bin0 = std::clamp((int)(freq0 / FreqPerBin), 0, UsableBins - 1);
-		const int bin1 = std::clamp((int)(freq1 / FreqPerBin), bin0 + 1, UsableBins);
-
-		float Sum = 0.0f;
-		int Count = 0;
-		for(int bin = bin0; bin < bin1; ++bin)
-		{
-			Sum += FftResult[bin].Magnitude();
-			++Count;
-		}
-
-		if(Count > 0)
-		{
-			float Magnitude = Sum / Count;
-			Magnitude = std::log10(1.0f + Magnitude * 100.0f) / 2.0f;
-			Bands[band] = std::clamp(Magnitude, 0.0f, 1.0f);
-			if(Magnitude > 0.001f)
-				AllZero = false;
-		}
-	}
-
-	std::scoped_lock Lock(m_pAudioCapture->m_Mutex);
-	const float Smoothing = 0.7f;
-	for(int i = 0; i < NumBands; ++i)
-	{
-		m_pAudioCapture->m_aFrequencyBands[i] =
-			m_pAudioCapture->m_aFrequencyBands[i] * Smoothing +
-			Bands[i] * (1.0f - Smoothing);
-	}
-	m_pAudioCapture->m_Active = true;
 }
 #endif

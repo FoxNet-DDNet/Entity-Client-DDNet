@@ -237,11 +237,6 @@ private:
 		public:
 			vec2 m_Pos = vec2();
 			vec2 m_Size = vec2();
-
-			vec2 m_WantedPos = vec2();
-			vec2 m_WantedSize = vec2();
-			bool m_Initialized = false;
-			void Update(float DeltaTime);
 		};
 
 		enum class EVisualState
@@ -264,6 +259,8 @@ private:
 		float m_TitleTextWidth = 0.0f;
 		float m_ArtistTextWidth = 0.0f;
 		float m_SizeScale = 1.0f;
+		// The scale the cached text widths above were measured at.
+		float m_TextSizeScale = 0.0f;
 
 		bool m_Hovered = false;
 		bool m_PrevHovered = false;
@@ -271,18 +268,15 @@ private:
 		CArtCropProfile m_CropProfile;
 		CArtCropProfile m_PrevCropProfile;
 
-		// Position and size of the island rect
+		// Position and size of the island rect. The album art and visualizer are placed directly
+		// from it each frame rather than animating on their own, so they cannot drift inside it.
 		CPosSize m_Rect;
-		CPosSize m_AlbumArt;
-		CPosSize m_Visualizer;
 
 		bool m_Initialized = false;
 
 		void ResetPosSize()
 		{
 			m_Rect = CPosSize();
-			m_AlbumArt = CPosSize();
-			m_Visualizer = CPosSize();
 		}
 
 		void Reset()

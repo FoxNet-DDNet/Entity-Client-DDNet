@@ -3855,7 +3855,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				DoLine_ColorPicker(&s_IslandColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Island color"), &g_Config.m_ClMediaIslandColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClMediaIslandColor, true)), false, nullptr, true);
 
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_ClMediaIslandSize, &g_Config.m_ClMediaIslandSize, &Button, "Island Size", 0, 10, &CUi::ms_LinearScrollbarScale, 0u, "");
+				Ui()->DoFloatScrollBar(&g_Config.m_ClMediaIslandScale, &g_Config.m_ClMediaIslandScale, &Button, EcLocalize("Island Size"), 10, 100, 10, &CUi::ms_LinearScrollbarScale, 0, "");
 
 				//ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				//Ui()->DoScrollbarOption(&g_Config.m_ClMediaIslandAnimation, &g_Config.m_ClMediaIslandAnimation, &Button, "Animation Time", 0, 300, &CUi::ms_LinearScrollbarScale, 0u, "");
