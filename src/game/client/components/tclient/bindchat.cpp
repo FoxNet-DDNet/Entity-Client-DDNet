@@ -287,7 +287,8 @@ bool CBindChat::CheckBindChat(const char *pText)
 	size_t SpaceIndex = pSpace ? pSpace - pText : strlen(pText);
 	for(const CBind &Bind : m_vBinds)
 	{
-		if(str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
+		if(str_startswith_nocase(pText, Bind.m_aName) &&
+			str_comp_nocase_num(pText, Bind.m_aName, SpaceIndex) == 0)
 			return true;
 	}
 	return false;
