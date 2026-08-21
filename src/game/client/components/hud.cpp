@@ -2656,8 +2656,16 @@ void CHud::RenderIsland()
 	}
 
 	const bool ShowSeconds = g_Config.m_TcShowLocalTimeSeconds; // TClient
-	const float LocalTimeWidth = LocalTime ? TextRender()->TextBoundingBox(LocalTimeSize, ShowSeconds ? "00:00.00" : "00:00").m_W : 0.0f;
-	const float NoGameTimerLocalTimeWidth = LocalTime ? TextRender()->TextBoundingBox(GameTimerSize, ShowSeconds ? "00:00.00" : "00:00").m_W : 0.0f;
+	if(absolute(Island.m_TimeTextSizeScale - SizeScale) > 0.001f || Island.m_TimeTextShowSeconds != ShowSeconds)
+	{
+		const char *pTimePlaceholder = ShowSeconds ? "00:00.00" : "00:00";
+		Island.m_LocalTimeWidth = TextRender()->TextBoundingBox(LocalTimeSize, pTimePlaceholder).m_W;
+		Island.m_NoGameTimerLocalTimeWidth = TextRender()->TextBoundingBox(GameTimerSize, pTimePlaceholder).m_W;
+		Island.m_TimeTextSizeScale = SizeScale;
+		Island.m_TimeTextShowSeconds = ShowSeconds;
+	}
+	const float LocalTimeWidth = LocalTime ? Island.m_LocalTimeWidth : 0.0f;
+	const float NoGameTimerLocalTimeWidth = LocalTime ? Island.m_NoGameTimerLocalTimeWidth : 0.0f;
 
 	const float CollapsedTimerSidePadding = (HudTimer || LocalTime ? 9.0f : 2.0f) * SizeScale;
 	const float ExpandedTimerSidePadding = 9.0f * SizeScale;
@@ -2665,10 +2673,7 @@ void CHud::RenderIsland()
 	float GameTimerWidth = 0.0f;
 	if(HudTimer)
 	{
-		char aBuf[64];
-		int Time = GameTimerTime();
-		str_time((int64_t)Time * 100, ETimeFormat::DAYS, aBuf, sizeof(aBuf));
-		GameTimerWidth = this->GameTimerWidth(GameTimerSize, Time);
+		GameTimerWidth = this->GameTimerWidth(GameTimerSize, GameTimerTime());
 	}
 	if(LocalTime)
 	{

@@ -262,6 +262,13 @@ private:
 		// The scale the cached text widths above were measured at.
 		float m_TextSizeScale = 0.0f;
 
+		// The clock placeholders are constant strings, so their widths only move when the scale
+		// they were measured at or the seconds setting does. Negative so the first pass measures.
+		float m_LocalTimeWidth = 0.0f;
+		float m_NoGameTimerLocalTimeWidth = 0.0f;
+		float m_TimeTextSizeScale = -1.0f;
+		bool m_TimeTextShowSeconds = false;
+
 		bool m_Hovered = false;
 		bool m_PrevHovered = false;
 

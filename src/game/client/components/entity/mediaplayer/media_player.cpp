@@ -466,7 +466,7 @@ void CMediaViewer::OnShutdown()
 #endif
 }
 
-void CMediaViewer::OnUpdate()
+void CMediaViewer::OnRender()
 {
 #if MEDIA_PLAYER_WINRT
 	if(!m_pWinrt || !m_pShared)

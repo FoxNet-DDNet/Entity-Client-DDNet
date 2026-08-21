@@ -120,7 +120,10 @@ public:
 	int Sizeof() const override { return sizeof(*this); }
 	void OnInit() override;
 	void OnShutdown() override;
-	void OnUpdate() override;
+	// Render rather than update: the only consumer is CHud::RenderIsland, and OnUpdate runs at
+	// main loop rate, which is far higher than the frame rate. CMediaViewer sits ahead of CHud
+	// in m_vpAll, so the state it publishes here is picked up in the same frame.
+	void OnRender() override;
 
 	bool GetStateSnapshot(CState &State) const;
 	void Previous();

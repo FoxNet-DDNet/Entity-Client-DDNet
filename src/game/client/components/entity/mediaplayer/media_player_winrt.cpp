@@ -285,7 +285,15 @@ void ApplySharedAlbumArt(CMediaViewer::CShared *pShared, CMediaViewer::CWinrt *p
 
 	IGraphics::CTextureHandle NewAlbumArt;
 	if(!LoadAlbumArtTexture(pGraphics, pWinrt->m_AlbumArtPendingRgba, pWinrt->m_AlbumArtPendingWidth, pWinrt->m_AlbumArtPendingHeight, "smtc_album_art", NewAlbumArt))
+	{
+		// Every way LoadAlbumArtTexture can fail is decided by the buffer it is given, so the same
+		// pixels can only fail again. Drop them rather than reuploading a full image every frame
+		// for the rest of the track.
+		pWinrt->m_AlbumArtPendingRgba.clear();
+		pWinrt->m_AlbumArtPendingWidth = 0;
+		pWinrt->m_AlbumArtPendingHeight = 0;
 		return;
+	}
 
 	if(pWinrt->m_State.m_PrevAlbumArt.m_Texture.IsValid())
 		pGraphics->UnloadTexture(&pWinrt->m_State.m_PrevAlbumArt.m_Texture);

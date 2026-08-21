@@ -904,7 +904,13 @@ void ApplyDbusSharedAlbumArt(CMediaViewer::CShared *pShared, CMediaViewer::CDbus
 
 	IGraphics::CTextureHandle NewAlbumArt;
 	if(!LoadAlbumArtTexture(pGraphics, pDbus->m_AlbumArtPendingRgba, pDbus->m_AlbumArtPendingWidth, pDbus->m_AlbumArtPendingHeight, "dbus_album_art", NewAlbumArt))
+	{
+		// See ApplySharedAlbumArt: the same pixels can only fail again, so do not keep retrying.
+		pDbus->m_AlbumArtPendingRgba.clear();
+		pDbus->m_AlbumArtPendingWidth = 0;
+		pDbus->m_AlbumArtPendingHeight = 0;
 		return;
+	}
 
 	if(pDbus->m_PrevAlbumArt.m_Texture.IsValid())
 		pGraphics->UnloadTexture(&pDbus->m_PrevAlbumArt.m_Texture);

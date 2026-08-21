@@ -17,6 +17,7 @@ enum
 	OUTLINE_TELE,
 	OUTLINE_KILL,
 	OUTLINE_SOLID,
+	NUM_OUTLINES,
 };
 
 enum class OutlineLayer
@@ -167,8 +168,34 @@ void COutlines::OnRender()
 		return m_pMapData[y * m_MapDataSize.x + x];
 	};
 
+	// These only depend on config, but the HSL to RGB conversion used to run once per outlined
+	// tile on screen, every frame. Resolve all of them up front instead.
+	class COutlineConfig
+	{
+	public:
+		int m_Enable;
+		int m_Width;
+		ColorRGBA m_Color;
+	};
+	const auto MakeConfig = [](int Enable, int Width, unsigned int Color) {
+		const bool Used = Enable && Width > 0;
+		return COutlineConfig{Enable, Width, Used ? color_cast<ColorRGBA>(ColorHSLA(Color, true)) : ColorRGBA()};
+	};
+	// Indexed by the outline type, so the order has to match the enum above.
+	const COutlineConfig aConfigs[NUM_OUTLINES] = {
+		COutlineConfig{0, 0, ColorRGBA()}, // OUTLINE_NONE, never drawn
+		MakeConfig(g_Config.m_ClOutlineUnfreeze, g_Config.m_ClOutlineWidthUnfreeze, g_Config.m_ClOutlineColorUnfreeze),
+		MakeConfig(g_Config.m_ClOutlineFreeze, g_Config.m_ClOutlineWidthFreeze, g_Config.m_ClOutlineColorFreeze),
+		MakeConfig(g_Config.m_ClOutlineTele, g_Config.m_ClOutlineWidthTele, g_Config.m_ClOutlineColorTele),
+		MakeConfig(g_Config.m_ClOutlineKill, g_Config.m_ClOutlineWidthKill, g_Config.m_ClOutlineColorKill),
+		MakeConfig(g_Config.m_ClOutlineSolid, g_Config.m_ClOutlineWidthSolid, g_Config.m_ClOutlineColorSolid)};
+
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
+
+	// Neighbouring tiles are nearly always the same type, so only push a color to the backend
+	// when it actually changes rather than ahead of every batch of quads.
+	int LastColorType = OUTLINE_NONE;
 
 	for(int y = StartY; y < EndY; y++)
 	{
@@ -177,26 +204,8 @@ void COutlines::OnRender()
 			const int Type = GetTile(x, y);
 			if(Type == OUTLINE_NONE)
 				continue;
-			class COutlineConfig
-			{
-			public:
-				const int &m_Enable;
-				const int &m_Width;
-				const unsigned int &m_Color;
-			};
-			const COutlineConfig Config = [&]() -> COutlineConfig {
-				if(Type == OUTLINE_SOLID)
-					return {g_Config.m_ClOutlineSolid, g_Config.m_ClOutlineWidthSolid, g_Config.m_ClOutlineColorSolid};
-				if(Type == OUTLINE_FREEZE)
-					return {g_Config.m_ClOutlineFreeze, g_Config.m_ClOutlineWidthFreeze, g_Config.m_ClOutlineColorFreeze};
-				if(Type == OUTLINE_UNFREEZE)
-					return {g_Config.m_ClOutlineUnfreeze, g_Config.m_ClOutlineWidthUnfreeze, g_Config.m_ClOutlineColorUnfreeze};
-				if(Type == OUTLINE_KILL)
-					return {g_Config.m_ClOutlineKill, g_Config.m_ClOutlineWidthKill, g_Config.m_ClOutlineColorKill};
-				if(Type == OUTLINE_TELE)
-					return {g_Config.m_ClOutlineTele, g_Config.m_ClOutlineWidthTele, g_Config.m_ClOutlineColorTele};
-				dbg_assert(false, "Invalid value for Type at %d, %d/%d, %d", x, y, m_MapDataSize.x, m_MapDataSize.y);
-			}();
+			dbg_assert(Type > OUTLINE_NONE && Type < NUM_OUTLINES, "Invalid value for Type at %d, %d/%d, %d", x, y, m_MapDataSize.x, m_MapDataSize.y);
+			const COutlineConfig &Config = aConfigs[Type];
 			if(!Config.m_Enable || Config.m_Width <= 0)
 				continue;
 			// Find neighbours
@@ -254,7 +263,11 @@ void COutlines::OnRender()
 			}
 			if(NumQuads <= 0)
 				continue;
-			Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(Config.m_Color, true)));
+			if(Type != LastColorType)
+			{
+				Graphics()->SetColor(Config.m_Color);
+				LastColorType = Type;
+			}
 			Graphics()->QuadsDrawTL(aQuads, NumQuads);
 		}
 	}
