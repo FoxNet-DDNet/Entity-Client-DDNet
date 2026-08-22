@@ -2619,6 +2619,8 @@ if(CLIENT)
     components/emoticon.h
     components/entity/anti_spawn_block.cpp
     components/entity/anti_spawn_block.h
+    components/entity/auto_dummy_connect.cpp
+    components/entity/auto_dummy_connect.h
     components/entity/chat_bubbles.cpp
     components/entity/chat_bubbles.h
     components/entity/commands.cpp

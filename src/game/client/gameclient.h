@@ -71,6 +71,7 @@
 
 // Entity
 #include "components/entity/anti_spawn_block.h"
+#include "components/entity/auto_dummy_connect.h"
 #include "components/entity/chat_bubbles.h"
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
@@ -266,11 +267,12 @@ public:
 	CLocalServer m_LocalServer;
 
 	// Entity
-	CEClient m_EClient;
-	CChatBubbles m_ChatBubbles;
 	CAntiSpawnBlock m_AntiSpawnBlock;
-	CFreezeKill m_FreezeKill;
+	CAutoDummyConnect m_AutoDummyConnect;
+	CChatBubbles m_ChatBubbles;
+	CEClient m_EClient;
 	CEntityInfo m_EntityInfo;
+	CFreezeKill m_FreezeKill;
 	CMapFinishBrowser m_MapFinishBrowser;
 	CMapOverview m_MapOverview;
 	CMediaViewer m_MediaViewer;
@@ -1097,6 +1099,11 @@ private:
 
 	void LoadMapSettings();
 	CMapBugs m_MapBugs;
+	// <FoxNet
+	// What the map turns on for FoxNet, the server reads the same settings
+	bool m_MapMovingTiles = false;
+	bool m_MapQStopaGivesDj = false;
+	// FoxNet>
 
 	// tunings for every zone on the map, 0 is a global tune
 	CTuningParams m_aTuningList[TuneZone::NUM];

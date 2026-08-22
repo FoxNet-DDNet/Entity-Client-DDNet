@@ -196,6 +196,7 @@ void CGameClient::OnConsoleInit()
 					      &m_AntiSpawnBlock, // EClient
 					      &m_EntityInfo, // EClient
 					      &m_MenusModeration, // EClient
+					      &m_AutoDummyConnect, // EClient
 				      });
 
 	// build the input stack
