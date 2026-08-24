@@ -460,7 +460,7 @@ void CGameClient::OnInit()
 		m_Menus.RenderLoading(pLoadingDDNetCaption, pLoadingMessageAssets, 1);
 	}
 
-	m_GameWorld.Init(Collision(), m_aTuningList, &m_MapBugs);
+	m_GameWorld.Init(Collision(), m_aTuningList, &m_MapBugs, &m_QuadZones);
 	OnReset();
 
 	// Set free binds to DDRace binds if it's active
@@ -624,6 +624,9 @@ void CGameClient::OnConnected()
 	m_Menus.RenderLoading(pConnectCaption, pLoadMapContent, 0);
 	m_Layers.Init(Map(), false, true);
 	m_Collision.Init(Layers());
+	// <FoxNet
+	m_QuadZones.OnMapLoad(Map());
+	// FoxNet>
 	m_GameWorld.m_Core.InitSwitchers(m_Collision.m_HighestSwitchNumber);
 	m_GameWorld.m_PredictedEvents.clear();
 	m_RaceHelper.Init(this);
@@ -4103,6 +4106,14 @@ void CGameClient::UpdatePrediction()
 	m_GameWorld.m_WorldConfig.m_NoWeakHookAndBounce = m_GameInfo.m_NoWeakHookAndBounce;
 	m_GameWorld.m_WorldConfig.m_PredictEvents = m_GameInfo.m_PredictEvents;
 
+	// <FoxNet
+	// Only FoxNet servers move their freeze quads, another server running the same map would not
+	m_QuadZones.SetActive(g_Config.m_ClPredictMovingTiles && m_MapMovingTiles && Client()->m_FoxNetVersion != 0);
+	m_QuadZones.SetStopAGivesDj(m_MapQStopaGivesDj);
+	// FoxNet animates the quads from this tick on and snaps it as the round start, see CGameControllerDDRace::Snap
+	m_QuadZones.SetQuadStartTick(m_Snap.m_pGameInfoObj ? m_Snap.m_pGameInfoObj->m_RoundStartTick : 0);
+	// FoxNet>
+
 	if(!m_Snap.m_pLocalCharacter)
 	{
 		if(CCharacter *pLocalChar = m_GameWorld.GetCharacterById(m_Snap.m_LocalClientId))
@@ -4440,6 +4451,7 @@ void CGameClient::UpdateRenderedCharacters()
 			}
 		}
 		m_aClients[i].m_RenderPos = Pos;
+
 		if(Predict() && i == m_Snap.m_LocalClientId)
 			m_LocalCharacterPos = Pos;
 	}
@@ -5441,6 +5453,10 @@ static bool UnknownMapSettingCallback(const char *pCommand, void *pUser)
 void CGameClient::LoadMapSettings()
 {
 	m_MapBugs = CMapBugs::Create(Map()->BaseName(), Map()->Size(), Map()->Sha256());
+	// <FoxNet
+	m_MapMovingTiles = false;
+	m_MapQStopaGivesDj = false;
+	// FoxNet>
 
 	// Reset Tunezones
 	for(int TuneZone = 0; TuneZone < TuneZone::NUM; TuneZone++)
@@ -5475,6 +5491,14 @@ void CGameClient::LoadMapSettings()
 		Console()->SetUnknownCommandCallback(UnknownMapSettingCallback, nullptr);
 		while(pNext < pSettings + Size)
 		{
+			// <FoxNet
+			// The setting the server turns its moving tiles on with, see CGameContext::LoadMapSettings
+			if(str_find_nocase(pNext, "sv_moving_tiles 1") || str_find_nocase(pNext, "sv_kog_qquads_enable 1"))
+				m_MapMovingTiles = true;
+			if(str_find_nocase(pNext, "sv_qstopa_gives_dj 1"))
+				m_MapQStopaGivesDj = true;
+			// FoxNet>
+
 			int StrSize = str_length(pNext) + 1;
 			Console()->ExecuteLine(pNext, IConsole::CLIENT_ID_GAME);
 			pNext += StrSize;

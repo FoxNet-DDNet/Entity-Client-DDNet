@@ -9,8 +9,11 @@
 
 #include <generated/client_data.h>
 
+#include <game/client/prediction/quad_zones.h>
 #include <game/collision.h>
 #include <game/mapitems.h>
+
+#include <limits>
 
 // Character, "physical" player's part
 
@@ -1079,14 +1082,163 @@ void CCharacter::HandleTuneLayer()
 	m_Core.m_Tuning = *GetTuning(GetOverriddenTuneZone());
 }
 
+// <FoxNet
+void CCharacter::QuadZonePush(const vec2 aPoints[4], vec2 QuadMotion, bool GivesDj)
+{
+	const float Radius = m_ProximityRadius * 0.55f;
+	const vec2 Pos = m_Pos;
+
+	const vec2 aA[4] = {aPoints[0], aPoints[1], aPoints[2], aPoints[3]};
+	const vec2 aB[4] = {aPoints[1], aPoints[2], aPoints[3], aPoints[0]};
+
+	float MinPenetration = std::numeric_limits<float>::infinity();
+	vec2 BestInwardNormal = vec2(0.0f, 0.0f);
+	vec2 BestEdge = vec2(0.0f, 0.0f);
+	int BestEdgeIndex = -1;
+
+	for(int i = 0; i < 4; i++)
+	{
+		const vec2 Edge = aB[i] - aA[i];
+		if(dot(Edge, Edge) <= 1e-6f)
+			continue;
+
+		const vec2 InwardNormal = normalize(vec2(-Edge.y, Edge.x));
+		const float Penetration = dot(Pos - aA[i], InwardNormal) + Radius;
+
+		if(Penetration < MinPenetration)
+		{
+			MinPenetration = Penetration;
+			BestInwardNormal = InwardNormal;
+			BestEdge = Edge;
+			BestEdgeIndex = i;
+		}
+	}
+
+	if(MinPenetration == std::numeric_limits<float>::infinity() || MinPenetration <= 0.0f)
+		return;
+
+	const vec2 Mtv = -BestInwardNormal * MinPenetration;
+
+	const auto CanPlace = [&](const vec2 &Place) {
+		return !Collision()->TestBox(Place, vec2(m_ProximityRadius, m_ProximityRadius));
+	};
+
+	// Gives up as much of the push as it takes to stay out of the map, rather than all of it
+	const auto MoveAxis = [&](vec2 &Place, const vec2 &Delta) {
+		if(Delta.x == 0.0f && Delta.y == 0.0f)
+			return vec2(0.0f, 0.0f);
+
+		if(CanPlace(Place + Delta))
+		{
+			Place += Delta;
+			return Delta;
+		}
+
+		float Low = 0.0f;
+		float High = 1.0f;
+		for(int i = 0; i < 10; i++)
+		{
+			const float Mid = (Low + High) * 0.5f;
+			if(CanPlace(Place + Delta * Mid))
+				Low = Mid;
+			else
+				High = Mid;
+		}
+		if(Low > 0.0f)
+		{
+			const vec2 Applied = Delta * Low;
+			Place += Applied;
+			return Applied;
+		}
+		return vec2(0.0f, 0.0f);
+	};
+
+	vec2 NewPos = m_Pos;
+	const vec2 AppliedX = MoveAxis(NewPos, vec2(Mtv.x, 0.0f));
+	const vec2 AppliedY = MoveAxis(NewPos, vec2(0.0f, Mtv.y));
+
+	const vec2 Vel = m_Core.m_Vel;
+	m_Pos = NewPos;
+	m_Core.m_Pos = NewPos;
+
+	vec2 NewVel = Vel;
+
+	const vec2 SurfaceNormal = -BestInwardNormal;
+	const float SurfaceSpeed = dot(QuadMotion, SurfaceNormal);
+	const float Target = std::max(SurfaceSpeed, 0.0f);
+	const float Along = dot(NewVel, SurfaceNormal);
+	if(Along < Target)
+		NewVel += SurfaceNormal * (Target - Along);
+
+	if(AppliedX.x == 0.0f && Mtv.x != 0.0f)
+		NewVel.x = 0.0f;
+	if(AppliedY.y == 0.0f && Mtv.y != 0.0f)
+		NewVel.y = 0.0f;
+
+	SetRawVelocity(NewVel);
+
+	if(!GivesDj || BestEdgeIndex < 0)
+		return;
+
+	const float EdgeLength = length(BestEdge);
+	const float EdgeSlope = EdgeLength > 1e-6f ? absolute(BestEdge.y) / EdgeLength : 1.0f;
+	if(BestInwardNormal.y >= 0.35f && EdgeSlope <= 0.60f && AppliedY.y < 0.0f && Vel.y >= 0.0f)
+	{
+		m_Core.m_JumpedTotal = 0;
+		m_Core.m_Jumped = 0;
+	}
+}
+// FoxNet>
+
+void CCharacter::QuadZoneTick()
+{
+	CQuadZones *pQuadZones = GameWorld()->QuadZones();
+	if(!pQuadZones || !pQuadZones->Active() || !GameWorld()->m_WorldConfig.m_PredictDDRace)
+		return;
+
+	const vec2 TestPos = m_Pos;
+	const vec2 Size = vec2(m_ProximityRadius, m_ProximityRadius) * 0.55f;
+	for(const CQuadData &Quad : pQuadZones->Quads(EPredictedZone::StopA, GameWorld()->GameTick()))
+	{
+		const vec2 QuadMotion = Quad.MotionAt(m_Pos);
+		if(Quad.Overlaps(TestPos, Size))
+			QuadZonePush(Quad.m_aPoints, QuadMotion, pQuadZones->StopAGivesDj());
+	}
+}
+
 void CCharacter::DDRaceTick()
 {
+	// <FoxNet
+	m_InsideQuadFreeze = false;
+	CQuadZones *pQuadZones = GameWorld()->QuadZones();
+	if(pQuadZones && pQuadZones->Active() && GameWorld()->m_WorldConfig.m_PredictDDRace)
+	{
+		const int Tick = GameWorld()->GameTick();
+
+		if(!m_Core.m_IsInFreeze && !m_Core.m_DeepFrozen && !m_Core.m_LiveFrozen)
+		{
+			if(m_TileIndex != TILE_UNFREEZE && m_TileFIndex != TILE_UNFREEZE &&
+				pQuadZones->Inside(EPredictedZone::Freeze, m_Pos, Tick))
+			{
+				Freeze();
+				m_InsideQuadFreeze = true;
+			}
+
+			if((m_FreezeTime != 0 || m_InsideQuadFreeze) &&
+				pQuadZones->Inside(EPredictedZone::Unfreeze, m_Pos, Tick))
+			{
+				Unfreeze();
+				m_InsideQuadFreeze = false;
+			}
+		}
+	}
+	// FoxNet>
+
 	mem_copy(&m_Input, &m_SavedInput, sizeof(m_Input));
 	if(m_Core.m_LiveFrozen && !m_CanMoveInFreeze && !m_Core.m_Super && !m_Core.m_Invincible)
 	{
 		m_Input.m_Direction = 0;
 		m_Input.m_Jump = 0;
-		// Hook and weapons are possible in live freeze
 	}
 	if(m_FreezeTime > 0)
 	{
@@ -1191,6 +1343,11 @@ void CCharacter::DDRacePostCoreTick()
 	{
 		HandleTiles(CurrentIndex);
 	}
+
+	// <FoxNet
+	if(m_InsideQuadFreeze)
+		Freeze();
+	// FoxNet>
 }
 
 bool CCharacter::Freeze(int Seconds)

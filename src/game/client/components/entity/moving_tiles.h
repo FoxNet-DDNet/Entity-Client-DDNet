@@ -41,7 +41,7 @@ static constexpr char ValidQuadNames[][30] = {
 	"QHook",
 	"QUnHook"};
 
-class CQuadData : CMapItemLayerQuads
+class CRenderQuad : CMapItemLayerQuads
 {
 public:
 	CQuad *m_pQuad = nullptr;
@@ -55,7 +55,7 @@ public:
 class CMovingTiles : public CComponent
 {
 	void Reset();
-	std::vector<CQuadData> m_vQuads;
+	std::vector<CRenderQuad> m_vQuads;
 
 	bool m_RenderAbove; // solids are rendered above tilemap, the rest below
 	CEnvelopeState m_EnvEvaluator;

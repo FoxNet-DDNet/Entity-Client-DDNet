@@ -2409,6 +2409,7 @@ set_src(GAME_SHARED GLOB src/game
   mapitems_ex_types.h
   prng.cpp
   prng.h
+  quad_data.h
   race_state.h
   team_state.h
   teamscore.cpp
@@ -2789,6 +2790,8 @@ if(CLIENT)
     prediction/entity.h
     prediction/gameworld.cpp
     prediction/gameworld.h
+    prediction/quad_zones.cpp
+    prediction/quad_zones.h
     projectile_data.cpp
     projectile_data.h
     race.cpp

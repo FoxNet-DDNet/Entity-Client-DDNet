@@ -224,6 +224,52 @@ constexpr int intersect_line_circle(const vec2 LineStart, const vec2 LineEnd, co
 	}
 }
 
+// <FoxNet
+inline bool InsideQuadrilateral(const vec2 &Point, const vec2 aPoints[4])
+{
+	// Ray-casting / crossing-number algorithm for a 4-vertex polygon.
+	bool Inside = false;
+	for(int i = 0, j = 3; i < 4; j = i++)
+	{
+		const vec2 &p = aPoints[i], &pj = aPoints[j];
+		bool Intersect = ((p.y > Point.y) != (pj.y > Point.y)) &&
+				 (Point.x < (pj.x - p.x) * (Point.y - p.y) / (pj.y - p.y) + p.x);
+		if(Intersect)
+			Inside = !Inside;
+	}
+	return Inside;
+}
+
+inline bool InsideQuadrilateral(const vec2 &Pos, const vec2 aPoints[4], const vec2 &Size)
+{
+	if(InsideQuadrilateral(vec2(Pos.x - Size.x, Pos.y - Size.y), aPoints))
+		return true;
+	if(InsideQuadrilateral(vec2(Pos.x + Size.x, Pos.y - Size.y), aPoints))
+		return true;
+	if(InsideQuadrilateral(vec2(Pos.x - Size.x, Pos.y + Size.y), aPoints))
+		return true;
+	if(InsideQuadrilateral(vec2(Pos.x + Size.x, Pos.y + Size.y), aPoints))
+		return true;
+	return false;
+}
+
+inline void Rotate(const vec2 &Center, vec2 *pPoint, const float &Rotation)
+{
+	float x = pPoint->x - Center.x;
+	float y = pPoint->y - Center.y;
+	pPoint->x = (x * cosf(Rotation) - y * sinf(Rotation) + Center.x);
+	pPoint->y = (x * sinf(Rotation) + y * cosf(Rotation) + Center.y);
+}
+
+// Rotates a vector around the origin, for points held relative to a pivot
+inline vec2 RotateVec(const vec2 &Vec, const float &Rotation)
+{
+	const float c = cosf(Rotation);
+	const float s = sinf(Rotation);
+	return vec2(Vec.x * c - Vec.y * s, Vec.x * s + Vec.y * c);
+}
+// FoxNet>
+
 // ------------------------------------
 template<Numeric T>
 class vector3_base

@@ -18,6 +18,7 @@
 #include <generated/protocol7.h>
 
 #include <game/client/prediction/gameworld.h>
+#include <game/client/prediction/quad_zones.h>
 #include <game/client/race.h>
 #include <game/collision.h>
 #include <game/gamecore.h>
@@ -331,6 +332,9 @@ private:
 
 	CLayers m_Layers;
 	CCollision m_Collision;
+	// <FoxNet
+	CQuadZones m_QuadZones;
+	// FoxNet>
 	CUi m_UI;
 	CRaceHelper m_RaceHelper;
 

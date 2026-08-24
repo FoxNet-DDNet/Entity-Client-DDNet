@@ -2742,6 +2742,7 @@ void CClient::PumpNetwork()
 			{
 				const bool WasConnecting = DummyConnecting();
 				DummyDisconnect(nullptr);
+
 				char aBuf[256];
 				str_format(aBuf, sizeof(aBuf), "offline dummy error='%s'", m_aNetClient[CONN_DUMMY].ErrorString());
 				m_pConsole->Print(IConsole::OUTPUT_LEVEL_STANDARD, "client", aBuf, CLIENT_NETWORK_PRINT_ERROR_COLOR);

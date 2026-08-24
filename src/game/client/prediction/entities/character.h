@@ -81,6 +81,10 @@ public:
 
 	int m_TileIndex;
 	int m_TileFIndex;
+	// <FoxNet
+	// Standing in a moving freeze quad this tick, see CFreezeZone::OnTick
+	bool m_InsideQuadFreeze = false;
+	// FoxNet>
 
 	bool m_LastRefillJumps;
 
@@ -183,6 +187,10 @@ private:
 	void HandleSkippableTiles(int Index);
 	void DDRaceTick();
 	void DDRacePostCoreTick();
+	// <FoxNet
+	void QuadZonePush(const vec2 aPoints[4], vec2 QuadMotion, bool GivesDj);
+	void QuadZoneTick();
+	// FoxNet>
 	void HandleTuneLayer();
 
 	int m_StrongWeakId;

@@ -11,6 +11,7 @@
 #include "entities/plasma.h"
 #include "entities/projectile.h"
 #include "entity.h"
+#include "quad_zones.h"
 
 #include <engine/shared/config.h>
 
@@ -33,6 +34,7 @@ CGameWorld::CGameWorld()
 	for(auto &pCharacter : m_apCharacters)
 		pCharacter = nullptr;
 	m_pCollision = nullptr;
+	m_pQuadZones = nullptr;
 	m_GameTick = 0;
 	m_pParent = nullptr;
 	m_pChild = nullptr;
@@ -50,9 +52,10 @@ CGameWorld::~CGameWorld()
 		m_pParent->m_pChild = nullptr;
 }
 
-void CGameWorld::Init(CCollision *pCollision, CTuningParams *pTuningList, const CMapBugs *pMapBugs)
+void CGameWorld::Init(CCollision *pCollision, CTuningParams *pTuningList, const CMapBugs *pMapBugs, CQuadZones *pQuadZones)
 {
 	m_pCollision = pCollision;
+	m_pQuadZones = pQuadZones;
 	m_pTuningList = pTuningList;
 	m_pMapBugs = pMapBugs;
 }
@@ -200,6 +203,14 @@ void CGameWorld::RemoveEntities()
 
 void CGameWorld::Tick()
 {
+	// <FoxNet
+	// FoxNet settles every quad for the tick before any zone or entity acts on one, so that
+	// they all agree on where the quads are, see CZoneManager::OnTick. That includes the solid
+	// ones, which by now are ordinary collision geometry to everything below.
+	if(m_pQuadZones)
+		m_pQuadZones->UpdateTo(GameTick());
+	// FoxNet>
+
 	// update all objects
 	for(int i = 0; i < NUM_ENTTYPES; i++)
 	{
@@ -233,6 +244,12 @@ void CGameWorld::Tick()
 			pEnt->m_SnapTicks++;
 			pEnt = m_pNextTraverseEntity;
 		}
+
+	// <FoxNet
+	// After the movement, never before it, see CCharacter::QuadZoneTick
+	for(CEntity *pEnt = FindFirst(ENTTYPE_CHARACTER); pEnt; pEnt = pEnt->TypeNext())
+		((CCharacter *)pEnt)->QuadZoneTick();
+	// FoxNet>
 
 	RemoveEntities();
 
@@ -643,6 +660,7 @@ void CGameWorld::CopyWorldClean(CGameWorld *pFrom)
 
 	m_GameTick = pFrom->m_GameTick;
 	m_pCollision = pFrom->m_pCollision;
+	m_pQuadZones = pFrom->m_pQuadZones;
 	m_WorldConfig = pFrom->m_WorldConfig;
 	m_pTuningList = pFrom->m_pTuningList;
 	m_pMapBugs = pFrom->m_pMapBugs;
@@ -696,6 +714,7 @@ void CGameWorld::CopyWorld(CGameWorld *pFrom)
 
 	m_GameTick = pFrom->m_GameTick;
 	m_pCollision = pFrom->m_pCollision;
+	m_pQuadZones = pFrom->m_pQuadZones;
 	m_WorldConfig = pFrom->m_WorldConfig;
 	m_pTuningList = pFrom->m_pTuningList;
 	m_pMapBugs = pFrom->m_pMapBugs;

@@ -27,37 +27,6 @@ inline static void RotatePoint(const vec2 &Center, vec2 &Point, float Rotation)
 	Point.y = RelativePos.x * std::sin(Rotation) + RelativePos.y * std::cos(Rotation) + Center.y;
 }
 
-inline static bool QuadName(const int *pInts, size_t NumInts, char *pStr, size_t StrSize)
-{
-	dbg_assert(NumInts > 0, "QuadName: NumInts invalid");
-	dbg_assert(StrSize >= NumInts * sizeof(int), "QuadName: StrSize invalid");
-
-	// Unpack string without validation
-	size_t StrIndex = 0;
-	for(size_t IntIndex = 0; IntIndex < NumInts; IntIndex++)
-	{
-		const int CurrentInt = pInts[IntIndex];
-		pStr[StrIndex] = ((CurrentInt >> 24) & 0xff) - 128;
-		StrIndex++;
-		pStr[StrIndex] = ((CurrentInt >> 16) & 0xff) - 128;
-		StrIndex++;
-		pStr[StrIndex] = ((CurrentInt >> 8) & 0xff) - 128;
-		StrIndex++;
-		pStr[StrIndex] = (CurrentInt & 0xff) - 128;
-		StrIndex++;
-	}
-	// Ensure null-termination
-	pStr[StrIndex - 1] = '\0';
-
-	// Ensure valid UTF-8
-	if(str_utf8_check(pStr))
-	{
-		return true;
-	}
-	pStr[0] = '\0';
-	return false;
-}
-
 void CMovingTiles::Reset()
 {
 	m_vQuads.clear();
@@ -91,7 +60,7 @@ void CMovingTiles::OnMapLoad()
 
 			char aLayerName[30];
 			CMapItemLayerQuads *pTilemap = reinterpret_cast<CMapItemLayerQuads *>(pLayer);
-			QuadName(pTilemap->m_aName, std::size(pTilemap->m_aName), aLayerName, std::size(aLayerName));
+			IntsToStr(pTilemap->m_aName, std::size(pTilemap->m_aName), aLayerName, std::size(aLayerName));
 
 			for(size_t Names = 0; Names < std::size(ValidQuadNames); Names++)
 			{
@@ -107,7 +76,7 @@ void CMovingTiles::OnMapLoad()
 					CQuad *pQuads = (CQuad *)GameClient()->Map()->GetDataSwapped(pTilemap->m_Data);
 					for(int NumQuads = 0; NumQuads < pTilemap->m_NumQuads; NumQuads++)
 					{
-						CQuadData QuadData;
+						CRenderQuad QuadData;
 						QuadData.m_pQuad = &pQuads[NumQuads];
 						QuadData.m_pGroup = pGroup;
 						QuadData.m_pLayer = pTilemap;
@@ -218,7 +187,7 @@ void CMovingTiles::OnRender()
 
 			for(size_t QuadIndex = QuadStart; QuadIndex < QuadEnd; QuadIndex++)
 			{
-				const CQuadData &QuadData = m_vQuads[QuadIndex];
+				const CRenderQuad &QuadData = m_vQuads[QuadIndex];
 				const CQuad *pQuad = QuadData.m_pQuad;
 				if(!pQuad)
 					continue;

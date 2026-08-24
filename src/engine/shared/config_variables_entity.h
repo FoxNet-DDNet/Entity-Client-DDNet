@@ -427,6 +427,7 @@ MACRO_CONFIG_STR(ClPhysicBallsSkin, ec_physic_balls_skin, 24, "volleyball", CFGF
 
 // Moving Tiles
 MACRO_CONFIG_INT(ClShowMovingTilesEntities, ec_show_moving_tiles_entities, 1, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show server-side moving tiles in entities | 1 = map design | 2 = use entities color | 3 = map design with entities color")
+MACRO_CONFIG_INT(ClPredictMovingTiles, ec_predict_moving_tiles, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predict the moving tiles that have a predictable outcome on FoxNet servers (freeze, unfreeze and stoppers)")
 
 MACRO_CONFIG_INT(ClHighProcessPriority, ec_high_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set DDNets process priority to high")
 MACRO_CONFIG_INT(ClDiscordNormalProcessPriority, ec_discord_normal_process_priority, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set Discord process priority to normal")
