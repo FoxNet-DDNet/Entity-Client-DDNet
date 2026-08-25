@@ -48,6 +48,7 @@ void CPacketChunkUnpacker::FeedPacket(const NETADDR &Addr, const CNetPacketConst
 	m_pConnection = pConnection;
 	m_ClientId = ClientId;
 	m_CurrentChunk = 0;
+	m_CurrentOffset = 0;
 	m_Data = Packet;
 	dbg_assert((m_Data.m_Flags & (NET_PACKETFLAG_CONNLESS | NET_PACKETFLAG_CONTROL)) == 0 && m_Data.m_DataSize > 0 && m_Data.m_NumChunks > 0,
 		"Invalid packet for chunk unpacker: flags=%d size=%d chunks=%d", m_Data.m_Flags, m_Data.m_DataSize, m_Data.m_NumChunks);
@@ -70,20 +71,17 @@ bool CPacketChunkUnpacker::UnpackNextChunk(CNetChunk *pChunk)
 			return false;
 		}
 
-		unsigned char *pData = m_Data.m_aChunkData;
-
-		// TODO: add checking here so we don't read too far
-		const int HeaderSplit = m_pConnection->m_Sixup ? 6 : 4;
-		for(int i = 0; i < m_CurrentChunk; i++)
+		// the chunk header is two bytes, three for vital chunks
+		if(m_CurrentOffset + 2 > m_Data.m_DataSize)
 		{
-			CNetChunkHeader SkippedHeader;
-			pData = SkippedHeader.Unpack(pData, HeaderSplit);
-			pData += SkippedHeader.m_Size;
+			m_Valid = false;
+			return false;
 		}
 
 		// unpack the header
+		const int HeaderSplit = m_pConnection->m_Sixup ? 6 : 4;
 		CNetChunkHeader Header;
-		pData = Header.Unpack(pData, HeaderSplit);
+		unsigned char *pData = Header.Unpack(&m_Data.m_aChunkData[m_CurrentOffset], HeaderSplit);
 		m_CurrentChunk++;
 
 		if(pData + Header.m_Size > pEnd)
@@ -91,6 +89,7 @@ bool CPacketChunkUnpacker::UnpackNextChunk(CNetChunk *pChunk)
 			m_Valid = false;
 			return false;
 		}
+		m_CurrentOffset = (int)(pData + Header.m_Size - m_Data.m_aChunkData);
 
 		// handle sequence stuff
 		if((Header.m_Flags & NET_CHUNKFLAG_VITAL) != 0)
@@ -125,6 +124,11 @@ bool CPacketChunkUnpacker::UnpackNextChunk(CNetChunk *pChunk)
 		pChunk->m_pData = pData;
 		return true;
 	}
+}
+
+void CPacketChunkUnpacker::Reset()
+{
+	m_Valid = false;
 }
 
 bool CNetBase::IsValidConnectionOrientedPacket(const CNetPacketConstruct *pPacket)
@@ -275,8 +279,13 @@ std::optional<int> CNetBase::UnpackPacketFlags(unsigned char *pBuffer, int Size)
 }
 
 // TODO: rename this function
-int CNetBase::UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct *pPacket, bool &Sixup, SECURITY_TOKEN *pSecurityToken, SECURITY_TOKEN *pResponseToken)
+int CNetBase::UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct *pPacket, bool &Sixup, bool AllowDecompression, SECURITY_TOKEN *pSecurityToken, SECURITY_TOKEN *pResponseToken, bool *pDecompressed)
 {
+	if(pDecompressed != nullptr)
+	{
+		*pDecompressed = false;
+	}
+
 	if(pResponseToken != nullptr)
 	{
 		*pResponseToken = NET_SECURITY_TOKEN_UNKNOWN;
@@ -356,6 +365,14 @@ int CNetBase::UnpackPacket(unsigned char *pBuffer, int Size, CNetPacketConstruct
 
 		if((pPacket->m_Flags & NET_PACKETFLAG_COMPRESSION) != 0)
 		{
+			if(!AllowDecompression)
+			{
+				return -1;
+			}
+			if(pDecompressed != nullptr)
+			{
+				*pDecompressed = true;
+			}
 			pPacket->m_DataSize = ms_Huffman.Decompress(&pBuffer[DataStart], pPacket->m_DataSize, pPacket->m_aChunkData, sizeof(pPacket->m_aChunkData));
 			if(pPacket->m_DataSize < 0)
 			{

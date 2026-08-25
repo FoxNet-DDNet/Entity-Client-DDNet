@@ -230,7 +230,7 @@ add_path {relpath(self.runner.data_dir, tmp_dir)}
 				"--tool=memcheck",
 				"--gen-suppressions=all",
 				"--suppressions={}".format(relpath(os.path.join(runner.repo_dir, "memcheck.supp"), self.tmp_dir)),
-				"--track-origins=yes",
+				# "--track-origins=yes", # too expensive, makes CI flaky
 			]
 		self.name = name
 		self.num_clients = 0
@@ -791,7 +791,7 @@ def smoke_test(test_env):
 	""".strip().split("\n")
 		)
 	)
-	client1.wait_for_log_exact("server: *** the end", timeout=3)
+	client1.wait_for_log_exact("chat/server: *** the end", timeout=15)
 
 	server.command("stoprecord")
 	client1.command("stoprecord")

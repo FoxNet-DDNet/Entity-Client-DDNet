@@ -51,6 +51,7 @@ void CPlayer::Reset()
 	m_DieTick = Server()->Tick();
 	m_PreviousDieTick = m_DieTick;
 	m_JoinTick = Server()->Tick();
+	m_DDNetVersionKickTick = Server()->Tick() + 3 * Server()->TickSpeed();
 	delete m_pCharacter;
 	m_pCharacter = nullptr;
 	SetSpectatorId(SPEC_FREEVIEW);
@@ -86,6 +87,7 @@ void CPlayer::Reset()
 	m_FirstPacket = true;
 
 	m_SendVoteIndex = -1;
+	m_pLastSentVoteOption = nullptr;
 
 	if(g_Config.m_Events)
 	{
@@ -150,6 +152,24 @@ void CPlayer::Reset()
 	m_CameraInfo.Reset();
 	UpdateNetworkClipRadius();
 	std::fill(std::begin(m_aStrongWeakId), std::end(m_aStrongWeakId), 0);
+	InvalidateClientInfo();
+}
+
+void CPlayer::SetTeeInfos(const CTeeInfo &TeeInfos)
+{
+	m_TeeInfos = TeeInfos;
+	InvalidateClientInfo();
+}
+
+void CPlayer::SetTeeInfos(const char *pSkinName, bool UseCustomColor, int ColorBody, int ColorFeet)
+{
+	str_copy(m_TeeInfos.m_aSkinName, pSkinName);
+	m_TeeInfos.m_UseCustomColor = UseCustomColor;
+	m_TeeInfos.m_ColorBody = ColorBody;
+	m_TeeInfos.m_ColorFeet = ColorFeet;
+	if(!Server()->IsSixup(m_ClientId))
+		m_TeeInfos.ToSixup();
+	InvalidateClientInfo();
 }
 
 static int PlayerFlags_SixToSeven(int Flags)
@@ -318,15 +338,18 @@ void CPlayer::Snap(int SnappingClient)
 	if(!Server()->Translate(TranslatedId, SnappingClient))
 		return;
 
-	CNetObj_ClientInfo ClientInfo = {};
-	StrToInts(ClientInfo.m_aName, std::size(ClientInfo.m_aName), Server()->ClientName(m_ClientId));
-	StrToInts(ClientInfo.m_aClan, std::size(ClientInfo.m_aClan), Server()->ClientClan(m_ClientId));
-	ClientInfo.m_Country = Server()->ClientCountry(m_ClientId);
-	StrToInts(ClientInfo.m_aSkin, std::size(ClientInfo.m_aSkin), m_TeeInfos.m_aSkinName);
-	ClientInfo.m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
-	ClientInfo.m_ColorBody = m_TeeInfos.m_ColorBody;
-	ClientInfo.m_ColorFeet = m_TeeInfos.m_ColorFeet;
-	Server()->SnapNewItem(TranslatedId, ClientInfo);
+	if(!m_ClientInfoValid)
+	{
+		m_ClientInfoValid = true;
+		StrToInts(m_ClientInfo.m_aName, std::size(m_ClientInfo.m_aName), Server()->ClientName(m_ClientId));
+		StrToInts(m_ClientInfo.m_aClan, std::size(m_ClientInfo.m_aClan), Server()->ClientClan(m_ClientId));
+		m_ClientInfo.m_Country = Server()->ClientCountry(m_ClientId);
+		StrToInts(m_ClientInfo.m_aSkin, std::size(m_ClientInfo.m_aSkin), m_TeeInfos.m_aSkinName);
+		m_ClientInfo.m_UseCustomColor = m_TeeInfos.m_UseCustomColor;
+		m_ClientInfo.m_ColorBody = m_TeeInfos.m_ColorBody;
+		m_ClientInfo.m_ColorFeet = m_TeeInfos.m_ColorFeet;
+	}
+	Server()->SnapNewItem(TranslatedId, m_ClientInfo);
 
 	int SnappingClientVersion = GameServer()->GetClientVersion(SnappingClient);
 	int Latency = SnappingClient == SERVER_DEMO_CLIENT ? m_Latency.m_Min : GameServer()->m_apPlayers[SnappingClient]->m_aCurLatency[m_ClientId];
@@ -482,14 +505,15 @@ void CPlayer::Snap(int SnappingClient)
 void CPlayer::FakeSnap()
 {
 	m_SentSnaps++;
-	if(GetClientVersion() >= VERSION_DDNET_128_PLAYERS)
+	if(Server()->ClientSupportsServerMaxClients(m_ClientId))
 		return;
 
-	// see others in spec
-	int SeeOthersId = GameServer()->m_PlayerMapping.SeeOthersId();
+	// see others in spec and vote menu
+	int SeeOthersId = GameServer()->m_PlayerMapping.SeeOthersId(m_ClientId);
 
 	if(Server()->IsSixup(m_ClientId))
 	{
+		// 0.7 removed `PLAYERFLAG_IN_MENU` so they have to receive the fake player at all times to support voting
 		if(GameServer()->m_PlayerMapping.TotalOverhang(m_ClientId))
 		{
 			protocol7::CNetObj_PlayerInfo PlayerInfo = {};
@@ -503,8 +527,11 @@ void CPlayer::FakeSnap()
 		return;
 	}
 
-	// see others
-	if(GameServer()->m_PlayerMapping.TotalOverhang(m_ClientId))
+	// See Others. For better 0.6 mod compatibility: Hide fake player even from `TEAM_BLUE` scoreboard if's not available currently and mod is TeamPlay
+	// Note: this causes Player and Vote menu to jump one line up when at the bottom, because the player gets removed after closing the menu.
+	const bool SeeOthersAvailable = (m_Paused != PAUSE_NONE || m_Team == TEAM_SPECTATORS || (m_PlayerFlags & PLAYERFLAG_IN_MENU));
+	const bool ShowSeeOthersPlayer = !GameServer()->m_pController->IsTeamPlay() || SeeOthersAvailable;
+	if(GameServer()->m_PlayerMapping.TotalOverhang(m_ClientId) && ShowSeeOthersPlayer)
 	{
 		CNetObj_ClientInfo ClientInfo = {};
 		StrToInts(ClientInfo.m_aName, std::size(ClientInfo.m_aName), GameServer()->m_PlayerMapping.SeeOthersName(m_ClientId));
@@ -519,16 +546,41 @@ void CPlayer::FakeSnap()
 		PlayerInfo.m_Local = 0;
 		PlayerInfo.m_ClientId = SeeOthersId;
 		PlayerInfo.m_Score = FinishTime::NOT_FINISHED_TIMESCORE;
-		PlayerInfo.m_Team = TEAM_BLUE;
+		PlayerInfo.m_Team = TEAM_BLUE; // `TEAM_BLUE` to hide from ddrace scoreboards
 		Server()->SnapNewItem(SeeOthersId, PlayerInfo);
 	}
 
-	int FakeId = LEGACY_MAX_CLIENTS - 1;
+	// Empty fake player for chat messages from untranslated players
+	int FakeId = Server()->GetMaxClients(m_ClientId) - 1;
 	CNetObj_ClientInfo ClientInfo = {};
 	StrToInts(ClientInfo.m_aName, std::size(ClientInfo.m_aName), " ");
 	StrToInts(ClientInfo.m_aClan, std::size(ClientInfo.m_aClan), "");
 	StrToInts(ClientInfo.m_aSkin, std::size(ClientInfo.m_aSkin), "default");
 	Server()->SnapNewItem(FakeId, ClientInfo);
+
+	// Support pause feature for vanilla 0.6. Requires local object on client side
+	if(GetClientVersion() >= VERSION_DDNET_OLD || m_Paused != PAUSE_PAUSED)
+		return;
+
+	CNetObj_PlayerInfo PlayerInfo = {};
+	PlayerInfo.m_Latency = m_Latency.m_Min;
+	PlayerInfo.m_Local = 1;
+	PlayerInfo.m_ClientId = FakeId;
+	PlayerInfo.m_Score = FinishTime::NOT_FINISHED_TIMESCORE;
+	PlayerInfo.m_Team = TEAM_SPECTATORS;
+	Server()->SnapNewItem(FakeId, PlayerInfo);
+
+	int SpectatorId = m_SpectatorId;
+	if(SpectatorId >= 0 && !Server()->Translate(SpectatorId, m_ClientId))
+	{
+		SpectatorId = FakeId;
+	}
+
+	CNetObj_SpectatorInfo SpectatorInfo = {};
+	SpectatorInfo.m_SpectatorId = SpectatorId;
+	SpectatorInfo.m_X = m_ViewPos.x;
+	SpectatorInfo.m_Y = m_ViewPos.y;
+	Server()->SnapNewItem(FakeId, SpectatorInfo);
 }
 
 void CPlayer::SendConnect(int FakeId, int ClientId)
@@ -551,9 +603,9 @@ void CPlayer::SendConnect(int FakeId, int ClientId)
 
 	for(int p = 0; p < protocol7::NUM_SKINPARTS; p++)
 	{
-		NewClientInfoMsg.m_apSkinPartNames[p] = pPlayer->m_TeeInfos.m_aaSkinPartNames[p];
-		NewClientInfoMsg.m_aUseCustomColors[p] = pPlayer->m_TeeInfos.m_aUseCustomColors[p];
-		NewClientInfoMsg.m_aSkinPartColors[p] = pPlayer->m_TeeInfos.m_aSkinPartColors[p];
+		NewClientInfoMsg.m_apSkinPartNames[p] = pPlayer->TeeInfos().m_aaSkinPartNames[p];
+		NewClientInfoMsg.m_aUseCustomColors[p] = pPlayer->TeeInfos().m_aUseCustomColors[p];
+		NewClientInfoMsg.m_aSkinPartColors[p] = pPlayer->TeeInfos().m_aSkinPartColors[p];
 	}
 
 	Server()->SendPackMsg(&NewClientInfoMsg, MSGFLAG_VITAL | MSGFLAG_NORECORD | MSGFLAG_NOTRANSLATE, m_ClientId);
@@ -976,7 +1028,9 @@ void CPlayer::ProcessScoreResult(CScorePlayerResult &Result)
 				if(aMessage[0] == 0)
 					break;
 
-				if(GameServer()->ProcessSpamProtection(m_ClientId) && PrimaryMessage)
+				// Only the primary message counts towards the chat score, the
+				// follow-up messages of one command must not mute the player.
+				if(PrimaryMessage && GameServer()->ProcessSpamProtection(m_ClientId))
 					break;
 
 				GameServer()->SendChat(-1, TEAM_ALL, aMessage, -1);

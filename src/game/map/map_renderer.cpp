@@ -16,7 +16,7 @@ void CMapRenderer::Clear()
 	m_vpRenderLayers.clear();
 }
 
-void CMapRenderer::Load(ERenderType Type, CLayers *pLayers, IMapImages *pMapImages, const IEnvelopeEval *pEnvelopeEval, std::optional<FRenderUploadCallback> RenderCallbackOptional)
+void CMapRenderer::Load(ERenderType Type, CLayers *pLayers, IMapImages *pMapImages, const IEnvelopeEval *pEnvelopeEval, std::optional<FCallbackMapRendererInit> CallbackMapRendererInitOptional)
 {
 	Clear();
 
@@ -27,7 +27,16 @@ void CMapRenderer::Load(ERenderType Type, CLayers *pLayers, IMapImages *pMapImag
 	{
 		CMapItemGroup *pGroup = pLayers->GetGroup(GroupId);
 		std::unique_ptr<CRenderLayer> pRenderLayerGroup = std::make_unique<CRenderLayerGroup>(GroupId, pGroup);
-		pRenderLayerGroup->OnInit(Graphics(), TextRender(), RenderMap(), pEnvelopeManager, pLayers->Map(), pMapImages, RenderCallbackOptional);
+
+		std::optional<FCallbackLayerInit> CallbackLayerInitOptional;
+		if(CallbackMapRendererInitOptional.has_value())
+		{
+			CallbackLayerInitOptional = [&](int LayerGroupId, int LayerId) {
+				(*CallbackMapRendererInitOptional)(LayerGroupId, pLayers->NumGroups(), LayerId, pGroup->m_NumLayers);
+			};
+		}
+
+		pRenderLayerGroup->OnInit(Graphics(), TextRender(), RenderMap(), pEnvelopeManager, pLayers->Map(), pMapImages, CallbackLayerInitOptional);
 		if(!pRenderLayerGroup->IsValid())
 		{
 			log_error("map_renderer", "error group was null, group number = %d, total groups = %d", GroupId, pLayers->NumGroups());
@@ -39,7 +48,7 @@ void CMapRenderer::Load(ERenderType Type, CLayers *pLayers, IMapImages *pMapImag
 		for(int LayerId = 0; LayerId < pGroup->m_NumLayers; LayerId++)
 		{
 			CMapItemLayer *pLayer = pLayers->GetLayer(pGroup->m_StartLayer + LayerId);
-			int LayerType = GetLayerType(pLayer, pLayers);
+			int LayerType = GetLayerType(pLayer);
 			PassedGameLayer |= LayerType == LAYER_GAME;
 
 			if(Type == ERenderType::RENDERTYPE_BACKGROUND_FORCE || Type == ERenderType::RENDERTYPE_BACKGROUND)
@@ -131,7 +140,7 @@ void CMapRenderer::Load(ERenderType Type, CLayers *pLayers, IMapImages *pMapImag
 			// just ignore invalid layers from rendering
 			if(pRenderLayer)
 			{
-				pRenderLayer->OnInit(Graphics(), TextRender(), RenderMap(), pEnvelopeManager, pLayers->Map(), pMapImages, RenderCallbackOptional);
+				pRenderLayer->OnInit(Graphics(), TextRender(), RenderMap(), pEnvelopeManager, pLayers->Map(), pMapImages, CallbackLayerInitOptional);
 				if(pRenderLayer->IsValid())
 				{
 					pRenderLayer->Init();
@@ -175,19 +184,26 @@ void CMapRenderer::Render(const CRenderLayerParams &Params)
 	}
 }
 
-int CMapRenderer::GetLayerType(const CMapItemLayer *pLayer, const CLayers *pLayers) const
+int CMapRenderer::GetLayerType(const CMapItemLayer *pLayer) const
 {
-	if(pLayer == (CMapItemLayer *)pLayers->GameLayer())
+	if(pLayer->m_Type != LAYERTYPE_TILES)
+		return LAYER_DEFAULT_TILESET;
+
+	// Physics layers must be determined by their flags instead of by comparing them with the
+	// layers of CLayers, which only knows the last physics layer of each type, as design tiles
+	// layers use the data index which is neither used nor validated for physics layers.
+	const int Flags = reinterpret_cast<const CMapItemLayerTilemap *>(pLayer)->m_Flags;
+	if(Flags & TILESLAYERFLAG_GAME)
 		return LAYER_GAME;
-	else if(pLayer == (CMapItemLayer *)pLayers->FrontLayer())
+	else if(Flags & TILESLAYERFLAG_FRONT)
 		return LAYER_FRONT;
-	else if(pLayer == (CMapItemLayer *)pLayers->SwitchLayer())
+	else if(Flags & TILESLAYERFLAG_SWITCH)
 		return LAYER_SWITCH;
-	else if(pLayer == (CMapItemLayer *)pLayers->TeleLayer())
+	else if(Flags & TILESLAYERFLAG_TELE)
 		return LAYER_TELE;
-	else if(pLayer == (CMapItemLayer *)pLayers->SpeedupLayer())
+	else if(Flags & TILESLAYERFLAG_SPEEDUP)
 		return LAYER_SPEEDUP;
-	else if(pLayer == (CMapItemLayer *)pLayers->TuneLayer())
+	else if(Flags & TILESLAYERFLAG_TUNE)
 		return LAYER_TUNE;
 	return LAYER_DEFAULT_TILESET;
 }

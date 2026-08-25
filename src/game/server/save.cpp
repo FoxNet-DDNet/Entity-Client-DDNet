@@ -9,6 +9,7 @@
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 
+#include <game/mapitems.h>
 #include <game/server/entities/character.h>
 #include <game/server/gamecontext.h>
 #include <game/server/gamemodes/ddnet.h>
@@ -240,6 +241,13 @@ bool CSaveTee::Load(CCharacter *pChr, std::optional<int> Team)
 	else
 	{
 		pChr->m_Core.SetHookedPlayer(m_HookedPlayer);
+	}
+	// A hook attached to the ground requires a hookable tile at its position.
+	if(pChr->m_Core.m_HookState == HOOK_GRABBED && pChr->m_Core.HookedPlayer() == -1 &&
+		pChr->Collision()->GetCollisionAt(pChr->m_Core.m_HookPos.x, pChr->m_Core.m_HookPos.y) != TILE_SOLID)
+	{
+		pChr->m_Core.m_HookState = HOOK_RETRACTED;
+		pChr->m_Core.m_HookPos = pChr->m_Core.m_Pos;
 	}
 	pChr->m_Core.m_NewHook = m_NewHook;
 	pChr->m_SavedInput.m_Direction = m_InputDirection;
@@ -545,11 +553,6 @@ bool CSaveHotReloadTee::Load(CCharacter *pChr, int Team)
 	return Result;
 }
 
-CSaveTeam::CSaveTeam()
-{
-	m_aString[0] = '\0';
-}
-
 CSaveTeam::~CSaveTeam()
 {
 	delete[] m_pSwitchers;
@@ -709,15 +712,20 @@ CCharacter *CSaveTeam::MatchCharacter(CGameContext *pGameServer, int ClientId, i
 	return pGameServer->m_apPlayers[ClientId]->ForceSpawn(m_pSavedTees[SaveId].GetPos());
 }
 
-char *CSaveTeam::GetString()
+const char *CSaveTeam::GetString()
 {
-	str_format(m_aString, sizeof(m_aString), "%d\t%d\t%d\t%d\t%d", static_cast<int>(m_TeamState), m_MembersCount, m_HighestSwitchNumber, m_TeamLocked, m_Practice);
+	// Appending a truncated line would corrupt the savegame, so refuse to
+	// serialize a team that does not fit instead.
+	int Length = str_format(m_aString, sizeof(m_aString), "%d\t%d\t%d\t%d\t%d", static_cast<int>(m_TeamState), m_MembersCount, m_HighestSwitchNumber, m_TeamLocked, m_Practice);
 
 	for(int i = 0; i < m_MembersCount; i++)
 	{
-		char aBuf[1024];
+		char aBuf[1 + MAX_SAVE_TEE_STRING_LENGTH];
 		str_format(aBuf, sizeof(aBuf), "\n%s", m_pSavedTees[i].GetString(this));
+		if(Length + str_length(aBuf) >= (int)sizeof(m_aString))
+			return nullptr;
 		str_append(m_aString, aBuf);
+		Length += str_length(aBuf);
 	}
 
 	if(m_pSwitchers && m_HighestSwitchNumber)
@@ -726,7 +734,10 @@ char *CSaveTeam::GetString()
 		{
 			char aBuf[64];
 			str_format(aBuf, sizeof(aBuf), "\n%d\t%d\t%d", m_pSwitchers[i].m_Status, m_pSwitchers[i].m_EndTime, m_pSwitchers[i].m_Type);
+			if(Length + str_length(aBuf) >= (int)sizeof(m_aString))
+				return nullptr;
 			str_append(m_aString, aBuf);
+			Length += str_length(aBuf);
 		}
 	}
 
@@ -737,21 +748,19 @@ int CSaveTeam::FromString(const char *pString)
 {
 	char aTeamStats[MAX_CLIENTS];
 	char aSwitcher[64];
-	char aSaveTee[1024];
+	char aSaveTee[MAX_SAVE_TEE_STRING_LENGTH];
 
-	char *pCopyPos;
+	const char *pCopyPos;
 	unsigned int Pos = 0;
 	unsigned int LastPos = 0;
 	unsigned int StrSize;
 
-	str_copy(m_aString, pString);
-
-	while(m_aString[Pos] != '\n' && Pos < sizeof(m_aString) && m_aString[Pos]) // find next \n or \0
+	while(pString[Pos] != '\n' && pString[Pos]) // find next \n or \0
 		Pos++;
 
-	pCopyPos = m_aString + LastPos;
+	pCopyPos = pString + LastPos;
 	StrSize = Pos - LastPos + 1;
-	if(m_aString[Pos] == '\n')
+	if(pString[Pos] == '\n')
 	{
 		Pos++; // skip \n
 		LastPos = Pos;
@@ -806,12 +815,12 @@ int CSaveTeam::FromString(const char *pString)
 
 	for(int n = 0; n < m_MembersCount; n++)
 	{
-		while(m_aString[Pos] != '\n' && Pos < sizeof(m_aString) && m_aString[Pos]) // find next \n or \0
+		while(pString[Pos] != '\n' && pString[Pos]) // find next \n or \0
 			Pos++;
 
-		pCopyPos = m_aString + LastPos;
+		pCopyPos = pString + LastPos;
 		StrSize = Pos - LastPos + 1;
-		if(m_aString[Pos] == '\n')
+		if(pString[Pos] == '\n')
 		{
 			Pos++; // skip \n
 			LastPos = Pos;
@@ -856,12 +865,12 @@ int CSaveTeam::FromString(const char *pString)
 
 	for(int n = 1; n < m_HighestSwitchNumber + 1; n++)
 	{
-		while(m_aString[Pos] != '\n' && Pos < sizeof(m_aString) && m_aString[Pos]) // find next \n or \0
+		while(pString[Pos] != '\n' && pString[Pos]) // find next \n or \0
 			Pos++;
 
-		pCopyPos = m_aString + LastPos;
+		pCopyPos = pString + LastPos;
 		StrSize = Pos - LastPos + 1;
-		if(m_aString[Pos] == '\n')
+		if(pString[Pos] == '\n')
 		{
 			Pos++; // skip \n
 			LastPos = Pos;

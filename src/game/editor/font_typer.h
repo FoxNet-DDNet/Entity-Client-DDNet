@@ -11,6 +11,7 @@
 
 #include <chrono>
 #include <memory>
+#include <optional>
 
 class CLayer;
 class CLayerTiles;
@@ -23,7 +24,8 @@ public:
 	public:
 		bool m_Active;
 		ivec2 m_TextIndex;
-		int m_TextLineLen;
+		// column a newline returns to
+		std::optional<int> m_LineStart;
 		std::shared_ptr<CLayer> m_pLastLayer;
 		int m_TilesPlacedSinceActivate;
 
@@ -50,6 +52,7 @@ private:
 	void TextModeOff();
 	void TextModeOn();
 	void SetTile(ivec2 Pos, unsigned char Index, const std::shared_ptr<CLayerTiles> &pLayer);
+	void PlaceTile(unsigned char Index, const std::shared_ptr<CLayerTiles> &pLayer);
 };
 
 #endif

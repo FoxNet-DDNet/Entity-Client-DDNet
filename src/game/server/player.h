@@ -9,6 +9,8 @@
 
 #include <engine/shared/protocol.h>
 
+#include <generated/protocol.h>
+
 #include <game/alloc.h>
 #include <game/server/save.h>
 
@@ -18,6 +20,7 @@
 class CCharacter;
 class CGameContext;
 class IServer;
+struct CVoteOptionServer;
 struct CNetObj_PlayerInput;
 struct CScorePlayerResult;
 
@@ -104,8 +107,17 @@ public:
 	int m_LastInvited;
 
 	int m_SendVoteIndex;
+	// last option sent, only read while m_SendVoteIndex is greater than zero. Options
+	// appended after the list was fully sent follow it.
+	const CVoteOptionServer *m_pLastSentVoteOption;
 
-	CTeeInfo m_TeeInfos;
+	const CTeeInfo &TeeInfos() const { return m_TeeInfos; }
+	void SetTeeInfos(const CTeeInfo &TeeInfos);
+	// Sets the 0.6 tee infos, deriving the 0.7 skin parts from them unless the client is 0.7
+	void SetTeeInfos(const char *pSkinName, bool UseCustomColor, int ColorBody, int ColorFeet);
+	// The snapped client info is the same for every snapping client, so it is cached
+	// and only rebuilt once the name, clan, country or tee infos have changed
+	void InvalidateClientInfo() { m_ClientInfoValid = false; }
 
 	int m_DieTick;
 	int m_PreviousDieTick;
@@ -125,6 +137,10 @@ public:
 	} m_Latency;
 
 private:
+	CTeeInfo m_TeeInfos;
+	CNetObj_ClientInfo m_ClientInfo = {};
+	bool m_ClientInfoValid = false;
+
 	const uint32_t m_UniqueClientId;
 	CCharacter *m_pCharacter;
 	int m_NumInputs;
@@ -230,6 +246,9 @@ public:
 
 	bool m_EyeEmoteEnabled;
 	int m_TimerType;
+
+	// Tick at which to kick the client if it still hasn't identified as a DDNet-based client
+	int m_DDNetVersionKickTick;
 
 	int GetDefaultEmote() const;
 	void OverrideDefaultEmote(int Emote, int Tick);
