@@ -36,6 +36,7 @@ enum class EBlendMode
 	NONE,
 	ALPHA,
 	ADDITIVE,
+	MULTIPLY,
 };
 
 enum class EWrapMode
@@ -905,6 +906,7 @@ public:
 	void BlendNone() override;
 	void BlendNormal() override;
 	void BlendAdditive() override;
+	void BlendMultiply() override;
 
 	void WrapNormal() override;
 	void WrapClamp() override;
@@ -1240,6 +1242,7 @@ public:
 	void ReadPixel(ivec2 Position, ColorRGBA *pColor) override;
 	void TakeScreenshot(const char *pFilename) override;
 	void TakeCustomScreenshot(const char *pFilename) override;
+	void RenderNightShift();
 	void Swap() override;
 	bool SetVSync(bool State) override;
 	bool SetMultiSampling(uint32_t ReqMultiSamplingCount, uint32_t &MultiSamplingCountBackend) override;

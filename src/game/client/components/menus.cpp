@@ -381,6 +381,34 @@ bool CMenus::DoLine_RadioMenu(CUIRect &View, const char *pLabel, std::vector<CBu
 }
 
 // EClient
+void CMenus::DoLine_TimeOfDay(CUIRect &View, const char *pLabel, int *pMinuteOfDay)
+{
+	constexpr int MinuteMax = 24 * 60 - 1;
+	constexpr int Step = 5;
+
+	CUIRect Row, Label, ScrollBar;
+	View.HSplitTop(20.0f, &Row, &View);
+	Row.VSplitMid(&Label, &ScrollBar, std::min(10.0f, Row.w * 0.05f));
+
+	// Same wheel and A/D shortcuts as the other slider options, which move whole minutes.
+	int Value = Ui()->ScrollbarKeyboardAdjust(&Row, *pMinuteOfDay, 0, MinuteMax);
+
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "%s: %02d:%02d", pLabel, Value / 60, Value % 60);
+	Ui()->DoLabel(&Label, aBuf, Label.h * CUi::ms_FontmodHeight * 0.8f, TEXTALIGN_ML);
+
+	const float Relative = CUi::ms_LinearScrollbarScale.ToRelative(Value, 0, MinuteMax);
+	const int Dragged = CUi::ms_LinearScrollbarScale.ToAbsolute(Ui()->DoScrollbarH(pMinuteOfDay, &ScrollBar, Relative), 0, MinuteMax);
+	if(Dragged != Value)
+	{
+		// A whole day does not fit on the bar at minute precision, so dragging snaps to five
+		// minutes. The shortcuts above stay exact, which is how you land on an odd minute.
+		Value = std::clamp((Dragged + Step / 2) / Step * Step, 0, MinuteMax);
+	}
+
+	*pMinuteOfDay = Value;
+}
+
 bool CMenus::DoLine_RadioMenu_Compact(CUIRect &View, const char *pLabel, std::vector<CButtonContainer> &vButtonContainers, const std::vector<const char *> &vLabels, const std::vector<int> &vValues, int &Value, float LabelSpacing, const std::vector<const char *> *pvTooltips)
 {
 	dbg_assert(vButtonContainers.size() == vValues.size(), "vButtonContainers and vValues must have the same size");

@@ -1544,24 +1544,10 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 	return ReturnValue;
 }
 
-bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
+// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
+int CUi::ScrollbarKeyboardAdjust(const CUIRect *pRect, int Value, int Min, int Max)
 {
-	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
-	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
-	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
-	const bool DelayUpdate = Flags & CUi::SCROLLBAR_OPTION_DELAYUPDATE;
-
-	int PrevValue = (DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId)) ? m_ScrollbarValue : *pOption;
-	int Value = PrevValue;
-	if(Infinite)
-	{
-		Max += 1;
-		if(Value == 0)
-			Value = Max;
-	}
-
-	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
-	int Increment = std::max(1, (Max - Min) / 35);
+	const int Increment = std::max(1, (Max - Min) / 35);
 	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && MouseInside(pRect))
 	{
 		Value += Increment;
@@ -1582,6 +1568,26 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 		Value += Input()->ModifierIsPressed() ? 5 : 1;
 		Value = std::clamp(Value, Min, Max);
 	}
+	return Value;
+}
+
+bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect, const char *pStr, int Min, int Max, const IScrollbarScale *pScale, unsigned Flags, const char *pSuffix)
+{
+	const bool Infinite = Flags & CUi::SCROLLBAR_OPTION_INFINITE;
+	const bool NoClampValue = Flags & CUi::SCROLLBAR_OPTION_NOCLAMPVALUE;
+	const bool MultiLine = Flags & CUi::SCROLLBAR_OPTION_MULTILINE;
+	const bool DelayUpdate = Flags & CUi::SCROLLBAR_OPTION_DELAYUPDATE;
+
+	int PrevValue = (DelayUpdate && m_pLastActiveScrollbar == pId && CheckActiveItem(pId)) ? m_ScrollbarValue : *pOption;
+	int Value = PrevValue;
+	if(Infinite)
+	{
+		Max += 1;
+		if(Value == 0)
+			Value = Max;
+	}
+
+	Value = ScrollbarKeyboardAdjust(pRect, Value, Min, Max);
 
 	char aBuf[256];
 	if(!Infinite || Value != Max)
@@ -1768,28 +1774,7 @@ bool CUi::DoFloatScrollBar(const void *pId, int *pOption, const CUIRect *pRect, 
 			Value = Max;
 	}
 
-	// Allow adjustment of slider options when ctrl is pressed (to avoid scrolling, or accidentally adjusting the value)
-	int Increment = std::max(1, (Max - Min) / 35);
-	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_UP) && MouseInside(pRect))
-	{
-		Value += Increment;
-		Value = std::clamp(Value, Min, Max);
-	}
-	if(Input()->ModifierIsPressed() && Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN) && MouseInside(pRect))
-	{
-		Value -= Increment;
-		Value = std::clamp(Value, Min, Max);
-	}
-	if(Input()->KeyPress(KEY_A) && MouseInside(pRect))
-	{
-		Value -= Input()->ModifierIsPressed() ? 5 : 1;
-		Value = std::clamp(Value, Min, Max);
-	}
-	if(Input()->KeyPress(KEY_D) && MouseInside(pRect))
-	{
-		Value += Input()->ModifierIsPressed() ? 5 : 1;
-		Value = std::clamp(Value, Min, Max);
-	}
+	Value = ScrollbarKeyboardAdjust(pRect, Value, Min, Max);
 
 	char aBuf[256];
 	str_format(aBuf, sizeof(aBuf), "%s: %.1f%s", pStr, (float)Value / DivideBy, pSuffix);

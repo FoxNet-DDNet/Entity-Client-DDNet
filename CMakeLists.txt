@@ -2328,6 +2328,8 @@ set_src(ENGINE_SHARED GLOB_RECURSE src/engine/shared
   network_console_conn.cpp
   network_server.cpp
   network_stun.cpp
+  night_shift.cpp
+  night_shift.h
   packer.cpp
   packer.h
   protocol.h

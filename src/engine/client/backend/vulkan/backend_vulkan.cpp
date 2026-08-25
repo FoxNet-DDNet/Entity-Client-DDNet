@@ -620,6 +620,7 @@ class CCommandProcessorFragment_Vulkan : public CCommandProcessorFragment_GLBase
 		VULKAN_BACKEND_BLEND_MODE_ALPHA = 0,
 		VULKAN_BACKEND_BLEND_MODE_NONE,
 		VULKAN_BACKEND_BLEND_MODE_ADDITATIVE,
+		VULKAN_BACKEND_BLEND_MODE_MULTIPLICATIVE,
 
 		VULKAN_BACKEND_BLEND_MODE_COUNT,
 	};
@@ -642,7 +643,7 @@ class CCommandProcessorFragment_Vulkan : public CCommandProcessorFragment_GLBase
 
 	struct SPipelineContainer
 	{
-		// 3 blend modes - 2 viewport & scissor modes - 2 texture modes
+		// 4 blend modes - 2 viewport & scissor modes - 2 texture modes
 		std::array<std::array<std::array<VkPipelineLayout, VULKAN_BACKEND_TEXTURE_MODE_COUNT>, VULKAN_BACKEND_CLIP_MODE_COUNT>, VULKAN_BACKEND_BLEND_MODE_COUNT> m_aaaPipelineLayouts;
 		std::array<std::array<std::array<VkPipeline, VULKAN_BACKEND_TEXTURE_MODE_COUNT>, VULKAN_BACKEND_CLIP_MODE_COUNT>, VULKAN_BACKEND_BLEND_MODE_COUNT> m_aaaPipelines;
 
@@ -3217,6 +3218,8 @@ protected:
 			return VULKAN_BACKEND_BLEND_MODE_ALPHA;
 		case EBlendMode::ADDITIVE:
 			return VULKAN_BACKEND_BLEND_MODE_ADDITATIVE;
+		case EBlendMode::MULTIPLY:
+			return VULKAN_BACKEND_BLEND_MODE_MULTIPLICATIVE;
 		default:
 			dbg_assert_failed("Invalid blend mode: %d", (int)State.m_BlendMode);
 		};
@@ -4836,6 +4839,14 @@ public:
 		VkPipelineColorBlendStateCreateInfo ColorBlending{};
 
 		GetStandardPipelineInfo(InputAssembly, Viewport, Scissor, ViewportState, Rasterizer, Multisampling, ColorBlendAttachment, ColorBlending);
+		if(BlendMode == VULKAN_BACKEND_BLEND_MODE_MULTIPLICATIVE)
+		{
+			// Scale what is already in the framebuffer by the incoming color instead of drawing over it.
+			ColorBlendAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_DST_COLOR;
+			ColorBlendAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ZERO;
+			ColorBlendAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_DST_ALPHA;
+			ColorBlendAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		}
 		InputAssembly.topology = IsLinePrim ? VK_PRIMITIVE_TOPOLOGY_LINE_LIST : VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
 
 		VkPipelineLayoutCreateInfo PipelineLayoutInfo{};

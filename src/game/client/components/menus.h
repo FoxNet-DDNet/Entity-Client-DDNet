@@ -102,6 +102,7 @@ public:
 
 	// EClient
 	bool DoLine_RadioMenu_Compact(CUIRect &View, const char *pLabel, std::vector<CButtonContainer> &vButtonContainers, const std::vector<const char *> &vLabels, const std::vector<int> &vValues, int &Value, float LabelSpacing = 5.0f, const std::vector<const char *> *pvTooltips = nullptr);
+	void DoLine_TimeOfDay(CUIRect &View, const char *pLabel, int *pMinuteOfDay);
 
 private:
 	CUi::SColorPickerPopupContext m_ColorPickerPopupContext;

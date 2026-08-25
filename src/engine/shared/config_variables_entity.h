@@ -477,6 +477,16 @@ MACRO_CONFIG_INT(ClClientSideMapFinishes, ec_client_side_map_finishes, 1, 0, 1, 
 // Finish Times
 MACRO_CONFIG_INT(ClSpectatorRadioShowDelay, ec_specradio_show_delay, 200, 0, 1000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How long it takes until the spectator radio shows up fully, its usable before it shows up")
 
+// Night Shift
+MACRO_CONFIG_INT(ClNightShift, ec_night_shift, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Warm the colors of the whole screen after dark")
+MACRO_CONFIG_INT(ClNightShiftSchedule, ec_night_shift_schedule, 1, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "When night shift is active (0 = always, 1 = custom hours, 2 = sunset to sunrise)")
+MACRO_CONFIG_INT(ClNightShiftTemperature, ec_night_shift_temperature, 4000, 1900, 6500, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color temperature night shift warms the screen to, in kelvin (lower is warmer)")
+MACRO_CONFIG_INT(ClNightShiftFrom, ec_night_shift_from, 1260, 0, 1439, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Minute of the day the custom night shift schedule turns on")
+MACRO_CONFIG_INT(ClNightShiftTo, ec_night_shift_to, 420, 0, 1439, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Minute of the day the custom night shift schedule turns off")
+MACRO_CONFIG_INT(ClNightShiftTransition, ec_night_shift_transition, 30, 0, 180, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many minutes night shift takes to fade in and out")
+MACRO_CONFIG_INT(ClNightShiftLatitude, ec_night_shift_latitude, 0, -9000, 9000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Latitude in hundredths of a degree, used by the sunset to sunrise schedule")
+MACRO_CONFIG_INT(ClNightShiftLongitude, ec_night_shift_longitude, 0, -18000, 18000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Longitude in hundredths of a degree, used by the sunset to sunrise schedule")
+
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
 

@@ -17,6 +17,7 @@
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/shared/jobs.h>
+#include <engine/shared/night_shift.h>
 #include <engine/storage.h>
 
 #include <generated/data_types.h>
@@ -162,6 +163,11 @@ void CGraphics_Threaded::BlendNormal()
 void CGraphics_Threaded::BlendAdditive()
 {
 	m_State.m_BlendMode = EBlendMode::ADDITIVE;
+}
+
+void CGraphics_Threaded::BlendMultiply()
+{
+	m_State.m_BlendMode = EBlendMode::MULTIPLY;
 }
 
 void CGraphics_Threaded::WrapNormal()
@@ -2866,8 +2872,37 @@ void CGraphics_Threaded::TakeCustomScreenshot(const char *pFilename)
 	m_DoScreenshot = true;
 }
 
+void CGraphics_Threaded::RenderNightShift()
+{
+	// Drawing the tint here rather than at the end of a render function means every frame
+	// gets it, including the loading screens and the editor, which do their own swapping.
+	if(m_Drawing != EDrawing::NONE)
+		return;
+
+	const ColorRGBA Tint = CNightShift::Tint();
+	if(Tint.r >= 1.0f && Tint.g >= 1.0f && Tint.b >= 1.0f)
+		return;
+
+	const CScreenRect PreviousScreen = GetScreen();
+	ClipDisable();
+	MapScreen(CScreenRect(0.0f, 0.0f, 1.0f, 1.0f));
+	TextureClear();
+	// Multiplying scales the colors already in the frame, which warms them without
+	// washing out the dark parts the way an alpha blended overlay would.
+	BlendMultiply();
+	QuadsBegin();
+	SetColor(Tint);
+	const CQuadItem QuadItem(0.0f, 0.0f, 1.0f, 1.0f);
+	QuadsDrawTL(&QuadItem, 1);
+	QuadsEnd();
+	BlendNormal();
+	MapScreen(PreviousScreen);
+}
+
 void CGraphics_Threaded::Swap()
 {
+	RenderNightShift();
+
 	bool Swapped = false;
 	ScreenshotDirect(&Swapped);
 	ReadPixelDirect(&Swapped);

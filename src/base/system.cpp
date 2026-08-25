@@ -1,9 +1,6 @@
 #include "system.h"
 
-#include "color.h"
 #include "str.h"
-
-#include <engine/shared/config.h>
 
 void str_to_uppercase(const char *src, char *dst, int dst_size)
 {
@@ -48,47 +45,3 @@ bool IsFlagSet(int32_t Flags, int n)
 {
 	return (Flags & (1 << n)) != 0;
 }
-
-//ColorRGBA NightShiftColor(ColorRGBA OriginalColor)
-//{
-//	auto IsNightShiftEnabled = []() {
-//		if(g_Config.m_ClNightShiftAlwaysOn)
-//			return true;
-//
-//		if(!g_Config.m_ClNightShiftScheduled)
-//			return false;
-//
-//		int StartHour = g_Config.m_ClNightShiftStart;
-//		int EndHour = g_Config.m_ClNightShiftEnd;
-//
-//		using namespace std::chrono;
-//		auto Now = system_clock::now();
-//		std::time_t t = system_clock::to_time_t(Now);
-//		std::tm Tm{};
-//#if defined(_WIN32)
-//		const errno_t Err = localtime_s(&Tm, &t);
-//		if(Err != 0)
-//			return false;
-//#else
-//		if(localtime_r(&t, &Tm) == nullptr)
-//			return false;
-//#endif
-//
-//		int CurrentHour = Tm.tm_hour;
-//		if(StartHour < EndHour)
-//			return CurrentHour >= StartHour && CurrentHour < EndHour;
-//		else
-//			return CurrentHour >= StartHour || CurrentHour < EndHour;
-//	};
-//
-//	if(!IsNightShiftEnabled())
-//		return OriginalColor;
-//
-//	const float Temperature = g_Config.m_ClNightShiftTemperature * 0.01f;
-//
-//	float R = 1.0f;
-//	float G = 1.0f - Temperature * 0.15f;
-//	float B = 1.0f - Temperature * 0.50f;
-//
-//	return OriginalColor.Multiply(ColorRGBA(R, G, B, 1.0f));
-//}

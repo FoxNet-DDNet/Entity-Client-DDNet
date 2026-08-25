@@ -6,6 +6,7 @@
 #include <engine/font_icons.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
+#include <engine/shared/night_shift.h>
 #include <engine/storage.h>
 #include <engine/textrender.h>
 
@@ -3191,6 +3192,132 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, EcLocalize("Rainbow speed"), 0, 200, &CUi::ms_LogarithmicScrollbarScale, 0, "%");
 
 			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
+			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
+		},
+	});
+
+	/* Night Shift */
+	vModules.push_back({
+		ESettingsModuleColumn::LEFT,
+		{"night", "shift", "warm", "temperature", "kelvin", "blue", "light", "eye", "strain", "sunset", "sunrise", "schedule", "latitude", "longitude"},
+		[&](bool HasSearch) {
+			const bool Scheduled = g_Config.m_ClNightShiftSchedule != NIGHT_SHIFT_SCHEDULE_ALWAYS;
+			float Height = HeaderHeight + LineSize * 4.0f + MarginSmall + MarginExtraSmall + MarginSmall;
+			if(Scheduled || HasSearch)
+				Height += LineSize;
+			if(g_Config.m_ClNightShiftSchedule == NIGHT_SHIFT_SCHEDULE_CUSTOM || HasSearch)
+				Height += LineSize * 2.0f;
+			if(g_Config.m_ClNightShiftSchedule == NIGHT_SHIFT_SCHEDULE_SUN || HasSearch)
+				Height += LineSize * 3.0f;
+			return Height;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Night Shift"), HeaderSize, HeaderAlignment);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNightShift, EcLocalize("Warm the screen after dark"), &g_Config.m_ClNightShift, &ModuleRect, LineSize);
+			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClNightShift, &ModuleRect, "Shifts the colors of everything on screen towards red, which is easier on the eyes at night");
+
+			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
+
+			static std::vector<const char *> s_ScheduleDropDownNames;
+			s_ScheduleDropDownNames = {EcLocalize("Always on"), EcLocalize("Custom hours"), EcLocalize("Sunset to sunrise")};
+			static CUi::SDropDownState s_ScheduleDropDownState;
+			static CScrollRegion s_ScheduleDropDownScrollRegion;
+			s_ScheduleDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_ScheduleDropDownScrollRegion;
+			CUIRect ScheduleDropDownRect;
+			ModuleRect.HSplitTop(LineSize, &ScheduleDropDownRect, &ModuleRect);
+			const int ScheduleSelected = Ui()->DoDropDown(&ScheduleDropDownRect, g_Config.m_ClNightShiftSchedule, s_ScheduleDropDownNames.data(), s_ScheduleDropDownNames.size(), s_ScheduleDropDownState);
+			Ui()->UpdatePopupMenuOffset(&s_ScheduleDropDownState.m_SelectionPopupContext, ScheduleDropDownRect.x, ScheduleDropDownRect.y);
+			if(s_ScrollRegion.RectClipped(ScheduleDropDownRect))
+				Ui()->ClosePopupMenu(&s_ScheduleDropDownState.m_SelectionPopupContext);
+			g_Config.m_ClNightShiftSchedule = ScheduleSelected;
+
+			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
+
+			// The bar runs from least warm on the left to most warm on the right, which is the
+			// opposite direction to the kelvin value behind it, so it drives a warmth percentage.
+			constexpr int NeutralTemperature = 6500;
+			constexpr int WarmestTemperature = 1900;
+			int Warmth = std::clamp(round_to_int((NeutralTemperature - g_Config.m_ClNightShiftTemperature) * 100.0f / (NeutralTemperature - WarmestTemperature)), 0, 100);
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			if(Ui()->DoScrollbarOption(&g_Config.m_ClNightShiftTemperature, &Warmth, &Button, EcLocalize("Warmth"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%"))
+				g_Config.m_ClNightShiftTemperature = NeutralTemperature - Warmth * (NeutralTemperature - WarmestTemperature) / 100;
+			static char s_aWarmthTooltip[128];
+			str_format(s_aWarmthTooltip, sizeof(s_aWarmthTooltip), EcLocalize("Drag right to remove more blue light, currently %dK"), g_Config.m_ClNightShiftTemperature);
+			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClNightShiftTemperature, &ModuleRect, s_aWarmthTooltip);
+
+			if(g_Config.m_ClNightShiftSchedule == NIGHT_SHIFT_SCHEDULE_CUSTOM || HasSearch)
+			{
+				DoLine_TimeOfDay(ModuleRect, EcLocalize("Turns on at"), &g_Config.m_ClNightShiftFrom);
+				DoLine_TimeOfDay(ModuleRect, EcLocalize("Turns off at"), &g_Config.m_ClNightShiftTo);
+			}
+
+			if(g_Config.m_ClNightShiftSchedule == NIGHT_SHIFT_SCHEDULE_SUN || HasSearch)
+			{
+				// The sunrise and sunset times depend on where you are, and the client has no
+				// way of knowing that, so the coordinates have to be typed in once.
+				static CLineInputNumber s_LatitudeInput;
+				static CLineInputNumber s_LongitudeInput;
+				if(!s_LatitudeInput.IsActive())
+					s_LatitudeInput.SetFloat(g_Config.m_ClNightShiftLatitude / 100.0f);
+				if(!s_LongitudeInput.IsActive())
+					s_LongitudeInput.SetFloat(g_Config.m_ClNightShiftLongitude / 100.0f);
+
+				CUIRect EditBoxRect;
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Button.VSplitMid(&Label, &EditBoxRect, std::min(10.0f, Button.w * 0.05f));
+				Ui()->DoLabel(&Label, EcLocalize("Latitude"), FontSize, TEXTALIGN_ML);
+				if(Ui()->DoEditBox(&s_LatitudeInput, &EditBoxRect, EditBoxFontSize))
+					g_Config.m_ClNightShiftLatitude = std::clamp((int)(s_LatitudeInput.GetFloat() * 100.0f), -9000, 9000);
+
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Button.VSplitMid(&Label, &EditBoxRect, std::min(10.0f, Button.w * 0.05f));
+				Ui()->DoLabel(&Label, EcLocalize("Longitude"), FontSize, TEXTALIGN_ML);
+				if(Ui()->DoEditBox(&s_LongitudeInput, &EditBoxRect, EditBoxFontSize))
+					g_Config.m_ClNightShiftLongitude = std::clamp((int)(s_LongitudeInput.GetFloat() * 100.0f), -18000, 18000);
+
+				char aBuf[128];
+				int Sunrise, Sunset;
+				switch(CNightShift::SunTimes(&Sunrise, &Sunset))
+				{
+				case CNightShift::SUN_NORMAL:
+					str_format(aBuf, sizeof(aBuf), EcLocalize("Sunrise %02d:%02d, sunset %02d:%02d"),
+						Sunrise / 60, Sunrise % 60, Sunset / 60, Sunset % 60);
+					break;
+				case CNightShift::SUN_ALWAYS_UP:
+					str_copy(aBuf, EcLocalize("The sun does not set here today"));
+					break;
+				case CNightShift::SUN_ALWAYS_DOWN:
+					str_copy(aBuf, EcLocalize("The sun does not rise here today"));
+					break;
+				default:
+					str_copy(aBuf, EcLocalize("Local time is unavailable"));
+					break;
+				}
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoLabel(&Button, aBuf, FontSize, TEXTALIGN_ML);
+			}
+
+			if(g_Config.m_ClNightShiftSchedule != NIGHT_SHIFT_SCHEDULE_ALWAYS || HasSearch)
+			{
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoScrollbarOption(&g_Config.m_ClNightShiftTransition, &g_Config.m_ClNightShiftTransition, &Button, EcLocalize("Fade"), 0, 180, &CUi::ms_LinearScrollbarScale, 0, EcLocalize(" minutes"));
+				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClNightShiftTransition, &ModuleRect, "How long the shift takes to fade in at the start and out at the end of its window");
+			}
+
+			char aStatus[128];
+			const int Now = CNightShift::LocalMinuteOfDay();
+			if(Now < 0)
+				str_copy(aStatus, EcLocalize("Local time is unavailable"));
+			else
+				str_format(aStatus, sizeof(aStatus), EcLocalize("Local time %02d:%02d, shift at %d%%"), Now / 60, Now % 60, (int)(CNightShift::Strength() * 100.0f + 0.5f));
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, aStatus, FontSize, TEXTALIGN_ML);
+
 			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
 		},
 	});
