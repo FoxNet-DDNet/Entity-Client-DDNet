@@ -15,6 +15,20 @@
 #include <cctype>
 #include <memory>
 
+// Backoff used when a backend answers with a rate limit (HTTP 429), Google is
+// aggressive about those. The delay doubles for every strike that happens after
+// the previous backoff already expired.
+static constexpr int64_t RATE_LIMIT_BACKOFF_SECONDS = 5;
+static constexpr int64_t RATE_LIMIT_BACKOFF_MAX_SECONDS = 160;
+static constexpr int RATE_LIMIT_MAX_STRIKES = 6;
+// How many requests a single job may send before it gives up on being rate limited
+static constexpr int RATE_LIMIT_MAX_ATTEMPTS = 3;
+
+static int RateLimitSeconds(int64_t Remaining)
+{
+	return (int)((Remaining + time_freq() - 1) / time_freq());
+}
+
 static void UrlEncode(const char *pText, char *pOut, size_t Length)
 {
 	if(Length == 0)
@@ -207,6 +221,12 @@ protected:
 	}
 
 public:
+	bool IsRateLimited() const override
+	{
+		// StatusCode() may only be read once the request is done
+		return m_pHttpRequest && m_pHttpRequest->State() == EHttpState::DONE && m_pHttpRequest->StatusCode() == 429;
+	}
+
 	std::optional<bool> Update(CTranslateResponse &Out) override
 	{
 		dbg_assert(m_pHttpRequest != nullptr, "m_pHttpRequest is nullptr");
@@ -634,12 +654,74 @@ public:
 	CTranslateBackendGoogle(IHttp &Http, const char *pText)
 	{
 		char aBuf[4096];
-		str_format(aBuf, sizeof(aBuf), "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=",
+		str_format(aBuf, sizeof(aBuf), "https://translate.google.com/translate_a/single?client=gtx&sl=auto&tl=%s&dt=t&q=",
 			EncodeTarget(g_Config.m_EcTranslateTarget));
 		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
 		CreateHttpRequest(Http, aBuf);
 	}
 };
+
+static ETranslateBackend TranslateBackendByName(const char *pName)
+{
+	if(str_comp_nocase(pName, "libretranslate") == 0)
+		return ETranslateBackend::LIBRETRANSLATE;
+	if(str_comp_nocase(pName, "ftapi") == 0)
+		return ETranslateBackend::FTAPI;
+	if(str_comp_nocase(pName, "deeplfree") == 0 || str_comp_nocase(pName, "deepl") == 0)
+		return ETranslateBackend::DEEPL_FREE;
+	if(str_comp_nocase(pName, "google") == 0)
+		return ETranslateBackend::GOOGLE;
+	return ETranslateBackend::INVALID;
+}
+
+static std::unique_ptr<ITranslateBackend> CreateTranslateBackend(ETranslateBackend Backend, IHttp &Http, const char *pText)
+{
+	switch(Backend)
+	{
+	case ETranslateBackend::LIBRETRANSLATE:
+		return std::make_unique<CTranslateBackendLibretranslate>(Http, pText);
+	case ETranslateBackend::FTAPI:
+		return std::make_unique<CTranslateBackendFtapi>(Http, pText);
+	case ETranslateBackend::DEEPL_FREE:
+		return std::make_unique<CTranslateBackendDeeplFree>(Http, pText);
+	case ETranslateBackend::GOOGLE:
+		return std::make_unique<CTranslateBackendGoogle>(Http, pText);
+	case ETranslateBackend::INVALID:
+		break;
+	}
+	return nullptr;
+}
+
+int64_t CTranslate::RateLimitRemaining(ETranslateBackend Backend) const
+{
+	if(Backend != m_RateLimitBackend)
+		return 0;
+	return std::max<int64_t>(m_RateLimitUntil - time(), 0);
+}
+
+void CTranslate::RateLimitHit(ETranslateBackend Backend)
+{
+	const int64_t Now = time();
+	if(Backend != m_RateLimitBackend)
+	{
+		m_RateLimitBackend = Backend;
+		m_RateLimitStrikes = 0;
+		m_RateLimitUntil = 0;
+	}
+	// Requests that were already in flight when the backoff started must not extend it
+	if(Now < m_RateLimitUntil)
+		return;
+	m_RateLimitStrikes = std::min(m_RateLimitStrikes + 1, RATE_LIMIT_MAX_STRIKES);
+	const int64_t Seconds = std::min(RATE_LIMIT_BACKOFF_SECONDS << (m_RateLimitStrikes - 1), RATE_LIMIT_BACKOFF_MAX_SECONDS);
+	m_RateLimitUntil = Now + Seconds * time_freq();
+}
+
+void CTranslate::RateLimitPassed(ETranslateBackend Backend)
+{
+	// A backoff that is still running is kept, only the escalation is reset
+	if(Backend == m_RateLimitBackend)
+		m_RateLimitStrikes = 0;
+}
 
 void CTranslate::ConTranslate(IConsole::IResult *pResult, void *pUserData)
 {
@@ -741,33 +823,46 @@ void CTranslate::Translate(CChat::CLine &Line, bool Manual)
 		return;
 	}
 
-	CTranslateJob Job;
-	Job.m_pLine = &Line;
-	Job.m_pTranslateResponse = std::make_shared<CTranslateResponse>();
-	Job.m_pLine->m_pTranslateResponse = Job.m_pTranslateResponse;
-
-	if(str_comp_nocase(g_Config.m_EcTranslateBackend, "libretranslate") == 0)
-		Job.m_pBackend = std::make_unique<CTranslateBackendLibretranslate>(*Http(), Job.m_pLine->m_aText);
-	else if(str_comp_nocase(g_Config.m_EcTranslateBackend, "ftapi") == 0)
-		Job.m_pBackend = std::make_unique<CTranslateBackendFtapi>(*Http(), Job.m_pLine->m_aText);
-	else if(str_comp_nocase(g_Config.m_EcTranslateBackend, "deeplfree") == 0 || str_comp_nocase(g_Config.m_EcTranslateBackend, "deepl") == 0)
-		Job.m_pBackend = std::make_unique<CTranslateBackendDeeplFree>(*Http(), Job.m_pLine->m_aText);
-	else if(str_comp_nocase(g_Config.m_EcTranslateBackend, "google") == 0)
-		Job.m_pBackend = std::make_unique<CTranslateBackendGoogle>(*Http(), Job.m_pLine->m_aText);
-	else
+	const ETranslateBackend Backend = TranslateBackendByName(g_Config.m_EcTranslateBackend);
+	if(Backend == ETranslateBackend::INVALID)
 	{
 		GameClient()->m_Chat.Echo("Invalid translate backend");
 		return;
 	}
 
-	if(Manual)
+	// Do not touch a backend that told us to slow down until its backoff has passed
+	const int64_t RateLimited = RateLimitRemaining(Backend);
+	if(RateLimited > 0 && !Manual)
+		return; // Automatic translations are dropped instead of piling up
+
+	CTranslateJob Job;
+	Job.m_Backend = Backend;
+	Job.m_pLine = &Line;
+	Job.m_pTranslateResponse = std::make_shared<CTranslateResponse>();
+	Job.m_pLine->m_pTranslateResponse = Job.m_pTranslateResponse;
+
+	if(RateLimited > 0)
 	{
-		str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("%s translating to %s", "translate"), Job.m_pBackend->Name(), g_Config.m_EcTranslateTarget);
+		// Manual translations are sent as soon as the backoff has passed
+		Job.m_RetryTime = m_RateLimitUntil;
+		str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("Rate limited, retrying in %d seconds", "translate"), RateLimitSeconds(RateLimited));
+		Job.m_pTranslateResponse->m_Error = true;
 		Job.m_pLine->m_Time = time();
 	}
 	else
 	{
-		Job.m_pTranslateResponse->m_Text[0] = '\0';
+		Job.m_pBackend = CreateTranslateBackend(Backend, *Http(), Job.m_pLine->m_aText);
+		Job.m_Attempts = 1;
+
+		if(Manual)
+		{
+			str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("%s translating to %s", "translate"), Job.m_pBackend->Name(), g_Config.m_EcTranslateTarget);
+			Job.m_pLine->m_Time = time();
+		}
+		else
+		{
+			Job.m_pTranslateResponse->m_Text[0] = '\0';
+		}
 	}
 
 	Job.m_pTranslateResponse->m_Auto = !Manual;
@@ -784,13 +879,54 @@ void CTranslate::OnRender()
 		return;
 
 	const auto Time = time();
+	int RetryIndex = 0;
 	auto ForEach = [&](CTranslateJob &Job) {
 		if(Job.m_pLine->m_pTranslateResponse != Job.m_pTranslateResponse)
 			return true; // Not the same line anymore
+		if(Job.m_RetryTime != 0)
+		{
+			if(Time < Job.m_RetryTime)
+				return false; // Still waiting out the rate limit backoff
+			Job.m_pBackend = CreateTranslateBackend(Job.m_Backend, *Http(), Job.m_pLine->m_aText);
+			if(!Job.m_pBackend)
+				return true;
+			Job.m_RetryTime = 0;
+			Job.m_Attempts++;
+		}
 		const std::optional<bool> Done = Job.m_pBackend->Update(*Job.m_pTranslateResponse);
 		if(!Done.has_value())
 			return false; // Keep ongoing tasks
-		if(*Done)
+		bool Success = *Done;
+		if(Job.m_pBackend->IsRateLimited())
+		{
+			RateLimitHit(Job.m_Backend);
+			if(Job.m_pTranslateResponse->m_Auto)
+			{
+				// Nobody is waiting for these, drop them silently instead of
+				// retrying, the backoff keeps the rest of them from being sent
+				Job.m_pTranslateResponse->m_Text[0] = '\0';
+				Job.m_pTranslateResponse->m_Language[0] = '\0';
+				return true;
+			}
+			if(Job.m_Attempts < RATE_LIMIT_MAX_ATTEMPTS)
+			{
+				Job.m_pBackend = nullptr; // Aborts the finished request and frees it until the retry
+				// Spread out the jobs that got rate limited together so the retries do not burst
+				Job.m_RetryTime = m_RateLimitUntil + RetryIndex++ * (time_freq() / 4);
+				str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("Rate limited, retrying in %d seconds", "translate"), RateLimitSeconds(Job.m_RetryTime - Time));
+				Job.m_pTranslateResponse->m_Error = true;
+				Job.m_pLine->m_Time = Time;
+				GameClient()->m_Chat.RebuildChat();
+				return false; // Keep the job around for the retry
+			}
+			str_copy(Job.m_pTranslateResponse->m_Text, Localize("rate limited", "translate"));
+			Success = false;
+		}
+		else if(Success)
+		{
+			RateLimitPassed(Job.m_Backend);
+		}
+		if(Success)
 		{
 			const bool SameTextAsInput = str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0;
 			if(SameTextAsInput) // Check for no translation difference
@@ -855,14 +991,17 @@ void CTranslate::AutoTranslate(CChat::CLine &Line)
 		if(Id >= 0 && Id == Line.m_ClientId)
 			return;
 	}
-	if(str_comp(g_Config.m_EcTranslateBackend, "ftapi") == 0)
+	const ETranslateBackend Backend = TranslateBackendByName(g_Config.m_EcTranslateBackend);
+	if(Backend == ETranslateBackend::FTAPI)
 	{
 		// FTAPI quickly gets overloaded, please do not disable this
 		// It may shut down if we spam it too hard
 		return;
 	}
-	if((str_comp(g_Config.m_EcTranslateBackend, "deeplfree") == 0 || str_comp(g_Config.m_EcTranslateBackend, "deepl") == 0) && g_Config.m_EcTranslateKey[0] == '\0')
+	if(Backend == ETranslateBackend::DEEPL_FREE && g_Config.m_EcTranslateKey[0] == '\0')
 		return;
+	if(RateLimitRemaining(Backend) > 0)
+		return; // Backend is backing off, do not queue anything up
 
 	Translate(Line, false);
 	s_LastLines[s_LastLineIndex] = Line;
