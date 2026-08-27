@@ -477,31 +477,67 @@ private:
 
 	void Grow(const unsigned char *pIn, unsigned char *pOut, int w, int h, int OutlineCount) const
 	{
+		struct SSample
+		{
+			int m_OffsetX;
+			int m_OffsetY;
+			unsigned char m_Mask;
+		};
+
+		// The kernel is the same for every pixel, so its weights are worked out once here rather
+		// than a square root and a clamp per pixel per tap.
+		dbg_assert(OutlineCount <= MAX_OUTLINE_THICKNESS, "Outline thickness out of range");
+		constexpr int MaxDiameter = MAX_OUTLINE_THICKNESS * 2 + 1;
+		SSample aSamples[MaxDiameter * MaxDiameter];
+		int NumSamples = 0;
+
+		for(int sy = -OutlineCount; sy <= OutlineCount; sy++)
+		{
+			for(int sx = -OutlineCount; sx <= OutlineCount; sx++)
+			{
+				const int DistanceSquared = sx * sx + sy * sy;
+
+				// Nothing past the one pixel falloff contributes anything, so the corners of the
+				// square kernel are dropped instead of being sampled for a zero weight
+				if(DistanceSquared > (OutlineCount + 1) * (OutlineCount + 1))
+					continue;
+
+				const float Distance = std::sqrt(static_cast<float>(DistanceSquared));
+				const float Mask = 1.0f - std::clamp(Distance - OutlineCount, 0.0f, 1.0f);
+				if(Mask <= 0.0f)
+					continue;
+
+				aSamples[NumSamples] = {sx, sy, static_cast<unsigned char>(Mask * 255.0f + 0.5f)};
+				NumSamples++;
+			}
+		}
+
 		for(int y = 0; y < h; y++)
 		{
 			for(int x = 0; x < w; x++)
 			{
 				int c = pIn[y * w + x];
 
-				for(int sy = -OutlineCount; sy <= OutlineCount; sy++)
+				for(int i = 0; i < NumSamples; i++)
 				{
-					for(int sx = -OutlineCount; sx <= OutlineCount; sx++)
-					{
-						int GetX = x + sx;
-						int GetY = y + sy;
-						if(GetX >= 0 && GetY >= 0 && GetX < w && GetY < h)
-						{
-							int Index = GetY * w + GetX;
-							float Mask = 1.f - std::clamp(length(vec2(sx, sy)) - OutlineCount, 0.f, 1.f);
-							c = std::max(c, (int)(pIn[Index] * Mask));
-						}
-					}
+					const SSample &Sample = aSamples[i];
+					const int GetX = x + Sample.m_OffsetX;
+					const int GetY = y + Sample.m_OffsetY;
+
+					if(GetX < 0 || GetY < 0 || GetX >= w || GetY >= h)
+						continue;
+
+					const int Value = (pIn[GetY * w + GetX] * Sample.m_Mask) / 255;
+					c = std::max(c, Value);
 				}
 
 				pOut[y * w + x] = c;
 			}
 		}
 	}
+
+	// The largest AdjustOutlineThicknessToFontSize can return, which bounds the Grow kernel
+	static constexpr int MAX_OUTLINE_THICKNESS = 4;
 
 	int AdjustOutlineThicknessToFontSize(int OutlineThickness, int FontSize) const
 	{
