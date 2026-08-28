@@ -474,11 +474,6 @@ void CInfoMessages::OnRender()
 	Graphics()->MapScreenToSize(Width, Height);
 	Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
 
-	int Showfps = g_Config.m_ClShowfps;
-#if defined(CONF_VIDEORECORDER)
-	if(IVideo::Current())
-		Showfps = 0;
-#endif
 	// EClient: the fps counter and prediction time used to be subtracted out by hand here. The
 	// HUD layout pushes this clear of them now, so it only says where it sits on its own.
 	const float StartX = Width - 10.0f;

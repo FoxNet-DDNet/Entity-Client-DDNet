@@ -351,7 +351,6 @@ void CHudEditor::RenderHoveredInfo(EHudElement Element) const
 		return;
 
 	const CHudLayout::CRect Rect = Layout().ResolvedRect(Element);
-	const CHudLayout::CPlacement &Placement = Layout().Placement(Element);
 
 	const char *pName = Localize(CHudLayout::ElementDisplayName(Element));
 

@@ -133,9 +133,9 @@ void CPerformanceStatistics::OnRender()
 
 	// The labels never change and TextSize is constexpr, so measure them once instead of laying
 	// them out again every frame.
-	static const float s_FpsLabelWidth = TextRender()->TextWidth(TextSize, "FPS: ", -1, -1.0f);
-	static const float s_PingLabelWidth = TextRender()->TextWidth(TextSize, "Ping: ", -1, -1.0f);
-	static const float s_SnapRateLabelWidth = TextRender()->TextWidth(TextSize, "Snap Rate: ", -1, -1.0f);
+	static const float s_FpsLabelWidth = TextRender()->TextWidth(TextSize, "FPS: ");
+	static const float s_PingLabelWidth = TextRender()->TextWidth(TextSize, "Ping: ");
+	static const float s_SnapRateLabelWidth = TextRender()->TextWidth(TextSize, "Snap Rate: ");
 
 	CUIRect CurRect = {-1, -1, -1, -1};
 	if(g_Config.m_ClStatisticsShowFps)
