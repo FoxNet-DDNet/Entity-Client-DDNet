@@ -1604,9 +1604,11 @@ public:
 		{
 			if((pCursor->m_Flags & TEXTFLAG_RENDER) != 0)
 			{
-				ColorRGBA TextColor = DefaultTextColor();
-				ColorRGBA TextColorOutline = DefaultTextOutlineColor();
-				RenderTextContainer(TextCont, TextColor, TextColorOutline);
+				// The fill colour is already baked into the glyph vertices from m_Color, and
+				// RenderTextContainer multiplies by what it is handed, so it is passed the
+				// identity here. The outline has no such path and has to be handed over, which is
+				// what makes TextOutlineColor apply to Text and TextEx at all.
+				RenderTextContainer(TextCont, DefaultTextColor(), m_OutlineColor);
 			}
 			DeleteTextContainer(TextCont);
 		}
