@@ -222,7 +222,7 @@ static void RenderSettingsModules(CScrollRegion &ScrollRegion, CUIRect &ColumnRe
 
 	for(const CSettingsModule &Module : vModules)
 	{
-		if(Module.m_Column != Column)
+		if(Column != ESettingsModuleColumn::BOTH && Module.m_Column != Column)
 			continue;
 
 		if(!SettingsModuleMatchesSearch(Module, pSearch))
@@ -244,6 +244,27 @@ static void RenderSettingsModules(CScrollRegion &ScrollRegion, CUIRect &ColumnRe
 			Module.m_Render(ModuleRect, HasSearch);
 		HasRenderedModule = true;
 	}
+}
+
+// EClient: two columns are only worth having while each one is wide enough to read its own
+// labels. The menu is laid out in a space that is always 600 tall and as wide as the aspect ratio
+// makes it, so a narrow screen leaves the columns crowded rather than merely small.
+static void RenderSettingsModuleColumns(CScrollRegion &ScrollRegion, CUIRect MainView, const std::vector<CSettingsModule> &vModules, const char *pSearch)
+{
+	constexpr float MinColumnWidth = 360.0f;
+
+	if((MainView.w - Margin) * 0.5f < MinColumnWidth)
+	{
+		// Everything in one column, in the order the modules are declared in, which keeps the two
+		// halves interleaved the way they read down the page rather than one half after the other
+		RenderSettingsModules(ScrollRegion, MainView, vModules, ESettingsModuleColumn::BOTH, pSearch);
+		return;
+	}
+
+	CUIRect ViewLeft, ViewRight;
+	MainView.VSplitMid(&ViewLeft, &ViewRight, Margin);
+	RenderSettingsModules(ScrollRegion, ViewLeft, vModules, ESettingsModuleColumn::LEFT, pSearch);
+	RenderSettingsModules(ScrollRegion, ViewRight, vModules, ESettingsModuleColumn::RIGHT, pSearch);
 }
 
 void CMenus::RenderSettingsEntity(CUIRect MainView)
@@ -3067,13 +3088,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 	const char *pSearch = s_SettingsSearchInput.GetString();
 
-	CUIRect ViewLeft, ViewRight;
-	MainView.VSplitMid(&ViewLeft, &ViewRight, 10.0f);
-
 	if(HasMatchingSettingsModules(vModules, pSearch))
 	{
-		RenderSettingsModules(s_ScrollRegion, ViewLeft, vModules, ESettingsModuleColumn::LEFT, pSearch);
-		RenderSettingsModules(s_ScrollRegion, ViewRight, vModules, ESettingsModuleColumn::RIGHT, pSearch);
+		RenderSettingsModuleColumns(s_ScrollRegion, MainView, vModules, pSearch);
 	}
 	else
 	{
@@ -4449,13 +4466,9 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 
 	const char *pSearch = s_VisualSearchInput.GetString();
 
-	CUIRect ViewLeft, ViewRight;
-	MainView.VSplitMid(&ViewLeft, &ViewRight, 10.0f);
-
 	if(HasMatchingSettingsModules(vModules, pSearch))
 	{
-		RenderSettingsModules(s_ScrollRegion, ViewLeft, vModules, ESettingsModuleColumn::LEFT, pSearch);
-		RenderSettingsModules(s_ScrollRegion, ViewRight, vModules, ESettingsModuleColumn::RIGHT, pSearch);
+		RenderSettingsModuleColumns(s_ScrollRegion, MainView, vModules, pSearch);
 	}
 	else
 	{

@@ -38,6 +38,7 @@ enum class ESettingsModuleColumn
 {
 	LEFT,
 	RIGHT,
+	BOTH, // Never a place to put a module, only something to ask for once the columns are merged
 };
 
 struct CSettingsModule
