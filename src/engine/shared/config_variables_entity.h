@@ -434,8 +434,7 @@ MACRO_CONFIG_INT(ClDiscordNormalProcessPriority, ec_discord_normal_process_prior
 
 // Media Island
 MACRO_CONFIG_INT(ClMediaIsland, ec_media_island, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media island")
-MACRO_CONFIG_INT(ClMediaIslandScale, ec_media_island_scale, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Media island size, in tenths of a step")
-MACRO_CONFIG_COL(ClMediaIslandColor, ec_media_island_visualizer_color, 2141323264 /* gray */, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Color of the media island visualizer")
+MACRO_CONFIG_COL(ClMediaIslandColor, ec_media_island_color, 2141323264 /* gray */, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Color of the media island background")
 MACRO_CONFIG_INT(ClMediaIslandAnimation, ec_media_island_animation, 100, 0, 300, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How fast the media island animation is (0 = disabled)")
 MACRO_CONFIG_INT(ClMediaIslandVisualizer, ec_media_island_visualizer, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show media island visualizer")
 MACRO_CONFIG_INT(ClMediaIslandVisualizerAlignment, ec_media_island_visualizer_alignment, 2, 1, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "1 = align bottom | 2 = align center")

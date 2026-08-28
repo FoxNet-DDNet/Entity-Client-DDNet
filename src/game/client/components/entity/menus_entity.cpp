@@ -183,6 +183,15 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 		TextRender()->SetRenderFlags(0);
 		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 		EditBox.VSplitLeft(SearchWidth, nullptr, &EditBox);
+
+		// EClient: a square off the end of the row, so it is on every settings page that has a
+		// search bar and needs no room of its own at any resolution
+		CUIRect HudEditorButton;
+		EditBox.VSplitRight(EditBox.h, &EditBox, &HudEditorButton);
+		EditBox.VSplitRight(Margin, &EditBox, nullptr);
+		static CButtonContainer s_HudEditorButton;
+		DoHudEditorButton(&s_HudEditorButton, &HudEditorButton);
+
 		if(!Ui()->IsPopupOpen() && Input()->ModifierIsPressed() && Input()->KeyPress(KEY_F))
 		{
 			Ui()->SetActiveItem(&SearchInput);
@@ -3077,6 +3086,43 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	s_ScrollRegion.End();
 }
 
+// EClient: the button that opens the HUD editor, drawn filling whatever rect it is handed. It
+// appears in a couple of the modules that are mostly about HUD elements, and once in the search bar
+// where it is reachable from any settings page regardless of which modules are on screen.
+void CMenus::DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect)
+{
+	CUIRect Button = *pRect;
+
+	const IClient::EClientState State = Client()->State();
+	const bool Ingame = State == IClient::STATE_ONLINE || State == IClient::STATE_DEMOPLAYBACK;
+
+	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
+
+	TextRender()->TextOutlineColor(TextRender()->DefaultTextOutlineColor());
+	TextRender()->TextColor(TextRender()->DefaultTextSelectionColor());
+	if(Ui()->HotItem() == pId && Ingame)
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+	ColorRGBA Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+	if(Ingame)
+		Color.a *= Ui()->ButtonColorMul(pId);
+
+	Button.Draw(Color, IGraphics::CORNER_ALL, 5.0f);
+
+	// Sized off the rect rather than a constant, so it fits whichever of the two places it is in
+	Ui()->DoLabel(&Button, FontIcon::BRUSH, Button.h * CUi::ms_FontmodHeight * 0.7f, TEXTALIGN_MC);
+
+	TextRender()->SetRenderFlags(0);
+	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+	TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+	GameClient()->m_Tooltips.DoToolTip(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor");
+
+	if(Ui()->DoButtonLogic(pId, 0, &Button, BUTTONFLAG_LEFT) && Ingame)
+		GameClient()->m_HudEditor.ToggleHudEditor();
+}
+
 void CMenus::RenderSettingsVisual(CUIRect MainView)
 {
 	static CScrollRegion s_ScrollRegion;
@@ -3089,6 +3135,18 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	std::vector<CSettingsModule> vModules;
 
 	CUIRect Label, Button;
+
+	auto RenderHudEditorButton = [this](CButtonContainer *pId, const CUIRect *pRect) {
+		// Tucked into the module's top right corner. The drawing itself is shared with the copy
+		// that sits in the search bar.
+		CUIRect Temp = *pRect;
+		constexpr float a = HeaderSize + MarginExtraSmall;
+		Temp.y += MarginSmall;
+		Temp.h = a;
+		Temp.x = Temp.x + Temp.w - a - MarginExtraSmall;
+		Temp.w = a;
+		DoHudEditorButton(pId, &Temp);
+	};
 
 	const bool RainbowOn = g_Config.m_ClRainbowHook || g_Config.m_ClRainbowTees || g_Config.m_ClRainbowWeapon || g_Config.m_ClRainbowOthers;
 	/* Cosmetics */
@@ -3935,7 +3993,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		},
 	});
 
-	/* Miscellaneous */
+	/* Stats */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		{"stats", "fps", "ping", "snap", "rate", "show"},
@@ -3967,28 +4025,28 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			if(g_Config.m_ClMediaIslandVisualizer || HasSearch)
 				Offset += LineSize;
 
-			return 135.0f + Offset;
+			return 105.0f + Offset;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
+			static CButtonContainer Id;
+			RenderHudEditorButton(&Id, &ModuleRect);
+
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 			Ui()->DoLabel(&Button, EcLocalize("Media Island"), HeaderSize, HeaderAlignment);
+
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMediaIsland, "Enable media island", &g_Config.m_ClMediaIsland, &ModuleRect, LineSize);
 
 				static CButtonContainer s_IslandColor;
 				DoLine_ColorPicker(&s_IslandColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Island color"), &g_Config.m_ClMediaIslandColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClMediaIslandColor, true)), false, nullptr, true);
 
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoFloatScrollBar(&g_Config.m_ClMediaIslandScale, &g_Config.m_ClMediaIslandScale, &Button, EcLocalize("Island Size"), 10, 100, 10, &CUi::ms_LinearScrollbarScale, 0, "");
-
 				//ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				//Ui()->DoScrollbarOption(&g_Config.m_ClMediaIslandAnimation, &g_Config.m_ClMediaIslandAnimation, &Button, "Animation Time", 0, 300, &CUi::ms_LinearScrollbarScale, 0u, "");
 				//GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClMediaIslandAnimation, &Button, "Time it takes for the Islands animation, lower = slower", FontSize);
 
-				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMediaIslandVisualizer, "Show Visualizer", &g_Config.m_ClMediaIslandVisualizer, &ModuleRect, LineSize);
 
 				if(g_Config.m_ClMediaIslandVisualizer || HasSearch)
@@ -4312,6 +4370,9 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 				ModuleRect.VMargin(Margin, &ModuleRect);
 
+				static CButtonContainer Id;
+				RenderHudEditorButton(&Id, &ModuleRect);
+
 				ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 				Ui()->DoLabel(&Button, EcLocalize("Frozen Tee Display"), HeaderSize, HeaderAlignment);
 				{
@@ -4437,6 +4498,7 @@ int CMenus::DoButtonNoRect_FontIcon(CButtonContainer *pButtonContainer, const ch
 	TextRender()->SetRenderFlags(0);
 	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 
+	TextRender()->TextColor(TextRender()->DefaultTextColor());
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, BUTTONFLAG_ALL);
 }
 

@@ -208,6 +208,7 @@ public:
 	void Prompt(char (&aPrompt)[32]);
 
 	void Toggle(int Type);
+	void Close(); // EClient
 	bool IsActive() const { return m_ConsoleState != CONSOLE_CLOSED; }
 	void SetRemoteConsoleInput(const char *pText, bool Open = true);
 

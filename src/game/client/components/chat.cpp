@@ -1721,12 +1721,22 @@ void CChat::OnRender()
 	const float Width = Height * Graphics()->ScreenAspect();
 	Graphics()->MapScreenToSize(Width, Height);
 
+	// EClient
+	CHudLayout &Layout = GameClient()->m_Hud.HudLayout();
+	const CHudLayout::CScope LayoutScope(&Layout, EHudElement::CHAT);
+
 	float x = 5.0f;
 	float y = 300.0f - 20.0f * FontSize() / 6.0f;
 	float ScaledFontSize = FontSize() * (8.0f / 6.0f);
 
-	// EClient: cursor position in chat space, used for selection and hover detection
-	const vec2 MousePos = m_SelectorMouse / vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight()) * vec2(Width, Height);
+	// EClient: where the lines start from, for the element rect reported further down
+	const float ChatBottom = y;
+
+	// EClient: cursor position in chat space, used for selection and hover detection. The layout
+	// may have moved and scaled the chat away from the base screen, so the cursor is brought into
+	// the chat's own coordinates rather than compared against them directly.
+	const vec2 MousePos = Layout.ToElementSpace(EHudElement::CHAT,
+		m_SelectorMouse / vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight()) * vec2(Width, Height));
 
 	// Handle mouse selection for chat when chat mode is active
 	if(m_Mode != MODE_NONE)
@@ -1817,7 +1827,12 @@ void CChat::OnRender()
 		const CUIRect ClippingRect = {InputCursor.m_X, InputCursor.m_Y, MessageMaxWidth, 2.25f * InputCursor.m_FontSize};
 		const float XScale = Graphics()->ScreenWidth() / Width;
 		const float YScale = Graphics()->ScreenHeight() / Height;
-		Graphics()->ClipEnable((int)(ClippingRect.x * XScale), (int)(ClippingRect.y * YScale), (int)(ClippingRect.w * XScale), (int)(ClippingRect.h * YScale));
+		// EClient: ClipEnable wants screen pixels, so unlike the drawing it cannot ride the screen
+		// mapping the layout set up and has to be taken back to base coordinates by hand
+		const vec2 ClipTopLeft = Layout.ToBaseSpace(EHudElement::CHAT, vec2(ClippingRect.x, ClippingRect.y));
+		const float ClipScale = Layout.ElementScale(EHudElement::CHAT);
+		Graphics()->ClipEnable((int)(ClipTopLeft.x * XScale), (int)(ClipTopLeft.y * YScale),
+			(int)(ClippingRect.w * ClipScale * XScale), (int)(ClippingRect.h * ClipScale * YScale));
 
 		float ScrollOffset = m_Input.GetScrollOffset();
 		float ScrollOffsetChange = m_Input.GetScrollOffsetChange();
@@ -2130,6 +2145,14 @@ void CChat::OnRender()
 			m_SelectionText.clear();
 		}
 	}
+
+	// EClient: the box is the chat at its fullest, which is what it looks like with chat open and
+	// nothing else in the way. HeightLimit and the wrap width both tighten while the scoreboard is
+	// up or chat is closed, and following those would make the element resize itself underneath
+	// whoever is trying to place it.
+	const float FullHeightLimit = 50.0f;
+	Layout.ReportNaturalRect(EHudElement::CHAT,
+		vec2(x, FullHeightLimit), vec2((float)g_Config.m_ClChatWidth, ChatBottom - FullHeightLimit));
 
 	if(m_Mode != MODE_NONE)
 	{

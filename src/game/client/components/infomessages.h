@@ -58,8 +58,8 @@ class CInfoMessages : public CComponent
 
 	CInfoMsg CreateInfoMsg(EType Type);
 	void AddInfoMsg(const CInfoMsg &InfoMsg);
-	void RenderKillMsg(const CInfoMsg &InfoMsg, float x, float y);
-	void RenderFinishMsg(const CInfoMsg &InfoMsg, float x, float y);
+	float RenderKillMsg(const CInfoMsg &InfoMsg, float x, float y); // EClient: returns leftmost x
+	float RenderFinishMsg(const CInfoMsg &InfoMsg, float x, float y); // EClient: returns leftmost x
 
 	void OnTeamKillMessage(const struct CNetMsg_Sv_KillMsgTeam *pMsg);
 	void OnKillMessage(const struct CNetMsg_Sv_KillMsg *pMsg);

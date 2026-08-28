@@ -41,6 +41,7 @@
 #include "components/debughud.h"
 #include "components/effects.h"
 #include "components/emoticon.h"
+#include "components/entity/hud/hud_editor.h" // EClient
 #include "components/flow.h"
 #include "components/freezebars.h"
 #include "components/ghost.h"
@@ -240,6 +241,7 @@ public:
 	CCountryFlags m_CountryFlags;
 	CFlow m_Flow;
 	CHud m_Hud;
+	CHudEditor m_HudEditor; // EClient
 	CImportantAlert m_ImportantAlert;
 	CDebugHud m_DebugHud;
 	CControls m_Controls;

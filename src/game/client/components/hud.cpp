@@ -155,6 +155,32 @@ void CHud::OnInit()
 	Graphics()->QuadContainerUpload(m_HudQuadContainerIndex);
 }
 
+// EClient
+bool CHud::PreviewActive() const
+{
+	// The editor being open is enough for stand in content. Switching elements on is what ctrl is
+	// for, and that is handled where the config values are overridden.
+	return GameClient()->m_HudEditor.IsActive();
+}
+
+// EClient: asked both by the box itself and by the spectator count that it pushes up. Those were
+// two separate copies of the same condition, which is how the preview came to draw the box without
+// anything moving out of its way.
+bool CHud::HasDummyActionsBox() const
+{
+	return g_Config.m_ClShowhudDummyActions &&
+	       !(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER) &&
+	       (Client()->DummyConnected() || PreviewActive());
+}
+
+void CHud::OnConsoleInit()
+{
+	// The layout is not a registered component, so it needs its interfaces wired up by hand. All
+	// components have had OnInterfacesInit called on them by the time this runs.
+	m_HudLayout.OnInterfacesInit(GameClient());
+	m_HudLayout.OnConsoleInit();
+}
+
 float CHud::GameTimerWidth(float Size, int Time)
 {
 	static float s_TextSize = Size;
@@ -300,6 +326,9 @@ void CHud::RenderScoreHud()
 			float ScoreWidthMax = std::max({m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth, s_TextWidth100});
 			float Split = 3.0f;
 			float ImageSize = (GameClient()->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_FLAGS) ? 16.0f : Split;
+			// EClient: StartY is advanced by the loop below, so the rect is reported up front
+			const float BoxWidth = ScoreWidthMax + ImageSize + 2 * Split;
+			m_HudLayout.ReportNaturalRect(EHudElement::SCORE, vec2(m_Width - BoxWidth, StartY), vec2(BoxWidth, 56.0f));
 			for(int t = 0; t < 2; t++)
 			{
 				// draw box
@@ -491,6 +520,9 @@ void CHud::RenderScoreHud()
 			static float s_TextWidth10 = TextRender()->TextWidth(14.0f, "10", -1, -1.0f);
 			float ScoreWidthMax = std::max({m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth, s_TextWidth10});
 			float Split = 3.0f, ImageSize = 16.0f, PosSize = 16.0f;
+			// EClient: StartY is advanced by the loop below, so the rect is reported up front
+			const float BoxWidth = ScoreWidthMax + ImageSize + 2 * Split + PosSize;
+			m_HudLayout.ReportNaturalRect(EHudElement::SCORE, vec2(m_Width - BoxWidth, StartY), vec2(BoxWidth, 56.0f));
 
 			for(int t = 0; t < 2; t++)
 			{
@@ -601,7 +633,11 @@ void CHud::RenderWarmupTimer()
 
 	const float FontSize = 20.0f;
 	const char *pTitle = Localize("Warmup");
-	TextRender()->Text(150.0f * Graphics()->ScreenAspect() - TextRender()->TextWidth(FontSize, pTitle) / 2.0f, 50.0f, FontSize, pTitle);
+	const float TitleWidth = TextRender()->TextWidth(FontSize, pTitle);
+	// EClient: from the top of the title to the bottom of the time below it
+	m_HudLayout.ReportNaturalRect(EHudElement::WARMUP_TIMER,
+		vec2(150.0f * Graphics()->ScreenAspect() - TitleWidth / 2.0f, 50.0f), vec2(TitleWidth, 45.0f));
+	TextRender()->Text(150.0f * Graphics()->ScreenAspect() - TitleWidth / 2.0f, 50.0f, FontSize, pTitle);
 
 	const int Seconds = GameClient()->m_Snap.m_pGameInfoObj->m_WarmupTimer / Client()->GameTickSpeed();
 	char aWarmupTime[16];
@@ -619,16 +655,22 @@ void CHud::RenderWarmupTimer()
 	TextRender()->Text(150.0f * Graphics()->ScreenAspect() - TextWidth / 2.0f, 75.0f, FontSize, aWarmupTime);
 }
 
-void CHud::RenderTextInfo()
+// EClient: shared by the fps counter and the prediction time below it, which are separate
+// elements but both hidden while a video is being recorded
+int CHud::ShowFps() const
 {
-	int Showfps = g_Config.m_ClShowfps;
 #if defined(CONF_VIDEORECORDER)
 	if(IVideo::Current())
-		Showfps = 0;
+		return 0;
 #endif
+	return g_Config.m_ClShowfps;
+}
+
+void CHud::RenderFps()
+{
 	char aBuf[16];
 
-	if(Showfps)
+	if(ShowFps())
 	{
 		const int FramesPerSecond = round_to_int(1.0f / Client()->FrameTimeAverage());
 		str_format(aBuf, sizeof(aBuf), "%d", FramesPerSecond);
@@ -646,6 +688,7 @@ void CHud::RenderTextInfo()
 		Cursor.SetPosition(vec2(m_Width - 10 - s_aTextWidth[DigitIndex], 5));
 		Cursor.m_FontSize = 12.0f;
 		m_FPSPos = vec2(m_Width - 10 - s_TextWidth00000, 5);
+		m_HudLayout.ReportNaturalRect(EHudElement::FPS, m_FPSPos, vec2(s_TextWidth00000, 12.0f)); // EClient
 		auto OldFlags = TextRender()->GetRenderFlags();
 		TextRender()->SetRenderFlags(OldFlags | TEXT_RENDER_FLAG_ONE_TIME_USE);
 		if(m_FPSTextContainerIndex.Valid())
@@ -660,12 +703,27 @@ void CHud::RenderTextInfo()
 	}
 	else
 		m_FPSPos = vec2(0, 0);
+}
 
-	if(g_Config.m_ClShowpred && Client()->State() != IClient::STATE_DEMOPLAYBACK)
-	{
-		str_format(aBuf, sizeof(aBuf), "%d", Client()->GetPredictionTime());
-		TextRender()->Text(m_Width - 10.0f - TextRender()->TextWidth(12.0f, aBuf), Showfps ? 20.0f : 5.0f, 12.0f, aBuf, -1.0f);
-	}
+void CHud::RenderPrediction()
+{
+	if(!g_Config.m_ClShowpred || Client()->State() == IClient::STATE_DEMOPLAYBACK)
+		return;
+
+	char aBuf[16];
+	str_format(aBuf, sizeof(aBuf), "%d", Client()->GetPredictionTime());
+
+	// EClient: sitting under the fps counter is the push solver's job now, so this only says where
+	// it goes when there is nothing above it
+	const float y = 5.0f;
+	const float TextWidth = TextRender()->TextWidth(12.0f, aBuf);
+
+	// EClient: measured off a fixed placeholder so the box does not twitch with the digit count
+	static float s_PlaceholderWidth = TextRender()->TextWidth(12.0f, "000");
+	m_HudLayout.ReportNaturalRect(EHudElement::PREDICTION,
+		vec2(m_Width - 10.0f - s_PlaceholderWidth, y), vec2(s_PlaceholderWidth, 12.0f));
+
+	TextRender()->Text(m_Width - 10.0f - TextWidth, y, 12.0f, aBuf, -1.0f);
 }
 void CHud::RenderConnectionWarning()
 {
@@ -857,6 +915,18 @@ void CHud::RenderAmmoHealthAndArmor(const CNetObj_Character *pCharacter)
 	bool IsSixupGameSkin = GameClient()->m_GameSkin.IsSixup();
 	int QuadOffsetSixup = (IsSixupGameSkin ? 10 : 0);
 
+	// EClient: a 12 unit row per meter that is actually shown, ten 12 unit wide slots across
+	{
+		const float RowHeight = 12.0f;
+		float Height = 0.0f;
+		if(GameClient()->m_GameInfo.m_HudHealthArmor)
+			Height += 2.0f * RowHeight;
+		if(GameClient()->m_GameInfo.m_HudAmmo)
+			Height += RowHeight;
+		if(Height > 0.0f)
+			m_HudLayout.ReportNaturalRect(EHudElement::HEALTH_AMMO, vec2(5.0f, 5.0f), vec2(120.0f, Height));
+	}
+
 	if(GameClient()->m_GameInfo.m_HudAmmo)
 	{
 		// ammo display
@@ -928,6 +998,9 @@ void CHud::PreparePlayerStateQuads()
 		constexpr float HudWeaponScale = 0.25f;
 		float Width = WeaponSpec.m_VisualSize * ScaleX * HudWeaponScale;
 		float Height = WeaponSpec.m_VisualSize * ScaleY * HudWeaponScale;
+		// EClient: RenderPlayerState draws these rotated by 45 degrees, so they reach further from
+		// their centre than their own width and height suggest
+		m_MaxWeaponHudExtent = std::max(m_MaxWeaponHudExtent, (Width + Height) / (2.0f * std::sqrt(2.0f)));
 		m_aWeaponOffset[Weapon] = Graphics()->QuadContainerAddSprite(m_HudQuadContainerIndex, Width, Height);
 	}
 
@@ -971,6 +1044,14 @@ void CHud::RenderPlayerState(const int ClientId)
 	CCharacterCore *pCharacter = &GameClient()->m_aClients[ClientId].m_Predicted;
 	CNetObj_Character *pPlayer = &GameClient()->m_aClients[ClientId].m_RenderCur;
 	int TotalJumpsToDisplay = 0;
+
+	// EClient: this used to shift itself down by the height of the health, armor and ammo rows by
+	// hand, which assumed those were always drawn at full size. The push solver stacks it under
+	// whatever health_ammo actually turned out to be now, so it scales with it.
+	// The rect this element covers is only known once every row below has laid itself out, so it
+	// is accumulated as they go and reported at the end.
+	float MaxX = 5.0f;
+	float TopY = -1.0f;
 	if(g_Config.m_ClShowhudJumpsIndicator)
 	{
 		int AvailableJumpsToDisplay;
@@ -1013,27 +1094,25 @@ void CHud::RenderPlayerState(const int ClientId)
 		}
 
 		// render available and used jumps
-		int JumpsOffsetY = ((GameClient()->m_GameInfo.m_HudHealthArmor && g_Config.m_ClShowhudHealthAmmo ? 24 : 0) +
-				    (GameClient()->m_GameInfo.m_HudAmmo && g_Config.m_ClShowhudHealthAmmo ? 12 : 0));
-		if(JumpsOffsetY > 0)
+		// EClient: the jump quads are baked at y = 5 + 24
+		if(TotalJumpsToDisplay > 0)
 		{
-			Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudAirjump);
-			Graphics()->RenderQuadContainerEx(m_HudQuadContainerIndex, m_AirjumpOffset, AvailableJumpsToDisplay, 0, JumpsOffsetY);
-			Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudAirjumpEmpty);
-			Graphics()->RenderQuadContainerEx(m_HudQuadContainerIndex, m_AirjumpEmptyOffset + AvailableJumpsToDisplay, TotalJumpsToDisplay - AvailableJumpsToDisplay, 0, JumpsOffsetY);
+			TopY = 5.0f + 24.0f;
+			MaxX = std::max(MaxX, 5.0f + TotalJumpsToDisplay * 12.0f);
 		}
-		else
-		{
-			Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudAirjump);
-			Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_AirjumpOffset, AvailableJumpsToDisplay);
-			Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudAirjumpEmpty);
-			Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_AirjumpEmptyOffset + AvailableJumpsToDisplay, TotalJumpsToDisplay - AvailableJumpsToDisplay);
-		}
+		Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudAirjump);
+		Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_AirjumpOffset, AvailableJumpsToDisplay);
+		Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudAirjumpEmpty);
+		Graphics()->RenderQuadContainer(m_HudQuadContainerIndex, m_AirjumpEmptyOffset + AvailableJumpsToDisplay, TotalJumpsToDisplay - AvailableJumpsToDisplay);
 	}
 
 	float x = 5 + 12;
-	float y = (5 + 12 + (GameClient()->m_GameInfo.m_HudHealthArmor && g_Config.m_ClShowhudHealthAmmo ? 24 : 0) +
-		   (GameClient()->m_GameInfo.m_HudAmmo && g_Config.m_ClShowhudHealthAmmo ? 12 : 0));
+	float y = 5.0f + 12.0f;
+
+	// EClient: the weapon row is centred on the cursor and drawn rotated, so it reaches further
+	// above the cursor than a plain 12 unit icon would, and it sits above the jump row
+	if(TopY < 0.0f || y - m_MaxWeaponHudExtent < TopY)
+		TopY = y - m_MaxWeaponHudExtent;
 
 	// render weapons
 	{
@@ -1070,6 +1149,7 @@ void CHud::RenderPlayerState(const int ClientId)
 	}
 
 	// render capabilities
+	MaxX = std::max(MaxX, x + m_MaxWeaponHudExtent); // EClient: the rotated weapons overhang too
 	x = 5;
 	y += 12;
 	if(TotalJumpsToDisplay > 0)
@@ -1120,6 +1200,7 @@ void CHud::RenderPlayerState(const int ClientId)
 	}
 
 	// render prohibited capabilities
+	MaxX = std::max(MaxX, x); // EClient
 	x = 5;
 	if(HasCapabilities)
 	{
@@ -1183,6 +1264,7 @@ void CHud::RenderPlayerState(const int ClientId)
 	}
 
 	// render dummy actions and freeze state
+	MaxX = std::max(MaxX, x); // EClient
 	x = 5;
 	if(HasProhibitedCapabilities)
 	{
@@ -1217,6 +1299,13 @@ void CHud::RenderPlayerState(const int ClientId)
 		Graphics()->TextureSet(GameClient()->m_HudSkin.m_SpriteHudLiveFrozen);
 		Graphics()->RenderQuadContainerAsSprite(m_HudQuadContainerIndex, m_LiveFrozenOffset, x, y);
 	}
+
+	// EClient: the capability, prohibition and freeze icons are added with the four argument
+	// QuadContainerAddSprite, which puts the quad's top left on the origin rather than centring
+	// it, so the last row runs from y to y + 12. Only the weapon row above is centred.
+	MaxX = std::max(MaxX, x);
+	if(TopY >= 0.0f)
+		m_HudLayout.ReportNaturalRect(EHudElement::PLAYER_STATE, vec2(5.0f, TopY), vec2(MaxX - 5.0f, y + 12.0f - TopY));
 }
 
 void CHud::RenderNinjaBarPos(const float x, float y, const float Width, const float Height, float Progress, const float Alpha)
@@ -1424,25 +1513,16 @@ void CHud::RenderSpectatorCount()
 	const float BoxHeight = 14.f;
 	const float BoxWidth = 13.f + TextRender()->TextWidth(Fontsize, aBuf);
 
-	float StartX = m_Width - BoxWidth;
-	float StartY = 285.0f - BoxHeight - 4; // 4 units distance to the next display;
-	if(HasMovementInformationBox())
-	{
-		StartY -= 4;
-	}
-	StartY -= GetMovementInformationBoxHeight();
+	// EClient: this used to subtract the height of the movement box, the score box and the dummy
+	// actions box by hand. The push solver in CHudLayout stacks it now, so it only has to say
+	// where it sits on its own.
+	const float StartX = m_Width - BoxWidth;
+	const float StartY = 285.0f - BoxHeight - 4; // 4 units distance to the next display;
 
-	if(g_Config.m_ClShowhudScore)
-	{
-		StartY -= 56;
-	}
+	m_HudLayout.ReportNaturalRect(EHudElement::SPECTATOR_COUNT, vec2(StartX, StartY), vec2(BoxWidth, BoxHeight)); // EClient
 
-	if(g_Config.m_ClShowhudDummyActions && !(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER) && Client()->DummyConnected())
-	{
-		StartY = StartY - 29.0f - 4; // dummy actions height and padding
-	}
-
-	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_L, 5.0f);
+	// EClient: rounded only where nothing is up against it, so panels put side by side merge
+	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, CHudLayout::BackgroundColor(), m_HudLayout.CornerFlags(EHudElement::SPECTATOR_COUNT), 5.0f);
 
 	float y = StartY + BoxHeight / 3;
 	float x = StartX + 2;
@@ -1455,7 +1535,9 @@ void CHud::RenderSpectatorCount()
 
 void CHud::RenderDummyActions()
 {
-	if(!g_Config.m_ClShowhudDummyActions || (GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER) || !Client()->DummyConnected())
+	// EClient: DummyConnected cannot be substituted the way the snapshot and config can, so the
+	// preview is let through inside HasDummyActionsBox
+	if(!HasDummyActionsBox())
 	{
 		return;
 	}
@@ -1463,20 +1545,14 @@ void CHud::RenderDummyActions()
 	const float BoxHeight = 29.0f;
 	const float BoxWidth = 16.0f;
 
-	float StartX = m_Width - BoxWidth;
-	float StartY = 285.0f - BoxHeight - 4; // 4 units distance to the next display;
-	if(HasMovementInformationBox())
-	{
-		StartY -= 4;
-	}
-	StartY -= GetMovementInformationBoxHeight();
+	// EClient: stacked by the push solver now, see RenderSpectatorCount
+	const float StartX = m_Width - BoxWidth;
+	const float StartY = 285.0f - BoxHeight - 4; // 4 units distance to the next display;
 
-	if(g_Config.m_ClShowhudScore)
-	{
-		StartY -= 56;
-	}
+	m_HudLayout.ReportNaturalRect(EHudElement::DUMMY_ACTIONS, vec2(StartX, StartY), vec2(BoxWidth, BoxHeight)); // EClient
 
-	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_L, 5.0f);
+	// EClient: rounded only where nothing is up against it, so panels put side by side merge
+	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, CHudLayout::BackgroundColor(), m_HudLayout.CornerFlags(EHudElement::DUMMY_ACTIONS), 5.0f);
 
 	float y = StartY + 2;
 	float x = StartX + 2;
@@ -1628,14 +1704,14 @@ void CHud::RenderMovementInformation()
 
 	const float BoxWidth = 62.0f;
 
-	float StartX = m_Width - BoxWidth;
-	float StartY = 285.0f - BoxHeight - 4.0f; // 4 units distance to the next display;
-	if(g_Config.m_ClShowhudScore)
-	{
-		StartY -= 56.0f;
-	}
+	// EClient: stacked by the push solver now, see RenderSpectatorCount
+	const float StartX = m_Width - BoxWidth;
+	const float StartY = 285.0f - BoxHeight - 4.0f; // 4 units distance to the next display;
 
-	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_L, 5.0f);
+	m_HudLayout.ReportNaturalRect(EHudElement::MOVEMENT_INFO, vec2(StartX, StartY), vec2(BoxWidth, BoxHeight)); // EClient
+
+	// EClient: rounded only where nothing is up against it, so panels put side by side merge
+	Graphics()->DrawRect(StartX, StartY, BoxWidth, BoxHeight, CHudLayout::BackgroundColor(), m_HudLayout.CornerFlags(EHudElement::MOVEMENT_INFO), 5.0f);
 
 	const CMovementInformation Info = GetMovementInformation(ClientId, g_Config.m_ClDummy);
 
@@ -1742,7 +1818,9 @@ void CHud::RenderSpectatorHud()
 		return;
 
 	// draw the box
-	Graphics()->DrawRect(m_Width - 180.0f, m_Height - 15.0f, 180.0f, 15.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_TL, 5.0f);
+	m_HudLayout.ReportNaturalRect(EHudElement::SPECTATOR_HUD, vec2(m_Width - 180.0f, m_Height - 15.0f), vec2(180.0f, 15.0f)); // EClient
+
+	Graphics()->DrawRect(m_Width - 180.0f, m_Height - 15.0f, 180.0f, 15.0f, CHudLayout::BackgroundColor(), m_HudLayout.CornerFlags(EHudElement::SPECTATOR_HUD), 5.0f); // EClient
 
 	// draw the text
 	char aBuf[128];
@@ -1797,10 +1875,13 @@ void CHud::RenderLocalTime(float x)
 	str_timestamp_format(aTimeStr, sizeof(aTimeStr), Seconds ? "%H:%M.%S" : "%H:%M");
 	const float Width = std::round(TextRender()->TextBoundingBox(5.0f, aTimeStr).m_W);
 
-	Graphics()->DrawRect(x - (Width + 15.0f), 0.0f, Width + 10.0f, 12.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_B, 3.75f);
+	// EClient
+	m_HudLayout.ReportNaturalRect(EHudElement::LOCAL_TIME, vec2(x - (Width + 15.0f), 0.0f), vec2(Width + 10.0f, 12.5f));
+
+	Graphics()->DrawRect(x - (Width + 15.0f), 0.0f, Width + 10.0f, 12.5f, CHudLayout::BackgroundColor(), m_HudLayout.CornerFlags(EHudElement::LOCAL_TIME), 3.75f);
 	TextRender()->Text(x - (Width + 10.0f), (12.5f - 5.f) / 2.f, 5.0f, aTimeStr, -1.0f);
 
-	// Graphics()->DrawRect(x - 30.0f, 0.0f, 25.0f, 12.5f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_B, 3.75f);
+	// Graphics()->DrawRect(x - 30.0f, 0.0f, 25.0f, 12.5f, CHudLayout::BackgroundColor(), IGraphics::CORNER_B, 3.75f);
 	// TextRender()->Text(x - 25.0f, (12.5f - 5.f) / 2.f, 5.0f, aTimeStr, -1.0f);
 }
 
@@ -1862,6 +1943,168 @@ void CHud::OnRender()
 	m_Height = 300.0f;
 	Graphics()->MapScreenToSize(m_Width, m_Height);
 
+	// EClient: while the editor is up, every element is shown with everything it is capable of
+	// showing, so that its real maximum footprint can be placed. Rather than duplicating the
+	// drawing code into a preview path, the inputs it reads are swapped out for the duration of
+	// this one frame and put straight back afterwards.
+	// Stand in content goes in whenever the editor is open, so nothing sits there empty while it
+	// is being placed. Holding ctrl is a stronger thing: it switches on the elements that are
+	// turned off entirely, which is the part worth having to ask for.
+	const bool Preview = GameClient()->m_HudEditor.IsActive();
+	const bool ForceOn = GameClient()->m_HudEditor.IsPreviewing();
+	const int PreviewClientId = GameClient()->m_Snap.m_LocalClientId;
+	const bool PreviewCharacter = Preview && PreviewClientId >= 0 && PreviewClientId < MAX_CLIENTS;
+
+	int *apPreviewConfigs[] = {
+		&g_Config.m_ClShowhud,
+		&g_Config.m_ClShowhudHealthAmmo,
+		&g_Config.m_ClShowhudDDRace,
+		&g_Config.m_ClShowhudJumpsIndicator,
+		&g_Config.m_ClShowhudScore,
+		&g_Config.m_ClShowhudDummyActions,
+		&g_Config.m_ClShowhudSpectatorCount,
+		&g_Config.m_ClShowhudPlayerPosition,
+		&g_Config.m_ClShowhudPlayerSpeed,
+		&g_Config.m_ClShowhudPlayerAngle,
+		&g_Config.m_ClShowhudPlayerCheckpoint,
+		&g_Config.m_ClShowfps,
+		&g_Config.m_ClShowpred,
+		&g_Config.m_ClShowRecord,
+		&g_Config.m_ClShowFrozenHud,
+		&g_Config.m_ClShowFrozenText,
+		&g_Config.m_ClNotifyWhenLast};
+	int aPreviewSavedConfigs[std::size(apPreviewConfigs)];
+
+	CNetObj_Character PreviewLocalCharacter{};
+	const CNetObj_GameInfo *pPreviewSavedGameInfo = GameClient()->m_Snap.m_pGameInfoObj;
+	const auto PreviewSavedGameInfo = GameClient()->m_GameInfo;
+	const int PreviewSavedMapBestSeconds = GameClient()->m_MapBestTimeSeconds;
+	const int PreviewSavedMapBestMillis = GameClient()->m_MapBestTimeMillis;
+	const bool PreviewSavedReceivedFinishTimes = GameClient()->m_ReceivedDDNetPlayerFinishTimes;
+	const float PreviewSavedPlayerRecord = m_aPlayerRecord[g_Config.m_ClDummy];
+	const CNetObj_SpectatorCount *pPreviewSavedSpectatorCount = GameClient()->m_Snap.m_pSpectatorCount;
+	const int PreviewSavedSpectatorTick = m_LastSpectatorCountTick;
+
+	CVoting &Voting = GameClient()->m_Voting;
+	const int64_t PreviewSavedVoteClosetime = Voting.m_Closetime;
+	const int PreviewSavedVoteYes = Voting.m_Yes;
+	const int PreviewSavedVoteNo = Voting.m_No;
+	const int PreviewSavedVotePass = Voting.m_Pass;
+	const int PreviewSavedVoteTotal = Voting.m_Total;
+	const int PreviewSavedVoteVoted = Voting.m_Voted;
+	char aPreviewSavedVoteDescription[VOTE_DESC_LENGTH];
+	char aPreviewSavedVoteReason[VOTE_REASON_LENGTH];
+	// Only worth copying when there is something to put back. Preview is off on essentially every
+	// frame, and these are not free.
+	CCharacterCore PreviewSavedPredicted;
+	CGameClient::CSnapState::CCharacterInfo PreviewSavedSnapCharacter;
+
+	if(ForceOn)
+	{
+		for(size_t i = 0; i < std::size(apPreviewConfigs); i++)
+		{
+			aPreviewSavedConfigs[i] = *apPreviewConfigs[i];
+			*apPreviewConfigs[i] = 1;
+		}
+
+		// A DDRace server reports no health, armor or ammo at all, so those meters would stay
+		// invisible however the config is set
+		GameClient()->m_GameInfo.m_HudHealthArmor = true;
+		GameClient()->m_GameInfo.m_HudAmmo = true;
+		GameClient()->m_GameInfo.m_HudDDRace = true;
+	}
+
+	if(Preview)
+	{
+		str_copy(aPreviewSavedVoteDescription, Voting.m_aDescription);
+		str_copy(aPreviewSavedVoteReason, Voting.m_aReason);
+
+		PreviewLocalCharacter.m_Health = 10;
+		PreviewLocalCharacter.m_Armor = 10;
+		PreviewLocalCharacter.m_AmmoCount = 10;
+		PreviewLocalCharacter.m_Weapon = WEAPON_GUN;
+
+		// Elements that only appear under conditions the editor cannot arrange are handed stand in
+		// state instead. The warmup clock counts down on a loop and the spectator count walks up,
+		// so that both are visibly alive rather than looking frozen or broken.
+		// Held on the component rather than on the stack. The snapshot keeps the pointer for the
+		// length of this call, and a local would leave it aimed at a dead frame the moment anything
+		// held on to it a little longer than expected.
+		m_PreviewGameInfo = *GameClient()->m_Snap.m_pGameInfoObj;
+		m_PreviewGameInfo.m_GameStateFlags &= ~(GAMESTATEFLAG_RACETIME | GAMESTATEFLAG_GAMEOVER);
+		m_PreviewGameInfo.m_WarmupTimer = (10 - (int)Client()->LocalTime() % 10) * Client()->GameTickSpeed();
+		GameClient()->m_Snap.m_pGameInfoObj = &m_PreviewGameInfo;
+
+		// Stand in times for the record lines, which otherwise only appear once the server has
+		// actually sent a best time
+		GameClient()->m_MapBestTimeSeconds = 90 + (int)Client()->LocalTime() % 30;
+		GameClient()->m_MapBestTimeMillis = 120;
+		GameClient()->m_ReceivedDDNetPlayerFinishTimes = false;
+		m_aPlayerRecord[g_Config.m_ClDummy] = 123.45f;
+
+		// A vote in progress cannot be arranged either, so one is stood in. Setting the same
+		// fields the server would means CVoting::Render needs no preview path of its own: its
+		// early returns simply pass.
+		const int VoteElapsed = (int)Client()->LocalTime() % 25;
+		Voting.m_Closetime = time_get() + time_freq() * (25 - VoteElapsed);
+		Voting.m_Voted = 0;
+		Voting.m_Total = 12;
+		Voting.m_Yes = 1 + VoteElapsed % 6;
+		Voting.m_No = 1 + (VoteElapsed / 2) % 4;
+		Voting.m_Pass = Voting.m_Total - Voting.m_Yes - Voting.m_No;
+		str_copy(Voting.m_aDescription, Localize("Kick player"));
+		str_copy(Voting.m_aReason, Localize("No reason given"));
+
+		m_PreviewSpectatorCount.m_NumSpectators = 1 + (int)Client()->LocalTime() % 20;
+		GameClient()->m_Snap.m_pSpectatorCount = &m_PreviewSpectatorCount;
+		// The counter throttles itself to one update a second, which would leave it blank at first
+		m_LastSpectatorCountTick = 0;
+	}
+
+	if(PreviewCharacter)
+	{
+		PreviewSavedPredicted = GameClient()->m_aClients[PreviewClientId].m_Predicted;
+		PreviewSavedSnapCharacter = GameClient()->m_Snap.m_aCharacters[PreviewClientId];
+
+		CCharacterCore &Core = GameClient()->m_aClients[PreviewClientId].m_Predicted;
+		Core.m_Jumps = 10;
+		Core.m_JumpedTotal = 0;
+		Core.m_EndlessJump = true;
+		Core.m_EndlessHook = true;
+		Core.m_Jetpack = true;
+		Core.m_HasTelegunGun = true;
+		Core.m_HasTelegunGrenade = true;
+		Core.m_HasTelegunLaser = true;
+		Core.m_Solo = true;
+		Core.m_CollisionDisabled = true;
+		Core.m_HookHitDisabled = true;
+		Core.m_HammerHitDisabled = true;
+		Core.m_ShotgunHitDisabled = true;
+		Core.m_GrenadeHitDisabled = true;
+		Core.m_LaserHitDisabled = true;
+		Core.m_DeepFrozen = true;
+		Core.m_LiveFrozen = true;
+		for(int Weapon = 0; Weapon < NUM_WEAPONS; Weapon++)
+		{
+			// The ninja bar reaches outside the row it is drawn on, so it is left out
+			Core.m_aWeapons[Weapon].m_Got = Weapon != WEAPON_NINJA;
+		}
+
+		auto &SnapCharacter = GameClient()->m_Snap.m_aCharacters[PreviewClientId];
+		SnapCharacter.m_HasExtendedData = true;
+		SnapCharacter.m_HasExtendedDisplayInfo = true;
+		SnapCharacter.m_ExtendedData.m_Jumps = 10;
+		SnapCharacter.m_ExtendedData.m_Flags |= CHARACTERFLAG_LOCK_MODE | CHARACTERFLAG_PRACTICE_MODE | CHARACTERFLAG_TEAM0_MODE;
+	}
+
+	m_HudLayout.OnBaseScreenSet(vec2(m_Width, m_Height));
+	if(m_HudLayout.TakeContainersDirty())
+	{
+		// Text containers keep the glyph size they were rasterized at, so anything cached before a
+		// scale change has to go or it renders blurry at the new size.
+		ResetHudContainers();
+	}
+
 #if defined(CONF_VIDEORECORDER)
 	if((IVideo::Current() && g_Config.m_ClVideoShowhud) || (!IVideo::Current() && g_Config.m_ClShowhud))
 #else
@@ -1872,14 +2115,31 @@ void CHud::OnRender()
 		{
 			if(g_Config.m_ClShowhudHealthAmmo)
 			{
-				RenderAmmoHealthAndArmor(GameClient()->m_Snap.m_pLocalCharacter);
+				if(!m_HudLayout.IsOccluded(EHudElement::HEALTH_AMMO))
+				{
+					CHudLayout::CScope Scope(&m_HudLayout, EHudElement::HEALTH_AMMO); // EClient
+					RenderAmmoHealthAndArmor(Preview ? &PreviewLocalCharacter : GameClient()->m_Snap.m_pLocalCharacter);
+				}
 			}
 			if(GameClient()->m_Snap.m_aCharacters[GameClient()->m_Snap.m_LocalClientId].m_HasExtendedData && g_Config.m_ClShowhudDDRace && GameClient()->m_GameInfo.m_HudDDRace)
 			{
-				RenderPlayerState(GameClient()->m_Snap.m_LocalClientId);
+				if(!m_HudLayout.IsOccluded(EHudElement::PLAYER_STATE))
+				{
+					CHudLayout::CScope Scope(&m_HudLayout, EHudElement::PLAYER_STATE); // EClient
+					RenderPlayerState(GameClient()->m_Snap.m_LocalClientId);
+				}
 			}
-			RenderSpectatorCount();
-			RenderMovementInformation();
+			// EClient
+			if(!m_HudLayout.IsOccluded(EHudElement::SPECTATOR_COUNT))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::SPECTATOR_COUNT);
+				RenderSpectatorCount();
+			}
+			if(!m_HudLayout.IsOccluded(EHudElement::MOVEMENT_INFO))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::MOVEMENT_INFO);
+				RenderMovementInformation();
+			}
 			RenderDDRaceEffects();
 		}
 		else if(GameClient()->m_Snap.m_SpecInfo.m_Active)
@@ -1887,7 +2147,11 @@ void CHud::OnRender()
 			int SpectatorId = GameClient()->m_Snap.m_SpecInfo.m_SpectatorId;
 			if(SpectatorId != SPEC_FREEVIEW && g_Config.m_ClShowhudHealthAmmo)
 			{
-				RenderAmmoHealthAndArmor(&GameClient()->m_Snap.m_aCharacters[SpectatorId].m_Cur);
+				if(!m_HudLayout.IsOccluded(EHudElement::HEALTH_AMMO))
+				{
+					CHudLayout::CScope Scope(&m_HudLayout, EHudElement::HEALTH_AMMO); // EClient
+					RenderAmmoHealthAndArmor(&GameClient()->m_Snap.m_aCharacters[SpectatorId].m_Cur);
+				}
 			}
 			if(SpectatorId != SPEC_FREEVIEW &&
 				GameClient()->m_Snap.m_aCharacters[SpectatorId].m_HasExtendedData &&
@@ -1895,10 +2159,23 @@ void CHud::OnRender()
 				(!GameClient()->m_MultiViewActivated || GameClient()->m_MultiViewShowHud) &&
 				GameClient()->m_GameInfo.m_HudDDRace)
 			{
-				RenderPlayerState(SpectatorId);
+				if(!m_HudLayout.IsOccluded(EHudElement::PLAYER_STATE))
+				{
+					CHudLayout::CScope Scope(&m_HudLayout, EHudElement::PLAYER_STATE); // EClient
+					RenderPlayerState(SpectatorId);
+				}
 			}
-			RenderMovementInformation();
-			RenderSpectatorHud();
+			// EClient
+			if(!m_HudLayout.IsOccluded(EHudElement::MOVEMENT_INFO))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::MOVEMENT_INFO);
+				RenderMovementInformation();
+			}
+			if(!m_HudLayout.IsOccluded(EHudElement::SPECTATOR_HUD))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::SPECTATOR_HUD);
+				RenderSpectatorHud();
+			}
 		}
 
 		// EClient
@@ -1906,14 +2183,51 @@ void CHud::OnRender()
 		//	RenderGameTimer();
 		RenderPauseNotification();
 		RenderSuddenDeath();
+		// EClient: unreachable from the playing branch above, so the preview draws it on its own
+		if(Preview && !GameClient()->m_Snap.m_SpecInfo.m_Active)
+		{
+			if(!m_HudLayout.IsOccluded(EHudElement::SPECTATOR_HUD))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::SPECTATOR_HUD);
+				RenderSpectatorHud();
+			}
+		}
+
+		// EClient
 		if(g_Config.m_ClShowhudScore)
-			RenderScoreHud();
-		RenderDummyActions();
-		RenderWarmupTimer();
-		RenderTextInfo();
+		{
+			if(!m_HudLayout.IsOccluded(EHudElement::SCORE))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::SCORE);
+				RenderScoreHud();
+			}
+		}
+		if(!m_HudLayout.IsOccluded(EHudElement::DUMMY_ACTIONS))
+		{
+			CHudLayout::CScope Scope(&m_HudLayout, EHudElement::DUMMY_ACTIONS);
+			RenderDummyActions();
+		}
+		if(!m_HudLayout.IsOccluded(EHudElement::WARMUP_TIMER))
+		{
+			CHudLayout::CScope Scope(&m_HudLayout, EHudElement::WARMUP_TIMER);
+			RenderWarmupTimer();
+		}
+		if(!m_HudLayout.IsOccluded(EHudElement::FPS))
+		{
+			CHudLayout::CScope Scope(&m_HudLayout, EHudElement::FPS);
+			RenderFps();
+		}
+		if(!m_HudLayout.IsOccluded(EHudElement::PREDICTION))
+		{
+			CHudLayout::CScope Scope(&m_HudLayout, EHudElement::PREDICTION);
+			RenderPrediction();
+		}
 
 		// EClient
 		// RenderLocalTime((m_Width / 7) * 3);
+		// The scope belongs inside RenderIsland, around the island itself. It cannot go here,
+		// because the same function draws the standalone clock and game timer when the island is
+		// switched off, and those are not part of this element.
 		RenderIsland();
 
 		FreezeHelpers();
@@ -1921,11 +2235,55 @@ void CHud::OnRender()
 		if(Client()->State() != IClient::STATE_DEMOPLAYBACK)
 			RenderConnectionWarning();
 		RenderTeambalanceWarning();
-		GameClient()->m_Voting.Render();
+		// EClient
+		if(!m_HudLayout.IsOccluded(EHudElement::VOTING))
+		{
+			CHudLayout::CScope Scope(&m_HudLayout, EHudElement::VOTING);
+			GameClient()->m_Voting.Render();
+		}
 		if(g_Config.m_ClShowRecord)
-			RenderRecord();
+		{
+			if(!m_HudLayout.IsOccluded(EHudElement::RECORD))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::RECORD); // EClient
+				RenderRecord();
+			}
+		}
 	}
 	RenderCursor();
+
+	// EClient
+	if(ForceOn)
+	{
+		for(size_t i = 0; i < std::size(apPreviewConfigs); i++)
+			*apPreviewConfigs[i] = aPreviewSavedConfigs[i];
+	}
+
+	if(Preview)
+	{
+		GameClient()->m_Snap.m_pGameInfoObj = pPreviewSavedGameInfo;
+		GameClient()->m_Snap.m_pSpectatorCount = pPreviewSavedSpectatorCount;
+		m_LastSpectatorCountTick = PreviewSavedSpectatorTick;
+
+		Voting.m_Closetime = PreviewSavedVoteClosetime;
+		Voting.m_Yes = PreviewSavedVoteYes;
+		Voting.m_No = PreviewSavedVoteNo;
+		Voting.m_Pass = PreviewSavedVotePass;
+		Voting.m_Total = PreviewSavedVoteTotal;
+		Voting.m_Voted = PreviewSavedVoteVoted;
+		str_copy(Voting.m_aDescription, aPreviewSavedVoteDescription);
+		str_copy(Voting.m_aReason, aPreviewSavedVoteReason);
+		GameClient()->m_GameInfo = PreviewSavedGameInfo;
+		GameClient()->m_MapBestTimeSeconds = PreviewSavedMapBestSeconds;
+		GameClient()->m_MapBestTimeMillis = PreviewSavedMapBestMillis;
+		GameClient()->m_ReceivedDDNetPlayerFinishTimes = PreviewSavedReceivedFinishTimes;
+		m_aPlayerRecord[g_Config.m_ClDummy] = PreviewSavedPlayerRecord;
+	}
+	if(PreviewCharacter)
+	{
+		GameClient()->m_aClients[PreviewClientId].m_Predicted = PreviewSavedPredicted;
+		GameClient()->m_Snap.m_aCharacters[PreviewClientId] = PreviewSavedSnapCharacter;
+	}
 }
 
 void CHud::OnMessage(int MsgType, void *pRawMsg)
@@ -2065,8 +2423,12 @@ void CHud::RenderDDRaceEffects()
 					TextY = IslandPos.y + IslandSize.y + OverlapPadding;
 				}
 			}
-			if(g_Config.m_ClShowFrozenText > 0 && !GameClient()->m_Scoreboard.IsActive())
-				TextY += 12.0f;
+			// EClient: the frozen count is a HUD element now, so its real rect is what to step past
+			if(m_HudLayout.IsLive(EHudElement::FROZEN_TEXT))
+			{
+				const CHudLayout::CRect FrozenText = m_HudLayout.ResolvedRect(EHudElement::FROZEN_TEXT);
+				TextY = std::max(TextY, FrozenText.m_Pos.y + FrozenText.m_Size.y + 2.0f);
+			}
 
 			CTextCursor Cursor;
 			Cursor.SetPosition(vec2(150 * Graphics()->ScreenAspect() - TextRender()->TextWidth(10, aBuf) / 2, TextY));
@@ -2086,15 +2448,25 @@ void CHud::RenderDDRaceEffects()
 
 void CHud::RenderRecord()
 {
+	// EClient: the width follows the time text and the translated label, so it is accumulated from
+	// what is actually drawn rather than assumed. The second line is only sometimes there.
+	float MaxX = 0.0f;
+	float MaxY = 0.0f;
+	auto TrackLine = [&](const char *pLabel, const char *pTime, float LineY) {
+		MaxX = std::max(MaxX, std::max(5.0f + TextRender()->TextWidth(6.0f, pLabel), 53.0f + TextRender()->TextWidth(6.0f, pTime)));
+		MaxY = std::max(MaxY, LineY + 6.0f);
+	};
+
 	if(GameClient()->m_MapBestTimeSeconds != FinishTime::UNSET && GameClient()->m_MapBestTimeSeconds != FinishTime::NOT_FINISHED_MILLIS)
 	{
 		char aBuf[64];
-		TextRender()->Text(5, 75, 6, Localize("Server best:"), -1.0f);
+		TextRender()->Text(0, 110, 6, Localize("Server best:"), -1.0f);
 		char aTime[32];
 		int64_t TimeCentiseconds = static_cast<int64_t>(GameClient()->m_MapBestTimeSeconds) * 100 + static_cast<int64_t>(GameClient()->m_MapBestTimeMillis) / 10;
 		str_time(TimeCentiseconds, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 		str_format(aBuf, sizeof(aBuf), "%s%s", GameClient()->m_MapBestTimeSeconds > 3600 ? "" : "   ", aTime);
-		TextRender()->Text(53, 75, 6, aBuf, -1.0f);
+		TextRender()->Text(47, 110, 6, aBuf, -1.0f);
+		TrackLine(Localize("Server best:"), aBuf, 110.0f); // EClient
 	}
 
 	if(GameClient()->m_ReceivedDDNetPlayerFinishTimes)
@@ -2103,13 +2475,14 @@ void CHud::RenderRecord()
 		if(PlayerTimeSeconds != FinishTime::NOT_FINISHED_MILLIS)
 		{
 			char aBuf[64];
-			TextRender()->Text(5, 82, 6, Localize("Personal best:"), -1.0f);
+			TextRender()->Text(0, 117, 6, Localize("Personal best:"), -1.0f);
 			char aTime[32];
 			const int PlayerTimeMillis = GameClient()->m_aClients[GameClient()->m_aLocalIds[g_Config.m_ClDummy]].m_FinishTimeMillis;
 			int64_t TimeCentiseconds = static_cast<int64_t>(PlayerTimeSeconds) * 100 + static_cast<int64_t>(PlayerTimeMillis) / 10;
 			str_time(TimeCentiseconds, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 			str_format(aBuf, sizeof(aBuf), "%s%s", PlayerTimeSeconds > 3600 ? "" : "   ", aTime);
-			TextRender()->Text(53, 82, 6, aBuf, -1.0f);
+			TextRender()->Text(47, 117, 6, aBuf, -1.0f);
+			TrackLine(Localize("Personal best:"), aBuf, 82.0f); // EClient
 		}
 	}
 	else
@@ -2118,21 +2491,38 @@ void CHud::RenderRecord()
 		if(PlayerRecord > 0.0f)
 		{
 			char aBuf[64];
-			TextRender()->Text(5, 82, 6, Localize("Personal best:"), -1.0f);
+			TextRender()->Text(0, 117, 6, Localize("Personal best:"), -1.0f);
 			char aTime[32];
 			str_time_float(PlayerRecord, ETimeFormat::HOURS_CENTISECS, aTime, sizeof(aTime));
 			str_format(aBuf, sizeof(aBuf), "%s%s", PlayerRecord > 3600 ? "" : "   ", aTime);
-			TextRender()->Text(53, 82, 6, aBuf, -1.0f);
+			TextRender()->Text(47, 117, 6, aBuf, -1.0f);
+			TrackLine(Localize("Personal best:"), aBuf, 82.0f); // EClient
 		}
 	}
+	// EClient
+	if(MaxX > 0.0f)
+		m_HudLayout.ReportNaturalRect(EHudElement::RECORD, vec2(0.0f, 110.0f), vec2(MaxX - 5.0f, MaxY - 103.0f));
 }
 
 void CHud::FreezeHelpers()
 {
+	// EClient: where the last alive shout starts from
+	constexpr float NOTIFY_LAST_X = 170.0f;
+
 	// render team in freeze text and last notify
 
+	// EClient: it rests in the same spot whether or not it is switched on, so it can be placed
+	// before there is ever anything to say
+	m_HudLayout.ReportNominalRect(EHudElement::NOTIFY_LAST,
+		vec2(NOTIFY_LAST_X, 4.0f), vec2(TextRender()->TextWidth(14.0f, g_Config.m_ClNotifyWhenLastText), 14.0f));
+
 	if(g_Config.m_ClShowFrozenText <= 0 && g_Config.m_ClShowFrozenHud <= 0 && !g_Config.m_ClNotifyWhenLast)
+	{
+		// The tee row has nowhere to be while every frozen feature is off, and saying so is not the
+		// same as never having said, which would leave its last rect standing
+		m_HudLayout.ClearNominalRect(EHudElement::FROZEN_TEES);
 		return;
+	}
 
 	if(!GameClient()->m_GameInfo.m_EntitiesDDRace)
 		return;
@@ -2156,65 +2546,55 @@ void CHud::FreezeHelpers()
 		}
 	}
 
+	// EClient: this used to know about the media island and the fps counter by name. It now asks
+	// the layout what room every element that is actually on screen leaves it, so anything moved
+	// into its band is taken into account without this having to be told about it.
 	constexpr float OverlapPadding = 2.0f;
-	int Showfps = g_Config.m_ClShowfps;
-#if defined(CONF_VIDEORECORDER)
-	if(IVideo::Current())
-		Showfps = 0;
-#endif
-	const bool HasFpsRect = Showfps && m_FPSTextContainerIndex.Valid();
-	const STextBoundingBox FpsBounds = HasFpsRect ? TextRender()->GetBoundingBoxTextContainer(m_FPSTextContainerIndex) : STextBoundingBox{};
-	auto OverlapsY = [](float Y, float Height, float RectY, float RectHeight) {
-		return Height > 0.0f && RectHeight > 0.0f && Y < RectY + RectHeight && Y + Height > RectY;
+	auto GetSpan = [&](float Y, float Height, float PreferredX, float &Left, float &Right) {
+		m_HudLayout.FreeSpanX(EHudElement::FROZEN_TEES, Y, Height, PreferredX, OverlapPadding, Left, Right);
 	};
-	auto GetReservedRight = [&](float Y, float Height) {
-		float ReservedRight = 0.0f;
 
-		vec2 Pos = IslandPos();
-		vec2 Size = IslandSize();
+	// EClient: where the tee row goes and how far it may run, worked out once. Both the row itself
+	// and the rect handed to the layout come from these, so the box the editor draws and the row it
+	// draws cannot drift apart. It starts clear of anything to its left and stops short of anything
+	// to its right, which is what keeps it off the island on one side and the kill feed on the
+	// other. Vertical overlap is left alone: that is the user's business.
+	const float TeeSize = g_Config.m_ClFrozenHudTeeSize;
+	const float TeeRowY = 0.0f;
+	const float TeeDefaultX = m_Width / 2 + 38.0f * (m_Width / m_Height) / 1.78f - TeeSize / 2.0f;
+	float TeeSpanLeft, TeeSpanRight;
+	GetSpan(TeeRowY, TeeSize, TeeDefaultX, TeeSpanLeft, TeeSpanRight);
+	const float TeeHudX = std::max(TeeDefaultX, TeeSpanLeft);
+	const int TeeRoom = std::max(round_truncate((TeeSpanRight - TeeHudX) / TeeSize), 0);
 
-		if(Size.x > 0.0f && Size.y > 0.0f && OverlapsY(Y, Height, Pos.y, Size.y))
-			ReservedRight = std::max(ReservedRight, Pos.x + Size.x + OverlapPadding);
-
-		return ReservedRight;
-	};
-	auto GetAvailableRight = [&](float Y, float Height) {
-		float AvailableRight = m_Width;
-		if(HasFpsRect && OverlapsY(Y, Height, m_FPSPos.y, FpsBounds.m_H))
-		{
-			AvailableRight = std::min(AvailableRight, m_FPSPos.x - OverlapPadding);
-		}
-		return AvailableRight;
-	};
-	auto PlaceRightOfReserved = [&](float DefaultX, float Y, float Width, float Height) {
-		const float ReservedRight = GetReservedRight(Y, Height);
-		const float AvailableRight = GetAvailableRight(Y, Height);
-		float X = DefaultX;
-		if(X < ReservedRight && X + Width > ReservedRight)
-		{
-			X = ReservedRight;
-		}
-		if(X + Width > AvailableRight)
-		{
-			X = std::max(ReservedRight, AvailableRight - Width);
-		}
-		return X;
-	};
+	m_HudLayout.ReportNominalRect(EHudElement::FROZEN_TEES,
+		vec2(TeeHudX, TeeRowY), vec2(TeeSize, TeeSize + 3.0f));
 
 	// Notify when last
 	if(g_Config.m_ClNotifyWhenLast)
 	{
-		if(NumInTeam > 1 && NumInTeam - NumFrozen == 1)
+		// EClient: being the last one alive is not something the editor can arrange, so the
+		// preview says it is
+		if((NumInTeam > 1 && NumInTeam - NumFrozen == 1) || PreviewActive())
 		{
 			char aBuf[64];
 			str_format(aBuf, sizeof(aBuf), "%s", g_Config.m_ClNotifyWhenLastText);
 			const float FontSize = 14.0f;
 			const float NotifyY = 4.0f;
 			const float NotifyWidth = TextRender()->TextWidth(FontSize, aBuf, -1, -1.0f);
-			const float NotifyX = PlaceRightOfReserved(170.0f, NotifyY, NotifyWidth, FontSize);
-			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClNotifyWhenLastColor)));
-			TextRender()->Text(NotifyX, NotifyY, FontSize, aBuf, -1);
-			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+
+			// EClient: an element of its own now, so it is placed by the layout rather than by
+			// stepping around whatever it found in the way
+			const float NotifyX = NOTIFY_LAST_X;
+			m_HudLayout.ReportNaturalRect(EHudElement::NOTIFY_LAST, vec2(NotifyX, NotifyY), vec2(NotifyWidth, FontSize));
+
+			if(!m_HudLayout.IsOccluded(EHudElement::NOTIFY_LAST))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::NOTIFY_LAST);
+				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClNotifyWhenLastColor)));
+				TextRender()->Text(NotifyX, NotifyY, FontSize, aBuf, -1);
+				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+			}
 		}
 	}
 	// Show freeze text
@@ -2223,30 +2603,30 @@ void CHud::FreezeHelpers()
 		str_format(aBuf, sizeof(aBuf), "%d / %d", NumInTeam - NumFrozen, NumInTeam);
 	else if(g_Config.m_ClShowFrozenText == 2)
 		str_format(aBuf, sizeof(aBuf), "%d / %d", NumFrozen, NumInTeam);
-	if(g_Config.m_ClShowFrozenText > 0 && !GameClient()->m_Scoreboard.IsActive())
+	// EClient: it used to dodge the island by hand and vanish whenever the scoreboard was open.
+	// Both are the layout's job now, so it only says where it sits and how big it is.
+	if(g_Config.m_ClShowFrozenText > 0 && !m_HudLayout.IsOccluded(EHudElement::FROZEN_TEXT))
 	{
+		CHudLayout::CScope Scope(&m_HudLayout, EHudElement::FROZEN_TEXT);
+
 		const float FontSize = 8.0f;
 		const float TextWidth = TextRender()->TextWidth(FontSize, aBuf, -1, -1.0f);
-		float TextY = 12.0f;
+		const float TextY = 12.0f;
 		const float TextX = m_Width / 2 - TextWidth / 2;
 
-		const vec2 IslandPos = this->IslandPos();
-		const vec2 IslandSize = this->IslandSize();
-		if(IslandSize.x > 0.0f && IslandSize.y > 0.0f)
-		{
-			const bool OverlapX = TextX < IslandPos.x + IslandSize.x && TextX + TextWidth > IslandPos.x;
-			const bool OverlapY = TextY < IslandPos.y + IslandSize.y && TextY + FontSize > IslandPos.y;
-			if(OverlapX && OverlapY)
-			{
-				TextY = IslandPos.y + IslandSize.y + OverlapPadding;
-			}
-		}
+		m_HudLayout.ReportNaturalRect(EHudElement::FROZEN_TEXT, vec2(TextX, TextY), vec2(TextWidth, FontSize));
 		TextRender()->Text(TextX, TextY, FontSize, aBuf, -1.0f);
 	}
 
 	// I told the clanker to rewrite this
-	if(g_Config.m_ClShowFrozenHud > 0 && !GameClient()->m_Scoreboard.IsActive() && !(LocalTeamID == 0 && g_Config.m_ClFrozenHudTeamOnly))
+	// EClient: hidden only where it would actually end up underneath the scoreboard, rather than
+	// whenever the scoreboard happens to be open
+	if(g_Config.m_ClShowFrozenHud > 0 && !m_HudLayout.IsOccluded(EHudElement::FROZEN_TEES) && !(LocalTeamID == 0 && g_Config.m_ClFrozenHudTeamOnly))
 	{
+		// EClient: this block is its own HUD element. The avoidance further down still works in
+		// untransformed coordinates, so it dodges where the island and fps counter naturally sit.
+		CHudLayout::CScope Scope(&m_HudLayout, EHudElement::FROZEN_TEES);
+
 		CTeeRenderInfo FreezeInfo;
 		const CSkin *pSkin = GameClient()->m_Skins.Find("x_ninja");
 		FreezeInfo.m_OriginalRenderSkin = pSkin->m_OriginalSkin;
@@ -2257,17 +2637,15 @@ void CHud::FreezeHelpers()
 		FreezeInfo.m_ColorFeet = ColorRGBA(1, 1, 1);
 		FreezeInfo.m_CustomColoredSkin = false;
 
-		float TeeSize = g_Config.m_ClFrozenHudTeeSize;
 		int MaxTees = (int)(8.3f * (m_Width / m_Height) * 13.0f / TeeSize);
 		if(!g_Config.m_ClShowfps && !g_Config.m_ClShowpred)
 			MaxTees = (int)(9.5f * (m_Width / m_Height) * 13.0f / TeeSize);
 		int MaxRows = g_Config.m_ClFrozenMaxRows;
-		const float DefaultHudX = m_Width / 2 + 38.0f * (m_Width / m_Height) / 1.78f - TeeSize / 2.0f;
-		const float HudY = 0.0f;
-		const float ReservedRight = GetReservedRight(HudY, TeeSize);
-		const float AvailableRight = GetAvailableRight(HudY, TeeSize);
-		const float HudX = std::max(DefaultHudX, ReservedRight);
-		MaxTees = std::min(MaxTees, std::max(round_truncate((AvailableRight - HudX) / TeeSize), 0));
+		// EClient: the same numbers the rect above was reported from
+		const float HudY = TeeRowY;
+		const float HudX = TeeHudX;
+		MaxTees = std::min(MaxTees, TeeRoom);
+
 		if(MaxTees <= 0)
 			return;
 		float StartPos = HudX + TeeSize / 2.0f;
@@ -2333,15 +2711,21 @@ void CHud::FreezeHelpers()
 
 		int FirstRowCount = NumDisplayable >= MaxTees ? MaxTees : NumDisplayable;
 
+		const float PanelWidth = TeeSize * FirstRowCount;
+		const float PanelHeight = TeeSize + 3.0f + (TotalRows - 1) * TeeSize;
+
+		// EClient: the element is the panel that gets drawn, which the tees sit inside
+		m_HudLayout.ReportNaturalRect(EHudElement::FROZEN_TEES, vec2(HudX, HudY), vec2(PanelWidth, PanelHeight));
+
 		Graphics()->TextureClear();
 		Graphics()->QuadsBegin();
-		Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.4f);
+		Graphics()->SetColor(CHudLayout::BackgroundColor());
 		Graphics()->DrawRectExt(HudX,
 			HudY,
-			TeeSize * FirstRowCount,
-			TeeSize + 3.0f + (TotalRows - 1) * TeeSize,
+			PanelWidth,
+			PanelHeight,
 			5.0f,
-			IGraphics::CORNER_B);
+			m_HudLayout.CornerFlags(EHudElement::FROZEN_TEES)); // EClient
 		Graphics()->QuadsEnd();
 
 		float ProgressiveOffset = 0.0f;
@@ -2536,13 +2920,6 @@ static float GetLerpAmount(float DeltaTime)
 	return std::clamp(DeltaTime * LerpSpeed, 0.0f, 1.0f);
 }
 
-static float GetMediaIslandSizeScale(int MediaIslandScale)
-{
-	// The config counts tenths of a step, so a step is worth a tenth of the island size.
-	const float Steps = (MediaIslandScale - DefaultConfig::ClMediaIslandScale) / 10.0f;
-	return std::clamp(1.0f + Steps * 0.1f, 0.5f, 1.5f);
-}
-
 static ColorRGBA LerpColor(const ColorRGBA &A, const ColorRGBA &B, float Amount)
 {
 	Amount = std::clamp(Amount, 0.0f, 1.0f);
@@ -2565,20 +2942,70 @@ void CHud::RenderIsland()
 	const float CenterX = m_Width * 0.5f; // Center of the island in virtual coordinates
 	if(!MediaIsland)
 	{
-		RenderLocalTime((m_Width / 7) * 3);
+		// EClient: with the island off the clock stands on its own, so it is its own element here.
+		// With the island on it is drawn inside it and belongs to race_timer instead, which is why
+		// nothing is reported for it down that path.
+		{
+			const float ClockX = (m_Width / 7) * 3;
+
+			// Only claims a resting position while it is actually set to be shown. Left to itself
+			// the clock appears only for as long as the scoreboard is open, and a box standing
+			// where it might one day be is just clutter to place things around.
+			if(g_Config.m_ClShowLocalTimeAlways)
+			{
+				const bool Seconds = g_Config.m_TcShowLocalTimeSeconds;
+				const float NominalWidth = std::round(TextRender()->TextBoundingBox(5.0f, Seconds ? "00:00.00" : "00:00").m_W);
+				m_HudLayout.ReportNominalRect(EHudElement::LOCAL_TIME,
+					vec2(ClockX - (NominalWidth + 15.0f), 0.0f), vec2(NominalWidth + 10.0f, 12.5f));
+			}
+			else
+			{
+				m_HudLayout.ClearNominalRect(EHudElement::LOCAL_TIME);
+			}
+
+			if(!m_HudLayout.IsOccluded(EHudElement::LOCAL_TIME))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::LOCAL_TIME);
+				RenderLocalTime(ClockX);
+			}
+		}
+		// EClient: with the island off the race timer stands on its own, and it is the same
+		// element either way. It is what race_timer refers to, the island being only how it gets
+		// presented, so it stays movable in both.
 		if(HudTimer)
-			RenderGameTimer(vec2(CenterX, 2.0f), 10.0f);
+		{
+			const float TimerWidth = GameTimerWidth(10.0f, GameTimerTime());
+			m_HudLayout.ReportNaturalRect(EHudElement::MEDIA_ISLAND,
+				vec2(CenterX - TimerWidth * 0.5f, 2.0f), vec2(TimerWidth, 10.0f));
+
+			if(!m_HudLayout.IsOccluded(EHudElement::MEDIA_ISLAND))
+			{
+				CHudLayout::CScope Scope(&m_HudLayout, EHudElement::MEDIA_ISLAND);
+				RenderGameTimer(vec2(CenterX, 2.0f), 10.0f);
+			}
+		}
 		Island.m_AnimProgress = 0.0f;
 		Island.ResetPosSize();
 		return; // Default rendering
 	}
+
+	// EClient: the clock is drawn inside the island from here on, so the standalone element gives
+	// up its resting position rather than leaving a box behind where it used to be
+	m_HudLayout.ClearNominalRect(EHudElement::LOCAL_TIME);
+
+	// EClient: everything from here down is the island, so this is where its placement applies.
+	// The fallback path above returned already and is deliberately left outside it.
+	if(m_HudLayout.IsOccluded(EHudElement::MEDIA_ISLAND))
+		return;
+	const CHudLayout::CScope IslandScope(&m_HudLayout, EHudElement::MEDIA_ISLAND);
 
 	const float DeltaTime = Client()->RenderFrameTime() * 1.2f;
 
 	// Every dimension below is derived from this, so animating the scale itself is what carries the
 	// box, the album art, the visualizer and the text sizes along together. Applying the new scale
 	// at once instead left the text snapping to its final size while the box was still lerping.
-	const float WantedSizeScale = GetMediaIslandSizeScale(g_Config.m_ClMediaIslandScale);
+	// EClient: the island is sized through the HUD layout now, like every other element
+	const float WantedSizeScale = 1.0f;
 	if(!Island.m_Initialized || g_Config.m_ClMediaIslandAnimation == 0)
 	{
 		Island.m_SizeScale = WantedSizeScale;
@@ -2692,7 +3119,10 @@ void CHud::RenderIsland()
 		const CUIRect *pUiScreen = Ui()->Screen();
 		if(pUiScreen->w <= 0.0f || pUiScreen->h <= 0.0f)
 			return vec2(0.0f, 0.0f);
-		return vec2(UiPos.x / pUiScreen->w * m_Width, UiPos.y / pUiScreen->h * m_Height);
+		// EClient: the hover boxes below are in the island's own coordinates, which the layout may
+		// have moved and scaled away from the base screen
+		return m_HudLayout.ToElementSpace(EHudElement::MEDIA_ISLAND,
+			vec2(UiPos.x / pUiScreen->w * m_Width, UiPos.y / pUiScreen->h * m_Height));
 	};
 	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
@@ -2793,7 +3223,11 @@ void CHud::RenderIsland()
 	Island.m_Rect.m_Pos = vec2(IslandRect.x, IslandRect.y);
 	Island.m_Rect.m_Size = vec2(IslandRect.w, IslandRect.h);
 
-	IslandRect.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMediaIslandColor, true)), IGraphics::CORNER_ALL, Rounding);
+	// EClient: reported so HUD elements can be stacked against the island. It is measure only, so
+	// the layout never transforms it.
+	m_HudLayout.ReportNaturalRect(EHudElement::MEDIA_ISLAND, Island.m_Rect.m_Pos, Island.m_Rect.m_Size);
+
+	IslandRect.Draw(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMediaIslandColor, true)), m_HudLayout.CornerFlags(EHudElement::MEDIA_ISLAND), Rounding); // EClient
 
 	CUIRect ContentRect;
 	IslandRect.Margin(Padding, &ContentRect);
@@ -2895,12 +3329,16 @@ void CHud::RenderIsland()
 		if(ActualClipRect.w <= 0.0f || ActualClipRect.h <= 0.0f)
 			return;
 
+		// EClient: ClipEnable wants screen pixels, so it cannot ride the element's screen mapping
+		// the way the drawing does
+		const vec2 ClipTopLeft = m_HudLayout.ToBaseSpace(EHudElement::MEDIA_ISLAND, vec2(ActualClipRect.x, ActualClipRect.y));
+		const float ElementScale = m_HudLayout.ElementScale(EHudElement::MEDIA_ISLAND);
 		const float ClipScaleX = Graphics()->ScreenWidth() / m_Width;
 		const float ClipScaleY = Graphics()->ScreenHeight() / m_Height;
-		const int ClipX = round_to_int(ActualClipRect.x * ClipScaleX);
-		const int ClipY = round_to_int(ActualClipRect.y * ClipScaleY);
-		const int ClipW = round_to_int(ActualClipRect.w * ClipScaleX);
-		const int ClipH = round_to_int(ActualClipRect.h * ClipScaleY);
+		const int ClipX = round_to_int(ClipTopLeft.x * ClipScaleX);
+		const int ClipY = round_to_int(ClipTopLeft.y * ClipScaleY);
+		const int ClipW = round_to_int(ActualClipRect.w * ElementScale * ClipScaleX);
+		const int ClipH = round_to_int(ActualClipRect.h * ElementScale * ClipScaleY);
 		if(ClipW <= 0 || ClipH <= 0)
 			return;
 

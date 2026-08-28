@@ -318,6 +318,7 @@ void CBindWheel::OnRender()
 		TextRender()->Text(Screen.w / 2.0f + Pos.x - Width / 2.0f, Screen.h / 2.0f + Pos.y - FontSize / 2.0f, FontSize, pName);
 	}
 	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
+	TextRender()->TextOutlineColor(TextRender()->DefaultTextOutlineColor()); // EClient
 	Graphics()->WrapNormal();
 
 	// For future middle circle usage

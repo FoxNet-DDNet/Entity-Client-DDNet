@@ -1630,6 +1630,14 @@ bool CGameConsole::OnInput(const IInput::CEvent &Event)
 	return true;
 }
 
+void CGameConsole::Close()
+{
+	// Toggle only closes the console when it is handed the type that is currently open, and
+	// leaves it in CONSOLE_CLOSING, which still reports as active
+	if(m_ConsoleState == CONSOLE_OPEN || m_ConsoleState == CONSOLE_OPENING)
+		Toggle(m_ConsoleType);
+}
+
 void CGameConsole::Toggle(int Type)
 {
 	if(m_ConsoleType != Type && (m_ConsoleState == CONSOLE_OPEN || m_ConsoleState == CONSOLE_OPENING))

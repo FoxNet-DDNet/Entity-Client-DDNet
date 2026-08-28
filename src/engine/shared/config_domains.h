@@ -12,6 +12,7 @@ CONFIG_DOMAIN(ENTITYBINDHWEEL, "entity_bindwheel.cfg", false)
 CONFIG_DOMAIN(ENTITYPLAYERACTIONS, "entity_playeractions.cfg", false)
 CONFIG_DOMAIN(ENTITYMAPFINISHES, "entity_map_finishes.cfg", false)
 CONFIG_DOMAIN(ENTITYMODACTIONS, "entity_mod_actions.cfg", false)
+CONFIG_DOMAIN(ENTITYHUDLAYOUT, "entity_hud_layout.cfg", false)
 // T-Client
 CONFIG_DOMAIN(TCLIENTPROFILES, "tclient_profiles.cfg", false)
 CONFIG_DOMAIN(TCLIENTCHATBINDS, "tclient_chatbinds.cfg", false)

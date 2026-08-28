@@ -1016,6 +1016,8 @@ void CScoreboard::OnRender()
 
 	if(!IsActive())
 	{
+		GameClient()->m_Hud.HudLayout().ClearOccluder(); // EClient
+
 		// lock mouse if scoreboard was opened by being dead or game pause
 		if(m_MouseUnlocked)
 		{
@@ -1047,6 +1049,11 @@ void CScoreboard::OnRender()
 	const float TitleHeight = 30.0f;
 
 	CUIRect Scoreboard = {(Screen.w - ScoreboardWidth) / 2.0f, 75.0f, ScoreboardWidth, 355.0f + TitleHeight};
+
+	// EClient: handed to the HUD layout so elements that end up underneath it can step aside. The
+	// ui screen is twice the height of the HUD's, so the rect is halved on the way across.
+	GameClient()->m_Hud.HudLayout().SetOccluder(
+		vec2(Scoreboard.x * 0.5f, Scoreboard.y * 0.5f), vec2(Scoreboard.w * 0.5f, Scoreboard.h * 0.5f));
 	CScoreboardRenderState RenderState{};
 
 	if(Teams)

@@ -347,7 +347,11 @@ void CVoting::Render()
 	}
 
 	CUIRect View = {0.0f, 60.0f, 120.0f, 38.0f};
-	View.Draw(ColorRGBA(0.0f, 0.0f, 0.0f, 0.4f), IGraphics::CORNER_R, 3.0f);
+
+	// EClient
+	CHudLayout &Layout = GameClient()->m_Hud.HudLayout();
+	Layout.ReportNaturalRect(EHudElement::VOTING, vec2(View.x, View.y), vec2(View.w, View.h));
+	View.Draw(CHudLayout::BackgroundColor(), Layout.CornerFlags(EHudElement::VOTING), 3.0f);
 	View.Margin(3.0f, &View);
 
 	SLabelProperties Props;

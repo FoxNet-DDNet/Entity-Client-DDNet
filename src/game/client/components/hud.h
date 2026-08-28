@@ -2,6 +2,7 @@
 /* If you are missing that file, acquire a complete release at teeworlds.com.                */
 #ifndef GAME_CLIENT_COMPONENTS_HUD_H
 #define GAME_CLIENT_COMPONENTS_HUD_H
+#include "entity/hud/hud_layout.h" // EClient
 #include "entity/mediaplayer/media_player.h"
 
 #include <base/color.h>
@@ -95,7 +96,16 @@ class CHud : public CComponent
 
 	void RenderCursor();
 
-	void RenderTextInfo();
+	bool PreviewActive() const; // EClient: the HUD editor is asking for everything to be shown
+
+	// EClient: stand in snapshot objects for the preview. Members rather than locals, so the
+	// pointers handed to m_Snap stay valid for as long as anything could still be holding them.
+	CNetObj_GameInfo m_PreviewGameInfo = {};
+	CNetObj_SpectatorCount m_PreviewSpectatorCount = {};
+	bool HasDummyActionsBox() const; // EClient
+	int ShowFps() const; // EClient
+	void RenderFps(); // EClient: was RenderTextInfo, split so the prediction time can move on its own
+	void RenderPrediction(); // EClient
 	void RenderConnectionWarning();
 	void RenderTeambalanceWarning();
 
@@ -147,6 +157,7 @@ public:
 	void OnReset() override;
 	void OnRender() override;
 	void OnInit() override;
+	void OnConsoleInit() override; // EClient
 	void OnNewSnapshot() override;
 
 	// DDRace
@@ -179,6 +190,7 @@ private:
 	int m_AirjumpOffset;
 	int m_AirjumpEmptyOffset;
 	int m_aWeaponOffset[NUM_WEAPONS];
+	float m_MaxWeaponHudExtent = 0.0f; // EClient: how far a rotated weapon sprite reaches from its centre
 	int m_EndlessJumpOffset;
 	int m_EndlessHookOffset;
 	int m_JetpackOffset;
@@ -302,10 +314,16 @@ private:
 	} m_Island;
 	vec2 m_FPSPos;
 
+	// EClient: moves and scales the elements below without touching the code that draws them
+	CHudLayout m_HudLayout;
+
 public:
-	vec2 IslandPos() const { return m_Island.m_Rect.m_Pos; }
-	vec2 IslandSize() const { return m_Island.m_Rect.m_Size; }
+	// EClient: resolved, so that everything laying out against the island follows it when the
+	// layout moves it. Zero while it is not being drawn, which is what callers test for.
+	vec2 IslandPos() const { return m_Island.m_Rect.m_Size.x > 0.0f ? m_HudLayout.ResolvedRect(EHudElement::MEDIA_ISLAND).m_Pos : vec2(0.0f, 0.0f); }
+	vec2 IslandSize() const { return m_Island.m_Rect.m_Size.x > 0.0f ? m_HudLayout.ResolvedRect(EHudElement::MEDIA_ISLAND).m_Size : vec2(0.0f, 0.0f); }
 	vec2 FpsPos() const { return m_FPSPos; }
+	CHudLayout &HudLayout() { return m_HudLayout; } // EClient
 };
 
 #endif

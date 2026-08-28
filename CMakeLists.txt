@@ -2726,6 +2726,10 @@ if(CLIENT)
     components/entity/entity.h 
     components/entity/freeze_kill.cpp
     components/entity/freeze_kill.h 
+    components/entity/hud/hud_editor.cpp
+    components/entity/hud/hud_editor.h
+    components/entity/hud/hud_layout.cpp
+    components/entity/hud/hud_layout.h
     components/entity/info.cpp
     components/entity/info.h
     components/entity/map_finish_browser.cpp

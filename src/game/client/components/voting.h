@@ -12,6 +12,9 @@
 
 class CVoting : public CComponent
 {
+	// EClient: stands in a vote while the HUD editor is previewing
+	friend class CHud;
+
 	CHeap m_Heap;
 
 	static void ConCallvote(IConsole::IResult *pResult, void *pUserData);
