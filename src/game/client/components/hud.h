@@ -214,6 +214,8 @@ private:
 	int m_LockModeOffset;
 
 	// EClient
+	bool CheckpointInfoEnabled();
+	bool HasMovementInformationBox();
 	bool RenderLocalTime() const;
 
 	void FreezeHelpers();

@@ -137,7 +137,10 @@ void CMenus::RenderSettingsAppearance(CUIRect MainView)
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudPlayerSpeed, Localize("Show player speed"), &g_Config.m_ClShowhudPlayerSpeed, &RightView, LineSize);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudPlayerAngle, Localize("Show player target angle"), &g_Config.m_ClShowhudPlayerAngle, &RightView, LineSize);
 
+		CUIRect CheckpointButton;
+		RightView.HSplitTop(LineSize, &CheckpointButton, nullptr);
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudPlayerCheckpoint, Localize("Show player checkpoint"), &g_Config.m_ClShowhudPlayerCheckpoint, &RightView, LineSize); // EClient
+		GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClShowhudPlayerCheckpoint, &CheckpointButton, "Only shows checkpoint if the map has checkpoints");
 
 		// Freeze bar settings
 		DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFreezeBars, Localize("Show freeze bars"), &g_Config.m_ClShowFreezeBars, &RightView, LineSize);

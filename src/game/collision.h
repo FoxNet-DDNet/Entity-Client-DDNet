@@ -146,6 +146,9 @@ public:
 	const std::vector<vec2> &TeleCheckOuts(int Number) { return m_TeleCheckOuts[Number]; }
 	const std::vector<vec2> &TeleOthers(int Number) { return m_TeleOthers[Number]; }
 
+	// EClient
+	bool HasCheckTele() { return !m_TeleCheckOuts.empty(); }
+
 private:
 	CLayers *m_pLayers;
 

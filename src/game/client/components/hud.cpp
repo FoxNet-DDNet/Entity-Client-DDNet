@@ -1459,11 +1459,6 @@ void CHud::RenderNinjaBarPos(const float x, float y, const float Width, const fl
 	Graphics()->WrapNormal();
 }
 
-inline static bool HasMovementInformationBox()
-{
-	return g_Config.m_ClShowhudPlayerPosition || g_Config.m_ClShowhudPlayerSpeed || g_Config.m_ClShowhudPlayerAngle || g_Config.m_ClShowhudPlayerCheckpoint;
-}
-
 void CHud::RenderSpectatorCount()
 {
 	if(!g_Config.m_ClShowhudSpectatorCount)
@@ -1602,7 +1597,7 @@ inline float CHud::GetMovementInformationBoxHeight()
 	// EClient
 	const int ClientId = GameClient()->m_Snap.m_SpecInfo.m_Active ? GameClient()->m_Snap.m_SpecInfo.m_SpectatorId : GameClient()->m_Snap.m_LocalClientId;
 	const CCharacter *pCharacter = GameClient()->m_GameWorld.GetCharacterById(ClientId);
-	if(g_Config.m_ClShowhudPlayerCheckpoint && pCharacter)
+	if(CheckpointInfoEnabled() && pCharacter)
 	{
 		BoxHeight += AngleLines * MOVEMENT_INFORMATION_LINE_HEIGHT;
 	}
@@ -1804,7 +1799,7 @@ void CHud::RenderMovementInformation()
 	if(g_Config.m_ClShowhudPlayerAngle)
 		RenderSoloInfoFloat("Angle:", Fontsize, m_PlayerAngleTextContainerIndex, Info.m_Angle, m_PlayerPrevAngle, LeftX, RightX, y);
 
-	if(g_Config.m_ClShowhudPlayerCheckpoint)
+	if(CheckpointInfoEnabled())
 	{
 		const CCharacter *pCharacter = GameClient()->m_GameWorld.GetCharacterById(ClientId);
 		if(pCharacter)
@@ -2778,6 +2773,16 @@ void CHud::FreezeHelpers()
 			ProgressiveOffset += TeeSize;
 		}
 	}
+}
+
+bool CHud::CheckpointInfoEnabled()
+{
+	return (g_Config.m_ClShowhudPlayerCheckpoint && Collision()->HasCheckTele()) || GameClient()->m_HudEditor.IsPreviewing();
+}
+
+bool CHud::HasMovementInformationBox()
+{
+	return g_Config.m_ClShowhudPlayerPosition || g_Config.m_ClShowhudPlayerSpeed || g_Config.m_ClShowhudPlayerAngle || CheckpointInfoEnabled();
 }
 
 bool CHud::RenderLocalTime() const
