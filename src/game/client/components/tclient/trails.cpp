@@ -111,8 +111,8 @@ void CTrails::OnRender()
 		// Taken from players.cpp
 		if(ClientId == -2)
 			Alpha *= g_Config.m_ClRaceGhostAlpha / 100.0f;
-		else if(ClientId < 0 || GameClient()->IsOtherTeam(ClientId))
-			Alpha *= g_Config.m_ClShowOthersAlpha / 100.0f;
+		else
+			Alpha *= GameClient()->TeeRenderAlpha(ClientId); // EClient
 
 		int TrailLength = g_Config.m_EcTeeTrailLength;
 		float Width = g_Config.m_EcTeeTrailWidth;

@@ -44,7 +44,7 @@ bool CFreezeBars::RenderKillBar()
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += 22.0f;
 
-	float Alpha = GameClient()->IsOtherTeam(ClientId) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+	float Alpha = GameClient()->TeeRenderAlpha(ClientId); // EClient
 
 	const ColorRGBA Color = ColorRGBA(0.6f, 1.0f, 1.6f, Alpha);
 
@@ -80,7 +80,7 @@ void CFreezeBars::RenderFreezeBar(int ClientId)
 	Position.x -= FreezeBarHalfWidth;
 	Position.y += 22.0f;
 
-	float Alpha = GameClient()->IsOtherTeam(ClientId) ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+	float Alpha = GameClient()->TeeRenderAlpha(ClientId); // EClient
 	if(pCharacter->m_IsInFreeze)
 	{
 		Alpha *= g_Config.m_ClFreezeBarsAlphaInsideFreeze / 100.0f;
@@ -251,6 +251,10 @@ inline bool CFreezeBars::IsPlayerInfoAvailable(int ClientId) const
 
 void CFreezeBars::OnRender()
 {
+	// EClient: everything below describes the tee being played, which while practicing is the
+	// practice one. Wrapped rather than taught about it, so the code itself is untouched.
+	CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
+
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 

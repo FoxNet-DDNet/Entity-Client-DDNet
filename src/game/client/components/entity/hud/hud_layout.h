@@ -39,6 +39,7 @@ enum class EHudElement
 	CHAT,
 	LOCAL_TIME,
 	NOTIFY_LAST,
+	PRACTICE_ALERT,
 	NUM_HUD_ELEMENTS,
 };
 

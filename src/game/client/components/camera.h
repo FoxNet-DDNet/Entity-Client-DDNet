@@ -93,6 +93,9 @@ public:
 	void OnReset() override;
 
 	void SetView(ivec2 Pos, bool Relative = false);
+	// EClient: the same thing in world units. SetView takes tiles and lands on a tile corner, which
+	// is half a tile off anything that wanted to be centred on a tee.
+	void SetViewPos(vec2 Pos);
 	void GotoSwitch(int Number, int Offset = -1);
 	void GotoTele(int Number, int Offset = -1);
 

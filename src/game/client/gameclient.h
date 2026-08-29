@@ -86,6 +86,7 @@
 #include "components/entity/performance_statistics.h"
 #include "components/entity/physicball.h"
 #include "components/entity/player_actions.h"
+#include "components/entity/local_practice.h"
 #include "components/entity/spec_pause_radio.h"
 
 // Tater
@@ -289,6 +290,7 @@ public:
 	CPerformanceStatistics m_PerformanceStatistics;
 	CPhysicBalls m_PhysicBalls;
 	CPlayerActions m_PlayerActions;
+	CLocalPractice m_LocalPractice;
 	CSpecPauseRadio m_SpecPauseRadio;
 
 	CMovingTiles m_MovingTilesBackground = CMovingTiles{false};
@@ -806,7 +808,7 @@ public:
 	bool GotWantedSkin7(bool Dummy);
 	void SendInfo(bool Start);
 	void SendDummyInfo(bool Start) override;
-	void SendKill() const;
+	void SendKill(); // EClient: no longer const, the practice world answers it locally
 	void SendReadyChange7(); // NOLINT(readability-make-member-function-const)
 
 	// EClient
@@ -870,6 +872,14 @@ public:
 	void DummyResetInput() override;
 	void Echo(const char *pString) override;
 	bool IsOtherTeam(int ClientId) const;
+	/**
+	 * EClient: the opacity a tee and everything drawn with it -- hook, hook line, freeze bar, name
+	 * plate, trail -- should be rendered at.
+	 *
+	 * This was the same ternary written out at a dozen call sites, which is why the practice world
+	 * fading bystanders kept missing some of them. Anything that fades a tee asks here instead.
+	 */
+	float TeeRenderAlpha(int ClientId) const;
 	int SwitchStateTeam() const;
 	bool IsLocalCharSuper() const;
 	bool CanDisplayWarning() const override;
@@ -1096,11 +1106,14 @@ private:
 	std::vector<std::shared_ptr<CManagedTeeRenderInfo>> m_vpManagedTeeRenderInfos;
 	void UpdateManagedTeeRenderInfos();
 
+	friend class CLocalPractice; // EClient: plays its own world's predicted events
+
 	void UpdateLocalTuning();
 	void UpdatePrediction();
 	void UpdateSpectatorCursor();
 	void UpdateRenderedCharacters();
-	void HandlePredictedEvents(int Tick);
+	// EClient: pWorld lets the practice world play its own events; defaults to the predicted one
+	void HandlePredictedEvents(int Tick, CGameWorld *pWorld = nullptr);
 
 	void OnInput(const IInput::CEvent &Event);
 

@@ -851,7 +851,6 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	CNamePlateData Data;
 
 	const auto &ClientData = GameClient()->m_aClients[pPlayerInfo->m_ClientId];
-	const bool OtherTeam = GameClient()->IsOtherTeam(pPlayerInfo->m_ClientId);
 
 	// TClient
 	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || (g_Config.m_ClWarList && g_Config.m_ClWarListShowClan && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_IsWarClan);
@@ -898,8 +897,7 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 
 	if(g_Config.m_ClNamePlatesAlways == 0)
 		Alpha *= std::clamp(1.0f - std::pow(distance(GameClient()->m_Controls.m_aTargetPos[g_Config.m_ClDummy], Position) / 200.0f, 16.0f), 0.0f, 1.0f);
-	if(OtherTeam)
-		Alpha *= (float)g_Config.m_ClShowOthersAlpha / 100.0f;
+	Alpha *= GameClient()->TeeRenderAlpha(pPlayerInfo->m_ClientId); // EClient
 
 	if(Data.m_Color == ColorRGBA(0, 0, 0, 0)) // If It doesn't have a Value -> so it isn't completely black
 		Data.m_Color = ColorRGBA(1.0f, 1.0f, 1.0f);
@@ -1144,6 +1142,10 @@ void CNamePlates::ResetNamePlates()
 
 void CNamePlates::OnRender()
 {
+	// EClient: everything below describes the tee being played, which while practicing is the
+	// practice one. Wrapped rather than taught about it, so the code itself is untouched.
+	CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
+
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
@@ -1168,7 +1170,9 @@ void CNamePlates::OnRender()
 			RenderNamePlateGame(RenderPos, pInfo, 0.4f);
 		}
 		// Only render name plates for active characters
-		if(GameClient()->m_Snap.m_aCharacters[i].m_Active)
+		// EClient: a practice tee counts, since the server may have stopped snapping the character
+		// it stands in for -- a dummy far enough away is the usual way
+		if(GameClient()->m_Snap.m_aCharacters[i].m_Active || GameClient()->m_LocalPractice.IsSimulated(i))
 		{
 			if(GameClient()->m_aClients[i].m_IsVolleyBall)
 				continue;

@@ -21,7 +21,7 @@
 #include <game/client/projectile_data.h>
 #include <game/mapitems.h>
 
-void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId, const CScreenRect &ScreenRect)
+void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId, const CScreenRect &ScreenRect, bool LocalWorld)
 {
 	int CurWeapon = std::clamp(pCurrent->m_Type, 0, NUM_WEAPONS - 1);
 
@@ -59,7 +59,10 @@ void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId, const
 	int PredictionTick = Client()->GetPredictionTick();
 
 	float Ct;
-	if(GameClient()->Predict() && GameClient()->AntiPingGrenade() && LocalPlayerInGame && !IsOtherTeam)
+	// EClient: a projectile from a locally simulated world was stamped on the prediction clock, so
+	// it has to be aged against that one. Measured against the server clock below, which trails by
+	// the prediction margin, it starts life at a negative age and stays invisible for about a ping.
+	if(LocalWorld || (GameClient()->Predict() && GameClient()->AntiPingGrenade() && LocalPlayerInGame && !IsOtherTeam))
 		Ct = ((float)(PredictionTick - 1 - pCurrent->m_StartTick) + Client()->PredIntraGameTick(g_Config.m_ClDummy)) / (float)Client()->GameTickSpeed();
 	else
 		Ct = (Client()->PrevGameTick(g_Config.m_ClDummy) - pCurrent->m_StartTick) / (float)Client()->GameTickSpeed() + s_LastGameTickTime;
@@ -91,11 +94,8 @@ void CItems::RenderProjectile(const CProjectileData *pCurrent, int ItemId, const
 		return;
 	vec2 PrevPos = CalcPos(pCurrent->m_StartPos, pCurrent->m_StartVel, Curvature, Speed, Ct - 0.001f);
 
-	float Alpha = 1.f;
-	if(IsOtherTeam)
-	{
-		Alpha = g_Config.m_ClShowOthersAlpha / 100.0f;
-	}
+	// EClient: as solid as the tee that fired it, bystanders in local practice included
+	float Alpha = (pCurrent->m_ExtraInfo && pCurrent->m_Owner >= 0) ? GameClient()->TeeRenderAlpha(pCurrent->m_Owner) : 1.f;
 
 	vec2 Vel = Pos - PrevPos;
 
@@ -296,9 +296,8 @@ void CItems::RenderLaser(const CLaserData *pCurrent, bool IsPredicted)
 		ColorIn = g_Config.m_ClLaserRifleInnerColor;
 	}
 
-	bool IsOtherTeam = (pCurrent->m_ExtraInfo && pCurrent->m_Owner >= 0 && GameClient()->IsOtherTeam(pCurrent->m_Owner));
-
-	float Alpha = IsOtherTeam ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.f;
+	// EClient: without extra info there is no owner to judge, so it stays solid as it always did
+	float Alpha = (pCurrent->m_ExtraInfo && pCurrent->m_Owner >= 0) ? GameClient()->TeeRenderAlpha(pCurrent->m_Owner) : 1.0f;
 
 	const ColorRGBA OuterColor = color_cast<ColorRGBA>(ColorHSLA(ColorOut).WithAlpha(Alpha));
 	const ColorRGBA InnerColor = color_cast<ColorRGBA>(ColorHSLA(ColorIn).WithAlpha(Alpha));
@@ -481,17 +480,18 @@ void CItems::OnRender()
 			 (From.y < ScreenRectLaser.m_TopLeft.y && To.y < ScreenRectLaser.m_TopLeft.y) || (From.y > ScreenRectLaser.m_BottomRight.y && To.y > ScreenRectLaser.m_BottomRight.y));
 	};
 
-	if(UsePredicted)
-	{
-		for(auto *pProj = (CProjectile *)GameClient()->m_PrevPredictedWorld.FindFirst(CGameWorld::ENTTYPE_PROJECTILE); pProj; pProj = (CProjectile *)pProj->NextEntity())
+	// EClient: pulled out of the one call it used to be so that the practice world, which has no
+	// snapshot behind it and would otherwise draw nothing it fires, can go through the same path
+	auto RenderPredictedEntities = [&](CGameWorld *pWorld, const std::vector<SSwitchers> &vSwitchers, bool LocalWorld) {
+		for(auto *pProj = (CProjectile *)pWorld->FindFirst(CGameWorld::ENTTYPE_PROJECTILE); pProj; pProj = (CProjectile *)pProj->NextEntity())
 		{
-			if(!IsSuper && pProj->m_Number > 0 && pProj->m_Number < (int)aSwitchers.size() && !aSwitchers[pProj->m_Number].m_aStatus[SwitcherTeam] && (pProj->m_Explosive ? BlinkingProjEx : BlinkingProj))
+			if(!IsSuper && pProj->m_Number > 0 && pProj->m_Number < (int)vSwitchers.size() && !vSwitchers[pProj->m_Number].m_aStatus[SwitcherTeam] && (pProj->m_Explosive ? BlinkingProjEx : BlinkingProj))
 				continue;
 
 			CProjectileData Data = pProj->GetData();
-			RenderProjectile(&Data, pProj->GetId(), ScreenRectProjectile);
+			RenderProjectile(&Data, pProj->GetId(), ScreenRectProjectile, LocalWorld);
 		}
-		for(CEntity *pEnt = GameClient()->m_PrevPredictedWorld.FindFirst(CGameWorld::ENTTYPE_LASER); pEnt; pEnt = pEnt->NextEntity())
+		for(CEntity *pEnt = pWorld->FindFirst(CGameWorld::ENTTYPE_LASER); pEnt; pEnt = pEnt->NextEntity())
 		{
 			auto *const pLaser = dynamic_cast<CLaser *>(pEnt);
 			if(!pLaser || pLaser->GetOwner() < 0 || !GameClient()->m_aClients[pLaser->GetOwner()].m_IsPredictedLocal)
@@ -501,14 +501,14 @@ void CItems::OnRender()
 				continue;
 			RenderLaser(&Data, true);
 		}
-		for(auto *pPickup = (CPickup *)GameClient()->m_PrevPredictedWorld.FindFirst(CGameWorld::ENTTYPE_PICKUP); pPickup; pPickup = (CPickup *)pPickup->NextEntity())
+		for(auto *pPickup = (CPickup *)pWorld->FindFirst(CGameWorld::ENTTYPE_PICKUP); pPickup; pPickup = (CPickup *)pPickup->NextEntity())
 		{
-			if(!IsSuper && pPickup->m_Layer == LAYER_SWITCH && pPickup->m_Number > 0 && pPickup->m_Number < (int)aSwitchers.size() && !aSwitchers[pPickup->m_Number].m_aStatus[SwitcherTeam] && BlinkingPickup)
+			if(!IsSuper && pPickup->m_Layer == LAYER_SWITCH && pPickup->m_Number > 0 && pPickup->m_Number < (int)vSwitchers.size() && !vSwitchers[pPickup->m_Number].m_aStatus[SwitcherTeam] && BlinkingPickup)
 				continue;
 
 			if(pPickup->InDDNetTile())
 			{
-				if(auto *pPrev = (CPickup *)GameClient()->m_PrevPredictedWorld.GetEntity(pPickup->GetId(), CGameWorld::ENTTYPE_PICKUP))
+				if(auto *pPrev = (CPickup *)pWorld->GetEntity(pPickup->GetId(), CGameWorld::ENTTYPE_PICKUP))
 				{
 					CNetObj_Pickup Data, Prev;
 					pPickup->FillInfo(&Data);
@@ -517,6 +517,18 @@ void CItems::OnRender()
 				}
 			}
 		}
+	};
+
+	if(UsePredicted)
+		RenderPredictedEntities(&GameClient()->m_PrevPredictedWorld, aSwitchers, false);
+
+	// EClient: the practice world keeps switchers of its own, so it is asked for its own rather
+	// than checked against the server's. Drawn as the practice tee's, or its projectiles come out
+	// at the opacity of the real tee they were fired past.
+	if(GameClient()->m_LocalPractice.IsActive())
+	{
+		CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
+		RenderPredictedEntities(GameClient()->m_LocalPractice.PrevRenderWorld(), GameClient()->m_LocalPractice.PrevRenderWorld()->Switchers(), true);
 	}
 
 	for(const CSnapEntities &Ent : GameClient()->SnapEntities())
@@ -758,11 +770,8 @@ void CItems::ReconstructSmokeTrail(const CProjectileData *pCurrent, int DestroyT
 
 	float Gt = (Client()->PrevGameTick(g_Config.m_ClDummy) - pCurrent->m_StartTick) / (float)Client()->GameTickSpeed() + Client()->GameTickTime(g_Config.m_ClDummy);
 
-	float Alpha = 1.f;
-	if(pCurrent->m_ExtraInfo && pCurrent->m_Owner >= 0 && GameClient()->IsOtherTeam(pCurrent->m_Owner))
-	{
-		Alpha = g_Config.m_ClShowOthersAlpha / 100.0f;
-	}
+	// EClient: as solid as the tee that fired it, bystanders in local practice included
+	float Alpha = (pCurrent->m_ExtraInfo && pCurrent->m_Owner >= 0) ? GameClient()->TeeRenderAlpha(pCurrent->m_Owner) : 1.f;
 
 	float T = Pt;
 	if(DestroyTick >= 0)
@@ -851,11 +860,13 @@ void CItems::RenderCosmeticLaser(const CNetObj_CosmeticLaser *pPrev, const CNetO
 		break;
 	}
 
-	bool IsOtherTeam = GameClient()->IsOtherTeam(Owner) || Owner < 0;
-
 	float Alpha = pCurrent->m_Alpha * 0.01f;
 	if(pCurrent->m_Alpha == -1)
-		Alpha = IsOtherTeam ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+		Alpha = GameClient()->TeeRenderAlpha(Owner); // EClient
+	// EClient: the server hung this off a tee, so it is as solid as that tee is. While practicing
+	// that tee is the see-through one, and the cosmetic has to go with it.
+	Alpha *= GameClient()->m_LocalPractice.ServerEntityAlpha(Owner);
+
 	if(Alpha <= 0)
 		return; // Invisible
 
@@ -1024,10 +1035,13 @@ void CItems::RenderCosmeticPickup(const CNetObj_CosmeticPickup *pPrev, const CNe
 	}
 	Graphics()->QuadsSetRotation(0);
 
-	bool IsOtherTeam = GameClient()->IsOtherTeam(Owner) || Owner < 0;
 	float Alpha = pCurrent->m_Alpha * 0.01f;
 	if(pCurrent->m_Alpha == -1)
-		Alpha = IsOtherTeam ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+		Alpha = GameClient()->TeeRenderAlpha(Owner); // EClient
+	// EClient: the server hung this off a tee, so it is as solid as that tee is. While practicing
+	// that tee is the see-through one, and the cosmetic has to go with it.
+	Alpha *= GameClient()->m_LocalPractice.ServerEntityAlpha(Owner);
+
 	if(Alpha <= 0)
 		return; // Invisible
 
@@ -1092,11 +1106,13 @@ void CItems::RenderCosmeticProjectile(const CNetObj_CosmeticProjectile *pPrev, c
 	vec2 Pos = mix(PrevPos, CurPos, IntraTick);
 	vec2 Vel = CurPos - PrevPos;
 
-	bool IsOtherTeam = (Owner >= 0 && GameClient()->IsOtherTeam(Owner)) || Owner < 0;
-
 	float Alpha = pCurrent->m_Alpha * 0.01f;
 	if(pCurrent->m_Alpha == -1)
-		Alpha = IsOtherTeam ? g_Config.m_ClShowOthersAlpha / 100.0f : 1.0f;
+		Alpha = GameClient()->TeeRenderAlpha(Owner); // EClient
+	// EClient: the server hung this off a tee, so it is as solid as that tee is. While practicing
+	// that tee is the see-through one, and the cosmetic has to go with it.
+	Alpha *= GameClient()->m_LocalPractice.ServerEntityAlpha(Owner);
+
 	if(Alpha <= 0)
 		return; // Invisible
 

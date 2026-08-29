@@ -68,6 +68,10 @@ private:
 		{
 			return Client()->DummyConnected();
 		}
+		else if(Str == "local_practice")
+		{
+			return GameClient()->m_LocalPractice.IsActive();
+		}
 		else if(Str == "rcon_authed")
 		{
 			return Client()->RconAuthed();

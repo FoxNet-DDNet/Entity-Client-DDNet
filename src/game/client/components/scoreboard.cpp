@@ -1238,7 +1238,8 @@ bool CScoreboard::IsActive() const
 	if(GameClient()->m_Snap.m_pLocalInfo && !GameClient()->m_Snap.m_SpecInfo.m_Active)
 	{
 		// we are not a spectator, check if we are dead and the game isn't paused
-		if(!GameClient()->m_Snap.m_pLocalCharacter && g_Config.m_ClScoreboardOnDeath &&
+		// EClient: playing a practice tee is not being dead, whatever the server has us as
+		if(!GameClient()->m_Snap.m_pLocalCharacter && !GameClient()->m_LocalPractice.IsControlling() && g_Config.m_ClScoreboardOnDeath &&
 			!(pGameInfoObj && pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_PAUSED))
 			return true;
 	}

@@ -96,6 +96,11 @@ public:
 	CCharacterCore GetCore() { return m_Core; }
 	void SetCore(const CCharacterCore &Core) { m_Core = Core; }
 	const CCharacterCore *Core() const { return &m_Core; }
+	// EClient: the practice world sets core flags directly, see CLocalPractice
+	CCharacterCore *Core() { return &m_Core; }
+	// EClient: moves every tick stamped field onto a different clock, for a character seeded into
+	// the practice world out of a snapshot taken on the server's, see CLocalPractice::SeedCharacter
+	void RebaseTicks(int Delta);
 	bool GetWeaponGot(int Type) { return m_Core.m_aWeapons[Type].m_Got; }
 	void SetWeaponGot(int Type, bool Value) { m_Core.m_aWeapons[Type].m_Got = Value; }
 	int GetWeaponAmmo(int Type) { return m_Core.m_aWeapons[Type].m_Ammo; }

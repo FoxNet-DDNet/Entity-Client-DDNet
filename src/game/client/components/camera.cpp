@@ -499,16 +499,19 @@ void CCamera::ConGotoTele(IConsole::IResult *pResult, void *pUserData)
 	pSelf->GotoTele(pResult->GetInteger(0), pResult->NumArguments() > 1 ? pResult->GetInteger(1) : -1);
 }
 
-void CCamera::SetView(ivec2 Pos, bool Relative)
+void CCamera::SetViewPos(vec2 Pos)
 {
-	vec2 RealPos = vec2(Pos.x * 32.0, Pos.y * 32.0);
-	vec2 UntestedViewPos = Relative ? m_ForceFreeviewPos + RealPos : RealPos;
-
 	m_ForceFreeview = true;
 
 	m_ForceFreeviewPos = vec2(
-		std::clamp(UntestedViewPos.x, 200.0f, Collision()->GetWidth() * 32 - 200.0f),
-		std::clamp(UntestedViewPos.y, 200.0f, Collision()->GetHeight() * 32 - 200.0f));
+		std::clamp(Pos.x, 200.0f, Collision()->GetWidth() * 32 - 200.0f),
+		std::clamp(Pos.y, 200.0f, Collision()->GetHeight() * 32 - 200.0f));
+}
+
+void CCamera::SetView(ivec2 Pos, bool Relative)
+{
+	vec2 RealPos = vec2(Pos.x * 32.0, Pos.y * 32.0);
+	SetViewPos(Relative ? m_ForceFreeviewPos + RealPos : RealPos);
 }
 
 void CCamera::GotoSwitch(int Number, int Offset)

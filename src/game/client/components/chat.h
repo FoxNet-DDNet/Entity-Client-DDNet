@@ -209,6 +209,7 @@ class CChat : public CComponent
 	friend class CTranslate;
 	friend class CChatBubbles;
 	friend class CHud;
+	friend class CLocalPractice; // EClient
 
 public:
 	CChat();

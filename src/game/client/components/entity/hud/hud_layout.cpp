@@ -134,6 +134,10 @@ static const CHudElementDef gs_aHudElements[] = {
 	{"Local time", EHudElement::LOCAL_TIME, "local_time", EHudAnchor::TOP_CENTER, EHudOriginX::FROM_CENTER, vec2(-40.0f, 0.0f), vec2(22.0f, 12.5f), 80, EHudPushDirection::NONE, 0.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowLocalTimeAlways, "Always show", nullptr, nullptr, nullptr, nullptr},
 	// hud.cpp FreezeHelpers: the last one alive shout, near the top left
 	{"Last alive notice", EHudElement::NOTIFY_LAST, "notify_last", EHudAnchor::TOP_LEFT, EHudOriginX::FROM_LEFT, vec2(170.0f, 4.0f), vec2(90.0f, 14.0f), 55, EHudPushDirection::RIGHT, 2.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClNotifyWhenLast, nullptr, nullptr, nullptr, nullptr, nullptr},
+	// local_practice.cpp CLocalPractice::RenderMovedAlert: centred under the top of the screen, and
+	// only ever present while practicing. It measures its own text, so this is the size before it
+	// has said anything.
+	{"Local practice notice", EHudElement::PRACTICE_ALERT, "local_practice_alert", EHudAnchor::TOP_CENTER, EHudOriginX::FROM_CENTER, vec2(-45.0f, 30.0f), vec2(90.0f, 10.0f), 45, EHudPushDirection::DOWN, 2.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClLocalPracticeAlert, nullptr, nullptr, nullptr, nullptr, nullptr},
 };
 
 static_assert(std::size(gs_aHudElements) == (size_t)EHudElement::NUM_HUD_ELEMENTS,

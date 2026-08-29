@@ -1750,6 +1750,26 @@ void CCharacter::Read(CNetObj_Character *pChar, CNetObj_DDNetCharacter *pExtende
 	}
 }
 
+// <EClient
+void CCharacter::RebaseTicks(int Delta)
+{
+	if(Delta == 0)
+		return;
+
+	// Everything here is a stamp rather than a duration, so it only means anything against the
+	// clock it was taken on. Durations, m_FreezeTime above all, are already clock independent and
+	// are deliberately left alone.
+	m_AttackTick += Delta;
+	m_LastWeaponSwitchTick += Delta;
+	m_LastTuneZoneTick += Delta;
+	m_Core.m_Ninja.m_ActivationTick += Delta;
+	if(m_Core.m_FreezeStart != 0)
+		m_Core.m_FreezeStart += Delta;
+	if(m_Core.m_FreezeEnd > 0)
+		m_Core.m_FreezeEnd += Delta;
+}
+// EClient>
+
 void CCharacter::SetCoreWorld(CGameWorld *pGameWorld)
 {
 	m_Core.SetCoreWorld(&pGameWorld->m_Core, pGameWorld->Collision(), pGameWorld->Teams());

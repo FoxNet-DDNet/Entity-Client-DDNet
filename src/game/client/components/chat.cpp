@@ -513,6 +513,15 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		if(GameClient()->m_Bindchat.ChatDoBinds(pInput))
 			SendMessage = false;
 
+		// EClient: a practice command is run against the local practice world and swallowed, so the
+		// server never sees a slash command it would answer for a team we are not in. It was typed
+		// into the chat box like any other line, so it belongs in the history like any other line.
+		if(SendMessage && GameClient()->m_LocalPractice.OnChatCommand(pInput))
+		{
+			AddHistoryEntry(pInput);
+			SendMessage = false;
+		}
+
 		if(SendMessage)
 		{
 			if(SilentMessage)
@@ -2189,6 +2198,11 @@ void CChat::EnsureCoherentWidth() const
 
 void CChat::SendChat(int Team, const char *pLine, int Conn)
 {
+	// EClient: every outgoing line funnels through here, which is what catches the ones that never
+	// went through the chat box -- "say /r" from a bind or the console above all
+	if(GameClient()->m_LocalPractice.OnChatCommand(pLine))
+		return;
+
 	// don't send empty messages
 	if(*str_utf8_skip_whitespaces(pLine) == '\0')
 		return;
@@ -2223,6 +2237,11 @@ void CChat::SendChat(int Team, const char *pLine, int Conn)
 
 void CChat::SendChatQueued(const char *pLine)
 {
+	// EClient: caught before it is queued, so a practice command does not sit waiting on the chat
+	// flood timer to be run
+	if(GameClient()->m_LocalPractice.OnChatCommand(pLine))
+		return;
+
 	if(!pLine || str_length(pLine) < 1)
 		return;
 

@@ -171,6 +171,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Spectator,
 					      &m_Emoticon,
 					      &m_PlayerActions, // EClient
+					      &m_LocalPractice, // EClient
 					      &m_SpecPauseRadio, // EClient
 					      &m_Bindwheel, // TClient
 					      &m_Bindchat, // TClient
@@ -563,7 +564,11 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 {
 	if(!Dummy)
 	{
-		return m_Controls.SnapInput(pData);
+		const int Size = m_Controls.SnapInput(pData);
+		// EClient
+		if(Size > 0)
+			m_LocalPractice.NeutralizeInput((CNetObj_PlayerInput *)pData, g_Config.m_ClDummy);
+		return Size;
 	}
 	if(m_aLocalIds[!g_Config.m_ClDummy] < 0)
 	{
@@ -584,6 +589,7 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 		}
 
 		mem_copy(pData, &m_DummyInput, sizeof(m_DummyInput));
+		m_LocalPractice.NeutralizeInput((CNetObj_PlayerInput *)pData, !g_Config.m_ClDummy); // EClient
 		return sizeof(m_DummyInput);
 	}
 	else
@@ -607,6 +613,7 @@ int CGameClient::OnSnapInput(int *pData, bool Dummy, bool Force)
 		m_HammerInput.m_TargetY = (int)Dir.y;
 
 		mem_copy(pData, &m_HammerInput, sizeof(m_HammerInput));
+		m_LocalPractice.NeutralizeInput((CNetObj_PlayerInput *)pData, !g_Config.m_ClDummy); // EClient
 		return sizeof(m_HammerInput);
 	}
 }
@@ -810,6 +817,11 @@ void CGameClient::UpdatePositions()
 		ResetMultiView();
 
 	UpdateRenderedCharacters();
+
+	// EClient: after the client has filled in the real tees, since the practice ones copy whatever
+	// they do not have an opinion about
+	m_LocalPractice.BuildRenderState();
+	m_LocalPractice.OverrideSpectatorView();
 }
 
 void CGameClient::OnRender()
@@ -832,6 +844,10 @@ void CGameClient::OnRender()
 			ResetMultiView();
 		}
 	}
+
+	// EClient: before UpdatePositions, so the camera and everything else laying out against the
+	// local tee sees this frame's practice state rather than the previous frame's
+	m_LocalPractice.OnUpdatePractice();
 
 	// update the local character and spectate position
 	UpdatePositions();
@@ -856,7 +872,13 @@ void CGameClient::OnRender()
 	// update camera data prior to CControls::OnRender to allow CControls::m_aTargetPos to compensate using camera data
 	m_Camera.UpdateCamera();
 
-	UpdateSpectatorCursor();
+	{
+		// EClient: the cursor is anchored to the tee it belongs to, and while practicing that is
+		// the practice tee -- otherwise /tpcursor and everything else built on the cursor's world
+		// position measures out from the real tee standing somewhere else entirely.
+		CLocalPractice::CScope PracticeScope(&m_LocalPractice);
+		UpdateSpectatorCursor();
+	}
 
 	// render all systems
 	for(auto &pComponent : m_vpAll)
@@ -2892,7 +2914,10 @@ void CGameClient::OnPredict()
 		CNetObj_PlayerInput DummyFastInput{};
 		bool DummyFirst = pInputData && pDummyInputData && pDummyChar->GetCid() < pLocalChar->GetCid();
 
-		if(g_Config.m_TcFastInput && Tick > FinalTickRegular)
+		// EClient: not while practicing. These ticks run on live input rather than on what was
+		// actually sent, so the real tee would act on presses the server never received -- which is
+		// where the phantom projectile hanging off the real tee came from.
+		if(g_Config.m_TcFastInput && Tick > FinalTickRegular && !m_LocalPractice.IsActive())
 		{
 			pInputData = &m_Controls.m_aFastInput[LocalTee];
 			if(GetDummyFastInput(DummyFastInput, pDummyInputData, pDummyChar, LocalTee, DummyTee))
@@ -3888,8 +3913,13 @@ void CGameClient::SendDummyInfo(bool Start)
 	}
 }
 
-void CGameClient::SendKill() const
+void CGameClient::SendKill()
 {
+	// EClient: while practicing, a kill belongs to the practice tee. Letting it through would
+	// respawn the real tee somewhere else and lose whatever run it is parked on.
+	if(m_LocalPractice.OnKill())
+		return;
+
 	CNetMsg_Cl_Kill Msg;
 	Client()->SendPackMsgActive(&Msg, MSGFLAG_VITAL);
 
@@ -4124,7 +4154,7 @@ void CGameClient::UpdatePrediction()
 	m_GameWorld.m_WorldConfig.m_PredictWeapons = AntiPingWeapons();
 	m_GameWorld.m_WorldConfig.m_BugDDRaceInput = m_GameInfo.m_BugDDRaceInput;
 	m_GameWorld.m_WorldConfig.m_NoWeakHookAndBounce = m_GameInfo.m_NoWeakHookAndBounce;
-	m_GameWorld.m_WorldConfig.m_PredictEvents = m_GameInfo.m_PredictEvents;
+	m_GameWorld.m_WorldConfig.m_PredictEvents = m_GameInfo.m_PredictEvents && g_Config.m_ClPredictEvents; // EClient: was checked inside CGameWorld::CreatePredictedEvent
 	m_GameWorld.m_WorldConfig.m_OldLaser = m_GameInfo.m_OldLaser;
 
 	// <FoxNet
@@ -4478,13 +4508,16 @@ void CGameClient::UpdateRenderedCharacters()
 	}
 }
 
-void CGameClient::HandlePredictedEvents(const int Tick)
+void CGameClient::HandlePredictedEvents(const int Tick, CGameWorld *pWorld)
 {
 	const float Alpha = 1.0f;
 	const float Volume = 1.0f;
 
-	auto EventsIterator = m_PredictedWorld.m_PredictedEvents.begin();
-	while(EventsIterator != m_PredictedWorld.m_PredictedEvents.end())
+	// EClient
+	CGameWorld &World = pWorld ? *pWorld : m_PredictedWorld;
+
+	auto EventsIterator = World.m_PredictedEvents.begin();
+	while(EventsIterator != World.m_PredictedEvents.end())
 	{
 		if(!EventsIterator->m_Handled && EventsIterator->m_Tick <= Tick)
 		{
@@ -4492,7 +4525,7 @@ void CGameClient::HandlePredictedEvents(const int Tick)
 			{
 				if(m_GameInfo.m_RaceSounds && ((EventsIterator->m_ExtraInfo == SOUND_GUN_FIRE && !g_Config.m_SndGun) || (EventsIterator->m_ExtraInfo == SOUND_PLAYER_PAIN_LONG && !g_Config.m_SndLongPain)))
 				{
-					EventsIterator = m_PredictedWorld.m_PredictedEvents.erase(EventsIterator);
+					EventsIterator = World.m_PredictedEvents.erase(EventsIterator);
 					continue;
 				}
 				m_Sounds.PlayAt(CSounds::CHN_WORLD, EventsIterator->m_ExtraInfo, 1.0f, EventsIterator->m_Pos);
@@ -4517,7 +4550,7 @@ void CGameClient::HandlePredictedEvents(const int Tick)
 		else if(Tick - EventsIterator->m_Tick > 3 * Client()->GameTickSpeed()) // 3 seconds
 		{
 			// remove too old events
-			EventsIterator = m_PredictedWorld.m_PredictedEvents.erase(EventsIterator);
+			EventsIterator = World.m_PredictedEvents.erase(EventsIterator);
 		}
 		else
 		{
@@ -4741,6 +4774,21 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 void CGameClient::Echo(const char *pString)
 {
 	m_Chat.Echo(pString);
+}
+
+float CGameClient::TeeRenderAlpha(int ClientId) const
+{
+	// EClient: one of our own tees while practicing is judged entirely by the practice world.
+	// IsOtherTeam below reads m_aClients[].m_Solo, which is the server's answer about the real tee
+	// -- so a dummy that is solo out there faded its practice tee too, one you can still hook.
+	if(m_LocalPractice.OwnsRenderAlpha(ClientId))
+		return m_LocalPractice.DrawAlpha(ClientId);
+
+	// A tee we cannot interact with is drawn faded. While practicing, that is everyone the practice
+	// world is not simulating, for exactly the same reason it is everyone in another team.
+	if(ClientId < 0 || IsOtherTeam(ClientId) || m_LocalPractice.IsBystander(ClientId))
+		return g_Config.m_ClShowOthersAlpha / 100.0f;
+	return 1.0f;
 }
 
 bool CGameClient::IsOtherTeam(int ClientId) const

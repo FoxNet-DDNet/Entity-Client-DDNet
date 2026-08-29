@@ -765,7 +765,9 @@ void CHud::RenderCursor()
 	CScreenRect ScreenRect = Graphics()->MapScreenToWorld(Center.x, Center.y, 100.0f, 100.0f, 100.0f, 0, 0, Graphics()->ScreenAspect(), 1.0f);
 	Graphics()->MapScreen(ScreenRect);
 
-	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && GameClient()->m_Snap.m_pLocalCharacter)
+	// EClient: a practice tee is aimed with the same cursor, whether or not the server still has a
+	// character for the tee it stands in for
+	if(Client()->State() != IClient::STATE_DEMOPLAYBACK && (GameClient()->m_Snap.m_pLocalCharacter || GameClient()->m_LocalPractice.IsControlling()))
 	{
 		// Render local cursor
 		CurWeapon = std::max(0, GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_Predicted.m_ActiveWeapon);
@@ -1631,19 +1633,23 @@ void CHud::RenderMovementInformationTextContainer(STextContainerIndex &TextConta
 CHud::CMovementInformation CHud::GetMovementInformation(int ClientId, int Conn) const
 {
 	CMovementInformation Out;
+	// EClient: a practice tee has everything to say about itself, even while the server is showing
+	// a spectator character for the tee it stands in for
+	const bool Practice = GameClient()->m_LocalPractice.IsSimulated(ClientId);
 	if(ClientId == SPEC_FREEVIEW)
 	{
 		Out.m_Pos = GameClient()->m_Camera.m_Center / 32.0f;
 	}
-	else if(GameClient()->m_aClients[ClientId].m_SpecCharPresent)
+	else if(GameClient()->m_aClients[ClientId].m_SpecCharPresent && !Practice)
 	{
 		Out.m_Pos = GameClient()->m_aClients[ClientId].m_SpecChar / 32.0f;
 	}
 	else
 	{
-		const CNetObj_Character *pPrevChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev;
-		const CNetObj_Character *pCurChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
-		const float IntraTick = Client()->IntraGameTick(Conn);
+		// The render characters are where the practice tee lives; the snapshot may have nothing
+		const CNetObj_Character *pPrevChar = Practice ? &GameClient()->m_aClients[ClientId].m_RenderPrev : &GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev;
+		const CNetObj_Character *pCurChar = Practice ? &GameClient()->m_aClients[ClientId].m_RenderCur : &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
+		const float IntraTick = Practice ? Client()->PredIntraGameTick(Conn) : Client()->IntraGameTick(Conn);
 
 		// To make the player position relative to blocks we need to divide by the block size
 		Out.m_Pos = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pCurChar->m_X, pCurChar->m_Y), IntraTick) / 32.0f;
@@ -1682,7 +1688,8 @@ CHud::CMovementInformation CHud::GetMovementInformation(int ClientId, int Conn) 
 void CHud::RenderMovementInformation()
 {
 	const int ClientId = GameClient()->m_Snap.m_SpecInfo.m_Active ? GameClient()->m_Snap.m_SpecInfo.m_SpectatorId : GameClient()->m_Snap.m_LocalClientId;
-	const bool PosOnly = ClientId == SPEC_FREEVIEW || (GameClient()->m_aClients[ClientId].m_SpecCharPresent);
+	// EClient: a practice tee has a speed and an angle to show, so it is not position only
+	const bool PosOnly = ClientId == SPEC_FREEVIEW || (GameClient()->m_aClients[ClientId].m_SpecCharPresent && !GameClient()->m_LocalPractice.IsSimulated(ClientId));
 	// Draw the information depending on settings: Position, speed and target angle
 	// This display is only to present the available information from the last snapshot, not to interpolate or predict
 	if(!HasMovementInformationBox())
@@ -1928,6 +1935,10 @@ void CHud::OnNewSnapshot()
 
 void CHud::OnRender()
 {
+	// EClient: everything below describes the tee being played, which while practicing is the
+	// practice one. Wrapped rather than taught about it, so the code itself is untouched.
+	CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
+
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
 
@@ -1967,7 +1978,8 @@ void CHud::OnRender()
 		&g_Config.m_ClShowRecord,
 		&g_Config.m_ClShowFrozenHud,
 		&g_Config.m_ClShowFrozenText,
-		&g_Config.m_ClNotifyWhenLast};
+		&g_Config.m_ClNotifyWhenLast,
+		&g_Config.m_ClLocalPracticeAlert}; // EClient
 	int aPreviewSavedConfigs[std::size(apPreviewConfigs)];
 
 	CNetObj_Character PreviewLocalCharacter{};
@@ -2106,11 +2118,13 @@ void CHud::OnRender()
 	if(g_Config.m_ClShowhud)
 #endif
 	{
-		if(GameClient()->m_Snap.m_pLocalCharacter && !GameClient()->m_Snap.m_SpecInfo.m_Active && !(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER))
+		// EClient: playing a practice tee is playing, even when the server has no character for the
+		// tee it stands in for -- the position readout and the rest belong to it
+		if((GameClient()->m_Snap.m_pLocalCharacter || GameClient()->m_LocalPractice.IsControlling()) && !GameClient()->m_Snap.m_SpecInfo.m_Active && !(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_GAMEOVER))
 		{
 			if(g_Config.m_ClShowhudHealthAmmo)
 			{
-				if(!m_HudLayout.IsOccluded(EHudElement::HEALTH_AMMO))
+				if(!m_HudLayout.IsOccluded(EHudElement::HEALTH_AMMO) && (Preview || GameClient()->m_Snap.m_pLocalCharacter))
 				{
 					CHudLayout::CScope Scope(&m_HudLayout, EHudElement::HEALTH_AMMO); // EClient
 					RenderAmmoHealthAndArmor(Preview ? &PreviewLocalCharacter : GameClient()->m_Snap.m_pLocalCharacter);
@@ -2244,6 +2258,8 @@ void CHud::OnRender()
 				RenderRecord();
 			}
 		}
+		// EClient: scopes itself, since it only draws on the frames it has something to say
+		GameClient()->m_LocalPractice.RenderMovedAlert(PreviewActive());
 	}
 	RenderCursor();
 

@@ -30,6 +30,11 @@
 //////////////////////////////////////////////////
 CGameWorld::CGameWorld()
 {
+	// EClient: never initialised before. It did not show, because every flag was also gated by a
+	// global somewhere; m_PredictEvents no longer is, so an indeterminate one would decide whether
+	// a brand new world creates events.
+	mem_zero(&m_WorldConfig, sizeof(m_WorldConfig));
+
 	for(auto &pFirstEntityType : m_apFirstEntityTypes)
 		pFirstEntityType = nullptr;
 	for(auto &pCharacter : m_apCharacters)
@@ -887,7 +892,10 @@ bool CGameWorld::EmulateBug(int Bug) const
 
 void CGameWorld::CreatePredictedEvent(const CPredictedEvent &NewEvent)
 {
-	if(!g_Config.m_ClPredictEvents || !m_WorldConfig.m_PredictEvents)
+	// EClient: cl_predict_events used to be read straight from the global here, which meant a world
+	// that is only ever simulated locally could not have events even though there is nothing for
+	// them to mispredict against. It is folded into m_PredictEvents by UpdatePrediction instead.
+	if(!m_WorldConfig.m_PredictEvents)
 		return;
 
 	// prediction is ran multiple times per tick, check if event already exists
