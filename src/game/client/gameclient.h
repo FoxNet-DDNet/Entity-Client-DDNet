@@ -78,6 +78,7 @@
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
+#include "components/entity/local_practice.h"
 #include "components/entity/map_finish_browser.h"
 #include "components/entity/map_overview.h"
 #include "components/entity/mediaplayer/media_player.h"
@@ -86,7 +87,6 @@
 #include "components/entity/performance_statistics.h"
 #include "components/entity/physicball.h"
 #include "components/entity/player_actions.h"
-#include "components/entity/local_practice.h"
 #include "components/entity/spec_pause_radio.h"
 
 // Tater

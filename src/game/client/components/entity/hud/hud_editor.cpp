@@ -877,13 +877,16 @@ void CHudEditor::OnRender()
 
 	// An element lighting up under a panel the cursor is actually over reads as the editor
 	// disagreeing with itself about what is being pointed at
-	const std::optional<EHudElement> Hovered =
-		m_Drag == EDrag::NONE ? (OverPopup ? std::nullopt : ElementAt(Mouse)) : std::optional<EHudElement>(m_DragElement);
+	std::optional<EHudElement> Hovered;
+	if(m_Drag != EDrag::NONE)
+		Hovered = m_DragElement;
+	else if(!OverPopup)
+		Hovered = ElementAt(Mouse);
 
 	for(int i = 0; i < (int)EHudElement::NUM_HUD_ELEMENTS; i++)
 	{
 		const EHudElement Element = (EHudElement)i;
-		RenderElement(Element, Hovered.has_value() && Hovered.value() == Element);
+		RenderElement(Element, Hovered == Element);
 	}
 
 	RenderSnapLines();
