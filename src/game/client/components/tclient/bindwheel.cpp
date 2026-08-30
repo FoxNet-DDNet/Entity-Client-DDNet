@@ -1,12 +1,26 @@
 #include "bindwheel.h"
 
+#include <base/color.h>
+#include <base/math.h>
+#include <base/str.h>
+#include <base/vmath.h>
+
+#include <engine/client.h>
+#include <engine/config.h>
+#include <engine/console.h>
 #include <engine/graphics.h>
+#include <engine/input.h>
+#include <engine/keys.h>
 #include <engine/shared/config.h>
 
-#include <game/client/animstate.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
+#include <game/client/ui_rect.h>
+
+#include <algorithm>
+#include <array>
+#include <cmath>
 
 CBindWheel::CBindWheel()
 {
@@ -256,8 +270,8 @@ void CBindWheel::OnRender()
 	if(length(GameClient()->m_Emoticon.m_SelectorMouse) > s_OuterMouseLimitRadius)
 		GameClient()->m_Emoticon.m_SelectorMouse = normalize(GameClient()->m_Emoticon.m_SelectorMouse) * s_OuterMouseLimitRadius;
 
-	int SegmentCount = m_vBinds.size();
-	if(SegmentCount == 0)
+	const size_t NumBinds = m_vBinds.size();
+	if(NumBinds == 0)
 	{
 		m_SelectedBind = -1;
 	}
@@ -265,7 +279,7 @@ void CBindWheel::OnRender()
 	{
 		const float SelectedAngle = angle(GameClient()->m_Emoticon.m_SelectorMouse);
 		if(length(GameClient()->m_Emoticon.m_SelectorMouse) > s_InnerOuterMouseBoundaryRadius)
-			m_SelectedBind = PositiveMod(std::round(SelectedAngle / (2.0f * pi) * SegmentCount), SegmentCount);
+			m_SelectedBind = PositiveMod(std::round(SelectedAngle / (2.0f * pi) * NumBinds), NumBinds);
 		else
 			m_SelectedBind = -1;
 	}
@@ -285,48 +299,39 @@ void CBindWheel::OnRender()
 	Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.3f * aAnimationPhase[0]);
 	Graphics()->DrawCircle(Screen.w / 2.0f, Screen.h / 2.0f, s_OuterCircleRadius * aAnimationPhase[0], 64);
 	Graphics()->QuadsEnd();
-
 	Graphics()->WrapClamp();
+
+	const ColorRGBA TextColor = TextRender()->DefaultTextColor();
+	const ColorRGBA OutlineColor = TextRender()->DefaultTextOutlineColor();
+	TextRender()->TextColor(TextColor.WithMultipliedAlpha(aAnimationPhase[1]));
+	TextRender()->TextOutlineColor(OutlineColor.WithMultipliedAlpha(aAnimationPhase[1]));
 
 	if(BindsEmpty)
 	{
-		float Size = 20.0f;
-		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(Size, "Empty") / 2.0f, Screen.h / 2.0f - Size / 2, Size, "Empty");
+		const float FontSize = 20.0f * aAnimationPhase[1];
+		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(FontSize, "Empty") / 2.0f, Screen.h / 2.0f - FontSize / 2, FontSize, "Empty");
 	}
 
-	const float Theta = pi * 2.0f / std::max<float>(1.0f, m_vBinds.size()); // Prevent divide by 0
-	for(int i = 0; i < static_cast<int>(m_vBinds.size()); i++)
+	const float Theta = pi * 2.0f / std::max<float>(1.0f, NumBinds); // Prevent divide by 0
+	for(size_t i = 0; i < NumBinds; i++)
 	{
 		const CBind &Bind = m_vBinds[i];
 		const float Angle = Theta * i;
-		const float Phase = ItemAnimationTime == 0.0f ? (i == m_SelectedBind ? 1.0f : 0.0f) : QuadEaseInOut(m_aAnimationTimeItems[i] / ItemAnimationTime);
+		const float Phase = ItemAnimationTime == 0.0f ? ((int)i == m_SelectedBind ? 1.0f : 0.0f) : QuadEaseInOut(m_aAnimationTimeItems[i] / ItemAnimationTime);
 		const float FontSize = (s_FontSize + Phase * (s_FontSizeSelected - s_FontSize)) * aAnimationPhase[1];
 		const char *pName = Bind.m_aName;
 		if(pName[0] == '\0')
-		{
 			pName = "Empty";
-			TextRender()->TextColor(0.7f, 0.7f, 0.7f, aAnimationPhase[1]);
-			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, aAnimationPhase[1]);
-		}
-		else
-		{
-			TextRender()->TextColor(1.0f, 1.0f, 1.0f, aAnimationPhase[1]);
-			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, aAnimationPhase[1]);
-		}
+
 		const float Width = TextRender()->TextWidth(FontSize, pName);
 		const vec2 Pos = direction(Angle) * s_OuterItemRadius * aAnimationPhase[1];
 		TextRender()->Text(Screen.w / 2.0f + Pos.x - Width / 2.0f, Screen.h / 2.0f + Pos.y - FontSize / 2.0f, FontSize, pName);
 	}
-	TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
-	TextRender()->TextOutlineColor(TextRender()->DefaultTextOutlineColor()); // EClient
-	Graphics()->WrapNormal();
 
-	// For future middle circle usage
-	// Graphics()->TextureClear();
-	// Graphics()->QuadsBegin();
-	// Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.3f * AnimationPhase3);
-	// DrawCircle(Screen.w / 2.0f, Screen.h / 2.0f, s_InnerCircleRadius * AnimationPhase3, 64);
-	// Graphics()->QuadsEnd();
+	TextRender()->TextColor(TextColor);
+	TextRender()->TextOutlineColor(OutlineColor);
+
+	Graphics()->WrapNormal();
 
 	RenderTools()->RenderCursor(GameClient()->m_Emoticon.m_SelectorMouse + vec2(Screen.w, Screen.h) / 2.0f, 24.0f, aAnimationPhase[0]);
 }

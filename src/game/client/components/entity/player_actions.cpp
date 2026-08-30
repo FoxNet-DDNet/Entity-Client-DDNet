@@ -1,8 +1,17 @@
 #include "player_actions.h"
 
+#include <base/color.h>
+#include <base/math.h>
+#include <base/mem.h>
+#include <base/str.h>
 #include <base/vmath.h>
 
+#include <engine/client.h>
+#include <engine/config.h>
+#include <engine/console.h>
 #include <engine/graphics.h>
+#include <engine/input.h>
+#include <engine/keys.h>
 #include <engine/shared/config.h>
 #include <engine/shared/protocol.h>
 #include <engine/textrender.h>
@@ -11,12 +20,16 @@
 #include <generated/protocol.h>
 
 #include <game/client/animstate.h>
+#include <game/client/components/tclient/bindwheel.h>
 #include <game/client/gameclient.h>
-#include <game/client/prediction/gameworld.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
+#include <game/client/ui_rect.h>
 
+#include <algorithm>
 #include <array>
+#include <cmath>
+#include <limits>
 
 CPlayerActions::CPlayerActions()
 {
@@ -388,8 +401,8 @@ void CPlayerActions::OnRender()
 	if(length(GameClient()->m_Emoticon.m_SelectorMouse) > s_OuterMouseLimitRadius)
 		GameClient()->m_Emoticon.m_SelectorMouse = normalize(GameClient()->m_Emoticon.m_SelectorMouse) * s_OuterMouseLimitRadius;
 
-	int SegmentCount = m_vBinds.size();
-	if(SegmentCount == 0)
+	const size_t NumBinds = m_vBinds.size();
+	if(NumBinds == 0)
 	{
 		m_SelectedBind = -1;
 	}
@@ -397,7 +410,7 @@ void CPlayerActions::OnRender()
 	{
 		const float SelectedAngle = angle(GameClient()->m_Emoticon.m_SelectorMouse);
 		if(length(GameClient()->m_Emoticon.m_SelectorMouse) > s_InnerOuterMouseBoundaryRadius)
-			m_SelectedBind = PositiveMod(std::round(SelectedAngle / (2.0f * pi) * SegmentCount), SegmentCount);
+			m_SelectedBind = PositiveMod(std::round(SelectedAngle / (2.0f * pi) * NumBinds), NumBinds);
 		else
 			m_SelectedBind = -1;
 	}
@@ -419,35 +432,30 @@ void CPlayerActions::OnRender()
 	Graphics()->QuadsEnd();
 
 	Graphics()->WrapClamp();
+	const ColorRGBA TextColor = TextRender()->DefaultTextColor();
+	const ColorRGBA OutlineColor = TextRender()->DefaultTextOutlineColor();
+	TextRender()->TextColor(TextColor.WithMultipliedAlpha(aAnimationPhase[1]));
+	TextRender()->TextOutlineColor(OutlineColor.WithMultipliedAlpha(aAnimationPhase[1]));
 
+	const float NameFontSize = 20.0f * aAnimationPhase[2];
 	if(BindsEmpty)
-	{
-		float Size = 20.0f;
-		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(Size, "Empty") / 2.0f, Screen.h / 2.0f - Size / 2, Size, "Empty");
-	}
+		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(NameFontSize, "Empty") / 2.0f, Screen.h / 2.0f - NameFontSize / 2, NameFontSize, "Empty");
 
-	const float Theta = pi * 2.0f / std::max<float>(1.0f, m_vBinds.size()); // Prevent divide by 0
-	for(int i = 0; i < static_cast<int>(m_vBinds.size()); i++)
+	const float Theta = pi * 2.0f / std::max<float>(1.0f, NumBinds); // Prevent divide by 0
+	for(int i = 0; i < static_cast<int>(NumBinds); i++)
 	{
 		const CBind &Bind = m_vBinds[i];
 		const float Angle = Theta * i;
-		const float Phase = ItemAnimationTime == 0.0f ? (i == m_SelectedBind ? 1.0f : 0.0f) : QuadEaseInOut(m_aAnimationTimeItems[i] / ItemAnimationTime);
-		const float FontSize = (s_FontSize + Phase * (s_FontSizeSelected - s_FontSize)) * aAnimationPhase[1];
+		const float Phase = ItemAnimationTime == 0.0f ? ((int)i == m_SelectedBind ? 1.0f : 0.0f) : QuadEaseInOut(m_aAnimationTimeItems[i] / ItemAnimationTime);
+		const float BindFontSize = (s_FontSize + Phase * (s_FontSizeSelected - s_FontSize)) * aAnimationPhase[1];
 		const char *pName = Bind.m_aName;
+
 		if(pName[0] == '\0')
-		{
 			pName = "Empty";
-			TextRender()->TextColor(0.7f, 0.7f, 0.7f, aAnimationPhase[1]);
-			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, aAnimationPhase[1]);
-		}
-		else
-		{
-			TextRender()->TextColor(1.0f, 1.0f, 1.0f, aAnimationPhase[1]);
-			TextRender()->TextOutlineColor(0.0f, 0.0f, 0.0f, aAnimationPhase[1]);
-		}
-		const float Width = TextRender()->TextWidth(FontSize, pName);
+
+		const float Width = TextRender()->TextWidth(BindFontSize, pName);
 		const vec2 Pos = direction(Angle) * s_OuterItemRadius * aAnimationPhase[1];
-		TextRender()->Text(Screen.w / 2.0f + Pos.x - Width / 2.0f, Screen.h / 2.0f + Pos.y - FontSize / 2.0f, FontSize, pName);
+		TextRender()->Text(Screen.w / 2.0f + Pos.x - Width / 2.0f, Screen.h / 2.0f + Pos.y - BindFontSize / 2.0f, BindFontSize, pName);
 	}
 	Graphics()->WrapNormal();
 
@@ -457,12 +465,7 @@ void CPlayerActions::OnRender()
 	Graphics()->DrawCircle(Screen.w / 2.0f, Screen.h / 2.0f, s_InnerCircleRadius * aAnimationPhase[2], 64);
 	Graphics()->QuadsEnd();
 
-	const float FontSize = 20.0f * aAnimationPhase[2];
-	if(BindsEmpty)
-	{
-		TextRender()->Text(Screen.w / 2.0f - TextRender()->TextWidth(FontSize, "Empty") / 2.0f, Screen.h / 2.0f - FontSize / 2, FontSize, "Empty");
-	}
-	else if(m_PlayerActionId >= 0 && m_PlayerActionId < MAX_CLIENTS)
+	if(!BindsEmpty && m_PlayerActionId >= 0 && m_PlayerActionId < MAX_CLIENTS)
 	{
 		const CGameClient::CClientData &Target = GameClient()->m_aClients[m_PlayerActionId];
 		const CNetObj_Character &TargetRender = GameClient()->m_aClients[m_PlayerActionId].m_RenderCur;
@@ -484,21 +487,21 @@ void CPlayerActions::OnRender()
 
 		const char *pName = Target.m_aName;
 		const float LineWidth = 175.0f * aAnimationPhase[2];
-		const float NameWidth = std::min(TextRender()->TextWidth(FontSize, pName), LineWidth);
+		const float NameWidth = std::min(TextRender()->TextWidth(NameFontSize, pName), LineWidth);
 
 		CTextCursor Cursor;
 		const float NameOffset = 50.0f * aAnimationPhase[2];
 		const vec2 NamePos = vec2(Screen.x, Screen.y) + vec2(Screen.w - NameWidth, Screen.h) / 2.0f - vec2(0.0f, NameOffset);
 		Cursor.SetPosition(NamePos);
-		Cursor.m_FontSize = FontSize;
+		Cursor.m_FontSize = NameFontSize;
 		Cursor.m_Flags |= TEXTFLAG_ELLIPSIS_AT_END;
 		Cursor.m_LineWidth = LineWidth;
 
 		TextRender()->TextEx(&Cursor, pName);
 	}
 
-	TextRender()->TextColor(TextRender()->DefaultTextColor());
-	TextRender()->TextOutlineColor(TextRender()->DefaultTextOutlineColor());
+	TextRender()->TextColor(TextColor);
+	TextRender()->TextOutlineColor(OutlineColor);
 
 	RenderTools()->RenderCursor(GameClient()->m_Emoticon.m_SelectorMouse + vec2(Screen.w, Screen.h) / 2.0f, 24.0f, aAnimationPhase[0]);
 }
