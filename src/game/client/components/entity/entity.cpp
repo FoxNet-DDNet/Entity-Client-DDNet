@@ -292,9 +292,13 @@ void CEClient::NotifyOnMove()
 	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
 		return;
 
-	int LocalId = GameClient()->m_Snap.m_LocalClientId;
+	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
 
-	vec2 LocalPos = GameClient()->m_aClients[LocalId].m_RenderPos;
+	const vec2 LocalPos = GameClient()->m_aClients[LocalId].m_RenderPos;
+	const vec2 LastPos = m_LastPos;
+	m_LastPos = LocalPos;
+	if(LastPos == LocalPos)
+		return;
 	if(!pGraphics->WindowActive())
 	{
 		const float MaxDist = 27.5f;
@@ -302,16 +306,14 @@ void CEClient::NotifyOnMove()
 		bool Moved = false;
 		for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 		{
-			if(m_LastPos == LocalPos)
-				continue;
 			const CGameClient::CClientData &ClientData = GameClient()->m_aClients[ClientId];
 			if(ClientId == LocalId || !ClientData.m_Active)
+				continue;
+			if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData)
 				continue;
 			if(ClientData.m_Solo)
 				continue;
 			if(!GameClient()->m_Teams.SameTeam(LocalId, ClientId))
-				continue;
-			if(!GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedData)
 				continue;
 			const CNetObj_Character *pOtherChar = &GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
 			vec2 OtherPos = GameClient()->m_aClients[ClientId].m_RenderPos;
@@ -325,7 +327,7 @@ void CEClient::NotifyOnMove()
 				Moved = true;
 
 			// Check for hammer firing
-			bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
+			const bool Hammering = (pOtherChar->m_Weapon == WEAPON_HAMMER) && (pOtherChar->m_AttackTick + 2 > Client()->GameTick(g_Config.m_ClDummy));
 			Dist = distance(vec2(pOtherChar->m_X, pOtherChar->m_Y), vec2(pLocalChar->m_X, pLocalChar->m_Y));
 			if(Hammering && Dist < 70.0f)
 				Moved = true;
@@ -337,7 +339,6 @@ void CEClient::NotifyOnMove()
 			Graphics()->NotifyWindow();
 		}
 	}
-	m_LastPos = LocalPos;
 }
 
 void CEClient::UpdateVolleyball()
