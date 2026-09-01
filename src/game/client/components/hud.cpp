@@ -3140,10 +3140,7 @@ void CHud::RenderIsland()
 		const CUIRect *pUiScreen = Ui()->Screen();
 		if(pUiScreen->w <= 0.0f || pUiScreen->h <= 0.0f)
 			return vec2(0.0f, 0.0f);
-		// EClient: the hover boxes below are in the island's own coordinates, which the layout may
-		// have moved and scaled away from the base screen
-		return m_HudLayout.ToElementSpace(EHudElement::MEDIA_ISLAND,
-			vec2(UiPos.x / pUiScreen->w * m_Width, UiPos.y / pUiScreen->h * m_Height));
+		return vec2(UiPos.x / pUiScreen->w * m_Width, UiPos.y / pUiScreen->h * m_Height);
 	};
 	if(Client()->State() == IClient::STATE_DEMOPLAYBACK)
 	{
@@ -3167,6 +3164,12 @@ void CHud::RenderIsland()
 		MousePos = ToHudSpaceFromUi(Ui()->MousePos());
 		HasMousePos = true;
 	}
+
+	// EClient: every one of those arrives in the base HUD space, while the hover boxes below are
+	// built in the island's own coordinates, which the layout may have moved and scaled away from
+	// it. Converting here rather than in each branch is what keeps them from disagreeing.
+	if(HasMousePos)
+		MousePos = m_HudLayout.ToElementSpace(EHudElement::MEDIA_ISLAND, MousePos);
 
 	auto MakeIslandRect = [&](float CurrentTimerWidth, float CurrentHeight, float CurrentMediaSize, float TimerSidePadding, float VisUnavailableWidth) {
 		const float LeftWidth = ShowArt ? CurrentMediaSize + TimerSidePadding : 0.0f;
