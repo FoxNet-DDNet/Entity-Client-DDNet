@@ -1178,6 +1178,8 @@ public:
 	void SetConnectInfo(const NETADDR *pAddress) override;
 
 	// EClient
+	void OnFontChange();
+
 	void OnSelfDeath(bool Dummy) override;
 
 	void OnServerBrowserRefresh() override;

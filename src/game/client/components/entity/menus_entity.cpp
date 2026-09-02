@@ -3942,12 +3942,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 						str_copy(g_Config.m_ClCustomFont, s_FontDropDownNames[FontSelectedNew]);
 						TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
 
-						// Reload *hopefully* all Fonts
-						TextRender()->OnPreWindowResize();
-						GameClient()->OnWindowResize();
-						GameClient()->Editor()->OnWindowResize();
-						GameClient()->m_MapImages.SetTextureScale(101);
-						GameClient()->m_MapImages.SetTextureScale(g_Config.m_ClTextEntitiesSize);
+						GameClient()->OnFontChange();
 					}
 					static CButtonContainer s_FontDirectoryId;
 					if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FontIcon::FOLDER, 0, &FontDirectory, BUTTONFLAG_LEFT))

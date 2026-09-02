@@ -96,6 +96,15 @@ void CHud::ResetHudContainers()
 	}
 
 	// EClient
+	m_TextWidthScore10 = TextRender()->TextWidth(14.0f, "10", -1, -1.0f);
+	m_TextWidthScore100 = TextRender()->TextWidth(14.0f, "100", -1, -1.0f);
+
+	m_TextWidthFPS0 = TextRender()->TextWidth(12.0f, "0", -1, -1.0f);
+	m_TextWidthFPS00 = TextRender()->TextWidth(12.0f, "00", -1, -1.0f);
+	m_TextWidthFPS000 = TextRender()->TextWidth(12.0f, "000", -1, -1.0f);
+	m_TextWidthFPS0000 = TextRender()->TextWidth(12.0f, "0000", -1, -1.0f);
+	m_TextWidthFPS00000 = TextRender()->TextWidth(12.0f, "00000", -1, -1.0f);
+
 	m_Island.Reset();
 
 	for(size_t i = 0; i < std::size(m_aPlayerInfoTextContainers); i++)
@@ -109,6 +118,8 @@ void CHud::ResetHudContainers()
 void CHud::OnWindowResize()
 {
 	ResetHudContainers();
+
+	GameTimerWidth(0.1f, 0);
 }
 
 void CHud::OnReset()
@@ -322,8 +333,7 @@ void CHud::RenderScoreHud()
 				}
 			}
 
-			static float s_TextWidth100 = TextRender()->TextWidth(14.0f, "100", -1, -1.0f);
-			float ScoreWidthMax = std::max({m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth, s_TextWidth100});
+			float ScoreWidthMax = std::max({m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth, m_TextWidthScore100});
 			float Split = 3.0f;
 			float ImageSize = (GameClient()->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_FLAGS) ? 16.0f : Split;
 			// EClient: StartY is advanced by the loop below, so the rect is reported up front
@@ -517,8 +527,7 @@ void CHud::RenderScoreHud()
 					RecreateRect = true;
 			}
 
-			static float s_TextWidth10 = TextRender()->TextWidth(14.0f, "10", -1, -1.0f);
-			float ScoreWidthMax = std::max({m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth, s_TextWidth10});
+			float ScoreWidthMax = std::max({m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth, m_TextWidthScore10});
 			float Split = 3.0f, ImageSize = 16.0f, PosSize = 16.0f;
 			// EClient: StartY is advanced by the loop below, so the rect is reported up front
 			const float BoxWidth = ScoreWidthMax + ImageSize + 2 * Split + PosSize;
@@ -675,20 +684,15 @@ void CHud::RenderFps()
 		const int FramesPerSecond = round_to_int(1.0f / Client()->FrameTimeAverage());
 		str_format(aBuf, sizeof(aBuf), "%d", FramesPerSecond);
 
-		static float s_TextWidth0 = TextRender()->TextWidth(12.f, "0", -1, -1.0f);
-		static float s_TextWidth00 = TextRender()->TextWidth(12.f, "00", -1, -1.0f);
-		static float s_TextWidth000 = TextRender()->TextWidth(12.f, "000", -1, -1.0f);
-		static float s_TextWidth0000 = TextRender()->TextWidth(12.f, "0000", -1, -1.0f);
-		static float s_TextWidth00000 = TextRender()->TextWidth(12.f, "00000", -1, -1.0f);
-		static const float s_aTextWidth[5] = {s_TextWidth0, s_TextWidth00, s_TextWidth000, s_TextWidth0000, s_TextWidth00000};
+		const float s_aTextWidth[5] = {m_TextWidthFPS0, m_TextWidthFPS00, m_TextWidthFPS000, m_TextWidthFPS0000, m_TextWidthFPS00000};
 
 		int DigitIndex = GetDigitsIndex(FramesPerSecond, 4);
 
 		CTextCursor Cursor;
 		Cursor.SetPosition(vec2(m_Width - 10 - s_aTextWidth[DigitIndex], 5));
 		Cursor.m_FontSize = 12.0f;
-		m_FPSPos = vec2(m_Width - 10 - s_TextWidth00000, 5);
-		m_HudLayout.ReportNaturalRect(EHudElement::FPS, m_FPSPos, vec2(s_TextWidth00000, 12.0f)); // EClient
+		m_FPSPos = vec2(m_Width - 10 - m_TextWidthFPS00000, 5);
+		m_HudLayout.ReportNaturalRect(EHudElement::FPS, m_FPSPos, vec2(m_TextWidthFPS00000, 12.0f)); // EClient
 		auto OldFlags = TextRender()->GetRenderFlags();
 		TextRender()->SetRenderFlags(OldFlags | TEXT_RENDER_FLAG_ONE_TIME_USE);
 		if(m_FPSTextContainerIndex.Valid())

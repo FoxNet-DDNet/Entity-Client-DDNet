@@ -17,10 +17,20 @@ class CPerformanceStatistics : public CComponent
 	int m_CurrentFPS = 0;
 	int64_t m_LastFpsUpdateTime = 0;
 
+	float m_DigitWidth0 = 0;
+	float m_DigitWidth00 = 0;
+	float m_DigitWidth000 = 0;
+	float m_DigitWidth0000 = 0;
+	float m_DigitWidth00000 = 0;
+	float m_FpsLabelWidth = 0;
+	float m_PingLabelWidth = 0;
+	float m_SnapRateLabelWidth = 0;
+
 public:
 	void UpdateServerStats();
 
 	void OnReset() override;
+	void OnWindowResize() override;
 
 	int Sizeof() const override { return sizeof(*this); }
 	void OnRender() override;

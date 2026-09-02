@@ -17,6 +17,9 @@
 #include <algorithm>
 #include <cstdint>
 
+constexpr float TextSize = 23.5f;
+constexpr float Padding = 22.0f;
+
 void CPerformanceStatistics::UpdateServerStats()
 {
 	const int CurGameTick = Client()->GameTick(g_Config.m_ClDummy);
@@ -59,6 +62,20 @@ void CPerformanceStatistics::OnReset()
 
 	m_CurrentFPS = 0;
 	m_LastFpsUpdateTime = 0;
+	OnWindowResize();
+}
+
+void CPerformanceStatistics::OnWindowResize()
+{
+	m_DigitWidth0 = TextRender()->TextWidth(TextSize, "0", -1, -1.0f);
+	m_DigitWidth00 = TextRender()->TextWidth(TextSize, "00", -1, -1.0f);
+	m_DigitWidth000 = TextRender()->TextWidth(TextSize, "000", -1, -1.0f);
+	m_DigitWidth0000 = TextRender()->TextWidth(TextSize, "0000", -1, -1.0f);
+	m_DigitWidth00000 = TextRender()->TextWidth(TextSize, "00000", -1, -1.0f);
+
+	m_FpsLabelWidth = TextRender()->TextWidth(TextSize, "FPS: ");
+	m_PingLabelWidth = TextRender()->TextWidth(TextSize, "Ping: ");
+	m_SnapRateLabelWidth = TextRender()->TextWidth(TextSize, "Snap Rate: ");
 }
 
 inline int GetDigitsIndex(int Value, int Max)
@@ -92,19 +109,11 @@ void CPerformanceStatistics::OnRender()
 		m_LastFpsUpdateTime = time_get();
 	}
 
-	constexpr float TextSize = 23.5f;
-	constexpr float Padding = 22.0f;
-
 	auto RenderModule = [this](CUIRect &Rect, const char *pText, float LabelWidth, int Value) {
-		static float s_DigitWidth0 = TextRender()->TextWidth(TextSize, "0", -1, -1.0f);
-		static float s_DigitWidth00 = TextRender()->TextWidth(TextSize, "00", -1, -1.0f);
-		static float s_DigitWidth000 = TextRender()->TextWidth(TextSize, "000", -1, -1.0f);
-		static float s_DigitWidth0000 = TextRender()->TextWidth(TextSize, "0000", -1, -1.0f);
-		static float s_DigitWidth00000 = TextRender()->TextWidth(TextSize, "00000", -1, -1.0f);
-		static constexpr int NUM_DIGIT_WIDTHS = 5;
-		static const float s_aDigitWidth[NUM_DIGIT_WIDTHS] = {s_DigitWidth0, s_DigitWidth00, s_DigitWidth000, s_DigitWidth0000, s_DigitWidth00000};
+		static constexpr int NumDigitWidths = 5;
+		const float s_aDigitWidth[NumDigitWidths] = {m_DigitWidth0, m_DigitWidth00, m_DigitWidth000, m_DigitWidth0000, m_DigitWidth00000};
 
-		int DigitIndex = GetDigitsIndex(Value, NUM_DIGIT_WIDTHS - 1);
+		int DigitIndex = GetDigitsIndex(Value, NumDigitWidths - 1);
 		float TotalWidth = LabelWidth + s_aDigitWidth[DigitIndex];
 
 		if(Rect.x <= 0.0f)
@@ -133,15 +142,12 @@ void CPerformanceStatistics::OnRender()
 
 	// The labels never change and TextSize is constexpr, so measure them once instead of laying
 	// them out again every frame.
-	static const float s_FpsLabelWidth = TextRender()->TextWidth(TextSize, "FPS: ");
-	static const float s_PingLabelWidth = TextRender()->TextWidth(TextSize, "Ping: ");
-	static const float s_SnapRateLabelWidth = TextRender()->TextWidth(TextSize, "Snap Rate: ");
 
 	CUIRect CurRect = {-1, -1, -1, -1};
 	if(g_Config.m_ClStatisticsShowFps)
-		RenderModule(CurRect, "FPS: ", s_FpsLabelWidth, m_CurrentFPS);
+		RenderModule(CurRect, "FPS: ", m_FpsLabelWidth, m_CurrentFPS);
 	if(g_Config.m_ClStatisticsShowPing)
-		RenderModule(CurRect, "Ping: ", s_PingLabelWidth, Client()->GetPredictionTime());
+		RenderModule(CurRect, "Ping: ", m_PingLabelWidth, Client()->GetPredictionTime());
 	if(g_Config.m_ClStatisticsShowSnapRate)
-		RenderModule(CurRect, "Snap Rate: ", s_SnapRateLabelWidth, m_SnapshotRate + 1);
+		RenderModule(CurRect, "Snap Rate: ", m_SnapRateLabelWidth, m_SnapshotRate + 1);
 }

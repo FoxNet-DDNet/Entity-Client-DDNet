@@ -6205,6 +6205,15 @@ int CGameClient::GetClientId(const char *pName)
 	return -1;
 }
 
+void CGameClient::OnFontChange()
+{
+	TextRender()->OnPreWindowResize();
+	OnWindowResize();
+	Editor()->OnWindowResize();
+	m_MapImages.SetTextureScale(101);
+	m_MapImages.SetTextureScale(g_Config.m_ClTextEntitiesSize);
+}
+
 void CGameClient::OnSelfDeath(bool Dummy)
 {
 	for(auto &pComponent : m_vpAll)

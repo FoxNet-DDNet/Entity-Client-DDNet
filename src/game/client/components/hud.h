@@ -104,6 +104,14 @@ class CHud : public CComponent
 	CNetObj_SpectatorCount m_PreviewSpectatorCount = {};
 	bool HasDummyActionsBox() const; // EClient
 	int ShowFps() const; // EClient
+
+
+	
+	float m_TextWidthFPS0;
+	float m_TextWidthFPS00;
+	float m_TextWidthFPS000;
+	float m_TextWidthFPS0000;
+	float m_TextWidthFPS00000;
 	void RenderFps(); // EClient: was RenderTextInfo, split so the prediction time can move on its own
 	void RenderPrediction(); // EClient
 	void RenderConnectionWarning();
@@ -139,6 +147,8 @@ class CHud : public CComponent
 	void RenderPauseNotification();
 	void RenderSuddenDeath();
 
+	float m_TextWidthScore10;
+	float m_TextWidthScore100;
 	void RenderScoreHud();
 	int m_LastLocalClientId = -1;
 
