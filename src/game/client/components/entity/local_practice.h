@@ -58,6 +58,15 @@ public:
 
 	bool IsActive() const { return m_Active; }
 
+	/**
+	 * Whether the server currently being played on is one local practice is allowed on at all.
+	 * Answers off m_GameInfo, so it can change under a running practice world, which is why
+	 * OnNewSnapshot rechecks it rather than only Start doing so.
+	 *
+	 * @param ppReason Set to a reason phrase when this returns false, if given.
+	 */
+	bool IsAvailableHere(const char **ppReason = nullptr) const;
+
 	void Toggle();
 	void Start();
 	void Stop();

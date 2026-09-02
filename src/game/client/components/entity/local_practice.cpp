@@ -196,6 +196,33 @@ CCharacter *CLocalPractice::AnyPracticeChar() const
 	return PracticeChar(!g_Config.m_ClDummy);
 }
 
+bool CLocalPractice::IsAvailableHere(const char **ppReason) const
+{
+	const CGameInfo &Info = GameClient()->m_GameInfo;
+
+	// Stepping out of the round to practice beside it is not something a mode that scores players
+	// against each other should have to account for, so none of them get it. m_Pvp covers every
+	// non-race gametype; fastcap is a race mode but is still players against players.
+	if(Info.m_Pvp || Info.m_FlagStartsRace)
+	{
+		if(ppReason)
+			*ppReason = "not available in competitive game modes";
+		return false;
+	}
+
+	// Servers that mean their map to be discovered a screen at a time turn zoom off. A practice
+	// world hands back exactly what that is holding on to, since its camera follows a tee that /tp
+	// will put anywhere on the map, so it has to follow the same switch.
+	if(!Info.m_AllowZoom)
+	{
+		if(ppReason)
+			*ppReason = "not available while the server has zoom disabled";
+		return false;
+	}
+
+	return true;
+}
+
 void CLocalPractice::Toggle()
 {
 	if(m_Active)
@@ -211,6 +238,13 @@ void CLocalPractice::Start()
 	if(Client()->State() != IClient::STATE_ONLINE)
 	{
 		Print("you have to be on a server");
+		return;
+	}
+
+	const char *pReason;
+	if(!IsAvailableHere(&pReason))
+	{
+		Print("%s", pReason);
 		return;
 	}
 
@@ -389,6 +423,16 @@ void CLocalPractice::OnNewSnapshot()
 
 	if(Client()->State() != IClient::STATE_ONLINE)
 	{
+		Stop();
+		return;
+	}
+
+	// The game info this rests on is rebuilt from every server info, so a mode change or the server
+	// turning zoom off has to end a practice world that is already running, not just refuse the next
+	const char *pReason;
+	if(!IsAvailableHere(&pReason))
+	{
+		Print("local practice ended, %s", pReason);
 		Stop();
 		return;
 	}

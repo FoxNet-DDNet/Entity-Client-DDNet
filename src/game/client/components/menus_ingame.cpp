@@ -254,6 +254,9 @@ void CMenus::RenderGame(CUIRect MainView)
 	// server has us paused. It shares the row when there is still room for it, and otherwise hangs
 	// off the panel in a tab of its own -- only as wide as the button, lined up under Spectate, and
 	// riding far enough up into the panel to cover the rounded corner it is continuing.
+	// Servers it is not allowed on get no button at all rather than one that only ever says no;
+	// IsActive still lets the way out show if the server withdrew it mid practice.
+	if(GameClient()->m_LocalPractice.IsAvailableHere() || GameClient()->m_LocalPractice.IsActive())
 	{
 		constexpr float LocalPracticeWidth = 150.0f;
 		constexpr float PanelCorner = 10.0f;
