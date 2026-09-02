@@ -76,6 +76,10 @@ private:
 	// Where the panel was put when it opened, so it stays there rather than following its element
 	std::optional<vec2> m_PopupAnchor;
 	CUIRect m_PopupRect = {0.0f, 0.0f, 0.0f, 0.0f};
+	// Whether one of the popup's values was being edited on the last frame drawn. Keystrokes belong
+	// to the field while it is, and the panel is the only thing that knows, since CUi clears its
+	// active item every frame the mouse button is not held.
+	bool m_ValueEditing = false;
 
 	CHudLayout &Layout() const;
 

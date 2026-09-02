@@ -488,7 +488,10 @@ int64_t CHudEditor::DoNumber(const void *pId, CButtonContainer *pIdLess, CButton
 	SValueSelectorProperties Props;
 	Props.m_Step = Step;
 	Props.m_Color = COLOR_POPUP_FIELD;
-	int64_t Value = Ui()->DoValueSelector(pId, &Shifter, "", Current, Min, Max, Props);
+	const SEditResult<int64_t> Result = Ui()->DoValueSelectorWithState(pId, &Shifter, "", Current, Min, Max, Props);
+	if(Result.m_State == EEditState::START || Result.m_State == EEditState::EDITING)
+		m_ValueEditing = true;
+	int64_t Value = Result.m_Value;
 
 	if(Ui()->DoButton_FontIcon(pIdLess, FontIcon::MINUS, 0, &Less, BUTTONFLAG_LEFT, IGraphics::CORNER_L, true, ControlColor(pIdLess)))
 		Value = Current - Step;
@@ -500,6 +503,8 @@ int64_t CHudEditor::DoNumber(const void *pId, CButtonContainer *pIdLess, CButton
 
 void CHudEditor::RenderPopup()
 {
+	m_ValueEditing = false;
+
 	if(!m_Popup.has_value())
 	{
 		m_PopupRect = {0.0f, 0.0f, 0.0f, 0.0f};
@@ -673,7 +678,11 @@ void CHudEditor::RenderPopup()
 		static CButtonContainer s_Less, s_More;
 		NextRow();
 		const int64_t Current = round_to_int(Placement.m_Scale * 100.0f);
-		const int64_t Value = DoNumber(&s_Scale, &s_Less, &s_More, &Row, Localize("Scale %"), Current, 35, 1000, 1);
+		// The top of the range is the one that leaves the element on the screen, and never below
+		// what it is already set to, so opening the panel cannot shrink it on its own
+		const int64_t Min = round_to_int(CHudLayout::MinScale() * 100.0f);
+		const int64_t Max = std::max<int64_t>(round_to_int(Layout().MaxScale(Element) * 100.0f), Current);
+		const int64_t Value = DoNumber(&s_Scale, &s_Less, &s_More, &Row, Localize("Scale %"), Current, Min, Max, 1);
 		if(Value != Current)
 			Layout().SetScale(Element, Value / 100.0f);
 	}
@@ -898,6 +907,14 @@ void CHudEditor::OnRender()
 
 	RenderPopup();
 
+	// A field that has been committed, cancelled, or closed along with the panel leaves its line
+	// input active behind it, because nothing draws it any more to deactivate it. Left that way it
+	// would go on swallowing keystrokes below and hold the client in text input mode. The editor
+	// shuts the console, chat and menus when it opens, so a value field is the only thing that can
+	// own a line input while it is up.
+	if(!m_ValueEditing && CLineInput::GetActiveInput() != nullptr)
+		CLineInput::GetActiveInput()->Deactivate();
+
 	// Nothing else draws a cursor in game, and the aim crosshair is not where the ui cursor is
 	RenderTools()->RenderCursor(Mouse, 12.0f);
 
@@ -935,6 +952,16 @@ bool CHudEditor::OnInput(const IInput::CEvent &Event)
 {
 	if(!m_Active)
 		return false;
+
+	// A value in the popup being typed into owns the keyboard until it is done with it. The panel
+	// drives CUi itself rather than going through the menus, so nothing else in the input stack
+	// forwards keystrokes to the field, and this has to come before the handling below so that
+	// escape cancels the edit rather than closing the popup out from under it.
+	if(CLineInput::GetActiveInput() != nullptr)
+	{
+		Ui()->OnInput(Event);
+		return true;
+	}
 
 	if(Event.m_Key == KEY_ESCAPE && (Event.m_Flags & IInput::FLAG_PRESS))
 	{

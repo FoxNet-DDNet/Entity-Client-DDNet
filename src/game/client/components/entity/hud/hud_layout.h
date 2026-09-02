@@ -299,6 +299,18 @@ public:
 	 * of bounds through a config file, a resize, or a change in its own size either.
 	 */
 	vec2 ClampOffset(EHudElement Element, vec2 Offset) const;
+
+	/**
+	 * The range a scale is allowed to take.
+	 *
+	 * The bottom is a constant, since anything smaller stops being readable at any screen size.
+	 * The top is whatever leaves the element still fitting on the screen, so that growing one
+	 * cannot push it over an edge the way clamping its position alone would allow. An element
+	 * already larger than the screen keeps life size available rather than being forced below it.
+	 */
+	static float MinScale();
+	float MaxScale(EHudElement Element) const;
+
 	void SetScale(EHudElement Element, float Scale);
 	void SetAnchor(EHudElement Element, EHudAnchor Anchor);
 	void ResetElement(EHudElement Element);

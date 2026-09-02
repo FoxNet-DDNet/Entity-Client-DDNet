@@ -1031,10 +1031,33 @@ void CHudLayout::SetOffset(EHudElement Element, vec2 Offset)
 	m_aPlacements[(int)Element].m_Offset = ClampOffset(Element, Offset + Push) - Push;
 }
 
+float CHudLayout::MinScale()
+{
+	return MIN_SCALE;
+}
+
+float CHudLayout::MaxScale(EHudElement Element) const
+{
+	if(m_BaseSize.x <= 0.0f || m_BaseSize.y <= 0.0f)
+		return MAX_SCALE;
+
+	const CRect Natural = NaturalRect(Element);
+	if(Natural.m_Size.x <= 0.0f || Natural.m_Size.y <= 0.0f)
+		return MAX_SCALE;
+
+	// The natural size is what the element reports in its own units, which does not move with the
+	// scale, so this does not chase itself while an element is being dragged larger.
+	const float Fit = std::min(m_BaseSize.x / Natural.m_Size.x, m_BaseSize.y / Natural.m_Size.y);
+	return std::clamp(Fit, 1.0f, MAX_SCALE);
+}
+
 void CHudLayout::SetScale(EHudElement Element, float Scale)
 {
 	Scale = std::round(Scale / SCALE_STEP) * SCALE_STEP;
-	Scale = std::clamp(Scale, MIN_SCALE, MAX_SCALE);
+	// Never below the element's current scale, so that an element which grew, or a screen that got
+	// smaller, cannot quietly shrink a size the user picked. It only ever caps growth.
+	const float Max = std::max(MaxScale(Element), m_aPlacements[(int)Element].m_Scale);
+	Scale = std::clamp(Scale, MIN_SCALE, Max);
 	if(m_aPlacements[(int)Element].m_Scale == Scale)
 		return;
 
