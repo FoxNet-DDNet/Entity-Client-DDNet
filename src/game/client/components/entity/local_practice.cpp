@@ -47,14 +47,14 @@ const CLocalPractice::CCommand CLocalPractice::ms_aCommands[] = {
 	{"exit", "", "Toggle the local practice world", &CLocalPractice::CmdPractice},
 	// Both spellings, because a server takes both and nobody should have to remember which one
 	// this is
-	{"tp", "<name>", "Teleport to a player", &CLocalPractice::CmdTp},
-	{"tele", "<name>", "Teleport to a player", &CLocalPractice::CmdTp},
+	{"tp", "[name]", "Teleport to a player, or to where you are spectating", &CLocalPractice::CmdTp},
+	{"tele", "[name]", "Teleport to a player, or to where you are spectating", &CLocalPractice::CmdTp},
 	{"tpreal", "", "Teleport to your real tee on the server", &CLocalPractice::CmdTpReal},
 	{"telereal", "", "Teleport to your real tee on the server", &CLocalPractice::CmdTpReal},
 	{"tpxy", "<x> <y>", "Teleport to a position in tiles", &CLocalPractice::CmdTpXy},
 	{"telexy", "<x> <y>", "Teleport to a position in tiles", &CLocalPractice::CmdTpXy},
-	{"tpcursor", "", "Teleport to your cursor", &CLocalPractice::CmdTpCursor},
-	{"telecursor", "", "Teleport to your cursor", &CLocalPractice::CmdTpCursor},
+	{"tpcursor", "[name]", "Teleport to your cursor, or to a player", &CLocalPractice::CmdTpCursor},
+	{"telecursor", "[name]", "Teleport to your cursor, or to a player", &CLocalPractice::CmdTpCursor},
 	{"lasttp", "", "Teleport back to where you last teleported from", &CLocalPractice::CmdLastTp},
 	{"rescue", "", "Teleport back to the last safe position", &CLocalPractice::CmdRescue},
 	{"r", "", "Teleport back to the last safe position", &CLocalPractice::CmdRescue},
@@ -840,6 +840,21 @@ void CLocalPractice::StepWorld(CGameWorld &World, int Tick)
 
 	World.Tick();
 	HandleTeleporters(World, Tick);
+
+	// Invincible is a "nothing freezes me" switch on the server rather than an unfreeze: every
+	// freeze path there is guarded, see CCharacter::Freeze and the m_Invincible checks through
+	// HandleTiles. Sweeping at the end of the tick reaches the same place without an invincible
+	// check having to be threaded through every freeze path in the prediction, and unlike the
+	// server's own SetInvincible it also picks up a tee that was already frozen, or deep frozen,
+	// before the switch went on. Re-looked-up rather than reusing the characters from the top of the
+	// tick, because a tick can end a character's life.
+	for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
+	{
+		const int ClientId = GameClient()->m_aLocalIds[Conn];
+		CCharacter *pChar = ClientId >= 0 ? World.GetCharacterById(ClientId) : nullptr;
+		if(pChar && pChar->Core()->m_Invincible)
+			ClearFreeze(pChar);
+	}
 }
 
 void CLocalPractice::UpdateLookahead()
@@ -1795,23 +1810,46 @@ bool CLocalPractice::ResolveTarget(const char *pName, vec2 &Pos) const
 	return false;
 }
 
+bool CLocalPractice::ViewPos(int Conn, vec2 &Pos) const
+{
+	// The practice-world stand-in for the server's CPlayer::m_ViewPos, which is where /tp and
+	// /telecursor fall back to. The server keeps it at the character's own position while the tee is
+	// alive and unpaused, and at the free camera the client sends as its target while it is not.
+	if(IsPaused(Conn))
+	{
+		Pos = GameClient()->m_Camera.m_Center;
+		return true;
+	}
+	const CCharacter *pChar = PracticeChar(Conn);
+	if(!pChar)
+		return false;
+	Pos = pChar->m_Pos;
+	return true;
+}
+
 void CLocalPractice::CmdTp(const char *pArgs)
 {
+	const int Conn = g_Config.m_ClDummy;
+	vec2 Pos;
+
+	// Mirrors CGameContext::ConTeleTo: with a name it goes to that player, and with nothing it goes
+	// to the view position. Playing, that is the tee's own position -- a teleport in place, which is
+	// still worth doing because a teleport unfreezes, resets the jumps and clears the velocity.
 	if(!pArgs[0])
 	{
-		// Deliberately not "teleport to your real tee": that is what /tpreal is for, and having the
-		// bare command do it reads as the teleport having gone wrong
-		Print("usage: /tp <name>, or /tpreal, /tpcursor, /tpxy <x> <y>");
-		return;
+		if(!ViewPos(Conn, Pos))
+		{
+			Print("nothing to teleport");
+			return;
+		}
 	}
-
-	vec2 Pos;
-	if(!ResolveTarget(pArgs, Pos))
+	else if(!ResolveTarget(pArgs, Pos))
 	{
 		Print("no player called '%s' is alive here", pArgs);
 		return;
 	}
-	if(!TeleportTo(g_Config.m_ClDummy, Pos))
+
+	if(!TeleportTo(Conn, Pos))
 		Print("nothing to teleport");
 }
 
@@ -1843,7 +1881,25 @@ void CLocalPractice::CmdTpXy(const char *pArgs)
 
 void CLocalPractice::CmdTpCursor(const char *pArgs)
 {
-	if(!TeleportTo(g_Config.m_ClDummy, GameClient()->GetCursorWorldPos()))
+	const int Conn = g_Config.m_ClDummy;
+	vec2 Pos;
+
+	// Mirrors CGameContext::ConTeleCursor: a name wins, otherwise the cursor while the tee is being
+	// played and the view position while it is paused. GetCursorWorldPos already makes that second
+	// split, because it returns the camera centre whenever the client is in a spectating state --
+	// which is the state OverrideSpectatorView puts it in while a practice tee is paused.
+	if(pArgs[0])
+	{
+		if(!ResolveTarget(pArgs, Pos))
+		{
+			Print("no player called '%s' is alive here", pArgs);
+			return;
+		}
+	}
+	else
+		Pos = GameClient()->GetCursorWorldPos();
+
+	if(!TeleportTo(Conn, Pos))
 		Print("nothing to teleport");
 }
 

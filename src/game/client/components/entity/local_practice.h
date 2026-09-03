@@ -370,6 +370,7 @@ private:
 	bool TeleportTo(int Conn, vec2 Pos);
 	static void ClearFreeze(CCharacter *pChar);
 	bool ResolveTarget(const char *pName, vec2 &Pos) const;
+	bool ViewPos(int Conn, vec2 &Pos) const;
 
 	// Practice commands. Each takes the rest of the chat line, or an empty string.
 	void CmdPractice(const char *pArgs);
