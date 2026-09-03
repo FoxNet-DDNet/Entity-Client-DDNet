@@ -621,7 +621,7 @@ public:
 		vec2 m_ImprovedPredPos = vec2(0, 0);
 		vec2 m_PrevImprovedPredPos = vec2(0, 0);
 		bool m_ValidAntipingSmooth = false;
-		float m_Uncertainty = 0.0f;
+		float m_Uncertainty = 1.0f;
 		float m_VolleyBallAngle = 0.0f;
 		bool m_IsVolleyBall = false;
 

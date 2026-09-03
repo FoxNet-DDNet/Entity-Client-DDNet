@@ -3195,6 +3195,7 @@ void CGameClient::OnPredict()
 			if(!m_Snap.m_aCharacters[i].m_Active || !m_aLastActive[i])
 			{
 				m_aClients[i].m_ValidAntipingSmooth = false;
+				m_aClients[i].m_Uncertainty = 1.0f;
 				continue;
 			}
 
@@ -3272,6 +3273,7 @@ void CGameClient::OnPredict()
 			{
 				m_aClients[i].m_PrevImprovedPredPos = PrevPredPos;
 				m_aClients[i].m_ImprovedPredPos = PredPos;
+				m_aClients[i].m_Uncertainty = 1.0f; // confidence must rebuild once history becomes valid again
 				continue;
 			}
 
@@ -3352,7 +3354,10 @@ void CGameClient::OnPredict()
 			m_aClients[i].m_ImprovedPredPos = ConfidencePos;
 			if(distance(ServerPos, PrevServerPos) > 600.0f || distance(m_aClients[i].m_PrevImprovedPredPos, m_aClients[i].m_ImprovedPredPos) > 600.0f)
 			{
+				// large jump (teleport/spawn): snap instead of smoothing through it, and don't
+				// let pre-jump confidence carry over into the post-jump prediction
 				m_aClients[i].m_PrevImprovedPredPos = m_aClients[i].m_ImprovedPredPos;
+				m_aClients[i].m_Uncertainty = 1.0f;
 			}
 			m_aClients[i].m_ValidAntipingSmooth = true;
 		}
@@ -3577,6 +3582,10 @@ void CGameClient::CClientData::Reset()
 
 	// EClient
 	m_RegularPredicted.Reset();
+	m_ImprovedPredPos = vec2(0.0f, 0.0f);
+	m_PrevImprovedPredPos = vec2(0.0f, 0.0f);
+	m_ValidAntipingSmooth = false;
+	m_Uncertainty = 1.0f;
 
 	if(m_pSkinInfo != nullptr)
 	{
