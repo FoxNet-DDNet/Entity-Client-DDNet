@@ -29,6 +29,7 @@
 #include <game/client/ui_scrollregion.h>
 #include <game/localization.h>
 
+#include <algorithm>
 #include <cstdint>
 #include <functional>
 #include <string>
@@ -40,7 +41,6 @@ using namespace std::chrono_literals;
 enum SettingTab
 {
 	SETTINGS = 0,
-	VISUAL,
 	WARLIST,
 	STATUSBAR,
 	BINDWHEEL,
@@ -76,6 +76,33 @@ constexpr float CornerRoundness = 12.0f;
 constexpr float HeaderSize = 20.0f;
 constexpr int HeaderAlignment = TEXTALIGN_MC;
 constexpr ColorRGBA BackgroundColor = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
+
+// EClient: the quick filter chips, in the order they are drawn. Nothing here is saved: a filter
+// left on across a restart just looks like settings that went missing.
+struct SSettingsFilterChip
+{
+	unsigned m_Flag;
+	const char *m_pName;
+};
+
+static const SSettingsFilterChip gs_aSettingsFilterChips[] = {
+	{FILTER_VISUAL, "Visual"},
+	{FILTER_HUD, "HUD"},
+	{FILTER_GAMEPLAY, "Gameplay"},
+	{FILTER_NETWORK, "Network"},
+	{FILTER_CHAT, "Chat"},
+	{FILTER_WARLIST, "Warlist"},
+	{FILTER_MISC, "Misc"},
+};
+
+static unsigned gs_SettingsModuleFilter = FILTER_NONE;
+
+// A module shows while no chip is on, or while it carries any of the chips that are. The chips OR
+// together, so picking a second topic widens the page rather than narrowing it to nothing.
+static bool SettingsModuleMatchesFilter(const CSettingsModule &Module)
+{
+	return gs_SettingsModuleFilter == FILTER_NONE || (Module.m_Filters & gs_SettingsModuleFilter) != 0;
+}
 
 static bool SettingsModuleMatchesSearch(const CSettingsModule &Module, const char *pSearch)
 {
@@ -123,59 +150,73 @@ static bool SettingsModuleMatchesSearch(const CSettingsModule &Module, const cha
 
 	return true;
 }
+
+// The filter and the search narrow the page together: a chip picks the topic, the search box picks
+// the setting inside it.
+static bool SettingsModuleVisible(const CSettingsModule &Module, const char *pSearch)
+{
+	return SettingsModuleMatchesFilter(Module) && SettingsModuleMatchesSearch(Module, pSearch);
+}
+
 static bool HasMatchingSettingsModules(const std::vector<CSettingsModule> &vModules, const char *pSearch)
 {
 	for(const CSettingsModule &Module : vModules)
 	{
-		if(SettingsModuleMatchesSearch(Module, pSearch))
+		if(SettingsModuleVisible(Module, pSearch))
 			return true;
 	}
 
 	return false;
 }
 
-static int CountMatchingSettingsModules(const std::vector<CSettingsModule> &vModules, const char *pSearch)
-{
-	int Matches = 0;
-	for(const CSettingsModule &Module : vModules)
-	{
-		if(SettingsModuleMatchesSearch(Module, pSearch))
-			++Matches;
-	}
-
-	return Matches;
-}
-
-static int CountSettingsSearchTermMatches(const std::vector<CSettingsModule> &vModules, const char *pSearch)
-{
-	if(pSearch == nullptr || pSearch[0] == '\0')
-		return 0;
-
-	int Matches = 0;
-	for(const CSettingsModule &Module : vModules)
-	{
-		for(const std::string_view Term : Module.m_vSearchTerms)
-		{
-			if(!Term.empty() && str_find_nocase(Term.data(), pSearch) != nullptr)
-				++Matches;
-		}
-	}
-
-	return Matches;
-}
+//static int CountMatchingSettingsModules(const std::vector<CSettingsModule> &vModules, const char *pSearch)
+//{
+//	int Matches = 0;
+//	for(const CSettingsModule &Module : vModules)
+//	{
+//		if(SettingsModuleVisible(Module, pSearch))
+//			++Matches;
+//	}
+//
+//	return Matches;
+//}
+//
+//static int CountSettingsSearchTermMatches(const std::vector<CSettingsModule> &vModules, const char *pSearch)
+//{
+//	if(pSearch == nullptr || pSearch[0] == '\0')
+//		return 0;
+//
+//	int Matches = 0;
+//	for(const CSettingsModule &Module : vModules)
+//	{
+//		if(!SettingsModuleMatchesFilter(Module))
+//			continue;
+//
+//		for(const std::string_view Term : Module.m_vSearchTerms)
+//		{
+//			if(!Term.empty() && str_find_nocase(Term.data(), pSearch) != nullptr)
+//				++Matches;
+//		}
+//	}
+//
+//	return Matches;
+//}
 
 void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect &MainView, const std::vector<CSettingsModule> &vModules, CLineInputBuffered<32> &SearchInput)
 {
-	CUIRect SearchBar, EditBox, Status;
-	constexpr float StatusFontSize = 9.0f;
-	MainView.HSplitTop(LineSize + Margin * 2.0f + StatusFontSize * 0.5f, &SearchBar, &MainView);
+	CUIRect SearchBar, Content, EditBox, ChipRow;
+	constexpr float ChipHeight = 18.0f;
+	constexpr float EditBoxHeight = EditBoxFontSize * 1.5f;
+	MainView.HSplitTop(Margin * 2.0f + EditBoxHeight + MarginSmall + ChipHeight, &SearchBar, &MainView);
 	ScrollRegion.AddRect(SearchBar);
 	{
 		const float SearchWidth = TextRender()->TextWidth(EditBoxFontSize, FontIcon::MAGNIFYING_GLASS) + 5.0f;
 
 		SearchBar.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-		SearchBar.Margin(Margin, &EditBox);
-		EditBox.HSplitTop(EditBoxFontSize * 1.5f, &EditBox, nullptr);
+		SearchBar.Margin(Margin, &Content);
+		Content.HSplitTop(EditBoxHeight, &EditBox, &Content);
+		Content.HSplitTop(MarginSmall, nullptr, &Content);
+		Content.HSplitTop(ChipHeight, &ChipRow, &Content);
 
 		TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 		TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
@@ -184,8 +225,6 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 		EditBox.VSplitLeft(SearchWidth, nullptr, &EditBox);
 
-		// EClient: a square off the end of the row, so it is on every settings page that has a
-		// search bar and needs no room of its own at any resolution
 		CUIRect HudEditorButton;
 		EditBox.VSplitRight(EditBox.h, &EditBox, &HudEditorButton);
 		EditBox.VSplitRight(Margin, &EditBox, nullptr);
@@ -201,36 +240,87 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 		SearchInput.SetEmptyText(Localize("Search"));
 		Ui()->DoClearableEditBox(&SearchInput, &EditBox, EditBoxFontSize);
 
-		Status = EditBox;
-		Status.HSplitTop(EditBoxFontSize * 1.5f + StatusFontSize * 1.5f + 1, nullptr, &Status);
+		// EClient: the quick filters. Each one is its own small rounded rect with a gap to the next,
+		// not a joined segmented control, and a selected chip fills with a color loud enough to
+		// register at a glance instead of the faint grey tint checked buttons usually get.
+		{
+			constexpr int NumChips = (int)std::size(gs_aSettingsFilterChips);
+			constexpr float ChipGap = MarginExtraSmall * 2.0f;
+			constexpr float ChipCorner = 2.0f;
+			constexpr float ChipFontSize = EditBoxFontSize;
+			constexpr ColorRGBA ChipActiveColor(0.38f, 0.46f, 0.9f, 0.65f);
+			constexpr ColorRGBA ChipInactiveColor(1.0f, 1.0f, 1.0f, 0.08f);
+			constexpr ColorRGBA ChipActiveTextColor(1.0f, 1.0f, 1.0f, 1.0f);
+			constexpr ColorRGBA ChipInactiveTextColor(0.75f, 0.75f, 0.75f, 1.0f);
 
-		char aBuf[64];
-		const int ShownModules = CountMatchingSettingsModules(vModules, SearchInput.GetString());
-		const int SearchMatches = CountSettingsSearchTermMatches(vModules, SearchInput.GetString());
+			static CButtonContainer s_aChipButtons[NumChips + 1];
 
-		str_format(aBuf, sizeof(aBuf), "Modules: %d · search matches: %d", ShownModules, SearchMatches);
-		TextRender()->TextColor(ColorRGBA(0.8f, 0.8f, 0.8f, 1.0f));
-		Ui()->DoLabel(&Status, aBuf, StatusFontSize, TEXTALIGN_ML);
-		TextRender()->TextColor(TextRender()->DefaultTextColor());
+			auto DoFilterChip = [&](CButtonContainer *pId, const char *pLabel, bool Active, CUIRect *pRect) {
+				ColorRGBA Color = Active ? ChipActiveColor : ChipInactiveColor;
+				Color.a *= Ui()->ButtonColorMul(pId);
+				pRect->Draw(Color, IGraphics::CORNER_ALL, ChipCorner);
+
+				TextRender()->TextColor(Active ? ChipActiveTextColor : ChipInactiveTextColor);
+				Ui()->DoLabel(pRect, pLabel, ChipFontSize, TEXTALIGN_MC);
+				TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+				return Ui()->DoButtonLogic(pId, Active, pRect, BUTTONFLAG_LEFT | BUTTONFLAG_RIGHT);
+			};
+
+			CUIRect Chips = ChipRow;
+			float ChipWidth = 0;
+			for(int i = 0; i < NumChips; ++i)
+			{
+				const SSettingsFilterChip &ChipInfo = gs_aSettingsFilterChips[i];
+				const float TextWidth = TextRender()->TextWidth(ChipFontSize, ChipInfo.m_pName);
+				if(TextWidth > ChipWidth - ChipGap * 2.0f)
+					ChipWidth = TextWidth + ChipGap * 2.0f;
+			}
+
+			CUIRect Chip;
+			Chips.VSplitLeft(ChipWidth, &Chip, &Chips);
+			if(DoFilterChip(&s_aChipButtons[0], EcLocalize("All"), gs_SettingsModuleFilter == FILTER_NONE, &Chip))
+				gs_SettingsModuleFilter = FILTER_NONE;
+
+			for(int i = 0; i < NumChips; ++i)
+			{
+				Chips.VSplitLeft(ChipGap, nullptr, &Chips);
+
+				const SSettingsFilterChip &ChipInfo = gs_aSettingsFilterChips[i];
+				const bool Active = (gs_SettingsModuleFilter & ChipInfo.m_Flag) != 0;
+
+				Chips.VSplitLeft(ChipWidth, &Chip, &Chips);
+				const int Result = DoFilterChip(&s_aChipButtons[i + 1], EcLocalize(ChipInfo.m_pName), Active, &Chip);
+				if(Result == BUTTONFLAG_LEFT)
+					gs_SettingsModuleFilter ^= ChipInfo.m_Flag;
+				else if(Result == BUTTONFLAG_RIGHT)
+					gs_SettingsModuleFilter = ChipInfo.m_Flag;
+			}
+		}
+
+		//char aBuf[64];
+		//const int ShownModules = CountMatchingSettingsModules(vModules, SearchInput.GetString());
+		//const int SearchMatches = CountSettingsSearchTermMatches(vModules, SearchInput.GetString());
+
+		//if(SearchInput.IsEmpty())
+		//	str_format(aBuf, sizeof(aBuf), "Modules: %d", ShownModules, SearchMatches);
+		//else
+		//	str_format(aBuf, sizeof(aBuf), "Modules: %d · search matches: %d", ShownModules, SearchMatches);
+		//TextRender()->TextColor(ColorRGBA(0.8f, 0.8f, 0.8f, 1.0f));
+		//Ui()->DoLabel(&Status, aBuf, StatusFontSize, TEXTALIGN_ML);
+		//TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 }
 
-static void RenderSettingsModules(CScrollRegion &ScrollRegion, CUIRect &ColumnRect, const std::vector<CSettingsModule> &vModules, ESettingsModuleColumn Column, const char *pSearch)
+// EClient: draws the modules named by vIndices down one column, in the order they were declared in.
+static void RenderSettingsModules(CScrollRegion &ScrollRegion, CUIRect &ColumnRect, const std::vector<CSettingsModule> &vModules, const std::vector<size_t> &vIndices, bool HasSearch)
 {
 	bool HasRenderedModule = false;
-	bool HasSearch = pSearch != nullptr && pSearch[0] != '\0';
 
-	for(const CSettingsModule &Module : vModules)
+	for(const size_t Index : vIndices)
 	{
-		if(Column != ESettingsModuleColumn::BOTH && Module.m_Column != Column)
-			continue;
-
-		if(!SettingsModuleMatchesSearch(Module, pSearch))
-			continue;
-
-		float ModuleHeight = Module.m_GetHeight(HasSearch);
-		if(ModuleHeight <= 0.0f)
-			continue;
+		const CSettingsModule &Module = vModules[Index];
+		const float ModuleHeight = Module.m_GetHeight(HasSearch);
 
 		float TopMargin = Module.m_TopMargin;
 		if(HasRenderedModule && TopMargin <= 0.0f)
@@ -246,25 +336,71 @@ static void RenderSettingsModules(CScrollRegion &ScrollRegion, CUIRect &ColumnRe
 	}
 }
 
+// EClient: on the full page, m_Column is the hand-picked reading order - the settings people touch
+// often at the top of a column, the ones they set once and forget lower down or on the other side.
+// That order only balances the two columns for the complete set, though, so once a filter or a
+// search cuts the page down to part of it, the pins are dropped and modules are dealt out in
+// declaration order into whichever column is currently shorter instead.
+static void PackSettingsModuleColumns(const std::vector<CSettingsModule> &vModules, const char *pSearch, bool HasSearch, std::vector<size_t> &vLeft, std::vector<size_t> &vRight)
+{
+	const bool Narrowed = gs_SettingsModuleFilter != FILTER_NONE || HasSearch;
+
+	float LeftHeight = 0.0f;
+	float RightHeight = 0.0f;
+
+	for(size_t Index = 0; Index < vModules.size(); ++Index)
+	{
+		const CSettingsModule &Module = vModules[Index];
+		if(!SettingsModuleVisible(Module, pSearch))
+			continue;
+
+		const float ModuleHeight = Module.m_GetHeight(HasSearch);
+		if(ModuleHeight <= 0.0f)
+			continue;
+
+		const bool Left = Narrowed ? LeftHeight <= RightHeight : Module.m_Column == ESettingsModuleColumn::LEFT;
+
+		if(Left)
+		{
+			vLeft.push_back(Index);
+			LeftHeight += ModuleHeight + Margin;
+		}
+		else
+		{
+			vRight.push_back(Index);
+			RightHeight += ModuleHeight + Margin;
+		}
+	}
+}
+
 // EClient: two columns are only worth having while each one is wide enough to read its own
 // labels. The menu is laid out in a space that is always 600 tall and as wide as the aspect ratio
 // makes it, so a narrow screen leaves the columns crowded rather than merely small.
 static void RenderSettingsModuleColumns(CScrollRegion &ScrollRegion, CUIRect MainView, const std::vector<CSettingsModule> &vModules, const char *pSearch)
 {
 	constexpr float MinColumnWidth = 360.0f;
+	const bool HasSearch = pSearch != nullptr && pSearch[0] != '\0';
+
+	std::vector<size_t> vLeft, vRight;
+	PackSettingsModuleColumns(vModules, pSearch, HasSearch, vLeft, vRight);
 
 	if((MainView.w - Margin) * 0.5f < MinColumnWidth)
 	{
 		// Everything in one column, in the order the modules are declared in, which keeps the two
 		// halves interleaved the way they read down the page rather than one half after the other
-		RenderSettingsModules(ScrollRegion, MainView, vModules, ESettingsModuleColumn::BOTH, pSearch);
+		std::vector<size_t> vBoth;
+		vBoth.reserve(vLeft.size() + vRight.size());
+		vBoth.insert(vBoth.end(), vLeft.begin(), vLeft.end());
+		vBoth.insert(vBoth.end(), vRight.begin(), vRight.end());
+		std::sort(vBoth.begin(), vBoth.end());
+		RenderSettingsModules(ScrollRegion, MainView, vModules, vBoth, HasSearch);
 		return;
 	}
 
 	CUIRect ViewLeft, ViewRight;
 	MainView.VSplitMid(&ViewLeft, &ViewRight, Margin);
-	RenderSettingsModules(ScrollRegion, ViewLeft, vModules, ESettingsModuleColumn::LEFT, pSearch);
-	RenderSettingsModules(ScrollRegion, ViewRight, vModules, ESettingsModuleColumn::RIGHT, pSearch);
+	RenderSettingsModules(ScrollRegion, ViewLeft, vModules, vLeft, HasSearch);
+	RenderSettingsModules(ScrollRegion, ViewRight, vModules, vRight, HasSearch);
 }
 
 void CMenus::RenderSettingsEntity(CUIRect MainView)
@@ -277,7 +413,7 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	int ActiveTabs = NumTabs;
 	for(int Tab = 0; Tab < NumTabs; ++Tab)
 	{
-		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, Tab))
+		if(IsFlagSet(g_Config.m_ClHideSettingsTabs, Tab))
 		{
 			ActiveTabs--;
 			if(s_CurTab == Tab)
@@ -296,7 +432,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	static CButtonContainer s_aPageTabs[NumTabs] = {};
 	const char *apTabNames[NumTabs] = {
 		EcLocalize("Settings"),
-		EcLocalize("Visuals"),
 		EcLocalize("Warlist"),
 		EcLocalize("Status bar"),
 		EcLocalize("Bindwheel"),
@@ -309,17 +444,17 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 		int LeftTab = 0;
 		int RightTab = NumTabs - 1;
 
-		if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, Tab))
+		if(IsFlagSet(g_Config.m_ClHideSettingsTabs, Tab))
 			continue;
 
 		for(int i = 0; i < Tab; ++i)
 		{
-			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, i) && IsFlagSet(g_Config.m_ClEClientSettingsTabs, LeftTab))
+			if(IsFlagSet(g_Config.m_ClHideSettingsTabs, i) && IsFlagSet(g_Config.m_ClHideSettingsTabs, LeftTab))
 				LeftTab++;
 		}
 		for(int i = NumTabs - 1; i > 0; --i)
 		{
-			if(IsFlagSet(g_Config.m_ClEClientSettingsTabs, i) && IsFlagSet(g_Config.m_ClEClientSettingsTabs, RightTab))
+			if(IsFlagSet(g_Config.m_ClHideSettingsTabs, i) && IsFlagSet(g_Config.m_ClHideSettingsTabs, RightTab))
 				RightTab--;
 		}
 
@@ -341,10 +476,6 @@ void CMenus::RenderSettingsEntity(CUIRect MainView)
 	if(s_CurTab == SettingTab::SETTINGS)
 	{
 		RenderSettingsEClient(MainView);
-	}
-	if(s_CurTab == SettingTab::VISUAL)
-	{
-		RenderSettingsVisual(MainView);
 	}
 	if(s_CurTab == SettingTab::WARLIST)
 	{
@@ -660,7 +791,6 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	CUIRect TeeRect, DevCardRect;
 
 	// Left Side
-
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
 	Ui()->DoLabel(&Label, EcLocalize("Developers:"), HeadlineFontSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
@@ -697,29 +827,25 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
 	Ui()->DoLabel(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
 
-	static int s_ShowSettings = IsFlagSet(g_Config.m_ClEClientSettingsTabs, SettingTab::SETTINGS);
+	static int s_ShowSettings = IsFlagSet(g_Config.m_ClHideSettingsTabs, SettingTab::SETTINGS);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettings, EcLocalize("Settings"), &s_ShowSettings, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::SETTINGS, s_ShowSettings);
+	SetFlag(g_Config.m_ClHideSettingsTabs, SettingTab::SETTINGS, s_ShowSettings);
 
-	static int s_ShowVisal = IsFlagSet(g_Config.m_ClEClientSettingsTabs, SettingTab::VISUAL);
-	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowVisal, EcLocalize("Visual"), &s_ShowVisal, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::VISUAL, s_ShowVisal);
-
-	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClEClientSettingsTabs, SettingTab::WARLIST);
+	static int s_ShowWarlist = IsFlagSet(g_Config.m_ClHideSettingsTabs, SettingTab::WARLIST);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowWarlist, EcLocalize("Warlist"), &s_ShowWarlist, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::WARLIST, s_ShowWarlist);
+	SetFlag(g_Config.m_ClHideSettingsTabs, SettingTab::WARLIST, s_ShowWarlist);
 
-	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClEClientSettingsTabs, SettingTab::STATUSBAR);
+	static int s_ShowStatusBar = IsFlagSet(g_Config.m_ClHideSettingsTabs, SettingTab::STATUSBAR);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowStatusBar, EcLocalize("Status Bar"), &s_ShowStatusBar, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::STATUSBAR, s_ShowStatusBar);
+	SetFlag(g_Config.m_ClHideSettingsTabs, SettingTab::STATUSBAR, s_ShowStatusBar);
 
-	static int s_ShowBindwheel = IsFlagSet(g_Config.m_ClEClientSettingsTabs, SettingTab::BINDWHEEL);
+	static int s_ShowBindwheel = IsFlagSet(g_Config.m_ClHideSettingsTabs, SettingTab::BINDWHEEL);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowBindwheel, EcLocalize("Bindwheel"), &s_ShowBindwheel, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::BINDWHEEL, s_ShowBindwheel);
+	SetFlag(g_Config.m_ClHideSettingsTabs, SettingTab::BINDWHEEL, s_ShowBindwheel);
 
-	static int s_ShowPlayerActions = IsFlagSet(g_Config.m_ClEClientSettingsTabs, SettingTab::PLAYERACTION);
+	static int s_ShowPlayerActions = IsFlagSet(g_Config.m_ClHideSettingsTabs, SettingTab::PLAYERACTION);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowPlayerActions, EcLocalize("Player Actions"), &s_ShowPlayerActions, &LeftView, LineSize);
-	SetFlag(g_Config.m_ClEClientSettingsTabs, SettingTab::PLAYERACTION, s_ShowPlayerActions);
+	SetFlag(g_Config.m_ClHideSettingsTabs, SettingTab::PLAYERACTION, s_ShowPlayerActions);
 
 	char aDeathBuf[32];
 	str_format(aDeathBuf, sizeof(aDeathBuf), "Deaths: %" PRId64, GameClient()->m_EClient.DeathCount());
@@ -2591,10 +2717,12 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	std::vector<CSettingsModule> vModules;
 
 	CUIRect Label, Button;
-	/* Automation */
+
+	/* Notifications */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
-		{"automation", "reply", "mute", "tab", "notify", "join", "message", "execute", "before", "join", "connect", "spawn", "show", "last", "name", "moved", "anti", "block"},
+		FILTER_CHAT,
+		{"notify", "notifications", "join", "message", "last", "player", "name", "moved", "tabbed", "out", "flash", "window"},
 		[](bool HasSearch) {
 			int OffSet = 0;
 			if(g_Config.m_ClNotifyOnJoin || HasSearch)
@@ -2602,21 +2730,14 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			if(g_Config.m_ClNotifyWhenLast || HasSearch)
 				OffSet += 20.0f;
 
-			if(g_Config.m_ClWarList || HasSearch)
-			{
-				OffSet += 22.5f;
-				if(g_Config.m_ClAutoAddOnNameChange || HasSearch)
-					OffSet += 22.5f;
-			}
-
-			return 225.0f + OffSet;
+			return 105.0f + OffSet;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Automation"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabel(&Button, EcLocalize("Notifications"), HeaderSize, HeaderAlignment);
 			{
 				auto RenderToggleEditBox = [&](const char *pLabel, int *pConfigValue, CLineInput *pLineInput, char *pBuffer, int BufferSize, const char *pEmptyText, float Length) {
 					ModuleRect.HSplitTop(20.0f, &Button, &MainView);
@@ -2651,22 +2772,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					ModuleRect.HSplitTop(-3.0f, &Button, &ModuleRect);
 				};
 
-				// group em up
-				{
-					std::array<float, 2> Sizes = {
-						TextRender()->TextBoundingBox(FontSize, "Tabbed reply").m_W,
-						TextRender()->TextBoundingBox(FontSize, "Muted Reply").m_W};
-					float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 23.5f;
-
-					static CLineInput s_TabbedReplyMsg;
-					RenderToggleEditBox("Tabbed reply", &g_Config.m_ClTabbedOutMsg, &s_TabbedReplyMsg, g_Config.m_ClAutoReplyMsg, sizeof(g_Config.m_ClAutoReplyMsg), "I'm Currently Tabbed Out", Length);
-					ModuleRect.HSplitTop(21.0f, &Button, &ModuleRect);
-
-					static CLineInput s_MutedReplyMsg;
-					RenderToggleEditBox("Muted Reply", &g_Config.m_ClReplyMuted, &s_MutedReplyMsg, g_Config.m_ClAutoReplyMutedMsg, sizeof(g_Config.m_ClAutoReplyMutedMsg), "You're muted, I can't see your messages", Length);
-				}
-				ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
-
 				{
 					const char *Name = g_Config.m_ClNotifyOnJoin ? "Notify on Join Name" : "Notify on Join";
 					float Length = TextRender()->TextBoundingBox(FontSize, "Notify on Join Name").m_W + 16.5f; // Give it some breathing room
@@ -2683,22 +2788,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 					static CLineInput s_NotifyMsg;
 					RenderLabeledEditBox("Notify Message", &s_NotifyMsg, g_Config.m_ClAutoNotifyMsg, sizeof(g_Config.m_ClAutoNotifyMsg), "Your Fav Person Has Joined!", Length);
-				}
-				ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
-				{
-					const char *pN = "Execute before connect";
-					float Length = TextRender()->TextBoundingBox(12.5f, pN).m_W + 3.5f; // Give it some breathing room
-
-					static CLineInput s_ReplyMsg;
-					RenderLabeledEditBox(pN, &s_ReplyMsg, g_Config.m_ClExecuteOnConnect, sizeof(g_Config.m_ClExecuteOnConnect), "Any Console Command", Length);
-				}
-				ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
-				{
-					const char *pN = "Execute on join";
-					float Length = TextRender()->TextBoundingBox(12.5f, pN).m_W + 3.5f; // Give it some breathing room
-
-					static CLineInput s_ReplyMsg;
-					RenderLabeledEditBox(pN, &s_ReplyMsg, g_Config.m_ClRunOnJoinConsole, sizeof(g_Config.m_ClRunOnJoinConsole), "Any Console Command", Length);
 				}
 				ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
 				{
@@ -2738,28 +2827,131 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				}
 				ModuleRect.HSplitTop(20.0f, &Button, &ModuleRect);
 
-				if(g_Config.m_ClWarList || HasSearch)
-				{
-					ModuleRect.HSplitTop(2.5f, &Button, &ModuleRect);
-					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-					if(DoButton_CheckBox(&g_Config.m_ClAutoAddOnNameChange, EcLocalize("Auto Add to Warlist on Name Change"), g_Config.m_ClAutoAddOnNameChange, &Button))
-						g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange ? 0 : 1;
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNotifyOnMove, "Notify when in-game character is being moved", &g_Config.m_ClNotifyOnMove, &ModuleRect, LineSize);
+			}
+		},
+	});
 
-					GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAutoAddOnNameChange, &Button, "Automatically adds players that change their name to the warlist again");
-					if(g_Config.m_ClAutoAddOnNameChange || HasSearch)
+	/* Auto Reply */
+	vModules.push_back({
+		ESettingsModuleColumn::LEFT,
+		FILTER_CHAT,
+		{"auto", "reply", "tabbed", "muted", "reply", "message", "tab"},
+		[](bool HasSearch) {
+			return 80.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Auto Reply"), HeaderSize, HeaderAlignment);
+			{
+				auto RenderToggleEditBox = [&](const char *pLabel, int *pConfigValue, CLineInput *pLineInput, char *pBuffer, int BufferSize, const char *pEmptyText, float Length) {
+					ModuleRect.HSplitTop(20.0f, &Button, &MainView);
+
+					Button.VSplitLeft(0.0f, 0, &ModuleRect);
+					Button.VSplitLeft(Length, &Label, &Button);
+					Button.VSplitRight(0.0f, &Button, &MainView);
+
+					pLineInput->SetBuffer(pBuffer, BufferSize);
+					pLineInput->SetEmptyText(pEmptyText);
+
+					if(DoButton_CheckBox(pConfigValue, pLabel, *pConfigValue, &ModuleRect))
+						*pConfigValue ^= 1;
+
+					if(*pConfigValue || HasSearch)
+						Ui()->DoEditBox(pLineInput, &Button, EditBoxFontSize);
+				};
+
+				std::array<float, 2> Sizes = {
+					TextRender()->TextBoundingBox(FontSize, "Tabbed reply").m_W,
+					TextRender()->TextBoundingBox(FontSize, "Muted Reply").m_W};
+				float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 23.5f;
+
+				static CLineInput s_TabbedReplyMsg;
+				RenderToggleEditBox("Tabbed reply", &g_Config.m_ClTabbedOutMsg, &s_TabbedReplyMsg, g_Config.m_ClAutoReplyMsg, sizeof(g_Config.m_ClAutoReplyMsg), "I'm Currently Tabbed Out", Length);
+				ModuleRect.HSplitTop(21.0f, &Button, &ModuleRect);
+
+				static CLineInput s_MutedReplyMsg;
+				RenderToggleEditBox("Muted Reply", &g_Config.m_ClReplyMuted, &s_MutedReplyMsg, g_Config.m_ClAutoReplyMutedMsg, sizeof(g_Config.m_ClAutoReplyMutedMsg), "You're muted, I can't see your messages", Length);
+			}
+		},
+	});
+
+	/* Player Indicator */
+	vModules.push_back({
+		ESettingsModuleColumn::LEFT,
+		FILTER_HUD | FILTER_VISUAL | FILTER_WARLIST,
+		{"player", "indicator", "size", "offset", "distance", "warlist", "groups", "colors", "freeze", "circle", "opacity"},
+		[](bool HasSearch) {
+			int Size = 80.0f;
+			if(g_Config.m_ClPlayerIndicator || HasSearch)
+			{
+				Size = 285.0f;
+				if(g_Config.m_ClIndicatorVariableDistance || HasSearch)
+					Size += 40.0f;
+				if(g_Config.m_ClWarListIndicator || HasSearch)
+					Size += 80.0f;
+				if(!g_Config.m_ClWarListIndicatorColors || !g_Config.m_ClWarListIndicator || HasSearch)
+					Size += 40.0f;
+			}
+
+			return Size;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Player Indicator"), HeaderSize, HeaderAlignment);
+			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, EcLocalize("Show any enabled Indicators"), &g_Config.m_ClPlayerIndicator, &ModuleRect, LineSize);
+
+				if(g_Config.m_ClPlayerIndicator || HasSearch)
+				{
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorHideOnScreen, EcLocalize("Hide indicator for tees on your screen"), &g_Config.m_ClIndicatorHideOnScreen, &ModuleRect, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicatorFreeze, EcLocalize("Show only freeze Players"), &g_Config.m_ClPlayerIndicatorFreeze, &ModuleRect, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, EcLocalize("Only show after joining a team"), &g_Config.m_ClIndicatorTeamOnly, &ModuleRect, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTees, EcLocalize("Render tiny tees instead of circles"), &g_Config.m_ClIndicatorTees, &ModuleRect, LineSize);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicator, EcLocalize("Use warlist groups for indicator"), &g_Config.m_ClWarListIndicator, &ModuleRect, LineSize);
+					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+					Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorRadius, &g_Config.m_ClIndicatorRadius, &Button, EcLocalize("Indicator size"), 1, 16);
+					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+					Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorOpacity, &g_Config.m_ClIndicatorOpacity, &Button, EcLocalize("Indicator opacity"), 0, 100);
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorVariableDistance, EcLocalize("Change indicator offset based on distance to other tees"), &g_Config.m_ClIndicatorVariableDistance, &ModuleRect, LineSize);
+					if(g_Config.m_ClIndicatorVariableDistance || HasSearch)
 					{
 						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-						static int s_NamePlatesStrong = 0;
-						if(DoButton_CheckBox(&s_NamePlatesStrong, "Notify you everytime someone gets auto added", g_Config.m_ClAutoAddOnNameChange == 2, &Button))
-							g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange != 2 ? 2 : 1;
+						Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorOffset, &g_Config.m_ClIndicatorOffset, &Button, EcLocalize("Indicator min offset"), 16, 200);
+						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+						Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorOffsetMax, &g_Config.m_ClIndicatorOffsetMax, &Button, EcLocalize("Indicator max offset"), 16, 200);
+						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+						Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorMaxDistance, &g_Config.m_ClIndicatorMaxDistance, &Button, EcLocalize("Indicator max distance"), 500, 7000);
+					}
+					else
+					{
+						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+						Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorOffset, &g_Config.m_ClIndicatorOffset, &Button, EcLocalize("Indicator offset"), 16, 200);
+					}
+					if(g_Config.m_ClWarListIndicator || HasSearch)
+					{
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicatorColors, EcLocalize("Use warlist colors instead of regular colors"), &g_Config.m_ClWarListIndicatorColors, &ModuleRect, LineSize);
+						char aBuf[128];
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicatorAll, EcLocalize("Show all warlist groups"), &g_Config.m_ClWarListIndicatorAll, &ModuleRect, LineSize);
+						str_format(aBuf, sizeof(aBuf), "Show %s group", GameClient()->m_WarList.m_WarTypes.at(1)->m_aWarName);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicatorEnemy, aBuf, &g_Config.m_ClWarListIndicatorEnemy, &ModuleRect, LineSize);
+						str_format(aBuf, sizeof(aBuf), "Show %s group", GameClient()->m_WarList.m_WarTypes.at(2)->m_aWarName);
+						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicatorTeam, aBuf, &g_Config.m_ClWarListIndicatorTeam, &ModuleRect, LineSize);
+					}
+					if(!g_Config.m_ClWarListIndicatorColors || !g_Config.m_ClWarListIndicator || HasSearch)
+					{
+						static CButtonContainer s_IndicatorAliveColorId, s_IndicatorDeadColorId, s_IndicatorSavedColorId;
+						DoLine_ColorPicker(&s_IndicatorAliveColorId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Indicator alive color"), &g_Config.m_ClIndicatorAlive, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClIndicatorAlive)), false);
+						DoLine_ColorPicker(&s_IndicatorDeadColorId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Indicator in freeze color"), &g_Config.m_ClIndicatorFreeze, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClIndicatorFreeze)), false);
+						DoLine_ColorPicker(&s_IndicatorSavedColorId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Indicator safe color"), &g_Config.m_ClIndicatorSaved, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClIndicatorSaved)), false);
 					}
 				}
-				ModuleRect.HSplitTop(2.5f, &Button, &ModuleRect);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNotifyOnMove, "Notify When Player is Being Moved", &g_Config.m_ClNotifyOnMove, &ModuleRect, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAntiSpawnBlock, "Anti Spawn Block", &g_Config.m_ClAntiSpawnBlock, &ModuleRect, LineSize);
-				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you respawn and back to team 0 when close to start line");
 			}
 		},
 	});
@@ -2767,7 +2959,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Chat Settings */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
-		{"chat", "bubble", "show", "mute", "console", "hide", "enemy", "friend", "spec", "server", "client", "warlist", "client", "id", "preview", "math", "expression", "calculator"},
+		FILTER_CHAT,
+		{"chat", "typing", "indicator", "show", "mute", "console", "hide", "enemy", "friend", "spec", "server", "client", "warlist", "client", "id", "preview", "math", "expression", "calculator"},
 		[](bool HasSearch) {
 			return 415.0f;
 		},
@@ -2778,7 +2971,10 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 			Ui()->DoLabel(&Button, EcLocalize("Chat Settings"), HeaderSize, HeaderAlignment);
 			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubble, ("Show Chat Bubble"), &g_Config.m_ClChatBubble, &ModuleRect, LineSize);
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				if(DoButton_CheckBox(&g_Config.m_ClChatBubble, ("Show Typing Indicator"), g_Config.m_ClChatBubble, &Button))
+					g_Config.m_ClChatBubble ^= 1;
+				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClChatBubble, &Button, "Lets others see the vanilla '...' icon above your tee while you're typing - not the floating chat text, that's the separate Chat Bubbles module");
 				ModuleRect.HSplitTop(2.5f, &Button, &ModuleRect);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowMutedInConsole, ("Show Messages of Muted People in The Console"), &g_Config.m_ClShowMutedInConsole, &ModuleRect, LineSize);
@@ -2791,14 +2987,14 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				ModuleRect.HSplitTop(-10.0f, &Button, &ModuleRect);
 
-				std::array<float, 5> Sizes = {
-					TextRender()->TextBoundingBox(FontSize, "Friend Prefix").m_W,
-					TextRender()->TextBoundingBox(FontSize, "Spec Prefix").m_W,
-					TextRender()->TextBoundingBox(FontSize, "Server Prefix").m_W,
-					TextRender()->TextBoundingBox(FontSize, "Client Prefix").m_W,
-					TextRender()->TextBoundingBox(FontSize, "Warlist Prefix").m_W,
+				const std::array<float, 5> Sizes = {
+					TextRender()->TextWidth(FontSize, "Friend Prefix"),
+					TextRender()->TextWidth(FontSize, "Spec Prefix"),
+					TextRender()->TextWidth(FontSize, "Server Prefix"),
+					TextRender()->TextWidth(FontSize, "Client Prefix"),
+					TextRender()->TextWidth(FontSize, "Warlist Prefix"),
 				};
-				float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 20.0f;
+				const float Length = *std::max_element(Sizes.begin(), Sizes.end()) + 20.0f;
 
 				auto RenderPrefixOption = [&](CLineInput *pLineInput, const char *pLabel, int *pConfigValue, char *pBuffer, const char *pEmptyText) {
 					ModuleRect.HSplitTop(21.0f, &Button, &ModuleRect);
@@ -2842,438 +3038,10 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		},
 	});
 
-	/* Ghost Tools */
-	vModules.push_back({
-		ESettingsModuleColumn::LEFT,
-		{"ghost", "prediction", "players", "swap", "hide"},
-		[](bool HasSearch) {
-			return 180.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Ghost Tools"), HeaderSize, HeaderAlignment);
-			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcShowOthersGhosts, EcLocalize("Show unpredicted ghosts for other players"), &g_Config.m_TcShowOthersGhosts, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcSwapGhosts, EcLocalize("Swap ghosts and normal players"), &g_Config.m_TcSwapGhosts, &ModuleRect, LineSize);
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_TcPredGhostsAlpha, &g_Config.m_TcPredGhostsAlpha, &Button, EcLocalize("Predicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_TcUnpredGhostsAlpha, &g_Config.m_TcUnpredGhostsAlpha, &Button, EcLocalize("Unpredicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcHideFrozenGhosts, EcLocalize("Hide ghosts of frozen players"), &g_Config.m_TcHideFrozenGhosts, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcRenderGhostAsCircle, EcLocalize("Render ghosts as circles"), &g_Config.m_TcRenderGhostAsCircle, &ModuleRect, LineSize);
-
-				static CButtonContainer s_ReaderButtonGhost, s_ClearButtonGhost;
-				DoLine_KeyReader(ModuleRect, s_ReaderButtonGhost, s_ClearButtonGhost, EcLocalize("Toggle ghosts key"), "toggle tc_show_others_ghosts 0 1");
-			}
-		},
-	});
-
-	/* Performance */
-#if defined(CONF_FAMILY_WINDOWS)
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"performance", "high", "lower", "process", "discord", "priority", "ddnet"},
-		[](bool HasSearch) {
-			return 80.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Performance"), HeaderSize, HeaderAlignment);
-
-			if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHighProcessPriority, ("High DDNet Process Priority"), &g_Config.m_ClHighProcessPriority, &ModuleRect, LineSize))
-				GameClient()->m_EClient.SetDDNetProcessPriority(g_Config.m_ClHighProcessPriority);
-
-			if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordNormalProcessPriority, ("Lower Discords Process Priority"), &g_Config.m_ClDiscordNormalProcessPriority, &ModuleRect, LineSize))
-			{
-				if(g_Config.m_ClDiscordNormalProcessPriority)
-					GameClient()->m_EClient.StartDiscordPriorityThread();
-			}
-		},
-	});
-#endif
-
-	/* Gores Mode */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"gores", "mode", "advanced", "disable", "weapons", "automation", "enable", "gametype"},
-		[](bool HasSearch) {
-			return 100.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Gores Mode"), HeaderSize, HeaderAlignment);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, ("\"advanced\" Gores Mode"), &g_Config.m_ClGoresMode, &ModuleRect, LineSize);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, ("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, ("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &ModuleRect, LineSize);
-		},
-	});
-
-	/* Fast Input */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"fast", "input", "reduced", "visual", "delay", "extra", "tick", "others", "increases", "latency", "makes", "dragging", "easier"},
-		[](bool HasSearch) {
-			int Size = 100.0f;
-			if(g_Config.m_TcFastInput || HasSearch)
-				Size += 25.0f;
-
-			return Size;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
-			{
-				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInput, EcLocalize("Fast Input (reduced visual delay)"), &g_Config.m_TcFastInput, &ModuleRect, LineSize))
-					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
-
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				if(Ui()->DoScrollbarOption(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
-					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
-				ModuleRect.HSplitTop(2.0f, &Button, &ModuleRect);
-
-				if(g_Config.m_TcFastInput || HasSearch)
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInputOthers, EcLocalize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_TcFastInputOthers, &ModuleRect, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSubTickAiming, "Sub-Tick aiming", &g_Config.m_ClSubTickAiming, &ModuleRect, LineSize);
-			}
-		},
-	});
-
-	/* Anti Ping Smoothing */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"anti", "ping", "smoothing", "new", "algorithm", "optimistic", "prediction", "stable", "direction", "remember", "instability", "longer", "uncertainty", "duration"},
-		[](bool HasSearch) {
-			return 120.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Anti Ping Smoothing"), HeaderSize, HeaderAlignment);
-			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingImproved, EcLocalize("Use new smoothing algorithm"), &g_Config.m_TcAntiPingImproved, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingStableDirection, EcLocalize("Optimistic prediction in stable direction"), &g_Config.m_TcAntiPingStableDirection, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingNegativeBuffer, EcLocalize("Remember instability for longer"), &g_Config.m_TcAntiPingNegativeBuffer, &ModuleRect, LineSize);
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_TcAntiPingUncertaintyScale, &g_Config.m_TcAntiPingUncertaintyScale, &Button, EcLocalize("Uncertainty duration"), 50, 400, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "%");
-			}
-		},
-	});
-
-	/* Menu Settings */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"menu", "settings", "friend", "prefix", "icon", "show", "others", "in", "menu", "spec"},
-		[](bool HasSearch) {
-			return 100.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Menu Settings"), HeaderSize, HeaderAlignment);
-			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, EcLocalize("Show Settings Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &ModuleRect, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuFriendColor, EcLocalize("Friend Color in Spectate Menu"), &g_Config.m_ClSpecMenuFriendColor, &ModuleRect, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, EcLocalize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &ModuleRect, LineSize);
-			}
-		},
-	});
-
-	/* Freeze Kill */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"freeze", "kill", "protection", "not", "moving", "only", "full", "frozen", "team", "in", "view", "wait", "until", "milli"},
-		[](bool HasSearch) {
-			int Offset = 0;
-			if(g_Config.m_ClFreezeKill || HasSearch)
-			{
-				Offset += 95.0f;
-				if(g_Config.m_ClFreezeKillWaitMs || HasSearch)
-					Offset += 25.0f;
-			}
-
-			return 75.0f + Offset;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Freeze Kill"), HeaderSize, HeaderAlignment);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKill, EcLocalize("Kill on Freeze"), &g_Config.m_ClFreezeKill, &ModuleRect, LineSize);
-
-			if(g_Config.m_ClFreezeKill || HasSearch)
-			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, EcLocalize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillNotMoving, EcLocalize("Don't Kill if Moving"), &g_Config.m_ClFreezeKillNotMoving, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, EcLocalize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamInView, EcLocalize("Dont Kill if Teammate is in View"), &g_Config.m_ClFreezeKillTeamInView, &ModuleRect, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, EcLocalize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &ModuleRect, LineSize);
-				if(g_Config.m_ClFreezeKillWaitMs || HasSearch)
-				{
-					ModuleRect.HSplitTop(2 * LineSize, &Button, &ModuleRect);
-					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, EcLocalize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
-				}
-			}
-		},
-	});
-
-	/* Anti Latency Tools */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"latency", "tools", "prediction", "anti", "ping", "margin", "frozen", "freeze"},
-		[](bool HasSearch) {
-			int Offset = 0;
-			if(g_Config.m_TcRemoveAnti || HasSearch)
-				Offset += 40.0f;
-			if(g_Config.m_TcPredMarginInFreeze || HasSearch)
-				Offset += 20.0f;
-
-			return 120.0f + Offset;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Anti Latency Tools"), HeaderSize, HeaderAlignment);
-			{
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_ClPredictionMargin, &g_Config.m_ClPredictionMargin, &Button, EcLocalize("Prediction Margin"), 10, 75, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcRemoveAnti, EcLocalize("Remove prediction & antiping in freeze"), &g_Config.m_TcRemoveAnti, &ModuleRect, LineSize);
-				if(g_Config.m_TcRemoveAnti || HasSearch)
-				{
-					if(g_Config.m_TcUnfreezeLagDelayTicks < g_Config.m_TcUnfreezeLagTicks)
-						g_Config.m_TcUnfreezeLagDelayTicks = g_Config.m_TcUnfreezeLagTicks;
-					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-					Ui()->DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagTicks, &g_Config.m_TcUnfreezeLagTicks, &Button, EcLocalize("Amount"), 100, 300, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
-					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-					Ui()->DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagDelayTicks, &g_Config.m_TcUnfreezeLagDelayTicks, &Button, EcLocalize("Delay"), 100, 3000, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
-				}
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcUnpredOthersInFreeze, EcLocalize("Dont predict other players if you are frozen"), &g_Config.m_TcUnpredOthersInFreeze, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcPredMarginInFreeze, EcLocalize("Adjust your prediction margin while frozen"), &g_Config.m_TcPredMarginInFreeze, &ModuleRect, LineSize);
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				if(g_Config.m_TcPredMarginInFreeze || HasSearch)
-				{
-					Ui()->DoScrollbarOption(&g_Config.m_TcPredMarginInFreezeAmount, &g_Config.m_TcPredMarginInFreezeAmount, &Button, EcLocalize("Frozen Margin"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "ms");
-				}
-			}
-		},
-	});
-
-	static CLineInputBuffered<32> s_SettingsSearchInput;
-	RenderSettingsModuleSearchBar(s_ScrollRegion, MainView, vModules, s_SettingsSearchInput);
-	MainView.HSplitTop(10.0f, nullptr, &MainView);
-
-	const char *pSearch = s_SettingsSearchInput.GetString();
-
-	if(HasMatchingSettingsModules(vModules, pSearch))
-	{
-		RenderSettingsModuleColumns(s_ScrollRegion, MainView, vModules, pSearch);
-	}
-	else
-	{
-		CUIRect NoResultsRect;
-		MainView.HSplitTop(LineSize, &NoResultsRect, &MainView);
-		if(s_ScrollRegion.AddRect(NoResultsRect))
-			Ui()->DoLabel(&NoResultsRect, "No settings match your search", FontSize, TEXTALIGN_MC);
-	}
-
-	s_ScrollRegion.End();
-}
-
-// EClient: the button that opens the HUD editor, drawn filling whatever rect it is handed. It
-// appears in a couple of the modules that are mostly about HUD elements, and once in the search bar
-// where it is reachable from any settings page regardless of which modules are on screen.
-void CMenus::DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect)
-{
-	CUIRect Button = *pRect;
-
-	const IClient::EClientState State = Client()->State();
-	const bool Ingame = State == IClient::STATE_ONLINE || State == IClient::STATE_DEMOPLAYBACK;
-
-	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
-	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
-
-	TextRender()->TextOutlineColor(TextRender()->DefaultTextOutlineColor());
-	TextRender()->TextColor(TextRender()->DefaultTextSelectionColor());
-	if(Ui()->HotItem() == pId && Ingame)
-		TextRender()->TextColor(TextRender()->DefaultTextColor());
-
-	ColorRGBA Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
-	if(Ingame)
-		Color.a *= Ui()->ButtonColorMul(pId);
-
-	Button.Draw(Color, IGraphics::CORNER_ALL, 5.0f);
-
-	// Sized off the rect rather than a constant, so it fits whichever of the two places it is in
-	Ui()->DoLabel(&Button, FontIcon::BRUSH, Button.h * CUi::ms_FontmodHeight * 0.7f, TEXTALIGN_MC);
-
-	TextRender()->SetRenderFlags(0);
-	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
-	TextRender()->TextColor(TextRender()->DefaultTextColor());
-
-	GameClient()->m_Tooltips.DoToolTip(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor");
-
-	if(Ui()->DoButtonLogic(pId, 0, &Button, BUTTONFLAG_LEFT) && Ingame)
-		GameClient()->m_HudEditor.ToggleHudEditor();
-}
-
-void CMenus::RenderSettingsVisual(CUIRect MainView)
-{
-	static CScrollRegion s_ScrollRegion;
-	CScrollRegionParams ScrollParams;
-	ScrollParams.m_ScrollUnit = 60.0f;
-	ScrollParams.m_ForceShowScrollbar = true;
-	ScrollParams.m_ScrollbarMargin = 5.0f;
-	s_ScrollRegion.Begin(&MainView, &ScrollParams);
-
-	std::vector<CSettingsModule> vModules;
-
-	CUIRect Label, Button;
-
-	auto RenderHudEditorButton = [this](CButtonContainer *pId, const CUIRect *pRect) {
-		// Tucked into the module's top right corner. The drawing itself is shared with the copy
-		// that sits in the search bar.
-		CUIRect Temp = *pRect;
-		constexpr float a = HeaderSize + MarginExtraSmall;
-		Temp.y += MarginSmall;
-		Temp.h = a;
-		Temp.x = Temp.x + Temp.w - a - MarginExtraSmall;
-		Temp.w = a;
-		DoHudEditorButton(pId, &Temp);
-	};
-
-	const bool RainbowOn = g_Config.m_ClRainbowHook || g_Config.m_ClRainbowTees || g_Config.m_ClRainbowWeapon || g_Config.m_ClRainbowOthers;
-	/* Cosmetics */
-	vModules.push_back({
-		ESettingsModuleColumn::LEFT,
-		{"cosmetic", "settings", "small", "skin", "effects", "color", "others", "rainbow", "tees", "weapons", "hook", "others", "speed"},
-		[&](bool HasSearch) {
-			int Offset = 0;
-			if(RainbowOn || HasSearch)
-				Offset += 20.0f;
-
-			return 235.0f + Offset;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Cosmetic Settings"), HeaderSize, HeaderAlignment);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &ModuleRect, LineMargin);
-
-			static std::vector<const char *> s_EffectDropDownNames;
-			s_EffectDropDownNames = {EcLocalize("No Effect"), EcLocalize("Sparkle effect"), EcLocalize("Fire Trail Effect"), EcLocalize("Switch Effect")};
-			static CUi::SDropDownState s_EffectDropDownState;
-			static CScrollRegion s_EffectDropDownScrollRegion;
-			s_EffectDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_EffectDropDownScrollRegion;
-			int EffectSelectedOld = g_Config.m_ClEffect;
-			CUIRect EffectDropDownRect;
-			ModuleRect.HSplitTop(LineSize, &EffectDropDownRect, &ModuleRect);
-			const int EffectSelectedNew = Ui()->DoDropDown(&EffectDropDownRect, EffectSelectedOld, s_EffectDropDownNames.data(), s_EffectDropDownNames.size(), s_EffectDropDownState);
-			Ui()->UpdatePopupMenuOffset(&s_EffectDropDownState.m_SelectionPopupContext, EffectDropDownRect.x, EffectDropDownRect.y);
-
-			if(s_ScrollRegion.RectClipped(EffectDropDownRect))
-			{
-				Ui()->ClosePopupMenu(&s_EffectDropDownState.m_SelectionPopupContext);
-			}
-
-			if(EffectSelectedOld != EffectSelectedNew)
-			{
-				g_Config.m_ClEffect = EffectSelectedNew;
-				if(g_Config.m_ClEffectSpeedOverride)
-				{
-					if(g_Config.m_ClEffect == EFFECT_SPARKLE)
-						g_Config.m_ClEffectSpeed = 75;
-					else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL)
-						g_Config.m_ClEffectSpeed = 125;
-					else if(g_Config.m_ClEffect == EFFECT_SWITCH)
-						g_Config.m_ClEffectSpeed = 150;
-				}
-			}
-
-			ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectColors, ("Effect Color"), &g_Config.m_ClEffectColors, &ModuleRect, LineMargin);
-
-			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClEffectColors, &ModuleRect, "Doesn't work if the sprite already has a set color\nMake the sprite the color you want if it doesn't work");
-			if(g_Config.m_ClEffectColors)
-			{
-				static CButtonContainer s_EffectR;
-				ModuleRect.HSplitTop(-3.0f, &Label, &ModuleRect);
-				ModuleRect.HSplitTop(-17.0f, &Button, &ModuleRect);
-				DoLine_ColorPicker(&s_EffectR, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize(""), &g_Config.m_ClEffectColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClEffectColor)), true);
-				ModuleRect.HSplitTop(-10.0f, &Button, &ModuleRect);
-			}
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectOthers, ("Effect Others"), &g_Config.m_ClEffectOthers, &ModuleRect, LineMargin);
-
-			ModuleRect.HSplitTop(MarginSmall, &Button, &ModuleRect);
-
-			// ***** Rainbow ***** //
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowTees, EcLocalize("Rainbow Tees"), &g_Config.m_ClRainbowTees, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowWeapon, EcLocalize("Rainbow weapons"), &g_Config.m_ClRainbowWeapon, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowHook, EcLocalize("Rainbow hook"), &g_Config.m_ClRainbowHook, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowOthers, EcLocalize("Rainbow others"), &g_Config.m_ClRainbowOthers, &ModuleRect, LineSize);
-
-			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
-			static std::vector<const char *> s_RainbowDropDownNames;
-			s_RainbowDropDownNames = {EcLocalize("Rainbow"), EcLocalize("Pulse"), EcLocalize("Black"), EcLocalize("Random")};
-			static CUi::SDropDownState s_RainbowDropDownState;
-			static CScrollRegion s_RainbowDropDownScrollRegion;
-			s_RainbowDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_RainbowDropDownScrollRegion;
-			int RainbowSelectedOld = g_Config.m_ClRainbowMode - 1;
-			CUIRect RainbowDropDownRect;
-			ModuleRect.HSplitTop(LineSize, &RainbowDropDownRect, &ModuleRect);
-			const int RainbowSelectedNew = Ui()->DoDropDown(&RainbowDropDownRect, RainbowSelectedOld, s_RainbowDropDownNames.data(), s_RainbowDropDownNames.size(), s_RainbowDropDownState);
-			Ui()->UpdatePopupMenuOffset(&s_RainbowDropDownState.m_SelectionPopupContext, RainbowDropDownRect.x, RainbowDropDownRect.y);
-
-			if(s_ScrollRegion.RectClipped(RainbowDropDownRect))
-			{
-				Ui()->ClosePopupMenu(&s_RainbowDropDownState.m_SelectionPopupContext);
-			}
-
-			if(RainbowSelectedOld != RainbowSelectedNew)
-			{
-				g_Config.m_ClRainbowMode = RainbowSelectedNew + 1;
-			}
-			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
-			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-			if(RainbowOn || HasSearch)
-				Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, EcLocalize("Rainbow speed"), 0, 200, &CUi::ms_LogarithmicScrollbarScale, 0, "%");
-
-			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
-			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
-		},
-	});
-
 	/* Night Shift */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
+		FILTER_VISUAL,
 		{"night", "shift", "warm", "temperature", "kelvin", "blue", "light", "eye", "strain", "sunset", "sunrise", "schedule", "latitude", "longitude"},
 		[&](bool HasSearch) {
 			const bool Scheduled = g_Config.m_ClNightShiftSchedule != NIGHT_SHIFT_SCHEDULE_ALWAYS;
@@ -3293,7 +3061,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 			Ui()->DoLabel(&Button, EcLocalize("Night Shift"), HeaderSize, HeaderAlignment);
 
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNightShift, EcLocalize("Warm the screen after dark"), &g_Config.m_ClNightShift, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNightShift, EcLocalize("Use Night Shift"), &g_Config.m_ClNightShift, &ModuleRect, LineSize);
 			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClNightShift, &ModuleRect, "Shifts the colors of everything on screen towards red, which is easier on the eyes at night");
 
 			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
@@ -3397,143 +3165,463 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		},
 	});
 
-	/* Trails */
+	/* Ghost Tools */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
-		{"trail", "settings", "color", "mode", "solid", "tee", "rainbow", "speed", "width", "length", "alpha"},
+		FILTER_GAMEPLAY | FILTER_VISUAL,
+		{"ghost", "prediction", "players", "swap", "hide"},
 		[](bool HasSearch) {
-			int Offset = 0;
-			if(g_Config.m_EcTeeTrailColorMode == CTrails::COLORMODE_SOLID || HasSearch)
-				Offset += ColorPickerLineSize + ColorPickerLineSpacing;
-
-			return 205.0f + Offset;
+			return 180.0f;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Tee Trails"), HeaderSize, HeaderAlignment);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrail, EcLocalize("Enable tee trails"), &g_Config.m_EcTeeTrail, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailOthers, EcLocalize("Show other tees' trails"), &g_Config.m_EcTeeTrailOthers, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailFade, EcLocalize("Fade trail alpha"), &g_Config.m_EcTeeTrailFade, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailTaper, EcLocalize("Taper trail width"), &g_Config.m_EcTeeTrailTaper, &ModuleRect, LineSize);
-
-			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
-			std::vector<const char *> vTrailDropDownNames;
-			vTrailDropDownNames = {EcLocalize("Solid"), EcLocalize("Tee"), EcLocalize("Rainbow"), EcLocalize("Speed")};
-			static CUi::SDropDownState s_TrailDropDownState;
-			static CScrollRegion s_TrailDropDownScrollRegion;
-			s_TrailDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_TrailDropDownScrollRegion;
-			int TrailSelectedOld = g_Config.m_EcTeeTrailColorMode - 1;
-			CUIRect TrailDropDownRect;
-			ModuleRect.HSplitTop(LineSize, &TrailDropDownRect, &ModuleRect);
-			const int TrailSelectedNew = Ui()->DoDropDown(&TrailDropDownRect, TrailSelectedOld, vTrailDropDownNames.data(), vTrailDropDownNames.size(), s_TrailDropDownState);
-			Ui()->UpdatePopupMenuOffset(&s_TrailDropDownState.m_SelectionPopupContext, TrailDropDownRect.x, TrailDropDownRect.y);
-
-			if(s_ScrollRegion.RectClipped(TrailDropDownRect))
+			Ui()->DoLabel(&Button, EcLocalize("Ghost Tools"), HeaderSize, HeaderAlignment);
 			{
-				Ui()->ClosePopupMenu(&s_TrailDropDownState.m_SelectionPopupContext);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcShowOthersGhosts, EcLocalize("Show unpredicted ghosts for other players"), &g_Config.m_TcShowOthersGhosts, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcSwapGhosts, EcLocalize("Swap ghosts and normal players"), &g_Config.m_TcSwapGhosts, &ModuleRect, LineSize);
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoScrollbarOption(&g_Config.m_TcPredGhostsAlpha, &g_Config.m_TcPredGhostsAlpha, &Button, EcLocalize("Predicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoScrollbarOption(&g_Config.m_TcUnpredGhostsAlpha, &g_Config.m_TcUnpredGhostsAlpha, &Button, EcLocalize("Unpredicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcHideFrozenGhosts, EcLocalize("Hide ghosts of frozen players"), &g_Config.m_TcHideFrozenGhosts, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcRenderGhostAsCircle, EcLocalize("Render ghosts as circles"), &g_Config.m_TcRenderGhostAsCircle, &ModuleRect, LineSize);
+
+				static CButtonContainer s_ReaderButtonGhost, s_ClearButtonGhost;
+				DoLine_KeyReader(ModuleRect, s_ReaderButtonGhost, s_ClearButtonGhost, EcLocalize("Toggle ghosts key"), "toggle tc_show_others_ghosts 0 1");
 			}
-
-			if(TrailSelectedOld != TrailSelectedNew)
-			{
-				g_Config.m_EcTeeTrailColorMode = TrailSelectedNew + 1;
-			}
-			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
-
-			static CButtonContainer s_TeeTrailColor;
-			if(g_Config.m_EcTeeTrailColorMode == CTrails::COLORMODE_SOLID || HasSearch)
-				DoLine_ColorPicker(&s_TeeTrailColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Tee trail color"), &g_Config.m_EcTeeTrailColor, ColorRGBA(1.0f, 1.0f, 1.0f), false);
-
-			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailWidth, &g_Config.m_EcTeeTrailWidth, &Button, EcLocalize("Trail width"), 0, 20);
-			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailLength, &g_Config.m_EcTeeTrailLength, &Button, EcLocalize("Trail length"), 0, 200);
-			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailAlpha, &g_Config.m_EcTeeTrailAlpha, &Button, EcLocalize("Trail alpha"), 0, 100);
 		},
 	});
 
-	/* Physic Balls */
+	/* Performance */
+#if defined(CONF_FAMILY_WINDOWS)
 	vModules.push_back({
-		ESettingsModuleColumn::LEFT,
-		{"physic", "balls", "new", "ball", "cursor", "amount", "ball", "skin"},
+		ESettingsModuleColumn::RIGHT,
+		FILTER_MISC,
+		{"performance", "high", "lower", "process", "discord", "priority", "ddnet"},
 		[](bool HasSearch) {
-			return 120;
+			return 80.0f;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, "Physic Balls", HeaderSize, HeaderAlignment);
+			Ui()->DoLabel(&Button, EcLocalize("Performance"), HeaderSize, HeaderAlignment);
 
-			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHighProcessPriority, ("High DDNet Process Priority"), &g_Config.m_ClHighProcessPriority, &ModuleRect, LineSize))
+				GameClient()->m_EClient.SetDDNetProcessPriority(g_Config.m_ClHighProcessPriority);
 
-			char aBuf[64];
-			str_format(aBuf, sizeof(aBuf), "Ball amount: %" PRIzu, GameClient()->m_PhysicBalls.GetBallCount());
+			if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordNormalProcessPriority, ("Lower Discords Process Priority"), &g_Config.m_ClDiscordNormalProcessPriority, &ModuleRect, LineSize))
+			{
+				if(g_Config.m_ClDiscordNormalProcessPriority)
+					GameClient()->m_EClient.StartDiscordPriorityThread();
+			}
+		},
+	});
+#endif
 
-			CUIRect BallAmountLabel, ClearButton;
-			Button.VSplitRight(45.0f, &BallAmountLabel, &ClearButton);
-			BallAmountLabel.VSplitRight(MarginSmall, &BallAmountLabel, nullptr);
+	/* Gores Mode */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_GAMEPLAY,
+		{"gores", "mode", "advanced", "disable", "weapons", "automation", "enable", "gametype"},
+		[](bool HasSearch) {
+			return 100.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
 
-			Ui()->DoLabel(&BallAmountLabel, aBuf, FontSize, TEXTALIGN_ML);
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Gores Mode"), HeaderSize, HeaderAlignment);
 
-			static CButtonContainer s_ClearBallsButton;
-			const ColorRGBA ButtonColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, EcLocalize("Enable Gores Mode"), &g_Config.m_ClGoresMode, &ModuleRect, LineSize);
 
-			if(Ui()->DoButton_FontIcon(&s_ClearBallsButton, FontIcon::TRASH, 0, &ClearButton, BUTTONFLAG_LEFT))
-				GameClient()->m_PhysicBalls.OnReset();
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, EcLocalize("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, EcLocalize("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &ModuleRect, LineSize);
+		},
+	});
+
+	/* Fast Input */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_GAMEPLAY | FILTER_NETWORK,
+		{"fast", "input", "reduced", "visual", "delay", "extra", "tick", "others", "increases", "latency", "makes", "dragging", "easier"},
+		[](bool HasSearch) {
+			int Size = 100.0f;
+			if(g_Config.m_TcFastInput || HasSearch)
+				Size += 25.0f;
+
+			return Size;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
+			{
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInput, EcLocalize("Fast Input (reduced visual delay)"), &g_Config.m_TcFastInput, &ModuleRect, LineSize))
+					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
+
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				if(Ui()->DoScrollbarOption(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
+					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
+				ModuleRect.HSplitTop(2.0f, &Button, &ModuleRect);
+
+				if(g_Config.m_TcFastInput || HasSearch)
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInputOthers, EcLocalize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_TcFastInputOthers, &ModuleRect, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSubTickAiming, EcLocalize("Sub-Tick aiming"), &g_Config.m_ClSubTickAiming, &ModuleRect, LineSize);
+			}
+		},
+	});
+
+	/* Anti Ping Smoothing */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_NETWORK | FILTER_GAMEPLAY,
+		{"anti", "ping", "smoothing", "new", "algorithm", "optimistic", "prediction", "stable", "direction", "remember", "instability", "longer", "uncertainty", "duration"},
+		[](bool HasSearch) {
+			return 120.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Anti Ping Smoothing"), HeaderSize, HeaderAlignment);
+			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingImproved, EcLocalize("Use new smoothing algorithm"), &g_Config.m_TcAntiPingImproved, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingStableDirection, EcLocalize("Optimistic prediction in stable direction"), &g_Config.m_TcAntiPingStableDirection, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingNegativeBuffer, EcLocalize("Remember instability for longer"), &g_Config.m_TcAntiPingNegativeBuffer, &ModuleRect, LineSize);
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoScrollbarOption(&g_Config.m_TcAntiPingUncertaintyScale, &g_Config.m_TcAntiPingUncertaintyScale, &Button, EcLocalize("Uncertainty duration"), 50, 400, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "%");
+			}
+		},
+	});
+
+	// EClient: the modules that used to live on their own Visuals tab. They are all one page
+	// now, and the quick filter chips are what separates them.
+	auto RenderHudEditorButton = [this](CButtonContainer *pId, const CUIRect *pRect) {
+		// Tucked into the module's top right corner. The drawing itself is shared with the copy
+		// that sits in the search bar.
+		CUIRect Temp = *pRect;
+		constexpr float a = HeaderSize + MarginExtraSmall;
+		Temp.y += MarginSmall;
+		Temp.h = a;
+		Temp.x = Temp.x + Temp.w - a - MarginExtraSmall;
+		Temp.w = a;
+		DoHudEditorButton(pId, &Temp);
+	};
+
+#if MEDIA_PLAYER_WINRT || MEDIA_PLAYER_DBUS
+	/* Media Island */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_HUD,
+		{"media", "music", "island", "visualizer", "size", "alignment", "bottom", "center"},
+		[](bool HasSearch) {
+			int Offset = 0;
+
+			if(g_Config.m_ClMediaIslandVisualizer || HasSearch)
+				Offset += LineSize;
+
+			return 110.0f + Offset;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			static CButtonContainer Id;
+			RenderHudEditorButton(&Id, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Media Island"), HeaderSize, HeaderAlignment);
+
+			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMediaIsland, "Enable media island", &g_Config.m_ClMediaIsland, &ModuleRect, LineSize);
+
+				static CButtonContainer s_IslandColor;
+				DoLine_ColorPicker(&s_IslandColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Island color"), &g_Config.m_ClMediaIslandColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClMediaIslandColor, true)), false, nullptr, true);
+
+				//ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				//Ui()->DoScrollbarOption(&g_Config.m_ClMediaIslandAnimation, &g_Config.m_ClMediaIslandAnimation, &Button, "Animation Time", 0, 300, &CUi::ms_LinearScrollbarScale, 0u, "");
+				//GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClMediaIslandAnimation, &Button, "Time it takes for the Islands animation, lower = slower", FontSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMediaIslandVisualizer, "Show Visualizer", &g_Config.m_ClMediaIslandVisualizer, &ModuleRect, LineSize);
+
+				if(g_Config.m_ClMediaIslandVisualizer || HasSearch)
+				{
+					static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}};
+					int Value = g_Config.m_ClMediaIslandVisualizerAlignment;
+					if(DoLine_RadioMenu(ModuleRect, EcLocalize("Visualizer Alignment:"), s_vButtonContainers, {"Bottom", "Center"}, {1, 2}, Value))
+					{
+						g_Config.m_ClMediaIslandVisualizerAlignment = Value;
+					}
+				}
+			}
+		},
+	});
+#endif
+
+	/* Chat Bubbles */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_CHAT | FILTER_VISUAL,
+		{"chat", "bubble", "player", "fade", "in", "out", "size"},
+		[](bool HasSearch) {
+			return 145.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Chat Bubbles"), HeaderSize, HeaderAlignment);
+			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubbles, EcLocalize("Show Chatbubbles above players"), &g_Config.m_ClChatBubbles, &ModuleRect, LineSize);
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoScrollbarOption(&g_Config.m_ClChatBubbleSize, &g_Config.m_ClChatBubbleSize, &Button, EcLocalize("Chat Bubble Size"), 20, 30);
+
+				ModuleRect.HSplitTop(MarginSmall + LineSize, &Button, &ModuleRect);
+				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleShowTime, &g_Config.m_ClChatBubbleShowTime, &Button, EcLocalize("Show the Bubbles for"), 200, 1000, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeIn, &g_Config.m_ClChatBubbleFadeIn, &Button, EcLocalize("fade in for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeOut, &g_Config.m_ClChatBubbleFadeOut, &Button, EcLocalize("fade out for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
+			}
+		},
+	});
+
+	/* Menu Settings */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_MISC,
+		{"menu", "settings", "friend", "prefix", "icon", "show", "others", "in", "menu", "spec"},
+		[](bool HasSearch) {
+			return 100.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Menu Settings"), HeaderSize, HeaderAlignment);
+			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, EcLocalize("Show Settings Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &ModuleRect, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuFriendColor, EcLocalize("Friend Color in Spectate Menu"), &g_Config.m_ClSpecMenuFriendColor, &ModuleRect, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, EcLocalize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &ModuleRect, LineSize);
+			}
+		},
+	});
+
+	/* Freeze Kill */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_GAMEPLAY,
+		{"freeze", "kill", "protection", "not", "moving", "only", "full", "frozen", "team", "in", "view", "wait", "until", "milli"},
+		[](bool HasSearch) {
+			int Offset = 0;
+			if(g_Config.m_ClFreezeKill || HasSearch)
+			{
+				Offset += 95.0f;
+				if(g_Config.m_ClFreezeKillWaitMs || HasSearch)
+					Offset += 25.0f;
+			}
+
+			return 75.0f + Offset;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Freeze Kill"), HeaderSize, HeaderAlignment);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKill, EcLocalize("Kill on Freeze"), &g_Config.m_ClFreezeKill, &ModuleRect, LineSize);
+
+			if(g_Config.m_ClFreezeKill || HasSearch)
+			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillIgnoreKillProt, EcLocalize("Ignore Kill Protection"), &g_Config.m_ClFreezeKillIgnoreKillProt, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillNotMoving, EcLocalize("Don't Kill if Moving"), &g_Config.m_ClFreezeKillNotMoving, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillOnlyFullFrozen, EcLocalize("Only Kill if Fully Frozen"), &g_Config.m_ClFreezeKillOnlyFullFrozen, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillTeamInView, EcLocalize("Dont Kill if Teammate is in View"), &g_Config.m_ClFreezeKillTeamInView, &ModuleRect, LineSize);
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKillWaitMs, EcLocalize("Wait Until Kill"), &g_Config.m_ClFreezeKillWaitMs, &ModuleRect, LineSize);
+				if(g_Config.m_ClFreezeKillWaitMs || HasSearch)
+				{
+					ModuleRect.HSplitTop(2 * LineSize, &Button, &ModuleRect);
+					Ui()->DoScrollbarOption(&g_Config.m_ClFreezeKillMs, &g_Config.m_ClFreezeKillMs, &Button, EcLocalize("Milliseconds to Wait For"), 1, 5000, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, "ms");
+				}
+			}
+		},
+	});
+
+	/* Anti Latency Tools */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_NETWORK | FILTER_GAMEPLAY,
+		{"latency", "tools", "prediction", "anti", "ping", "margin", "frozen", "freeze"},
+		[](bool HasSearch) {
+			int Offset = 0;
+			if(g_Config.m_TcRemoveAnti || HasSearch)
+				Offset += 40.0f;
+			if(g_Config.m_TcPredMarginInFreeze || HasSearch)
+				Offset += 20.0f;
+
+			return 120.0f + Offset;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Anti Latency Tools"), HeaderSize, HeaderAlignment);
+			{
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoScrollbarOption(&g_Config.m_ClPredictionMargin, &g_Config.m_ClPredictionMargin, &Button, EcLocalize("Prediction Margin"), 10, 75, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcRemoveAnti, EcLocalize("Remove prediction & antiping in freeze"), &g_Config.m_TcRemoveAnti, &ModuleRect, LineSize);
+				if(g_Config.m_TcRemoveAnti || HasSearch)
+				{
+					if(g_Config.m_TcUnfreezeLagDelayTicks < g_Config.m_TcUnfreezeLagTicks)
+						g_Config.m_TcUnfreezeLagDelayTicks = g_Config.m_TcUnfreezeLagTicks;
+					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+					Ui()->DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagTicks, &g_Config.m_TcUnfreezeLagTicks, &Button, EcLocalize("Amount"), 100, 300, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+					Ui()->DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagDelayTicks, &g_Config.m_TcUnfreezeLagDelayTicks, &Button, EcLocalize("Delay"), 100, 3000, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+				}
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcUnpredOthersInFreeze, EcLocalize("Dont predict other players if you are frozen"), &g_Config.m_TcUnpredOthersInFreeze, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcPredMarginInFreeze, EcLocalize("Adjust your prediction margin while frozen"), &g_Config.m_TcPredMarginInFreeze, &ModuleRect, LineSize);
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				if(g_Config.m_TcPredMarginInFreeze || HasSearch)
+				{
+					Ui()->DoScrollbarOption(&g_Config.m_TcPredMarginInFreezeAmount, &g_Config.m_TcPredMarginInFreezeAmount, &Button, EcLocalize("Frozen Margin"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "ms");
+				}
+			}
+		},
+	});
+
+	const bool RainbowOn = g_Config.m_ClRainbowHook || g_Config.m_ClRainbowTees || g_Config.m_ClRainbowWeapon || g_Config.m_ClRainbowOthers;
+	/* Cosmetics */
+	vModules.push_back({
+		ESettingsModuleColumn::LEFT,
+		FILTER_VISUAL,
+		{"cosmetic", "settings", "small", "skin", "effects", "color", "others", "rainbow", "tees", "weapons", "hook", "others", "speed"},
+		[&](bool HasSearch) {
+			int Offset = 0;
+			if(RainbowOn || HasSearch)
+				Offset += 20.0f;
+
+			return 235.0f + Offset;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Cosmetic Settings"), HeaderSize, HeaderAlignment);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &ModuleRect, LineMargin);
+
+			static std::vector<const char *> s_EffectDropDownNames;
+			s_EffectDropDownNames = {EcLocalize("No Effect"), EcLocalize("Sparkle effect"), EcLocalize("Fire Trail Effect"), EcLocalize("Switch Effect")};
+			static CUi::SDropDownState s_EffectDropDownState;
+			static CScrollRegion s_EffectDropDownScrollRegion;
+			s_EffectDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_EffectDropDownScrollRegion;
+			int EffectSelectedOld = g_Config.m_ClEffect;
+			CUIRect EffectDropDownRect;
+			ModuleRect.HSplitTop(LineSize, &EffectDropDownRect, &ModuleRect);
+			const int EffectSelectedNew = Ui()->DoDropDown(&EffectDropDownRect, EffectSelectedOld, s_EffectDropDownNames.data(), s_EffectDropDownNames.size(), s_EffectDropDownState);
+			Ui()->UpdatePopupMenuOffset(&s_EffectDropDownState.m_SelectionPopupContext, EffectDropDownRect.x, EffectDropDownRect.y);
+
+			if(s_ScrollRegion.RectClipped(EffectDropDownRect))
+			{
+				Ui()->ClosePopupMenu(&s_EffectDropDownState.m_SelectionPopupContext);
+			}
+
+			if(EffectSelectedOld != EffectSelectedNew)
+			{
+				g_Config.m_ClEffect = EffectSelectedNew;
+				if(g_Config.m_ClEffectSpeedOverride)
+				{
+					if(g_Config.m_ClEffect == EFFECT_SPARKLE)
+						g_Config.m_ClEffectSpeed = 75;
+					else if(g_Config.m_ClEffect == EFFECT_FIRETRAIL)
+						g_Config.m_ClEffectSpeed = 125;
+					else if(g_Config.m_ClEffect == EFFECT_SWITCH)
+						g_Config.m_ClEffectSpeed = 150;
+				}
+			}
+
+			ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectColors, ("Effect Color"), &g_Config.m_ClEffectColors, &ModuleRect, LineMargin);
+
+			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClEffectColors, &ModuleRect, "Doesn't work if the sprite already has a set color\nMake the sprite the color you want if it doesn't work");
+			if(g_Config.m_ClEffectColors)
+			{
+				static CButtonContainer s_EffectR;
+				ModuleRect.HSplitTop(-3.0f, &Label, &ModuleRect);
+				ModuleRect.HSplitTop(-17.0f, &Button, &ModuleRect);
+				DoLine_ColorPicker(&s_EffectR, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize(""), &g_Config.m_ClEffectColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClEffectColor)), true);
+				ModuleRect.HSplitTop(-10.0f, &Button, &ModuleRect);
+			}
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectOthers, ("Effect Others"), &g_Config.m_ClEffectOthers, &ModuleRect, LineMargin);
 
 			ModuleRect.HSplitTop(MarginSmall, &Button, &ModuleRect);
 
+			// ***** Rainbow ***** //
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowTees, EcLocalize("Rainbow Tees"), &g_Config.m_ClRainbowTees, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowWeapon, EcLocalize("Rainbow weapons"), &g_Config.m_ClRainbowWeapon, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowHook, EcLocalize("Rainbow hook"), &g_Config.m_ClRainbowHook, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRainbowOthers, EcLocalize("Rainbow others"), &g_Config.m_ClRainbowOthers, &ModuleRect, LineSize);
+
+			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
+			static std::vector<const char *> s_RainbowDropDownNames;
+			s_RainbowDropDownNames = {EcLocalize("Rainbow"), EcLocalize("Pulse"), EcLocalize("Black"), EcLocalize("Random")};
+			static CUi::SDropDownState s_RainbowDropDownState;
+			static CScrollRegion s_RainbowDropDownScrollRegion;
+			s_RainbowDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_RainbowDropDownScrollRegion;
+			int RainbowSelectedOld = g_Config.m_ClRainbowMode - 1;
+			CUIRect RainbowDropDownRect;
+			ModuleRect.HSplitTop(LineSize, &RainbowDropDownRect, &ModuleRect);
+			const int RainbowSelectedNew = Ui()->DoDropDown(&RainbowDropDownRect, RainbowSelectedOld, s_RainbowDropDownNames.data(), s_RainbowDropDownNames.size(), s_RainbowDropDownState);
+			Ui()->UpdatePopupMenuOffset(&s_RainbowDropDownState.m_SelectionPopupContext, RainbowDropDownRect.x, RainbowDropDownRect.y);
+
+			if(s_ScrollRegion.RectClipped(RainbowDropDownRect))
 			{
-				static CLineInput s_NotifyMsg;
-				s_NotifyMsg.SetBuffer(g_Config.m_ClPhysicBallsSkin, sizeof(g_Config.m_ClPhysicBallsSkin));
-				s_NotifyMsg.SetEmptyText("Volleyball");
-
-				const char *pLabel = "Ball Skin:";
-				float Length = TextRender()->TextBoundingBox(FontSize, pLabel).m_W + 3.5f; // Give it some breathing room
-
-				ModuleRect.HSplitTop(20.0f, &Button, nullptr);
-
-				Button.VSplitLeft(Length, &Label, &Button);
-				Button.VSplitLeft(100.0f, &Button, nullptr);
-
-				Ui()->DoEditBox(&s_NotifyMsg, &Button, EditBoxFontSize);
-
-				ModuleRect.HSplitTop(3.0f, &Button, &ModuleRect);
-				Ui()->DoLabel(&ModuleRect, pLabel, FontSize, TEXTALIGN_LEFT);
+				Ui()->ClosePopupMenu(&s_RainbowDropDownState.m_SelectionPopupContext);
 			}
+
+			if(RainbowSelectedOld != RainbowSelectedNew)
+			{
+				g_Config.m_ClRainbowMode = RainbowSelectedNew + 1;
+			}
+			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-			ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
-			CUIRect SpawnButton, SpawnButtonCursor;
-			Button.VSplitLeft(110.0f, &SpawnButton, &Button);
-			Button.VSplitLeft(MarginSmall, nullptr, &Button);
-			Button.VSplitLeft(110.0f, &SpawnButtonCursor, nullptr);
+			if(RainbowOn || HasSearch)
+				Ui()->DoScrollbarOption(&g_Config.m_ClRainbowSpeed, &g_Config.m_ClRainbowSpeed, &Button, EcLocalize("Rainbow speed"), 0, 200, &CUi::ms_LogarithmicScrollbarScale, 0, "%");
 
-			static CButtonContainer s_SpawnBall, s_OtherBallButton;
-
-			if(DoButtonForceFontSize_Menu(&s_SpawnBall, EcLocalize("New Ball"), 0, &SpawnButton, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
-			{
-				GameClient()->m_PhysicBalls.NewBallPlayer(60.0f);
-			}
-
-			if(DoButtonForceFontSize_Menu(&s_OtherBallButton, EcLocalize("New Ball Cursor"), 0, &SpawnButtonCursor, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
-			{
-				GameClient()->m_PhysicBalls.NewBallCursor(60.0f);
-			}
+			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
+			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
 		},
 	});
 
 	/* Server-Side Rainbow */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
+		FILTER_VISUAL,
 		{"server", "rainbow", "preview", "color", "hue", "saturation", "lightness", "alpha"},
 		[](bool HasSearch) {
-			return 260;
+			return 255;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -3809,22 +3897,263 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		},
 	});
 
-	/* Player Indicator */
+	/* Warlist */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
-		{"player", "indicator", "size", "offset", "distance", "warlist", "groups", "colors", "freeze", "circle", "opacity"},
-		[](bool HasSearch) {
-			int Size = 80.0f;
-			if(g_Config.m_ClPlayerIndicator || HasSearch)
+		FILTER_WARLIST,
+		{"warlist", "sweat", "skin", "auto", "add", "name", "change", "anti", "spawn", "block", "random", "team"},
+		[&](bool HasSearch) {
+			float Height = 200.0f;
+			if(g_Config.m_ClAutoAddOnNameChange || HasSearch)
+				Height += LineSize;
+
+			return Height;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Warlist"), HeaderSize, HeaderAlignment);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarList, ("Use Warlist"), &g_Config.m_ClWarList, &ModuleRect, LineMargin);
+			ModuleRect.HSplitTop(5, &Button, &ModuleRect);
+
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			if(DoButton_CheckBox(&g_Config.m_ClAntiSpawnBlock, "Anti Spawn Block", g_Config.m_ClAntiSpawnBlock, &Button))
+				g_Config.m_ClAntiSpawnBlock ^= 1;
+			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you respawn and back to team 0 when close to start line");
+
+			ModuleRect.HSplitTop(5, &Button, &ModuleRect);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode"), &g_Config.m_ClSweatMode, &ModuleRect, LineMargin);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &ModuleRect, LineMargin);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSelfColor, ("Don't Change Own Color"), &g_Config.m_ClSweatModeSelfColor, &ModuleRect, LineMargin);
+
+			static CLineInput s_Name;
+			s_Name.SetBuffer(g_Config.m_ClSweatModeSkinName, sizeof(g_Config.m_ClSweatModeSkinName));
+			s_Name.SetEmptyText("x_ninja");
+
+			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 			{
-				Size = 285.0f;
-				if(g_Config.m_ClIndicatorVariableDistance || HasSearch)
-					Size += 40.0f;
-				if(g_Config.m_ClWarListIndicator || HasSearch)
-					Size += 80.0f;
-				if(!g_Config.m_ClWarListIndicatorColors || !g_Config.m_ClWarListIndicator || HasSearch)
-					Size += 40.0f;
+				const float Length = TextRender()->TextBoundingBox(FontSize, "Skin Name:").m_W;
+				CUIRect SkinLabel, SkinInput;
+				Button.VSplitLeft(0.0f, &SkinLabel, &SkinInput);
+				SkinLabel.VSplitLeft(25.0f, &SkinLabel, &SkinLabel);
+				SkinLabel.VSplitLeft(Length, &SkinLabel, &SkinInput);
+				Ui()->DoLabel(&SkinLabel, "Skin Name:", 13.0f, TEXTALIGN_ML);
+				SkinInput.VSplitLeft(150.0f, &SkinInput, nullptr);
+				Ui()->DoEditBox(&s_Name, &SkinInput, EditBoxFontSize);
 			}
+
+			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			if(DoButton_CheckBox(&g_Config.m_ClAutoAddOnNameChange, EcLocalize("Auto Add to Warlist on Name Change"), g_Config.m_ClAutoAddOnNameChange, &Button))
+				g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange ? 0 : 1;
+			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAutoAddOnNameChange, &Button, "Automatically adds players that change their name to the warlist again");
+
+			if(g_Config.m_ClAutoAddOnNameChange || HasSearch)
+			{
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				static int s_NamePlatesStrong = 0;
+				if(DoButton_CheckBox(&s_NamePlatesStrong, "Notify you everytime someone gets auto added", g_Config.m_ClAutoAddOnNameChange == 2, &Button))
+					g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange != 2 ? 2 : 1;
+			}
+		},
+	});
+
+	/* Trails */
+	vModules.push_back({
+		ESettingsModuleColumn::LEFT,
+		FILTER_VISUAL,
+		{"trail", "settings", "color", "mode", "solid", "tee", "rainbow", "speed", "width", "length", "alpha"},
+		[](bool HasSearch) {
+			int Offset = 0;
+			if(g_Config.m_EcTeeTrailColorMode == CTrails::COLORMODE_SOLID || HasSearch)
+				Offset += ColorPickerLineSize + ColorPickerLineSpacing;
+
+			return 205.0f + Offset;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Tee Trails"), HeaderSize, HeaderAlignment);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrail, EcLocalize("Enable tee trails"), &g_Config.m_EcTeeTrail, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailOthers, EcLocalize("Show other tees' trails"), &g_Config.m_EcTeeTrailOthers, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailFade, EcLocalize("Fade trail alpha"), &g_Config.m_EcTeeTrailFade, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailTaper, EcLocalize("Taper trail width"), &g_Config.m_EcTeeTrailTaper, &ModuleRect, LineSize);
+
+			ModuleRect.HSplitTop(MarginExtraSmall, nullptr, &ModuleRect);
+			std::vector<const char *> vTrailDropDownNames;
+			vTrailDropDownNames = {EcLocalize("Solid"), EcLocalize("Tee"), EcLocalize("Rainbow"), EcLocalize("Speed")};
+			static CUi::SDropDownState s_TrailDropDownState;
+			static CScrollRegion s_TrailDropDownScrollRegion;
+			s_TrailDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_TrailDropDownScrollRegion;
+			int TrailSelectedOld = g_Config.m_EcTeeTrailColorMode - 1;
+			CUIRect TrailDropDownRect;
+			ModuleRect.HSplitTop(LineSize, &TrailDropDownRect, &ModuleRect);
+			const int TrailSelectedNew = Ui()->DoDropDown(&TrailDropDownRect, TrailSelectedOld, vTrailDropDownNames.data(), vTrailDropDownNames.size(), s_TrailDropDownState);
+			Ui()->UpdatePopupMenuOffset(&s_TrailDropDownState.m_SelectionPopupContext, TrailDropDownRect.x, TrailDropDownRect.y);
+
+			if(s_ScrollRegion.RectClipped(TrailDropDownRect))
+			{
+				Ui()->ClosePopupMenu(&s_TrailDropDownState.m_SelectionPopupContext);
+			}
+
+			if(TrailSelectedOld != TrailSelectedNew)
+			{
+				g_Config.m_EcTeeTrailColorMode = TrailSelectedNew + 1;
+			}
+			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
+
+			static CButtonContainer s_TeeTrailColor;
+			if(g_Config.m_EcTeeTrailColorMode == CTrails::COLORMODE_SOLID || HasSearch)
+				DoLine_ColorPicker(&s_TeeTrailColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Tee trail color"), &g_Config.m_EcTeeTrailColor, ColorRGBA(1.0f, 1.0f, 1.0f), false);
+
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailWidth, &g_Config.m_EcTeeTrailWidth, &Button, EcLocalize("Trail width"), 0, 20);
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailLength, &g_Config.m_EcTeeTrailLength, &Button, EcLocalize("Trail length"), 0, 200);
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			Ui()->DoScrollbarOption(&g_Config.m_EcTeeTrailAlpha, &g_Config.m_EcTeeTrailAlpha, &Button, EcLocalize("Trail alpha"), 0, 100);
+		},
+	});
+
+	/* Startup Commands */
+	vModules.push_back({
+		ESettingsModuleColumn::LEFT,
+		FILTER_MISC,
+		{"execute", "before", "connect", "join", "console", "command", "startup", "run"},
+		[](bool HasSearch) {
+			return 80.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Startup Commands"), HeaderSize, HeaderAlignment);
+			{
+				auto RenderLabeledEditBox = [&](const char *pLabel, CLineInput *pLineInput, char *pBuffer, int BufferSize, const char *pEmptyText, float Length, float LabelFontSize = 12.5f) {
+					ModuleRect.HSplitTop(20.0f, &Button, &MainView);
+
+					Button.VSplitLeft(0.0f, 0, &ModuleRect);
+					Button.VSplitLeft(Length, &Label, &Button);
+					Button.VSplitRight(0.0f, &Button, &MainView);
+
+					pLineInput->SetBuffer(pBuffer, BufferSize);
+					pLineInput->SetEmptyText(pEmptyText);
+					Ui()->DoEditBox(pLineInput, &Button, EditBoxFontSize);
+
+					ModuleRect.HSplitTop(3.0f, &Button, &ModuleRect);
+					Ui()->DoLabel(&ModuleRect, pLabel, LabelFontSize, TEXTALIGN_LEFT);
+					ModuleRect.HSplitTop(-3.0f, &Button, &ModuleRect);
+				};
+
+				{
+					const char *pN = "Execute before connect";
+					float Length = TextRender()->TextBoundingBox(12.5f, pN).m_W + 3.5f; // Give it some breathing room
+
+					static CLineInput s_ReplyMsg;
+					RenderLabeledEditBox(pN, &s_ReplyMsg, g_Config.m_ClExecuteOnConnect, sizeof(g_Config.m_ClExecuteOnConnect), "Any Console Command", Length);
+				}
+				ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
+				{
+					const char *pN = "Execute on join";
+					float Length = TextRender()->TextBoundingBox(12.5f, pN).m_W + 3.5f; // Give it some breathing room
+
+					static CLineInput s_ReplyMsg;
+					RenderLabeledEditBox(pN, &s_ReplyMsg, g_Config.m_ClRunOnJoinConsole, sizeof(g_Config.m_ClRunOnJoinConsole), "Any Console Command", Length);
+				}
+			}
+		},
+	});
+
+	/* Physic Balls */
+	vModules.push_back({
+		ESettingsModuleColumn::LEFT,
+		FILTER_VISUAL | FILTER_GAMEPLAY,
+		{"physic", "balls", "new", "ball", "cursor", "amount", "ball", "skin"},
+		[](bool HasSearch) {
+			return 120;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, "Physic Balls", HeaderSize, HeaderAlignment);
+
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+
+			char aBuf[64];
+			str_format(aBuf, sizeof(aBuf), "Ball amount: %" PRIzu, GameClient()->m_PhysicBalls.GetBallCount());
+
+			CUIRect BallAmountLabel, ClearButton;
+			Button.VSplitRight(45.0f, &BallAmountLabel, &ClearButton);
+			BallAmountLabel.VSplitRight(MarginSmall, &BallAmountLabel, nullptr);
+
+			Ui()->DoLabel(&BallAmountLabel, aBuf, FontSize, TEXTALIGN_ML);
+
+			static CButtonContainer s_ClearBallsButton;
+			const ColorRGBA ButtonColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f);
+
+			if(Ui()->DoButton_FontIcon(&s_ClearBallsButton, FontIcon::TRASH, 0, &ClearButton, BUTTONFLAG_LEFT))
+				GameClient()->m_PhysicBalls.OnReset();
+
+			ModuleRect.HSplitTop(MarginSmall, &Button, &ModuleRect);
+
+			{
+				static CLineInput s_NotifyMsg;
+				s_NotifyMsg.SetBuffer(g_Config.m_ClPhysicBallsSkin, sizeof(g_Config.m_ClPhysicBallsSkin));
+				s_NotifyMsg.SetEmptyText("Volleyball");
+
+				const char *pLabel = "Ball Skin:";
+				float Length = TextRender()->TextBoundingBox(FontSize, pLabel).m_W + 3.5f; // Give it some breathing room
+
+				ModuleRect.HSplitTop(20.0f, &Button, nullptr);
+
+				Button.VSplitLeft(Length, &Label, &Button);
+				Button.VSplitLeft(100.0f, &Button, nullptr);
+
+				Ui()->DoEditBox(&s_NotifyMsg, &Button, EditBoxFontSize);
+
+				ModuleRect.HSplitTop(3.0f, &Button, &ModuleRect);
+				Ui()->DoLabel(&ModuleRect, pLabel, FontSize, TEXTALIGN_LEFT);
+			}
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
+			CUIRect SpawnButton, SpawnButtonCursor;
+			Button.VSplitLeft(110.0f, &SpawnButton, &Button);
+			Button.VSplitLeft(MarginSmall, nullptr, &Button);
+			Button.VSplitLeft(110.0f, &SpawnButtonCursor, nullptr);
+
+			static CButtonContainer s_SpawnBall, s_OtherBallButton;
+
+			if(DoButtonForceFontSize_Menu(&s_SpawnBall, EcLocalize("New Ball"), 0, &SpawnButton, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
+			{
+				GameClient()->m_PhysicBalls.NewBallPlayer(60.0f);
+			}
+
+			if(DoButtonForceFontSize_Menu(&s_OtherBallButton, EcLocalize("New Ball Cursor"), 0, &SpawnButtonCursor, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
+			{
+				GameClient()->m_PhysicBalls.NewBallCursor(60.0f);
+			}
+		},
+	});
+
+	/* Frozen Tee Appearance */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_VISUAL,
+		{"frozen", "freeze", "stars", "katana", "colored", "tee", "skins", "white", "feet"},
+		[](bool HasSearch) {
+			int Size = 120;
+			if(g_Config.m_ClWhiteFeet || HasSearch)
+				Size += LineSize + MarginExtraSmall * 2.0f;
 
 			return Size;
 		},
@@ -3833,54 +4162,21 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Player Indicator"), HeaderSize, HeaderAlignment);
-			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, EcLocalize("Show any enabled Indicators"), &g_Config.m_ClPlayerIndicator, &ModuleRect, LineSize);
+			Ui()->DoLabel(&Button, EcLocalize("Frozen Tee Appearance"), HeaderSize, HeaderAlignment);
 
-				if(g_Config.m_ClPlayerIndicator || HasSearch)
-				{
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorHideOnScreen, EcLocalize("Hide indicator for tees on your screen"), &g_Config.m_ClIndicatorHideOnScreen, &ModuleRect, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicatorFreeze, EcLocalize("Show only freeze Players"), &g_Config.m_ClPlayerIndicatorFreeze, &ModuleRect, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTeamOnly, EcLocalize("Only show after joining a team"), &g_Config.m_ClIndicatorTeamOnly, &ModuleRect, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorTees, EcLocalize("Render tiny tees instead of circles"), &g_Config.m_ClIndicatorTees, &ModuleRect, LineSize);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicator, EcLocalize("Use warlist groups for indicator"), &g_Config.m_ClWarListIndicator, &ModuleRect, LineSize);
-					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-					Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorRadius, &g_Config.m_ClIndicatorRadius, &Button, EcLocalize("Indicator size"), 1, 16);
-					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-					Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorOpacity, &g_Config.m_ClIndicatorOpacity, &Button, EcLocalize("Indicator opacity"), 0, 100);
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClIndicatorVariableDistance, EcLocalize("Change indicator offset based on distance to other tees"), &g_Config.m_ClIndicatorVariableDistance, &ModuleRect, LineSize);
-					if(g_Config.m_ClIndicatorVariableDistance || HasSearch)
-					{
-						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-						Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorOffset, &g_Config.m_ClIndicatorOffset, &Button, EcLocalize("Indicator min offset"), 16, 200);
-						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-						Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorOffsetMax, &g_Config.m_ClIndicatorOffsetMax, &Button, EcLocalize("Indicator max offset"), 16, 200);
-						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-						Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorMaxDistance, &g_Config.m_ClIndicatorMaxDistance, &Button, EcLocalize("Indicator max distance"), 500, 7000);
-					}
-					else
-					{
-						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-						Ui()->DoScrollbarOption(&g_Config.m_ClIndicatorOffset, &g_Config.m_ClIndicatorOffset, &Button, EcLocalize("Indicator offset"), 16, 200);
-					}
-					if(g_Config.m_ClWarListIndicator || HasSearch)
-					{
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicatorColors, EcLocalize("Use warlist colors instead of regular colors"), &g_Config.m_ClWarListIndicatorColors, &ModuleRect, LineSize);
-						char aBuf[128];
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicatorAll, EcLocalize("Show all warlist groups"), &g_Config.m_ClWarListIndicatorAll, &ModuleRect, LineSize);
-						str_format(aBuf, sizeof(aBuf), "Show %s group", GameClient()->m_WarList.m_WarTypes.at(1)->m_aWarName);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicatorEnemy, aBuf, &g_Config.m_ClWarListIndicatorEnemy, &ModuleRect, LineSize);
-						str_format(aBuf, sizeof(aBuf), "Show %s group", GameClient()->m_WarList.m_WarTypes.at(2)->m_aWarName);
-						DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListIndicatorTeam, aBuf, &g_Config.m_ClWarListIndicatorTeam, &ModuleRect, LineSize);
-					}
-					if(!g_Config.m_ClWarListIndicatorColors || !g_Config.m_ClWarListIndicator || HasSearch)
-					{
-						static CButtonContainer s_IndicatorAliveColorId, s_IndicatorDeadColorId, s_IndicatorSavedColorId;
-						DoLine_ColorPicker(&s_IndicatorAliveColorId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Indicator alive color"), &g_Config.m_ClIndicatorAlive, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClIndicatorAlive)), false);
-						DoLine_ColorPicker(&s_IndicatorDeadColorId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Indicator in freeze color"), &g_Config.m_ClIndicatorFreeze, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClIndicatorFreeze)), false);
-						DoLine_ColorPicker(&s_IndicatorSavedColorId, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Indicator safe color"), &g_Config.m_ClIndicatorSaved, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClIndicatorSaved)), false);
-					}
-				}
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFrozenKatana, EcLocalize("Show katana on frozen players"), &g_Config.m_TcFrozenKatana, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClColorFrozenTeeBody, EcLocalize("Colored frozen tee skins"), &g_Config.m_ClColorFrozenTeeBody, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWhiteFeet, EcLocalize("Render feet as white feet"), &g_Config.m_ClWhiteFeet, &ModuleRect, LineSize);
+			CUIRect FeetBox;
+			if(g_Config.m_ClWhiteFeet || HasSearch)
+			{
+				ModuleRect.HSplitTop(LineSize + MarginExtraSmall, &FeetBox, &ModuleRect);
+				FeetBox.HSplitTop(MarginExtraSmall, nullptr, &FeetBox);
+				FeetBox.VSplitMid(&FeetBox, nullptr);
+				static CLineInput s_WhiteFeet(g_Config.m_ClWhiteFeetSkin, sizeof(g_Config.m_ClWhiteFeetSkin));
+				s_WhiteFeet.SetEmptyText("x_ninja");
+				Ui()->DoEditBox(&s_WhiteFeet, &FeetBox, EditBoxFontSize);
 			}
 		},
 	});
@@ -3888,13 +4184,10 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	/* Miscellaneous */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		{"miscellaneous", "custom", "font", "katana", "colored", "options", "freeze", "frozen", "stars", "ping", "circles", "names", "white", "feet", "old", "team", "moving", "tiles", "entities", "entity", "cursor"},
+		FILTER_MISC | FILTER_VISUAL | FILTER_HUD,
+		{"miscellaneous", "custom", "font", "options", "ping", "circles", "names", "old", "team", "moving", "tiles", "entities", "entity", "cursor"},
 		[](bool HasSearch) {
-			int Size = 260;
-			if(g_Config.m_ClWhiteFeet || HasSearch)
-				Size += LineSize;
-
-			return Size;
+			return 175.0f;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -3956,22 +4249,6 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &ModuleRect, LineSize);
 
 				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFrozenKatana, EcLocalize("Show katana on frozen players"), &g_Config.m_TcFrozenKatana, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClColorFrozenTeeBody, EcLocalize("Colored frozen tee skins"), &g_Config.m_ClColorFrozenTeeBody, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWhiteFeet, EcLocalize("Render feet as white feet"), &g_Config.m_ClWhiteFeet, &ModuleRect, LineSize);
-				CUIRect FeetBox;
-				if(g_Config.m_ClWhiteFeet || HasSearch)
-				{
-					ModuleRect.HSplitTop(LineSize + MarginExtraSmall, &FeetBox, &ModuleRect);
-					FeetBox.HSplitTop(MarginExtraSmall, nullptr, &FeetBox);
-					FeetBox.VSplitMid(&FeetBox, nullptr);
-					static CLineInput s_WhiteFeet(g_Config.m_ClWhiteFeetSkin, sizeof(g_Config.m_ClWhiteFeetSkin));
-					s_WhiteFeet.SetEmptyText("x_ninja");
-					Ui()->DoEditBox(&s_WhiteFeet, &FeetBox, EditBoxFontSize);
-				}
-
-				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreboardOutlineTeams, EcLocalize("Outline Teams in Scoreboard"), &g_Config.m_ClScoreboardOutlineTeams, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRevertTeamColors, EcLocalize("Use Old Team Colors"), &g_Config.m_ClRevertTeamColors, &ModuleRect, LineSize);
 
@@ -4008,6 +4285,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	/* Stats */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
+		FILTER_HUD,
 		{"stats", "fps", "ping", "snap", "rate", "show"},
 		[](bool HasSearch) {
 			return 100;
@@ -4026,58 +4304,10 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		},
 	});
 
-#if MEDIA_PLAYER_WINRT || MEDIA_PLAYER_DBUS
-	/* Media Island */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"media", "music", "island", "visualizer", "size", "alignment", "bottom", "center"},
-		[](bool HasSearch) {
-			int Offset = 0;
-
-			if(g_Config.m_ClMediaIslandVisualizer || HasSearch)
-				Offset += LineSize;
-
-			return 105.0f + Offset;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			static CButtonContainer Id;
-			RenderHudEditorButton(&Id, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Media Island"), HeaderSize, HeaderAlignment);
-
-			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMediaIsland, "Enable media island", &g_Config.m_ClMediaIsland, &ModuleRect, LineSize);
-
-				static CButtonContainer s_IslandColor;
-				DoLine_ColorPicker(&s_IslandColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Island color"), &g_Config.m_ClMediaIslandColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClMediaIslandColor, true)), false, nullptr, true);
-
-				//ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				//Ui()->DoScrollbarOption(&g_Config.m_ClMediaIslandAnimation, &g_Config.m_ClMediaIslandAnimation, &Button, "Animation Time", 0, 300, &CUi::ms_LinearScrollbarScale, 0u, "");
-				//GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClMediaIslandAnimation, &Button, "Time it takes for the Islands animation, lower = slower", FontSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMediaIslandVisualizer, "Show Visualizer", &g_Config.m_ClMediaIslandVisualizer, &ModuleRect, LineSize);
-
-				if(g_Config.m_ClMediaIslandVisualizer || HasSearch)
-				{
-					static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}};
-					int Value = g_Config.m_ClMediaIslandVisualizerAlignment;
-					if(DoLine_RadioMenu(ModuleRect, EcLocalize("Visualizer Alignment:"), s_vButtonContainers, {"Bottom", "Center"}, {1, 2}, Value))
-					{
-						g_Config.m_ClMediaIslandVisualizerAlignment = Value;
-					}
-				}
-			}
-		},
-	});
-#endif
-
 	/* Map Overview */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
+		FILTER_HUD | FILTER_VISUAL,
 		{"map", "overview", "options", "opacity", "explore", "dark"},
 		[](bool HasSearch) {
 			return 100.0f;
@@ -4102,6 +4332,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	/* Discord RPC */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
+		FILTER_MISC,
 		{"discord", "rpc", "rich", "presence", "offline", "online", "message"},
 		[](bool HasSearch) {
 			return 125.0f;
@@ -4150,84 +4381,11 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	});
 #endif
 
-	/* Sweat Mode */
-	vModules.push_back({
-		ESettingsModuleColumn::LEFT,
-		{"warlist", "sweat", "skin"},
-		[&](bool HasSearch) {
-			if(!g_Config.m_ClWarList && !HasSearch)
-				return 0.0f;
-
-			return 130.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			if(!g_Config.m_ClWarList && !HasSearch)
-				return;
-
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Warlist Sweat Mode"), HeaderSize, HeaderAlignment);
-
-			ModuleRect.HSplitTop(5, &Button, &ModuleRect);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode"), &g_Config.m_ClSweatMode, &ModuleRect, LineMargin);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &ModuleRect, LineMargin);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSelfColor, ("Don't Change Own Color"), &g_Config.m_ClSweatModeSelfColor, &ModuleRect, LineMargin);
-
-			static CLineInput s_Name;
-			s_Name.SetBuffer(g_Config.m_ClSweatModeSkinName, sizeof(g_Config.m_ClSweatModeSkinName));
-			s_Name.SetEmptyText("x_ninja");
-
-			ModuleRect.HSplitTop(2.4f, &Label, &ModuleRect);
-			ModuleRect.VSplitLeft(25.0f, &ModuleRect, &ModuleRect);
-			Ui()->DoLabel(&ModuleRect, "Skin Name:", 13.0f, TEXTALIGN_LEFT);
-
-			ModuleRect.HSplitTop(-1, &Button, &ModuleRect);
-			ModuleRect.HSplitTop(18.9f, &Button, &ModuleRect);
-
-			float Length = TextRender()->TextBoundingBox(FontSize, "Skin Name").m_W + 3.5f;
-
-			Button.VSplitLeft(0.0f, 0, &ModuleRect);
-			Button.VSplitLeft(Length, &Label, &Button);
-			Button.VSplitLeft(150.0f, &Button, 0);
-
-			Ui()->DoEditBox(&s_Name, &Button, EditBoxFontSize);
-		},
-	});
-
-	/* Chat Bubbles */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		{"chat", "bubble", "player", "fade", "in", "out", "size"},
-		[](bool HasSearch) {
-			return 145.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Chat Bubbles"), HeaderSize, HeaderAlignment);
-			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubbles, EcLocalize("Show Chatbubbles above players"), &g_Config.m_ClChatBubbles, &ModuleRect, LineSize);
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_ClChatBubbleSize, &g_Config.m_ClChatBubbleSize, &Button, EcLocalize("Chat Bubble Size"), 20, 30);
-				ModuleRect.HSplitTop(MarginSmall, &Button, &ModuleRect);
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleShowTime, &g_Config.m_ClChatBubbleShowTime, &Button, EcLocalize("Show the Bubbles for"), 200, 1000, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeIn, &g_Config.m_ClChatBubbleFadeIn, &Button, EcLocalize("fade in for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoFloatScrollBar(&g_Config.m_ClChatBubbleFadeOut, &g_Config.m_ClChatBubbleFadeOut, &Button, EcLocalize("fade out for"), 15, 100, 100, &CUi::ms_LinearScrollbarScale, 0, "s");
-			}
-		},
-	});
-
 	/* Tile Outlines */
 	const float ScrollBarOffset = 8.5f;
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
+		FILTER_VISUAL | FILTER_GAMEPLAY,
 		{"tile", "outline", "freeze", "deep", "solid", "tele", "kill", "width"},
 		[&](bool HasSearch) {
 			int Size = 80.0f;
@@ -4327,6 +4485,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 	/* Background Draw */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
+		FILTER_VISUAL,
 		{"back", "ground", "draw", "time", "until", "stroke", "disappear", "mouse"},
 		[&](bool HasSearch) {
 			return 180.0f;
@@ -4362,6 +4521,7 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		static bool s_Open = false;
 		vModules.push_back({
 			ESettingsModuleColumn::RIGHT,
+			FILTER_HUD | FILTER_WARLIST,
 			{"frozen", "freeze", "display", "team", "ninja", "tee", "row", "size", "alive"},
 			[&](bool HasSearch) { // Doesnt show all on purpose, its ugly
 				int Size = 160.0f;
@@ -4454,12 +4614,11 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 			},
 		});
 	}
-
-	static CLineInputBuffered<32> s_VisualSearchInput;
-	RenderSettingsModuleSearchBar(s_ScrollRegion, MainView, vModules, s_VisualSearchInput);
+	static CLineInputBuffered<32> s_SettingsSearchInput;
+	RenderSettingsModuleSearchBar(s_ScrollRegion, MainView, vModules, s_SettingsSearchInput);
 	MainView.HSplitTop(10.0f, nullptr, &MainView);
 
-	const char *pSearch = s_VisualSearchInput.GetString();
+	const char *pSearch = s_SettingsSearchInput.GetString();
 
 	if(HasMatchingSettingsModules(vModules, pSearch))
 	{
@@ -4472,7 +4631,45 @@ void CMenus::RenderSettingsVisual(CUIRect MainView)
 		if(s_ScrollRegion.AddRect(NoResultsRect))
 			Ui()->DoLabel(&NoResultsRect, "No settings match your search", FontSize, TEXTALIGN_MC);
 	}
+
 	s_ScrollRegion.End();
+}
+
+// EClient: the button that opens the HUD editor, drawn filling whatever rect it is handed. It
+// appears in a couple of the modules that are mostly about HUD elements, and once in the search bar
+// where it is reachable from any settings page regardless of which modules are on screen.
+void CMenus::DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect)
+{
+	CUIRect Button = *pRect;
+
+	const IClient::EClientState State = Client()->State();
+	const bool Ingame = State == IClient::STATE_ONLINE || State == IClient::STATE_DEMOPLAYBACK;
+
+	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
+
+	TextRender()->TextOutlineColor(TextRender()->DefaultTextOutlineColor());
+	TextRender()->TextColor(TextRender()->DefaultTextSelectionColor());
+	if(Ui()->HotItem() == pId && Ingame)
+		TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+	ColorRGBA Color = ColorRGBA(0.6f, 0.6f, 0.6f, 0.5f);
+	if(Ingame)
+		Color.a *= Ui()->ButtonColorMul(pId);
+
+	Button.Draw(Color, IGraphics::CORNER_ALL, 5.0f);
+
+	// Sized off the rect rather than a constant, so it fits whichever of the two places it is in
+	Ui()->DoLabel(&Button, FontIcon::BRUSH, Button.h * CUi::ms_FontmodHeight * 0.7f, TEXTALIGN_MC);
+
+	TextRender()->SetRenderFlags(0);
+	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+	TextRender()->TextColor(TextRender()->DefaultTextColor());
+
+	GameClient()->m_Tooltips.DoToolTip(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor");
+
+	if(Ui()->DoButtonLogic(pId, 0, &Button, BUTTONFLAG_LEFT) && Ingame)
+		GameClient()->m_HudEditor.ToggleHudEditor();
 }
 
 void CMenus::PopupConfirmRemoveWarType()
