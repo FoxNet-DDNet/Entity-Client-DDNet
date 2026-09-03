@@ -233,6 +233,46 @@ void CMenus::RenderGame(CUIRect MainView)
 		}
 	}
 
+	// EClient
+	if(GameClient()->m_LocalPractice.IsAvailableHere() || GameClient()->m_LocalPractice.IsActive())
+	{
+		constexpr float LocalPracticeWidth = 150.0f;
+		constexpr float PanelCorner = 10.0f;
+		CUIRect LocalButton;
+		if(ButtonBar.w - 37.0f >= LocalPracticeWidth + 5.0f)
+		{
+			ButtonBar.VSplitLeft(LocalPracticeWidth, &LocalButton, &ButtonBar);
+			ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
+		}
+		else
+		{
+			constexpr float ButtonHeight = 25.0f;
+			constexpr float ButtonGap = 5.0f;
+
+			CUIRect Tab;
+			Tab.x = ButtonPanel.x;
+			Tab.w = LocalPracticeWidth + 2.0f * PanelCorner;
+			Tab.y = ButtonPanel.y + ButtonPanel.h - PanelCorner;
+			Tab.h = ButtonGap + ButtonHeight + PanelCorner;
+			Tab.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, PanelCorner);
+
+			MainView.HSplitTop(Tab.y + Tab.h - MainView.y, nullptr, &MainView);
+
+			LocalButton.x = Tab.x + PanelCorner;
+			LocalButton.w = LocalPracticeWidth;
+			LocalButton.y = Tab.y + ButtonGap;
+			LocalButton.h = ButtonHeight;
+		}
+
+		static CButtonContainer s_LocalPracticeButton;
+		const bool PracticeActive = GameClient()->m_LocalPractice.IsActive();
+		if(DoButton_Menu(&s_LocalPracticeButton, PracticeActive ? Localize("Leave practice") : Localize("Local practice"), 0, &LocalButton))
+		{
+			GameClient()->m_LocalPractice.Toggle();
+			SetActive(false);
+		}
+	}
+
 	if(GameClient()->m_Snap.m_pLocalInfo && (GameClient()->m_Snap.m_pLocalInfo->m_Team == TEAM_SPECTATORS || Paused || Spec))
 	{
 		ButtonBar.VSplitLeft(32.0f, &Button, &ButtonBar);
@@ -248,54 +288,6 @@ void CMenus::RenderGame(CUIRect MainView)
 		}
 		GameClient()->m_Camera.UpdateAutoSpecCameraTooltip();
 		GameClient()->m_Tooltips.DoToolTip(&s_AutoCameraButton, &Button, GameClient()->m_Camera.AutoSpecCameraTooltip());
-	}
-
-	// EClient: outside the pause checks above, because local practice carries on working while the
-	// server has us paused. It shares the row when there is still room for it, and otherwise hangs
-	// off the panel in a tab of its own -- only as wide as the button, lined up under Spectate, and
-	// riding far enough up into the panel to cover the rounded corner it is continuing.
-	// Servers it is not allowed on get no button at all rather than one that only ever says no;
-	// IsActive still lets the way out show if the server withdrew it mid practice.
-	if(GameClient()->m_LocalPractice.IsAvailableHere() || GameClient()->m_LocalPractice.IsActive())
-	{
-		constexpr float LocalPracticeWidth = 150.0f;
-		constexpr float PanelCorner = 10.0f;
-		CUIRect LocalButton;
-		if(ButtonBar.w >= LocalPracticeWidth + 5.0f)
-		{
-			ButtonBar.VSplitLeft(LocalPracticeWidth, &LocalButton, &ButtonBar);
-			ButtonBar.VSplitLeft(5.0f, nullptr, &ButtonBar);
-		}
-		else
-		{
-			constexpr float ButtonHeight = 25.0f;
-			constexpr float ButtonGap = 5.0f; // the same gap the buttons in the row have between them
-
-			// Starts level with the bottom of the row above, which is where the panel's rounded
-			// corner begins, so the tab's own square top covers it and the two read as one shape
-			CUIRect Tab;
-			Tab.x = ButtonPanel.x;
-			Tab.w = LocalPracticeWidth + 2.0f * PanelCorner;
-			Tab.y = ButtonPanel.y + ButtonPanel.h - PanelCorner;
-			Tab.h = ButtonGap + ButtonHeight + PanelCorner;
-			Tab.Draw(ms_ColorTabbarActive, IGraphics::CORNER_B, PanelCorner);
-
-			MainView.HSplitTop(Tab.y + Tab.h - MainView.y, nullptr, &MainView);
-
-			// Inset by the panel's own margin, so it starts at the same x as Spectate above it
-			LocalButton.x = Tab.x + PanelCorner;
-			LocalButton.w = LocalPracticeWidth;
-			LocalButton.y = Tab.y + ButtonGap;
-			LocalButton.h = ButtonHeight;
-		}
-
-		static CButtonContainer s_LocalPracticeButton;
-		const bool PracticeActive = GameClient()->m_LocalPractice.IsActive();
-		if(DoButton_Menu(&s_LocalPracticeButton, PracticeActive ? Localize("Leave practice") : Localize("Local practice"), 0, &LocalButton))
-		{
-			GameClient()->m_LocalPractice.Toggle();
-			SetActive(false);
-		}
 	}
 
 	if(g_Config.m_ClTouchControls)
