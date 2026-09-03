@@ -401,8 +401,13 @@ public:
 
 	/**
 	 * Whether an element is covered by whatever was last passed to SetOccluder.
+	 *
+	 * Asking holds the rect the answer was based on, because an element only measures itself while
+	 * it draws. Left to lapse, a covered element would fall back to its nominal rect, and wherever
+	 * the two disagree about being covered it would draw, measure, hide, lapse and draw again a
+	 * few frames apart, which reads as a flicker.
 	 */
-	bool IsOccluded(EHudElement Element) const;
+	bool IsOccluded(EHudElement Element);
 
 	/**
 	 * The scale actually applied to an element, after clamping.
@@ -437,6 +442,11 @@ private:
 	 * rendering, because it was switched off, must fall back to its nominal rect rather than
 	 * keeping a rect that no longer reflects anything.
 	 */
+	/**
+	 * Stops an element's last measurement ageing out over a frame in which it did not draw.
+	 */
+	void HoldNaturalRect(EHudElement Element);
+
 	class CMeasurement
 	{
 	public:

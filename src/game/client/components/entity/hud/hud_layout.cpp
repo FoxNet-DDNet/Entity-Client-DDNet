@@ -1095,7 +1095,19 @@ void CHudLayout::SetOccluder(vec2 Pos, vec2 Size)
 	m_OccluderSize = Size;
 }
 
-bool CHudLayout::IsOccluded(EHudElement Element) const
+void CHudLayout::HoldNaturalRect(EHudElement Element)
+{
+	CMeasurement &Measurement = m_aMeasurements[(int)Element];
+	// Only a measurement that is still good is worth keeping. One that lapsed already, or that was
+	// never taken, is left alone so that an element which simply is not being drawn any more goes
+	// on falling back to its nominal rect.
+	if(Measurement.m_Frame < 0 || m_Frame - Measurement.m_Frame > MEASUREMENT_MAX_AGE)
+		return;
+
+	Measurement.m_Frame = m_Frame;
+}
+
+bool CHudLayout::IsOccluded(EHudElement Element)
 {
 	if(m_OccluderSize.x <= 0.0f || m_OccluderSize.y <= 0.0f)
 		return false;
@@ -1104,10 +1116,16 @@ bool CHudLayout::IsOccluded(EHudElement Element) const
 	if(Rect.m_Size.x <= 0.0f || Rect.m_Size.y <= 0.0f)
 		return false;
 
-	return Rect.m_Pos.x < m_OccluderPos.x + m_OccluderSize.x &&
-	       Rect.m_Pos.x + Rect.m_Size.x > m_OccluderPos.x &&
-	       Rect.m_Pos.y < m_OccluderPos.y + m_OccluderSize.y &&
-	       Rect.m_Pos.y + Rect.m_Size.y > m_OccluderPos.y;
+	const bool Occluded = Rect.m_Pos.x < m_OccluderPos.x + m_OccluderSize.x &&
+			      Rect.m_Pos.x + Rect.m_Size.x > m_OccluderPos.x &&
+			      Rect.m_Pos.y < m_OccluderPos.y + m_OccluderSize.y &&
+			      Rect.m_Pos.y + Rect.m_Size.y > m_OccluderPos.y;
+
+	// The element is about to be told not to draw, so nothing else will keep this rect alive
+	if(Occluded)
+		HoldNaturalRect(Element);
+
+	return Occluded;
 }
 
 bool CHudLayout::IsPresent(EHudElement Element) const
