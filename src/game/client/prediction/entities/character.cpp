@@ -1177,6 +1177,9 @@ void CCharacter::QuadZonePush(const vec2 aPoints[4], vec2 QuadMotion, bool Gives
 
 	SetRawVelocity(NewVel);
 
+	m_Core.Quantize();
+	m_Pos = m_Core.m_Pos;
+
 	if(!GivesDj || BestEdgeIndex < 0)
 		return;
 
