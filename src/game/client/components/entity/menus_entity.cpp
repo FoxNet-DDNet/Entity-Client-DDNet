@@ -3276,16 +3276,16 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				if(g_Config.m_EcFastInputMode == CGameClient::FAST_INPUT_MODE_FLUX)
 				{
-					CUIRect Label, ScrollBar;
-					Button.VSplitMid(&Label, &ScrollBar, std::min(10.0f, Button.w * 0.05f));
+					CUIRect FastInputLabel, FastInputScrollBar;
+					Button.VSplitMid(&FastInputLabel, &FastInputScrollBar, std::min(10.0f, Button.w * 0.05f));
 					int Value = Ui()->ScrollbarKeyboardAdjust(&Button, g_Config.m_EcFluxInputAmount, 0, 500);
 
 					char aBuf[64];
 					str_format(aBuf, sizeof(aBuf), "%s: %.2f %s", EcLocalize("Prediction offset"), Value / 100.0f, EcLocalize("ticks"));
-					Ui()->DoLabel(&Label, aBuf, Label.h * CUi::ms_FontmodHeight * 0.8f, TEXTALIGN_ML);
+					Ui()->DoLabel(&FastInputLabel, aBuf, FastInputLabel.h * CUi::ms_FontmodHeight * 0.8f, TEXTALIGN_ML);
 
 					const float Relative = CUi::ms_LinearScrollbarScale.ToRelative(Value, 0, 500);
-					Value = CUi::ms_LinearScrollbarScale.ToAbsolute(Ui()->DoScrollbarH(&g_Config.m_EcFluxInputAmount, &ScrollBar, Relative), 0, 500);
+					Value = CUi::ms_LinearScrollbarScale.ToAbsolute(Ui()->DoScrollbarH(&g_Config.m_EcFluxInputAmount, &FastInputScrollBar, Relative), 0, 500);
 					g_Config.m_EcFluxInputAmount = std::clamp(Value, 0, 500);
 				}
 				else if(Ui()->DoScrollbarOption(&g_Config.m_EcFastInputAmount, &g_Config.m_EcFastInputAmount, &Button, EcLocalize("Prediction offset"), 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
