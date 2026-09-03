@@ -446,11 +446,23 @@ public:
 	bool m_NewPredictedTick;
 	int m_aFlagDropTick[2];
 
+	// EClient: whether we've ever received a NETMSGTYPE_SV_PREINPUT this connection.
+	// Used to keep fast input's "flux" mode from extrapolating other tees before we
+	// actually have any server-confirmed hint about their input.
+	bool m_ReceivedPreInput = false;
+
 	enum
 	{
 		SERVERMODE_PURE = 0,
 		SERVERMODE_MOD,
 		SERVERMODE_PUREMOD,
+	};
+
+	// EClient: fast input algorithms, selected via ec_fast_input_mode
+	enum
+	{
+		FAST_INPUT_MODE_CLASSIC = 0, // offset in milliseconds, other tees mirror our own amount 1:1 or get nothing
+		FAST_INPUT_MODE_FLUX, // offset in ticks, other tees capped to one tick and held until the server sends a pre-input
 	};
 	int m_ServerMode;
 	CGameInfo m_GameInfo;
@@ -1064,6 +1076,10 @@ public:
 	vec2 GetSmoothPos(int ClientId);
 	vec2 GetFreezePos(int ClientId);
 	vec2 GetFastInputPos(int ClientId);
+	bool IsFastInputLocalClient(int ClientId) const;
+	float GetFastInputOffsetTicks() const;
+	float GetFastInputOffsetTicksOthers() const;
+	float GetFastInputOffsetTicksFor(int ClientId) const;
 
 	int m_MultiViewTeam;
 	float m_MultiViewPersonalZoom;

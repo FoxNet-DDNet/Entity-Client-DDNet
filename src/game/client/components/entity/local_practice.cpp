@@ -878,8 +878,8 @@ void CLocalPractice::UpdateLookahead()
 	// Fast input asks for it to be drawn further along than the simulation has reached, so that far
 	// is simulated speculatively -- the same trade the real prediction makes for the same reason.
 	float Ahead = Client()->PredIntraGameTick(g_Config.m_ClDummy);
-	if(g_Config.m_TcFastInput)
-		Ahead += g_Config.m_TcFastInputAmount / (float)(1000 / SERVER_TICK_SPEED);
+	if(g_Config.m_EcFastInput)
+		Ahead += GameClient()->GetFastInputOffsetTicks();
 
 	const int Whole = std::min((int)Ahead, 16);
 	m_RenderIntra = std::clamp(Ahead - Whole, 0.0f, 1.0f);

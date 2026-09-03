@@ -3180,14 +3180,14 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 			Ui()->DoLabel(&Button, EcLocalize("Ghost Tools"), HeaderSize, HeaderAlignment);
 			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcShowOthersGhosts, EcLocalize("Show unpredicted ghosts for other players"), &g_Config.m_TcShowOthersGhosts, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcSwapGhosts, EcLocalize("Swap ghosts and normal players"), &g_Config.m_TcSwapGhosts, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcShowOthersGhosts, EcLocalize("Show unpredicted ghosts for other players"), &g_Config.m_EcShowOthersGhosts, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcSwapGhosts, EcLocalize("Swap ghosts and normal players"), &g_Config.m_EcSwapGhosts, &ModuleRect, LineSize);
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_TcPredGhostsAlpha, &g_Config.m_TcPredGhostsAlpha, &Button, EcLocalize("Predicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
+				Ui()->DoScrollbarOption(&g_Config.m_EcPredGhostsAlpha, &g_Config.m_EcPredGhostsAlpha, &Button, EcLocalize("Predicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_TcUnpredGhostsAlpha, &g_Config.m_TcUnpredGhostsAlpha, &Button, EcLocalize("Unpredicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcHideFrozenGhosts, EcLocalize("Hide ghosts of frozen players"), &g_Config.m_TcHideFrozenGhosts, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcRenderGhostAsCircle, EcLocalize("Render ghosts as circles"), &g_Config.m_TcRenderGhostAsCircle, &ModuleRect, LineSize);
+				Ui()->DoScrollbarOption(&g_Config.m_EcUnpredGhostsAlpha, &g_Config.m_EcUnpredGhostsAlpha, &Button, EcLocalize("Unpredicted alpha"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "%");
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcHideFrozenGhosts, EcLocalize("Hide ghosts of frozen players"), &g_Config.m_EcHideFrozenGhosts, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcRenderGhostAsCircle, EcLocalize("Render ghosts as circles"), &g_Config.m_EcRenderGhostAsCircle, &ModuleRect, LineSize);
 
 				static CButtonContainer s_ReaderButtonGhost, s_ClearButtonGhost;
 				DoLine_KeyReader(ModuleRect, s_ReaderButtonGhost, s_ClearButtonGhost, EcLocalize("Toggle ghosts key"), "toggle tc_show_others_ghosts 0 1");
@@ -3249,10 +3249,10 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_GAMEPLAY | FILTER_NETWORK,
-		{"fast", "input", "reduced", "visual", "delay", "extra", "tick", "others", "increases", "latency", "makes", "dragging", "easier"},
+		{"fast", "input", "reduced", "visual", "delay", "tick", "others", "flux", "classic", "mode", "prediction", "offset"},
 		[](bool HasSearch) {
-			int Size = 100.0f;
-			if(g_Config.m_TcFastInput || HasSearch)
+			int Size = 122.0f;
+			if(g_Config.m_EcFastInput || HasSearch)
 				Size += 25.0f;
 
 			return Size;
@@ -3264,16 +3264,37 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 			Ui()->DoLabel(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
 			{
-				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInput, EcLocalize("Fast Input (reduced visual delay)"), &g_Config.m_TcFastInput, &ModuleRect, LineSize))
+				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFastInput, EcLocalize("Enable Fast Input"), &g_Config.m_EcFastInput, &ModuleRect, LineSize))
 					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
 
+				static std::vector<CButtonContainer> s_vFastInputModeButtons(2);
+				static const std::vector<const char *> s_vFastInputModeLabels = {EcLocalize("Classic"), EcLocalize("Flux")};
+				static const std::vector<int> s_vFastInputModeValues = {CGameClient::FAST_INPUT_MODE_CLASSIC, CGameClient::FAST_INPUT_MODE_FLUX};
+
+				DoLine_RadioMenu_Compact(ModuleRect, "", s_vFastInputModeButtons, s_vFastInputModeLabels, s_vFastInputModeValues, g_Config.m_EcFastInputMode, 0.0f);
+
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				if(Ui()->DoScrollbarOption(&g_Config.m_TcFastInputAmount, &g_Config.m_TcFastInputAmount, &Button, "Amount", 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
+				if(g_Config.m_EcFastInputMode == CGameClient::FAST_INPUT_MODE_FLUX)
+				{
+					CUIRect Label, ScrollBar;
+					Button.VSplitMid(&Label, &ScrollBar, std::min(10.0f, Button.w * 0.05f));
+					int Value = Ui()->ScrollbarKeyboardAdjust(&Button, g_Config.m_EcFluxInputAmount, 0, 500);
+
+					char aBuf[64];
+					str_format(aBuf, sizeof(aBuf), "%s: %.2f %s", EcLocalize("Prediction offset"), Value / 100.0f, EcLocalize("ticks"));
+					Ui()->DoLabel(&Label, aBuf, Label.h * CUi::ms_FontmodHeight * 0.8f, TEXTALIGN_ML);
+
+					const float Relative = CUi::ms_LinearScrollbarScale.ToRelative(Value, 0, 500);
+					Value = CUi::ms_LinearScrollbarScale.ToAbsolute(Ui()->DoScrollbarH(&g_Config.m_EcFluxInputAmount, &ScrollBar, Relative), 0, 500);
+					g_Config.m_EcFluxInputAmount = std::clamp(Value, 0, 500);
+				}
+				else if(Ui()->DoScrollbarOption(&g_Config.m_EcFastInputAmount, &g_Config.m_EcFastInputAmount, &Button, EcLocalize("Prediction offset"), 1, 40, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE | CUi::SCROLLBAR_OPTION_DELAYUPDATE, "ms"))
 					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
 				ModuleRect.HSplitTop(2.0f, &Button, &ModuleRect);
 
-				if(g_Config.m_TcFastInput || HasSearch)
-					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFastInputOthers, EcLocalize("Extra tick other tees (increases other tees latency, \nmakes dragging slightly easier when using fast input)"), &g_Config.m_TcFastInputOthers, &ModuleRect, LineSize);
+				static const std::vector<const char *> s_vFastInputOthersLabels = {EcLocalize("Fast input others"), EcLocalize("Flux input others")};
+				if(g_Config.m_EcFastInput || HasSearch)
+					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFastInputOthers, s_vFastInputOthersLabels[g_Config.m_EcFastInputMode], &g_Config.m_EcFastInputOthers, &ModuleRect, LineSize);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSubTickAiming, EcLocalize("Sub-Tick aiming"), &g_Config.m_ClSubTickAiming, &ModuleRect, LineSize);
 			}
@@ -3295,11 +3316,11 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 			Ui()->DoLabel(&Button, EcLocalize("Anti Ping Smoothing"), HeaderSize, HeaderAlignment);
 			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingImproved, EcLocalize("Use new smoothing algorithm"), &g_Config.m_TcAntiPingImproved, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingStableDirection, EcLocalize("Optimistic prediction in stable direction"), &g_Config.m_TcAntiPingStableDirection, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcAntiPingNegativeBuffer, EcLocalize("Remember instability for longer"), &g_Config.m_TcAntiPingNegativeBuffer, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcAntiPingImproved, EcLocalize("Use new smoothing algorithm"), &g_Config.m_EcAntiPingImproved, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcAntiPingStableDirection, EcLocalize("Optimistic prediction in stable direction"), &g_Config.m_EcAntiPingStableDirection, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcAntiPingNegativeBuffer, EcLocalize("Remember instability for longer"), &g_Config.m_EcAntiPingNegativeBuffer, &ModuleRect, LineSize);
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_TcAntiPingUncertaintyScale, &g_Config.m_TcAntiPingUncertaintyScale, &Button, EcLocalize("Uncertainty duration"), 50, 400, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "%");
+				Ui()->DoScrollbarOption(&g_Config.m_EcAntiPingUncertaintyScale, &g_Config.m_EcAntiPingUncertaintyScale, &Button, EcLocalize("Uncertainty duration"), 50, 400, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "%");
 			}
 		},
 	});
@@ -3471,9 +3492,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		{"latency", "tools", "prediction", "anti", "ping", "margin", "frozen", "freeze"},
 		[](bool HasSearch) {
 			int Offset = 0;
-			if(g_Config.m_TcRemoveAnti || HasSearch)
+			if(g_Config.m_EcRemoveAnti || HasSearch)
 				Offset += 40.0f;
-			if(g_Config.m_TcPredMarginInFreeze || HasSearch)
+			if(g_Config.m_EcPredMarginInFreeze || HasSearch)
 				Offset += 20.0f;
 
 			return 120.0f + Offset;
@@ -3487,22 +3508,22 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			{
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				Ui()->DoScrollbarOption(&g_Config.m_ClPredictionMargin, &g_Config.m_ClPredictionMargin, &Button, EcLocalize("Prediction Margin"), 10, 75, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcRemoveAnti, EcLocalize("Remove prediction & antiping in freeze"), &g_Config.m_TcRemoveAnti, &ModuleRect, LineSize);
-				if(g_Config.m_TcRemoveAnti || HasSearch)
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcRemoveAnti, EcLocalize("Remove prediction & antiping in freeze"), &g_Config.m_EcRemoveAnti, &ModuleRect, LineSize);
+				if(g_Config.m_EcRemoveAnti || HasSearch)
 				{
-					if(g_Config.m_TcUnfreezeLagDelayTicks < g_Config.m_TcUnfreezeLagTicks)
-						g_Config.m_TcUnfreezeLagDelayTicks = g_Config.m_TcUnfreezeLagTicks;
+					if(g_Config.m_EcUnfreezeLagDelayTicks < g_Config.m_EcUnfreezeLagTicks)
+						g_Config.m_EcUnfreezeLagDelayTicks = g_Config.m_EcUnfreezeLagTicks;
 					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-					Ui()->DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagTicks, &g_Config.m_TcUnfreezeLagTicks, &Button, EcLocalize("Amount"), 100, 300, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+					Ui()->DoSliderWithScaledValue(&g_Config.m_EcUnfreezeLagTicks, &g_Config.m_EcUnfreezeLagTicks, &Button, EcLocalize("Amount"), 100, 300, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
 					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-					Ui()->DoSliderWithScaledValue(&g_Config.m_TcUnfreezeLagDelayTicks, &g_Config.m_TcUnfreezeLagDelayTicks, &Button, EcLocalize("Delay"), 100, 3000, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
+					Ui()->DoSliderWithScaledValue(&g_Config.m_EcUnfreezeLagDelayTicks, &g_Config.m_EcUnfreezeLagDelayTicks, &Button, EcLocalize("Delay"), 100, 3000, 20, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
 				}
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcUnpredOthersInFreeze, EcLocalize("Dont predict other players if you are frozen"), &g_Config.m_TcUnpredOthersInFreeze, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcPredMarginInFreeze, EcLocalize("Adjust your prediction margin while frozen"), &g_Config.m_TcPredMarginInFreeze, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcUnpredOthersInFreeze, EcLocalize("Dont predict other players if you are frozen"), &g_Config.m_EcUnpredOthersInFreeze, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcPredMarginInFreeze, EcLocalize("Adjust your prediction margin while frozen"), &g_Config.m_EcPredMarginInFreeze, &ModuleRect, LineSize);
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				if(g_Config.m_TcPredMarginInFreeze || HasSearch)
+				if(g_Config.m_EcPredMarginInFreeze || HasSearch)
 				{
-					Ui()->DoScrollbarOption(&g_Config.m_TcPredMarginInFreezeAmount, &g_Config.m_TcPredMarginInFreezeAmount, &Button, EcLocalize("Frozen Margin"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "ms");
+					Ui()->DoScrollbarOption(&g_Config.m_EcPredMarginInFreezeAmount, &g_Config.m_EcPredMarginInFreezeAmount, &Button, EcLocalize("Frozen Margin"), 0, 100, &CUi::ms_LinearScrollbarScale, 0, "ms");
 				}
 			}
 		},
@@ -4165,7 +4186,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			Ui()->DoLabel(&Button, EcLocalize("Frozen Tee Appearance"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_TcFrozenKatana, EcLocalize("Show katana on frozen players"), &g_Config.m_TcFrozenKatana, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFrozenKatana, EcLocalize("Show katana on frozen players"), &g_Config.m_EcFrozenKatana, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClColorFrozenTeeBody, EcLocalize("Colored frozen tee skins"), &g_Config.m_ClColorFrozenTeeBody, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWhiteFeet, EcLocalize("Render feet as white feet"), &g_Config.m_ClWhiteFeet, &ModuleRect, LineSize);
 			CUIRect FeetBox;
@@ -4500,16 +4521,16 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
 
 			static CButtonContainer s_BgDrawColor;
-			DoLine_ColorPicker(&s_BgDrawColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Color"), &g_Config.m_TcBgDrawColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::TcBgDrawColor)), false);
+			DoLine_ColorPicker(&s_BgDrawColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Color"), &g_Config.m_EcBgDrawColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::EcBgDrawColor)), false);
 
 			ModuleRect.HSplitTop(LineSize * 2.0f, &Button, &ModuleRect);
-			if(g_Config.m_TcBgDrawFadeTime == 0)
-				Ui()->DoScrollbarOption(&g_Config.m_TcBgDrawFadeTime, &g_Config.m_TcBgDrawFadeTime, &Button, EcLocalize("Time until strokes disappear"), 0, 600, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, EcLocalize(" seconds (never)"));
+			if(g_Config.m_EcBgDrawFadeTime == 0)
+				Ui()->DoScrollbarOption(&g_Config.m_EcBgDrawFadeTime, &g_Config.m_EcBgDrawFadeTime, &Button, EcLocalize("Time until strokes disappear"), 0, 600, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, EcLocalize(" seconds (never)"));
 			else
-				Ui()->DoScrollbarOption(&g_Config.m_TcBgDrawFadeTime, &g_Config.m_TcBgDrawFadeTime, &Button, EcLocalize("Time until strokes disappear"), 0, 600, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, EcLocalize(" seconds"));
+				Ui()->DoScrollbarOption(&g_Config.m_EcBgDrawFadeTime, &g_Config.m_EcBgDrawFadeTime, &Button, EcLocalize("Time until strokes disappear"), 0, 600, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE, EcLocalize(" seconds"));
 
 			ModuleRect.HSplitTop(LineSize * 2.0f, &Button, &ModuleRect);
-			Ui()->DoScrollbarOption(&g_Config.m_TcBgDrawWidth, &g_Config.m_TcBgDrawWidth, &Button, EcLocalize("Width"), 1, 50, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE);
+			Ui()->DoScrollbarOption(&g_Config.m_EcBgDrawWidth, &g_Config.m_EcBgDrawWidth, &Button, EcLocalize("Width"), 1, 50, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_MULTILINE);
 
 			static CButtonContainer s_ReaderButtonDraw, s_ClearButtonDraw;
 			DoLine_KeyReader(ModuleRect, s_ReaderButtonDraw, s_ClearButtonDraw, EcLocalize("Draw where mouse is"), "+bg_draw");

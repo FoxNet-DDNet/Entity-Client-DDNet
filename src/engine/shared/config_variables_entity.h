@@ -17,21 +17,21 @@ MACRO_CONFIG_COL(ClECMessageColor, ec_message_color, 9633471, CFGFLAG_CLIENT | C
 MACRO_CONFIG_INT(ClMutedConsoleColor, ec_muted_console_color, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "colors in console for warlist")
 
 // Anti Latency Tools
-MACRO_CONFIG_INT(TcRemoveAnti, ec_remove_anti, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Removes some amount of antiping & player prediction in freeze")
-MACRO_CONFIG_INT(TcUnfreezeLagTicks, ec_remove_anti_ticks, 5, 0, 20, CFGFLAG_CLIENT | CFGFLAG_SAVE, "The biggest amount of prediction ticks that are removed")
-MACRO_CONFIG_INT(TcUnfreezeLagDelayTicks, ec_remove_anti_delay_ticks, 25, 5, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many ticks it takes to remove the maximum prediction after being frozen")
+MACRO_CONFIG_INT(EcRemoveAnti, ec_remove_anti, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Removes some amount of antiping & player prediction in freeze")
+MACRO_CONFIG_INT(EcUnfreezeLagTicks, ec_remove_anti_ticks, 5, 0, 20, CFGFLAG_CLIENT | CFGFLAG_SAVE, "The biggest amount of prediction ticks that are removed")
+MACRO_CONFIG_INT(EcUnfreezeLagDelayTicks, ec_remove_anti_delay_ticks, 25, 5, 150, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many ticks it takes to remove the maximum prediction after being frozen")
 
-MACRO_CONFIG_INT(TcUnpredOthersInFreeze, ec_unpred_others_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont predict other players if you are frozen")
-MACRO_CONFIG_INT(TcPredMarginInFreeze, ec_pred_margin_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable changing prediction margin while frozen")
-MACRO_CONFIG_INT(TcPredMarginInFreezeAmount, ec_pred_margin_in_freeze_amount, 15, 0, 2000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set what your prediction margin while frozen should be")
+MACRO_CONFIG_INT(EcUnpredOthersInFreeze, ec_unpred_others_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Dont predict other players if you are frozen")
+MACRO_CONFIG_INT(EcPredMarginInFreeze, ec_pred_margin_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Enable changing prediction margin while frozen")
+MACRO_CONFIG_INT(EcPredMarginInFreezeAmount, ec_pred_margin_in_freeze_amount, 15, 0, 2000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Set what your prediction margin while frozen should be")
 
-MACRO_CONFIG_INT(TcShowOthersGhosts, ec_show_others_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ghosts for other players in their unpredicted position")
-MACRO_CONFIG_INT(TcSwapGhosts, ec_swap_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show predicted players as ghost and normal players as unpredicted")
-MACRO_CONFIG_INT(TcHideFrozenGhosts, ec_hide_frozen_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide Ghosts of other players if they are frozen")
+MACRO_CONFIG_INT(EcShowOthersGhosts, ec_show_others_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show ghosts for other players in their unpredicted position")
+MACRO_CONFIG_INT(EcSwapGhosts, ec_swap_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show predicted players as ghost and normal players as unpredicted")
+MACRO_CONFIG_INT(EcHideFrozenGhosts, ec_hide_frozen_ghosts, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hide Ghosts of other players if they are frozen")
 
-MACRO_CONFIG_INT(TcPredGhostsAlpha, ec_pred_ghosts_alpha, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of predicted ghosts (0-100)")
-MACRO_CONFIG_INT(TcUnpredGhostsAlpha, ec_unpred_ghosts_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of unpredicted ghosts (0-100)")
-MACRO_CONFIG_INT(TcRenderGhostAsCircle, ec_render_ghost_as_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render Ghosts as circles instead of tee")
+MACRO_CONFIG_INT(EcPredGhostsAlpha, ec_pred_ghosts_alpha, 100, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of predicted ghosts (0-100)")
+MACRO_CONFIG_INT(EcUnpredGhostsAlpha, ec_unpred_ghosts_alpha, 50, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Alpha of unpredicted ghosts (0-100)")
+MACRO_CONFIG_INT(EcRenderGhostAsCircle, ec_render_ghost_as_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Render Ghosts as circles instead of tee")
 
 // Outline Variables
 MACRO_CONFIG_INT(ClOutline, ec_outline, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draws outlines")
@@ -53,19 +53,21 @@ MACRO_CONFIG_COL(ClOutlineColorTele, ec_outline_color_tele, 2113893167, CFGFLAG_
 MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 2097217461, CFGFLAG_CLIENT | CFGFLAG_SAVE | CFGFLAG_COLALPHA, "Unfreeze outline color")
 
 // Fast Input
-MACRO_CONFIG_INT(TcFastInput, ec_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction before the next tick")
-MACRO_CONFIG_INT(TcFastInputAmount, ec_fast_input_amount, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many milliseconds fast input will apply")
-MACRO_CONFIG_INT(TcFastInputOthers, ec_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply fast input to other tees")
+MACRO_CONFIG_INT(EcFastInput, ec_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction before the next tick")
+MACRO_CONFIG_INT(EcFastInputAmount, ec_fast_input_amount, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many milliseconds fast input will apply")
+MACRO_CONFIG_INT(EcFastInputOthers, ec_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply fast input to other tees")
+MACRO_CONFIG_INT(EcFastInputMode, ec_fast_input_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fast input algorithm: 0 = classic, 1 = flux (caps other tees to one extrapolated tick and waits for server pre-input)")
+MACRO_CONFIG_INT(EcFluxInputAmount, ec_flux_input_amount, 100, 0, 500, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Flux prediction offset, in hundredths of a tick (100 = 1.00 ticks). Only used when ec_fast_input_mode is set to flux")
 
 // Anti Ping Smoothing
-MACRO_CONFIG_INT(TcAntiPingImproved, ec_antiping_improved, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Different antiping smoothing algorithm, not compatible with cl_antiping_smooth")
-MACRO_CONFIG_INT(TcAntiPingNegativeBuffer, ec_antiping_negative_buffer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Helps in Gores. Allows internal certainty value to be negative which causes more conservative prediction")
-MACRO_CONFIG_INT(TcAntiPingStableDirection, ec_antiping_stable_direction, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predicts optimistically along the tees stable axis to reduce delay in gaining overall stability")
-MACRO_CONFIG_INT(TcAntiPingUncertaintyScale, ec_antiping_uncertainty_scale, 150, 25, 400, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Determines uncertainty duration as a factor of ping, 100 = 1.0")
+MACRO_CONFIG_INT(EcAntiPingImproved, ec_antiping_improved, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Different antiping smoothing algorithm, not compatible with cl_antiping_smooth")
+MACRO_CONFIG_INT(EcAntiPingNegativeBuffer, ec_antiping_negative_buffer, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Helps in Gores. Allows internal certainty value to be negative which causes more conservative prediction")
+MACRO_CONFIG_INT(EcAntiPingStableDirection, ec_antiping_stable_direction, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Predicts optimistically along the tees stable axis to reduce delay in gaining overall stability")
+MACRO_CONFIG_INT(EcAntiPingUncertaintyScale, ec_antiping_uncertainty_scale, 150, 25, 400, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Determines uncertainty duration as a factor of ping, 100 = 1.0")
 
 // Revert Variables
-MACRO_CONFIG_INT(TcSmoothPredictionMargin, ec_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
-MACRO_CONFIG_INT(TcFrozenKatana, ec_frozen_katana, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show katana on frozen players (reverts a DDNet change)")
+MACRO_CONFIG_INT(EcSmoothPredictionMargin, ec_prediction_margin_smooth, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Makes prediction margin transition smooth, causes worse ping jitter adjustment (reverts a ddnet change)")
+MACRO_CONFIG_INT(EcFrozenKatana, ec_frozen_katana, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show katana on frozen players (reverts a DDNet change)")
 
 // War List
 MACRO_CONFIG_INT(ClWarList, ec_warlist, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles war list visuals")
@@ -373,14 +375,14 @@ MACRO_CONFIG_INT(ClInfoUrlType, ec_info_url_type, 1, 0, 1, CFGFLAG_CLIENT | CFGF
 MACRO_CONFIG_STR(ClCustomCommunitiesUrl, ec_custom_communities_url, 256, "https://raw.githubusercontent.com/TaterClient/ddnet-custom-communities/refs/heads/main/custom-communities-ddnet-info.json", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to fetch custom communities from (must be https), empty to disable")
 
 // Bg Draw
-MACRO_CONFIG_INT(TcBgDrawWidth, ec_bg_draw_width, 5, 1, 50, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Width of background draw strokes")
-MACRO_CONFIG_INT(TcBgDrawFadeTime, ec_bg_draw_fade_time, 0, 0, 600, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Time until strokes disappear (0 = never)")
-MACRO_CONFIG_INT(TcBgDrawMaxItems, ec_bg_draw_max_items, 128, 0, 2048, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Maximum number of strokes")
-MACRO_CONFIG_COL(TcBgDrawColor, ec_bg_draw_color, 11893936, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of background draw strokes")
-MACRO_CONFIG_INT(TcBgDrawAutoSaveLoad, ec_bg_draw_auto_save_load, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically save and load background drawings")
+MACRO_CONFIG_INT(EcBgDrawWidth, ec_bg_draw_width, 5, 1, 50, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Width of background draw strokes")
+MACRO_CONFIG_INT(EcBgDrawFadeTime, ec_bg_draw_fade_time, 0, 0, 600, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Time until strokes disappear (0 = never)")
+MACRO_CONFIG_INT(EcBgDrawMaxItems, ec_bg_draw_max_items, 128, 0, 2048, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Maximum number of strokes")
+MACRO_CONFIG_COL(EcBgDrawColor, ec_bg_draw_color, 11893936, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of background draw strokes")
+MACRO_CONFIG_INT(EcBgDrawAutoSaveLoad, ec_bg_draw_auto_save_load, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically save and load background drawings")
 
 // Timer
-MACRO_CONFIG_INT(TcShowLocalTimeSeconds, ec_show_local_time_seconds, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show local time in seconds")
+MACRO_CONFIG_INT(EcShowLocalTimeSeconds, ec_show_local_time_seconds, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show local time in seconds")
 
 // Weapon in Freeze
 MACRO_CONFIG_INT(ClRenderWeaponsInFreeze, ec_render_weapons_in_freeze, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Renders players' weapons while frozen")

@@ -65,14 +65,9 @@ void CEnvelopeState::EnvelopeEval(int TimeOffsetMillis, int EnvelopeIndex, Color
 				EnvelopeTick = Client()->PredGameTick(g_Config.m_ClDummy) - 1 - GameClient()->m_Snap.m_pGameInfoObj->m_RoundStartTick;
 				TickRatio = (double)Client()->PredIntraGameTick(g_Config.m_ClDummy);
 
-				/*
-				 * Fast input draws the local tee ec_fast_input_amount milliseconds past this, see
-				 * CGameClient::GetFastInputPos, and the prediction advances the world for those
-				 * ticks along with it. Everything the map animates has to follow, or a moving quad
-				 * is drawn short of the tee it has already frozen.
-				 */
-				if(g_Config.m_TcFastInput)
-					TimeOffsetMillis += g_Config.m_TcFastInputAmount;
+				// EClient: Fast Input changes local tee rendering to be "in the future" basically, so offset quads as well.
+				if(g_Config.m_EcFastInput)
+					TickRatio += GameClient()->GetFastInputOffsetTicks();
 			}
 			Time = duration_cast<nanoseconds>(TickRatio * s_NanosPerTick) + EnvelopeTick * s_NanosPerTick;
 		}

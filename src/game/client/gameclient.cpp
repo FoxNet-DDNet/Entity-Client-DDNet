@@ -632,6 +632,7 @@ void CGameClient::OnConnected()
 	m_GameWorld.m_Core.InitSwitchers(m_Collision.m_HighestSwitchNumber);
 	m_GameWorld.m_PredictedEvents.clear();
 	m_RaceHelper.Init(this);
+	m_ReceivedPreInput = false;
 
 	// render loading before going through all components
 	m_Menus.RenderLoading(pConnectCaption, pLoadMapContent, 0);
@@ -1400,6 +1401,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 	{
 		CNetMsg_Sv_PreInput *pMsg = (CNetMsg_Sv_PreInput *)pRawMsg;
 		m_aClients[pMsg->m_Owner].m_aPreInputs[pMsg->m_IntendedTick % 200] = *pMsg;
+		m_ReceivedPreInput = true;
 	}
 	else if(MsgId == NETMSGTYPE_SV_SAVECODE)
 	{
@@ -2860,18 +2862,17 @@ void CGameClient::OnPredict()
 		pDummyChar = m_PredictedWorld.GetCharacterById(m_aLocalIds[!g_Config.m_ClDummy]);
 
 	bool RealPredTick = false;
-	// predict
 
+	// predict
 	int FastInputTicks = 0;
-	if(g_Config.m_TcFastInput)
-		FastInputTicks = (g_Config.m_TcFastInputAmount + 19) / 20;
+	if(g_Config.m_EcFastInput)
+		FastInputTicks = (int)std::ceil(GetFastInputOffsetTicks());
 
 	int FinalTickRegular = Client()->PredGameTick(g_Config.m_ClDummy); // The vanilla final tick disregarding fast input
 
 	int FinalTickSelf = FinalTickRegular + FastInputTicks; // the final tick for just our local tee
-	int FinalTickOthers = FinalTickSelf; // the final tick for all other tees
-	if(g_Config.m_TcFastInput && !g_Config.m_TcFastInputOthers)
-		FinalTickOthers = FinalTickSelf - FastInputTicks;
+	int OthersTicks = g_Config.m_EcFastInput ? (int)std::ceil(GetFastInputOffsetTicksOthers()) : 0;
+	int FinalTickOthers = FinalTickRegular + OthersTicks; // the final tick for all other tees
 
 	int LocalTee = g_Config.m_ClDummy ^ m_IsDummySwapping;
 	int DummyTee = LocalTee ^ 1;
@@ -2914,10 +2915,7 @@ void CGameClient::OnPredict()
 		CNetObj_PlayerInput DummyFastInput{};
 		bool DummyFirst = pInputData && pDummyInputData && pDummyChar->GetCid() < pLocalChar->GetCid();
 
-		// EClient: not while practicing. These ticks run on live input rather than on what was
-		// actually sent, so the real tee would act on presses the server never received -- which is
-		// where the phantom projectile hanging off the real tee came from.
-		if(g_Config.m_TcFastInput && Tick > FinalTickRegular && !m_LocalPractice.IsActive())
+		if(g_Config.m_EcFastInput && Tick > FinalTickRegular && !m_LocalPractice.IsActive())
 		{
 			pInputData = &m_Controls.m_aFastInput[LocalTee];
 			if(GetDummyFastInput(DummyFastInput, pDummyInputData, pDummyChar, LocalTee, DummyTee))
@@ -3039,7 +3037,7 @@ void CGameClient::OnPredict()
 		// m_PrevPredictedWorld.CopyWorld(&m_PrevRegularPredictedWorld); // not sure if this is worth performance cost, it seems to not matter
 	}
 
-	if(g_Config.m_TcRemoveAnti)
+	if(g_Config.m_EcRemoveAnti)
 	{
 		m_ExtraPredictedWorld.CopyWorldClean(&m_PredictedWorld);
 
@@ -3054,7 +3052,7 @@ void CGameClient::OnPredict()
 		{
 			bool Unfrozen = false;
 			bool Frozen = false;
-			for(int i = 0; i < g_Config.m_TcUnfreezeLagDelayTicks; i++)
+			for(int i = 0; i < g_Config.m_EcUnfreezeLagDelayTicks; i++)
 			{
 				if(!pExtraChar)
 					continue;
@@ -3073,7 +3071,7 @@ void CGameClient::OnPredict()
 				else
 				{
 					pExtraChar->m_AliveAccumulation = std::max(pExtraChar->m_AliveAccumulation, 1);
-					pExtraChar->m_AliveAccumulation = std::min(pExtraChar->m_AliveAccumulation + 1, g_Config.m_TcUnfreezeLagDelayTicks);
+					pExtraChar->m_AliveAccumulation = std::min(pExtraChar->m_AliveAccumulation + 1, g_Config.m_EcUnfreezeLagDelayTicks);
 				}
 			}
 		}
@@ -3148,7 +3146,7 @@ void CGameClient::OnPredict()
 	// EClient
 	// New antiping smoothing
 	CCharacter *pSmoothLocalChar = m_PredSmoothingWorld.GetCharacterById(m_Snap.m_LocalClientId);
-	if(g_Config.m_TcAntiPingImproved &&
+	if(g_Config.m_EcAntiPingImproved &&
 		Predict() && AntiPingPlayers() &&
 		pSmoothLocalChar &&
 		RealPredTick && m_PredictedTick >= MIN_TICK)
@@ -3317,11 +3315,11 @@ void CGameClient::OnPredict()
 			float TickDuration = (float)1000 / (float)Client()->GameTickSpeed();
 
 			// Manage uncertainty value
-			float PredTimeScale = (float)g_Config.m_TcAntiPingUncertaintyScale / 100.0f;
+			float PredTimeScale = (float)g_Config.m_EcAntiPingUncertaintyScale / 100.0f;
 			float TickSize = TickDuration / ((float)PredTime * PredTimeScale); // 20ms / PredTime
 			float PrevConfidence = 1.0f - m_aClients[i].m_Uncertainty;
 			float NewConfidence = PrevConfidence - Uncertainty + TickSize;
-			float MinConfidence = g_Config.m_TcAntiPingNegativeBuffer ? -1.0f : 0.0f;
+			float MinConfidence = g_Config.m_EcAntiPingNegativeBuffer ? -1.0f : 0.0f;
 			NewConfidence = std::clamp(NewConfidence, MinConfidence, 1.0f); // A certain about of "negative buffer" is allowed
 			m_aClients[i].m_Uncertainty = 1.0f - NewConfidence;
 			NewConfidence = std::max(0.0f, NewConfidence);
@@ -3335,7 +3333,7 @@ void CGameClient::OnPredict()
 				ConfidenceParallel = vec2(0, 0);
 			vec2 ConfidencePerp = PredVector - ConfidenceParallel;
 
-			if(!g_Config.m_TcAntiPingStableDirection)
+			if(!g_Config.m_EcAntiPingStableDirection)
 				TrustFactor = 0.0f;
 
 			vec2 ConfidenceVector = ConfidenceParallel * std::max(TrustFactor, NewConfidence) + ConfidencePerp * NewConfidence;
@@ -3363,7 +3361,7 @@ void CGameClient::OnPredict()
 		}
 	}
 	// Copy the current pred world so on the next tick we have the "previous" pred world to advance and test against
-	if(m_NewPredictedTick && g_Config.m_TcAntiPingImproved)
+	if(m_NewPredictedTick && g_Config.m_EcAntiPingImproved)
 		m_PredSmoothingWorld.CopyWorldClean(&m_RegularPredictedWorld);
 
 	for(int i = 0; i < MAX_CLIENTS; i++)
@@ -4471,9 +4469,9 @@ void CGameClient::UpdateRenderedCharacters()
 				vec2(m_aClients[i].m_RenderCur.m_X, m_aClients[i].m_RenderCur.m_Y),
 				m_aClients[i].m_IsPredicted ? Client()->PredIntraGameTick(g_Config.m_ClDummy) : Client()->IntraGameTick(g_Config.m_ClDummy));
 
-			if(g_Config.m_TcRemoveAnti)
+			if(g_Config.m_EcRemoveAnti)
 				Pos = GetFreezePos(i);
-			else if(g_Config.m_TcFastInput && (i == m_Snap.m_LocalClientId || IsDummy))
+			else if(g_Config.m_EcFastInput && (i == m_Snap.m_LocalClientId || IsDummy))
 				Pos = GetFastInputPos(i);
 
 			if(i == m_Snap.m_LocalClientId || IsDummy)
@@ -4495,18 +4493,18 @@ void CGameClient::UpdateRenderedCharacters()
 				if(g_Config.m_ClAntiPingSmooth)
 					Pos = GetSmoothPos(i);
 
-				if(g_Config.m_TcAntiPingImproved && m_aClients[i].m_ValidAntipingSmooth)
+				if(g_Config.m_EcAntiPingImproved && m_aClients[i].m_ValidAntipingSmooth)
 					Pos = mix(m_aClients[i].m_PrevImprovedPredPos, m_aClients[i].m_ImprovedPredPos, Client()->PredIntraGameTick(g_Config.m_ClDummy));
 
-				if(g_Config.m_TcRemoveAnti && m_pClient->m_IsLocalFrozen)
+				if(g_Config.m_EcRemoveAnti && m_pClient->m_IsLocalFrozen)
 					Pos = GetFreezePos(i);
-				else if(g_Config.m_TcFastInput && g_Config.m_TcFastInputOthers && !g_Config.m_TcAntiPingImproved)
+				else if(g_Config.m_EcFastInput && g_Config.m_EcFastInputOthers && !g_Config.m_EcAntiPingImproved)
 					Pos = GetFastInputPos(i);
 
-				if(g_Config.m_TcShowOthersGhosts && g_Config.m_TcSwapGhosts && !(m_aClients[i].m_FreezeEnd > 0 && g_Config.m_TcHideFrozenGhosts))
+				if(g_Config.m_EcShowOthersGhosts && g_Config.m_EcSwapGhosts && !(m_aClients[i].m_FreezeEnd > 0 && g_Config.m_EcHideFrozenGhosts))
 					Pos = UnpredPos;
 
-				if(g_Config.m_TcUnpredOthersInFreeze && Client()->m_IsLocalFrozen)
+				if(g_Config.m_EcUnpredOthersInFreeze && Client()->m_IsLocalFrozen)
 					Pos = UnpredPos;
 			}
 		}
@@ -4652,9 +4650,47 @@ void CGameClient::DetectStrongHook()
 	}
 }
 
+bool CGameClient::IsFastInputLocalClient(int ClientId) const
+{
+	return ClientId == m_Snap.m_LocalClientId || (PredictDummy() && ClientId == m_aLocalIds[!g_Config.m_ClDummy]);
+}
+
+// EClient: our own fast input offset, in continuous ticks, for whichever algorithm is selected.
+// Classic reads ec_fast_input_amount (milliseconds); flux reads its own ec_flux_input_amount
+// (hundredths of a tick), which is finer and does not assume a 50 tick server. Returns zero while
+// fast input is off, so a caller that forgets to check the setting still gets no offset.
+float CGameClient::GetFastInputOffsetTicks() const
+{
+	if(!g_Config.m_EcFastInput)
+		return 0.0f;
+	if(g_Config.m_EcFastInputMode == FAST_INPUT_MODE_FLUX)
+		return g_Config.m_EcFluxInputAmount / 100.0f;
+	return g_Config.m_EcFastInputAmount / 20.0f;
+}
+
+// EClient: the same offset for tees that aren't ours. Classic mirrors our own amount onto them 1:1
+// (or gives them nothing at all); flux caps them to a single tick no matter how far ahead we draw
+// ourselves, and holds off entirely until the server has sent a pre-input we are actually feeding
+// into the prediction -- without one we have no hint about their real input.
+float CGameClient::GetFastInputOffsetTicksOthers() const
+{
+	if(!g_Config.m_EcFastInputOthers)
+		return 0.0f;
+	if(g_Config.m_EcFastInputMode == FAST_INPUT_MODE_FLUX)
+		return m_ReceivedPreInput && g_Config.m_ClAntiPingPreInput ? std::min(GetFastInputOffsetTicks(), 1.0f) : 0.0f;
+	return GetFastInputOffsetTicks();
+}
+
+// Capping the whole offset rather than only its whole-tick part matters: the leftover fraction is
+// mixed into the intra tick, so capping ticks alone would still shift a tee we meant to leave put.
+float CGameClient::GetFastInputOffsetTicksFor(int ClientId) const
+{
+	return IsFastInputLocalClient(ClientId) ? GetFastInputOffsetTicks() : GetFastInputOffsetTicksOthers();
+}
+
 vec2 CGameClient::GetSmoothPos(int ClientId)
 {
-	const int FastInputTicks = g_Config.m_TcFastInput ? (g_Config.m_TcFastInputAmount + 19) / 20 : 0;
+	const int FastInputTicks = g_Config.m_EcFastInput ? (int)std::ceil(GetFastInputOffsetTicks()) : 0;
 	vec2 Pos = mix(m_aClients[ClientId].m_PrevPredicted.m_Pos, m_aClients[ClientId].m_Predicted.m_Pos, Client()->PredIntraGameTick(g_Config.m_ClDummy));
 	int64_t Now = time_get();
 	for(int i = 0; i < 2; i++)
@@ -4668,8 +4704,9 @@ vec2 CGameClient::GetSmoothPos(int ClientId)
 			float SmoothIntra;
 			Client()->GetSmoothTick(&SmoothTick, &SmoothIntra, MixAmount);
 
-			if(ClientId != m_Snap.m_LocalClientId && g_Config.m_TcFastInputOthers && FastInputTicks > 0)
-				SmoothTick += FastInputTicks;
+			// only ever reached for tees that aren't ours, so the others offset is the one that applies
+			if(ClientId != m_Snap.m_LocalClientId && FastInputTicks > 0)
+				SmoothTick += (int)std::ceil(GetFastInputOffsetTicksOthers());
 
 			if(SmoothTick > 0 &&
 				m_aClients[ClientId].m_aPredTick[(SmoothTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
@@ -4686,8 +4723,9 @@ vec2 CGameClient::GetFastInputPos(int ClientId)
 
 	vec2 Pos = mix(m_aClients[ClientId].m_PrevPredicted.m_Pos, m_aClients[ClientId].m_Predicted.m_Pos, PredIntraTick);
 
-	float FastInputIntra = (g_Config.m_TcFastInputAmount % 20) / 20.0f;
-	int FastInputTicks = g_Config.m_TcFastInputAmount / 20;
+	const float OffsetTicks = GetFastInputOffsetTicksFor(ClientId);
+	int FastInputTicks = (int)OffsetTicks;
+	float FastInputIntra = OffsetTicks - FastInputTicks;
 
 	float CombinedIntra = PredIntraTick + FastInputIntra;
 
@@ -4699,9 +4737,11 @@ vec2 CGameClient::GetFastInputPos(int ClientId)
 
 	int FinalTick = PredTick + FastInputTicks;
 
+	// the ring buffer is filled out to our own amount, which is as far as any tee can be sampled
+	const int BufferedTicks = (int)std::ceil(GetFastInputOffsetTicks());
 	if(FinalTick > 0 &&
 		m_aClients[ClientId].m_aPredTick[(FinalTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
-		m_aClients[ClientId].m_aPredTick[FinalTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + FastInputTicks)
+		m_aClients[ClientId].m_aPredTick[FinalTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + BufferedTicks)
 	{
 		Pos = mix(m_aClients[ClientId].m_aPredPos[(FinalTick - 1) % 200], m_aClients[ClientId].m_aPredPos[FinalTick % 200], FinalIntra);
 	}
@@ -4722,7 +4762,7 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 	float SmoothIntra;
 
 	int AdjustTicks = 0;
-	int DelayTicks = g_Config.m_TcUnfreezeLagDelayTicks;
+	int DelayTicks = g_Config.m_EcUnfreezeLagDelayTicks;
 	int FreezeTime = 0;
 	if(pExtraChar && pChar)
 	{
@@ -4735,7 +4775,7 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 
 		AdjustTicks = std::min(FreezeTime, AdjustTicks);
 	}
-	if(g_Config.m_TcRemoveAnti && pChar && AdjustTicks > 0 && FreezeTime > 0)
+	if(g_Config.m_EcRemoveAnti && pChar && AdjustTicks > 0 && FreezeTime > 0)
 		MixAmount = mix(0.0f, 1.0f, 1.0f - AdjustTicks / (float)DelayTicks);
 	// else if(AdjustTicks == 0 && ClientId != m_Snap.m_LocalClientId)
 	//	MixAmount = 1.f - std::pow(1.f - TimePassed / (float)Len, 1.2f);
@@ -4747,8 +4787,9 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 	m_SmoothTick = SmoothTick;
 	m_SmoothIntraTick = SmoothIntra;
 
-	float FastInputIntra = (g_Config.m_TcFastInputAmount % 20) / 20.0f;
-	int FastInputTicks = g_Config.m_TcFastInputAmount / 20;
+	const float FreezeOffsetTicks = GetFastInputOffsetTicksFor(ClientId);
+	int FastInputTicks = (int)FreezeOffsetTicks;
+	float FastInputIntra = FreezeOffsetTicks - FastInputTicks;
 
 	float CombinedIntra = SmoothIntra + FastInputIntra;
 
@@ -4758,21 +4799,17 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 
 	FastInputTicks += CarryOverTicks;
 
-	const bool IsLocal = ClientId == m_Snap.m_LocalClientId || (PredictDummy() && ClientId == m_aLocalIds[!g_Config.m_ClDummy]);
-	if(IsLocal && g_Config.m_TcFastInput)
-	{
-		SmoothTick += FastInputTicks;
-		SmoothIntra = FinalIntra;
-	}
-	else if(!IsLocal && g_Config.m_TcFastInputOthers && g_Config.m_TcFastInput)
+	if(g_Config.m_EcFastInput)
 	{
 		SmoothTick += FastInputTicks;
 		SmoothIntra = FinalIntra;
 	}
 
+	// the ring buffer is filled out to our own amount, which is as far as any tee can be sampled
+	const int BufferedTicks = (int)std::ceil(GetFastInputOffsetTicks());
 	if(SmoothTick > 0 &&
 		m_aClients[ClientId].m_aPredTick[(SmoothTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
-		m_aClients[ClientId].m_aPredTick[SmoothTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + FastInputTicks)
+		m_aClients[ClientId].m_aPredTick[SmoothTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + BufferedTicks)
 	{
 		Pos = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200], m_aClients[ClientId].m_aPredPos[SmoothTick % 200], SmoothIntra);
 	}

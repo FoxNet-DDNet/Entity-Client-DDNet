@@ -253,8 +253,8 @@ void CClient::SendSupportsCosmeticSnapInfo(int Conn)
 void CClient::SendFastInputsInfo(int Conn)
 {
 	CMsgPacker Msg(NETMSG_FOXNET_FASTINPUTS, true);
-	Msg.AddInt(g_Config.m_TcFastInput);
-	Msg.AddInt(g_Config.m_TcFastInputAmount);
+	Msg.AddInt(g_Config.m_EcFastInput);
+	Msg.AddInt(g_Config.m_EcFastInputAmount);
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
@@ -403,7 +403,7 @@ void CClient::SendInput()
 			m_aInputs[i][m_aCurrentInput[i]].m_Tick = m_aPredTick[g_Config.m_ClDummy];
 			m_aInputs[i][m_aCurrentInput[i]].m_PredictedTime = m_PredictedTime.Get(Now);
 			m_aInputs[i][m_aCurrentInput[i]].m_PredictionMargin = PredictionMargin() * time_freq() / 1000;
-			if(g_Config.m_TcSmoothPredictionMargin)
+			if(g_Config.m_EcSmoothPredictionMargin)
 				m_aInputs[i][m_aCurrentInput[i]].m_PredictionMargin = m_PredictedTime.GetMargin(Now);
 			m_aInputs[i][m_aCurrentInput[i]].m_Time = Now;
 
@@ -2172,7 +2172,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 				if(m_aInputs[Conn][k].m_Tick == InputPredTick)
 				{
 					Target = m_aInputs[Conn][k].m_PredictedTime + (Now - m_aInputs[Conn][k].m_Time);
-					if(g_Config.m_TcSmoothPredictionMargin)
+					if(g_Config.m_EcSmoothPredictionMargin)
 						Target = Target - (int64_t)((TimeLeft / 1000.0f) * time_freq()) + m_aInputs[Conn][k].m_PredictionMargin;
 					else
 						Target = Target - (int64_t)((TimeLeft / 1000.0f) * time_freq());
@@ -3058,7 +3058,7 @@ void CClient::Update()
 					SendInput();
 				}
 
-				if(g_Config.m_TcFastInput && GameClient()->CheckNewInput())
+				if(g_Config.m_EcFastInput && GameClient()->CheckNewInput())
 				{
 					Repredict = true;
 				}
@@ -5566,7 +5566,7 @@ void CClient::GetSmoothFreezeTick(int *pSmoothTick, float *pSmoothIntraTick, flo
 	int64_t PredTime = m_PredictedTime.Get(time_get());
 	GameTime = std::min(GameTime, PredTime);
 
-	int64_t UpperPredTime = std::clamp(PredTime - (time_freq() / 50) * g_Config.m_TcUnfreezeLagTicks, GameTime, PredTime);
+	int64_t UpperPredTime = std::clamp(PredTime - (time_freq() / 50) * g_Config.m_EcUnfreezeLagTicks, GameTime, PredTime);
 	int64_t LowestPredTime = std::clamp(PredTime, GameTime, UpperPredTime);
 	int64_t SmoothTime = std::clamp(LowestPredTime + (int64_t)(MixAmount * (PredTime - LowestPredTime)), LowestPredTime, PredTime);
 
@@ -5601,9 +5601,9 @@ int CClient::MaxLatencyTicks() const
 
 int CClient::PredictionMargin() const
 {
-	if(g_Config.m_TcPredMarginInFreeze && m_IsLocalFrozen)
+	if(g_Config.m_EcPredMarginInFreeze && m_IsLocalFrozen)
 	{
-		return g_Config.m_TcPredMarginInFreezeAmount;
+		return g_Config.m_EcPredMarginInFreezeAmount;
 	}
 	return g_Config.m_ClPredictionMargin;
 }

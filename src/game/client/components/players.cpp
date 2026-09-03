@@ -616,10 +616,10 @@ void CPlayers::RenderPlayer(
 	bool Spec = GameClient()->m_Snap.m_SpecInfo.m_Active;
 
 	float Alpha = GameClient()->TeeRenderAlpha(ClientId); // EClient
-	if(!OtherTeam && ClientId >= 0 && g_Config.m_TcShowOthersGhosts && !Local && !Spec)
-		Alpha = g_Config.m_TcPredGhostsAlpha / 100.0f;
+	if(!OtherTeam && ClientId >= 0 && g_Config.m_EcShowOthersGhosts && !Local && !Spec)
+		Alpha = g_Config.m_EcPredGhostsAlpha / 100.0f;
 
-	if(!OtherTeam && g_Config.m_TcShowOthersGhosts && !Local && g_Config.m_TcUnpredOthersInFreeze && Client()->m_IsLocalFrozen && !Spec)
+	if(!OtherTeam && g_Config.m_EcShowOthersGhosts && !Local && g_Config.m_EcUnpredOthersInFreeze && Client()->m_IsLocalFrozen && !Spec)
 		Alpha = 1.0f;
 
 	if(ClientId == -2) // ghost
@@ -655,7 +655,7 @@ void CPlayers::RenderPlayer(
 	float Angle = GetPlayerTargetAngle(&Prev, &Player, ClientId, Intra);
 
 	vec2 Direction = direction(Angle);
-	if(g_Config.m_TcSwapGhosts && g_Config.m_TcShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
+	if(g_Config.m_EcSwapGhosts && g_Config.m_EcShowOthersGhosts && !Local && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		if(ClientId >= 0)
 			Position = mix(
 				vec2(GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_X, GameClient()->m_Snap.m_aCharacters[ClientId].m_Prev.m_Y),
@@ -710,7 +710,7 @@ void CPlayers::RenderPlayer(
 
 	bool Stationary = Player.m_VelX <= 1 && Player.m_VelX >= -1;
 	bool InAir = !Collision()->CheckPoint(Player.m_X, Player.m_Y + 16);
-	if(g_Config.m_TcAntiPingImproved && !Local)
+	if(g_Config.m_EcAntiPingImproved && !Local)
 		InAir = !Collision()->CheckPoint(Position.x, Position.y + 16);
 	bool Running = Player.m_VelX >= 5000 || Player.m_VelX <= -5000;
 	bool WantOtherDir = (Player.m_Direction == -1 && Vel.x > 0) || (Player.m_Direction == 1 && Vel.x < 0);
@@ -1092,7 +1092,7 @@ void CPlayers::BuildTeeRenderInfo(int ClientId, const CFrameSkins &Skins, CTeeRe
 		Frozen = GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0;
 
 		// EClient
-		if(g_Config.m_TcFastInput)
+		if(g_Config.m_EcFastInput)
 			Frozen = GameClient()->m_aClients[ClientId].m_RegularPredicted.m_FreezeEnd != 0;
 	}
 	else
@@ -1132,7 +1132,7 @@ void CPlayers::BuildTeeRenderInfo(int ClientId, const CFrameSkins &Skins, CTeeRe
 	}
 
 	// TClient
-	if(g_Config.m_TcFrozenKatana > 0 && GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0)
+	if(g_Config.m_EcFrozenKatana > 0 && GameClient()->m_aClients[ClientId].m_Predicted.m_FreezeEnd != 0)
 	{
 		GameClient()->m_aClients[ClientId].m_RenderCur.m_Weapon = WEAPON_NINJA;
 		Info.m_TeeRenderFlags &= ~TEE_NO_WEAPON;

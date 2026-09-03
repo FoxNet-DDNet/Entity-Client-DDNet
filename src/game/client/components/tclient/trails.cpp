@@ -77,12 +77,12 @@ void CTrails::OnRender()
 		{
 			StartTick = PredTick;
 			IntraTick = Client()->PredIntraGameTick(g_Config.m_ClDummy);
-			if(g_Config.m_TcRemoveAnti)
+			if(g_Config.m_EcRemoveAnti)
 			{
 				StartTick = GameClient()->m_SmoothTick;
 				IntraTick = GameClient()->m_SmoothIntraTick;
 			}
-			if(g_Config.m_TcUnpredOthersInFreeze && !Local && Client()->m_IsLocalFrozen)
+			if(g_Config.m_EcUnpredOthersInFreeze && !Local && Client()->m_IsLocalFrozen)
 			{
 				StartTick = GameTick;
 			}

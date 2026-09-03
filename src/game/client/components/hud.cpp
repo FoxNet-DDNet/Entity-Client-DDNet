@@ -1875,7 +1875,7 @@ void CHud::RenderLocalTime(float x)
 	if(!RenderLocalTime())
 		return;
 
-	const bool Seconds = g_Config.m_TcShowLocalTimeSeconds; // TClient
+	const bool Seconds = g_Config.m_EcShowLocalTimeSeconds; // TClient
 
 	char aTimeStr[16];
 	str_timestamp_format(aTimeStr, sizeof(aTimeStr), Seconds ? "%H:%M.%S" : "%H:%M");
@@ -2978,7 +2978,7 @@ void CHud::RenderIsland()
 			// where it might one day be is just clutter to place things around.
 			if(g_Config.m_ClShowLocalTimeAlways)
 			{
-				const bool Seconds = g_Config.m_TcShowLocalTimeSeconds;
+				const bool Seconds = g_Config.m_EcShowLocalTimeSeconds;
 				const float NominalWidth = std::round(TextRender()->TextBoundingBox(5.0f, Seconds ? "00:00.00" : "00:00").m_W);
 				m_HudLayout.ReportNominalRect(EHudElement::LOCAL_TIME,
 					vec2(ClockX - (NominalWidth + 15.0f), 0.0f), vec2(NominalWidth + 10.0f, 12.5f));
@@ -3105,7 +3105,7 @@ void CHud::RenderIsland()
 		Island.m_CropProfile = MusicArtCropProfile(Island.m_CurState.m_ServiceId);
 	}
 
-	const bool ShowSeconds = g_Config.m_TcShowLocalTimeSeconds; // TClient
+	const bool ShowSeconds = g_Config.m_EcShowLocalTimeSeconds; // TClient
 	if(absolute(Island.m_TimeTextSizeScale - SizeScale) > 0.001f || Island.m_TimeTextShowSeconds != ShowSeconds)
 	{
 		const char *pTimePlaceholder = ShowSeconds ? "00:00.00" : "00:00";
