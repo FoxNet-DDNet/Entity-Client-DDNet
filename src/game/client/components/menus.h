@@ -41,10 +41,28 @@ enum class ESettingsModuleColumn
 	BOTH, // Never a place to put a module, only something to ask for once the columns are merged
 };
 
-struct CSettingsModule
+// EClient: what a module is about, so the one settings page can be narrowed to a topic without
+// being split back into separate pages. A module carries one or more of these; the page holds a
+// mask of the chips the user has toggled on, and an empty mask shows everything.
+enum ESettingsModuleFilter : unsigned
 {
+	FILTER_NONE = 0, // No chip active: everything shows
+
+	FILTER_VISUAL = 1 << 0,
+	FILTER_HUD = 1 << 1,
+	FILTER_GAMEPLAY = 1 << 2,
+	FILTER_NETWORK = 1 << 3,
+	FILTER_CHAT = 1 << 4,
+	FILTER_WARLIST = 1 << 5,
+	FILTER_MISC = 1 << 6,
+};
+
+class CSettingsModule
+{
+public:
 	ESettingsModuleColumn m_Column = ESettingsModuleColumn::LEFT;
 	float m_TopMargin = 0.0f;
+	unsigned m_Filters = FILTER_MISC; // Never FILTER_NONE, an untagged module would be unreachable while any chip is on
 	std::vector<std::string_view> m_vSearchTerms;
 	std::function<float(bool)> m_GetHeight;
 	std::function<void(CUIRect, bool)> m_Render;
@@ -57,18 +75,20 @@ struct CSettingsModule
 	{
 	}
 
-	CSettingsModule(ESettingsModuleColumn Column, std::vector<std::string_view> vSearchTerms, std::function<float(bool)> GetHeight, std::function<void(CUIRect, bool)> Render, float TopMargin = 0.0f) :
+	CSettingsModule(ESettingsModuleColumn Column, unsigned Filters, std::vector<std::string_view> vSearchTerms, std::function<float(bool)> GetHeight, std::function<void(CUIRect, bool)> Render, float TopMargin = 0.0f) :
 		m_Column(Column),
 		m_TopMargin(TopMargin),
+		m_Filters(Filters),
 		m_vSearchTerms(std::move(vSearchTerms)),
 		m_GetHeight(std::move(GetHeight)),
 		m_Render(std::move(Render))
 	{
 	}
 
-	CSettingsModule(ESettingsModuleColumn Column, std::initializer_list<std::string_view> SearchTerms, std::function<float(bool)> GetHeight, std::function<void(CUIRect, bool)> Render, float TopMargin = 0.0f) :
+	CSettingsModule(ESettingsModuleColumn Column, unsigned Filters, std::initializer_list<std::string_view> SearchTerms, std::function<float(bool)> GetHeight, std::function<void(CUIRect, bool)> Render, float TopMargin = 0.0f) :
 		m_Column(Column),
 		m_TopMargin(TopMargin),
+		m_Filters(Filters),
 		m_vSearchTerms(SearchTerms),
 		m_GetHeight(std::move(GetHeight)),
 		m_Render(std::move(Render))
@@ -920,7 +940,6 @@ private:
 	void RenderSettingsEClient(CUIRect MainView);
 	void RenderSettingsWarList(CUIRect MainView);
 	void RenderSettingsProfiles(CUIRect MainView);
-	void RenderSettingsVisual(CUIRect MainView);
 	void RenderSettingsStatusbar(CUIRect MainView);
 	void RenderSettingsPlayerActions(CUIRect MainView);
 	void RenderSettingsBindwheel(CUIRect MainView);
