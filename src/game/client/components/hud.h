@@ -105,8 +105,6 @@ class CHud : public CComponent
 	bool HasDummyActionsBox() const; // EClient
 	int ShowFps() const; // EClient
 
-
-	
 	float m_TextWidthFPS0;
 	float m_TextWidthFPS00;
 	float m_TextWidthFPS000;
