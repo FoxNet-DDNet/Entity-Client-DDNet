@@ -300,6 +300,8 @@ private:
 	bool m_aHasLastTp[NUM_DUMMIES];
 	vec2 m_aRescuePos[NUM_DUMMIES];
 	bool m_aHasRescuePos[NUM_DUMMIES];
+	// Stands in for CPlayer::m_DieTick, which is what rate limits the death effect on a kill tile
+	int m_aDieTick[NUM_DUMMIES];
 
 	// What the real tees were doing last snapshot, to notice them being moved
 	bool m_aHasServerPos[MAX_CLIENTS];
@@ -354,6 +356,8 @@ private:
 	void StepWorld(CGameWorld &World, int Tick);
 	void UpdateLookahead();
 	void HandleTeleporters(CGameWorld &World, int Tick);
+	void HandleDeathTiles(CGameWorld &World, int Tick);
+	bool IsDeathTileAt(vec2 Pos, float ProximityRadius) const;
 	int PickTeleOut(int Tick, int Size) const;
 	void TeleportChar(CCharacter *pChar, vec2 Pos, bool ResetVel, bool ReleaseHooked, CGameWorld &World);
 	static void LoseWeapons(CCharacter *pChar);

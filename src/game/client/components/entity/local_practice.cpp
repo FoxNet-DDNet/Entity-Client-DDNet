@@ -303,6 +303,9 @@ void CLocalPractice::Start()
 	m_PrevWorld.CopyWorldClean(&m_World);
 	m_AlertReason = EMoveReason::NONE;
 	mem_zero(m_aPauseState, sizeof(m_aPauseState));
+	// Far enough back that the first kill tile touched plays its effect rather than being swallowed
+	for(int &DieTick : m_aDieTick)
+		DieTick = m_Tick - Client()->GameTickSpeed();
 	m_TeleSeed = (unsigned int)Client()->GameTick(g_Config.m_ClDummy);
 
 	// Registered with the chat so they autocomplete alongside the server's own, and taken back out
@@ -538,7 +541,18 @@ void CLocalPractice::Respawn(int Conn)
 		return;
 
 	vec2 Pos = m_aStartPos[Conn];
-	if(!m_vSpawns.empty())
+	const int ClientId = GameClient()->m_aLocalIds[Conn];
+	const bool ToReal = g_Config.m_ClLocalPracticeKillToReal && ClientId >= 0 && GameClient()->m_Snap.m_aCharacters[ClientId].m_Active;
+
+	if(ToReal)
+	{
+		// Back to the real tee, which is where practice started from and almost always where the
+		// next attempt wants to begin. A spawn tile is halfway across the map from the part being
+		// practiced.
+		const CNetObj_Character &Cur = GameClient()->m_Snap.m_aCharacters[ClientId].m_Cur;
+		Pos = vec2(Cur.m_X, Cur.m_Y);
+	}
+	else if(!m_vSpawns.empty())
 	{
 		// Round robin rather than random, so repeatedly killing walks the spawns instead of
 		// sometimes handing back the one just left
@@ -840,6 +854,7 @@ void CLocalPractice::StepWorld(CGameWorld &World, int Tick)
 
 	World.Tick();
 	HandleTeleporters(World, Tick);
+	HandleDeathTiles(World, Tick);
 
 	// Invincible is a "nothing freezes me" switch on the server rather than an unfreeze: every
 	// freeze path there is guarded, see CCharacter::Freeze and the m_Invincible checks through
@@ -1169,6 +1184,69 @@ void CLocalPractice::LoseWeapons(CCharacter *pChar)
 {
 	for(int Weapon = WEAPON_SHOTGUN; Weapon < NUM_WEAPONS; Weapon++)
 		pChar->GiveWeapon(Weapon, true);
+}
+
+bool CLocalPractice::IsDeathTileAt(vec2 Pos, float ProximityRadius) const
+{
+	// The same eight probes CCharacter::HandleSkippableTiles makes: the four corners of the tee,
+	// against the game layer and the front layer
+	const float Offset = ProximityRadius / 3.0f;
+	for(const float x : {Pos.x + Offset, Pos.x - Offset})
+		for(const float y : {Pos.y - Offset, Pos.y + Offset})
+			if(Collision()->GetCollisionAt(x, y) == TILE_DEATH || Collision()->GetFrontCollisionAt(x, y) == TILE_DEATH)
+				return true;
+	return false;
+}
+
+void CLocalPractice::HandleDeathTiles(CGameWorld &World, int Tick)
+{
+	// The practice branch of CCharacter::HandleSkippableTiles: a kill tile freezes instead of
+	// killing, and plays the death sound and particles at most once a second, so that sitting in one
+	// is a single effect rather than a stream of them. None of this exists in the client's
+	// prediction -- it leaves the whole death-tile branch out, because prediction never kills a tee
+	// -- so the practice world has to do it itself.
+	// Speculative look-ahead ticks re-run every frame, so only the world that really advances is
+	// allowed to play anything or to move the rate limit on.
+	const bool RealTick = &World == &m_World;
+
+	for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
+	{
+		const int ClientId = GameClient()->m_aLocalIds[Conn];
+		CCharacter *pChar = ClientId >= 0 ? World.GetCharacterById(ClientId) : nullptr;
+		if(!pChar)
+			continue;
+		// The server's third guard, having finished the race in a team, has no counterpart here:
+		// nothing in the practice world tracks a finish.
+		if(pChar->Core()->m_Super || pChar->Core()->m_Invincible)
+			continue;
+		if(!IsDeathTileAt(pChar->m_Pos, pChar->GetProximityRadius()))
+			continue;
+
+		pChar->Freeze();
+
+		if(!RealTick || Tick - m_aDieTick[Conn] < Client()->GameTickSpeed())
+			continue;
+		m_aDieTick[Conn] = Tick;
+		World.CreatePredictedSound(pChar->m_Pos, SOUND_PLAYER_DIE, ClientId);
+		GameClient()->m_Effects.PlayerDeath(pChar->m_Pos, ClientId, 1.0f);
+	}
+
+	if(!RealTick)
+		return;
+
+	// Leaving the game layer still kills, exactly as it does on a server with practice on -- the
+	// death tile is the only thing practice makes survivable. Respawning is all a kill can mean in
+	// here, so that is what it does, and where it puts you is ec_local_practice_kill_to_real.
+	for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
+	{
+		const int ClientId = GameClient()->m_aLocalIds[Conn];
+		CCharacter *pChar = ClientId >= 0 ? World.GetCharacterById(ClientId) : nullptr;
+		if(pChar && pChar->GameLayerClipped(pChar->m_Pos))
+		{
+			m_aDieTick[Conn] = Tick;
+			Respawn(Conn);
+		}
+	}
 }
 
 void CLocalPractice::HandleTeleporters(CGameWorld &World, int Tick)
@@ -2122,7 +2200,19 @@ void CLocalPractice::CmdInvincible(const char *pArgs)
 	CCharacter *pChar = AnyPracticeChar();
 	if(!pChar)
 		return;
-	pChar->Core()->m_Invincible = pArgs[0] ? str_toint(pArgs) != 0 : !pChar->Core()->m_Invincible;
+
+	// CCharacter::SetInvincible, mirrored down to the order: super comes off first because the
+	// server does not want both at once, the unfreeze follows the switch going on, and endless jump
+	// tracks it in both directions -- so turning invincible off takes endless jump with it, as it
+	// does on a server. The end-of-tick sweep in StepWorld is what keeps the unfreeze standing,
+	// standing in for the invincible guards the server has on every freeze path.
+	const bool Invincible = pArgs[0] ? str_toint(pArgs) != 0 : !pChar->Core()->m_Invincible;
+	if(Invincible)
+		pChar->SetSuper(false);
+	pChar->Core()->m_Invincible = Invincible;
+	if(Invincible)
+		ClearFreeze(pChar);
+	pChar->Core()->m_EndlessJump = Invincible;
 }
 
 void CLocalPractice::CmdWeapons(const char *pArgs)
