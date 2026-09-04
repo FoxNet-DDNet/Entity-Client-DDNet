@@ -3223,28 +3223,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	});
 #endif
 
-	/* Gores Mode */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		FILTER_GAMEPLAY,
-		{"gores", "mode", "advanced", "disable", "weapons", "automation", "enable", "gametype"},
-		[](bool HasSearch) {
-			return 100.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Gores Mode"), HeaderSize, HeaderAlignment);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, EcLocalize("Enable Gores Mode"), &g_Config.m_ClGoresMode, &ModuleRect, LineSize);
-
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, EcLocalize("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, EcLocalize("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &ModuleRect, LineSize);
-		},
-	});
-
 	/* Fast Input */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
@@ -3325,11 +3303,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		},
 	});
 
-	// EClient: the modules that used to live on their own Visuals tab. They are all one page
-	// now, and the quick filter chips are what separates them.
 	auto RenderHudEditorButton = [this](CButtonContainer *pId, const CUIRect *pRect) {
-		// Tucked into the module's top right corner. The drawing itself is shared with the copy
-		// that sits in the search bar.
 		CUIRect Temp = *pRect;
 		constexpr float a = HeaderSize + MarginExtraSmall;
 		Temp.y += MarginSmall;
@@ -3388,6 +3362,192 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		},
 	});
 #endif
+
+	/* Gores Mode */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_GAMEPLAY,
+		{"gores", "mode", "advanced", "disable", "weapons", "automation", "enable", "gametype"},
+		[](bool HasSearch) {
+			return 100.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Gores Mode"), HeaderSize, HeaderAlignment);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, EcLocalize("Enable Gores Mode"), &g_Config.m_ClGoresMode, &ModuleRect, LineSize);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresModeDisableIfWeapons, EcLocalize("Disable if You Have Any Weapon"), &g_Config.m_ClGoresModeDisableIfWeapons, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClAutoEnableGoresMode, EcLocalize("Auto Enable if Gametype is \"Gores\""), &g_Config.m_ClAutoEnableGoresMode, &ModuleRect, LineSize);
+		},
+	});
+
+	/* Miscellaneous */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_MISC | FILTER_VISUAL | FILTER_HUD,
+		{"miscellaneous", "custom", "font", "options", "ping", "circles", "names", "old", "team", "moving", "tiles", "entities", "entity", "cursor"},
+		[](bool HasSearch) {
+			return 175.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Miscellaneous"), HeaderSize, HeaderAlignment);
+			{
+				// T-Client
+				{
+					static std::vector<const char *> s_FontDropDownNames = {};
+					static CUi::SDropDownState s_FontDropDownState;
+					static CScrollRegion s_FontDropDownScrollRegion;
+					s_FontDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_FontDropDownScrollRegion;
+					s_FontDropDownState.m_SelectionPopupContext.m_SpecialFontRenderMode = true;
+					int FontSelectedOld = -1;
+					for(size_t i = 0; i < TextRender()->GetCustomFaces()->size(); ++i)
+					{
+						if(s_FontDropDownNames.size() != TextRender()->GetCustomFaces()->size())
+							s_FontDropDownNames.push_back(TextRender()->GetCustomFaces()->at(i).c_str());
+
+						if(str_find_nocase(g_Config.m_ClCustomFont, TextRender()->GetCustomFaces()->at(i).c_str()))
+							FontSelectedOld = i;
+					}
+					CUIRect FontDropDownRect, FontDirectory;
+					ModuleRect.HSplitTop(LineSize, &FontDropDownRect, &ModuleRect);
+
+					float Length = TextRender()->TextBoundingBox(FontSize, "Custom Font:").m_W + 3.5f;
+
+					FontDropDownRect.VSplitLeft(Length, &Label, &FontDropDownRect);
+					FontDropDownRect.VSplitRight(20.0f, &FontDropDownRect, &FontDirectory);
+					FontDropDownRect.VSplitRight(MarginSmall, &FontDropDownRect, nullptr);
+
+					Ui()->DoLabel(&Label, EcLocalize("Custom Font:"), FontSize, TEXTALIGN_ML);
+					const int FontSelectedNew = Ui()->DoDropDown(&FontDropDownRect, FontSelectedOld, s_FontDropDownNames.data(), s_FontDropDownNames.size(), s_FontDropDownState);
+					Ui()->UpdatePopupMenuOffset(&s_FontDropDownState.m_SelectionPopupContext, FontDropDownRect.x, FontDropDownRect.y);
+
+					if(s_ScrollRegion.RectClipped(FontDropDownRect))
+					{
+						Ui()->ClosePopupMenu(&s_FontDropDownState.m_SelectionPopupContext);
+					}
+
+					if(FontSelectedOld != FontSelectedNew)
+					{
+						str_copy(g_Config.m_ClCustomFont, s_FontDropDownNames[FontSelectedNew]);
+						TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
+
+						GameClient()->OnFontChange();
+					}
+					static CButtonContainer s_FontDirectoryId;
+					if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FontIcon::FOLDER, 0, &FontDirectory, BUTTONFLAG_LEFT))
+					{
+						Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
+						Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);
+						Client()->ViewFile("data/entity/fonts");
+					}
+				}
+
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &ModuleRect, LineSize);
+
+				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreboardOutlineTeams, EcLocalize("Outline Teams in Scoreboard"), &g_Config.m_ClScoreboardOutlineTeams, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRevertTeamColors, EcLocalize("Use Old Team Colors"), &g_Config.m_ClRevertTeamColors, &ModuleRect, LineSize);
+
+				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
+
+				{
+					static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}, {}, {}};
+					static const std::vector<const char *> s_vTooltips = {
+						EcLocalize("Don't show moving tiles in entities"),
+						EcLocalize("Use map design for moving tiles in entities"),
+						EcLocalize("Use selected game-assets' colors for moving tiles in entities"),
+						EcLocalize("Use game-assets' colors and map design for moving tiles in entities"),
+					};
+					int Value = g_Config.m_ClShowMovingTilesEntities;
+					if(DoLine_RadioMenu_Compact(ModuleRect, EcLocalize("Moving Tiles:"),
+						   s_vButtonContainers,
+						   {"Off", "Design", "Entity", "Both"},
+						   {0, 1, 2, 3},
+						   Value,
+						   5.0f,
+						   &s_vTooltips))
+					{
+						g_Config.m_ClShowMovingTilesEntities = Value;
+					}
+				}
+
+				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoScrollbarOption(&g_Config.m_ClCursorOpacitySpec, &g_Config.m_ClCursorOpacitySpec, &Button, EcLocalize("Cursor Opacity in Spec"), 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
+			}
+		},
+	});
+
+	/* Stats */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_HUD,
+		{"stats", "fps", "ping", "snap", "rate", "show"},
+		[](bool HasSearch) {
+			return 100;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("Stats"), HeaderSize, HeaderAlignment);
+			{
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowFps, EcLocalize("Show FPS"), &g_Config.m_ClStatisticsShowFps, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowPing, EcLocalize("Show Ping"), &g_Config.m_ClStatisticsShowPing, &ModuleRect, LineSize);
+				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowSnapRate, EcLocalize("Show Snap Rate"), &g_Config.m_ClStatisticsShowSnapRate, &ModuleRect, LineSize);
+			}
+		},
+	});
+
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_GAMEPLAY,
+		{"ingame", "in-game", "game", "automation", "auto", "dummy", "connect", "switch", "spawn", "anti", "block"},
+		[](bool HasSearch) {
+			return 80.0f;
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			Ui()->DoLabel(&Button, EcLocalize("In-Game Automation"), HeaderSize, HeaderAlignment);
+
+			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			if(DoButton_CheckBox(&g_Config.m_ClAntiSpawnBlock, "Anti Spawn Block", g_Config.m_ClAntiSpawnBlock, &Button))
+				g_Config.m_ClAntiSpawnBlock ^= 1;
+			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you respawn and back to team 0 when close to start line");
+
+			{
+				static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}, {}};
+				static const std::vector<const char *> s_vTooltips = {
+					EcLocalize("Off"),
+					EcLocalize("Automatically connect dummy on join"),
+					EcLocalize("Automatically connect dummy and switch back to main automatically"),
+				};
+				int Value = g_Config.m_ClAutoDummyConnect;
+				if(DoLine_RadioMenu_Compact(ModuleRect, EcLocalize("Auto Dummy:"),
+					   s_vButtonContainers,
+					   {"Off", "On", "On + No Switch"},
+					   {0, 1, 2},
+					   Value,
+					   5.0f,
+					   &s_vTooltips))
+				{
+					g_Config.m_ClAutoDummyConnect = Value;
+				}
+			}
+		},
+	});
 
 	/* Chat Bubbles */
 	vModules.push_back({
@@ -3922,9 +4082,9 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_WARLIST,
-		{"warlist", "sweat", "skin", "auto", "add", "name", "change", "anti", "spawn", "block", "random", "team"},
+		{"warlist", "sweat", "skin", "auto", "add", "name", "change"},
 		[&](bool HasSearch) {
-			float Height = 200.0f;
+			float Height = 180.0f;
 			if(g_Config.m_ClAutoAddOnNameChange || HasSearch)
 				Height += LineSize;
 
@@ -3940,12 +4100,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarList, ("Use Warlist"), &g_Config.m_ClWarList, &ModuleRect, LineMargin);
 			ModuleRect.HSplitTop(5, &Button, &ModuleRect);
 
-			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-			if(DoButton_CheckBox(&g_Config.m_ClAntiSpawnBlock, "Anti Spawn Block", g_Config.m_ClAntiSpawnBlock, &Button))
-				g_Config.m_ClAntiSpawnBlock ^= 1;
-			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you respawn and back to team 0 when close to start line");
-
-			ModuleRect.HSplitTop(5, &Button, &ModuleRect);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatMode, ("Sweat Mode"), &g_Config.m_ClSweatMode, &ModuleRect, LineMargin);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeOnlyOthers, ("Don't Change Own Skin"), &g_Config.m_ClSweatModeOnlyOthers, &ModuleRect, LineMargin);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSweatModeSelfColor, ("Don't Change Own Color"), &g_Config.m_ClSweatModeSelfColor, &ModuleRect, LineMargin);
@@ -4166,7 +4320,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		},
 	});
 
-	/* Frozen Tee Appearance */
+	/* Tee Appearance */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_VISUAL,
@@ -4183,7 +4337,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Frozen Tee Appearance"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabel(&Button, EcLocalize("Tee Appearance"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFrozenKatana, EcLocalize("Show katana on frozen players"), &g_Config.m_EcFrozenKatana, &ModuleRect, LineSize);
@@ -4198,129 +4352,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				static CLineInput s_WhiteFeet(g_Config.m_ClWhiteFeetSkin, sizeof(g_Config.m_ClWhiteFeetSkin));
 				s_WhiteFeet.SetEmptyText("x_ninja");
 				Ui()->DoEditBox(&s_WhiteFeet, &FeetBox, EditBoxFontSize);
-			}
-		},
-	});
-
-	/* Miscellaneous */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		FILTER_MISC | FILTER_VISUAL | FILTER_HUD,
-		{"miscellaneous", "custom", "font", "options", "ping", "circles", "names", "old", "team", "moving", "tiles", "entities", "entity", "cursor"},
-		[](bool HasSearch) {
-			return 175.0f;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Miscellaneous"), HeaderSize, HeaderAlignment);
-			{
-				// T-Client
-				{
-					static std::vector<const char *> s_FontDropDownNames = {};
-					static CUi::SDropDownState s_FontDropDownState;
-					static CScrollRegion s_FontDropDownScrollRegion;
-					s_FontDropDownState.m_SelectionPopupContext.m_pScrollRegion = &s_FontDropDownScrollRegion;
-					s_FontDropDownState.m_SelectionPopupContext.m_SpecialFontRenderMode = true;
-					int FontSelectedOld = -1;
-					for(size_t i = 0; i < TextRender()->GetCustomFaces()->size(); ++i)
-					{
-						if(s_FontDropDownNames.size() != TextRender()->GetCustomFaces()->size())
-							s_FontDropDownNames.push_back(TextRender()->GetCustomFaces()->at(i).c_str());
-
-						if(str_find_nocase(g_Config.m_ClCustomFont, TextRender()->GetCustomFaces()->at(i).c_str()))
-							FontSelectedOld = i;
-					}
-					CUIRect FontDropDownRect, FontDirectory;
-					ModuleRect.HSplitTop(LineSize, &FontDropDownRect, &ModuleRect);
-
-					float Length = TextRender()->TextBoundingBox(FontSize, "Custom Font:").m_W + 3.5f;
-
-					FontDropDownRect.VSplitLeft(Length, &Label, &FontDropDownRect);
-					FontDropDownRect.VSplitRight(20.0f, &FontDropDownRect, &FontDirectory);
-					FontDropDownRect.VSplitRight(MarginSmall, &FontDropDownRect, nullptr);
-
-					Ui()->DoLabel(&Label, EcLocalize("Custom Font:"), FontSize, TEXTALIGN_ML);
-					const int FontSelectedNew = Ui()->DoDropDown(&FontDropDownRect, FontSelectedOld, s_FontDropDownNames.data(), s_FontDropDownNames.size(), s_FontDropDownState);
-					Ui()->UpdatePopupMenuOffset(&s_FontDropDownState.m_SelectionPopupContext, FontDropDownRect.x, FontDropDownRect.y);
-
-					if(s_ScrollRegion.RectClipped(FontDropDownRect))
-					{
-						Ui()->ClosePopupMenu(&s_FontDropDownState.m_SelectionPopupContext);
-					}
-
-					if(FontSelectedOld != FontSelectedNew)
-					{
-						str_copy(g_Config.m_ClCustomFont, s_FontDropDownNames[FontSelectedNew]);
-						TextRender()->SetCustomFace(g_Config.m_ClCustomFont);
-
-						GameClient()->OnFontChange();
-					}
-					static CButtonContainer s_FontDirectoryId;
-					if(Ui()->DoButton_FontIcon(&s_FontDirectoryId, FontIcon::FOLDER, 0, &FontDirectory, BUTTONFLAG_LEFT))
-					{
-						Storage()->CreateFolder("data/entity", IStorage::TYPE_ABSOLUTE);
-						Storage()->CreateFolder("data/entity/fonts", IStorage::TYPE_ABSOLUTE);
-						Client()->ViewFile("data/entity/fonts");
-					}
-				}
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPingNameCircle, ("Show Ping Circles Next To Names"), &g_Config.m_ClPingNameCircle, &ModuleRect, LineSize);
-
-				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClScoreboardOutlineTeams, EcLocalize("Outline Teams in Scoreboard"), &g_Config.m_ClScoreboardOutlineTeams, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRevertTeamColors, EcLocalize("Use Old Team Colors"), &g_Config.m_ClRevertTeamColors, &ModuleRect, LineSize);
-
-				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
-
-				{
-					static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}, {}, {}};
-					static const std::vector<const char *> s_vTooltips = {
-						EcLocalize("Don't show moving tiles in entities"),
-						EcLocalize("Use map design for moving tilesin entities"),
-						EcLocalize("Use selected asset colors for moving tiles in entities"),
-						EcLocalize("Use asset colors and map design for moving tiles in entities"),
-					};
-					int Value = g_Config.m_ClShowMovingTilesEntities;
-					if(DoLine_RadioMenu_Compact(ModuleRect, EcLocalize("Moving Tiles:"),
-						   s_vButtonContainers,
-						   {"Off", "Design", "Entity", "Both"},
-						   {0, 1, 2, 3},
-						   Value,
-						   5.0f,
-						   &s_vTooltips))
-					{
-						g_Config.m_ClShowMovingTilesEntities = Value;
-					}
-				}
-
-				ModuleRect.HSplitTop(5.0f, &Button, &ModuleRect);
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoScrollbarOption(&g_Config.m_ClCursorOpacitySpec, &g_Config.m_ClCursorOpacitySpec, &Button, EcLocalize("Cursor Opacity in Spec"), 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
-			}
-		},
-	});
-
-	/* Stats */
-	vModules.push_back({
-		ESettingsModuleColumn::RIGHT,
-		FILTER_HUD,
-		{"stats", "fps", "ping", "snap", "rate", "show"},
-		[](bool HasSearch) {
-			return 100;
-		},
-		[&](CUIRect ModuleRect, bool HasSearch) {
-			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
-			ModuleRect.VMargin(Margin, &ModuleRect);
-
-			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Stats"), HeaderSize, HeaderAlignment);
-			{
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowFps, EcLocalize("Show FPS"), &g_Config.m_ClStatisticsShowFps, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowPing, EcLocalize("Show Ping"), &g_Config.m_ClStatisticsShowPing, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowSnapRate, EcLocalize("Show Snap Rate"), &g_Config.m_ClStatisticsShowSnapRate, &ModuleRect, LineSize);
 			}
 		},
 	});
