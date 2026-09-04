@@ -372,88 +372,6 @@ public:
 	}
 };
 
-class CTranslateBackendFtapi : public ITranslateBackendHttp
-{
-private:
-	bool ParseResponseJson(const json_value *pObj, CTranslateResponse &Out)
-	{
-		if(!pObj)
-		{
-			str_copy(Out.m_Text, "Response is not JSON");
-			return false;
-		}
-
-		if(pObj->type != json_object)
-		{
-			str_copy(Out.m_Text, "Response is not object");
-			return false;
-		}
-
-		const json_value *pTranslatedText = json_object_get(pObj, "destination-text");
-		if(pTranslatedText == &json_value_none)
-		{
-			str_copy(Out.m_Text, "No destination-text");
-			return false;
-		}
-		if(pTranslatedText->type != json_string)
-		{
-			str_copy(Out.m_Text, "destination-text is not string");
-			return false;
-		}
-
-		const json_value *pDetectedLanguage = json_object_get(pObj, "source-language");
-		if(pDetectedLanguage == &json_value_none)
-		{
-			str_copy(Out.m_Text, "No source-language");
-			return false;
-		}
-		if(pDetectedLanguage->type != json_string)
-		{
-			str_copy(Out.m_Text, "source-language is not string");
-			return false;
-		}
-
-		str_copy(Out.m_Text, pTranslatedText->u.string.ptr);
-		str_copy(Out.m_Language, pDetectedLanguage->u.string.ptr);
-
-		return true;
-	}
-
-protected:
-	bool ParseResponse(CTranslateResponse &Out) override
-	{
-		json_value *pObj = m_pHttpRequest->ResultJson();
-		bool Res = ParseResponseJson(pObj, Out);
-		json_value_free(pObj);
-		return Res;
-	}
-
-public:
-	const char *EncodeTarget(const char *pTarget) const override
-	{
-		if(!pTarget || pTarget[0] == '\0')
-			return DefaultConfig::EcTranslateTarget;
-		if(str_comp_nocase(pTarget, "zh") == 0)
-			return "zh-cn";
-		return pTarget;
-	}
-	const char *Name() const override
-	{
-		return "FreeTranslateAPI";
-	}
-	CTranslateBackendFtapi(IHttp &Http, const char *pText)
-	{
-		char aBuf[4096];
-		str_format(aBuf, sizeof(aBuf), "%s/translate?dl=%s&text=",
-			g_Config.m_EcTranslateEndpoint[0] != '\0' ? g_Config.m_EcTranslateEndpoint : "https://ftapi.pythonanywhere.com",
-			EncodeTarget(g_Config.m_EcTranslateTarget));
-
-		UrlEncode(pText, aBuf + strlen(aBuf), sizeof(aBuf) - strlen(aBuf));
-
-		CreateHttpRequest(Http, aBuf);
-	}
-};
-
 class CTranslateBackendDeeplFree : public ITranslateBackendHttp
 {
 private:
@@ -665,8 +583,6 @@ static ETranslateBackend TranslateBackendByName(const char *pName)
 {
 	if(str_comp_nocase(pName, "libretranslate") == 0)
 		return ETranslateBackend::LIBRETRANSLATE;
-	if(str_comp_nocase(pName, "ftapi") == 0)
-		return ETranslateBackend::FTAPI;
 	if(str_comp_nocase(pName, "deeplfree") == 0 || str_comp_nocase(pName, "deepl") == 0)
 		return ETranslateBackend::DEEPL_FREE;
 	if(str_comp_nocase(pName, "google") == 0)
@@ -680,8 +596,6 @@ static std::unique_ptr<ITranslateBackend> CreateTranslateBackend(ETranslateBacke
 	{
 	case ETranslateBackend::LIBRETRANSLATE:
 		return std::make_unique<CTranslateBackendLibretranslate>(Http, pText);
-	case ETranslateBackend::FTAPI:
-		return std::make_unique<CTranslateBackendFtapi>(Http, pText);
 	case ETranslateBackend::DEEPL_FREE:
 		return std::make_unique<CTranslateBackendDeeplFree>(Http, pText);
 	case ETranslateBackend::GOOGLE:
@@ -992,12 +906,7 @@ void CTranslate::AutoTranslate(CChat::CLine &Line)
 			return;
 	}
 	const ETranslateBackend Backend = TranslateBackendByName(g_Config.m_EcTranslateBackend);
-	if(Backend == ETranslateBackend::FTAPI)
-	{
-		// FTAPI quickly gets overloaded, please do not disable this
-		// It may shut down if we spam it too hard
-		return;
-	}
+
 	if(Backend == ETranslateBackend::DEEPL_FREE && g_Config.m_EcTranslateKey[0] == '\0')
 		return;
 	if(RateLimitRemaining(Backend) > 0)

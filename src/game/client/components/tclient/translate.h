@@ -14,7 +14,6 @@ enum class ETranslateBackend
 {
 	INVALID,
 	LIBRETRANSLATE,
-	FTAPI,
 	DEEPL_FREE,
 	GOOGLE,
 };
