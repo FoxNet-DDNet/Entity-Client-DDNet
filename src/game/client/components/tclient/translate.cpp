@@ -834,7 +834,7 @@ static std::unique_ptr<ITranslateBackend> CreateTranslateBackend(ETranslateBacke
 		return std::make_unique<CTranslateBackendDeepl>(Http, pText);
 	case ETranslateBackend::GOOGLE:
 		return std::make_unique<CTranslateBackendGoogle>(Http, pText);
-	case ETranslateBackend::INVALID:
+	default:
 		break;
 	}
 	return nullptr;
