@@ -607,6 +607,9 @@ public:
 	void SetMouseSlow(bool MouseSlow) { m_MouseSlow = MouseSlow; }
 
 	bool ConsumeHotkey(EHotkey Hotkey);
+	// EClient: for a component that handles its own input and so cannot hand the whole event to
+	// OnInput, but still has ui of its own that waits on a hotkey
+	void SetHotkey(EHotkey Hotkey) { m_HotkeysPressed |= Hotkey; }
 	void ClearHotkeys() { m_HotkeysPressed = 0; }
 	bool OnInput(const IInput::CEvent &Event);
 

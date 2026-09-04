@@ -43,7 +43,7 @@ static CTranslateBackendLimits TranslateBackendLimits(ETranslateBackend Backend)
 	case ETranslateBackend::LIBRETRANSLATE:
 		// Usually self hosted, no reason to hold back
 		return {0, 5, 60};
-	case ETranslateBackend::DEEPL_FREE:
+	case ETranslateBackend::DEEPL:
 		return {500, 30, 600};
 	case ETranslateBackend::GOOGLE:
 		// Punishes bursts hard and stays angry for a long time afterwards
@@ -53,19 +53,71 @@ static CTranslateBackendLimits TranslateBackendLimits(ETranslateBackend Backend)
 	}
 }
 
-static const char *TranslateBackendName(ETranslateBackend Backend)
+const char *CTranslate::BackendName(ETranslateBackend Backend)
 {
 	switch(Backend)
 	{
 	case ETranslateBackend::LIBRETRANSLATE:
 		return "LibreTranslate";
-	case ETranslateBackend::DEEPL_FREE:
-		return "DeepL Free";
+	case ETranslateBackend::DEEPL:
+		return "DeepL";
 	case ETranslateBackend::GOOGLE:
 		return "Google Translate";
 	default:
 		return "Translate";
 	}
+}
+
+CTranslate::EBackendRequirement CTranslate::BackendRequirement(ETranslateBackend Backend)
+{
+	switch(Backend)
+	{
+	case ETranslateBackend::DEEPL:
+		// Every request carries the key as an Authorization header, there is nothing to fall back
+		// on without one
+		return EBackendRequirement::API_KEY;
+	case ETranslateBackend::LIBRETRANSLATE:
+		// There is no public instance to aim at, an endpoint that was never set means the requests
+		// go to a server on this machine
+		return EBackendRequirement::ENDPOINT;
+	default:
+		return EBackendRequirement::NONE;
+	}
+}
+
+bool CTranslate::BackendReady(ETranslateBackend Backend)
+{
+	switch(BackendRequirement(Backend))
+	{
+	case EBackendRequirement::API_KEY:
+		return g_Config.m_EcTranslateKey[0] != '\0';
+	case EBackendRequirement::ENDPOINT:
+		return g_Config.m_EcTranslateEndpoint[0] != '\0';
+	default:
+		return true;
+	}
+}
+
+int CTranslate::NumBackends()
+{
+	// INVALID is not something anyone can pick
+	return (int)ETranslateBackend::NUM - 1;
+}
+
+int CTranslate::BackendConfigValue(int Index)
+{
+	return Index + 1;
+}
+
+ETranslateBackend CTranslate::Backend()
+{
+	const int Value = g_Config.m_EcTranslateBackend;
+	// Anything out of range lands on the default rather than on nothing. Zero in particular is what
+	// the config parser makes of the backend name this setting used to hold, so a config written
+	// before it became a number keeps translating instead of going quiet.
+	if(Value <= (int)ETranslateBackend::INVALID || Value >= (int)ETranslateBackend::NUM)
+		return ETranslateBackend::GOOGLE;
+	return (ETranslateBackend)Value;
 }
 
 // Time between requests of a backend, the config overrides the backend default
@@ -169,7 +221,7 @@ static void NormalizeTranslatedText(char *pText, size_t Size)
 	str_copy(pText, Decoded.c_str(), Size);
 }
 
-static void NormalizeLanguageCode(const char *pLanguage, char *pOut, size_t Size)
+void CTranslate::NormalizeLanguage(const char *pLanguage, char *pOut, size_t Size)
 {
 	if(Size == 0)
 		return;
@@ -190,22 +242,21 @@ static void NormalizeLanguageCode(const char *pLanguage, char *pOut, size_t Size
 	}
 }
 
-static bool HandleLanguageBlacklist(const char *pLanguage)
+bool CTranslate::IsLanguageInList(const char *pList, const char *pLanguage)
 {
-	if(!pLanguage || pLanguage[0] == '\0' || g_Config.m_EcTranslateLanguageBlacklist[0] == '\0')
+	if(!pList || pList[0] == '\0')
 		return false;
 
 	char aLanguage[16];
-	NormalizeLanguageCode(pLanguage, aLanguage, sizeof(aLanguage));
+	NormalizeLanguage(pLanguage, aLanguage, sizeof(aLanguage));
 	if(aLanguage[0] == '\0')
 		return false;
 
 	char aToken[16];
 	char aTokenNormalized[16];
-	const char *pList = g_Config.m_EcTranslateLanguageBlacklist;
 	while((pList = str_next_token(pList, ", ", aToken, sizeof(aToken))) != nullptr)
 	{
-		NormalizeLanguageCode(aToken, aTokenNormalized, sizeof(aTokenNormalized));
+		NormalizeLanguage(aToken, aTokenNormalized, sizeof(aTokenNormalized));
 		if(aTokenNormalized[0] != '\0' && str_comp_nocase(aLanguage, aTokenNormalized) == 0)
 			return true;
 	}
@@ -213,27 +264,127 @@ static bool HandleLanguageBlacklist(const char *pLanguage)
 	return false;
 }
 
+class CTranslateLanguage
+{
+public:
+	const char *m_pCode;
+	const char *m_pName;
+};
+
+// Sorted by name, which is the order a picker shows them in. Codes are the short forms
+// NormalizeLanguage reduces everything to, so "zh-CN" and "zh" both land on the Chinese entry.
+static const CTranslateLanguage gs_aLanguages[] = {
+	{"sq", "Albanian"},
+	{"ar", "Arabic"},
+	{"bn", "Bengali"},
+	{"bg", "Bulgarian"},
+	{"zh", "Chinese"},
+	{"hr", "Croatian"},
+	{"cs", "Czech"},
+	{"da", "Danish"},
+	{"nl", "Dutch"},
+	{"en", "English"},
+	{"et", "Estonian"},
+	{"tl", "Filipino"},
+	{"fi", "Finnish"},
+	{"fr", "French"},
+	{"de", "German"},
+	{"el", "Greek"},
+	{"he", "Hebrew"},
+	{"hi", "Hindi"},
+	{"hu", "Hungarian"},
+	{"id", "Indonesian"},
+	{"it", "Italian"},
+	{"ja", "Japanese"},
+	{"ko", "Korean"},
+	{"lv", "Latvian"},
+	{"lt", "Lithuanian"},
+	{"mk", "Macedonian"},
+	{"ms", "Malay"},
+	{"no", "Norwegian"},
+	{"fa", "Persian"},
+	{"pl", "Polish"},
+	{"pt", "Portuguese"},
+	{"ro", "Romanian"},
+	{"ru", "Russian"},
+	{"sr", "Serbian"},
+	{"sk", "Slovak"},
+	{"sl", "Slovenian"},
+	{"es", "Spanish"},
+	{"sv", "Swedish"},
+	{"th", "Thai"},
+	{"tr", "Turkish"},
+	{"uk", "Ukrainian"},
+	{"ur", "Urdu"},
+	{"vi", "Vietnamese"},
+};
+
+int CTranslate::NumLanguages()
+{
+	return (int)std::size(gs_aLanguages);
+}
+
+const char *CTranslate::LanguageCode(int Index)
+{
+	if(Index < 0 || Index >= NumLanguages())
+		return "";
+	return gs_aLanguages[Index].m_pCode;
+}
+
+const char *CTranslate::LanguageName(int Index)
+{
+	if(Index < 0 || Index >= NumLanguages())
+		return "";
+	return gs_aLanguages[Index].m_pName;
+}
+
+void CTranslate::SetLanguageInList(char *pList, size_t Size, const char *pLanguage, bool Add)
+{
+	char aLanguage[16];
+	NormalizeLanguage(pLanguage, aLanguage, sizeof(aLanguage));
+	if(aLanguage[0] == '\0')
+		return;
+
+	// The list is rebuilt rather than edited in place, which also drops duplicates and the empty
+	// entries a hand written list tends to carry along
+	char aResult[256] = "";
+	char aToken[16];
+	char aTokenNormalized[16];
+	const char *pRead = pList;
+	while((pRead = str_next_token(pRead, ", ", aToken, sizeof(aToken))) != nullptr)
+	{
+		NormalizeLanguage(aToken, aTokenNormalized, sizeof(aTokenNormalized));
+		if(aTokenNormalized[0] == '\0')
+			continue;
+		if(str_comp_nocase(aTokenNormalized, aLanguage) == 0)
+			continue;
+		if(aResult[0] != '\0')
+			str_append(aResult, ",");
+		str_append(aResult, aTokenNormalized);
+	}
+
+	if(Add)
+	{
+		if(aResult[0] != '\0')
+			str_append(aResult, ",");
+		str_append(aResult, aLanguage);
+	}
+
+	str_copy(pList, aResult, Size);
+}
+
+static bool HandleLanguageBlacklist(const char *pLanguage)
+{
+	return CTranslate::IsLanguageInList(g_Config.m_EcTranslateLanguageBlacklist, pLanguage);
+}
+
 static bool HandleLanguageWhitelist(const char *pLanguage)
 {
+	// An empty list means everything passes, it is not a list that happens to match nothing
 	if(!pLanguage || pLanguage[0] == '\0' || g_Config.m_EcTranslateLanguageWhitelist[0] == '\0')
 		return true;
 
-	char aLanguage[16];
-	NormalizeLanguageCode(pLanguage, aLanguage, sizeof(aLanguage));
-	if(aLanguage[0] == '\0')
-		return true;
-
-	char aToken[16];
-	char aTokenNormalized[16];
-	const char *pList = g_Config.m_EcTranslateLanguageWhitelist;
-
-	while((pList = str_next_token(pList, ", ", aToken, sizeof(aToken))) != nullptr)
-	{
-		NormalizeLanguageCode(aToken, aTokenNormalized, sizeof(aTokenNormalized));
-		if(aTokenNormalized[0] != '\0' && str_comp_nocase(aLanguage, aTokenNormalized) == 0)
-			return true;
-	}
-	return false;
+	return CTranslate::IsLanguageInList(g_Config.m_EcTranslateLanguageWhitelist, pLanguage);
 }
 
 const char *ITranslateBackend::EncodeTarget(const char *pTarget) const
@@ -312,6 +463,40 @@ public:
 			m_pHttpRequest->Abort();
 	}
 };
+
+// DeepL writes em dashes where a chat message reads better with a comma. The spacing on either
+// side goes with it, so "a \xe2\x80\x94 b" comes out as "a, b" and not as "a , b".
+static void ReplaceEmDashes(char *pText, size_t Size)
+{
+	static const char *EM_DASH = "\xe2\x80\x94"; // U+2014
+	if(str_find(pText, EM_DASH) == nullptr)
+		return;
+
+	std::string Result;
+	for(const char *pRead = pText; *pRead != '\0';)
+	{
+		if(str_startswith(pRead, EM_DASH) == nullptr)
+		{
+			Result += *pRead;
+			++pRead;
+			continue;
+		}
+
+		// The dash takes the spacing on both of its sides with it
+		while(!Result.empty() && Result.back() == ' ')
+			Result.pop_back();
+		pRead += str_length(EM_DASH);
+		while(*pRead == ' ')
+			++pRead;
+
+		// With nothing left on one side there is nothing to join, and a dash that lands against a
+		// comma only wants the space. Neither leaves a comma hanging on its own.
+		if(!Result.empty() && *pRead != '\0')
+			Result += Result.back() == ',' ? " " : ", ";
+	}
+
+	str_copy(pText, Result.c_str(), Size);
+}
 
 class CTranslateBackendLibretranslate : public ITranslateBackendHttp
 {
@@ -403,7 +588,7 @@ protected:
 public:
 	const char *Name() const override
 	{
-		return TranslateBackendName(ETranslateBackend::LIBRETRANSLATE);
+		return CTranslate::BackendName(ETranslateBackend::LIBRETRANSLATE);
 	}
 	CTranslateBackendLibretranslate(IHttp &Http, const char *pText)
 	{
@@ -429,7 +614,7 @@ public:
 	}
 };
 
-class CTranslateBackendDeeplFree : public ITranslateBackendHttp
+class CTranslateBackendDeepl : public ITranslateBackendHttp
 {
 private:
 	bool ParseResponseJson(const json_value *pObj, CTranslateResponse &Out)
@@ -495,6 +680,7 @@ private:
 		}
 
 		str_copy(Out.m_Text, pTranslatedText->u.string.ptr);
+		ReplaceEmDashes(Out.m_Text, sizeof(Out.m_Text));
 		if(pDetectedLanguage != &json_value_none)
 			str_copy(Out.m_Language, pDetectedLanguage->u.string.ptr);
 		else
@@ -532,9 +718,9 @@ public:
 	}
 	const char *Name() const override
 	{
-		return TranslateBackendName(ETranslateBackend::DEEPL_FREE);
+		return CTranslate::BackendName(ETranslateBackend::DEEPL);
 	}
-	CTranslateBackendDeeplFree(IHttp &Http, const char *pText)
+	CTranslateBackendDeepl(IHttp &Http, const char *pText)
 	{
 		CJsonStringWriter Json;
 		Json.BeginObject();
@@ -546,6 +732,8 @@ public:
 		Json.WriteStrValue(EncodeTarget(g_Config.m_EcTranslateTarget));
 		Json.EndObject();
 
+		// Free and Pro speak the same api, they only differ in where they listen, so the endpoint
+		// is all a Pro key needs pointed at api.deepl.com
 		CreateHttpRequest(Http, g_Config.m_EcTranslateEndpoint[0] == '\0' ? "https://api-free.deepl.com/v2/translate" : g_Config.m_EcTranslateEndpoint);
 		char aAuth[320];
 		str_format(aAuth, sizeof(aAuth), "DeepL-Auth-Key %s", g_Config.m_EcTranslateKey);
@@ -623,7 +811,7 @@ protected:
 public:
 	const char *Name() const override
 	{
-		return TranslateBackendName(ETranslateBackend::GOOGLE);
+		return CTranslate::BackendName(ETranslateBackend::GOOGLE);
 	}
 
 	CTranslateBackendGoogle(IHttp &Http, const char *pText)
@@ -636,25 +824,14 @@ public:
 	}
 };
 
-static ETranslateBackend TranslateBackendByName(const char *pName)
-{
-	if(str_comp_nocase(pName, "libretranslate") == 0)
-		return ETranslateBackend::LIBRETRANSLATE;
-	if(str_comp_nocase(pName, "deeplfree") == 0 || str_comp_nocase(pName, "deepl") == 0)
-		return ETranslateBackend::DEEPL_FREE;
-	if(str_comp_nocase(pName, "google") == 0)
-		return ETranslateBackend::GOOGLE;
-	return ETranslateBackend::INVALID;
-}
-
 static std::unique_ptr<ITranslateBackend> CreateTranslateBackend(ETranslateBackend Backend, IHttp &Http, const char *pText)
 {
 	switch(Backend)
 	{
 	case ETranslateBackend::LIBRETRANSLATE:
 		return std::make_unique<CTranslateBackendLibretranslate>(Http, pText);
-	case ETranslateBackend::DEEPL_FREE:
-		return std::make_unique<CTranslateBackendDeeplFree>(Http, pText);
+	case ETranslateBackend::DEEPL:
+		return std::make_unique<CTranslateBackendDeepl>(Http, pText);
 	case ETranslateBackend::GOOGLE:
 		return std::make_unique<CTranslateBackendGoogle>(Http, pText);
 	case ETranslateBackend::INVALID:
@@ -733,7 +910,7 @@ void CTranslate::ConTranslateResetLimits(IConsole::IResult *pResult, void *pUser
 	CTranslate *pThis = static_cast<CTranslate *>(pUserData);
 	for(CBackendState &State : pThis->m_aBackendStates)
 		State = CBackendState();
-	pThis->GameClient()->m_Chat.Echo("Translate rate limits cleared");
+	pThis->GameClient()->ClientMessage("Translate rate limits cleared");
 }
 
 void CTranslate::OnConsoleInit()
@@ -747,13 +924,13 @@ void CTranslate::Translate(int Id, bool Manual)
 {
 	if(Id < 0 || Id > (int)std::size(GameClient()->m_aClients))
 	{
-		GameClient()->m_Chat.Echo("Not a valid ID");
+		GameClient()->ClientMessage("Not a valid ID");
 		return;
 	}
 	const auto &Player = GameClient()->m_aClients[Id];
 	if(!Player.m_Active)
 	{
-		GameClient()->m_Chat.Echo("ID not connected");
+		GameClient()->ClientMessage("ID not connected");
 		return;
 	}
 	Translate(Player.m_aName, Manual);
@@ -803,7 +980,7 @@ void CTranslate::Translate(const char *pName, bool Manual)
 	}
 	if(!pLineBest || pLineBest->m_aText[0] == '\0')
 	{
-		GameClient()->m_Chat.Echo("No message to translate");
+		GameClient()->ClientMessage("No message to translate");
 		return;
 	}
 
@@ -815,16 +992,11 @@ void CTranslate::Translate(CChat::CLine &Line, bool Manual)
 	if(m_vJobs.size() > 15)
 	{
 		if(Manual)
-			GameClient()->m_Chat.Echo("Translate queue is full");
+			GameClient()->ClientMessage("Translate queue is full");
 		return;
 	}
 
-	const ETranslateBackend Backend = TranslateBackendByName(g_Config.m_EcTranslateBackend);
-	if(Backend == ETranslateBackend::INVALID)
-	{
-		GameClient()->m_Chat.Echo("Invalid translate backend");
-		return;
-	}
+	const ETranslateBackend Backend = CTranslate::Backend();
 
 	const int64_t Now = time();
 	const int64_t SendTime = NextRequestTime(Backend);
@@ -837,8 +1009,8 @@ void CTranslate::Translate(CChat::CLine &Line, bool Manual)
 		if(Manual)
 		{
 			char aBuf[128];
-			str_format(aBuf, sizeof(aBuf), "%s is rate limited, try again in %d seconds", TranslateBackendName(Backend), TimeToSeconds(Wait));
-			GameClient()->m_Chat.Echo(aBuf);
+			str_format(aBuf, sizeof(aBuf), "%s is rate limited, try again in %d seconds", CTranslate::BackendName(Backend), TimeToSeconds(Wait));
+			GameClient()->ClientMessage(aBuf);
 		}
 		return;
 	}
@@ -864,7 +1036,7 @@ void CTranslate::Translate(CChat::CLine &Line, bool Manual)
 		}
 		else
 		{
-			str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("%s translating to %s", "translate"), TranslateBackendName(Backend), g_Config.m_EcTranslateTarget);
+			str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("%s translating to %s", "translate"), CTranslate::BackendName(Backend), g_Config.m_EcTranslateTarget);
 		}
 		Job.m_pLine->m_Time = Now;
 	}
@@ -960,6 +1132,13 @@ void CTranslate::OnRender()
 
 		if(Success)
 		{
+			// Backends disagree on case, DeepL answers "RU" where the others say "ru". The code is
+			// shown on the chat line and offered to the language lists, both of which want one
+			// spelling rather than whichever the backend felt like.
+			char aLanguage[sizeof(Job.m_pTranslateResponse->m_Language)];
+			str_utf8_tolower(Job.m_pTranslateResponse->m_Language, aLanguage, sizeof(aLanguage));
+			str_copy(Job.m_pTranslateResponse->m_Language, aLanguage);
+
 			const bool SameTextAsInput = str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0;
 			if(SameTextAsInput) // Check for no translation difference
 			{
@@ -992,7 +1171,7 @@ void CTranslate::OnRender()
 		else
 		{
 			char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];
-			str_format(aBuf, sizeof(aBuf), Localize("%s to %s failed: %s", "translate"), TranslateBackendName(Job.m_Backend), g_Config.m_EcTranslateTarget, Job.m_pTranslateResponse->m_Text);
+			str_format(aBuf, sizeof(aBuf), Localize("%s to %s failed: %s", "translate"), CTranslate::BackendName(Job.m_Backend), g_Config.m_EcTranslateTarget, Job.m_pTranslateResponse->m_Text);
 			Job.m_pTranslateResponse->m_Error = true;
 			str_copy(Job.m_pTranslateResponse->m_Text, aBuf);
 		}
@@ -1023,9 +1202,9 @@ void CTranslate::AutoTranslate(CChat::CLine &Line)
 		if(Id >= 0 && Id == Line.m_ClientId)
 			return;
 	}
-	const ETranslateBackend Backend = TranslateBackendByName(g_Config.m_EcTranslateBackend);
+	const ETranslateBackend Backend = CTranslate::Backend();
 
-	if(Backend == ETranslateBackend::DEEPL_FREE && g_Config.m_EcTranslateKey[0] == '\0')
+	if(Backend == ETranslateBackend::DEEPL && g_Config.m_EcTranslateKey[0] == '\0')
 		return;
 
 	Translate(Line, false);

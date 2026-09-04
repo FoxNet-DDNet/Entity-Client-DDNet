@@ -22,6 +22,7 @@
 #include <engine/console.h>
 #include <engine/editor.h>
 #include <engine/external/tinyexpr.h>
+#include <engine/font_icons.h>
 #include <engine/graphics.h>
 #include <engine/input.h>
 #include <engine/keys.h>
@@ -38,6 +39,7 @@
 #include <game/client/animstate.h>
 #include <game/client/components/scoreboard.h>
 #include <game/client/components/sounds.h>
+#include <game/client/components/tclient/translate.h>
 #include <game/client/gameclient.h>
 #include <game/client/lineinput.h>
 #include <game/client/render.h>
@@ -52,6 +54,17 @@
 #include <ranges>
 #include <string>
 #include <vector>
+
+static constexpr float POPUP_WIDTH = 170.0f;
+static constexpr float POPUP_LANGUAGE_WIDTH = 200.0f;
+static constexpr float POPUP_LANGUAGE_MAX_HEIGHT = 320.0f;
+static constexpr float POPUP_FONT_SIZE = 10.0f;
+static constexpr float POPUP_ENTRY_HEIGHT = 16.0f;
+static constexpr float POPUP_ENTRY_SPACING = 2.0f;
+static constexpr float POPUP_ENTRY_PADDING = 4.0f;
+// The chat menu button, sized off the input line it sits next to
+static constexpr float MENU_BUTTON_SCALE = 1.3f;
+static constexpr float MENU_BUTTON_ROUNDING = 3.0f;
 
 char CChat::ms_aDisplayText[MAX_CHAT_LENGTH] = "";
 
@@ -483,6 +496,30 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 
 	const int BacklogPrevLine = m_BacklogCurLine;
 
+	// <EClient: while the chat is open it swallows every event, so the ui never hears the keys the
+	// menus opened from it care about. They are handed over here, ahead of everything the chat
+	// does with the same keys.
+	if(Event.m_Flags & IInput::FLAG_PRESS && PopupOpen())
+	{
+		if(Event.m_Key == KEY_ESCAPE)
+		{
+			CloseTopPopup();
+			return true;
+		}
+		if(Event.m_Key == KEY_MOUSE_WHEEL_UP || Event.m_Key == KEY_MOUSE_WHEEL_DOWN)
+		{
+			// Raised rather than scrolled by hand. A scroll region reached through ScrollRelative
+			// restarts its animation from where it currently is, so ticks arriving faster than one
+			// animation lands cut each other short and the list creeps instead of racing; taking
+			// the hotkey it makes them stack the way a wheel is supposed to. It also picks up the
+			// region under the cursor on its own, and gets alt-held page scrolling for free.
+			Ui()->SetHotkey(Event.m_Key == KEY_MOUSE_WHEEL_UP ? CUi::HOTKEY_SCROLL_UP : CUi::HOTKEY_SCROLL_DOWN);
+			// The wheel belongs to the menu either way, it must not move the chat behind it
+			return true;
+		}
+	}
+	// EClient>
+
 	if(Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_ESCAPE)
 	{
 		DisableMode();
@@ -815,6 +852,9 @@ void CChat::DisableMode()
 		m_Mode = MODE_NONE;
 		m_Input.Deactivate();
 		m_BacklogCurLine = 0;
+		// EClient: the menus belong to the open chat, they have nothing to act on without it
+		Ui()->ClosePopupMenu(&m_MessagePopupContext);
+		Ui()->ClosePopupMenu(&m_ChatPopupContext, true);
 	}
 }
 
@@ -1707,6 +1747,7 @@ void CChat::OnRender()
 
 	if(m_Mode != MODE_NONE)
 	{
+		SyncUiMouse(); // EClient
 		Ui()->StartCheck();
 		Ui()->Update(true);
 	}
@@ -1747,6 +1788,21 @@ void CChat::OnRender()
 	const vec2 MousePos = Layout.ToElementSpace(EHudElement::CHAT,
 		m_SelectorMouse / vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight()) * vec2(Width, Height));
 
+	// EClient: the menus live on the ui screen, so anything the chat draws that they have to line
+	// up with has to make the trip out of the chat's own coordinates and onto that screen
+	const CUIRect *pUiScreen = Ui()->Screen();
+	const vec2 UiScale = vec2(pUiScreen->w / Width, pUiScreen->h / Height);
+	const auto ToUiRect = [&](vec2 Pos, vec2 Size) {
+		const vec2 Base = Layout.ToBaseSpace(EHudElement::CHAT, Pos);
+		const float Scale = Layout.ElementScale(EHudElement::CHAT);
+		return CUIRect{Base.x * UiScale.x, Base.y * UiScale.y, Size.x * Scale * UiScale.x, Size.y * Scale * UiScale.y};
+	};
+	CUIRect MenuButtonRect = {0.0f, 0.0f, 0.0f, 0.0f};
+
+	// EClient: right clicking a message opens its menu. Taken on the press rather than through the
+	// ui, so that a message can be right clicked while another one's menu is still open.
+	const bool RightClicked = m_Mode != MODE_NONE && Ui()->MouseButtonClicked(1) && !Ui()->IsPopupHovered();
+
 	// Handle mouse selection for chat when chat mode is active
 	if(m_Mode != MODE_NONE)
 	{
@@ -1757,7 +1813,7 @@ void CChat::OnRender()
 		const bool MousePressed = Input()->KeyIsPressed(KEY_MOUSE_1);
 
 		// Check if mouse is pressed (start selection) - only if above chat input (lower Y value)
-		if(!m_Selecting && MousePressed && MousePos.y < ChatInputAreaY)
+		if(!m_Selecting && MousePressed && MousePos.y < ChatInputAreaY && !Ui()->IsPopupOpen())
 		{
 			m_Selecting = true;
 			m_NewLineCounter = 0;
@@ -1803,11 +1859,18 @@ void CChat::OnRender()
 
 	if(m_Mode != MODE_NONE)
 	{
+		// EClient: the button that opens the chat menu. It rides along with the input line instead
+		// of being an element of its own, so the hud layout has nothing to say about it. Taller
+		// than the line it sits next to, so it is centred on the text rather than hung off its top.
+		const float MenuButtonSize = ScaledFontSize * MENU_BUTTON_SCALE;
+		const float MenuButtonSpacing = ScaledFontSize / 3.0f;
+		MenuButtonRect = ToUiRect(vec2(x, y + (ScaledFontSize - MenuButtonSize) / 2.0f), vec2(MenuButtonSize, MenuButtonSize));
+
 		// render chat input
 		CTextCursor InputCursor;
-		InputCursor.SetPosition(vec2(x, y));
+		InputCursor.SetPosition(vec2(x + MenuButtonSize + MenuButtonSpacing, y));
 		InputCursor.m_FontSize = ScaledFontSize;
-		InputCursor.m_LineWidth = Width - 190.0f;
+		InputCursor.m_LineWidth = Width - 195.0f;
 
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
@@ -1908,6 +1971,7 @@ void CChat::OnRender()
 #endif
 	{
 		m_HoveringMessage = false; // EClient: no messages are rendered, so nothing can be hovered
+		RenderChatUi(MenuButtonRect); // EClient
 		return;
 	}
 
@@ -1989,27 +2053,42 @@ void CChat::OnRender()
 
 		float Blend = Now > Line.m_Time + 14 * time_freq() && !m_PrevShowChat ? 1.0f - (Now - Line.m_Time - 14 * time_freq()) / (2.0f * time_freq()) : 1.0f;
 
+		const float LineTop = y;
+		const float LineBottom = y + Line.m_aYOffset[OffsetType];
+
+		const bool LineHovered = m_Mode != MODE_NONE &&
+					 MousePos.x >= x && MousePos.x <= x + Line.m_RenderWidth &&
+					 MousePos.y >= LineTop && MousePos.y <= LineBottom;
+		if(LineHovered)
+		{
+			HoveringMessage = true;
+			if(RightClicked)
+			{
+				OpenMessagePopup(Line, ((m_CurrentLine - i) + MAX_LINES) % MAX_LINES);
+			}
+		}
+
 		// Draw backgrounds for messages in one batch
 		if(!g_Config.m_ClChatOld)
 		{
 			Graphics()->TextureClear();
 			if(Line.m_QuadContainerIndex != -1)
 			{
-				Graphics()->SetColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChatBackgroundColor, true)).WithMultipliedAlpha(Blend));
+				ColorRGBA BackgroundColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChatBackgroundColor, true)).WithMultipliedAlpha(Blend);
+				if(LineHovered && !Ui()->IsPopupHovered()) // EClient
+				{
+					static constexpr float gs_MessageHoverHighlightAlpha = 0.38f;
+					if(BackgroundColor.a <= 0.1f)
+						BackgroundColor.a = 0.1f;
+					if(BackgroundColor.a > 0.66f)
+						BackgroundColor.a *= gs_MessageHoverHighlightAlpha;
+					else
+						BackgroundColor.a /= gs_MessageHoverHighlightAlpha;
+				}
+
+				Graphics()->SetColor(BackgroundColor);
 				Graphics()->RenderQuadContainerEx(Line.m_QuadContainerIndex, 0, -1, 0, ((y + RealMsgPaddingY / 2.0f) - Line.m_TextYOffset));
 			}
-		}
-
-		// Check if this line is in the selection range
-		const float LineTop = y;
-		const float LineBottom = y + Line.m_aYOffset[OffsetType];
-
-		// EClient: pause the chat while the cursor hovers this message
-		if(m_Mode != MODE_NONE &&
-			MousePos.x >= x && MousePos.x <= x + Line.m_RenderWidth &&
-			MousePos.y >= LineTop && MousePos.y <= LineBottom)
-		{
-			HoveringMessage = true;
 		}
 
 		if(IsSelecting && LineBottom >= SelectionMinY && LineTop <= SelectionMaxY)
@@ -2163,16 +2242,458 @@ void CChat::OnRender()
 	Layout.ReportNaturalRect(EHudElement::CHAT,
 		vec2(x, FullHeightLimit), vec2((float)g_Config.m_ClChatWidth, ChatBottom - FullHeightLimit));
 
-	if(m_Mode != MODE_NONE)
-	{
-		Ui()->MapScreen();
-		const vec2 WindowSize = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight());
-		const CUIRect *pUiScreen = Ui()->Screen();
-		const vec2 CursorPos = m_SelectorMouse / WindowSize * vec2(pUiScreen->w, pUiScreen->h);
-		RenderTools()->RenderCursor(CursorPos, 24.0f);
-		Ui()->FinishCheck();
-	}
+	RenderChatUi(MenuButtonRect); // EClient
 }
+
+// <EClient
+// What CUi::DoPopupMenu takes off a popup's rect before handing the rest to the render function,
+// its border plus its margin. Kept private over there, so the height a menu asks for has to know.
+static constexpr float POPUP_PADDING = 5.0f;
+
+static void RenderPopupIcon(CUi *pUi, const CUIRect &Rect, const char *pIcon, ColorRGBA Color)
+{
+	pUi->TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+	pUi->TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
+	pUi->TextRender()->TextColor(Color);
+	pUi->DoLabel(&Rect, pIcon, POPUP_FONT_SIZE, TEXTALIGN_MC);
+	pUi->TextRender()->TextColor(pUi->TextRender()->DefaultTextColor());
+	pUi->TextRender()->SetRenderFlags(0);
+	pUi->TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+}
+
+float CChat::PopupHeight(int Entries)
+{
+	if(Entries <= 0)
+		return POPUP_PADDING * 2.0f;
+	return Entries * POPUP_ENTRY_HEIGHT + (Entries - 1) * POPUP_ENTRY_SPACING + POPUP_PADDING * 2.0f;
+}
+
+void CChat::SyncUiMouse()
+{
+	// The chat steers a cursor of its own while it is open, the ui knows nothing of it. Walking
+	// the ui cursor onto it every frame is what lets the menus hit test against what the player
+	// sees, without the chat having to give up the cursor it already tracks for text selection.
+	const vec2 Delta = m_SelectorMouse - Ui()->UpdatedMousePos();
+	if(Delta != vec2(0.0f, 0.0f))
+		Ui()->OnCursorMove(Delta.x, Delta.y);
+}
+
+CChat::CLine *CChat::CMessagePopupContext::Line() const
+{
+	if(m_pChat == nullptr || m_LineIndex < 0 || m_LineIndex >= MAX_LINES)
+		return nullptr;
+
+	CLine *pLine = &m_pChat->m_aLines[m_LineIndex];
+	// The chat holds still while a menu is open, but the slot can still be handed to a newer
+	// message, and acting on the wrong one is worse than doing nothing
+	if(!pLine->m_Initialized || pLine->m_Time != m_LineTime)
+		return nullptr;
+	return pLine;
+}
+
+void CChat::OpenMessagePopup(const CLine &Line, int LineIndex)
+{
+	Ui()->ClosePopupMenu(&m_ChatPopupContext, true);
+	Ui()->ClosePopupMenu(&m_MessagePopupContext);
+
+	m_MessagePopupContext.m_pChat = this;
+	m_MessagePopupContext.m_LineIndex = LineIndex;
+	m_MessagePopupContext.m_LineTime = Line.m_Time;
+	m_MessagePopupContext.m_ClientId = Line.m_ClientId;
+	m_MessagePopupContext.m_Text = Line.m_RenderedName + Line.m_RenderedText;
+	m_MessagePopupContext.m_aLanguage[0] = '\0';
+	if(Line.m_pTranslateResponse && !Line.m_pTranslateResponse->m_Error)
+		str_copy(m_MessagePopupContext.m_aLanguage, Line.m_pTranslateResponse->m_Language);
+
+	bool IsLocal = false;
+	for(const int LocalId : GameClient()->m_aLocalIds)
+		IsLocal |= LocalId >= 0 && LocalId == Line.m_ClientId;
+
+	m_MessagePopupContext.m_ShowFriend = !IsLocal && Line.m_ClientId >= 0 && GameClient()->m_aClients[Line.m_ClientId].m_Active;
+	m_MessagePopupContext.m_ShowTranslate = !IsLocal && Line.m_ClientId >= SERVER_MSG && Line.m_aText[0] != '\0';
+	m_MessagePopupContext.m_ShowLanguage = m_MessagePopupContext.m_aLanguage[0] != '\0';
+
+	const int Entries = 1 + (m_MessagePopupContext.m_ShowFriend ? 1 : 0) +
+			    (m_MessagePopupContext.m_ShowTranslate ? 1 : 0) +
+			    (m_MessagePopupContext.m_ShowLanguage ? 2 : 0);
+	Ui()->DoPopupMenu(&m_MessagePopupContext, Ui()->MouseX(), Ui()->MouseY(), POPUP_WIDTH, PopupHeight(Entries),
+		&m_MessagePopupContext, CMessagePopupContext::Render);
+}
+
+void CChat::OpenChatPopup(const CUIRect &ButtonRect)
+{
+	Ui()->ClosePopupMenu(&m_MessagePopupContext);
+	Ui()->ClosePopupMenu(&m_ChatPopupContext, true);
+
+	m_ChatPopupContext.m_pChat = this;
+	// Anchored on the button's top edge rather than below it. The input line sits low enough that
+	// the menu is always folded upwards, and this way it stops at the button instead of covering
+	// it.
+	Ui()->DoPopupMenu(&m_ChatPopupContext, ButtonRect.x, ButtonRect.y, POPUP_WIDTH, PopupHeight(5),
+		&m_ChatPopupContext, CChatPopupContext::Render);
+}
+
+void CChat::OpenBackendPopup(const CUIRect &FromRect)
+{
+	Ui()->ClosePopupMenu(&m_BackendPopupContext);
+	m_BackendPopupContext.m_pChat = this;
+	// Opened alongside the entry it came from rather than on top of it
+	Ui()->DoPopupMenu(&m_BackendPopupContext, FromRect.x + FromRect.w, FromRect.y, POPUP_WIDTH,
+		PopupHeight(CTranslate::NumBackends()), &m_BackendPopupContext, CBackendPopupContext::Render);
+}
+
+void CChat::OpenLanguagePopup(const CUIRect &FromRect)
+{
+	Ui()->ClosePopupMenu(&m_LanguagePopupContext);
+	m_LanguagePopupContext.m_pChat = this;
+	m_LanguagePopupContext.m_vCodes.clear();
+	m_LanguagePopupContext.m_vNames.clear();
+
+	for(int i = 0; i < CTranslate::NumLanguages(); i++)
+	{
+		m_LanguagePopupContext.m_vCodes.emplace_back(CTranslate::LanguageCode(i));
+		m_LanguagePopupContext.m_vNames.emplace_back(CTranslate::LanguageName(i));
+	}
+
+	// Whatever the lists hold that the table does not still has to be reachable, or a code typed
+	// into the config by hand could never be taken back out from here
+	const char *apLists[] = {g_Config.m_EcTranslateLanguageWhitelist, g_Config.m_EcTranslateLanguageBlacklist};
+	for(const char *pList : apLists)
+	{
+		char aToken[16];
+		char aCode[16];
+		while((pList = str_next_token(pList, ", ", aToken, sizeof(aToken))) != nullptr)
+		{
+			CTranslate::NormalizeLanguage(aToken, aCode, sizeof(aCode));
+			if(aCode[0] == '\0')
+				continue;
+			if(std::find(m_LanguagePopupContext.m_vCodes.begin(), m_LanguagePopupContext.m_vCodes.end(), aCode) != m_LanguagePopupContext.m_vCodes.end())
+				continue;
+			m_LanguagePopupContext.m_vCodes.emplace_back(aCode);
+			m_LanguagePopupContext.m_vNames.emplace_back("");
+		}
+	}
+
+	// Sized once, here, because the ui addresses a button by where it lives
+	m_LanguagePopupContext.m_vWhitelistButtons.clear();
+	m_LanguagePopupContext.m_vBlacklistButtons.clear();
+	m_LanguagePopupContext.m_vWhitelistButtons.resize(m_LanguagePopupContext.m_vCodes.size());
+	m_LanguagePopupContext.m_vBlacklistButtons.resize(m_LanguagePopupContext.m_vCodes.size());
+
+	const float Height = std::min(PopupHeight((int)m_LanguagePopupContext.m_vCodes.size()), POPUP_LANGUAGE_MAX_HEIGHT);
+	Ui()->DoPopupMenu(&m_LanguagePopupContext, FromRect.x + FromRect.w, FromRect.y, POPUP_LANGUAGE_WIDTH, Height,
+		&m_LanguagePopupContext, CLanguagePopupContext::Render);
+}
+
+bool CChat::CloseTopPopup()
+{
+	// Innermost first, the same order the ui itself would take them down in
+	if(Ui()->IsPopupOpen(&m_LanguagePopupContext))
+		Ui()->ClosePopupMenu(&m_LanguagePopupContext);
+	else if(Ui()->IsPopupOpen(&m_BackendPopupContext))
+		Ui()->ClosePopupMenu(&m_BackendPopupContext);
+	else if(Ui()->IsPopupOpen(&m_MessagePopupContext))
+		Ui()->ClosePopupMenu(&m_MessagePopupContext);
+	else if(Ui()->IsPopupOpen(&m_ChatPopupContext))
+		Ui()->ClosePopupMenu(&m_ChatPopupContext, true);
+	else
+		return false;
+	return true;
+}
+
+void CChat::RenderChatUi(const CUIRect &MenuButtonRect)
+{
+	if(m_Mode == MODE_NONE)
+		return;
+
+	Ui()->MapScreen();
+
+	if(MenuButtonRect.h > 0.0f)
+	{
+		// CUi::DoButton_FontIcon would do all of this, but it rounds its corners off harder than
+		// this button wants, and the amount is not something it takes
+		const bool Open = Ui()->IsPopupOpen(&m_ChatPopupContext);
+		MenuButtonRect.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, (Open ? 0.25f : 0.5f) * Ui()->ButtonColorMul(&m_ChatMenuButton)),
+			IGraphics::CORNER_ALL, MENU_BUTTON_ROUNDING);
+
+		CUIRect Label;
+		MenuButtonRect.HMargin(MenuButtonRect.h / 6.0f, &Label);
+		TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
+		TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
+		Ui()->DoLabel(&Label, FontIcon::LIST_UL, Label.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+		TextRender()->SetRenderFlags(0);
+		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+
+		if(Ui()->DoButtonLogic(&m_ChatMenuButton, 0, &MenuButtonRect, BUTTONFLAG_LEFT))
+			OpenChatPopup(MenuButtonRect);
+	}
+
+	Ui()->RenderPopupMenus();
+
+	const vec2 WindowSize = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight());
+	const CUIRect *pUiScreen = Ui()->Screen();
+	RenderTools()->RenderCursor(m_SelectorMouse / WindowSize * vec2(pUiScreen->w, pUiScreen->h), 24.0f);
+	Ui()->FinishCheck();
+}
+
+std::string CChat::ChatText() const
+{
+	std::string Result;
+	for(int i = NumInitializedLines() - 1; i >= 0; i--)
+	{
+		const CLine &Line = m_aLines[((m_CurrentLine - i) + MAX_LINES) % MAX_LINES];
+		// A line only gains its rendered form once it has been drawn, one that never was falls
+		// back to the parts it was built from
+		std::string Text = Line.m_RenderedName + Line.m_RenderedText;
+		if(Text.empty())
+		{
+			if(Line.m_aName[0] != '\0')
+				Text = std::string(Line.m_aName) + ": ";
+			Text += Line.m_aText;
+		}
+		if(Text.empty())
+			continue;
+		if(!Result.empty())
+			Result += "\n";
+		Result += Text;
+	}
+	return Result;
+}
+
+CUi::EPopupMenuFunctionResult CChat::CMessagePopupContext::Render(void *pContext, CUIRect View, bool Active)
+{
+	CMessagePopupContext *pPopup = static_cast<CMessagePopupContext *>(pContext);
+	CChat *pChat = pPopup->m_pChat;
+	CUi *pUi = pChat->Ui();
+
+	CUi::EPopupMenuFunctionResult Result = CUi::POPUP_KEEP_OPEN;
+	CUIRect Slot;
+	bool First = true;
+	const auto NextSlot = [&]() {
+		if(!First)
+			View.HSplitTop(POPUP_ENTRY_SPACING, nullptr, &View);
+		First = false;
+		View.HSplitTop(POPUP_ENTRY_HEIGHT, &Slot, &View);
+		return &Slot;
+	};
+
+	if(pPopup->m_ShowFriend)
+	{
+		const CGameClient::CClientData &Client = pChat->GameClient()->m_aClients[pPopup->m_ClientId];
+		if(pUi->DoButton_PopupMenu(&pPopup->m_FriendButton, Client.m_Friend ? Localize("Remove friend") : Localize("Add friend"),
+			   NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true, Client.m_Active))
+		{
+			if(Client.m_Friend)
+				pChat->GameClient()->Friends()->RemoveFriend(Client.m_aName, Client.m_aClan);
+			else
+				pChat->GameClient()->Friends()->AddFriend(Client.m_aName, Client.m_aClan);
+			Result = CUi::POPUP_CLOSE_CURRENT;
+		}
+	}
+
+	if(pUi->DoButton_PopupMenu(&pPopup->m_CopyButton, Localize("Copy message"), NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+	{
+		pChat->Input()->SetClipboardText(pPopup->m_Text.c_str());
+		Result = CUi::POPUP_CLOSE_CURRENT;
+	}
+
+	if(pPopup->m_ShowTranslate)
+	{
+		CLine *pLine = pPopup->Line();
+		if(pUi->DoButton_PopupMenu(&pPopup->m_TranslateButton, Localize("Translate"), NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true, pLine != nullptr) &&
+			pLine != nullptr)
+		{
+			pChat->GameClient()->m_Translate.Translate(*pLine, true);
+			Result = CUi::POPUP_CLOSE_CURRENT;
+		}
+	}
+
+	if(pPopup->m_ShowLanguage)
+	{
+		char aBuf[64];
+
+		const bool Whitelisted = CTranslate::IsLanguageInList(g_Config.m_EcTranslateLanguageWhitelist, pPopup->m_aLanguage);
+		str_format(aBuf, sizeof(aBuf), Whitelisted ? Localize("Unwhitelist %s") : Localize("Whitelist %s"), pPopup->m_aLanguage);
+		if(pUi->DoButton_PopupMenu(&pPopup->m_WhitelistButton, aBuf, NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+		{
+			CTranslate::SetLanguageInList(g_Config.m_EcTranslateLanguageWhitelist, sizeof(g_Config.m_EcTranslateLanguageWhitelist), pPopup->m_aLanguage, !Whitelisted);
+		}
+
+		const bool Blacklisted = CTranslate::IsLanguageInList(g_Config.m_EcTranslateLanguageBlacklist, pPopup->m_aLanguage);
+		str_format(aBuf, sizeof(aBuf), Blacklisted ? Localize("Unblacklist %s") : Localize("Blacklist %s"), pPopup->m_aLanguage);
+		if(pUi->DoButton_PopupMenu(&pPopup->m_BlacklistButton, aBuf, NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+		{
+			CTranslate::SetLanguageInList(g_Config.m_EcTranslateLanguageBlacklist, sizeof(g_Config.m_EcTranslateLanguageBlacklist), pPopup->m_aLanguage, !Blacklisted);
+		}
+	}
+
+	return Result;
+}
+
+CUi::EPopupMenuFunctionResult CChat::CBackendPopupContext::Render(void *pContext, CUIRect View, bool Active)
+{
+	CBackendPopupContext *pPopup = static_cast<CBackendPopupContext *>(pContext);
+	CUi *pUi = pPopup->m_pChat->Ui();
+
+	static_assert((int)ETranslateBackend::NUM <= MAX_BACKENDS, "CBackendPopupContext has no button for every backend");
+
+	CUi::EPopupMenuFunctionResult Result = CUi::POPUP_KEEP_OPEN;
+	CUIRect Slot;
+	for(int i = 0; i < CTranslate::NumBackends(); i++)
+	{
+		if(i != 0)
+			View.HSplitTop(POPUP_ENTRY_SPACING, nullptr, &View);
+		View.HSplitTop(POPUP_ENTRY_HEIGHT, &Slot, &View);
+
+		const int Value = CTranslate::BackendConfigValue(i);
+		const ETranslateBackend Backend = (ETranslateBackend)Value;
+		const bool Current = g_Config.m_EcTranslateBackend == Value;
+		// The one in use is drawn filled in rather than only on hover, so the list says which it is
+		if(pUi->DoButton_PopupMenu(&pPopup->m_aBackendButtons[i], CTranslate::BackendName(Backend),
+			   &Slot, POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, !Current))
+		{
+			g_Config.m_EcTranslateBackend = Value;
+			Result = CUi::POPUP_CLOSE_CURRENT;
+		}
+
+		// What the backend still wants before it can do anything, marked on the right of its row.
+		// Google asks for nothing and so carries no mark, which is the whole point of showing them.
+		const CTranslate::EBackendRequirement Requirement = CTranslate::BackendRequirement(Backend);
+		const char *pTooltip = Localize("Works as is, nothing to set up");
+		if(Requirement != CTranslate::EBackendRequirement::NONE)
+		{
+			const bool Ready = CTranslate::BackendReady(Backend);
+			const bool NeedsKey = Requirement == CTranslate::EBackendRequirement::API_KEY;
+			if(NeedsKey)
+				pTooltip = Ready ? Localize("Uses the api key from ec_translate_key") : Localize("Needs an api key, set ec_translate_key");
+			else
+				pTooltip = Ready ? Localize("Uses the server from ec_translate_endpoint") : Localize("Needs a server of your own, set ec_translate_endpoint. Requests go to localhost:5000 until you do");
+
+			CUIRect Icon;
+			Slot.VSplitRight(POPUP_ENTRY_HEIGHT, nullptr, &Icon);
+			RenderPopupIcon(pUi, Icon, NeedsKey ? FontIcon::KEY : FontIcon::NETWORK_WIRED,
+				Ready ? ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f) : ColorRGBA(1.0f, 0.75f, 0.2f, 0.9f));
+		}
+		pPopup->m_pChat->GameClient()->m_Tooltips.DoToolTip(&pPopup->m_aBackendButtons[i], &Slot, pTooltip, POPUP_LANGUAGE_WIDTH);
+	}
+
+	return Result;
+}
+
+CUi::EPopupMenuFunctionResult CChat::CLanguagePopupContext::Render(void *pContext, CUIRect View, bool Active)
+{
+	CLanguagePopupContext *pPopup = static_cast<CLanguagePopupContext *>(pContext);
+	CUi *pUi = pPopup->m_pChat->Ui();
+
+	CScrollRegionParams ScrollParams;
+	ScrollParams.m_ScrollbarThickness = 8.0f;
+	ScrollParams.m_ScrollbarMargin = POPUP_ENTRY_SPACING;
+	ScrollParams.m_ScrollbarNoOuterMargin = true;
+	ScrollParams.m_ScrollUnit = 3 * (POPUP_ENTRY_HEIGHT + POPUP_ENTRY_SPACING);
+	pPopup->m_ScrollRegion.Begin(&View, &ScrollParams);
+
+	const ColorRGBA WhitelistColor = ColorRGBA(0.4f, 0.9f, 0.4f, 0.75f);
+	const ColorRGBA BlacklistColor = ColorRGBA(0.95f, 0.35f, 0.35f, 0.75f);
+
+	for(size_t i = 0; i < pPopup->m_vCodes.size(); ++i)
+	{
+		CUIRect Slot;
+		if(i != 0)
+			View.HSplitTop(POPUP_ENTRY_SPACING, nullptr, &View);
+		View.HSplitTop(POPUP_ENTRY_HEIGHT, &Slot, &View);
+		if(!pPopup->m_ScrollRegion.AddRect(Slot))
+			continue;
+
+		const char *pCode = pPopup->m_vCodes[i].c_str();
+
+		CUIRect Whitelist, Blacklist, Label;
+		Slot.VSplitRight(POPUP_ENTRY_HEIGHT, &Slot, &Blacklist);
+		Slot.VSplitRight(POPUP_ENTRY_SPACING, &Slot, nullptr);
+		Slot.VSplitRight(POPUP_ENTRY_HEIGHT, &Label, &Whitelist);
+
+		// A code the table does not name is shown on its own, there is nothing to put beside it
+		char aBuf[64];
+		if(pPopup->m_vNames[i].empty())
+			str_copy(aBuf, pCode);
+		else
+			str_format(aBuf, sizeof(aBuf), "%s (%s)", pPopup->m_vNames[i].c_str(), pCode);
+		pUi->DoLabel(&Label, aBuf, POPUP_FONT_SIZE, TEXTALIGN_ML);
+
+		const bool Whitelisted = CTranslate::IsLanguageInList(g_Config.m_EcTranslateLanguageWhitelist, pCode);
+		if(pUi->DoButton_FontIcon(&pPopup->m_vWhitelistButtons[i], FontIcon::STAR, Whitelisted, &Whitelist, BUTTONFLAG_LEFT,
+			   IGraphics::CORNER_ALL, true, Whitelisted ? std::optional(WhitelistColor.WithMultipliedAlpha(pUi->ButtonColorMul(&pPopup->m_vWhitelistButtons[i]))) : std::nullopt))
+		{
+			CTranslate::SetLanguageInList(g_Config.m_EcTranslateLanguageWhitelist, sizeof(g_Config.m_EcTranslateLanguageWhitelist), pCode, !Whitelisted);
+		}
+		pPopup->m_pChat->GameClient()->m_Tooltips.DoToolTip(&pPopup->m_vWhitelistButtons[i], &Whitelist, Localize("Auto translate this language"));
+
+		const bool Blacklisted = CTranslate::IsLanguageInList(g_Config.m_EcTranslateLanguageBlacklist, pCode);
+		if(pUi->DoButton_FontIcon(&pPopup->m_vBlacklistButtons[i], FontIcon::BAN, Blacklisted, &Blacklist, BUTTONFLAG_LEFT,
+			   IGraphics::CORNER_ALL, true, Blacklisted ? std::optional(BlacklistColor.WithMultipliedAlpha(pUi->ButtonColorMul(&pPopup->m_vBlacklistButtons[i]))) : std::nullopt))
+		{
+			CTranslate::SetLanguageInList(g_Config.m_EcTranslateLanguageBlacklist, sizeof(g_Config.m_EcTranslateLanguageBlacklist), pCode, !Blacklisted);
+		}
+		pPopup->m_pChat->GameClient()->m_Tooltips.DoToolTip(&pPopup->m_vBlacklistButtons[i], &Blacklist, Localize("Never auto translate this language"));
+	}
+
+	pPopup->m_ScrollRegion.End();
+
+	return CUi::POPUP_KEEP_OPEN;
+}
+
+CUi::EPopupMenuFunctionResult CChat::CChatPopupContext::Render(void *pContext, CUIRect View, bool Active)
+{
+	CChatPopupContext *pPopup = static_cast<CChatPopupContext *>(pContext);
+	CChat *pChat = pPopup->m_pChat;
+	CUi *pUi = pChat->Ui();
+
+	CUi::EPopupMenuFunctionResult Result = CUi::POPUP_KEEP_OPEN;
+	CUIRect Slot;
+	bool First = true;
+	const auto NextSlot = [&]() {
+		if(!First)
+			View.HSplitTop(POPUP_ENTRY_SPACING, nullptr, &View);
+		First = false;
+		View.HSplitTop(POPUP_ENTRY_HEIGHT, &Slot, &View);
+		return &Slot;
+	};
+
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Auto translate"), g_Config.m_EcTranslateAuto ? Localize("On") : Localize("Off"));
+	// Left open, the label it flips is the only thing that reports what happened
+	if(pUi->DoButton_PopupMenu(&pPopup->m_AutoTranslateButton, aBuf, NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+	{
+		g_Config.m_EcTranslateAuto ^= 1;
+	}
+
+	str_format(aBuf, sizeof(aBuf), "%s: %s", Localize("Backend"), CTranslate::BackendName(CTranslate::Backend()));
+	if(pUi->DoButton_PopupMenu(&pPopup->m_BackendButton, aBuf, NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+	{
+		pChat->OpenBackendPopup(Slot);
+	}
+
+	if(pUi->DoButton_PopupMenu(&pPopup->m_LanguagesButton, Localize("Languages"), NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+	{
+		pChat->OpenLanguagePopup(Slot);
+	}
+
+	if(pUi->DoButton_PopupMenu(&pPopup->m_CopyChatButton, Localize("Copy chat"), NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+	{
+		const std::string Text = pChat->ChatText();
+		if(!Text.empty())
+			pChat->Input()->SetClipboardText(Text.c_str());
+		Result = CUi::POPUP_CLOSE_CURRENT;
+	}
+
+	if(pUi->DoButton_PopupMenu(&pPopup->m_ClearChatButton, Localize("Clear chat"), NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+	{
+		pChat->ClearLines();
+		Result = CUi::POPUP_CLOSE_CURRENT;
+	}
+
+	return Result;
+}
+// EClient>
 
 void CChat::EnsureCoherentFontSize() const
 {

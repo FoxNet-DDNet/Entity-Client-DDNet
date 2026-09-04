@@ -15,6 +15,8 @@
 #include <game/client/component.h>
 #include <game/client/lineinput.h>
 #include <game/client/render.h>
+#include <game/client/ui.h>
+#include <game/client/ui_scrollregion.h>
 
 #include <string>
 #include <vector>
@@ -135,6 +137,109 @@ class CChat : public CComponent
 		CHAT_NUM,
 	};
 
+	// <EClient: the menus reachable from the chat, one on a message and one on the button that
+	// sits next to the input
+	class CMessagePopupContext : public SPopupMenuId
+	{
+	public:
+		CChat *m_pChat = nullptr;
+		// Where the message sits in m_aLines, plus the time it carried when the menu was opened.
+		// The menu outlives the frame it was opened on and the slot may be reused underneath it,
+		// so anything acting on the line has to check that it is still the same message.
+		int m_LineIndex = -1;
+		int64_t m_LineTime = 0;
+		int m_ClientId = -1;
+		// Source language the message was translated from, empty unless it was translated
+		char m_aLanguage[16] = "";
+		// The message as it reads on screen, prefixes and name included
+		std::string m_Text;
+
+		// Which entries the menu was opened with. Settled once, so that the height the menu was
+		// given and what it draws into it cannot disagree while it is open.
+		bool m_ShowFriend = false;
+		bool m_ShowTranslate = false;
+		bool m_ShowLanguage = false;
+
+		CButtonContainer m_FriendButton;
+		CButtonContainer m_CopyButton;
+		CButtonContainer m_TranslateButton;
+		CButtonContainer m_WhitelistButton;
+		CButtonContainer m_BlacklistButton;
+
+		CLine *Line() const;
+
+		static CUi::EPopupMenuFunctionResult Render(void *pContext, CUIRect View, bool Active);
+	};
+	CMessagePopupContext m_MessagePopupContext;
+
+	class CChatPopupContext : public SPopupMenuId
+	{
+	public:
+		CChat *m_pChat = nullptr;
+
+		CButtonContainer m_AutoTranslateButton;
+		CButtonContainer m_BackendButton;
+		CButtonContainer m_LanguagesButton;
+		CButtonContainer m_CopyChatButton;
+		CButtonContainer m_ClearChatButton;
+
+		static CUi::EPopupMenuFunctionResult Render(void *pContext, CUIRect View, bool Active);
+	};
+	CChatPopupContext m_ChatPopupContext;
+
+	class CBackendPopupContext : public SPopupMenuId
+	{
+	public:
+		CChat *m_pChat = nullptr;
+
+		// Room for every ETranslateBackend there is, which chat.h cannot name without including
+		// its way back around into translate.h. chat.cpp holds the assert that keeps the two in
+		// step.
+		static constexpr int MAX_BACKENDS = 8;
+		CButtonContainer m_aBackendButtons[MAX_BACKENDS];
+
+		static CUi::EPopupMenuFunctionResult Render(void *pContext, CUIRect View, bool Active);
+	};
+	CBackendPopupContext m_BackendPopupContext;
+
+	class CLanguagePopupContext : public SPopupMenuId
+	{
+	public:
+		CChat *m_pChat = nullptr;
+		CScrollRegion m_ScrollRegion;
+
+		// Built when the menu opens: every language worth offering, plus any code already sitting
+		// in one of the lists that is not among them, so a hand written entry can still be taken
+		// back out. Left alone afterwards, the buttons below are addressed by their position.
+		std::vector<std::string> m_vCodes;
+		std::vector<std::string> m_vNames;
+		std::vector<CButtonContainer> m_vWhitelistButtons;
+		std::vector<CButtonContainer> m_vBlacklistButtons;
+
+		static CUi::EPopupMenuFunctionResult Render(void *pContext, CUIRect View, bool Active);
+	};
+	CLanguagePopupContext m_LanguagePopupContext;
+
+	CButtonContainer m_ChatMenuButton;
+
+	static float PopupHeight(int Entries);
+
+	// Keeps the ui cursor on top of the one the chat steers, so the menus can hit test against it
+	void SyncUiMouse();
+	void OpenMessagePopup(const CLine &Line, int LineIndex);
+	void OpenChatPopup(const CUIRect &ButtonRect);
+	void OpenBackendPopup(const CUIRect &FromRect);
+	void OpenLanguagePopup(const CUIRect &FromRect);
+	// The topmost menu the chat has open, taken down the way the ui would take it down if it were
+	// the one hearing the key
+	bool CloseTopPopup();
+	// The menu button and the menus themselves, drawn on the ui screen once the chat is done with
+	// its own. Taken care of on every path that renders the chat input, including the one that
+	// draws no messages at all.
+	void RenderChatUi(const CUIRect &MenuButtonRect);
+	std::string ChatText() const;
+	// EClient>
+
 	int m_Mode;
 	bool m_Show;
 	bool m_CompletionUsed;
@@ -232,7 +337,14 @@ public:
 	void OnPrepareLines(float y);
 	// EClient: the view is frozen while selecting text or while hovering a message,
 	// so messages don't move away under the cursor
-	bool IsScrollPaused() const { return m_Mode != MODE_NONE && (m_Selecting || m_HasSelection || m_HoveringMessage); }
+	bool IsScrollPaused() const { return m_Mode != MODE_NONE && (m_Selecting || m_HasSelection || m_HoveringMessage || PopupOpen()); }
+	// EClient: a menu opened from the chat holds the view still, the message it acts on must not
+	// scroll out from under it
+	bool PopupOpen() const
+	{
+		return Ui()->IsPopupOpen(&m_MessagePopupContext) || Ui()->IsPopupOpen(&m_ChatPopupContext) ||
+		       Ui()->IsPopupOpen(&m_BackendPopupContext) || Ui()->IsPopupOpen(&m_LanguagePopupContext);
+	}
 	int GetLinesToSkipWhilePaused() const; // EClient
 	int GetMaxBacklogCurLine() const;
 	void Reset();

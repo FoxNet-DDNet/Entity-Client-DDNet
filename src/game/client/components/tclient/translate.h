@@ -14,7 +14,7 @@ enum class ETranslateBackend
 {
 	INVALID,
 	LIBRETRANSLATE,
-	DEEPL_FREE,
+	DEEPL,
 	GOOGLE,
 	NUM,
 };
@@ -90,6 +90,37 @@ public:
 	void Translate(CChat::CLine &Line, bool Manual);
 
 	void AutoTranslate(CChat::CLine &Line);
+
+	// <EClient: the language lists are plain comma separated config strings, these keep everyone
+	// reading and writing them agreeing on what counts as the same language
+	static void NormalizeLanguage(const char *pLanguage, char *pOut, size_t Size);
+	static bool IsLanguageInList(const char *pList, const char *pLanguage);
+	static void SetLanguageInList(char *pList, size_t Size, const char *pLanguage, bool Add);
+
+	// The languages a picker offers. Not what the backends accept, which is far more than anyone
+	// wants to scroll through, and a code that is missing here can still be typed into the config.
+	static int NumLanguages();
+	static const char *LanguageCode(int Index);
+	static const char *LanguageName(int Index);
+
+	// What a backend has to be handed before it can translate anything. Only Google asks for
+	// nothing, which is worth saying out loud where a backend is picked.
+	enum class EBackendRequirement
+	{
+		NONE,
+		API_KEY,
+		ENDPOINT,
+	};
+	static EBackendRequirement BackendRequirement(ETranslateBackend Backend);
+	static bool BackendReady(ETranslateBackend Backend);
+
+	// The backend is a plain number in the config. These read it back, and let a picker walk the
+	// choices without having to know the enum behind them.
+	static ETranslateBackend Backend();
+	static int NumBackends();
+	static int BackendConfigValue(int Index);
+	static const char *BackendName(ETranslateBackend Backend);
+	// EClient>
 };
 
 #endif

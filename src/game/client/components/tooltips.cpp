@@ -78,6 +78,10 @@ void CTooltips::OnRender()
 		if(!Tooltip.m_OnScreen)
 			return;
 
+		// EClient: the rects and the mouse position below are all in ui coordinates, say so rather
+		// than inheriting whichever mapping the previous component left behind
+		Ui()->MapScreen();
+
 		// Reset hover time if a different tooltip is active.
 		// Only reset hover time when rendering, because multiple tooltips can be
 		// activated in the same frame, but only the last one should be rendered.
