@@ -8,24 +8,28 @@
 
 #include <game/client/gameclient.h>
 
-void CAutoDummyConnect::DummyChangeBack()
+void CAutoDummyConnect::AdoptDummyLocalId()
 {
-	if(m_AutoSwitchedDummy || g_Config.m_ClAutoDummyConnect != 2)
+	const int Conn = IClient::CONN_DUMMY;
+
+	// While the dummy is the active connection OnNewSnapshot keeps its local id up to date.
+	if(g_Config.m_ClDummy == Conn || GameClient()->m_aLocalIds[Conn] >= 0)
 		return;
 
-	if(g_Config.m_ClDummy != 1)
-		return;
-
-	// The local id of a connection is only assigned in CGameClient::OnNewSnapshot,
-	// which the engine only runs for the connection that is currently active. As long
-	// as the dummy's local id is unknown, CGameClient::OnSnapInput bails out and the
-	// client never sends any input on CONN_DUMMY, so the server drops the dummy again.
-	// Stay on the dummy until its first snapshot has been processed, then switch back.
-	if(GameClient()->m_aLocalIds[IClient::CONN_DUMMY] < 0)
-		return;
-
-	g_Config.m_ClDummy = 0;
-	m_AutoSwitchedDummy = true;
+	// Only the active connection is unpacked into m_Snap, so a dummy that never became
+	// active has no local id. CGameClient::OnSnapInput refuses to produce input without
+	// one, which means nothing is ever sent on CONN_DUMMY and the server drops the dummy.
+	// Mirror the m_Snap based assignment in OnNewSnapshot against the raw dummy snapshot.
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		const CNetObj_PlayerInfo *pInfo = static_cast<const CNetObj_PlayerInfo *>(
+			Client()->SnapFindItem(Conn, IClient::SNAP_CURRENT, NETOBJTYPE_PLAYERINFO, ClientId));
+		if(pInfo && pInfo->m_Local && pInfo->m_ClientId == ClientId)
+		{
+			GameClient()->m_aLocalIds[Conn] = ClientId;
+			return;
+		}
+	}
 }
 
 void CAutoDummyConnect::OnRender()
@@ -36,15 +40,9 @@ void CAutoDummyConnect::OnRender()
 	if(Client()->State() != IClient::STATE_ONLINE)
 		return;
 
-	if(m_ConnectedDummy)
-	{
-		DummyChangeBack();
-		return;
-	}
-
 	if(Client()->DummyConnected())
 	{
-		m_ConnectedDummy = true;
+		AdoptDummyLocalId();
 		return;
 	}
 
@@ -70,13 +68,15 @@ void CAutoDummyConnect::OnRender()
 		return;
 
 	m_NextAttempt = Now + time_freq() * 5 / 2;
-	Client()->DummyConnect();
+
+	if(g_Config.m_ClAutoDummyConnect == 2)
+		Client()->DummyConnectInBackground();
+	else
+		Client()->DummyConnect();
 }
 
 void CAutoDummyConnect::OnReset()
 {
-	m_ConnectedDummy = false;
-	m_AutoSwitchedDummy = false;
 	m_WarnedNotAllowed = false;
 	m_NextAttempt = 0;
 }

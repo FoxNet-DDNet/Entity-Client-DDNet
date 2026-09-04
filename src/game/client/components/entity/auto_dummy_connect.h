@@ -7,13 +7,11 @@
 
 class CAutoDummyConnect : public CComponent
 {
-	bool m_ConnectedDummy = false;
-	bool m_AutoSwitchedDummy = false;
 	bool m_WarnedNotAllowed = false;
 
 	int64_t m_NextAttempt = 0;
 
-	void DummyChangeBack();
+	void AdoptDummyLocalId();
 
 public:
 	int Sizeof() const override { return sizeof(*this); }

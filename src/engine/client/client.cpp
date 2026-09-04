@@ -258,6 +258,12 @@ void CClient::SendFastInputsInfo(int Conn)
 	SendMsg(Conn, &Msg, MSGFLAG_VITAL);
 }
 
+void CClient::DummyConnectInBackground()
+{
+	DummyConnect();
+	m_DummyStayOnMain = DummyConnecting();
+}
+
 void CClient::SendInfo(int Conn)
 {
 	SendqxdInfo(Conn); // EClient
@@ -938,6 +944,7 @@ void CClient::DummyDisconnect(const char *pReason)
 	m_DummyConnecting = false;
 	m_DummyReconnectOnReload = false;
 	m_DummyDeactivateOnReconnect = false;
+	m_DummyStayOnMain = false; // EClient
 #if defined(CONF_PLATFORM_IOS)
 	m_DummyReconnectOnResume = false;
 #endif
@@ -1991,6 +1998,16 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 			Rcon("crashmeplx");
 			if(m_aRconAuthed[0] && !m_aRconAuthed[1])
 				RconAuth(m_aRconUsername, m_aRconPassword);
+			// <EClient
+			// The switch above is undone right here, before anything outside of this update
+			// can observe it, so no frame is ever rendered on a background dummy. It still
+			// has to happen first: Rcon and RconAuth above are sent on the active connection.
+			if(m_DummyStayOnMain)
+			{
+				m_DummyStayOnMain = false;
+				g_Config.m_ClDummy = 0;
+			}
+			// EClient>
 		}
 		else if(Msg == NETMSG_PING)
 		{

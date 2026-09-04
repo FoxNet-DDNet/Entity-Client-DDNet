@@ -190,6 +190,7 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	float m_LastDummyConnectTime = 0.0f;
 	bool m_DummyReconnectOnReload = false;
 	bool m_DummyDeactivateOnReconnect = false;
+	bool m_DummyStayOnMain = false; // EClient
 #if defined(CONF_PLATFORM_IOS)
 	bool m_DummyReconnectOnResume = false;
 #endif
@@ -569,6 +570,7 @@ private:
 public:
 	void DiscordRPCUpdate() override;
 	void SendFastInputsInfo(int Conn) override;
+	void DummyConnectInBackground() override;
 	// EClient>
 };
 

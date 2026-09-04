@@ -405,6 +405,9 @@ public:
 	// EClient
 	virtual void DiscordRPCUpdate() = 0;
 	virtual void SendFastInputsInfo(int Conn) = 0;
+	// Like DummyConnect, but the dummy does not become the active connection once it is
+	// ready. Used to connect a dummy in the background without moving the camera onto it.
+	virtual void DummyConnectInBackground() = 0;
 	int m_FoxNetVersion = 0;
 };
 
