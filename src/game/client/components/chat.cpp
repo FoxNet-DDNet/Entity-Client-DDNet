@@ -2413,7 +2413,7 @@ void CChat::RenderChatUi(const CUIRect &MenuButtonRect)
 		// CUi::DoButton_FontIcon would do all of this, but it rounds its corners off harder than
 		// this button wants, and the amount is not something it takes
 		const bool Open = Ui()->IsPopupOpen(&m_ChatPopupContext);
-		MenuButtonRect.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, (Open ? 0.25f : 0.5f) * Ui()->ButtonColorMul(&m_ChatMenuButton)),
+		MenuButtonRect.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, (Open ? 0.5f : 0.25f) * Ui()->ButtonColorMul(&m_ChatMenuButton)),
 			IGraphics::CORNER_ALL, MENU_BUTTON_ROUNDING);
 
 		CUIRect Label;
