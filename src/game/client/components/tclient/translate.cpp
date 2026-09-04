@@ -447,7 +447,6 @@ public:
 		}
 		if(m_pHttpRequest->State() != EHttpState::DONE)
 		{
-			str_copy(Out.m_Text, "Curl error");
 			return false;
 		}
 		if(m_pHttpRequest->StatusCode() != 200 && !ParseHttpError())
