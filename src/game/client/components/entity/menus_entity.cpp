@@ -4326,7 +4326,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		FILTER_VISUAL,
 		{"frozen", "freeze", "stars", "katana", "colored", "tee", "skins", "white", "feet"},
 		[](bool HasSearch) {
-			int Size = 120;
+			int Size = 140;
 			if(g_Config.m_ClWhiteFeet || HasSearch)
 				Size += LineSize + MarginExtraSmall * 2.0f;
 
@@ -4339,6 +4339,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 			Ui()->DoLabel(&Button, EcLocalize("Tee Appearance"), HeaderSize, HeaderAlignment);
 
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderWeaponsInFreeze, EcLocalize("Show Players' weapon while theyre frozen"), &g_Config.m_ClRenderWeaponsInFreeze, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFrozenKatana, EcLocalize("Show katana on frozen players"), &g_Config.m_EcFrozenKatana, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClColorFrozenTeeBody, EcLocalize("Colored frozen tee skins"), &g_Config.m_ClColorFrozenTeeBody, &ModuleRect, LineSize);
