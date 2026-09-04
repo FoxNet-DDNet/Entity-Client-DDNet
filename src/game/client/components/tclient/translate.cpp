@@ -15,18 +15,70 @@
 #include <cctype>
 #include <memory>
 
-// Backoff used when a backend answers with a rate limit (HTTP 429), Google is
-// aggressive about those. The delay doubles for every strike that happens after
-// the previous backoff already expired.
-static constexpr int64_t RATE_LIMIT_BACKOFF_SECONDS = 5;
-static constexpr int64_t RATE_LIMIT_BACKOFF_MAX_SECONDS = 160;
-static constexpr int RATE_LIMIT_MAX_STRIKES = 6;
 // How many requests a single job may send before it gives up on being rate limited
 static constexpr int RATE_LIMIT_MAX_ATTEMPTS = 3;
+// A backoff never grows past its backend maximum, this only keeps the shift sane
+static constexpr int RATE_LIMIT_MAX_STRIKES = 16;
+// How long a request may wait for its turn before it is dropped, translating a
+// message that scrolled out of the chat long ago helps nobody
+static constexpr int64_t QUEUE_MAX_WAIT_SECONDS_AUTO = 5;
+static constexpr int64_t QUEUE_MAX_WAIT_SECONDS_MANUAL = 30;
 
-static int RateLimitSeconds(int64_t Remaining)
+class CTranslateBackendLimits
 {
-	return (int)((Remaining + time_freq() - 1) / time_freq());
+public:
+	// Minimum time between two requests, sending faster than this is what gets
+	// us rate limited in the first place
+	int m_MinIntervalMs;
+	// First backoff after a rate limit, doubles for every rate limit that
+	// follows until the maximum is reached
+	int m_BackoffSeconds;
+	int m_BackoffMaxSeconds;
+};
+
+static CTranslateBackendLimits TranslateBackendLimits(ETranslateBackend Backend)
+{
+	switch(Backend)
+	{
+	case ETranslateBackend::LIBRETRANSLATE:
+		// Usually self hosted, no reason to hold back
+		return {0, 5, 60};
+	case ETranslateBackend::DEEPL_FREE:
+		return {500, 30, 600};
+	case ETranslateBackend::GOOGLE:
+		// Punishes bursts hard and stays angry for a long time afterwards
+		return {1500, 60, 900};
+	default:
+		return {0, 5, 60};
+	}
+}
+
+static const char *TranslateBackendName(ETranslateBackend Backend)
+{
+	switch(Backend)
+	{
+	case ETranslateBackend::LIBRETRANSLATE:
+		return "LibreTranslate";
+	case ETranslateBackend::DEEPL_FREE:
+		return "DeepL Free";
+	case ETranslateBackend::GOOGLE:
+		return "Google Translate";
+	default:
+		return "Translate";
+	}
+}
+
+// Time between requests of a backend, the config overrides the backend default
+static int64_t TranslateMinInterval(ETranslateBackend Backend)
+{
+	const int64_t Milliseconds = g_Config.m_EcTranslateMinInterval >= 0 ? g_Config.m_EcTranslateMinInterval : TranslateBackendLimits(Backend).m_MinIntervalMs;
+	return Milliseconds * time_freq() / 1000;
+}
+
+// Rounds a duration up to full seconds, for messages shown to the user
+static int TimeToSeconds(int64_t Time)
+{
+	return (int)((Time + time_freq() - 1) / time_freq());
 }
 
 static void UrlEncode(const char *pText, char *pOut, size_t Length)
@@ -224,7 +276,12 @@ public:
 	bool IsRateLimited() const override
 	{
 		// StatusCode() may only be read once the request is done
-		return m_pHttpRequest && m_pHttpRequest->State() == EHttpState::DONE && m_pHttpRequest->StatusCode() == 429;
+		if(!m_pHttpRequest || m_pHttpRequest->State() != EHttpState::DONE)
+			return false;
+		const int StatusCode = m_pHttpRequest->StatusCode();
+		// 429 is the rate limit itself, 503 is a backend that is out of capacity,
+		// both mean the same thing for us: stop asking for a while
+		return StatusCode == 429 || StatusCode == 503;
 	}
 
 	std::optional<bool> Update(CTranslateResponse &Out) override
@@ -346,7 +403,7 @@ protected:
 public:
 	const char *Name() const override
 	{
-		return "LibreTranslate";
+		return TranslateBackendName(ETranslateBackend::LIBRETRANSLATE);
 	}
 	CTranslateBackendLibretranslate(IHttp &Http, const char *pText)
 	{
@@ -475,7 +532,7 @@ public:
 	}
 	const char *Name() const override
 	{
-		return "DeepL Free";
+		return TranslateBackendName(ETranslateBackend::DEEPL_FREE);
 	}
 	CTranslateBackendDeeplFree(IHttp &Http, const char *pText)
 	{
@@ -566,7 +623,7 @@ protected:
 public:
 	const char *Name() const override
 	{
-		return "Google Translate";
+		return TranslateBackendName(ETranslateBackend::GOOGLE);
 	}
 
 	CTranslateBackendGoogle(IHttp &Http, const char *pText)
@@ -606,35 +663,51 @@ static std::unique_ptr<ITranslateBackend> CreateTranslateBackend(ETranslateBacke
 	return nullptr;
 }
 
-int64_t CTranslate::RateLimitRemaining(ETranslateBackend Backend) const
+int64_t CTranslate::NextRequestTime(ETranslateBackend Backend) const
 {
-	if(Backend != m_RateLimitBackend)
-		return 0;
-	return std::max<int64_t>(m_RateLimitUntil - time(), 0);
+	const CBackendState &State = BackendState(Backend);
+	return std::max(State.m_NextRequest, State.m_BackoffUntil);
 }
 
-void CTranslate::RateLimitHit(ETranslateBackend Backend)
+bool CTranslate::SendRequest(CTranslateJob &Job)
 {
+	Job.m_pBackend = CreateTranslateBackend(Job.m_Backend, *Http(), Job.m_pLine->m_aText);
+	if(!Job.m_pBackend)
+		return false;
+	Job.m_Attempts++;
+	Job.m_SendTime = 0;
+	// Hold the next request back, a backend that is asked once per chat message
+	// is what gets us rate limited to begin with
+	BackendState(Job.m_Backend).m_NextRequest = time() + TranslateMinInterval(Job.m_Backend);
+	return true;
+}
+
+void CTranslate::OnRateLimited(ETranslateBackend Backend)
+{
+	CBackendState &State = BackendState(Backend);
 	const int64_t Now = time();
-	if(Backend != m_RateLimitBackend)
-	{
-		m_RateLimitBackend = Backend;
-		m_RateLimitStrikes = 0;
-		m_RateLimitUntil = 0;
-	}
 	// Requests that were already in flight when the backoff started must not extend it
-	if(Now < m_RateLimitUntil)
+	if(Now < State.m_BackoffUntil)
 		return;
-	m_RateLimitStrikes = std::min(m_RateLimitStrikes + 1, RATE_LIMIT_MAX_STRIKES);
-	const int64_t Seconds = std::min(RATE_LIMIT_BACKOFF_SECONDS << (m_RateLimitStrikes - 1), RATE_LIMIT_BACKOFF_MAX_SECONDS);
-	m_RateLimitUntil = Now + Seconds * time_freq();
+
+	const CTranslateBackendLimits Limits = TranslateBackendLimits(Backend);
+	State.m_Strikes = std::min(State.m_Strikes + 1, RATE_LIMIT_MAX_STRIKES);
+	const int64_t Seconds = std::min<int64_t>((int64_t)Limits.m_BackoffSeconds << std::min(State.m_Strikes - 1, 20), Limits.m_BackoffMaxSeconds);
+	State.m_BackoffUntil = Now + Seconds * time_freq();
+
+	// Translations going quiet for minutes looks like the module is broken
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "Translation ratelimited, waiting %" PRId64 " seconds", Seconds);
+	GameClient()->ClientMessage(aBuf);
 }
 
-void CTranslate::RateLimitPassed(ETranslateBackend Backend)
+void CTranslate::OnRequestSucceeded(ETranslateBackend Backend)
 {
-	// A backoff that is still running is kept, only the escalation is reset
-	if(Backend == m_RateLimitBackend)
-		m_RateLimitStrikes = 0;
+	// Recover slowly, a single answer that got through does not mean the limit
+	// is gone. Dropping straight back to the shortest backoff makes us run into
+	// the same wall over and over.
+	CBackendState &State = BackendState(Backend);
+	State.m_Strikes = std::max(State.m_Strikes - 1, 0);
 }
 
 void CTranslate::ConTranslate(IConsole::IResult *pResult, void *pUserData)
@@ -655,10 +728,19 @@ void CTranslate::ConTranslateId(IConsole::IResult *pResult, void *pUserData)
 	pThis->Translate(pResult->GetInteger(0), true);
 }
 
+void CTranslate::ConTranslateResetLimits(IConsole::IResult *pResult, void *pUserData)
+{
+	CTranslate *pThis = static_cast<CTranslate *>(pUserData);
+	for(CBackendState &State : pThis->m_aBackendStates)
+		State = CBackendState();
+	pThis->GameClient()->m_Chat.Echo("Translate rate limits cleared");
+}
+
 void CTranslate::OnConsoleInit()
 {
 	Console()->Register("translate", "?r[name]", CFGFLAG_CLIENT, ConTranslate, this, "Translate last message (of a given name)");
 	Console()->Register("translate_id", "v[id]", CFGFLAG_CLIENT, ConTranslateId, this, "Translate last message of the person with this id");
+	Console()->Register("translate_reset_limits", "", CFGFLAG_CLIENT, ConTranslateResetLimits, this, "Forget the rate limit backoff of all translate backends");
 }
 
 void CTranslate::Translate(int Id, bool Manual)
@@ -744,42 +826,52 @@ void CTranslate::Translate(CChat::CLine &Line, bool Manual)
 		return;
 	}
 
-	// Do not touch a backend that told us to slow down until its backoff has passed
-	const int64_t RateLimited = RateLimitRemaining(Backend);
-	if(RateLimited > 0 && !Manual)
-		return; // Automatic translations are dropped instead of piling up
+	const int64_t Now = time();
+	const int64_t SendTime = NextRequestTime(Backend);
+	const int64_t Wait = std::max<int64_t>(SendTime - Now, 0);
+	const int64_t MaxWait = (Manual ? QUEUE_MAX_WAIT_SECONDS_MANUAL : QUEUE_MAX_WAIT_SECONDS_AUTO) * time_freq();
+	if(Wait > MaxWait)
+	{
+		// Backing off for longer than the message stays interesting, queueing it
+		// up would only translate it after everybody has moved on
+		if(Manual)
+		{
+			char aBuf[128];
+			str_format(aBuf, sizeof(aBuf), "%s is rate limited, try again in %d seconds", TranslateBackendName(Backend), TimeToSeconds(Wait));
+			GameClient()->m_Chat.Echo(aBuf);
+		}
+		return;
+	}
 
 	CTranslateJob Job;
 	Job.m_Backend = Backend;
+	Job.m_SendTime = SendTime;
+	Job.m_Deadline = Now + MaxWait;
 	Job.m_pLine = &Line;
 	Job.m_pTranslateResponse = std::make_shared<CTranslateResponse>();
+	Job.m_pTranslateResponse->m_Auto = !Manual;
 	Job.m_pLine->m_pTranslateResponse = Job.m_pTranslateResponse;
 
-	if(RateLimited > 0)
-	{
-		// Manual translations are sent as soon as the backoff has passed
-		Job.m_RetryTime = m_RateLimitUntil;
-		str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("Rate limited, retrying in %d seconds", "translate"), RateLimitSeconds(RateLimited));
-		Job.m_pTranslateResponse->m_Error = true;
-		Job.m_pLine->m_Time = time();
-	}
-	else
-	{
-		Job.m_pBackend = CreateTranslateBackend(Backend, *Http(), Job.m_pLine->m_aText);
-		Job.m_Attempts = 1;
+	if(Wait == 0 && !SendRequest(Job))
+		return;
 
-		if(Manual)
+	if(Manual)
+	{
+		if(Wait > 0 && BackendState(Backend).m_BackoffUntil > Now)
 		{
-			str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("%s translating to %s", "translate"), Job.m_pBackend->Name(), g_Config.m_EcTranslateTarget);
-			Job.m_pLine->m_Time = time();
+			str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("Rate limited, retrying in %d seconds", "translate"), TimeToSeconds(Wait));
+			Job.m_pTranslateResponse->m_Error = true;
 		}
 		else
 		{
-			Job.m_pTranslateResponse->m_Text[0] = '\0';
+			str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("%s translating to %s", "translate"), TranslateBackendName(Backend), g_Config.m_EcTranslateTarget);
 		}
+		Job.m_pLine->m_Time = Now;
 	}
-
-	Job.m_pTranslateResponse->m_Auto = !Manual;
+	else
+	{
+		Job.m_pTranslateResponse->m_Text[0] = '\0';
+	}
 
 	m_vJobs.emplace_back(std::move(Job));
 
@@ -793,53 +885,79 @@ void CTranslate::OnRender()
 		return;
 
 	const auto Time = time();
-	int RetryIndex = 0;
 	auto ForEach = [&](CTranslateJob &Job) {
 		if(Job.m_pLine->m_pTranslateResponse != Job.m_pTranslateResponse)
 			return true; // Not the same line anymore
-		if(Job.m_RetryTime != 0)
+
+		bool Success = false;
+		bool RateLimited = false;
+
+		if(!Job.m_pBackend)
 		{
-			if(Time < Job.m_RetryTime)
-				return false; // Still waiting out the rate limit backoff
-			Job.m_pBackend = CreateTranslateBackend(Job.m_Backend, *Http(), Job.m_pLine->m_aText);
-			if(!Job.m_pBackend)
-				return true;
-			Job.m_RetryTime = 0;
-			Job.m_Attempts++;
+			// Waiting for the turn of this job at its backend
+			const int64_t SendTime = std::max(Job.m_SendTime, NextRequestTime(Job.m_Backend));
+			if(SendTime > Job.m_Deadline)
+			{
+				RateLimited = true; // Waited long enough, give up on this message
+			}
+			else
+			{
+				if(Time < SendTime)
+				{
+					Job.m_SendTime = SendTime;
+					return false;
+				}
+				if(!SendRequest(Job))
+					return true;
+			}
 		}
-		const std::optional<bool> Done = Job.m_pBackend->Update(*Job.m_pTranslateResponse);
-		if(!Done.has_value())
-			return false; // Keep ongoing tasks
-		bool Success = *Done;
-		if(Job.m_pBackend->IsRateLimited())
+
+		if(!RateLimited)
 		{
-			RateLimitHit(Job.m_Backend);
+			const std::optional<bool> Done = Job.m_pBackend->Update(*Job.m_pTranslateResponse);
+			if(!Done.has_value())
+				return false; // Keep ongoing tasks
+			Success = *Done;
+			RateLimited = Job.m_pBackend->IsRateLimited();
+			if(RateLimited)
+			{
+				Success = false;
+				OnRateLimited(Job.m_Backend);
+				const int64_t SendTime = NextRequestTime(Job.m_Backend);
+				if(Job.m_Attempts < RATE_LIMIT_MAX_ATTEMPTS && SendTime <= Job.m_Deadline)
+				{
+					// Send it again once the backoff has passed
+					Job.m_pBackend = nullptr; // Aborts the finished request and frees it until then
+					Job.m_SendTime = SendTime;
+					if(!Job.m_pTranslateResponse->m_Auto)
+					{
+						str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("Rate limited, retrying in %d seconds", "translate"), TimeToSeconds(SendTime - Time));
+						Job.m_pTranslateResponse->m_Error = true;
+						Job.m_pLine->m_Time = Time;
+						GameClient()->m_Chat.RebuildChat();
+					}
+					return false; // Keep the job around for the retry
+				}
+			}
+			else if(Success)
+			{
+				OnRequestSucceeded(Job.m_Backend);
+			}
+		}
+
+		if(RateLimited)
+		{
 			if(Job.m_pTranslateResponse->m_Auto)
 			{
 				// Nobody is waiting for these, drop them silently instead of
-				// retrying, the backoff keeps the rest of them from being sent
+				// filling the chat with errors that all say the same thing
 				Job.m_pTranslateResponse->m_Text[0] = '\0';
 				Job.m_pTranslateResponse->m_Language[0] = '\0';
 				return true;
 			}
-			if(Job.m_Attempts < RATE_LIMIT_MAX_ATTEMPTS)
-			{
-				Job.m_pBackend = nullptr; // Aborts the finished request and frees it until the retry
-				// Spread out the jobs that got rate limited together so the retries do not burst
-				Job.m_RetryTime = m_RateLimitUntil + RetryIndex++ * (time_freq() / 4);
-				str_format(Job.m_pTranslateResponse->m_Text, sizeof(Job.m_pTranslateResponse->m_Text), Localize("Rate limited, retrying in %d seconds", "translate"), RateLimitSeconds(Job.m_RetryTime - Time));
-				Job.m_pTranslateResponse->m_Error = true;
-				Job.m_pLine->m_Time = Time;
-				GameClient()->m_Chat.RebuildChat();
-				return false; // Keep the job around for the retry
-			}
 			str_copy(Job.m_pTranslateResponse->m_Text, Localize("rate limited", "translate"));
-			Success = false;
 		}
-		else if(Success)
-		{
-			RateLimitPassed(Job.m_Backend);
-		}
+
 		if(Success)
 		{
 			const bool SameTextAsInput = str_comp_nocase(Job.m_pLine->m_aText, Job.m_pTranslateResponse->m_Text) == 0;
@@ -874,7 +992,7 @@ void CTranslate::OnRender()
 		else
 		{
 			char aBuf[sizeof(Job.m_pTranslateResponse->m_Text)];
-			str_format(aBuf, sizeof(aBuf), Localize("%s to %s failed: %s", "translate"), Job.m_pBackend->Name(), g_Config.m_EcTranslateTarget, Job.m_pTranslateResponse->m_Text);
+			str_format(aBuf, sizeof(aBuf), Localize("%s to %s failed: %s", "translate"), TranslateBackendName(Job.m_Backend), g_Config.m_EcTranslateTarget, Job.m_pTranslateResponse->m_Text);
 			Job.m_pTranslateResponse->m_Error = true;
 			str_copy(Job.m_pTranslateResponse->m_Text, aBuf);
 		}
@@ -909,8 +1027,6 @@ void CTranslate::AutoTranslate(CChat::CLine &Line)
 
 	if(Backend == ETranslateBackend::DEEPL_FREE && g_Config.m_EcTranslateKey[0] == '\0')
 		return;
-	if(RateLimitRemaining(Backend) > 0)
-		return; // Backend is backing off, do not queue anything up
 
 	Translate(Line, false);
 	s_LastLines[s_LastLineIndex] = Line;
