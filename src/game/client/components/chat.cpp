@@ -2077,7 +2077,7 @@ void CChat::OnRender()
 				ColorRGBA BackgroundColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClChatBackgroundColor, true)).WithMultipliedAlpha(Blend);
 				if(LineHovered && !Ui()->IsPopupHovered()) // EClient
 				{
-					static constexpr float gs_MessageHoverHighlightAlpha = 0.38f;
+					static constexpr float gs_MessageHoverHighlightAlpha = 0.5f;
 					if(BackgroundColor.a <= 0.1f)
 						BackgroundColor.a = 0.1f;
 					if(BackgroundColor.a > 0.66f)
