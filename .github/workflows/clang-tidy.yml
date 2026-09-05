@@ -1,11 +1,9 @@
 name: Check clang-tidy
 
-# on:
-#   push:
-#     branches-ignore:
-#       - gh-readonly-queue/**
-#   pull_request:
-#   merge_group:
+# Disabled: run manually from the Actions tab. A workflow with no `on:` trigger at
+# all is invalid, not disabled, and fails instantly on every push.
+on:
+  workflow_dispatch:
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}

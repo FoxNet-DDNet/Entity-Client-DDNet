@@ -330,7 +330,12 @@ if(NOT MSVC AND NOT HAIKU)
     add_cxx_compiler_flag_if_supported(OUR_FLAGS -fstack-clash-protection)
     # Forward-edge control-flow protection (CET on x86, BTI/PAC on aarch64).
     add_cxx_compiler_flag_if_supported(OUR_FLAGS -fcf-protection=full)
-    add_cxx_compiler_flag_if_supported(OUR_FLAGS -mbranch-protection=standard)
+    if(NOT TARGET_OS STREQUAL "mac" AND NOT TARGET_OS STREQUAL "ios")
+      # clang rejects -mbranch-protection= for Apple targets, but check_cxx_compiler_flag
+      # only probes the host and reports success anyway, so the universal (arm64;x86_64)
+      # build then fails on the x86_64 slice. Apple has its own pointer authentication.
+      add_cxx_compiler_flag_if_supported(OUR_FLAGS -mbranch-protection=standard)
+    endif()
     if(NOT TARGET_OS STREQUAL "windows" AND NOT TARGET_OS STREQUAL "mac")
       # Resolve all dynamic symbols at startup and make the GOT read-only afterwards (full RELRO).
       add_linker_flag_if_supported(OUR_FLAGS_LINK -Wl,-z,relro)
@@ -338,10 +343,14 @@ if(NOT MSVC AND NOT HAIKU)
     endif()
   endif()
 
-  # Disable exceptions as DDNet does not use them.
+  # Upstream disables exceptions everywhere. This fork keeps them because ChaiScript needs
+  # them, but ChaiScript is game-client only, so the server is still built without them
+  # like upstream. That also keeps GCC from emitting the CCharacter pool's operator delete
+  # as an unwind path for the placement new in player.cpp, which -Wfree-nonheap-object
+  # false-positives on under LTO. Applied to the server targets further down.
   # Haha, but we need them -Tater
   # Whatever that guy said -qxdFox
-  # add_cxx_compiler_flag_if_supported(OUR_FLAGS -fno-exceptions)
+  add_cxx_compiler_flag_if_supported(OUR_FLAGS_SERVER -fno-exceptions)
 
   # Inaccurate floating point numbers cause problems on mingw-w64-gcc when
   # compiling for x86, might cause problems elsewhere. So don't store floats
@@ -4268,6 +4277,22 @@ endif()
 
 set(TARGETS ${TARGETS_OWN} ${TARGETS_DEP})
 
+# Targets kept out of LTO under GCC. Must stay GCC-only: clang emits none of these
+# diagnostics, and taking targets out of LTO there left engine-shared's bitcode to be
+# LTO-codegen'd at link with a general-dynamic TLS model, breaking the Android armv7
+# link on __tls_get_addr.
+set(IPO_EXCLUDED_GNU
+  # Bundled zlib declares read() differently than the system headers. GCC can only compare
+  # the two once zlib's IR takes part in LTO, which it does under PREFER_BUNDLED_LIBS.
+  zlib)
+
+# The server is built without exceptions, like upstream. See OUR_FLAGS_SERVER above.
+foreach(target game-server game-server-without-main)
+  if(TARGET ${target} AND OUR_FLAGS_SERVER)
+    target_compile_options(${target} PRIVATE ${OUR_FLAGS_SERVER})
+  endif()
+endforeach()
+
 foreach(target ${TARGETS})
   if(MSVC)
     set_property(TARGET ${target} PROPERTY MSVC_RUNTIME_LIBRARY MultiThreaded$<$<CONFIG:Debug>:Debug>) # Use static CRT
@@ -4302,7 +4327,10 @@ foreach(target ${TARGETS})
     endif()
   endif()
   if(ENABLE_IPO)
-    set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    # See IPO_EXCLUDED_GNU above for why these targets opt out under GCC.
+    if(NOT (CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND target IN_LIST IPO_EXCLUDED_GNU))
+      set_property(TARGET ${target} PROPERTY INTERPROCEDURAL_OPTIMIZATION TRUE)
+    endif()
   endif()
   if(ENABLE_PIE)
     set_property(TARGET ${target} PROPERTY POSITION_INDEPENDENT_CODE TRUE)
