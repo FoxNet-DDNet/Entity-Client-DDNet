@@ -207,7 +207,37 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 	CUIRect SearchBar, Content, EditBox, ChipRow;
 	constexpr float ChipHeight = 18.0f;
 	constexpr float EditBoxHeight = EditBoxFontSize * 1.5f;
-	MainView.HSplitTop(Margin * 2.0f + EditBoxHeight + MarginSmall + ChipHeight, &SearchBar, &MainView);
+
+	constexpr int NumChips = (int)std::size(gs_aSettingsFilterChips);
+	constexpr float ChipGap = MarginExtraSmall * 2.0f;
+	constexpr float ChipCorner = 2.0f;
+	constexpr float ChipFontSize = EditBoxFontSize;
+	constexpr ColorRGBA ChipActiveColor(0.38f, 0.46f, 0.9f, 0.65f);
+	constexpr ColorRGBA ChipInactiveColor(1.0f, 1.0f, 1.0f, 0.08f);
+	constexpr ColorRGBA ChipActiveTextColor(1.0f, 1.0f, 1.0f, 1.0f);
+	constexpr ColorRGBA ChipInactiveTextColor(0.75f, 0.75f, 0.75f, 1.0f);
+	float ChipWidth = 0;
+
+	for(int i = 0; i < NumChips; i++)
+	{
+		const SSettingsFilterChip &ChipInfo = gs_aSettingsFilterChips[i];
+		const float TextWidth = TextRender()->TextWidth(ChipFontSize, ChipInfo.m_pName);
+		if(TextWidth > ChipWidth - ChipGap * 2.0f)
+			ChipWidth = TextWidth + ChipGap * 2.0f;
+	}
+
+	int LastChipInRow = NumChips;
+	for(int i = NumChips; i > 0; i--)
+	{
+		if(ChipWidth * (i + 1) > MainView.w - ChipWidth * 1.75f)
+			LastChipInRow = i;
+	}
+
+	float NeededChipPadding = ChipHeight;
+	if(LastChipInRow != NumChips)
+		NeededChipPadding = ChipHeight * 2.0f + MarginExtraSmall;
+
+	MainView.HSplitTop(Margin * 2.0f + EditBoxHeight + MarginSmall + NeededChipPadding, &SearchBar, &MainView);
 	ScrollRegion.AddRect(SearchBar);
 	{
 		const float SearchWidth = TextRender()->TextWidth(EditBoxFontSize, FontIcon::MAGNIFYING_GLASS) + 5.0f;
@@ -246,15 +276,6 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 		Ui()->DoClearableEditBox(&SearchInput, &EditBox, EditBoxFontSize);
 
 		{
-			constexpr int NumChips = (int)std::size(gs_aSettingsFilterChips);
-			constexpr float ChipGap = MarginExtraSmall * 2.0f;
-			constexpr float ChipCorner = 2.0f;
-			constexpr float ChipFontSize = EditBoxFontSize;
-			constexpr ColorRGBA ChipActiveColor(0.38f, 0.46f, 0.9f, 0.65f);
-			constexpr ColorRGBA ChipInactiveColor(1.0f, 1.0f, 1.0f, 0.08f);
-			constexpr ColorRGBA ChipActiveTextColor(1.0f, 1.0f, 1.0f, 1.0f);
-			constexpr ColorRGBA ChipInactiveTextColor(0.75f, 0.75f, 0.75f, 1.0f);
-
 			static CButtonContainer s_aChipButtons[NumChips + 1];
 
 			auto DoFilterChip = [&](CButtonContainer *pId, const char *pLabel, bool Active, CUIRect *pRect) {
@@ -270,14 +291,6 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 			};
 
 			CUIRect Chips = ChipRow;
-			float ChipWidth = 0;
-			for(int i = 0; i < NumChips; ++i)
-			{
-				const SSettingsFilterChip &ChipInfo = gs_aSettingsFilterChips[i];
-				const float TextWidth = TextRender()->TextWidth(ChipFontSize, ChipInfo.m_pName);
-				if(TextWidth > ChipWidth - ChipGap * 2.0f)
-					ChipWidth = TextWidth + ChipGap * 2.0f;
-			}
 
 			CUIRect Chip;
 			Chips.VSplitLeft(ChipWidth, &Chip, &Chips);
@@ -286,6 +299,12 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 
 			for(int i = 0; i < NumChips; ++i)
 			{
+				if(LastChipInRow == i)
+				{
+					Chips.y += ChipHeight + MarginExtraSmall;
+					Chips.w = ChipRow.w;
+					Chips.x = ChipRow.x - ChipGap;
+				}
 				Chips.VSplitLeft(ChipGap, nullptr, &Chips);
 
 				const SSettingsFilterChip &ChipInfo = gs_aSettingsFilterChips[i];
@@ -371,7 +390,7 @@ static void PackSettingsModuleColumns(const std::vector<CSettingsModule> &vModul
 
 static void RenderSettingsModuleColumns(CScrollRegion &ScrollRegion, CUIRect MainView, const std::vector<CSettingsModule> &vModules, const char *pSearch)
 {
-	constexpr float MinColumnWidth = 360.0f;
+	constexpr float MinColumnWidth = 350.0f;
 	const bool HasSearch = pSearch != nullptr && pSearch[0] != '\0';
 
 	std::vector<size_t> vLeft, vRight;
