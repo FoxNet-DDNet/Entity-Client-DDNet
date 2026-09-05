@@ -55,6 +55,7 @@ enum ESettingsModuleFilter : unsigned
 	FILTER_CHAT = 1 << 4,
 	FILTER_WARLIST = 1 << 5,
 	FILTER_MISC = 1 << 6,
+	FILTER_NEW = 1 << 7,
 };
 
 class CSettingsModule

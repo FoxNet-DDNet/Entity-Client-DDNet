@@ -91,6 +91,7 @@ static const SSettingsFilterChip gs_aSettingsFilterChips[] = {
 	{FILTER_CHAT, "Chat"},
 	{FILTER_WARLIST, "Warlist"},
 	{FILTER_MISC, "Misc"},
+	{FILTER_NEW, "NEW"},
 };
 
 static unsigned gs_SettingsModuleFilter = FILTER_NONE;
@@ -3030,7 +3031,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Night Shift */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
-		FILTER_VISUAL,
+		FILTER_VISUAL | FILTER_NEW,
 		{"night", "shift", "warm", "temperature", "kelvin", "blue", "light", "eye", "strain", "sunset", "sunrise", "schedule", "latitude", "longitude"},
 		[&](bool HasSearch) {
 			const bool Scheduled = g_Config.m_ClNightShiftSchedule != NIGHT_SHIFT_SCHEDULE_ALWAYS;
@@ -3215,7 +3216,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Fast Input */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		FILTER_GAMEPLAY | FILTER_NETWORK,
+		FILTER_GAMEPLAY | FILTER_NETWORK | FILTER_NEW,
 		{"fast", "input", "reduced", "visual", "delay", "tick", "others", "flux", "classic", "mode", "prediction", "offset"},
 		[](bool HasSearch) {
 			int Size = 122.0f;
@@ -3478,7 +3479,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Stats */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		FILTER_HUD,
+		FILTER_HUD | FILTER_NEW,
 		{"stats", "fps", "ping", "snap", "rate", "show"},
 		[](bool HasSearch) {
 			return 100;
@@ -3499,7 +3500,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		FILTER_GAMEPLAY,
+		FILTER_GAMEPLAY | FILTER_NEW,
 		{"ingame", "in-game", "game", "automation", "auto", "dummy", "connect", "switch", "spawn", "anti", "block"},
 		[](bool HasSearch) {
 			return 80.0f;
@@ -4312,7 +4313,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Tee Appearance */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		FILTER_VISUAL,
+		FILTER_VISUAL | FILTER_NEW,
 		{"frozen", "freeze", "stars", "katana", "colored", "tee", "skins", "white", "feet"},
 		[](bool HasSearch) {
 			int Size = 140;
