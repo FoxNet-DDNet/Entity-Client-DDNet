@@ -530,11 +530,11 @@ void CHudEditor::RenderPopup()
 	const bool Pushes = Placement.m_PushDirection != EHudPushDirection::NONE;
 	const bool Attached = Placement.m_AttachTarget != EHudElement::NUM_HUD_ELEMENTS;
 
-	// Title, anchor, push, priority, scale, attach target, the two resets side by side and the
-	// full reset, plus the rows that only appear when they have something to say. Counted rather
-	// than guessed, so the panel is never left with a dead strip along the bottom or a row cut off
-	// the end of it.
-	const int NumRows = 8 + (pEnabled == nullptr ? 0 : 1) + (pEnabled2 == nullptr ? 0 : 1) + (pEnabled3 == nullptr ? 0 : 1) + (Pushes ? 1 : 0) + (Attached ? 2 : 0);
+	// Title, hide when covered, anchor, push, priority, scale, attach target, the two resets side
+	// by side and the full reset, plus the rows that only appear when they have something to say.
+	// Counted rather than guessed, so the panel is never left with a dead strip along the bottom or
+	// a row cut off the end of it.
+	const int NumRows = 9 + (pEnabled == nullptr ? 0 : 1) + (pEnabled2 == nullptr ? 0 : 1) + (pEnabled3 == nullptr ? 0 : 1) + (Pushes ? 1 : 0) + (Attached ? 2 : 0);
 
 	CUIRect Popup;
 	Popup.w = 210.0f;
@@ -621,6 +621,15 @@ void CHudEditor::RenderPopup()
 		NextRow();
 		if(DoCheckBox(&s_Enabled3, &Row, pLabel == nullptr ? Localize("Enabled") : Localize(pLabel), *pEnabled3 != 0))
 			*pEnabled3 = *pEnabled3 != 0 ? 0 : 1;
+	}
+
+	{
+		// The scoreboard is the only thing that covers anything, so it is named rather than being
+		// described as an occluder, which would mean nothing to anyone reading the panel
+		static CButtonContainer s_HideWhenCovered;
+		NextRow();
+		if(DoCheckBox(&s_HideWhenCovered, &Row, Localize("Hide under scoreboard"), Placement.m_HideWhenCovered))
+			Layout().SetHideWhenCovered(Element, !Placement.m_HideWhenCovered);
 	}
 
 	{

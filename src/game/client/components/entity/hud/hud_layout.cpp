@@ -72,6 +72,10 @@ public:
 	// A third, shown only while the second is on, for a setting that only means anything then
 	int *m_pEnabled3;
 	const char *m_pEnabledLabel3;
+
+	// Whether the element gives way to the scoreboard by default. Last, and defaulted, so that
+	// only the rows that differ have to say anything.
+	bool m_HideWhenCovered = true;
 };
 
 // Nothing to attach to
@@ -121,14 +125,14 @@ static const CHudElementDef gs_aHudElements[] = {
 	{"Frozen tees", EHudElement::FROZEN_TEES, "frozen_tees", EHudAnchor::TOP_CENTER, EHudOriginX::FROM_CENTER, vec2(75.5f, 0.0f), vec2(90.0f, 15.0f), 30, EHudPushDirection::NONE, 0.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowFrozenHud, nullptr, nullptr, nullptr, nullptr, nullptr},
 	// infomessages.cpp CInfoMessages::OnRender. Drawn in its own 1800 tall space, so its rect is
 	// reported in HUD units and its transform is applied through that space instead.
-	{"Kill feed", EHudElement::KILL_FEED, "kill_feed", EHudAnchor::TOP_RIGHT, EHudOriginX::FROM_RIGHT, vec2(93.3f, 5.0f), vec2(91.7f, 23.0f), 65, EHudPushDirection::DOWN, 2.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowKillMessages, nullptr, nullptr, nullptr, nullptr, nullptr},
+	{"Kill feed", EHudElement::KILL_FEED, "kill_feed", EHudAnchor::TOP_RIGHT, EHudOriginX::FROM_RIGHT, vec2(93.3f, 5.0f), vec2(91.7f, 23.0f), 65, EHudPushDirection::DOWN, 2.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowKillMessages, nullptr, nullptr, nullptr, nullptr, nullptr, false},
 	// hud.cpp FreezeHelpers: the frozen count, centred near the top
 	{"Frozen count", EHudElement::FROZEN_TEXT, "frozen_text", EHudAnchor::TOP_CENTER, EHudOriginX::FROM_CENTER, vec2(0.0f, 12.0f), vec2(30.0f, 8.0f), 60, EHudPushDirection::DOWN, 2.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowFrozenText, nullptr, nullptr, nullptr, nullptr, nullptr},
 	// voting.cpp CVoting::Render: a fixed panel against the left edge
-	{"Vote", EHudElement::VOTING, "voting", EHudAnchor::CENTER_LEFT, EHudOriginX::FROM_LEFT, vec2(0.0f, 60.0f), vec2(120.0f, 38.0f), 75, EHudPushDirection::NONE, 0.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
+	{"Vote", EHudElement::VOTING, "voting", EHudAnchor::CENTER_LEFT, EHudOriginX::FROM_LEFT, vec2(0.0f, 60.0f), vec2(120.0f, 38.0f), 75, EHudPushDirection::NONE, 0.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, false},
 	// chat.cpp CChat::OnRender: grows upward from the bottom left. It hit tests its own messages
 	// and clips its input line, so both cross into base coordinates the way the island's do.
-	{"Chat", EHudElement::CHAT, "chat", EHudAnchor::BOTTOM_LEFT, EHudOriginX::FROM_LEFT, vec2(5.0f, 200.0f), vec2(200.0f, 90.0f), 55, EHudPushDirection::NONE, 0.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowChat, nullptr, nullptr, nullptr, nullptr, nullptr},
+	{"Chat", EHudElement::CHAT, "chat", EHudAnchor::BOTTOM_LEFT, EHudOriginX::FROM_LEFT, vec2(5.0f, 200.0f), vec2(200.0f, 90.0f), 55, EHudPushDirection::NONE, 0.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowChat, nullptr, nullptr, nullptr, nullptr, nullptr, false},
 	// hud.cpp RenderLocalTime. Only its own element while the media island is switched off, since
 	// the island draws the clock inside itself and reports it as part of race_timer instead.
 	{"Local time", EHudElement::LOCAL_TIME, "local_time", EHudAnchor::TOP_CENTER, EHudOriginX::FROM_CENTER, vec2(-40.0f, 0.0f), vec2(22.0f, 12.5f), 80, EHudPushDirection::NONE, 0.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowLocalTimeAlways, "Always show", nullptr, nullptr, nullptr, nullptr},
@@ -203,6 +207,7 @@ CHudLayout::CHudLayout()
 		m_aPlacements[i].m_AttachTarget = gs_aHudElements[i].m_AttachTarget;
 		m_aPlacements[i].m_AttachSide = gs_aHudElements[i].m_AttachSide;
 		m_aPlacements[i].m_AttachGap = gs_aHudElements[i].m_AttachGap;
+		m_aPlacements[i].m_HideWhenCovered = gs_aHudElements[i].m_HideWhenCovered;
 		m_aPushOffsets[i] = vec2(0.0f, 0.0f);
 	}
 }
@@ -859,6 +864,20 @@ void CHudLayout::ConHudScale(IConsole::IResult *pResult, void *pUserData)
 	pThis->SetScale(Element, pResult->GetFloat(1));
 }
 
+void CHudLayout::ConHudHideCovered(IConsole::IResult *pResult, void *pUserData)
+{
+	CHudLayout *pThis = (CHudLayout *)pUserData;
+
+	EHudElement Element;
+	if(!ElementByName(pResult->GetString(0), &Element))
+	{
+		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "hud_layout", "unknown element, use hud_list");
+		return;
+	}
+
+	pThis->SetHideWhenCovered(Element, pResult->GetInteger(1) != 0);
+}
+
 void CHudLayout::ConHudAnchor(IConsole::IResult *pResult, void *pUserData)
 {
 	CHudLayout *pThis = (CHudLayout *)pUserData;
@@ -1086,6 +1105,7 @@ void CHudLayout::ResetElement(EHudElement Element)
 	m_aPlacements[(int)Element].m_AttachTarget = Def.m_AttachTarget;
 	m_aPlacements[(int)Element].m_AttachSide = Def.m_AttachSide;
 	m_aPlacements[(int)Element].m_AttachGap = Def.m_AttachGap;
+	m_aPlacements[(int)Element].m_HideWhenCovered = Def.m_HideWhenCovered;
 	m_ContainersDirty = true;
 }
 
@@ -1107,8 +1127,16 @@ void CHudLayout::HoldNaturalRect(EHudElement Element)
 	Measurement.m_Frame = m_Frame;
 }
 
+void CHudLayout::SetHideWhenCovered(EHudElement Element, bool Hide)
+{
+	m_aPlacements[(int)Element].m_HideWhenCovered = Hide;
+}
+
 bool CHudLayout::IsOccluded(EHudElement Element)
 {
+	if(!m_aPlacements[(int)Element].m_HideWhenCovered)
+		return false;
+
 	if(m_OccluderSize.x <= 0.0f || m_OccluderSize.y <= 0.0f)
 		return false;
 
@@ -1226,7 +1254,8 @@ bool CHudLayout::IsDefault(EHudElement Element) const
 	       Placement.m_PushGap == Def.m_PushGap &&
 	       Placement.m_AttachTarget == Def.m_AttachTarget &&
 	       Placement.m_AttachSide == Def.m_AttachSide &&
-	       Placement.m_AttachGap == Def.m_AttachGap;
+	       Placement.m_AttachGap == Def.m_AttachGap &&
+	       Placement.m_HideWhenCovered == Def.m_HideWhenCovered;
 }
 
 void CHudLayout::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData)
@@ -1267,6 +1296,11 @@ void CHudLayout::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserD
 				gs_apPushDirectionNames[(int)Placement.m_PushDirection], Placement.m_PushPriority, Placement.m_PushGap);
 			pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITYHUDLAYOUT);
 		}
+		if(Placement.m_HideWhenCovered != gs_aHudElements[i].m_HideWhenCovered)
+		{
+			str_format(aBuf, sizeof(aBuf), "hud_hide_covered %s %d", pName, Placement.m_HideWhenCovered ? 1 : 0);
+			pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITYHUDLAYOUT);
+		}
 		if(Placement.m_AttachTarget != gs_aHudElements[i].m_AttachTarget ||
 			Placement.m_AttachSide != gs_aHudElements[i].m_AttachSide ||
 			Placement.m_AttachGap != gs_aHudElements[i].m_AttachGap)
@@ -1292,6 +1326,8 @@ void CHudLayout::OnConsoleInit()
 		"Set which way a HUD element is shoved when something with a higher priority is in its way");
 	Console()->Register("hud_attach", "s[element] s[target] s[side] ?f[gap]", CFGFLAG_CLIENT, ConHudAttach, this,
 		"Stick a HUD element to one side of another so it travels with it. Target none detaches it");
+	Console()->Register("hud_hide_covered", "s[element] i[hide]", CFGFLAG_CLIENT, ConHudHideCovered, this,
+		"Whether a HUD element stops drawing while the scoreboard covers it");
 	Console()->Register("hud_reset", "?s[element]", CFGFLAG_CLIENT, ConHudReset, this, "Reset one HUD element, or all of them, to its default placement");
 	Console()->Register("hud_list", "", CFGFLAG_CLIENT, ConHudList, this, "List every HUD element the layout system knows about");
 }

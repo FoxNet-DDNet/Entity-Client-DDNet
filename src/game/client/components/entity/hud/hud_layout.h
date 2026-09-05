@@ -130,6 +130,10 @@ public:
 		EHudElement m_AttachTarget = EHudElement::NUM_HUD_ELEMENTS;
 		EHudPushDirection m_AttachSide = EHudPushDirection::NONE;
 		float m_AttachGap = 0.0f;
+
+		// Whether the scoreboard covering this element is reason enough to stop drawing it. Off for
+		// the few that carry something the player still needs while it is up.
+		bool m_HideWhenCovered = true;
 	};
 
 	/**
@@ -308,6 +312,8 @@ public:
 	 * cannot push it over an edge the way clamping its position alone would allow. An element
 	 * already larger than the screen keeps life size available rather than being forced below it.
 	 */
+	void SetHideWhenCovered(EHudElement Element, bool Hide);
+
 	static float MinScale();
 	float MaxScale(EHudElement Element) const;
 
@@ -526,6 +532,7 @@ private:
 	static void ConHudAnchor(IConsole::IResult *pResult, void *pUserData);
 	static void ConHudPush(IConsole::IResult *pResult, void *pUserData);
 	static void ConHudAttach(IConsole::IResult *pResult, void *pUserData);
+	static void ConHudHideCovered(IConsole::IResult *pResult, void *pUserData);
 	static void ConHudReset(IConsole::IResult *pResult, void *pUserData);
 	static void ConHudList(IConsole::IResult *pResult, void *pUserData);
 };

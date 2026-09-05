@@ -1775,6 +1775,11 @@ void CChat::OnRender()
 	CHudLayout &Layout = GameClient()->m_Hud.HudLayout();
 	const CHudLayout::CScope LayoutScope(&Layout, EHudElement::CHAT);
 
+	// EClient: the scoreboard covering the chat hides the lines, where the element is set to give
+	// way to it. Not while it is open for typing or being held open to read, since hiding the line
+	// someone is writing, or the chat they just asked to see, would be worse than the overlap.
+	const bool Occluded = m_Mode == MODE_NONE && !m_PrevShowChat && Layout.IsOccluded(EHudElement::CHAT);
+
 	float x = 5.0f;
 	float y = 300.0f - 20.0f * FontSize() / 6.0f;
 	float ScaledFontSize = FontSize() * (8.0f / 6.0f);
@@ -2032,6 +2037,9 @@ void CChat::OnRender()
 		if(!Line.m_Initialized)
 			break;
 		if(Now > Line.m_Time + 16 * time_freq() && !m_PrevShowChat)
+			break;
+
+		if(Occluded) // EClient
 			break;
 
 		// Skip new lines that arrived while the view is paused to keep it stable
