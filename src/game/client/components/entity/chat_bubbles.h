@@ -1,6 +1,7 @@
 #ifndef GAME_CLIENT_COMPONENTS_ENTITY_CHAT_BUBBLES_H
 #define GAME_CLIENT_COMPONENTS_ENTITY_CHAT_BUBBLES_H
 
+#include <base/color.h>
 #include <base/str.h>
 #include <base/vmath.h>
 
@@ -19,6 +20,7 @@ class CBubble
 public:
 	char m_aText[MAX_LINE_LENGTH] = "";
 	int64_t m_Time = 0;
+	ColorRGBA m_Color = ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f);
 
 	STextContainerIndex m_TextContainerIndex;
 	CTextCursor m_Cursor;

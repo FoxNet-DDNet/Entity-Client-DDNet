@@ -488,7 +488,7 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			TextRender()->TextSelectionColor(1.0f, 1.0f, 1.0f, 0.8f);
 			// EClient
 			if(g_Config.m_ClChatColorParsing)
-				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+				TextRender()->ColorParsing(pDisplayStr, &Cursor);
 			else
 				TextRender()->TextEx(&Cursor, pDisplayStr);
 
@@ -505,7 +505,7 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_SelectionEnd = str_utf8_offset_bytes_to_chars(pDisplayStr, End);
 			// EClient
 			if(g_Config.m_ClChatColorParsing)
-				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+				TextRender()->ColorParsing(pDisplayStr, &Cursor);
 			else
 				TextRender()->TextEx(&Cursor, pDisplayStr);
 		}
@@ -516,7 +516,7 @@ STextBoundingBox CLineInput::Render(const CUIRect *pRect, float FontSize, int Al
 			Cursor.m_CalculateSelectionMode = m_MouseSelection.m_Selecting ? TEXT_CURSOR_SELECTION_MODE_CALCULATE : TEXT_CURSOR_SELECTION_MODE_NONE;
 			// EClient
 			if(g_Config.m_ClChatColorParsing)
-				TextRender()->ColorParsing(pDisplayStr, &Cursor, TextRender()->DefaultTextColor());
+				TextRender()->ColorParsing(pDisplayStr, &Cursor);
 			else
 				TextRender()->TextEx(&Cursor, pDisplayStr);
 		}

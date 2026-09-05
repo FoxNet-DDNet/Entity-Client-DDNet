@@ -250,7 +250,13 @@ public:
 	virtual void OnPreWindowResize() = 0;
 	virtual void OnWindowResize() = 0;
 
-	virtual void ColorParsing(const char *pText, CTextCursor *pCursor, ColorRGBA OriginalCol, STextContainerIndex *pTextContainerIndex = nullptr) = 0;
+	/**
+	 * Draws pText with the EClient chat color codes applied. Text outside of a code is drawn
+	 * with the current @link TextColor @endlink, "&NN"/"&NNS" override it and "&x" goes back to it.
+	 * The codes are stripped when a text container is given and kept visible otherwise, so that
+	 * they stay editable while typing.
+	 */
+	virtual void ColorParsing(const char *pText, CTextCursor *pCursor, STextContainerIndex *pTextContainerIndex = nullptr) = 0;
 	virtual ColorRGBA HSVtoRGB(float h, float s, float v) = 0;
 
 	virtual std::string RemoveColorCodes(const char *pText) = 0;

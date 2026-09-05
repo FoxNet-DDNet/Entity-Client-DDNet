@@ -1488,13 +1488,18 @@ void CChat::OnPrepareLines(float y)
 				AppendCursor.m_LineWidth -= MeasureCursor.m_LongestLineWidth;
 			}
 
+			// The color codes are stripped so that the background gets the correct size,
+			// measuring must not touch the text container the render pass builds below
+			const auto MeasureText = [&](const char *pMeasure) {
+				if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
+					TextRender()->TextEx(&AppendCursor, TextRender()->RemoveColorCodes(pMeasure).c_str());
+				else
+					TextRender()->TextEx(&AppendCursor, pMeasure);
+			};
+
 			if(pTranslatedText)
 			{
-				// This is here so that the background has the correct size
-				if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
-					TextRender()->ColorParsing(pTranslatedText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
-				else
-					TextRender()->TextEx(&AppendCursor, pTranslatedText);
+				MeasureText(pTranslatedText);
 
 				if(pTranslatedLanguage)
 				{
@@ -1510,11 +1515,7 @@ void CChat::OnPrepareLines(float y)
 			}
 			else
 			{
-				// This is here so that the background has the correct size
-				if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
-					TextRender()->ColorParsing(pText, &AppendCursor, ColorRGBA(1, 1, 1, 1), &Line.m_TextContainerIndex);
-				else
-					TextRender()->TextEx(&AppendCursor, pText);
+				MeasureText(pText);
 			}
 
 			Line.m_aYOffset[OffsetType] = AppendCursor.Height() + RealMsgPaddingY;
@@ -1652,7 +1653,7 @@ void CChat::OnPrepareLines(float y)
 		if(pTranslatedText)
 		{
 			if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
-				TextRender()->ColorParsing(pTranslatedText, &AppendCursor, Color, &Line.m_TextContainerIndex);
+				TextRender()->ColorParsing(pTranslatedText, &AppendCursor, &Line.m_TextContainerIndex);
 			else
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pTranslatedText);
 			RawMessage += TextRender()->RemoveColorCodes(pTranslatedText);
@@ -1689,13 +1690,11 @@ void CChat::OnPrepareLines(float y)
 		{
 			ColorizeLine(Line, AppendCursor);
 			if(g_Config.m_ClChatColorParsing && Line.m_ClientId != SERVER_MSG)
-				TextRender()->ColorParsing(pText, &AppendCursor, Color, &Line.m_TextContainerIndex);
+				TextRender()->ColorParsing(pText, &AppendCursor, &Line.m_TextContainerIndex);
 			else
 				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &AppendCursor, pText);
 			RawMessage += TextRender()->RemoveColorCodes(pText);
 		}
-
-		AppendCursor.m_vColorSplits.clear();
 
 		float FullWidth = RealMsgPaddingX * 1.5f;
 		if(!IsScoreBoardOpen && !g_Config.m_ClChatOld)

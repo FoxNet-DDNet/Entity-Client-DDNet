@@ -121,9 +121,10 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 	else // regular message
 		Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMessageColor));
 
+	Bubble.m_Color = Color;
 	TextRender()->TextColor(Color);
 
-	TextRender()->ColorParsing(pText, &Cursor, Color, &Bubble.m_TextContainerIndex);
+	TextRender()->ColorParsing(pText, &Cursor, &Bubble.m_TextContainerIndex);
 
 	m_avChatBubbles[ClientId].insert(m_avChatBubbles[ClientId].begin(), Bubble);
 
@@ -349,9 +350,11 @@ void CChatBubbles::SetupTextcontainer(CBubble &Bubble)
 		CTextCursor Cursor;
 		SetupTextCursor(Cursor);
 
-		TextRender()->CreateOrAppendTextContainer(Bubble.m_TextContainerIndex, &Cursor, Bubble.m_aText);
 		Bubble.m_Cursor.m_FontSize = FontSize;
 
-		TextRender()->ColorParsing(Bubble.m_aText, &Cursor, ColorRGBA(1.0f, 1.0f, 1.0f), &Bubble.m_TextContainerIndex);
+		// ColorParsing creates the container itself, appending the text beforehand would
+		// draw it twice and leave the color codes visible in the first copy
+		TextRender()->TextColor(Bubble.m_Color);
+		TextRender()->ColorParsing(Bubble.m_aText, &Cursor, &Bubble.m_TextContainerIndex);
 	}
 }

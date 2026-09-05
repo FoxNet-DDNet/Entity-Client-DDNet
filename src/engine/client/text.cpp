@@ -17,9 +17,11 @@
 #include <ft2build.h>
 #include FT_FREETYPE_H
 
+#include <algorithm>
 #include <chrono>
 #include <cstddef>
 #include <limits>
+#include <string>
 #include <tuple>
 #include <unordered_map>
 #include <vector>
@@ -43,6 +45,24 @@ enum
 {
 	FONT_NAME_SIZE = 128,
 };
+
+// EClient: chat color codes, "&NN" picks a hue, "&NNS" also picks a saturation
+// and "&x" resets to the color the text started with.
+static bool IsColorCodeDigit(char Char)
+{
+	return Char >= '0' && Char <= '9';
+}
+
+// Length of the code following the '&', or 0 when there is no valid code.
+static int ColorCodeLength(const char *pCode)
+{
+	if(pCode[0] == 'x')
+		return 1;
+	// The short circuits keep this from reading past the terminator
+	if(!IsColorCodeDigit(pCode[0]) || !IsColorCodeDigit(pCode[1]))
+		return 0;
+	return IsColorCodeDigit(pCode[2]) ? 3 : 2;
+}
 
 struct SGlyph
 {
@@ -1969,23 +1989,21 @@ public:
 					const float CharX = (DrawX + CharKerning) + BearingX;
 					const float CharY = TmpY - BearingY;
 
-					// Check if we have any color split
+					// Check if we have any color split. Appending to a container keeps
+					// counting characters where the previous append left off, so skip over
+					// every split that already ended instead of advancing one per glyph.
 					ColorRGBA Color = m_Color;
-					if(ColorOption < (int)pCursor->m_vColorSplits.size())
+					while(ColorOption < (int)pCursor->m_vColorSplits.size())
 					{
-						STextColorSplit &Split = pCursor->m_vColorSplits.at(ColorOption);
-						if(PrevCharCount >= Split.m_CharIndex && (Split.m_Length == -1 || PrevCharCount < Split.m_CharIndex + Split.m_Length))
-							Color = Split.m_Color;
-						if(Split.m_Length != -1 && PrevCharCount >= (Split.m_CharIndex + Split.m_Length - 1))
+						const STextColorSplit &Split = pCursor->m_vColorSplits[ColorOption];
+						if(Split.m_Length != -1 && PrevCharCount >= Split.m_CharIndex + Split.m_Length)
 						{
 							ColorOption++;
-							if(ColorOption < (int)pCursor->m_vColorSplits.size())
-							{ // Handle splits that are
-								Split = pCursor->m_vColorSplits.at(ColorOption);
-								if(PrevCharCount >= Split.m_CharIndex)
-									Color = Split.m_Color;
-							}
+							continue;
 						}
+						if(PrevCharCount >= Split.m_CharIndex)
+							Color = Split.m_Color;
+						break;
 					}
 
 					// don't add text that isn't drawn, the color overwrite is used for that
@@ -2531,137 +2549,117 @@ public:
 		}
 		return ColorRGBA(r, g, b, 1.0f);
 	}
-	void ColorParsing(const char *pText, CTextCursor *pCursor, ColorRGBA OriginalCol, STextContainerIndex *pTextContainerIndex) override
+	// EClient: turns the "&NN"/"&NNS"/"&x" codes in pText into color splits on pCursor and
+	// draws the text in a single pass. Doing it in one pass instead of one draw call per
+	// color segment keeps word wrapping, caret placement and text selection working across
+	// a color change, and composes with color splits the caller already put on the cursor.
+	void ColorParsing(const char *pText, CTextCursor *pCursor, STextContainerIndex *pTextContainerIndex) override
 	{
-		if(!pText[0])
+		if(pText == nullptr)
 			return;
 
-		bool RemoveCodes = pTextContainerIndex == nullptr ? false : true;
+		// Codes are only stripped when building a text container. The line input keeps them
+		// visible so they can still be edited while typing.
+		const bool StripCodes = pTextContainerIndex != nullptr;
 
-		auto GetColorFromCode = [this](const char *p) -> std::optional<std::pair<ColorRGBA, int>> {
-			if(isdigit(p[0]) && isdigit(p[1]))
-			{
-				int Code = (p[0] - '0') * 10 + (p[1] - '0');
-				float Sat = 1.0f;
-				int Length = 2;
-				if(isdigit(p[2]))
-				{
-					Sat = (p[2] - '0') / 10.0f;
-					Length = 3;
-				}
-
-				if(Code >= 0 && Code <= 99)
-				{
-					float Hue = Code / 100.0f;
-					return std::make_pair(HSVtoRGB(Hue, Sat, 1.0f), Length);
-				}
-			}
-			return std::nullopt;
+		auto DrawText = [&](const char *pDraw, int Length) {
+			if(StripCodes)
+				CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, pDraw, Length);
+			else
+				TextEx(pCursor, pDraw, Length);
 		};
 
-		const char *p = pText;
-		ColorRGBA CurColor = OriginalCol;
-		const char *SegStart = p;
-
-		while(*p)
+		const char *pFirstCode = pText;
+		while(*pFirstCode != '\0' && !(*pFirstCode == '&' && ColorCodeLength(pFirstCode + 1) != 0))
+			pFirstCode++;
+		if(*pFirstCode == '\0')
 		{
-			if(*p == '&' && *(p + 1))
+			// No codes at all, which is the common case, so don't touch the color splits
+			DrawText(pText, -1);
+			return;
+		}
+
+		// Color splits are indexed by the byte offset within the whole cursor
+		const int BaseIndex = pCursor->m_CharCount;
+		const std::vector<STextColorSplit> vOriginalSplits = pCursor->m_vColorSplits;
+		std::string Text;
+		Text.reserve(str_length(pText));
+
+		ColorRGBA CurrentColor = m_Color;
+		bool Colored = false;
+		int SegmentStart = 0;
+		auto FlushSegment = [&]() {
+			const int SegmentEnd = (int)Text.size();
+			// Uncolored text needs no split, it is drawn with the current text color
+			if(SegmentEnd > SegmentStart && Colored)
+				pCursor->m_vColorSplits.emplace_back(BaseIndex + SegmentStart, SegmentEnd - SegmentStart, CurrentColor);
+			SegmentStart = SegmentEnd;
+		};
+
+		const char *pCurrent = pText;
+		while(*pCurrent != '\0')
+		{
+			const int CodeLength = *pCurrent == '&' ? ColorCodeLength(pCurrent + 1) : 0;
+			if(CodeLength == 0)
 			{
-				// Check for reset code
-				if(*(p + 1) == 'x')
-				{
-					if(p > SegStart)
-					{
-						TextColor(CurColor);
-						if(RemoveCodes)
-							CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
-						else
-							TextEx(pCursor, SegStart, p - SegStart);
-					}
-					if(RemoveCodes)
-						p += 2;
-					else
-						p += 0;
+				Text.push_back(*pCurrent);
+				pCurrent++;
+				continue;
+			}
 
-					CurColor = OriginalCol;
-					SegStart = p;
-					if(!RemoveCodes)
-						p++;
-					continue;
-				}
-
-				auto ColorResult = GetColorFromCode(p + 1);
-				if(ColorResult && *(p + 2))
-				{
-					if(p > SegStart)
-					{
-						TextColor(CurColor);
-						if(RemoveCodes)
-							CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
-						else
-							TextEx(pCursor, SegStart, p - SegStart);
-					}
-					if(RemoveCodes)
-						p += 1 + ColorResult->second; // & + code length
-					else
-						p += 0;
-					CurColor = ColorResult->first;
-					SegStart = p;
-					if(!RemoveCodes)
-						p++;
-				}
-				else
-				{
-					++p;
-				}
+			FlushSegment();
+			if(!StripCodes)
+			{
+				// The code stays visible and is drawn in the color it introduces
+				Text.append(pCurrent, CodeLength + 1);
+			}
+			if(CodeLength == 1)
+			{
+				Colored = false;
 			}
 			else
 			{
-				++p;
+				const float Hue = ((pCurrent[1] - '0') * 10 + (pCurrent[2] - '0')) / 100.0f;
+				const float Saturation = CodeLength == 3 ? (pCurrent[3] - '0') / 10.0f : 1.0f;
+				CurrentColor = HSVtoRGB(Hue, Saturation, 1.0f);
+				Colored = true;
 			}
+			pCurrent += CodeLength + 1;
 		}
-		if(p > SegStart)
+		FlushSegment();
+
+		// Splits the caller added are not necessarily in front of ours
+		if(!vOriginalSplits.empty())
 		{
-			TextColor(CurColor);
-			if(RemoveCodes)
-				CreateOrAppendTextContainer(*pTextContainerIndex, pCursor, SegStart, p - SegStart);
-			else
-				TextEx(pCursor, SegStart, p - SegStart);
+			std::stable_sort(pCursor->m_vColorSplits.begin(), pCursor->m_vColorSplits.end(), [](const STextColorSplit &Left, const STextColorSplit &Right) {
+				return Left.m_CharIndex < Right.m_CharIndex;
+			});
 		}
+
+		DrawText(Text.c_str(), (int)Text.size());
+
+		// Leave the cursor as we found it, the splits are baked into the container by now
+		pCursor->m_vColorSplits = vOriginalSplits;
 	}
 
 	std::string RemoveColorCodes(const char *pText) override
 	{
 		std::string Result;
-		if(!pText)
+		if(pText == nullptr)
 			return Result;
 
-		const char *p = pText;
-		while(*p)
+		const char *pCurrent = pText;
+		while(*pCurrent != '\0')
 		{
-			if(*p == '&' && *(p + 1))
+			const int CodeLength = *pCurrent == '&' ? ColorCodeLength(pCurrent + 1) : 0;
+			if(CodeLength == 0)
 			{
-				if(*(p + 1) == 'x')
-				{
-					p += 2;
-				}
-				else if(isdigit(p[1]) && isdigit(p[2]))
-				{
-					int CodeLength = 2;
-					if(isdigit(p[3]))
-						CodeLength = 3;
-					p += 1 + CodeLength; // & + code length
-				}
-				else
-				{
-					Result += *p;
-					++p;
-				}
+				Result.push_back(*pCurrent);
+				pCurrent++;
 			}
 			else
 			{
-				Result += *p;
-				++p;
+				pCurrent += CodeLength + 1;
 			}
 		}
 		return Result;
