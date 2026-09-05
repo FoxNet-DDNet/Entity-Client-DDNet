@@ -555,6 +555,8 @@ public:
 	vec2 UpdatedMouseDelta() const { return m_UpdatedMouseDelta; }
 	int LastMouseButton(int Index) const { return (m_LastMouseButtons >> Index) & 1; } // TClient
 	int MouseButton(int Index) const { return (m_MouseButtons >> Index) & 1; }
+	// EClient: for a component about to start driving the ui after a lull, see the definition
+	void ResumeMouseButtons();
 	int MouseButtonClicked(int Index) const { return MouseButton(Index) && !((m_LastMouseButtons >> Index) & 1); }
 	bool CheckMouseLock()
 	{

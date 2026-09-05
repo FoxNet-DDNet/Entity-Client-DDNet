@@ -840,6 +840,10 @@ void CChat::EnableMode(int Team)
 		m_CompletionUsed = false;
 		m_BacklogCurLine = 0;
 		m_Input.Activate(EInputPriority::CHAT);
+		// EClient: the ui has not been updated while the chat was shut, so a button held from
+		// before it opened would otherwise land as a click on whatever the cursor rests on
+		Ui()->ResumeMouseButtons();
+		m_RightClickLine = -1;
 		if(m_SelectorMouse == vec2(-1.0f, -1.0f))
 			m_SelectorMouse = vec2(Graphics()->WindowWidth(), Graphics()->WindowHeight()) * 0.5f;
 	}
@@ -852,6 +856,8 @@ void CChat::DisableMode()
 		m_Mode = MODE_NONE;
 		m_Input.Deactivate();
 		m_BacklogCurLine = 0;
+		// EClient: an unfinished click cannot be finished once the chat is gone
+		m_RightClickLine = -1;
 		// EClient: the menus belong to the open chat, they have nothing to act on without it
 		Ui()->ClosePopupMenu(&m_MessagePopupContext);
 		Ui()->ClosePopupMenu(&m_ChatPopupContext, true);
@@ -1803,9 +1809,18 @@ void CChat::OnRender()
 	};
 	CUIRect MenuButtonRect = {0.0f, 0.0f, 0.0f, 0.0f};
 
-	// EClient: right clicking a message opens its menu. Taken on the press rather than through the
-	// ui, so that a message can be right clicked while another one's menu is still open.
-	const bool RightClicked = m_Mode != MODE_NONE && Ui()->MouseButtonClicked(1) && !Ui()->IsPopupHovered();
+	// <EClient: right clicking a message opens its menu, on the release rather than the press, so
+	// the two are told apart here instead of going through DoButtonLogic, which refuses to hand an
+	// item the mouse while a menu holds it and so could not open one message's menu from another's
+	const bool RightJustPressed = m_Mode != MODE_NONE && Ui()->MouseButtonClicked(1);
+	const bool RightJustReleased = m_Mode != MODE_NONE && !Ui()->MouseButton(1) && Ui()->LastMouseButton(1);
+	if(RightJustPressed)
+	{
+		// Claimed further down by whichever message the press landed on, if any. A press that
+		// begins on an open menu, or on nothing at all, leaves it unclaimed and opens nothing.
+		m_RightClickLine = -1;
+	}
+	// EClient>
 
 	// Handle mouse selection for chat when chat mode is active
 	if(m_Mode != MODE_NONE)
@@ -1813,11 +1828,14 @@ void CChat::OnRender()
 		// Chat input area bounds (rough estimate - below the input line)
 		const float ChatInputAreaY = y;
 
-		// Use KeyIsPressed for mouse button state (works with UI mouse system)
-		const bool MousePressed = Input()->KeyIsPressed(KEY_MOUSE_1);
+		// EClient: taken from the ui rather than from the raw key, so that the press that begins a
+		// selection is an edge between two of its frames. A button already down as the chat opened
+		// was never pressed inside it and must not start one.
+		const bool MousePressed = Ui()->MouseButton(0);
+		const bool MouseJustPressed = Ui()->MouseButtonClicked(0);
 
 		// Check if mouse is pressed (start selection) - only if above chat input (lower Y value)
-		if(!m_Selecting && MousePressed && MousePos.y < ChatInputAreaY && !Ui()->IsPopupOpen())
+		if(!m_Selecting && MouseJustPressed && MousePos.y < ChatInputAreaY && !Ui()->IsPopupOpen())
 		{
 			m_Selecting = true;
 			m_NewLineCounter = 0;
@@ -2069,9 +2087,17 @@ void CChat::OnRender()
 		if(LineHovered)
 		{
 			HoveringMessage = true;
-			if(RightClicked)
+
+			// EClient: press claims the message, release over that same message opens its menu.
+			// Dragging off it in between is a click on neither, which is what a button does.
+			const int LineIndex = ((m_CurrentLine - i) + MAX_LINES) % MAX_LINES;
+			if(RightJustPressed && !Ui()->IsPopupHovered())
 			{
-				OpenMessagePopup(Line, ((m_CurrentLine - i) + MAX_LINES) % MAX_LINES);
+				m_RightClickLine = LineIndex;
+			}
+			else if(RightJustReleased && m_RightClickLine == LineIndex && !Ui()->IsPopupHovered())
+			{
+				OpenMessagePopup(Line, LineIndex);
 			}
 		}
 
@@ -2139,6 +2165,8 @@ void CChat::OnRender()
 	}
 
 	m_HoveringMessage = HoveringMessage; // EClient
+	if(RightJustReleased)
+		m_RightClickLine = -1; // EClient: the click is over, whether it opened anything or not
 
 	if(IsSelecting && !vSelectedLines.empty())
 	{

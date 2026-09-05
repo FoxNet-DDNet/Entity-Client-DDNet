@@ -108,6 +108,9 @@ class CChat : public CComponent
 	std::string m_SelectionText;
 	int m_NewLineCounter; // Track new lines while the view is paused to keep it stable
 	bool m_HoveringMessage; // EClient: cursor rests on a rendered message
+	// EClient: a message menu opens on the release of a right click that both began and ended on
+	// the same message, this is the message its press claimed
+	int m_RightClickLine = -1;
 
 	CLine m_aLines[MAX_LINES];
 	int m_CurrentLine;

@@ -88,6 +88,9 @@ void CHudEditor::SetActive(bool Active)
 
 		// Start in the middle rather than wherever the aim cursor happened to be sitting
 		SetUiMousePos(Ui()->Screen()->Center());
+		// The ui has not been updated while the editor was shut, so a button held from before it
+		// opened would otherwise land as a click on whatever the cursor came to rest on
+		Ui()->ResumeMouseButtons();
 	}
 }
 

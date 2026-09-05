@@ -283,6 +283,32 @@ void CUi::Update(bool IsChat)
 	m_ProgressSpinnerOffset = std::fmod(m_ProgressSpinnerOffset, 1.0f);
 }
 
+// <EClient
+void CUi::ResumeMouseButtons()
+{
+	// A click is an edge between two updates, so it only means anything if the previous update was
+	// the previous frame. Nothing updates the ui while the player is just playing, which leaves the
+	// button state behind from whenever something last did, minutes ago at times. The first update
+	// a component makes on opening would compare against that and read a button held since before
+	// it opened as a click inside it.
+	//
+	// Adopting whatever is held right now as already held closes that gap: a button that was
+	// already down produces no edge, and one pressed afterwards still does. Called by whoever is
+	// about to start updating, since only they know when their lull ends.
+	unsigned Pressed = 0;
+	if(Enabled())
+	{
+		for(int MouseKey = KEY_MOUSE_1; MouseKey <= KEY_MOUSE_3; ++MouseKey)
+		{
+			if(Input()->KeyIsPressed(MouseKey))
+				Pressed |= 1 << (MouseKey - KEY_MOUSE_1);
+		}
+	}
+	m_MouseButtons = Pressed;
+	m_LastMouseButtons = Pressed;
+}
+// EClient>
+
 void CUi::DebugRender(float X, float Y)
 {
 	MapScreen();
