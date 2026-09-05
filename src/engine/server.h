@@ -309,11 +309,6 @@ public:
 		return true;
 	}
 
-	bool ClientUsesRealClientIds(int ClientId) const
-	{
-		return ClientId < 0 || GetClientVersion(ClientId) >= VERSION_DDNET_128_PLAYERS;
-	}
-
 	virtual bool WouldClientNameChange(int ClientId, const char *pNameRequest) = 0;
 	virtual bool WouldClientClanChange(int ClientId, const char *pClanRequest) = 0;
 	virtual void SetClientName(int ClientId, const char *pName) = 0;
@@ -468,6 +463,7 @@ public:
 
 	virtual void OnPreTickTeehistorian() = 0;
 
+	virtual void OnClientRejoin(int ClientId) = 0;
 	virtual void ReinitPlayerMap(int ClientId, bool Timeout) = 0;
 	virtual void OnSetAuthed(int ClientId, int Level) = 0;
 	virtual bool PlayerExists(int ClientId) const = 0;

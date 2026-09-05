@@ -699,6 +699,7 @@ public:
 	bool DoEditBox_Search(CLineInput *pLineInput, const CUIRect *pRect, float FontSize, bool HotkeyEnabled);
 
 	int DoButton_Menu(CUIElement &UIElement, const CButtonContainer *pId, const std::function<const char *()> &GetTextLambda, const CUIRect *pRect, const SMenuButtonProperties &Props = {});
+	void DrawButton_FontIcon(const char *pText, const CUIRect *pRect, ColorRGBA Color, int Corners = IGraphics::CORNER_ALL, bool Enabled = true) const;
 	int DoButton_FontIcon(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, unsigned Flags, int Corners = IGraphics::CORNER_ALL, bool Enabled = true, std::optional<ColorRGBA> ButtonColor = std::nullopt);
 	// only used for popup menus
 	int DoButton_PopupMenu(CButtonContainer *pButtonContainer, const char *pText, const CUIRect *pRect, float Size, int Align, float Padding = 0.0f, bool TransparentInactive = false, bool Enabled = true, std::optional<ColorRGBA> ButtonColor = std::nullopt);
@@ -740,7 +741,7 @@ public:
 	// Fired the moment the back button transitions to active (mouse-down inside it).
 	void SetOnBackButtonPressedCallback(std::function<void()> pfnCallback) { m_OnBackButtonPressedFunction = std::move(pfnCallback); }
 
-	// popup menu
+	// found in ui_popups.cpp
 	void DoPopupMenu(const SPopupMenuId *pId, float X, float Y, float Width, float Height, void *pContext, FPopupMenuFunction pfnFunc, const SPopupMenuProperties &Props = {});
 	void RenderPopupMenus();
 	void ClosePopupMenu(const SPopupMenuId *pId, bool IncludeDescendants = false);

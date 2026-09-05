@@ -1,4 +1,3 @@
-
 ![gui_logo](https://github.com/user-attachments/assets/76f93b08-3efa-40a8-96b9-b64b17c14b3f)
 
 ### Newest Features:

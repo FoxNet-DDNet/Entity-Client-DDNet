@@ -1736,43 +1736,6 @@ void CGameContext::OnClientEnter(int ClientId)
 	}
 	m_pController->OnPlayerConnect(m_apPlayers[ClientId]);
 
-	{
-		CNetMsg_Sv_CommandInfoGroupStart Msg;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
-	}
-	for(const IConsole::ICommandInfo *pCmd = Console()->FirstCommandInfo(ClientId, CFGFLAG_CHAT);
-		pCmd; pCmd = Console()->NextCommandInfo(pCmd, ClientId, CFGFLAG_CHAT))
-	{
-		const char *pName = pCmd->Name();
-
-		if(Server()->IsSixup(ClientId))
-		{
-			if(!str_comp_nocase(pName, "w") || !str_comp_nocase(pName, "whisper"))
-				continue;
-
-			if(!str_comp_nocase(pName, "r"))
-				pName = "rescue";
-
-			protocol7::CNetMsg_Sv_CommandInfo Msg;
-			Msg.m_pName = pName;
-			Msg.m_pArgsFormat = pCmd->Params();
-			Msg.m_pHelpText = pCmd->Help();
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
-		}
-		else
-		{
-			CNetMsg_Sv_CommandInfo Msg;
-			Msg.m_pName = pName;
-			Msg.m_pArgsFormat = pCmd->Params();
-			Msg.m_pHelpText = pCmd->Help();
-			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
-		}
-	}
-	{
-		CNetMsg_Sv_CommandInfoGroupEnd Msg;
-		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
-	}
-
 	IServer::CClientInfo Info;
 	if(Server()->GetClientInfo(ClientId, &Info))
 	{
@@ -1804,9 +1767,7 @@ void CGameContext::OnClientEnter(int ClientId)
 	// the player map has to be initialized before anything can be mapped into it
 	m_PlayerMapping.InitPlayerMap(ClientId);
 
-	// send active vote
-	if(m_VoteCloseTime)
-		SendVoteSet(ClientId);
+	SendStartMessages(ClientId);
 
 	Server()->ExpireServerInfo();
 
@@ -3651,7 +3612,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 	}
 	else if(str_comp_nocase(pType, "kick") == 0)
 	{
-		if(!pSelf->Server()->ClientUsesRealClientIds(pResult->m_ClientId))
+		if(!pSelf->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
 		{
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Your client does not see the real client IDs of this server. Use a more recent DDNet client.");
 			return;
@@ -3676,7 +3637,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 	}
 	else if(str_comp_nocase(pType, "spectate") == 0)
 	{
-		if(!pSelf->Server()->ClientUsesRealClientIds(pResult->m_ClientId))
+		if(!pSelf->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
 		{
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Your client does not see the real client IDs of this server. Use a more recent DDNet client.");
 			return;
@@ -5411,6 +5372,87 @@ void CGameContext::ReadCensorList()
 bool CGameContext::PracticeByDefault() const
 {
 	return g_Config.m_SvPracticeByDefault && g_Config.m_SvTestingCommands;
+}
+
+void CGameContext::SendStartMessages(int ClientId)
+{
+	if(Server()->IsSixup(ClientId))
+	{
+		{
+			protocol7::CNetMsg_Sv_GameInfo Msg;
+			Msg.m_GameFlags = m_pController->GameFlags();
+			Msg.m_MatchCurrent = 1;
+			Msg.m_MatchNum = 0;
+			Msg.m_ScoreLimit = 0;
+			Msg.m_TimeLimit = 0;
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+		}
+
+		// /team is essential
+		{
+			protocol7::CNetMsg_Sv_CommandInfoRemove Msg;
+			Msg.m_pName = "team";
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+		}
+	}
+
+	{
+		CNetMsg_Sv_CommandInfoGroupStart Msg;
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+	}
+	for(const IConsole::ICommandInfo *pCmd = Console()->FirstCommandInfo(ClientId, CFGFLAG_CHAT);
+		pCmd; pCmd = Console()->NextCommandInfo(pCmd, ClientId, CFGFLAG_CHAT))
+	{
+		const char *pName = pCmd->Name();
+
+		if(Server()->IsSixup(ClientId))
+		{
+			if(!str_comp_nocase(pName, "w") || !str_comp_nocase(pName, "whisper"))
+				continue;
+
+			if(!str_comp_nocase(pName, "r"))
+				pName = "rescue";
+
+			protocol7::CNetMsg_Sv_CommandInfo Msg;
+			Msg.m_pName = pName;
+			Msg.m_pArgsFormat = pCmd->Params();
+			Msg.m_pHelpText = pCmd->Help();
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+		}
+		else
+		{
+			CNetMsg_Sv_CommandInfo Msg;
+			Msg.m_pName = pName;
+			Msg.m_pArgsFormat = pCmd->Params();
+			Msg.m_pHelpText = pCmd->Help();
+			Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+		}
+	}
+	{
+		CNetMsg_Sv_CommandInfoGroupEnd Msg;
+		Server()->SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_NORECORD, ClientId);
+	}
+
+	// send active vote
+	if(m_VoteCloseTime)
+		SendVoteSet(ClientId);
+}
+
+void CGameContext::OnClientRejoin(int ClientId)
+{
+	if(!m_apPlayers[ClientId])
+		return;
+
+	ReinitPlayerMap(ClientId, false);
+	SendStartMessages(ClientId);
+
+	// send clear vote options
+	CNetMsg_Sv_VoteClearOptions ClearMsg;
+	Server()->SendPackMsg(&ClearMsg, MSGFLAG_VITAL, ClientId);
+
+	// begin sending vote options
+	m_apPlayers[ClientId]->m_SendVoteIndex = 0;
+	SendTuningParams(ClientId, m_apPlayers[ClientId]->m_TuneZone);
 }
 
 void CGameContext::ReinitPlayerMap(int ClientId, bool Timeout)

@@ -155,7 +155,7 @@ void CServerBan::ConBanExt(IConsole::IResult *pResult, void *pUser)
 	if(str_isallnum(pStr))
 	{
 		int ClientId = str_toint(pStr);
-		if(!pThis->Server()->ClientUsesRealClientIds(pResult->m_ClientId))
+		if(!pThis->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "net_ban", "ban error (use a more recent DDNet client)");
 		else if(ClientId < 0 || ClientId >= MAX_CLIENTS || pThis->Server()->m_aClients[ClientId].m_State == CServer::CClient::STATE_EMPTY)
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "net_ban", "ban error (invalid client id)");
@@ -238,6 +238,7 @@ void CServer::CClient::Reset()
 	m_NumPreInputs = 0;
 	m_Flags = 0;
 	m_RedirectDropTime = 0;
+	m_Rejoining = false;
 
 	std::fill(std::begin(m_aIdMap), std::end(m_aIdMap), -1);
 	std::fill(std::begin(m_aReverseIdMap), std::end(m_aReverseIdMap), -1);
@@ -617,6 +618,7 @@ int CServer::Init()
 		Client.m_Latency = 0;
 		Client.m_Sixup = false;
 		Client.m_RedirectDropTime = 0;
+		Client.m_Rejoining = false;
 	}
 
 	m_CurrentGameTick = MIN_TICK;
@@ -1042,7 +1044,7 @@ void CServer::DoSnapshot()
 	for(int i = 0; i < MaxClients(); i++)
 	{
 		// client must be ingame to receive snapshots
-		if(m_aClients[i].m_State != CClient::STATE_INGAME)
+		if(m_aClients[i].m_State != CClient::STATE_INGAME || m_aClients[i].m_Rejoining)
 			continue;
 
 		// this client is trying to recover, don't spam snapshots
@@ -1114,8 +1116,8 @@ void CServer::DoSnapshot()
 
 			// create delta
 			CSnapshotDelta *const pSnapshotDelta = IsSixup(i) ? &m_SnapshotDeltaSixup : &m_SnapshotDelta;
-			char aDeltaData[CSnapshot::MAX_SIZE];
-			int DeltaSize = pSnapshotDelta->CreateDelta(pDeltashot, Data.AsSnapshot(), aDeltaData);
+			CSnapshotDeltaBuffer DeltaData;
+			int DeltaSize = pSnapshotDelta->CreateDelta(pDeltashot, Data.AsSnapshot(), &DeltaData);
 
 			if(DeltaSize)
 			{
@@ -1123,8 +1125,14 @@ void CServer::DoSnapshot()
 				const int MaxSize = MAX_SNAPSHOT_PACKSIZE;
 
 				char aCompData[CSnapshot::MAX_SIZE];
-				SnapshotSize = CVariableInt::Compress(aDeltaData, DeltaSize, aCompData, sizeof(aCompData));
-				int NumPackets = (SnapshotSize + MaxSize - 1) / MaxSize;
+				SnapshotSize = CVariableInt::Compress(DeltaData.m_aData, DeltaSize, aCompData, sizeof(aCompData));
+				const int NumPackets = (SnapshotSize + MaxSize - 1) / MaxSize;
+				if(SnapshotSize < 0 || NumPackets > CSnapshot::MAX_PARTS)
+				{
+					// the client cannot receive this snapshot, it will keep acking the old one
+					log_error("server", "snapshot for client %d is too large to send, delta_size=%d packed_size=%d", i, DeltaSize, SnapshotSize);
+					continue;
+				}
 
 				for(int n = 0, Left = SnapshotSize; Left > 0; n++)
 				{
@@ -1171,9 +1179,16 @@ void CServer::DoSnapshot()
 	}
 }
 
-int CServer::ClientRejoinCallback(int ClientId, void *pUser)
+int CServer::ClientRejoinCallback(int ClientId, void *pUser, bool Sixup, bool VanillaAuth)
 {
 	CServer *pThis = (CServer *)pUser;
+
+	if(pThis->m_aClients[ClientId].m_State != CClient::STATE_INGAME)
+	{
+		if(VanillaAuth)
+			return NewClientNoAuthCallback(ClientId, pUser);
+		return NewClientCallback(ClientId, pUser, Sixup);
+	}
 
 	pThis->m_aClients[ClientId].m_AuthKey = -1;
 	pThis->m_aClients[ClientId].m_pRconCmdToSend = nullptr;
@@ -1183,6 +1198,9 @@ int CServer::ClientRejoinCallback(int ClientId, void *pUser)
 	pThis->m_aClients[ClientId].m_DDNetVersionSettled = false;
 
 	pThis->m_aClients[ClientId].Reset();
+	// m_Rejoining guides the client back into the connection without modifying current slot state.
+	pThis->m_aClients[ClientId].m_Rejoining = true;
+	pThis->m_aClients[ClientId].m_Sixup = Sixup;
 
 	pThis->GameServer()->TeehistorianRecordPlayerRejoin(ClientId);
 	pThis->Antibot()->OnEngineClientDrop(ClientId, "rejoin");
@@ -1338,6 +1356,7 @@ int CServer::DelClientCallback(int ClientId, const char *pReason, void *pUser)
 	pThis->m_aClients[ClientId].m_Snapshots.PurgeAll();
 	pThis->m_aClients[ClientId].m_Sixup = false;
 	pThis->m_aClients[ClientId].m_RedirectDropTime = 0;
+	pThis->m_aClients[ClientId].m_Rejoining = false;
 	pThis->m_aClients[ClientId].m_HasPersistentData = false;
 
 	pThis->GameServer()->TeehistorianRecordPlayerDrop(ClientId, pReason);
@@ -1808,6 +1827,10 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 			{
 				return;
 			}
+			if(Chunk == 0)
+			{
+				m_aClients[ClientId].m_NextMapChunk = 0;
+			}
 			if(Chunk != m_aClients[ClientId].m_NextMapChunk || !Config()->m_SvFastDownload)
 			{
 				SendMapData(ClientId, Chunk);
@@ -2027,7 +2050,7 @@ void CServer::ProcessClientPacket(CNetChunk *pPacket)
 
 void CServer::OnNetMsgClientVer(int ClientId, CUuid *pConnectionId, int DDNetVersion, const char *pDDNetVersionStr)
 {
-	if(m_aClients[ClientId].m_State != CClient::STATE_PREAUTH)
+	if(m_aClients[ClientId].m_State != CClient::STATE_PREAUTH && !m_aClients[ClientId].m_Rejoining)
 		return;
 	if(DDNetVersion < 0)
 		return;
@@ -2037,12 +2060,16 @@ void CServer::OnNetMsgClientVer(int ClientId, CUuid *pConnectionId, int DDNetVer
 	str_copy(m_aClients[ClientId].m_aDDNetVersionStr, pDDNetVersionStr);
 	m_aClients[ClientId].m_DDNetVersionSettled = true;
 	m_aClients[ClientId].m_GotDDNetVersionPacket = true;
-	m_aClients[ClientId].m_State = CClient::STATE_AUTH;
+
+	if(!m_aClients[ClientId].m_Rejoining)
+	{
+		m_aClients[ClientId].m_State = CClient::STATE_AUTH;
+	}
 }
 
 void CServer::OnNetMsgInfo(int ClientId, const char *pVersion, const char *pPasswordOrNullptr)
 {
-	if((m_aClients[ClientId].m_State != CClient::STATE_PREAUTH && m_aClients[ClientId].m_State != CClient::STATE_AUTH))
+	if(m_aClients[ClientId].m_State != CClient::STATE_PREAUTH && m_aClients[ClientId].m_State != CClient::STATE_AUTH && !m_aClients[ClientId].m_Rejoining)
 		return;
 
 	if(str_comp(pVersion, GameServer()->NetVersion()) != 0 && str_comp(pVersion, "0.7 802f1be60a05665f") != 0)
@@ -2081,10 +2108,14 @@ void CServer::OnNetMsgInfo(int ClientId, const char *pVersion, const char *pPass
 		return;
 	}
 
-	m_aClients[ClientId].m_State = CClient::STATE_CONNECTING;
 	SendRconType(ClientId, m_AuthManager.NumNonDefaultKeys() > 0);
 	SendCapabilities(ClientId);
-	SendMap(ClientId);
+
+	if(!m_aClients[ClientId].m_Rejoining)
+	{
+		m_aClients[ClientId].m_State = CClient::STATE_CONNECTING;
+		SendMap(ClientId);
+	}
 }
 
 void CServer::OnNetMsgReady(int ClientId)
@@ -2111,10 +2142,23 @@ void CServer::OnNetMsgReady(int ClientId)
 	// Make rejoining session possible before timeout protection triggers
 	// https://github.com/ddnet/ddnet/pull/301
 	SendConnectionReady(ClientId);
+
+	if(m_aClients[ClientId].m_Rejoining)
+	{
+		CNetMsg_Sv_ReadyToEnter Msg;
+		SendPackMsg(&Msg, MSGFLAG_VITAL | MSGFLAG_FLUSH, ClientId);
+	}
 }
 
 void CServer::OnNetMsgEnterGame(int ClientId)
 {
+	if(m_aClients[ClientId].m_Rejoining)
+	{
+		m_aClients[ClientId].m_Rejoining = false;
+		GameServer()->OnClientRejoin(ClientId);
+		return;
+	}
+
 	if(m_aClients[ClientId].m_State != CClient::STATE_READY)
 		return;
 	if(!GameServer()->IsClientReady(ClientId))
@@ -2241,7 +2285,7 @@ void CServer::OnNetMsgRconAuth(int ClientId, const char *pName, const char *pPw,
 			}
 			}
 
-			if(!ClientUsesRealClientIds(ClientId))
+			if(!ClientSupportsServerMaxClients(ClientId))
 			{
 				SendRconLine(ClientId, "Your client does not see the real client IDs of this server. Use a more recent DDNet client.");
 			}
@@ -3800,7 +3844,7 @@ bool CServer::CanClientUseCommandCallback(int ClientId, const IConsole::ICommand
 bool CServer::CanClientUseCommand(int ClientId, const IConsole::ICommandInfo *pCommand) const
 {
 	// make sure we don't affect the wrong client, disallow id targeting commands when a moderator is using id translation
-	if(pCommand->TakesClientId() && !ClientUsesRealClientIds(ClientId))
+	if(pCommand->TakesClientId() && !ClientSupportsServerMaxClients(ClientId))
 		return false;
 	if(pCommand->Flags() & CFGFLAG_CHAT)
 		return true;
@@ -4081,8 +4125,11 @@ void CServer::SaveDemo(int ClientId, float Time)
 {
 	if(IsRecording(ClientId))
 	{
+		char aPlayerName[MAX_NAME_LENGTH];
+		str_copy(aPlayerName, m_aClients[ClientId].m_aName);
+		str_sanitize_filename(aPlayerName);
 		char aNewFilename[IO_MAX_PATH_LENGTH];
-		str_format(aNewFilename, sizeof(aNewFilename), "demos/%s_%s_%05.2f.demo", GameServer()->Map()->BaseName(), m_aClients[ClientId].m_aName, Time);
+		str_format(aNewFilename, sizeof(aNewFilename), "demos/%s_%s_%05.2f.demo", GameServer()->Map()->BaseName(), aPlayerName, Time);
 		m_aDemoRecorder[ClientId].Stop(IDemoRecorder::EStopMode::KEEP_FILE, aNewFilename);
 	}
 }

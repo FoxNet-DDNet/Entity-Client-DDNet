@@ -137,6 +137,7 @@ option(VULKAN "Enable the vulkan backend" ${AUTO_VULKAN_BACKEND})
 
 option(EXCEPTION_HANDLING "Enable crashdumps (only works with Windows)" OFF)
 option(IPO "Enable interprocedural optimizations" OFF)
+option(PRECOMPILE_HEADERS "Precompile commonly used headers to speed up compilation (requires CMake 3.16)" ON)
 set(FUSE_LD OFF CACHE STRING "Linker to use")
 option(SECURITY_COMPILER_FLAGS "Whether to set security-relevant compiler flags like -D_FORTIFY_SOURCE=2 and -fstack-protector-strong" ON)
 option(MACOS_CODESIGN "Whether to sign code when building the DMG on macOS" OFF)
@@ -187,8 +188,6 @@ endif()
 if(NOT(CMAKE_BUILD_TYPE MATCHES "^(Release|Debug|RelWithDebInfo|MinSizeRel)$"))
   message(WARNING "Unknown CMAKE_BUILD_TYPE, should be one of Release, Debug, RelWithDebInfo or MinSizeRel")
 endif()
-
-set(DBG $<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>)
 
 if(IPO)
   include(CheckIPOSupported)
@@ -310,7 +309,9 @@ if(NOT MSVC AND NOT HAIKU)
             endif()
           endif()
         endif()
-      else()
+      elseif(NOT TARGET_OS STREQUAL "windows")
+        # Windows: only the default linker handles GCC+LTO, gold can't produce
+        # PE binaries and lld ignores GCC's LTO plugin, leaving all objects empty.
         add_linker_flag_if_supported(OUR_FLAGS_LINK -fuse-ld=gold)
         if(FLAG_SUPPORTED_fuse_ld_gold)
           message(STATUS "Using gold linker")
@@ -355,7 +356,11 @@ if(NOT MSVC AND NOT HAIKU)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS -fsigned-char)
 
   # Support more sections in object files, because the limit is exceeded for some files in debug mode.
-  add_cxx_compiler_flag_if_supported(OUR_FLAGS -Wa,-mbig-obj)
+  # Not with IPO, because GCC's LTO plugin cannot read big-obj COFF files, making
+  # the linker treat all LTO objects as empty. Stays far below the limit with LTO anyway.
+  if(NOT ENABLE_IPO)
+    add_cxx_compiler_flag_if_supported(OUR_FLAGS -Wa,-mbig-obj)
+  endif()
 
   # Don't insert timestamps into PEs to keep the build reproducible.
   if(TARGET_OS STREQUAL "windows")
@@ -809,6 +814,16 @@ if(TARGET_OS STREQUAL "windows")
   list(APPEND PLATFORM_LIBS ntdll.lib) # https://github.com/ddnet/ddnet/issues/6725
   list(APPEND PLATFORM_LIBS uuid.lib) # FOLDERID_RoamingAppData
 elseif(TARGET_OS STREQUAL "mac")
+  if(NOT CMAKE_VERSION VERSION_LESS 3.16)
+    if(NOT CMAKE_OBJCXX_COMPILER)
+      set(CMAKE_OBJCXX_COMPILER "${CMAKE_CXX_COMPILER}")
+    endif()
+    if(NOT CMAKE_OBJCXX_COMPILER_LAUNCHER)
+      set(CMAKE_OBJCXX_COMPILER_LAUNCHER "${CMAKE_CXX_COMPILER_LAUNCHER}")
+    endif()
+    enable_language(OBJCXX)
+    set(CMAKE_OBJCXX_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_OBJCXX_FLAGS}")
+  endif()
   find_library(CARBON Carbon)
   find_library(COCOA Cocoa)
   find_library(OPENGL OpenGL)
@@ -838,7 +853,7 @@ elseif(TARGET_OS STREQUAL "ios")
   find_library(SECURITY Security)
   find_library(SYSTEMCONFIGURATION SystemConfiguration)
   set(PLATFORM_CLIENT
-    src/ios/ios_main.cpp
+    src/ios/ios_main.mm
   )
   set(PLATFORM_CLIENT_LIBS
     # tidy-alphabetical-start
@@ -1068,6 +1083,7 @@ endif()
 set(CARGO_BUILD_DIR_DEBUG "${CARGO_BUILD_DIR}debug")
 set(CARGO_BUILD_DIR_RELEASE "${CARGO_BUILD_DIR}release")
 set(CARGO_BUILD_DIR_RELWITHDEBINFO "${CARGO_BUILD_DIR}relwithdebinfo")
+set(CARGO_BUILD_DIR_MINSIZEREL "${CARGO_BUILD_DIR}minsizerel")
 
 # We can't check this directly; it is a cmake property, not a variable
 get_cmake_property(MULTI_CONFIG_BUILD GENERATOR_IS_MULTI_CONFIG)
@@ -1075,11 +1091,13 @@ if(MULTI_CONFIG_BUILD)
   if(CMAKE_VERSION VERSION_LESS 3.20)
     message(SEND_ERROR "Multi-config generators only supported from CMake 3.20 and up")
   else()
-    set(CARGO_BUILD_DIR "${CARGO_BUILD_DIR}$<IF:$<CONFIG:Debug>,debug,$<IF:$<CONFIG:RelWithDebInfo>,relwithdebinfo,release>>")
+    set(CARGO_BUILD_DIR "${CARGO_BUILD_DIR}$<IF:$<CONFIG:Debug>,debug,$<IF:$<CONFIG:RelWithDebInfo>,relwithdebinfo,$<IF:$<CONFIG:MinSizeRel>,minsizerel,release>>>")
     list(APPEND CARGO_BUILD
       $<$<CONFIG:RelWithDebInfo>:--profile>
       $<$<CONFIG:RelWithDebInfo>:relwithdebinfo>
-      $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>>:--release>)
+      $<$<CONFIG:MinSizeRel>:--profile>
+      $<$<CONFIG:MinSizeRel>:minsizerel>
+      $<$<NOT:$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>,$<CONFIG:MinSizeRel>>>:--release>)
   endif()
 else()
   if(CMAKE_BUILD_TYPE STREQUAL Debug)
@@ -1087,6 +1105,9 @@ else()
   elseif(CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo)
     set(CARGO_BUILD_DIR "${CARGO_BUILD_DIR_RELWITHDEBINFO}")
     list(APPEND CARGO_BUILD --profile relwithdebinfo)
+  elseif(CMAKE_BUILD_TYPE STREQUAL MinSizeRel)
+    set(CARGO_BUILD_DIR "${CARGO_BUILD_DIR_MINSIZEREL}")
+    list(APPEND CARGO_BUILD --profile minsizerel)
   else()
     set(CARGO_BUILD_DIR "${CARGO_BUILD_DIR_RELEASE}")
     list(APPEND CARGO_BUILD --release)
@@ -1131,6 +1152,7 @@ if(NOT CMAKE_OSX_ARCHITECTURES OR TARGET_OS STREQUAL "ios")
       IMPORTED_LOCATION "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR_RELEASE}/${LIBRARY_NAME}"
       IMPORTED_LOCATION_DEBUG "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR_DEBUG}/${LIBRARY_NAME}"
       IMPORTED_LOCATION_RELWITHDEBINFO "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR_RELWITHDEBINFO}/${LIBRARY_NAME}"
+      IMPORTED_LOCATION_MINSIZEREL "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR_MINSIZEREL}/${LIBRARY_NAME}"
     )
     list(APPEND RUST_OUTPUTS "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR}/${LIBRARY_NAME}")
   endforeach()
@@ -1149,6 +1171,7 @@ else()
       IMPORTED_LOCATION "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR_RELEASE}/${LIBRARY_NAME}"
       IMPORTED_LOCATION_DEBUG "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR_DEBUG}/${LIBRARY_NAME}"
       IMPORTED_LOCATION_RELWITHDEBINFO "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR_RELWITHDEBINFO}/${LIBRARY_NAME}"
+      IMPORTED_LOCATION_MINSIZEREL "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR_MINSIZEREL}/${LIBRARY_NAME}"
     )
     add_custom_target(rust_${rust_target}_target DEPENDS "${PROJECT_BINARY_DIR}/${CARGO_BUILD_DIR}/${LIBRARY_NAME}")
     add_dependencies(rust_${rust_target} rust_${rust_target}_target)
@@ -2873,6 +2896,7 @@ if(CLIENT)
     laser_data.h
     lineinput.cpp
     lineinput.h
+    multiview.cpp
     pickup_data.cpp
     pickup_data.h
     prediction/entities/character.cpp
@@ -3673,7 +3697,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
   add_custom_target(run_tests
     DEPENDS run_cxx_tests
   )
-  if(NOT MSVC OR CMAKE_BUILD_TYPE STREQUAL Release)
+  if(NOT MSVC OR CMAKE_BUILD_TYPE STREQUAL Release OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo OR CMAKE_BUILD_TYPE STREQUAL MinSizeRel)
     # On MSVC, Rust tests only work in the release mode because we link our C++
     # code with the debug C standard library (/MTd) but Rust only supports
     # linking to the release C standard library (/MT).
@@ -3681,6 +3705,14 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     # See also https://github.com/rust-lang/rust/issues/39016.
     add_dependencies(run_tests run_rust_tests)
   endif()
+endif()
+
+if(ENABLE_IPO AND CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
+  foreach(target engine-gfx engine-shared game-shared rust-bridge-shared json md5 zlib)
+    if(TARGET ${target})
+      target_compile_options(${target} PRIVATE -ffat-lto-objects)
+    endif()
+  endforeach()
 endif()
 
 add_library(rust_test STATIC EXCLUDE_FROM_ALL
@@ -4296,10 +4328,24 @@ foreach(target ${TARGETS_LINK})
   endif()
 endforeach()
 
+if(PRECOMPILE_HEADERS AND NOT CMAKE_VERSION VERSION_LESS 3.16)
+  foreach(target engine-shared game-client game-server-without-main game-shared testrunner)
+    if(TARGET ${target})
+      target_precompile_headers(${target} PRIVATE src/pch.h)
+    endif()
+  endforeach()
+  if(TARGET testrunner)
+    target_precompile_headers(testrunner PRIVATE <gtest/gtest.h>)
+  endif()
+endif()
+
 foreach(target ${TARGETS_OWN})
   set_property(TARGET ${target} PROPERTY CXX_STANDARD 20)
   set_property(TARGET ${target} PROPERTY CXX_STANDARD_REQUIRED ON)
   set_property(TARGET ${target} PROPERTY CXX_EXTENSIONS OFF)
+  set_property(TARGET ${target} PROPERTY OBJCXX_STANDARD 20)
+  set_property(TARGET ${target} PROPERTY OBJCXX_STANDARD_REQUIRED ON)
+  set_property(TARGET ${target} PROPERTY OBJCXX_EXTENSIONS OFF)
 
   if(MSVC)
     # tidy-alphabetical-start
