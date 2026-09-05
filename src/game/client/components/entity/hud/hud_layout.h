@@ -298,6 +298,15 @@ public:
 	int CornerFlags(EHudElement Element) const;
 
 	/**
+	 * Whether anything lies flush against one whole side of an element, the screen edge included.
+	 *
+	 * CornerFlags answers this a corner at a time, which is the right question for a panel drawn as
+	 * one rect. An element drawn as several stacked boxes has to ask about the side as a whole
+	 * instead, so that its boxes all round the same way rather than each following its own corner.
+	 */
+	bool SideBlocked(EHudElement Element, EHudPushDirection Side) const;
+
+	/**
 	 * The offset with an element pulled back onto the screen, if it would otherwise hang over an
 	 * edge. Applied on the way in and again on the way out, so that an element cannot end up out
 	 * of bounds through a config file, a resize, or a change in its own size either.

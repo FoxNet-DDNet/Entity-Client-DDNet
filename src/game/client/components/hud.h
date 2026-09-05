@@ -148,6 +148,9 @@ class CHud : public CComponent
 	float m_TextWidthScore10;
 	float m_TextWidthScore100;
 	void RenderScoreHud();
+	// EClient: the corners the score boxes were last baked with. Their rect lives in a quad
+	// container, so it has to be rebuilt when the rounding changes, the same as when the score does.
+	int m_ScoreCorners = -1;
 	int m_LastLocalClientId = -1;
 
 	void RenderSpectatorHud();

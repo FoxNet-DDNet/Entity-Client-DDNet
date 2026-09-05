@@ -310,6 +310,13 @@ void CHud::RenderScoreHud()
 		bool ForceScoreInfoInit = !m_aScoreInfo[0].m_Initialized || !m_aScoreInfo[1].m_Initialized;
 		m_aScoreInfo[0].m_Initialized = m_aScoreInfo[1].m_Initialized = true;
 
+		// EClient: both sides follow the layout. Upstream squares the right and rounds the left
+		// because that is where the box sits by default, but either side can be dragged against an
+		// edge. Asked about the side rather than the corners, so the two boxes round together.
+		const int ScoreCorners =
+			(m_HudLayout.SideBlocked(EHudElement::SCORE, EHudPushDirection::LEFT) ? 0 : IGraphics::CORNER_L) |
+			(m_HudLayout.SideBlocked(EHudElement::SCORE, EHudPushDirection::RIGHT) ? 0 : IGraphics::CORNER_R);
+
 		if(GameClient()->IsTeamPlay() && GameClient()->m_Snap.m_pGameDataObj)
 		{
 			char aScoreTeam[2][16];
@@ -322,7 +329,7 @@ void CHud::RenderScoreHud()
 				GameClient()->m_Snap.m_pGameDataObj->m_FlagCarrierRed,
 				GameClient()->m_Snap.m_pGameDataObj->m_FlagCarrierBlue};
 
-			bool RecreateRect = ForceScoreInfoInit;
+			bool RecreateRect = ForceScoreInfoInit || ScoreCorners != m_ScoreCorners; // EClient
 			for(int t = 0; t < 2; t++)
 			{
 				if(aRecreateTeamScore[t])
@@ -333,6 +340,7 @@ void CHud::RenderScoreHud()
 				}
 			}
 
+			m_ScoreCorners = ScoreCorners; // EClient
 			float ScoreWidthMax = std::max({m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth, m_TextWidthScore100});
 			float Split = 3.0f;
 			float ImageSize = (GameClient()->m_Snap.m_pGameInfoObj->m_GameFlags & GAMEFLAG_FLAGS) ? 16.0f : Split;
@@ -350,7 +358,7 @@ void CHud::RenderScoreHud()
 						Graphics()->SetColor(0.975f, 0.17f, 0.17f, 0.3f);
 					else
 						Graphics()->SetColor(0.17f, 0.46f, 0.975f, 0.3f);
-					m_aScoreInfo[t].m_RoundRectQuadContainerIndex = Graphics()->CreateRectQuadContainer(m_Width - ScoreWidthMax - ImageSize - 2 * Split, StartY + t * 20, ScoreWidthMax + ImageSize + 2 * Split, ScoreSingleBoxHeight, 5.0f, IGraphics::CORNER_L);
+					m_aScoreInfo[t].m_RoundRectQuadContainerIndex = Graphics()->CreateRectQuadContainer(m_Width - ScoreWidthMax - ImageSize - 2 * Split, StartY + t * 20, ScoreWidthMax + ImageSize + 2 * Split, ScoreSingleBoxHeight, 5.0f, ScoreCorners); // EClient
 				}
 				Graphics()->TextureClear();
 				Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -495,7 +503,7 @@ void CHud::RenderScoreHud()
 			bool RecreateScores = str_comp(aScore[0], m_aScoreInfo[0].m_aScoreText) != 0 || str_comp(aScore[1], m_aScoreInfo[1].m_aScoreText) != 0 || m_LastLocalClientId != GameClient()->m_Snap.m_LocalClientId;
 			m_LastLocalClientId = GameClient()->m_Snap.m_LocalClientId;
 
-			bool RecreateRect = ForceScoreInfoInit;
+			bool RecreateRect = ForceScoreInfoInit || ScoreCorners != m_ScoreCorners; // EClient
 			for(int t = 0; t < 2; t++)
 			{
 				if(RecreateScores)
@@ -527,6 +535,7 @@ void CHud::RenderScoreHud()
 					RecreateRect = true;
 			}
 
+			m_ScoreCorners = ScoreCorners; // EClient
 			float ScoreWidthMax = std::max({m_aScoreInfo[0].m_ScoreTextWidth, m_aScoreInfo[1].m_ScoreTextWidth, m_TextWidthScore10});
 			float Split = 3.0f, ImageSize = 16.0f, PosSize = 16.0f;
 			// EClient: StartY is advanced by the loop below, so the rect is reported up front
@@ -544,7 +553,7 @@ void CHud::RenderScoreHud()
 						Graphics()->SetColor(1.0f, 1.0f, 1.0f, 0.25f);
 					else
 						Graphics()->SetColor(0.0f, 0.0f, 0.0f, 0.25f);
-					m_aScoreInfo[t].m_RoundRectQuadContainerIndex = Graphics()->CreateRectQuadContainer(m_Width - ScoreWidthMax - ImageSize - 2 * Split - PosSize, StartY + t * 20, ScoreWidthMax + ImageSize + 2 * Split + PosSize, ScoreSingleBoxHeight, 5.0f, IGraphics::CORNER_L);
+					m_aScoreInfo[t].m_RoundRectQuadContainerIndex = Graphics()->CreateRectQuadContainer(m_Width - ScoreWidthMax - ImageSize - 2 * Split - PosSize, StartY + t * 20, ScoreWidthMax + ImageSize + 2 * Split + PosSize, ScoreSingleBoxHeight, 5.0f, ScoreCorners); // EClient
 				}
 				Graphics()->TextureClear();
 				Graphics()->SetColor(1.0f, 1.0f, 1.0f, 1.0f);

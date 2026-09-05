@@ -737,6 +737,61 @@ int CHudLayout::CornerFlags(EHudElement Element) const
 	return Flags;
 }
 
+bool CHudLayout::SideBlocked(EHudElement Element, EHudPushDirection Side) const
+{
+	const CRect Rect = ResolvedRect(Element);
+	if(Rect.m_Size.x <= 0.0f || Rect.m_Size.y <= 0.0f)
+		return false;
+
+	const bool Vertical = Side == EHudPushDirection::LEFT || Side == EHudPushDirection::RIGHT;
+	const float SideCoord = Side == EHudPushDirection::LEFT  ? Rect.m_Pos.x :
+				Side == EHudPushDirection::RIGHT ? Rect.m_Pos.x + Rect.m_Size.x :
+				Side == EHudPushDirection::UP    ? Rect.m_Pos.y :
+								   Rect.m_Pos.y + Rect.m_Size.y;
+
+	// The screen counts as something to be flush against, the same as a neighbour would
+	if(Vertical)
+	{
+		if(SideCoord <= CORNER_TOUCH_DISTANCE || SideCoord >= m_BaseSize.x - CORNER_TOUCH_DISTANCE)
+			return true;
+	}
+	else
+	{
+		if(SideCoord <= CORNER_TOUCH_DISTANCE || SideCoord >= m_BaseSize.y - CORNER_TOUCH_DISTANCE)
+			return true;
+	}
+
+	for(int i = 0; i < (int)EHudElement::NUM_HUD_ELEMENTS; i++)
+	{
+		if((EHudElement)i == Element || !IsLive((EHudElement)i))
+			continue;
+
+		const CRect Other = m_aPlacedRects[i];
+		if(Other.m_Size.x <= 0.0f || Other.m_Size.y <= 0.0f)
+			continue;
+
+		if(Vertical)
+		{
+			const bool Flush = absolute(Other.m_Pos.x - SideCoord) <= CORNER_TOUCH_DISTANCE ||
+					   absolute(Other.m_Pos.x + Other.m_Size.x - SideCoord) <= CORNER_TOUCH_DISTANCE;
+			// Anywhere along the side is enough, rather than at one particular point on it
+			if(Flush && Other.m_Pos.y <= Rect.m_Pos.y + Rect.m_Size.y + CORNER_TOUCH_DISTANCE &&
+				Other.m_Pos.y + Other.m_Size.y >= Rect.m_Pos.y - CORNER_TOUCH_DISTANCE)
+				return true;
+		}
+		else
+		{
+			const bool Flush = absolute(Other.m_Pos.y - SideCoord) <= CORNER_TOUCH_DISTANCE ||
+					   absolute(Other.m_Pos.y + Other.m_Size.y - SideCoord) <= CORNER_TOUCH_DISTANCE;
+			if(Flush && Other.m_Pos.x <= Rect.m_Pos.x + Rect.m_Size.x + CORNER_TOUCH_DISTANCE &&
+				Other.m_Pos.x + Other.m_Size.x >= Rect.m_Pos.x - CORNER_TOUCH_DISTANCE)
+				return true;
+		}
+	}
+
+	return false;
+}
+
 void CHudLayout::FreeSpanX(EHudElement Element, float Y, float Height, float PreferredX, float Padding, float &Left, float &Right) const
 {
 	Left = 0.0f;
