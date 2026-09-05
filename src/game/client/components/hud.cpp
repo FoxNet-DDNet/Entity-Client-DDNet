@@ -2945,16 +2945,6 @@ static float GetLerpAmount(float DeltaTime)
 	return std::clamp(DeltaTime * LerpSpeed, 0.0f, 1.0f);
 }
 
-static ColorRGBA LerpColor(const ColorRGBA &A, const ColorRGBA &B, float Amount)
-{
-	Amount = std::clamp(Amount, 0.0f, 1.0f);
-	return ColorRGBA(
-		std::lerp(A.r, B.r, Amount),
-		std::lerp(A.g, B.g, Amount),
-		std::lerp(A.b, B.b, Amount),
-		A.a);
-}
-
 void CHud::RenderIsland()
 {
 	const bool MediaIsland = g_Config.m_ClMediaIsland;
@@ -3546,9 +3536,9 @@ void CHud::RenderIsland()
 			if(g_Config.m_ClMediaIslandVisualizerColorDynamic)
 			{
 				if(Island.m_CurState.m_AlbumArt.m_Colors.m_HasPrimary)
-					PrimaryColor = LerpColor(Island.m_CurState.m_PrevAlbumArt.m_Colors.GetPrimary(), Island.m_CurState.m_AlbumArt.m_Colors.GetPrimary(), a);
+					PrimaryColor = color_lerp(Island.m_CurState.m_PrevAlbumArt.m_Colors.GetPrimary(), Island.m_CurState.m_AlbumArt.m_Colors.GetPrimary(), a);
 				if(Island.m_CurState.m_AlbumArt.m_Colors.m_HasSecondary)
-					SecondaryColor = LerpColor(Island.m_CurState.m_PrevAlbumArt.m_Colors.GetSecondary(), Island.m_CurState.m_AlbumArt.m_Colors.GetSecondary(), a);
+					SecondaryColor = color_lerp(Island.m_CurState.m_PrevAlbumArt.m_Colors.GetSecondary(), Island.m_CurState.m_AlbumArt.m_Colors.GetSecondary(), a);
 			}
 			else
 				SecondaryColor = PrimaryColor;
@@ -3683,7 +3673,7 @@ void CHud::RenderVisualizer(const CMediaViewer::CState &State, ColorRGBA Primary
 		// the bar folds the top and bottom corners into each other and pinches short bars.
 		const float BarRounding = std::min(Rounding, BarHeight * 0.5f);
 
-		Graphics()->SetColor(LerpColor(Primary, Secondary, Blend));
+		Graphics()->SetColor(color_lerp(Primary, Secondary, Blend).WithAlpha(Primary.a));
 		Graphics()->DrawRectExt(X, Y, ActualBarWidth, BarHeight, BarRounding, IGraphics::CORNER_ALL);
 	}
 	Graphics()->QuadsEnd();

@@ -224,6 +224,10 @@ class CLabelResult
 {
 public:
 	bool m_Truncated;
+	// EClient
+	vec2 m_TextPos;
+	float m_TextSize;
+	float m_TextWidth;
 };
 
 enum EButtonFlags : unsigned

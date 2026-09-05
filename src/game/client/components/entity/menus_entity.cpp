@@ -2,6 +2,7 @@
 #include <base/math.h>
 #include <base/str.h>
 #include <base/system.h>
+#include <base/time.h>
 
 #include <engine/font_icons.h>
 #include <engine/graphics.h>
@@ -91,7 +92,7 @@ static const SSettingsFilterChip gs_aSettingsFilterChips[] = {
 	{FILTER_CHAT, "Chat"},
 	{FILTER_WARLIST, "Warlist"},
 	{FILTER_MISC, "Misc"},
-	{FILTER_NEW, "NEW"},
+	{FILTER_NEW, "New"},
 };
 
 static unsigned gs_SettingsModuleFilter = FILTER_NONE;
@@ -2704,6 +2705,48 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	ScrollParams.m_ScrollbarMargin = 5.0f;
 	s_ScrollRegion.Begin(&MainView, &ScrollParams);
 
+	auto RenderHudEditorButton = [this](CButtonContainer *pId, const CUIRect *pRect) {
+		CUIRect Temp = *pRect;
+		constexpr float a = HeaderSize + MarginExtraSmall;
+		Temp.y += MarginSmall;
+		Temp.h = a;
+		Temp.x = Temp.x + Temp.w - a - MarginExtraSmall;
+		Temp.w = a;
+		DoHudEditorButton(pId, &Temp);
+	};
+
+	auto RenderNEWLabel = [this](float x, float y, float LerpOff) {
+		static constexpr const float TextSizeNEW = 8.0f;
+		static constexpr const float NEWRectAlpha = 0.87f;
+		static constexpr const char *pText = "NEW";
+		const float TextWidth = TextRender()->TextWidth(TextSizeNEW, pText);
+
+		CUIRect Temp;
+		Temp.y = y;
+		Temp.x = x;
+		Temp.h = TextSizeNEW + MarginSmall * 2.0f;
+		Temp.w = TextWidth + MarginSmall * 2.5f;
+
+		const float Amount = (time_get() / (double)time_freq() * 2.25f) + LerpOff * 2.0f * pi;
+
+		// colors picked by my girlfriend
+		const ColorRGBA Primary = ColorRGBA(0x614FFF);
+		const ColorRGBA Secondary = ColorRGBA(0xB94FFF);
+
+		auto CosLerp = [&](float a) { return 0.25f - 0.25f * std::cos(Amount + a); };
+		auto SinLerp = [&](float a) { return 0.25f - 0.25f * std::sin(Amount + a); };
+
+		const ColorRGBA TopLeft = color_lerp(Primary, Secondary, CosLerp(1.0f));
+		const ColorRGBA BottomRight = color_lerp(Primary, Secondary, 1.0f - CosLerp(1.0f));
+
+		const ColorRGBA TopRight = color_lerp(TopLeft, BottomRight, SinLerp(0.47f));
+		const ColorRGBA BottomLeft = color_lerp(TopLeft, BottomRight, SinLerp(0.54f));
+
+		Temp.Draw4(TopLeft.WithAlpha(NEWRectAlpha), TopRight.WithAlpha(NEWRectAlpha), BottomLeft.WithAlpha(NEWRectAlpha), BottomRight.WithAlpha(NEWRectAlpha), IGraphics::CORNER_ALL, 3.0f);
+
+		Ui()->DoLabel(&Temp, pText, Temp.h * CUi::ms_FontmodHeight * 0.7f, TEXTALIGN_MC);
+	};
+
 	std::vector<CSettingsModule> vModules;
 
 	CUIRect Label, Button;
@@ -3049,7 +3092,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Night Shift"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("Night Shift"), HeaderSize, HeaderAlignment);
+			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.5f);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNightShift, EcLocalize("Use Night Shift"), &g_Config.m_ClNightShift, &ModuleRect, LineSize);
 			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClNightShift, &ModuleRect, "Shifts the colors of everything on screen towards red, which is easier on the eyes at night");
@@ -3230,7 +3274,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
+			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.2f);
 			{
 				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFastInput, EcLocalize("Enable Fast Input"), &g_Config.m_EcFastInput, &ModuleRect, LineSize))
 					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
@@ -3292,16 +3337,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			}
 		},
 	});
-
-	auto RenderHudEditorButton = [this](CButtonContainer *pId, const CUIRect *pRect) {
-		CUIRect Temp = *pRect;
-		constexpr float a = HeaderSize + MarginExtraSmall;
-		Temp.y += MarginSmall;
-		Temp.h = a;
-		Temp.x = Temp.x + Temp.w - a - MarginExtraSmall;
-		Temp.w = a;
-		DoHudEditorButton(pId, &Temp);
-	};
 
 #if MEDIA_PLAYER_WINRT || MEDIA_PLAYER_DBUS
 	/* Media Island */
@@ -3489,7 +3524,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Stats"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("Stats"), HeaderSize, HeaderAlignment);
+			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.0f);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowFps, EcLocalize("Show FPS"), &g_Config.m_ClStatisticsShowFps, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowPing, EcLocalize("Show Ping"), &g_Config.m_ClStatisticsShowPing, &ModuleRect, LineSize);
@@ -3498,6 +3534,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		},
 	});
 
+	/* In-Game Automation */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_GAMEPLAY | FILTER_NEW,
@@ -3510,7 +3547,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("In-Game Automation"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("In-Game Automation"), HeaderSize, HeaderAlignment);
+			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.8f);
 
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 			if(DoButton_CheckBox(&g_Config.m_ClAntiSpawnBlock, "Anti Spawn Block", g_Config.m_ClAntiSpawnBlock, &Button))
@@ -4327,7 +4365,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Tee Appearance"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("Tee Appearance"), HeaderSize, HeaderAlignment);
+			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.3f);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderWeaponsInFreeze, EcLocalize("Show Players' weapon while they're frozen"), &g_Config.m_ClRenderWeaponsInFreeze, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);

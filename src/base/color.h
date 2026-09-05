@@ -308,4 +308,13 @@ constexpr T color_invert(const T &col)
 template<typename T>
 std::optional<T> color_parse(const char *pStr);
 
+constexpr ColorRGBA color_lerp(const ColorRGBA &A, const ColorRGBA &B, const float F)
+{
+	return ColorRGBA(
+		std::lerp(A.r, B.r, F),
+		std::lerp(A.g, B.g, F),
+		std::lerp(A.b, B.b, F),
+		std::lerp(A.a, B.a, F));
+}
+
 #endif
