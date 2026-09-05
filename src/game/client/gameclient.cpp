@@ -3200,7 +3200,13 @@ void CGameClient::OnPredict()
 
 			CCharacter *pChar = m_PredSmoothingWorld.GetCharacterById(i);
 			if(!pChar)
+			{
+				// the smoothing world can lack a character the predicted world still has. Leaving
+				// the flag set would keep drawing this tee at the position we last smoothed it to,
+				// frozen there while the real one moves on.
+				m_aClients[i].m_ValidAntipingSmooth = false;
 				continue;
+			}
 
 			vec2 PredPos = m_aClients[i].m_RegularPredicted.m_Pos;
 
@@ -3342,7 +3348,10 @@ void CGameClient::OnPredict()
 			ConfidencePos.x = std::clamp(ConfidencePos.x, MinPos.x, MaxPos.x);
 			ConfidencePos.y = std::clamp(ConfidencePos.y, MinPos.y, MaxPos.y);
 
-			m_aClients[i].m_PrevImprovedPredPos = m_aClients[i].m_ImprovedPredPos;
+			// only carry the last position forward if we actually produced one. On the first frame
+			// after a reset it is the zeroed default, and interpolating out of the map corner is
+			// only caught below when the tee happens to be far enough from the origin.
+			m_aClients[i].m_PrevImprovedPredPos = m_aClients[i].m_ValidAntipingSmooth ? m_aClients[i].m_ImprovedPredPos : ConfidencePos;
 			m_aClients[i].m_ImprovedPredPos = ConfidencePos;
 			if(distance(ServerPos, PrevServerPos) > 600.0f || distance(m_aClients[i].m_PrevImprovedPredPos, m_aClients[i].m_ImprovedPredPos) > 600.0f)
 			{
@@ -4649,6 +4658,18 @@ bool CGameClient::IsFastInputLocalClient(int ClientId) const
 	return ClientId == m_Snap.m_LocalClientId || (PredictDummy() && ClientId == m_aLocalIds[!g_Config.m_ClDummy]);
 }
 
+// EClient: whether the prediction ring buffer really holds Tick and the tick before it, which is
+// what every sampler here interpolates between. The slots are indexed modulo 200, so a tick we
+// never predicted leaves the entry from 200 ticks ago sitting there -- four seconds stale, and low
+// enough to slip past any "not too far ahead" test. Only an exact match rules that out; getting it
+// wrong draws the tee at wherever it stood four seconds earlier until the slot is written again.
+bool CGameClient::HasPredPos(int ClientId, int Tick) const
+{
+	return Tick > 0 &&
+	       m_aClients[ClientId].m_aPredTick[(Tick - 1) % 200] == Tick - 1 &&
+	       m_aClients[ClientId].m_aPredTick[Tick % 200] == Tick;
+}
+
 // EClient: our own fast input offset, in continuous ticks, for whichever algorithm is selected.
 // Classic reads ec_fast_input_amount (milliseconds); flux reads its own ec_flux_input_amount
 // (hundredths of a tick), which is finer and does not assume a 50 tick server. Returns zero while
@@ -4702,9 +4723,7 @@ vec2 CGameClient::GetSmoothPos(int ClientId)
 			if(ClientId != m_Snap.m_LocalClientId && FastInputTicks > 0)
 				SmoothTick += (int)std::ceil(GetFastInputOffsetTicksOthers());
 
-			if(SmoothTick > 0 &&
-				m_aClients[ClientId].m_aPredTick[(SmoothTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
-				m_aClients[ClientId].m_aPredTick[SmoothTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + FastInputTicks)
+			if(HasPredPos(ClientId, SmoothTick))
 				Pos[i] = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200][i], m_aClients[ClientId].m_aPredPos[SmoothTick % 200][i], SmoothIntra);
 		}
 	}
@@ -4731,11 +4750,7 @@ vec2 CGameClient::GetFastInputPos(int ClientId)
 
 	int FinalTick = PredTick + FastInputTicks;
 
-	// the ring buffer is filled out to our own amount, which is as far as any tee can be sampled
-	const int BufferedTicks = (int)std::ceil(GetFastInputOffsetTicks());
-	if(FinalTick > 0 &&
-		m_aClients[ClientId].m_aPredTick[(FinalTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
-		m_aClients[ClientId].m_aPredTick[FinalTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + BufferedTicks)
+	if(HasPredPos(ClientId, FinalTick))
 	{
 		Pos = mix(m_aClients[ClientId].m_aPredPos[(FinalTick - 1) % 200], m_aClients[ClientId].m_aPredPos[FinalTick % 200], FinalIntra);
 	}
@@ -4799,11 +4814,7 @@ vec2 CGameClient::GetFreezePos(int ClientId)
 		SmoothIntra = FinalIntra;
 	}
 
-	// the ring buffer is filled out to our own amount, which is as far as any tee can be sampled
-	const int BufferedTicks = (int)std::ceil(GetFastInputOffsetTicks());
-	if(SmoothTick > 0 &&
-		m_aClients[ClientId].m_aPredTick[(SmoothTick - 1) % 200] >= Client()->PrevGameTick(g_Config.m_ClDummy) &&
-		m_aClients[ClientId].m_aPredTick[SmoothTick % 200] <= Client()->PredGameTick(g_Config.m_ClDummy) + BufferedTicks)
+	if(HasPredPos(ClientId, SmoothTick))
 	{
 		Pos = mix(m_aClients[ClientId].m_aPredPos[(SmoothTick - 1) % 200], m_aClients[ClientId].m_aPredPos[SmoothTick % 200], SmoothIntra);
 	}

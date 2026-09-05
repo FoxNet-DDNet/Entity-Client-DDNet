@@ -1077,6 +1077,7 @@ public:
 	vec2 GetFreezePos(int ClientId);
 	vec2 GetFastInputPos(int ClientId);
 	bool IsFastInputLocalClient(int ClientId) const;
+	bool HasPredPos(int ClientId, int Tick) const;
 	float GetFastInputOffsetTicks() const;
 	float GetFastInputOffsetTicksOthers() const;
 	float GetFastInputOffsetTicksFor(int ClientId) const;
