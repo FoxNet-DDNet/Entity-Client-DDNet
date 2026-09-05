@@ -77,8 +77,6 @@ constexpr float HeaderSize = 20.0f;
 constexpr int HeaderAlignment = TEXTALIGN_MC;
 constexpr ColorRGBA BackgroundColor = ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f);
 
-// EClient: the quick filter chips, in the order they are drawn. Nothing here is saved: a filter
-// left on across a restart just looks like settings that went missing.
 struct SSettingsFilterChip
 {
 	unsigned m_Flag;
@@ -237,12 +235,14 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 			SearchInput.SelectAll();
 			ScrollRegion.ScrollHere(CScrollRegion::EScrollOption::SCROLLHERE_TOP, true);
 		}
+
+		static int s_SearchUnfocusId;
+		if(SearchInput.IsActive() && Ui()->MouseButtonClicked(0) && !Ui()->MouseHovered(&EditBox))
+			Ui()->SetActiveItem(&s_SearchUnfocusId);
+
 		SearchInput.SetEmptyText(Localize("Search"));
 		Ui()->DoClearableEditBox(&SearchInput, &EditBox, EditBoxFontSize);
 
-		// EClient: the quick filters. Each one is its own small rounded rect with a gap to the next,
-		// not a joined segmented control, and a selected chip fills with a color loud enough to
-		// register at a glance instead of the faint grey tint checked buttons usually get.
 		{
 			constexpr int NumChips = (int)std::size(gs_aSettingsFilterChips);
 			constexpr float ChipGap = MarginExtraSmall * 2.0f;
@@ -312,7 +312,6 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 	}
 }
 
-// EClient: draws the modules named by vIndices down one column, in the order they were declared in.
 static void RenderSettingsModules(CScrollRegion &ScrollRegion, CUIRect &ColumnRect, const std::vector<CSettingsModule> &vModules, const std::vector<size_t> &vIndices, bool HasSearch)
 {
 	bool HasRenderedModule = false;
@@ -336,11 +335,6 @@ static void RenderSettingsModules(CScrollRegion &ScrollRegion, CUIRect &ColumnRe
 	}
 }
 
-// EClient: on the full page, m_Column is the hand-picked reading order - the settings people touch
-// often at the top of a column, the ones they set once and forget lower down or on the other side.
-// That order only balances the two columns for the complete set, though, so once a filter or a
-// search cuts the page down to part of it, the pins are dropped and modules are dealt out in
-// declaration order into whichever column is currently shorter instead.
 static void PackSettingsModuleColumns(const std::vector<CSettingsModule> &vModules, const char *pSearch, bool HasSearch, std::vector<size_t> &vLeft, std::vector<size_t> &vRight)
 {
 	const bool Narrowed = gs_SettingsModuleFilter != FILTER_NONE || HasSearch;
@@ -373,9 +367,6 @@ static void PackSettingsModuleColumns(const std::vector<CSettingsModule> &vModul
 	}
 }
 
-// EClient: two columns are only worth having while each one is wide enough to read its own
-// labels. The menu is laid out in a space that is always 600 tall and as wide as the aspect ratio
-// makes it, so a narrow screen leaves the columns crowded rather than merely small.
 static void RenderSettingsModuleColumns(CScrollRegion &ScrollRegion, CUIRect MainView, const std::vector<CSettingsModule> &vModules, const char *pSearch)
 {
 	constexpr float MinColumnWidth = 360.0f;
@@ -386,8 +377,6 @@ static void RenderSettingsModuleColumns(CScrollRegion &ScrollRegion, CUIRect Mai
 
 	if((MainView.w - Margin) * 0.5f < MinColumnWidth)
 	{
-		// Everything in one column, in the order the modules are declared in, which keeps the two
-		// halves interleaved the way they read down the page rather than one half after the other
 		std::vector<size_t> vBoth;
 		vBoth.reserve(vLeft.size() + vRight.size());
 		vBoth.insert(vBoth.end(), vLeft.begin(), vLeft.end());
@@ -4688,9 +4677,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	s_ScrollRegion.End();
 }
 
-// EClient: the button that opens the HUD editor, drawn filling whatever rect it is handed. It
-// appears in a couple of the modules that are mostly about HUD elements, and once in the search bar
-// where it is reachable from any settings page regardless of which modules are on screen.
 void CMenus::DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect)
 {
 	CUIRect Button = *pRect;
