@@ -409,9 +409,13 @@ class ITranslateBackendHttp : public ITranslateBackend
 {
 protected:
 	std::shared_ptr<IHttpRequest> m_pHttpRequest = nullptr;
+	IHttp *m_pHttp = nullptr;
 	virtual bool ParseResponse(CTranslateResponse &Out) = 0;
 	virtual bool ParseHttpError() const { return false; }
 
+	// Only prepares the request, the constructor of the backend still has to add its headers
+	// and body afterwards. Handing it to the http thread here would race those calls against
+	// curl reading them, which drops whatever was not set yet, see RunHttpRequest()
 	void CreateHttpRequest(IHttp &Http, const char *pUrl)
 	{
 		std::shared_ptr<IHttpRequest> pGet = ::CreateHttpRequest(pUrl);
@@ -420,10 +424,18 @@ protected:
 		pGet->Timeout(CTimeout{10000, 0, 500, 10});
 
 		m_pHttpRequest = pGet;
-		Http.Run(pGet);
+		m_pHttp = &Http;
 	}
 
 public:
+	// Queues the finished request, nothing may touch it after this
+	void RunHttpRequest()
+	{
+		dbg_assert(m_pHttpRequest != nullptr, "m_pHttpRequest is nullptr");
+		dbg_assert(m_pHttp != nullptr, "m_pHttp is nullptr");
+		m_pHttp->Run(m_pHttpRequest);
+	}
+
 	bool IsRateLimited() const override
 	{
 		// StatusCode() may only be read once the request is done
@@ -823,16 +835,25 @@ public:
 	}
 };
 
+// Sends the request only once the constructor is done with it, a backend cannot forget to do so
+template<typename TBackend>
+static std::unique_ptr<ITranslateBackend> MakeTranslateBackend(IHttp &Http, const char *pText)
+{
+	std::unique_ptr<TBackend> pBackend = std::make_unique<TBackend>(Http, pText);
+	pBackend->RunHttpRequest();
+	return pBackend;
+}
+
 static std::unique_ptr<ITranslateBackend> CreateTranslateBackend(ETranslateBackend Backend, IHttp &Http, const char *pText)
 {
 	switch(Backend)
 	{
 	case ETranslateBackend::LIBRETRANSLATE:
-		return std::make_unique<CTranslateBackendLibretranslate>(Http, pText);
+		return MakeTranslateBackend<CTranslateBackendLibretranslate>(Http, pText);
 	case ETranslateBackend::DEEPL:
-		return std::make_unique<CTranslateBackendDeepl>(Http, pText);
+		return MakeTranslateBackend<CTranslateBackendDeepl>(Http, pText);
 	case ETranslateBackend::GOOGLE:
-		return std::make_unique<CTranslateBackendGoogle>(Http, pText);
+		return MakeTranslateBackend<CTranslateBackendGoogle>(Http, pText);
 	default:
 		break;
 	}
