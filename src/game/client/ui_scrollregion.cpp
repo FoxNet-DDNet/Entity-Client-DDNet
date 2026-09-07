@@ -156,7 +156,7 @@ bool CScrollRegion::ScrollbarShown() const
 
 bool CScrollRegion::Animating() const
 {
-	return m_AnimTime > 0.0f;
+	return m_AnimTime > 0.0f && m_CanAnimate;
 }
 
 bool CScrollRegion::Active() const

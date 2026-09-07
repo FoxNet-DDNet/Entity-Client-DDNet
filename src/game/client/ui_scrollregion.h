@@ -127,6 +127,9 @@ private:
 	float m_ContentScrollOffset;
 	CScrollRegionParams m_Params;
 
+	// EClient
+	bool m_CanAnimate;
+
 public:
 	enum EScrollOption
 	{
