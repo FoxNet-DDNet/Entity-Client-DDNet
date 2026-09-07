@@ -1328,9 +1328,13 @@ void CHudLayout::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserD
 		const char *pName = gs_aHudElements[i].m_pName;
 		char aBuf[128];
 
-		if(Placement.m_Offset.x != 0.0f || Placement.m_Offset.y != 0.0f)
+		// The anchor and the scale decide the rect the offset is held inside, so both are written
+		// ahead of the move. Read back the other way round, an offset that only fits once the
+		// element has been shrunk is measured against its full size instead, and clamped away
+		// before the scale that made room for it has been applied.
+		if(Placement.m_Anchor != gs_aHudElements[i].m_DefaultAnchor)
 		{
-			str_format(aBuf, sizeof(aBuf), "hud_move %s %.3f %.3f", pName, Placement.m_Offset.x, Placement.m_Offset.y);
+			str_format(aBuf, sizeof(aBuf), "hud_anchor %s %s", pName, gs_apAnchorNames[(int)Placement.m_Anchor]);
 			pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITYHUDLAYOUT);
 		}
 		if(Placement.m_Scale != 1.0f)
@@ -1338,9 +1342,9 @@ void CHudLayout::ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserD
 			str_format(aBuf, sizeof(aBuf), "hud_scale %s %.3f", pName, Placement.m_Scale);
 			pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITYHUDLAYOUT);
 		}
-		if(Placement.m_Anchor != gs_aHudElements[i].m_DefaultAnchor)
+		if(Placement.m_Offset.x != 0.0f || Placement.m_Offset.y != 0.0f)
 		{
-			str_format(aBuf, sizeof(aBuf), "hud_anchor %s %s", pName, gs_apAnchorNames[(int)Placement.m_Anchor]);
+			str_format(aBuf, sizeof(aBuf), "hud_move %s %.3f %.3f", pName, Placement.m_Offset.x, Placement.m_Offset.y);
 			pConfigManager->WriteLine(aBuf, ConfigDomain::ENTITYHUDLAYOUT);
 		}
 		if(Placement.m_PushPriority != gs_aHudElements[i].m_PushPriority ||
