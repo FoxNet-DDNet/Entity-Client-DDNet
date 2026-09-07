@@ -210,9 +210,6 @@ void CGameWorld::RemoveEntities()
 void CGameWorld::Tick()
 {
 	// <FoxNet
-	// FoxNet settles every quad for the tick before any zone or entity acts on one, so that
-	// they all agree on where the quads are, see CZoneManager::OnTick. That includes the solid
-	// ones, which by now are ordinary collision geometry to everything below.
 	if(m_pQuadZones)
 		m_pQuadZones->UpdateTo(GameTick());
 	// FoxNet>
