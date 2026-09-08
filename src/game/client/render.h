@@ -82,6 +82,7 @@ public:
 		m_GotAirJump = true;
 		m_TeeRenderFlags = 0;
 		m_FeetFlipped = false;
+		m_ClientId = -1;
 
 		for(auto &Sixup : m_aSixup)
 			Sixup.Reset();
@@ -132,6 +133,8 @@ public:
 	bool m_GotAirJump;
 	int m_TeeRenderFlags;
 	bool m_FeetFlipped;
+	// EClient
+	int m_ClientId;
 
 	bool Valid() const
 	{

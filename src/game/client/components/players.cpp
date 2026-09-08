@@ -1219,6 +1219,8 @@ void CPlayers::BuildTeeRenderInfo(int ClientId, const CFrameSkins &Skins, CTeeRe
 				Part);
 		}
 	}
+
+	Info.m_ClientId = ClientId;
 }
 
 void CPlayers::OnRender()

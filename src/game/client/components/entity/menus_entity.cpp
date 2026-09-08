@@ -4343,11 +4343,11 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		FILTER_VISUAL | FILTER_NEW,
 		{"frozen", "freeze", "stars", "katana", "colored", "tee", "skins", "white", "feet"},
 		[](bool HasSearch) {
-			int Size = 140;
+			int Offset = 0;
 			if(g_Config.m_ClWhiteFeet || HasSearch)
-				Size += LineSize + MarginExtraSmall * 2.0f;
+				Offset += LineSize + MarginExtraSmall * 2.0f;
 
-			return Size;
+			return 140 + Offset;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -4361,7 +4361,21 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFrozenKatana, EcLocalize("Show katana on frozen players"), &g_Config.m_EcFrozenKatana, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClColorFrozenTeeBody, EcLocalize("Colored frozen tee skins"), &g_Config.m_ClColorFrozenTeeBody, &ModuleRect, LineSize);
-			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWhiteFeet, EcLocalize("Render feet as white feet"), &g_Config.m_ClWhiteFeet, &ModuleRect, LineSize);
+			
+			{
+				static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}, {}, {}};
+				int Value = g_Config.m_ClWhiteFeet;
+				if(DoLine_RadioMenu_Compact(ModuleRect, EcLocalize("Render white feet:"),
+					   s_vButtonContainers,
+					   {"None", "Own", "Others", "All"},
+					   {0, 1, 2, 3},
+					   Value,
+					   5.0f))
+				{
+					g_Config.m_ClWhiteFeet = Value;
+				}
+			}
+
 			CUIRect FeetBox;
 			if(g_Config.m_ClWhiteFeet || HasSearch)
 			{

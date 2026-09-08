@@ -590,7 +590,12 @@ void CRenderTools::RenderTee6(const CAnimState *pAnim, const CTeeRenderInfo *pIn
 			Graphics()->SetColor(pInfo->m_ColorFeet.r * ColorScale, pInfo->m_ColorFeet.g * ColorScale, pInfo->m_ColorFeet.b * ColorScale, Alpha);
 
 			Graphics()->TextureSet(OutLine == 1 ? pSkinTextures->m_FeetOutline : pSkinTextures->m_Feet);
-			if(g_Config.m_ClWhiteFeet)
+
+			const bool RenderAsWhite = (g_Config.m_ClWhiteFeet == 1 && (pInfo->m_ClientId == GameClient()->m_aLocalIds[0] || pInfo->m_ClientId == GameClient()->m_aLocalIds[1])) ||
+						   (g_Config.m_ClWhiteFeet == 2 && pInfo->m_ClientId != GameClient()->m_aLocalIds[0] && pInfo->m_ClientId != GameClient()->m_aLocalIds[1]) ||
+						   (g_Config.m_ClWhiteFeet == 3);
+
+			if(RenderAsWhite)
 			{
 				const float WhiteFeetColor = 1.0f * ColorScale;
 				Graphics()->SetColor(WhiteFeetColor, WhiteFeetColor, WhiteFeetColor, Alpha);
