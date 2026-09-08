@@ -4361,7 +4361,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFrozenKatana, EcLocalize("Show katana on frozen players"), &g_Config.m_EcFrozenKatana, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClColorFrozenTeeBody, EcLocalize("Colored frozen tee skins"), &g_Config.m_ClColorFrozenTeeBody, &ModuleRect, LineSize);
-			
+
 			{
 				static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}, {}, {}};
 				int Value = g_Config.m_ClWhiteFeet;

@@ -592,8 +592,8 @@ void CRenderTools::RenderTee6(const CAnimState *pAnim, const CTeeRenderInfo *pIn
 			Graphics()->TextureSet(OutLine == 1 ? pSkinTextures->m_FeetOutline : pSkinTextures->m_Feet);
 
 			const bool RenderAsWhite = pInfo->m_ClientId != -1 && ((g_Config.m_ClWhiteFeet == 1 && (pInfo->m_ClientId == GameClient()->m_aLocalIds[0] || pInfo->m_ClientId == GameClient()->m_aLocalIds[1])) ||
-						   (g_Config.m_ClWhiteFeet == 2 && pInfo->m_ClientId != GameClient()->m_aLocalIds[0] && pInfo->m_ClientId != GameClient()->m_aLocalIds[1]) ||
-						   (g_Config.m_ClWhiteFeet == 3));
+										      (g_Config.m_ClWhiteFeet == 2 && pInfo->m_ClientId != GameClient()->m_aLocalIds[0] && pInfo->m_ClientId != GameClient()->m_aLocalIds[1]) ||
+										      (g_Config.m_ClWhiteFeet == 3));
 
 			if(RenderAsWhite && !GameClient()->m_aClients[pInfo->m_ClientId].m_SpecCharPresent)
 			{
