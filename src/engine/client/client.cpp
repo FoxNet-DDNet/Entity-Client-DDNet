@@ -857,6 +857,7 @@ void CClient::DisconnectWithReason(const char *pReason)
 
 	// <FoxNet
 	m_FoxNetVersion = 0;
+	m_FoxNetMovingTilesVersion = 0;
 	// FoxNet>
 }
 
@@ -2154,6 +2155,7 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 					m_ExpectedMaplistEntries = -1;
 					// <FoxNet
 					m_FoxNetVersion = 0;
+					m_FoxNetMovingTilesVersion = 0;
 					// FoxNet>
 				}
 			}
@@ -2526,6 +2528,15 @@ void CClient::ProcessServerPacket(CNetChunk *pPacket, int Conn, bool Dummy)
 				return;
 			log_info("foxnet", "server is running FoxNet version %d", Version);
 			m_FoxNetVersion = Version;
+
+			const int MovingTilesVersion = Unpacker.GetInt();
+			m_FoxNetMovingTilesVersion = Unpacker.Error() ? 0 : MovingTilesVersion;
+			if(m_FoxNetMovingTilesVersion != FOXNET_MOVING_TILES_VERSION)
+			{
+				log_info("foxnet", "not predicting moving tiles: server is on version %d, this client on %d",
+					m_FoxNetMovingTilesVersion, FOXNET_MOVING_TILES_VERSION);
+			}
+
 			SendFastInputsInfo(Conn);
 		}
 		// FoxNet>

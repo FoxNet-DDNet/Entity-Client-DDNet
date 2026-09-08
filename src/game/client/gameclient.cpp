@@ -4168,8 +4168,8 @@ void CGameClient::UpdatePrediction()
 	m_GameWorld.m_WorldConfig.m_OldLaser = m_GameInfo.m_OldLaser;
 
 	// <FoxNet
-	// Only FoxNet servers move their freeze quads, another server running the same map would not
-	m_QuadZones.SetActive(g_Config.m_ClPredictMovingTiles && m_MapMovingTiles && Client()->m_FoxNetVersion != 0);
+	const bool PredictMovingTiles = Client()->m_FoxNetVersion != 0 && Client()->m_FoxNetMovingTilesVersion == FOXNET_MOVING_TILES_VERSION;
+	m_QuadZones.SetActive(g_Config.m_ClPredictMovingTiles && m_MapMovingTiles && PredictMovingTiles);
 	m_QuadZones.SetStopAGivesDj(m_MapQStopaGivesDj);
 	// FoxNet animates the quads from this tick on and snaps it as the round start, see CGameControllerDDRace::Snap
 	m_QuadZones.SetQuadStartTick(m_Snap.m_pGameInfoObj ? m_Snap.m_pGameInfoObj->m_RoundStartTick : 0);

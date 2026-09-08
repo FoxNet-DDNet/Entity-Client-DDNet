@@ -1193,20 +1193,11 @@ void CCharacter::QuadZonePush(const vec2 aPoints[4], vec2 QuadMotion, bool Gives
 }
 // FoxNet>
 
-/*
- * Reached from CGameWorld::Tick once every character has moved, which is where the server runs
- * these zones as well: they sit in CZoneManager::OnPostTick, called from FoxNetPostTick after
- * m_World.Tick is done. Freezing up front instead -- as this used to, from the top of
- * DDRaceTick -- put m_FreezeTime back before the input copy further down, and a frozen
- * character has its direction, jump and hook zeroed, so an rcon unfreeze never got a single
- * tick of live input through inside a quad the way it does on a freeze tile.
- */
+
 void CCharacter::QuadZoneTick()
 {
 	CQuadZones *pQuadZones = GameWorld()->QuadZones();
 
-	// Cleared even with nothing to predict, or the flag keeps whatever it last held and
-	// DDRacePostCoreTick re-freezes off that alone for as long as the character lives
 	m_InsideQuadFreeze = false;
 
 	if(!pQuadZones || !pQuadZones->Active() || !GameWorld()->m_WorldConfig.m_PredictDDRace)
@@ -1214,7 +1205,6 @@ void CCharacter::QuadZoneTick()
 
 	const int Tick = GameWorld()->GameTick();
 
-	// Freeze, then unfreeze, then the stoppers: the order the server walks its zone lists in
 	if(!m_Core.m_IsInFreeze && !m_Core.m_DeepFrozen && !m_Core.m_LiveFrozen)
 	{
 		if(m_TileIndex != TILE_UNFREEZE && m_TileFIndex != TILE_UNFREEZE &&
@@ -1232,11 +1222,11 @@ void CCharacter::QuadZoneTick()
 		}
 	}
 
-	const vec2 TestPos = m_Pos;
 	const vec2 Size = vec2(m_ProximityRadius, m_ProximityRadius) * 0.55f;
 	for(const CQuadData &Quad : pQuadZones->Quads(EPredictedZone::StopA, Tick))
 	{
-		const vec2 QuadMotion = Quad.MotionAt(m_Pos);
+		const vec2 TestPos = m_Pos;
+		const vec2 QuadMotion = Quad.MotionAt(TestPos);
 		if(Quad.Overlaps(TestPos, Size))
 			QuadZonePush(Quad.m_aPoints, QuadMotion, pQuadZones->StopAGivesDj());
 	}

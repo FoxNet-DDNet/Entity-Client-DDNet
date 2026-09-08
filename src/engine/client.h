@@ -409,6 +409,8 @@ public:
 	// ready. Used to connect a dummy in the background without moving the camera onto it.
 	virtual void DummyConnectInBackground() = 0;
 	int m_FoxNetVersion = 0;
+	// 0 = server did not send one
+	int m_FoxNetMovingTilesVersion = 0;
 };
 
 class IGameClient : public IInterface
