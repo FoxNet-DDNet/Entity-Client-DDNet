@@ -151,7 +151,7 @@ MACRO_CONFIG_INT(EcTranslateBackend, ec_translate_backend, 3, 0, 3, CFGFLAG_CLIE
 MACRO_CONFIG_STR(EcTranslateTarget, ec_translate_target, 16, "en", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Translate target language (must be 2 character ISO 639 code)")
 MACRO_CONFIG_STR(EcTranslateEndpoint, ec_translate_endpoint, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "For backends which need it, endpoint to use (must be https, DeepL Pro is https://api.deepl.com/v2/translate)")
 MACRO_CONFIG_STR(EcTranslateKey, ec_translate_key, 256, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "For backends which need it, api key to use")
-MACRO_CONFIG_INT(EcTranslateAuto, ec_translate_auto, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically translate messages, only some backends support this (DeepL requires an api key)")
+MACRO_CONFIG_INT(EcTranslateAuto, ec_translate_auto, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically translate messages, only some backends support this (DeepL requires an api key)")
 MACRO_CONFIG_STR(EcTranslateLanguageBlacklist, ec_translate_language_blacklist, 256, "en", CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get ignored while translating (e.g. 'en,de,ru'")
 MACRO_CONFIG_STR(EcTranslateLanguageWhitelist, ec_translate_language_whitelist, 256, "ru,uk,tr,es,pl,mk,lt,bg,zh-CN", CFGFLAG_CLIENT | CFGFLAG_SAVE, "comma seperated languages that get translated, if not in this list, ignored (e.g. 'en,de,ru')")
 MACRO_CONFIG_INT(EcTranslateLogErrors, ec_translate_log_errors, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Log translation errors")
