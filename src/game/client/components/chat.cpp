@@ -2512,6 +2512,12 @@ CUi::EPopupMenuFunctionResult CChat::CMessagePopupContext::Render(void *pContext
 		return &Slot;
 	};
 
+	if(pUi->DoButton_PopupMenu(&pPopup->m_CopyButton, Localize("Copy message"), NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
+	{
+		pChat->Input()->SetClipboardText(pPopup->m_Text.c_str());
+		Result = CUi::POPUP_CLOSE_CURRENT;
+	}
+
 	if(pPopup->m_ShowFriend)
 	{
 		const CGameClient::CClientData &Client = pChat->GameClient()->m_aClients[pPopup->m_ClientId];
@@ -2524,12 +2530,6 @@ CUi::EPopupMenuFunctionResult CChat::CMessagePopupContext::Render(void *pContext
 				pChat->GameClient()->Friends()->AddFriend(Client.m_aName, Client.m_aClan);
 			Result = CUi::POPUP_CLOSE_CURRENT;
 		}
-	}
-
-	if(pUi->DoButton_PopupMenu(&pPopup->m_CopyButton, Localize("Copy message"), NextSlot(), POPUP_FONT_SIZE, TEXTALIGN_ML, POPUP_ENTRY_PADDING, true))
-	{
-		pChat->Input()->SetClipboardText(pPopup->m_Text.c_str());
-		Result = CUi::POPUP_CLOSE_CURRENT;
 	}
 
 	if(pPopup->m_ShowTranslate)
