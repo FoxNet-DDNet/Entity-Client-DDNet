@@ -32,6 +32,15 @@ public:
 		// the map stores the corners row by row, walking the outline needs them in order
 		std::swap(m_aLocalPoints[2], m_aLocalPoints[3]);
 
+		// A mirrored quad winds the other way, which flips the edge normals QuadZonePush pushes
+		// along, so put the ring back the way that code assumes. Shoelace over the corners:
+		// positive means vec2(-Edge.y, Edge.x) points into the quad.
+		float Area = 0.0f;
+		for(int i = 0, j = 3; i < 4; j = i++)
+			Area += m_aLocalPoints[j].x * m_aLocalPoints[i].y - m_aLocalPoints[i].x * m_aLocalPoints[j].y;
+		if(Area < 0.0f)
+			std::swap(m_aLocalPoints[1], m_aLocalPoints[3]);
+
 		for(int i = 0; i < 4; i++)
 			m_aPoints[i] = m_aLocalPoints[i];
 		m_Pivot = m_aLocalPoints[4];

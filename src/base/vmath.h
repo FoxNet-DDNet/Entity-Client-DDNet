@@ -242,14 +242,47 @@ inline bool InsideQuadrilateral(const vec2 &Point, const vec2 aPoints[4])
 
 inline bool InsideQuadrilateral(const vec2 &Pos, const vec2 aPoints[4], const vec2 &Size)
 {
-	if(InsideQuadrilateral(vec2(Pos.x - Size.x, Pos.y - Size.y), aPoints))
-		return true;
-	if(InsideQuadrilateral(vec2(Pos.x + Size.x, Pos.y - Size.y), aPoints))
-		return true;
-	if(InsideQuadrilateral(vec2(Pos.x - Size.x, Pos.y + Size.y), aPoints))
-		return true;
-	if(InsideQuadrilateral(vec2(Pos.x + Size.x, Pos.y + Size.y), aPoints))
-		return true;
+	const vec2 Min = vec2(Pos.x - Size.x, Pos.y - Size.y);
+	const vec2 Max = vec2(Pos.x + Size.x, Pos.y + Size.y);
+	const vec2 aBox[4] = {Min, vec2(Max.x, Min.y), Max, vec2(Min.x, Max.y)};
+
+	for(const vec2 &Corner : aBox)
+	{
+		if(InsideQuadrilateral(Corner, aPoints))
+			return true;
+	}
+
+	/*
+	 * A quad thinner than the box passes clean between those four corners without any of them
+	 * ever entering it, which is a tee walking straight through a shallow QStopa ramp while the
+	 * quad below holds it at exactly that height. Holding a corner of the quad, or crossing its
+	 * outline, is the rest of the overlap.
+	 */
+	for(int i = 0; i < 4; i++)
+	{
+		if(aPoints[i].x >= Min.x && aPoints[i].x <= Max.x && aPoints[i].y >= Min.y && aPoints[i].y <= Max.y)
+			return true;
+	}
+
+	const auto Side = [](const vec2 &A, const vec2 &B, const vec2 &P) {
+		const float Cross = (B.x - A.x) * (P.y - A.y) - (B.y - A.y) * (P.x - A.x);
+		return Cross > 0.0f ? 1 : (Cross < 0.0f ? -1 : 0);
+	};
+
+	for(int i = 0; i < 4; i++)
+	{
+		const vec2 &BoxStart = aBox[i];
+		const vec2 &BoxEnd = aBox[(i + 1) % 4];
+		for(int k = 0; k < 4; k++)
+		{
+			const vec2 &QuadStart = aPoints[k];
+			const vec2 &QuadEnd = aPoints[(k + 1) % 4];
+			if(Side(BoxStart, BoxEnd, QuadStart) * Side(BoxStart, BoxEnd, QuadEnd) < 0 &&
+				Side(QuadStart, QuadEnd, BoxStart) * Side(QuadStart, QuadEnd, BoxEnd) < 0)
+				return true;
+		}
+	}
+
 	return false;
 }
 

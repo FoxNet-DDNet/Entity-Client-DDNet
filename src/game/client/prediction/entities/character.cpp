@@ -1083,13 +1083,57 @@ void CCharacter::HandleTuneLayer()
 }
 
 // <FoxNet
-void CCharacter::QuadZonePush(const vec2 aPoints[4], vec2 QuadMotion, bool GivesDj)
+void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData> &vQuads, vec2 QuadMotion, bool GivesDj)
 {
 	const float Radius = m_ProximityRadius * 0.55f;
 	const vec2 Pos = m_Pos;
 
-	const vec2 aA[4] = {aPoints[0], aPoints[1], aPoints[2], aPoints[3]};
-	const vec2 aB[4] = {aPoints[1], aPoints[2], aPoints[3], aPoints[0]};
+	const vec2 *pPoints = Quad.m_aPoints;
+	const vec2 aA[4] = {pPoints[0], pPoints[1], pPoints[2], pPoints[3]};
+	const vec2 aB[4] = {pPoints[1], pPoints[2], pPoints[3], pPoints[0]};
+
+	// Only a quad overlapping this one can hide one of its edges, and that is a handful of the layer
+	std::vector<const CQuadData *> vpNeighbours;
+	for(const CQuadData &Other : vQuads)
+	{
+		if(&Other == &Quad)
+			continue;
+		if(Other.m_AabbMax.x < Quad.m_AabbMin.x || Other.m_AabbMin.x > Quad.m_AabbMax.x)
+			continue;
+		if(Other.m_AabbMax.y < Quad.m_AabbMin.y || Other.m_AabbMin.y > Quad.m_AabbMax.y)
+			continue;
+		vpNeighbours.push_back(&Other);
+	}
+
+	/*
+	 * An edge with solid quad on its far side is a seam inside the terrain, not a face to be
+	 * pushed out through: taking it ejects along the seam, which is how a tee ends up standing
+	 * on the join between two stacked quads instead of sliding down their shared outer wall.
+	 * Sampled a step outwards because the seam is the boundary of both quads and a point test on
+	 * a boundary answers either way, and at three places along the edge because a neighbour that
+	 * covers only part of it leaves the rest a real face. Kept identical to the server, see
+	 * CCollidableZone::CollidableImpl.
+	 */
+	const auto SeamEdge = [&](const vec2 &A, const vec2 &B, const vec2 &Outward) {
+		if(vpNeighbours.empty())
+			return false;
+		for(int Sample = 1; Sample <= 3; Sample++)
+		{
+			const vec2 Point = mix(A, B, Sample * 0.25f) + Outward;
+			bool Covered = false;
+			for(const CQuadData *pOther : vpNeighbours)
+			{
+				if(pOther->Contains(Point))
+				{
+					Covered = true;
+					break;
+				}
+			}
+			if(!Covered)
+				return false;
+		}
+		return true;
+	};
 
 	float MinPenetration = std::numeric_limits<float>::infinity();
 	vec2 BestInwardNormal = vec2(0.0f, 0.0f);
@@ -1103,6 +1147,10 @@ void CCharacter::QuadZonePush(const vec2 aPoints[4], vec2 QuadMotion, bool Gives
 			continue;
 
 		const vec2 InwardNormal = normalize(vec2(-Edge.y, Edge.x));
+
+		if(SeamEdge(aA[i], aB[i], -InwardNormal))
+			continue;
+
 		const float Penetration = dot(Pos - aA[i], InwardNormal) + Radius;
 
 		if(Penetration < MinPenetration)
@@ -1223,12 +1271,13 @@ void CCharacter::QuadZoneTick()
 	}
 
 	const vec2 Size = vec2(m_ProximityRadius, m_ProximityRadius) * 0.55f;
-	for(const CQuadData &Quad : pQuadZones->Quads(EPredictedZone::StopA, Tick))
+	const std::vector<CQuadData> &vStopA = pQuadZones->Quads(EPredictedZone::StopA, Tick);
+	for(const CQuadData &Quad : vStopA)
 	{
 		const vec2 TestPos = m_Pos;
 		const vec2 QuadMotion = Quad.MotionAt(TestPos);
 		if(Quad.Overlaps(TestPos, Size))
-			QuadZonePush(Quad.m_aPoints, QuadMotion, pQuadZones->StopAGivesDj());
+			QuadZonePush(Quad, vStopA, QuadMotion, pQuadZones->StopAGivesDj());
 	}
 }
 

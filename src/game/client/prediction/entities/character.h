@@ -7,7 +7,10 @@
 
 #include <game/client/prediction/entity.h>
 #include <game/gamecore.h>
+#include <game/quad_data.h>
 #include <game/race_state.h>
+
+#include <vector>
 
 enum
 {
@@ -193,7 +196,7 @@ private:
 	void DDRaceTick();
 	void DDRacePostCoreTick();
 	// <FoxNet
-	void QuadZonePush(const vec2 aPoints[4], vec2 QuadMotion, bool GivesDj);
+	void QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData> &vQuads, vec2 QuadMotion, bool GivesDj);
 	void QuadZoneTick();
 	// FoxNet>
 	void HandleTuneLayer();
