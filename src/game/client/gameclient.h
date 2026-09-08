@@ -624,6 +624,10 @@ public:
 		int m_FreezeEnd;
 		bool m_DeepFrozen;
 		bool m_LiveFrozen;
+		// <FoxNet
+		// Standing in a QFr quad, which the server never flags as CHARACTERFLAG_IN_FREEZE
+		bool m_InsideQuadFreeze;
+		// FoxNet>
 
 		CCharacterCore m_Predicted;
 		CCharacterCore m_PrevPredicted;

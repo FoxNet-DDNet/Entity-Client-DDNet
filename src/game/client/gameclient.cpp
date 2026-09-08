@@ -2960,8 +2960,14 @@ void CGameClient::OnPredict()
 		if(Tick == FinalTickRegular)
 		{
 			for(int i = 0; i < MAX_CLIENTS; i++)
+			{
+				m_aClients[i].m_InsideQuadFreeze = false; // FoxNet
 				if(CCharacter *pChar = m_PredictedWorld.GetCharacterById(i))
+				{
 					m_aClients[i].m_RegularPredicted = pChar->GetCore();
+					m_aClients[i].m_InsideQuadFreeze = pChar->m_InsideQuadFreeze; // FoxNet
+				}
+			}
 		}
 
 		if(Tick == Client()->PredGameTick(g_Config.m_ClDummy))
@@ -3577,6 +3583,7 @@ void CGameClient::CClientData::Reset()
 	m_FreezeEnd = 0;
 	m_DeepFrozen = false;
 	m_LiveFrozen = false;
+	m_InsideQuadFreeze = false; // FoxNet
 
 	m_Predicted.Reset();
 	m_PrevPredicted.Reset();

@@ -31,7 +31,9 @@ bool CFreezeBars::RenderKillBar()
 	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
 		return false;
 
-	if(g_Config.m_ClFreezeKillOnlyFullFrozen && !pCharacter->m_IsInFreeze)
+	// A QFr quad counts as full freeze here too, see RenderFreezeBar
+	const bool IsInFreeze = pCharacter->m_IsInFreeze || GameClient()->m_aClients[ClientId].m_InsideQuadFreeze;
+	if(g_Config.m_ClFreezeKillOnlyFullFrozen && !IsInFreeze)
 		return false;
 
 	float Time = (static_cast<float>(GameClient()->m_FreezeKill.m_LastFreeze) - time_get());
@@ -64,7 +66,11 @@ void CFreezeBars::RenderFreezeBar(int ClientId)
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
 	CCharacterCore *pCharacter = &GameClient()->m_aClients[ClientId].m_RegularPredicted;
 
-	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo || (pCharacter->m_IsInFreeze && g_Config.m_ClFreezeBarsAlphaInsideFreeze == 0))
+	// A QFr quad freezes just like a freeze tile does, but the server flags only the tiles, see
+	// CCharacter::m_InsideQuadFreeze
+	const bool IsInFreeze = pCharacter->m_IsInFreeze || GameClient()->m_aClients[ClientId].m_InsideQuadFreeze;
+
+	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo || (IsInFreeze && g_Config.m_ClFreezeBarsAlphaInsideFreeze == 0))
 	{
 		return;
 	}
@@ -81,7 +87,7 @@ void CFreezeBars::RenderFreezeBar(int ClientId)
 	Position.y += 22.0f;
 
 	float Alpha = GameClient()->TeeRenderAlpha(ClientId); // EClient
-	if(pCharacter->m_IsInFreeze)
+	if(IsInFreeze)
 	{
 		Alpha *= g_Config.m_ClFreezeBarsAlphaInsideFreeze / 100.0f;
 	}

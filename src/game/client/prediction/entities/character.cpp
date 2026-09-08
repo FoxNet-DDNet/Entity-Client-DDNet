@@ -1241,7 +1241,6 @@ void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData
 }
 // FoxNet>
 
-
 void CCharacter::QuadZoneTick()
 {
 	CQuadZones *pQuadZones = GameWorld()->QuadZones();
