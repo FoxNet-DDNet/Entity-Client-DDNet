@@ -13,6 +13,7 @@
 #include <game/collision.h>
 #include <game/mapitems.h>
 
+#include <algorithm>
 #include <limits>
 
 // Character, "physical" player's part
@@ -1092,6 +1093,20 @@ void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData
 	const vec2 aA[4] = {pPoints[0], pPoints[1], pPoints[2], pPoints[3]};
 	const vec2 aB[4] = {pPoints[1], pPoints[2], pPoints[3], pPoints[0]};
 
+	bool Buried = true;
+	for(int i = 0; i < 4; i++)
+	{
+		const vec2 Edge = aB[i] - aA[i];
+		if(dot(Edge, Edge) <= 1e-6f)
+			continue;
+
+		if(dot(Pos - aA[i], normalize(vec2(-Edge.y, Edge.x))) < 0.0f)
+		{
+			Buried = false;
+			break;
+		}
+	}
+
 	// Only a quad overlapping this one can hide one of its edges, and that is a handful of the layer
 	std::vector<const CQuadData *> vpNeighbours;
 	for(const CQuadData &Other : vQuads)
@@ -1105,67 +1120,99 @@ void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData
 		vpNeighbours.push_back(&Other);
 	}
 
-	/*
-	 * An edge with solid quad on its far side is a seam inside the terrain, not a face to be
-	 * pushed out through: taking it ejects along the seam, which is how a tee ends up standing
-	 * on the join between two stacked quads instead of sliding down their shared outer wall.
-	 * Sampled a step outwards because the seam is the boundary of both quads and a point test on
-	 * a boundary answers either way, and at three places along the edge because a neighbour that
-	 * covers only part of it leaves the rest a real face. Kept identical to the server, see
-	 * CCollidableZone::CollidableImpl.
-	 */
+	const auto BuriedAt = [&](const vec2 &Point) {
+		for(const CQuadData *pOther : vpNeighbours)
+		{
+			if(pOther->Contains(Point))
+				return true;
+		}
+		return false;
+	};
+
 	const auto SeamEdge = [&](const vec2 &A, const vec2 &B, const vec2 &Outward) {
 		if(vpNeighbours.empty())
 			return false;
 		for(int Sample = 1; Sample <= 3; Sample++)
 		{
-			const vec2 Point = mix(A, B, Sample * 0.25f) + Outward;
-			bool Covered = false;
-			for(const CQuadData *pOther : vpNeighbours)
-			{
-				if(pOther->Contains(Point))
-				{
-					Covered = true;
-					break;
-				}
-			}
-			if(!Covered)
+			if(!BuriedAt(mix(A, B, Sample * 0.25f) + Outward))
 				return false;
 		}
 		return true;
 	};
 
-	float MinPenetration = std::numeric_limits<float>::infinity();
-	vec2 BestInwardNormal = vec2(0.0f, 0.0f);
+	vec2 PushDir = vec2(0.0f, 0.0f);
+	float PushDepth = 0.0f;
 	vec2 BestEdge = vec2(0.0f, 0.0f);
 	int BestEdgeIndex = -1;
 
-	for(int i = 0; i < 4; i++)
+	if(Buried)
 	{
-		const vec2 Edge = aB[i] - aA[i];
-		if(dot(Edge, Edge) <= 1e-6f)
-			continue;
+		// Inside, the shallowest edge is the way out, and the seams are not ways out at all
+		float MinPenetration = std::numeric_limits<float>::infinity();
+		vec2 BestInwardNormal = vec2(0.0f, 0.0f);
 
-		const vec2 InwardNormal = normalize(vec2(-Edge.y, Edge.x));
-
-		if(SeamEdge(aA[i], aB[i], -InwardNormal))
-			continue;
-
-		const float Penetration = dot(Pos - aA[i], InwardNormal) + Radius;
-
-		if(Penetration < MinPenetration)
+		for(int i = 0; i < 4; i++)
 		{
-			MinPenetration = Penetration;
-			BestInwardNormal = InwardNormal;
-			BestEdge = Edge;
-			BestEdgeIndex = i;
+			const vec2 Edge = aB[i] - aA[i];
+			if(dot(Edge, Edge) <= 1e-6f)
+				continue;
+
+			const vec2 InwardNormal = normalize(vec2(-Edge.y, Edge.x));
+
+			if(SeamEdge(aA[i], aB[i], -InwardNormal))
+				continue;
+
+			const float Penetration = dot(Pos - aA[i], InwardNormal) + Radius;
+			if(Penetration < MinPenetration)
+			{
+				MinPenetration = Penetration;
+				BestInwardNormal = InwardNormal;
+				BestEdge = Edge;
+				BestEdgeIndex = i;
+			}
 		}
+
+		if(BestEdgeIndex < 0 || MinPenetration <= 0.0f)
+			return;
+
+		PushDepth = MinPenetration;
+		PushDir = -BestInwardNormal;
+	}
+	else
+	{
+		float Nearest = std::numeric_limits<float>::max();
+		vec2 NearestPoint = vec2(0.0f, 0.0f);
+
+		for(int i = 0; i < 4; i++)
+		{
+			const vec2 Edge = aB[i] - aA[i];
+			const float Len2 = dot(Edge, Edge);
+			if(Len2 <= 1e-6f)
+				continue;
+
+			const vec2 Point = aA[i] + Edge * std::clamp(dot(Pos - aA[i], Edge) / Len2, 0.0f, 1.0f);
+			const float Dist = distance(Pos, Point);
+			if(Dist < Nearest)
+			{
+				Nearest = Dist;
+				NearestPoint = Point;
+				BestEdge = Edge;
+				BestEdgeIndex = i;
+			}
+		}
+
+		if(BestEdgeIndex < 0 || Nearest >= Radius)
+			return; // only the box around the entity ever reached this quad
+
+		const vec2 InwardNormal = normalize(vec2(-BestEdge.y, BestEdge.x));
+		if(BuriedAt(NearestPoint - InwardNormal))
+			return; // touching this quad through the neighbour that covers it
+
+		PushDepth = Radius - Nearest;
+		PushDir = Nearest > 0.0001f ? (Pos - NearestPoint) / Nearest : -InwardNormal;
 	}
 
-	if(MinPenetration == std::numeric_limits<float>::infinity() || MinPenetration <= 0.0f)
-		return;
-
-	const vec2 Mtv = -BestInwardNormal * MinPenetration;
+	const vec2 Mtv = PushDir * PushDepth;
 
 	const auto CanPlace = [&](const vec2 &Place) {
 		return !Collision()->TestBox(Place, vec2(m_ProximityRadius, m_ProximityRadius));
@@ -1211,7 +1258,7 @@ void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData
 
 	vec2 NewVel = Vel;
 
-	const vec2 SurfaceNormal = -BestInwardNormal;
+	const vec2 SurfaceNormal = PushDir;
 	const float SurfaceSpeed = dot(QuadMotion, SurfaceNormal);
 	const float Target = std::max(SurfaceSpeed, 0.0f);
 	const float Along = dot(NewVel, SurfaceNormal);
@@ -1233,7 +1280,7 @@ void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData
 
 	const float EdgeLength = length(BestEdge);
 	const float EdgeSlope = EdgeLength > 1e-6f ? absolute(BestEdge.y) / EdgeLength : 1.0f;
-	if(BestInwardNormal.y >= 0.35f && EdgeSlope <= 0.60f && AppliedY.y < 0.0f && Vel.y >= 0.0f)
+	if(PushDir.y <= -0.35f && EdgeSlope <= 0.60f && AppliedY.y < 0.0f && Vel.y >= 0.0f)
 	{
 		m_Core.m_JumpedTotal = 0;
 		m_Core.m_Jumped = 0;
