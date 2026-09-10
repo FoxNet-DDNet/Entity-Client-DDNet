@@ -259,7 +259,12 @@ CGameConsole::CInstance::CInstance(int Type)
 		}
 	});
 
-	m_Input.SetClipboardLineCallback([this](const char *pStr) { ExecuteLine(pStr); });
+	m_Input.SetClipboardLineCallback([this](const char *pStr) {
+		if(pStr[0] != '\0')
+		{
+			ExecuteLine(pStr);
+		}
+	});
 
 	m_CurrentMatchIndex = -1;
 	m_aCurrentSearchString[0] = '\0';

@@ -25,6 +25,7 @@
 #include <engine/console.h>
 #include <engine/engine.h>
 #include <engine/map.h>
+#include <engine/server/authmanager.h>
 #include <engine/server/server.h>
 #include <engine/shared/config.h>
 #include <engine/shared/datafile.h>
@@ -598,6 +599,10 @@ void CGameContext::SnapLaserObject(const CSnapContext &Context, int SnapId, cons
 
 void CGameContext::SnapPickup(const CSnapContext &Context, int SnapId, const vec2 &Pos, int Type, int SubType, int SwitchNumber, int Flags) const
 {
+	if(Type == POWERUP_FREEZE && Context.GetClientVersion() < VERSION_DDNET_PICKUP_FREEZE)
+	{
+		Type = POWERUP_HEALTH;
+	}
 	if(Context.IsSixup())
 	{
 		protocol7::CNetObj_Pickup Pickup = {};
@@ -1968,11 +1973,11 @@ void CGameContext::TeehistorianRecordTeamFinish(int TeamId, int TimeTicks)
 	}
 }
 
-void CGameContext::TeehistorianRecordAuthLogin(int ClientId, int Level, const char *pAuthName)
+void CGameContext::TeehistorianRecordAuthLogin(int ClientId, const char *pRoleName, const char *pAuthName)
 {
 	if(m_TeeHistorianActive)
 	{
-		m_TeeHistorian.RecordAuthLogin(ClientId, Level, pAuthName);
+		m_TeeHistorian.RecordAuthLogin(ClientId, pRoleName, pAuthName);
 	}
 }
 
@@ -3390,6 +3395,8 @@ void CGameContext::ConSay(IConsole::IResult *pResult, void *pUserData)
 void CGameContext::ConSetTeam(IConsole::IResult *pResult, void *pUserData)
 {
 	CGameContext *pSelf = (CGameContext *)pUserData;
+	if(!pSelf->m_pController)
+		return;
 	int Team = pResult->GetInteger(1);
 	if(!pSelf->m_pController->IsValidTeam(Team))
 	{
@@ -3612,7 +3619,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 	}
 	else if(str_comp_nocase(pType, "kick") == 0)
 	{
-		if(!pSelf->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
+		if(pResult->m_ClientId >= 0 && !pSelf->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
 		{
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Your client does not see the real client IDs of this server. Use a more recent DDNet client.");
 			return;
@@ -3637,7 +3644,7 @@ void CGameContext::ConForceVote(IConsole::IResult *pResult, void *pUserData)
 	}
 	else if(str_comp_nocase(pType, "spectate") == 0)
 	{
-		if(!pSelf->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
+		if(pResult->m_ClientId >= 0 && !pSelf->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
 		{
 			pSelf->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "server", "Your client does not see the real client IDs of this server. Use a more recent DDNet client.");
 			return;
@@ -3858,6 +3865,33 @@ void CGameContext::ConchainPracticeByDefaultUpdate(IConsole::IResult *pResult, v
 	}
 }
 
+void CGameContext::ConchainTeleOthersAuthLevel(IConsole::IResult *pResult, void *pUserData, IConsole::FCommandCallback pfnCallback, void *pCallbackUserData)
+{
+	const char *pValue = pResult->GetString(0);
+	if(pResult->NumArguments() && !CAuthManager::RoleNameToAuthLevel(pValue).has_value())
+	{
+		if(str_comp(pValue, "1") == 0)
+		{
+			log_warn("server", "got deprecated value %s for sv_tele_others_auth_level, please use \"helper\" instead", pValue);
+		}
+		else if(str_comp(pValue, "2") == 0)
+		{
+			log_warn("server", "got deprecated value %s for sv_tele_others_auth_level, please use \"moderator\" instead", pValue);
+		}
+		else if(str_comp(pValue, "3") == 0)
+		{
+			log_warn("server", "got deprecated value %s for sv_tele_others_auth_level, please use \"admin\" instead", pValue);
+		}
+		else
+		{
+			log_error("server", "Value can only be one of those: helper, moderator, admin");
+			return;
+		}
+	}
+
+	pfnCallback(pResult, pCallbackUserData);
+}
+
 void CGameContext::OnConsoleInit()
 {
 	m_pServer = Kernel()->RequestInterface<IServer>();
@@ -3986,6 +4020,7 @@ void CGameContext::RegisterDDRaceCommands()
 	Console()->Register("dump_log", "?i[seconds]", CFGFLAG_SERVER, ConDumpLog, this, "Show logs of the last i seconds");
 
 	Console()->Chain("sv_practice_by_default", ConchainPracticeByDefaultUpdate, this);
+	Console()->Chain("sv_tele_others_auth_level", ConchainTeleOthersAuthLevel, this);
 }
 
 void CGameContext::RegisterChatCommands()
@@ -4707,7 +4742,10 @@ void CGameContext::OnSetAuthed(int ClientId, int Level)
 	{
 		if(Level != AUTHED_NO)
 		{
-			m_TeeHistorian.RecordAuthLogin(ClientId, Level, Server()->GetAuthName(ClientId));
+			m_TeeHistorian.RecordAuthLogin(
+				ClientId,
+				CAuthManager::AuthLevelToRoleName(Level),
+				Server()->GetAuthName(ClientId));
 		}
 		else
 		{

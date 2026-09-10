@@ -47,8 +47,6 @@ else()
 endif()
 
 set(ORIGINAL_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH})
-set(ORIGINAL_CMAKE_REQUIRED_INCLUDES ${CMAKE_REQUIRED_INCLUDES})
-set(ORIGINAL_CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES})
 set(OWN_CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR}/cmake)
 set(CMAKE_MODULE_PATH ${OWN_CMAKE_MODULE_PATH})
 
@@ -612,6 +610,7 @@ endif()
 if(NOT(TARGET_OS STREQUAL "android" OR TARGET_OS STREQUAL "ios"))
   find_package(GLEW)
 endif()
+find_package(EGL QUIET)
 find_package(GTest)
 if(UPNP)
   find_package(Miniupnpc)
@@ -920,6 +919,9 @@ else()
   else()
     set(PLATFORM_LIBS)
   endif()
+endif()
+if(TOOLS)
+  show_dependency_status("EGL" EGL) # egl also checks for OpenGL::EGL
 endif()
 
 ########################################################################
@@ -2147,6 +2149,7 @@ set(COPY_FILES
   ${SQLite3_COPY_FILES}
   ${SSP_COPY_FILES}
   ${VULKAN_COPY_FILES}
+  ${WAVPACK_COPY_FILES}
   ${WEBSOCKETS_COPY_FILES}
   # tidy-alphabetical-end
 )
@@ -2664,8 +2667,11 @@ if(CLIENT)
     backend/opengles/opengles_sl_program.cpp
     backend/vulkan/backend_vulkan.cpp
     backend/vulkan/backend_vulkan.h
+    backend_egl.cpp
+    backend_egl.h
     backend_sdl.cpp
     backend_sdl.h
+    backend_threaded.cpp
     blocklist_driver.cpp
     blocklist_driver.h
     checksum.h
@@ -3069,7 +3075,7 @@ if(CLIENT)
   )
   set(CLIENT_SRC ${ENGINE_CLIENT} ${PLATFORM_CLIENT} ${GAME_CLIENT} ${GAME_EDITOR} ${GAME_MAP} ${GAME_GENERATED_CLIENT})
 
-  set(DEPS_CLIENT ${DEPS} ${GLEW_DEP} ${WAVPACK_DEP})
+  set(DEPS_CLIENT ${DEPS} ${GLEW_DEP})
 
   # Libraries
   set(LIBS_CLIENT
@@ -3238,27 +3244,6 @@ if(CLIENT)
 
   if(STEAMAPI_KIND STREQUAL SHARED OR DISCORD)
     set_own_rpath(game-client)
-  endif()
-
-  set(PARAMS "${WAVPACK_INCLUDE_DIRS};${WAVPACK_LIBRARIES}")
-  if(NOT(WAVPACK_OPEN_FILE_INPUT_EX_PARAMS STREQUAL PARAMS))
-    unset(WAVPACK_OPEN_FILE_INPUT_EX CACHE)
-  endif()
-  set(WAVPACK_OPEN_FILE_INPUT_EX_PARAMS "${PARAMS}" CACHE INTERNAL "")
-
-  set(CMAKE_REQUIRED_INCLUDES ${ORIGINAL_CMAKE_REQUIRED_INCLUDES} ${WAVPACK_INCLUDE_DIRS})
-  set(CMAKE_REQUIRED_LIBRARIES ${ORIGINAL_CMAKE_REQUIRED_LIBRARIES} ${WAVPACK_LIBRARIES})
-  check_symbol_exists(WavpackOpenFileInputEx wavpack.h WAVPACK_OPEN_FILE_INPUT_EX)
-  check_symbol_exists(WavpackCloseFile wavpack.h WAVPACK_CLOSE_FILE)
-  set(CMAKE_REQUIRED_INCLUDES ${ORIGINAL_CMAKE_REQUIRED_INCLUDES})
-  set(CMAKE_REQUIRED_LIBRARIES ${ORIGINAL_CMAKE_REQUIRED_LIBRARIES})
-
-  if(WAVPACK_OPEN_FILE_INPUT_EX)
-    target_compile_definitions(game-client PRIVATE CONF_WAVPACK_OPEN_FILE_INPUT_EX)
-  endif()
-
-  if(WAVPACK_CLOSE_FILE)
-    target_compile_definitions(game-client PRIVATE CONF_WAVPACK_CLOSE_FILE)
   endif()
 
   if(GLEW_BUNDLED)
@@ -3517,6 +3502,7 @@ if(TOOLS)
     map_extract.cpp
     map_find_env.cpp
     map_optimize.cpp
+    map_render.cpp
     map_replace_area.cpp
     map_replace_image.cpp
     map_resave.cpp
@@ -3532,6 +3518,9 @@ if(TOOLS)
     file(RELATIVE_PATH T "${PROJECT_SOURCE_DIR}/src/tools/" ${ABS_T})
     if(T MATCHES "\\.cpp$")
       string(REGEX REPLACE "\\.cpp$" "" TOOL "${T}")
+      if(TOOL MATCHES "^map_render$" AND NOT EGL_FOUND)
+        continue()
+      endif()
       set(TOOL_DEPS ${DEPS})
       set(TOOL_LIBS ${LIBS})
       unset(EXTRA_TOOL_SRC)
@@ -3542,6 +3531,11 @@ if(TOOLS)
       endif()
       if(TOOL MATCHES "^config_")
         list(APPEND EXTRA_TOOL_SRC "src/tools/config_common.h")
+      endif()
+      if(TOOL MATCHES "^map_render$")
+        list(APPEND TOOL_INCLUDE_DIRS ${PNG_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS} ${GLEW_INCLUDE_DIRS})
+        list(APPEND TOOL_DEPS $<TARGET_OBJECTS:engine-gfx> ${GLEW_DEP})
+        list(APPEND TOOL_LIBS ${PNG_LIBRARIES} ${FREETYPE_LIBRARIES} ${GLEW_LIBRARIES} ${CMAKE_DL_LIBS} ${EGL_LIBRARY} ${OPENGL_gl_LIBRARY})
       endif()
       set(EXCLUDE_FROM_ALL)
       if(DEV)
@@ -3558,6 +3552,32 @@ if(TOOLS)
       )
       target_include_directories(${TOOL} SYSTEM PRIVATE ${TOOL_INCLUDE_DIRS})
       target_link_libraries(${TOOL} ${TOOL_LIBS})
+      if(TOOL MATCHES "^map_render$")
+        target_sources(map_render PRIVATE
+          src/engine/client/graphics_threaded.cpp
+          src/engine/client/backend_egl.cpp
+          src/engine/client/backend/opengl/backend_opengl.cpp
+          src/engine/client/backend/opengl/backend_opengl3.cpp
+          src/engine/client/backend/opengl/opengl_sl.cpp
+          src/engine/client/backend/opengl/opengl_sl_program.cpp
+          src/engine/client/backend/glsl_shader_compiler.cpp
+          src/engine/client/backend/backend_base.cpp
+          src/engine/client/backend_threaded.cpp
+          src/engine/client/blocklist_driver.cpp
+          src/engine/client/warning.cpp
+          src/game/map/map_renderer.cpp
+          src/game/map/render_layer.cpp
+          src/game/map/render_map.cpp
+          src/game/map/render_component.cpp
+          src/game/map/envelope_extrema.cpp
+          ${PROJECT_BINARY_DIR}/src/generated/client_data.h
+        )
+        target_include_directories(map_render PRIVATE ${PROJECT_BINARY_DIR})
+        target_compile_definitions(map_render PRIVATE BACKEND_NO_SDL)
+        if(GLEW_BUNDLED)
+          target_compile_definitions(map_render PRIVATE CONF_GLEW_HAS_CONTEXT_INIT)
+        endif()
+      endif()
       list(APPEND TARGETS_TOOLS ${TOOL})
     endif()
   endforeach()
@@ -3882,13 +3902,11 @@ set(CPACK_SOURCE_FILES
   datasrc/
   ddnet-libs/
   license.txt
-  lsan.supp
   memcheck.supp
   other/
   scripts/
   src/
   storage.cfg
-  ubsan.supp
   valgrind.supp
   # tidy-alphabetical-end
 )
@@ -3920,6 +3938,9 @@ if(TOOLS)
     map_extract
     # tidy-alphabetical-end
   )
+  if(EGL_FOUND)
+    list(APPEND TARGET_TOOLS map_render)
+  endif()
 else()
   set(TARGET_TOOLS)
 endif()

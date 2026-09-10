@@ -697,6 +697,10 @@ void CConsole::ExecuteLineStroked(int Stroke, const char *pStr, int ClientId, bo
 
 bool CConsole::CanUseCommand(int ClientId, const IConsole::ICommandInfo *pCommand) const
 {
+	// config files, econ, fifo and passed votes have full access
+	if(ClientId == IConsole::CLIENT_ID_UNSPECIFIED || ClientId == IConsole::CLIENT_ID_GAME || ClientId == IConsole::CLIENT_ID_NO_GAME)
+		return true;
+	dbg_assert(ClientId >= 0, "Invalid ClientId: %d", ClientId);
 	// the fallback is needed for the client and rust tests
 	if(!m_pfnCanUseCommandCallback)
 		return true;
@@ -888,7 +892,7 @@ void CConsole::ConCommandStatus(IResult *pResult, void *pUser)
 	pConsole->PrintCommandList(AccessLevel.value(), 0);
 }
 
-void CConsole::ConUserCommandStatus(IResult *pResult, void *pUser)
+void CConsole::ConCmdlistChat(IResult *pResult, void *pUser)
 {
 	CConsole *pConsole = static_cast<CConsole *>(pUser);
 	pConsole->PrintCommandList(EAccessLevel::USER, CMDFLAG_PRACTICE);
@@ -927,7 +931,7 @@ CConsole::CConsole(int FlagMask)
 
 	Register("access_level", "s[command] ?s['admin'|'moderator'|'helper'|'all']", CFGFLAG_SERVER, ConCommandAccess, this, "Specify command accessibility for given access level");
 	Register("access_status", "s['admin'|'moderator'|'helper'|'all']", CFGFLAG_SERVER, ConCommandStatus, this, "List all commands which are accessible for given access level");
-	Register("cmdlist", "", CFGFLAG_SERVER | CFGFLAG_CHAT, ConUserCommandStatus, this, "List all commands which are accessible for users");
+	Register("cmdlist", "", CFGFLAG_SERVER | CFGFLAG_CHAT, ConCmdlistChat, this, "List all commands which are accessible for users");
 
 	// DDRace
 

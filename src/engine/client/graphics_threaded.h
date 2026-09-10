@@ -1240,7 +1240,9 @@ public:
 	void ReadPixel(ivec2 Position, ColorRGBA *pColor) override;
 	void TakeScreenshot(const char *pFilename) override;
 	void TakeCustomScreenshot(const char *pFilename) override;
-	void RenderNightShift();
+	void ReadFramebuffer(CImageInfo &Image);
+	void SetScreenSize(int Width, int Height);
+	void RenderNightShift(); // EClient
 	void Swap() override;
 	bool SetVSync(bool State) override;
 	bool SetMultiSampling(uint32_t ReqMultiSamplingCount, uint32_t &MultiSamplingCountBackend) override;

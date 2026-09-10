@@ -246,6 +246,9 @@ public:
 	bool m_MapReload;
 	bool m_SameMapReload;
 	bool m_ReloadedWhenEmpty;
+
+	// client id of the user currently executing a rcon command
+	// can also be -1 (RCON_CID_SERV) or -2 (RCON_CID_VOTE)
 	int m_RconClientId;
 	int m_RconAuthLevel;
 	int m_PrintCBIndex;

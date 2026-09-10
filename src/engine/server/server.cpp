@@ -155,7 +155,7 @@ void CServerBan::ConBanExt(IConsole::IResult *pResult, void *pUser)
 	if(str_isallnum(pStr))
 	{
 		int ClientId = str_toint(pStr);
-		if(!pThis->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
+		if(pResult->m_ClientId >= 0 && !pThis->Server()->ClientSupportsServerMaxClients(pResult->m_ClientId))
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "net_ban", "ban error (use a more recent DDNet client)");
 		else if(ClientId < 0 || ClientId >= MAX_CLIENTS || pThis->Server()->m_aClients[ClientId].m_State == CServer::CClient::STATE_EMPTY)
 			pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "net_ban", "ban error (invalid client id)");
@@ -1185,6 +1185,7 @@ int CServer::ClientRejoinCallback(int ClientId, void *pUser, bool Sixup, bool Va
 
 	if(pThis->m_aClients[ClientId].m_State != CClient::STATE_INGAME)
 	{
+		DelClientCallback(ClientId, "reconnect", pUser);
 		if(VanillaAuth)
 			return NewClientNoAuthCallback(ClientId, pUser);
 		return NewClientCallback(ClientId, pUser, Sixup);
@@ -3504,7 +3505,10 @@ int CServer::Run()
 						// This was recorded in AuthInit in the past.
 						if(IsRconAuthed(ClientId))
 						{
-							GameServer()->TeehistorianRecordAuthLogin(ClientId, GetAuthedState(ClientId), GetAuthName(ClientId));
+							GameServer()->TeehistorianRecordAuthLogin(
+								ClientId,
+								CAuthManager::AuthLevelToRoleName(GetAuthedState(ClientId)),
+								GetAuthName(ClientId));
 						}
 					}
 

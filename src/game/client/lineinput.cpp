@@ -356,12 +356,12 @@ bool CLineInput::ProcessInput(const IInput::CEvent &Event)
 					{
 						if(ClipboardText[i] == '\n')
 						{
-							if(i == Begin)
+							size_t End = i;
+							if(End > 0 && ClipboardText[End - 1] == '\r')
 							{
-								Begin++;
-								continue;
+								--End;
 							}
-							std::string Line = ClipboardText.substr(Begin, i - Begin + 1);
+							std::string Line = ClipboardText.substr(Begin, End - Begin);
 							str_sanitize_cc(Line.data());
 							if(FirstLine)
 							{
@@ -376,7 +376,7 @@ bool CLineInput::ProcessInput(const IInput::CEvent &Event)
 							m_pfnClipboardLineCallback(GetString());
 						}
 					}
-					std::string Line = ClipboardText.substr(Begin, i - Begin + 1);
+					std::string Line = ClipboardText.substr(Begin);
 					str_sanitize_cc(Line.data());
 					if(FirstLine)
 						SetRange(Line.c_str(), m_SelectionStart, m_SelectionEnd);
