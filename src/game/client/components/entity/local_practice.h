@@ -407,10 +407,22 @@ private:
 	void CmdSolo(const char *pArgs);
 	void CmdUnSolo(const char *pArgs);
 	void CmdInvincible(const char *pArgs);
+
 	void CmdWeapons(const char *pArgs);
 	void CmdUnWeapons(const char *pArgs);
+
+	void CmdGrenade(const char *pArgs);
+	void CmdUnGrenade(const char *pArgs);
+
+	void CmdLaser(const char *pArgs);
+	void CmdUnLaser(const char *pArgs);
+
+	void CmdShotgun(const char *pArgs);
+	void CmdUnShotgun(const char *pArgs);
+
 	void CmdNinja(const char *pArgs);
 	void CmdUnNinja(const char *pArgs);
+
 	void CmdJetpack(const char *pArgs);
 	void CmdEndlessHook(const char *pArgs);
 	void CmdEndlessJump(const char *pArgs);

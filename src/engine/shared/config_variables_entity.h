@@ -503,7 +503,7 @@ MACRO_CONFIG_INT(ClLocalPracticeGhostAlpha, ec_local_practice_ghost_alpha, 40, 0
 MACRO_CONFIG_INT(ClLocalPracticeGhostFade, ec_local_practice_ghost_fade, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fade the ghost out while it overlaps your practice tee")
 MACRO_CONFIG_INT(ClLocalPracticeFreezeAim, ec_local_practice_freeze_aim, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Keep the aim your real tee had when practice started instead of sending your live aim")
 MACRO_CONFIG_INT(ClLocalPracticeAlert, ec_local_practice_alert, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show a notice when your real tee gets moved while practicing")
-MACRO_CONFIG_INT(ClLocalPracticeAlertTime, ec_local_practice_alert_time, 5, 1, 60, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many seconds the moved notice stays on screen")
+MACRO_CONFIG_INT(ClLocalPracticeAlertTime, ec_local_practice_alert_time, 2, 1, 60, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many seconds the moved notice stays on screen")
 MACRO_CONFIG_COL(ClLocalPracticeAlertColor, ec_local_practice_alert_color, 1376160, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of the moved notice")
 MACRO_CONFIG_INT(ClLocalPracticeExitOnMove, ec_local_practice_exit_on_move, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Leave the practice world as soon as your real tee gets moved")
 MACRO_CONFIG_INT(ClLocalPracticeKillToReal, ec_local_practice_kill_to_real, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Killing in the practice world puts you back at your real tee instead of at a spawn tile")

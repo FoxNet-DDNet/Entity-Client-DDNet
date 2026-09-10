@@ -41,12 +41,7 @@ static const float gs_GhostFadeNear = 28.0f;
 static const float gs_GhostFadeFar = 96.0f;
 
 const CLocalPractice::CCommand CLocalPractice::ms_aCommands[] = {
-	// Deliberately not "/practice": that is a real DDNet server command, and swallowing it would
-	// take away the ability to turn server practice on at all. Everything below it is only ever
-	// matched while the local world is running, where taking it over is the whole point.
 	{"exit", "", "Toggle the local practice world", &CLocalPractice::CmdPractice},
-	// Both spellings, because a server takes both and nobody should have to remember which one
-	// this is
 	{"tp", "[name]", "Teleport to a player, or to where you are spectating", &CLocalPractice::CmdTp},
 	{"tele", "[name]", "Teleport to a player, or to where you are spectating", &CLocalPractice::CmdTp},
 	{"tpreal", "", "Teleport to your real tee on the server", &CLocalPractice::CmdTpReal},
@@ -59,8 +54,6 @@ const CLocalPractice::CCommand CLocalPractice::ms_aCommands[] = {
 	{"rescue", "", "Teleport back to the last safe position", &CLocalPractice::CmdRescue},
 	{"r", "", "Teleport back to the last safe position", &CLocalPractice::CmdRescue},
 	{"kill", "", "Respawn at a spawn tile", &CLocalPractice::CmdKill},
-	// Taken over so they act on the practice tee. Left alone they reach the server and move the
-	// real tee into spectators, which is the one thing local practice exists to avoid.
 	{"pause", "", "Stop controlling the practice tee, leaving it standing there", &CLocalPractice::CmdPause},
 	{"spec", "", "Stop controlling the practice tee and take it out of the world once it rests", &CLocalPractice::CmdSpec},
 	{"unpause", "", "Take control of the practice tee again", &CLocalPractice::CmdUnpause},
@@ -72,10 +65,24 @@ const CLocalPractice::CCommand CLocalPractice::ms_aCommands[] = {
 	{"solo", "", "Turn solo on", &CLocalPractice::CmdSolo},
 	{"unsolo", "", "Turn solo off", &CLocalPractice::CmdUnSolo},
 	{"invincible", "[0|1]", "Toggle invincibility", &CLocalPractice::CmdInvincible},
+
 	{"weapons", "", "Give all weapons", &CLocalPractice::CmdWeapons},
 	{"unweapons", "", "Take all weapons away", &CLocalPractice::CmdUnWeapons},
+
+	{"grenade", "", "Give all weapons", &CLocalPractice::CmdGrenade},
+	{"ungrenade", "", "Give all weapons", &CLocalPractice::CmdUnGrenade},
+
+	{"laser", "", "Give all weapons", &CLocalPractice::CmdLaser},
+	{"unlaser", "", "Give all weapons", &CLocalPractice::CmdUnLaser},
+
+	{"shotgun", "", "Give all weapons", &CLocalPractice::CmdShotgun},
+	{"unshotgun", "", "Give all weapons", &CLocalPractice::CmdUnShotgun},
+	{"rifle", "", "Give all weapons", &CLocalPractice::CmdShotgun},
+	{"unrifle", "", "Give all weapons", &CLocalPractice::CmdUnShotgun},
+
 	{"ninja", "", "Give ninja", &CLocalPractice::CmdNinja},
 	{"unninja", "", "Take ninja away", &CLocalPractice::CmdUnNinja},
+
 	{"jetpack", "[0|1]", "Toggle jetpack", &CLocalPractice::CmdJetpack},
 	{"endless", "[0|1]", "Toggle endless hook", &CLocalPractice::CmdEndlessHook},
 	{"endlessjump", "[0|1]", "Toggle endless jumps", &CLocalPractice::CmdEndlessJump},
@@ -2217,8 +2224,11 @@ void CLocalPractice::CmdInvincible(const char *pArgs)
 
 void CLocalPractice::CmdWeapons(const char *pArgs)
 {
-	if(CCharacter *pChar = AnyPracticeChar())
-		pChar->GiveAllWeapons();
+	CCharacter *pChar = AnyPracticeChar();
+	if(!pChar)
+		return;
+
+	pChar->GiveAllWeapons();
 }
 
 void CLocalPractice::CmdUnWeapons(const char *pArgs)
@@ -2229,6 +2239,42 @@ void CLocalPractice::CmdUnWeapons(const char *pArgs)
 	for(int Weapon = WEAPON_SHOTGUN; Weapon < NUM_WEAPONS - 1; Weapon++)
 		pChar->GiveWeapon(Weapon, true);
 	pChar->SetActiveWeapon(WEAPON_GUN);
+}
+
+void CLocalPractice::CmdGrenade(const char *pArgs)
+{
+	if(CCharacter *pChar = AnyPracticeChar())
+		pChar->GiveWeapon(WEAPON_GRENADE);
+}
+
+void CLocalPractice::CmdUnGrenade(const char *pArgs)
+{
+	if(CCharacter *pChar = AnyPracticeChar())
+		pChar->GiveWeapon(WEAPON_GRENADE, true);
+}
+
+void CLocalPractice::CmdLaser(const char *pArgs)
+{
+	if(CCharacter *pChar = AnyPracticeChar())
+		pChar->GiveWeapon(WEAPON_LASER);
+}
+
+void CLocalPractice::CmdUnLaser(const char *pArgs)
+{
+	if(CCharacter *pChar = AnyPracticeChar())
+		pChar->GiveWeapon(WEAPON_LASER, true);
+}
+
+void CLocalPractice::CmdShotgun(const char *pArgs)
+{
+	if(CCharacter *pChar = AnyPracticeChar())
+		pChar->GiveWeapon(WEAPON_SHOTGUN);
+}
+
+void CLocalPractice::CmdUnShotgun(const char *pArgs)
+{
+	if(CCharacter *pChar = AnyPracticeChar())
+		pChar->GiveWeapon(WEAPON_SHOTGUN, true);
 }
 
 void CLocalPractice::CmdNinja(const char *pArgs)
