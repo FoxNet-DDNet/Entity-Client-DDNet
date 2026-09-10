@@ -55,6 +55,8 @@ void CScrollRegion::Begin(CUIRect *pClipRect, const CScrollRegionParams *pParams
 
 void CScrollRegion::End()
 {
+	m_CanAnimate = false; // EClient
+
 	Ui()->ClipDisable();
 
 	// only show scrollbar if content overflows
@@ -65,6 +67,8 @@ void CScrollRegion::End()
 	UpdateHotScrollRegion();
 	AdvanceAnimation();
 	DoSlider();
+
+	m_CanAnimate = true; // EClient
 }
 
 bool CScrollRegion::AddRect(const CUIRect &Rect, bool ShouldScrollHere)
