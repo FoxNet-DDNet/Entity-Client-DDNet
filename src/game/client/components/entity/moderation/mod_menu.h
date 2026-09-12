@@ -17,11 +17,12 @@
 
 class IConfigManager;
 
-// The moderation menu page, only reachable while authenticated to rcon. It runs an
-// rcon command for the players selected from its online player list, either the
-// command that is typed into its input or one of the user defined quick actions.
-// Commands are templates that are run for every selected player, with "%d" replaced
-// by their client id.
+// The moderation menu page, only reachable while authenticated to rcon. It runs a
+// command for the players selected from its online player list, either the command
+// that is typed into its input or one of the user defined quick actions. Commands
+// are templates that are run for every selected player, with "%d" replaced by their
+// client id. The input always runs its command as rcon, a quick action runs it as
+// either rcon or a local client command.
 //
 // This is a component so that the quick actions can register their console commands
 // and be written to their config file. Only the page itself is rendered by CMenus.
@@ -49,10 +50,12 @@ private:
 	public:
 		char m_aName[QUICKACTION_MAX_NAME] = "";
 		char m_aCommand[QUICKACTION_MAX_CMD] = "";
+		// Run the command on the local console instead of sending it to rcon
+		bool m_ClientCommand = false;
 
 		bool operator==(const CQuickAction &Other) const
 		{
-			return !str_comp(m_aName, Other.m_aName) && !str_comp(m_aCommand, Other.m_aCommand);
+			return !str_comp(m_aName, Other.m_aName) && !str_comp(m_aCommand, Other.m_aCommand) && m_ClientCommand == Other.m_ClientCommand;
 		}
 	};
 
@@ -86,8 +89,9 @@ private:
 	CButtonContainer m_DeselectAllButton;
 	void SelectPlayer(int ClientId);
 	int CountSelectedPlayers() const;
-	// The rcon lines that run the command template for all selected players, joining
-	// as many commands as fit into a single line
+	// The command template with "%d" replaced, one command per selected player
+	std::vector<std::string> BuildPlayerCommands(const char *pCommandTemplate) const;
+	// Those commands as rcon lines, joining as many as fit into a single line
 	std::vector<std::string> BuildRconCommandChunks(const char *pCommandTemplate) const;
 
 	// Command
@@ -105,26 +109,31 @@ private:
 	vec2 m_DragStartPos = vec2(0.0f, 0.0f);
 	char m_aEditName[QUICKACTION_MAX_NAME] = "";
 	char m_aEditCommand[QUICKACTION_MAX_CMD] = "";
+	bool m_EditClientCommand = false;
 	// Tooltips only keep the pointer to their text, so it must outlive the frame
-	char m_aHoveredCommand[QUICKACTION_MAX_CMD] = "";
+	char m_aHoveredCommand[QUICKACTION_MAX_CMD + 64] = "";
 	char m_aCommandTooltip[IConsole::CMDLINE_LENGTH + IConsole::TEMPCMD_PARAMS_LENGTH + IConsole::TEMPCMD_HELP_LENGTH + 8] = "";
 	CLineInput m_ActionNameInput;
 	CLineInput m_ActionCommandInput;
 	CScrollRegion m_ActionScrollRegion;
 	CButtonContainer m_aActionButtons[QUICKACTION_MAX_ACTIONS];
 	CButtonContainer m_EditModeButton;
+	CButtonContainer m_ActionTypeButton;
 	CButtonContainer m_AddActionButton;
 	CButtonContainer m_DeleteActionButton;
 	void RenderQuickActions(CUIRect View);
+	void ExecuteQuickAction(const CQuickAction &Action);
 
-	int AddQuickAction(const char *pName, const char *pCommand);
-	void RemoveQuickAction(const char *pName, const char *pCommand);
+	int AddQuickAction(const char *pName, const char *pCommand, bool ClientCommand);
+	void RemoveQuickAction(const char *pName, const char *pCommand, bool ClientCommand);
 	void RemoveQuickAction(int Index);
 	void RemoveAllQuickActions();
 	void MoveQuickAction(int Index, int NewIndex);
 
 	static void ConAddModAction(IConsole::IResult *pResult, void *pUserData);
+	static void ConAddModClientAction(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveModAction(IConsole::IResult *pResult, void *pUserData);
+	static void ConRemoveModClientAction(IConsole::IResult *pResult, void *pUserData);
 	static void ConRemoveAllModActions(IConsole::IResult *pResult, void *pUserData);
 
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);

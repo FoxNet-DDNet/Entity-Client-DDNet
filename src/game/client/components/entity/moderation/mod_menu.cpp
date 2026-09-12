@@ -249,7 +249,7 @@ static bool ValidateCommandSyntax(std::string_view CommandLine, const IConsole::
 	return ArgumentIndex == vArguments.size();
 }
 
-static const IConsole::ICommandInfo *FindDisplayedCommandInfo(IConsole *pConsole, IClient *pClient, std::string_view CommandLine, bool &ExactMatch, std::string &CommandName)
+static const IConsole::ICommandInfo *FindDisplayedCommandInfo(IConsole *pConsole, IClient *pClient, std::string_view CommandLine, int FlagMask, bool &ExactMatch, std::string &CommandName)
 {
 	ExactMatch = false;
 	CommandName.clear();
@@ -258,8 +258,9 @@ static const IConsole::ICommandInfo *FindDisplayedCommandInfo(IConsole *pConsole
 	if(CommandToken.empty())
 		return nullptr;
 
-	const bool UseTempCommands = pClient->RconAuthed() && pClient->UseTempRconCommands();
-	const int FlagMask = CFGFLAG_SERVER;
+	// Temporary commands are the ones the server sends for rcon, they are kept in
+	// their own list and are never client commands.
+	const bool UseTempCommands = FlagMask == CFGFLAG_SERVER && pClient->RconAuthed() && pClient->UseTempRconCommands();
 
 	char aCommand[IConsole::CMDLINE_LENGTH];
 	str_copy(aCommand, std::string(CommandToken).c_str(), sizeof(aCommand));
@@ -310,13 +311,25 @@ static void AutocompleteCommandInput(CLineInput *pInput, std::string_view Sugges
 void CMenusModeration::ConAddModAction(IConsole::IResult *pResult, void *pUserData)
 {
 	CMenusModeration *pThis = static_cast<CMenusModeration *>(pUserData);
-	pThis->AddQuickAction(pResult->GetString(0), pResult->GetString(1));
+	pThis->AddQuickAction(pResult->GetString(0), pResult->GetString(1), false);
+}
+
+void CMenusModeration::ConAddModClientAction(IConsole::IResult *pResult, void *pUserData)
+{
+	CMenusModeration *pThis = static_cast<CMenusModeration *>(pUserData);
+	pThis->AddQuickAction(pResult->GetString(0), pResult->GetString(1), true);
 }
 
 void CMenusModeration::ConRemoveModAction(IConsole::IResult *pResult, void *pUserData)
 {
 	CMenusModeration *pThis = static_cast<CMenusModeration *>(pUserData);
-	pThis->RemoveQuickAction(pResult->GetString(0), pResult->GetString(1));
+	pThis->RemoveQuickAction(pResult->GetString(0), pResult->GetString(1), false);
+}
+
+void CMenusModeration::ConRemoveModClientAction(IConsole::IResult *pResult, void *pUserData)
+{
+	CMenusModeration *pThis = static_cast<CMenusModeration *>(pUserData);
+	pThis->RemoveQuickAction(pResult->GetString(0), pResult->GetString(1), true);
 }
 
 void CMenusModeration::ConRemoveAllModActions(IConsole::IResult *pResult, void *pUserData)
@@ -331,8 +344,10 @@ void CMenusModeration::OnConsoleInit()
 	if(pConfigManager)
 		pConfigManager->RegisterCallback(ConfigSaveCallback, this, ConfigDomain::ENTITYMODACTIONS);
 
-	Console()->Register("add_mod_action", "s[name] r[command]", CFGFLAG_CLIENT, ConAddModAction, this, "Add a quick action to the moderation menu");
-	Console()->Register("remove_mod_action", "s[name] r[command]", CFGFLAG_CLIENT, ConRemoveModAction, this, "Remove a quick action from the moderation menu");
+	Console()->Register("add_mod_action", "s[name] r[command]", CFGFLAG_CLIENT, ConAddModAction, this, "Add a quick action running an rcon command to the moderation menu");
+	Console()->Register("add_mod_client_action", "s[name] r[command]", CFGFLAG_CLIENT, ConAddModClientAction, this, "Add a quick action running a client command to the moderation menu");
+	Console()->Register("remove_mod_action", "s[name] r[command]", CFGFLAG_CLIENT, ConRemoveModAction, this, "Remove an rcon quick action from the moderation menu");
+	Console()->Register("remove_mod_client_action", "s[name] r[command]", CFGFLAG_CLIENT, ConRemoveModClientAction, this, "Remove a client command quick action from the moderation menu");
 	Console()->Register("delete_all_mod_actions", "", CFGFLAG_CLIENT, ConRemoveAllModActions, this, "Removes all moderation menu quick actions");
 }
 
@@ -352,7 +367,7 @@ void CMenusModeration::OnWindowResize()
 	}
 }
 
-int CMenusModeration::AddQuickAction(const char *pName, const char *pCommand)
+int CMenusModeration::AddQuickAction(const char *pName, const char *pCommand, bool ClientCommand)
 {
 	if(m_vQuickActions.size() >= QUICKACTION_MAX_ACTIONS)
 		return -1;
@@ -360,15 +375,17 @@ int CMenusModeration::AddQuickAction(const char *pName, const char *pCommand)
 	CQuickAction Action;
 	str_copy(Action.m_aName, pName);
 	str_copy(Action.m_aCommand, pCommand);
+	Action.m_ClientCommand = ClientCommand;
 	m_vQuickActions.push_back(Action);
 	return static_cast<int>(m_vQuickActions.size()) - 1;
 }
 
-void CMenusModeration::RemoveQuickAction(const char *pName, const char *pCommand)
+void CMenusModeration::RemoveQuickAction(const char *pName, const char *pCommand, bool ClientCommand)
 {
 	CQuickAction Action;
 	str_copy(Action.m_aName, pName);
 	str_copy(Action.m_aCommand, pCommand);
+	Action.m_ClientCommand = ClientCommand;
 	auto It = std::find(m_vQuickActions.begin(), m_vQuickActions.end(), Action);
 	if(It != m_vQuickActions.end())
 		m_vQuickActions.erase(It);
@@ -406,7 +423,7 @@ void CMenusModeration::ConfigSaveCallback(IConfigManager *pConfigManager, void *
 		char aBuf[(QUICKACTION_MAX_NAME + QUICKACTION_MAX_CMD) * 2 + 32] = "";
 		char *pEnd = aBuf + sizeof(aBuf);
 		char *pDst;
-		str_append(aBuf, "add_mod_action \"");
+		str_append(aBuf, Action.m_ClientCommand ? "add_mod_client_action \"" : "add_mod_action \"");
 		// Escape name
 		pDst = aBuf + str_length(aBuf);
 		str_escape(&pDst, Action.m_aName, pEnd);
@@ -432,14 +449,11 @@ void CMenusModeration::SelectPlayer(int ClientId)
 	str_copy(m_aPlayers[ClientId].m_aSelectedClan, GameClient()->m_aClients[ClientId].m_aClan);
 }
 
-std::vector<std::string> CMenusModeration::BuildRconCommandChunks(const char *pCommandTemplate) const
+std::vector<std::string> CMenusModeration::BuildPlayerCommands(const char *pCommandTemplate) const
 {
-	std::vector<std::string> vChunks;
+	std::vector<std::string> vCommands;
 	if(pCommandTemplate == nullptr || pCommandTemplate[0] == '\0')
-		return vChunks;
-
-	constexpr size_t MaxCommandLength = IConsole::CMDLINE_LENGTH - 1;
-	std::string CurrentChunk;
+		return vCommands;
 
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ++ClientId)
 	{
@@ -450,6 +464,20 @@ std::vector<std::string> CMenusModeration::BuildRconCommandChunks(const char *pC
 		if(Command.empty())
 			continue;
 
+		vCommands.push_back(Command);
+	}
+
+	return vCommands;
+}
+
+std::vector<std::string> CMenusModeration::BuildRconCommandChunks(const char *pCommandTemplate) const
+{
+	std::vector<std::string> vChunks;
+	constexpr size_t MaxCommandLength = IConsole::CMDLINE_LENGTH - 1;
+	std::string CurrentChunk;
+
+	for(const std::string &Command : BuildPlayerCommands(pCommandTemplate))
+	{
 		if(Command.size() > MaxCommandLength)
 			continue;
 
@@ -634,7 +662,7 @@ void CMenusModeration::Render(CUIRect MainView)
 	const bool HasCommandTemplate = m_CommandInput.GetString()[0] != '\0';
 	bool ExactCommandMatch = false;
 	std::string DisplayedCommandName;
-	const IConsole::ICommandInfo *pDisplayedCommandInfo = FindDisplayedCommandInfo(Console(), Client(), m_CommandInput.GetString(), ExactCommandMatch, DisplayedCommandName);
+	const IConsole::ICommandInfo *pDisplayedCommandInfo = FindDisplayedCommandInfo(Console(), Client(), m_CommandInput.GetString(), CFGFLAG_SERVER, ExactCommandMatch, DisplayedCommandName);
 	const bool CommandSyntaxValid = HasCommandTemplate && ExactCommandMatch && ValidateCommandSyntax(m_CommandInput.GetString(), pDisplayedCommandInfo);
 	const std::vector<std::string> vCommandChunks = BuildRconCommandChunks(m_CommandInput.GetString());
 
@@ -850,6 +878,34 @@ void CMenusModeration::Render(CUIRect MainView)
 	}
 }
 
+void CMenusModeration::ExecuteQuickAction(const CQuickAction &Action)
+{
+	if(Action.m_aCommand[0] == '\0')
+		return;
+
+	// A command without the client id placeholder does not target anyone in
+	// particular, so it is run once instead of once per selected player.
+	if(!CommandTargetsPlayers(Action.m_aCommand))
+	{
+		if(Action.m_ClientCommand)
+			Console()->ExecuteLine(Action.m_aCommand, IConsole::CLIENT_ID_UNSPECIFIED);
+		else
+			Client()->Rcon(Action.m_aCommand);
+		return;
+	}
+
+	if(Action.m_ClientCommand)
+	{
+		for(const std::string &Command : BuildPlayerCommands(Action.m_aCommand))
+			Console()->ExecuteLine(Command.c_str(), IConsole::CLIENT_ID_UNSPECIFIED);
+	}
+	else
+	{
+		for(const std::string &Chunk : BuildRconCommandChunks(Action.m_aCommand))
+			Client()->Rcon(Chunk.c_str());
+	}
+}
+
 // The quick action section, rendered below the command input of the menu. A right
 // click on an action fills that input with the command of the action.
 void CMenusModeration::RenderQuickActions(CUIRect View)
@@ -905,31 +961,39 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 		{
 			m_ActionNameInput.Set(m_vQuickActions[m_SelectedAction].m_aName);
 			m_ActionCommandInput.Set(m_vQuickActions[m_SelectedAction].m_aCommand);
+			m_EditClientCommand = m_vQuickActions[m_SelectedAction].m_ClientCommand;
 		}
 		else
 		{
 			m_ActionNameInput.Clear();
 			m_ActionCommandInput.Clear();
+			m_EditClientCommand = false;
 		}
 		m_LoadedAction = m_SelectedAction;
 	}
 
 	if(m_QuickActionsEditMode)
 	{
-		CUIRect Editor, Row, Label, Input, AddButton, DeleteButton;
+		CUIRect Editor, Row, Label, Input, TypeButton, AddButton, DeleteButton;
 		View.HSplitBottom(68.0f, &View, &Editor);
 		View.HSplitBottom(8.0f, &View, nullptr);
 
 		Editor.HSplitTop(20.0f, &Row, &Editor);
 		Row.VSplitLeft(70.0f, &Label, &Input);
+		Input.VSplitRight(70.0f, &Input, &TypeButton);
+		Input.VSplitRight(5.0f, &Input, nullptr);
 		Ui()->DoLabel(&Label, EcLocalize("Name"), 12.0f, TEXTALIGN_ML);
 		Ui()->DoEditBox(&m_ActionNameInput, &Input, 11.0f);
+
+		if(GameClient()->m_Menus.DoButton_Menu(&m_ActionTypeButton, m_EditClientCommand ? EcLocalize("Client") : EcLocalize("Rcon"), 0, &TypeButton))
+			m_EditClientCommand = !m_EditClientCommand;
+		GameClient()->m_Tooltips.DoToolTip(&m_ActionTypeButton, &TypeButton, EcLocalize("Whether the action sends its command to rcon or runs it on the local console"), 200.0f);
 
 		// The syntax check is only a hint, a command is never rejected: servers can
 		// have commands that this client does not know about.
 		bool ExactCommandMatch = false;
 		std::string DisplayedCommandName;
-		const IConsole::ICommandInfo *pCommandInfo = FindDisplayedCommandInfo(Console(), Client(), m_aEditCommand, ExactCommandMatch, DisplayedCommandName);
+		const IConsole::ICommandInfo *pCommandInfo = FindDisplayedCommandInfo(Console(), Client(), m_aEditCommand, m_EditClientCommand ? CFGFLAG_CLIENT : CFGFLAG_SERVER, ExactCommandMatch, DisplayedCommandName);
 		const bool CommandSyntaxValid = m_aEditCommand[0] == '\0' || (ExactCommandMatch && ValidateCommandSyntax(m_aEditCommand, pCommandInfo));
 
 		Editor.HSplitTop(4.0f, nullptr, &Editor);
@@ -945,7 +1009,7 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 		{
 			if(pCommandInfo == nullptr)
 			{
-				str_copy(m_aCommandTooltip, EcLocalize("Unknown rcon command"));
+				str_copy(m_aCommandTooltip, m_EditClientCommand ? EcLocalize("Unknown client command") : EcLocalize("Unknown rcon command"));
 			}
 			else
 			{
@@ -966,6 +1030,7 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 		{
 			str_copy(m_vQuickActions[m_SelectedAction].m_aName, m_aEditName);
 			str_copy(m_vQuickActions[m_SelectedAction].m_aCommand, m_aEditCommand);
+			m_vQuickActions[m_SelectedAction].m_ClientCommand = m_EditClientCommand;
 		}
 
 		Editor.HSplitTop(4.0f, nullptr, &Editor);
@@ -976,7 +1041,7 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 		// written out first and then added without losing what was typed.
 		const bool AddDisabled = (int)m_vQuickActions.size() >= QUICKACTION_MAX_ACTIONS;
 		if(GameClient()->m_Menus.DoButtonForceFontSize_Menu(&m_AddActionButton, EcLocalize("Add Action"), 0, &AddButton, 11.0f, AddDisabled))
-			m_SelectedAction = AddQuickAction(m_aEditName[0] != '\0' ? m_aEditName : "New Action", m_aEditCommand);
+			m_SelectedAction = AddQuickAction(m_aEditName[0] != '\0' ? m_aEditName : "New Action", m_aEditCommand, m_EditClientCommand);
 
 		if(GameClient()->m_Menus.DoButtonForceFontSize_Menu(&m_DeleteActionButton, EcLocalize("Delete Action"), 0, &DeleteButton, 11.0f, m_SelectedAction < 0))
 		{
@@ -1105,15 +1170,7 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 			const int Result = Ui()->DoButtonLogic(&m_aActionButtons[Index], 0, &Tile, BUTTONFLAG_LEFT | BUTTONFLAG_RIGHT);
 			if(Result == 1 && CanExecute)
 			{
-				if(TargetsPlayers)
-				{
-					for(const std::string &Chunk : BuildRconCommandChunks(Action.m_aCommand))
-						Client()->Rcon(Chunk.c_str());
-				}
-				else
-				{
-					Client()->Rcon(Action.m_aCommand);
-				}
+				ExecuteQuickAction(Action);
 			}
 			else if(Result == 2 && Action.m_aCommand[0] != '\0')
 			{
@@ -1127,8 +1184,9 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 		const bool Selected = m_QuickActionsEditMode && m_SelectedAction == Index;
 		const bool DropTarget = m_Dragging && HoveredAction == Index && m_DraggedAction != Index;
 
-		// Same base color and hover/press response as the other menu buttons
-		ColorRGBA TileColor(1.0f, 1.0f, 1.0f, 0.5f);
+		// Same base color and hover/press response as the other menu buttons, client
+		// commands are tinted so they can be told apart from the rcon ones.
+		ColorRGBA TileColor = Action.m_ClientCommand ? ColorRGBA(0.55f, 0.75f, 1.0f, 0.5f) : ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f);
 		if(Selected)
 			TileColor = ColorRGBA(0.5f, 0.95f, 0.7f, 0.5f);
 		else if(DropTarget)
@@ -1144,7 +1202,10 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 		{
 			// The tooltip only keeps the pointer around, and only the hovered tile can
 			// show one, so a single shared buffer is enough to keep it valid.
-			str_copy(m_aHoveredCommand, Action.m_aCommand);
+			if(Action.m_ClientCommand)
+				str_format(m_aHoveredCommand, sizeof(m_aHoveredCommand), "%s\n%s", Action.m_aCommand, EcLocalize("Client command"));
+			else
+				str_copy(m_aHoveredCommand, Action.m_aCommand);
 			GameClient()->m_Tooltips.DoToolTip(&m_aActionButtons[Index], &Tile, m_aHoveredCommand);
 		}
 
@@ -1170,7 +1231,7 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 		CUIRect Floating = vTiles[m_DraggedAction];
 		Floating.x = Ui()->MousePos().x - Floating.w / 2.0f;
 		Floating.y = Ui()->MousePos().y - Floating.h / 2.0f;
-		Floating.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.85f), IGraphics::CORNER_ALL, 5.0f);
+		Floating.Draw(Action.m_ClientCommand ? ColorRGBA(0.55f, 0.75f, 1.0f, 0.85f) : ColorRGBA(1.0f, 1.0f, 1.0f, 0.85f), IGraphics::CORNER_ALL, 5.0f);
 
 		CUIRect FloatingLabel;
 		Floating.VMargin(4.0f, &FloatingLabel);
