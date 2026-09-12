@@ -167,11 +167,7 @@ print(re.replace(re.compile("\\d"), "h3ll0", true, fun[](str, match, group) { //
 <summary>Setting Pages</summary>
 
 ### Main Settings
-<img width="1920" height="1854" alt="Settings" src="https://github.com/user-attachments/assets/9a9ea2cc-96bd-44b0-a4e5-fe68ed319ca1" />
-
-#
-### Visuals
-<img width="1920" height="2792" alt="menu_2026-07-12_13-12-28" src="https://github.com/user-attachments/assets/91d2b82f-d013-476a-af10-2fd31de2869f" />
+<img width="1920" height="4471" alt="image" src="https://github.com/user-attachments/assets/e1ed0522-cf8c-4eba-ad3d-fa8e890c8eec" />
 
 #
 ### Warlist
