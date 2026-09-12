@@ -76,6 +76,8 @@ public:
 private:
 	void UpdateQuad(CQuadData &Quad, std::chrono::nanoseconds Time, std::chrono::nanoseconds PrevTime, bool WithMotion) const;
 	void EvalPosEnvelope(const CQuadData &Quad, std::chrono::nanoseconds Time, vec2 &Offset, float &Rotation) const;
+	// Whether the envelope put the quad somewhere else between these two times instead of moving it there
+	bool QuadJumped(const CQuadData &Quad, std::chrono::nanoseconds Time, std::chrono::nanoseconds PrevTime) const;
 
 	std::vector<CQuadData> m_avQuads[(int)EPredictedZone::Num];
 	std::unique_ptr<CMapBasedEnvelopePointAccess> m_pEnvelopePoints;

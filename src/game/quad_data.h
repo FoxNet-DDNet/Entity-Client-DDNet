@@ -25,6 +25,14 @@ public:
 	int m_PosEnv = -1;
 	int m_PosEnvOffset = 0;
 
+	/*
+	 * Whether the quad was put somewhere else this tick rather than having travelled there. An
+	 * envelope that loops back to its start, or steps from one point to the next, moves it
+	 * without any speed behind it, and the tick's delta is then the whole jump. Kept identical to
+	 * the server, see CQuadData::UpdatePositionEnvelope.
+	 */
+	bool m_Teleported = true;
+
 	void Init(const CQuad &Quad)
 	{
 		for(int i = 0; i < 5; i++)
@@ -67,6 +75,10 @@ public:
 
 	vec2 MotionAt(vec2 Pos) const
 	{
+		// A jump is not motion, so there is no speed to hand over
+		if(m_Teleported)
+			return vec2(0.0f, 0.0f);
+
 		// A quad that does not turn moves every point of itself by the same amount, and saying
 		// so here keeps four trig calls out of a probe that runs per quad per collision step
 		if(m_Angle == 0.0f && m_PrevAngle == 0.0f)

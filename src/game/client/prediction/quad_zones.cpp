@@ -153,6 +153,69 @@ void CQuadZones::EvalPosEnvelope(const CQuadData &Quad, std::chrono::nanoseconds
 	Rotation = Position.b / 180.0f * pi;
 }
 
+bool CQuadZones::QuadJumped(const CQuadData &Quad, std::chrono::nanoseconds Time, std::chrono::nanoseconds PrevTime) const
+{
+	int EnvelopesStart, EnvelopesNum;
+	m_pMap->GetType(MAPITEMTYPE_ENVELOPE, &EnvelopesStart, &EnvelopesNum);
+	if(Quad.m_PosEnv < 0 || Quad.m_PosEnv >= EnvelopesNum)
+		return false;
+
+	const CMapItemEnvelope *pEnvelope = static_cast<CMapItemEnvelope *>(m_pMap->GetItem(EnvelopesStart + Quad.m_PosEnv));
+	if(!pEnvelope || pEnvelope->m_Channels <= 0)
+		return false;
+
+	m_pEnvelopePoints->SetPointsRange(pEnvelope->m_StartPoint, pEnvelope->m_NumPoints);
+	const int NumPoints = m_pEnvelopePoints->NumPoints();
+	if(NumPoints < 2)
+		return false;
+
+	const CEnvPoint *pFirst = m_pEnvelopePoints->GetPoint(0);
+	const CEnvPoint *pLast = m_pEnvelopePoints->GetPoint(NumPoints - 1);
+	const int64_t Loop = pLast->m_Time.GetInternal();
+	if(Loop <= 0)
+		return false;
+
+	const auto Millis = [&](std::chrono::nanoseconds At) {
+		int64_t Value = (std::chrono::duration_cast<std::chrono::milliseconds>(At).count() + Quad.m_PosEnvOffset) % Loop;
+		if(Value < 0)
+			Value += Loop;
+		return Value;
+	};
+	const auto Segment = [&](int64_t At) {
+		for(int i = 0; i < NumPoints - 1; i++)
+		{
+			if(At >= m_pEnvelopePoints->GetPoint(i)->m_Time.GetInternal() &&
+				At <= m_pEnvelopePoints->GetPoint(i + 1)->m_Time.GetInternal())
+				return i;
+		}
+		return NumPoints - 1;
+	};
+	const auto Differs = [](const CEnvPoint *pA, const CEnvPoint *pB) {
+		return pA->m_aValues[0] != pB->m_aValues[0] ||
+		       pA->m_aValues[1] != pB->m_aValues[1] ||
+		       pA->m_aValues[2] != pB->m_aValues[2];
+	};
+
+	const int64_t Now = Millis(Time);
+	const int64_t Before = Millis(PrevTime);
+
+	// Running off the end and back to the start only moves the quad if the two ends differ
+	if(Now < Before && Differs(pFirst, pLast))
+		return true;
+
+	// A step holds one point's value and drops onto the next one's when the segment ends
+	const int Was = Segment(Before);
+	if(Was < NumPoints - 1 && Segment(Now) != Was)
+	{
+		const CEnvPoint *pCur = m_pEnvelopePoints->GetPoint(Was);
+		const CEnvPoint *pNext = m_pEnvelopePoints->GetPoint(Was + 1);
+		if(pCur->m_Curvetype == CURVETYPE_STEP && Differs(pCur, pNext))
+			return true;
+	}
+
+	return false;
+}
+
 void CQuadZones::UpdateQuad(CQuadData &Quad, std::chrono::nanoseconds Time, std::chrono::nanoseconds PrevTime, bool WithMotion) const
 {
 	vec2 Offset = vec2(0.0f, 0.0f);
@@ -171,6 +234,7 @@ void CQuadZones::UpdateQuad(CQuadData &Quad, std::chrono::nanoseconds Time, std:
 
 		Quad.m_PrevPivot = Quad.m_aLocalPoints[4] + PrevOffset;
 		Quad.m_PrevAngle = PrevRotation;
+		Quad.m_Teleported = QuadJumped(Quad, Time, PrevTime);
 	}
 	else
 	{
@@ -178,6 +242,7 @@ void CQuadZones::UpdateQuad(CQuadData &Quad, std::chrono::nanoseconds Time, std:
 		// stood is the honest answer either way, and it is the one MotionAt reads.
 		Quad.m_PrevPivot = Quad.m_Pivot;
 		Quad.m_PrevAngle = Quad.m_Angle;
+		Quad.m_Teleported = true;
 	}
 
 	for(int i = 0; i < 4; i++)
