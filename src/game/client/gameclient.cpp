@@ -199,6 +199,7 @@ void CGameClient::OnConsoleInit()
 					      &m_EntityInfo, // EClient
 					      &m_MenusModeration, // EClient
 					      &m_AutoDummyConnect, // EClient
+					      &m_Webhook, // EClient
 				      });
 
 	// build the input stack

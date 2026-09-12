@@ -2784,6 +2784,8 @@ if(CLIENT)
     components/entity/menus_entity.cpp
     components/entity/moderation/mod_menu.cpp
     components/entity/moderation/mod_menu.h
+    components/entity/moderation/webhook.cpp
+    components/entity/moderation/webhook.h
     components/entity/moving_tiles.cpp
     components/entity/moving_tiles.h 
     components/entity/performance_statistics.cpp

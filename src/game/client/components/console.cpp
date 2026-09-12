@@ -774,6 +774,8 @@ void CGameConsole::CInstance::PrintLine(const char *pLine, int Len, ColorRGBA Pr
 	pEntry->m_Length = Len;
 	pEntry->m_LineCount = -1;
 	str_copy(pEntry->m_aText, pLine, Len + 1);
+
+	m_pGameConsole->GameClient()->m_Webhook.ConsoleLine(m_Type, pLine);
 }
 
 int CGameConsole::CInstance::GetLinesToScroll(int Direction, int LinesToScroll)

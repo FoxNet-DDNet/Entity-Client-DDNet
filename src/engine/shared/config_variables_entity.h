@@ -490,6 +490,9 @@ MACRO_CONFIG_INT(ClNightShiftTransition, ec_night_shift_transition, 30, 0, 180, 
 MACRO_CONFIG_INT(ClNightShiftLatitude, ec_night_shift_latitude, 0, -9000, 9000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Latitude in hundredths of a degree, used by the sunset to sunrise schedule")
 MACRO_CONFIG_INT(ClNightShiftLongitude, ec_night_shift_longitude, 0, -18000, 18000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Longitude in hundredths of a degree, used by the sunset to sunrise schedule")
 
+// Webhook
+MACRO_CONFIG_STR(EcWebhookUrl, ec_webhook_url, 512, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "URL to use with webhook (remember to enable http_allow_insecure for http)")
+
 // Custom variables from my server for the editor
 // You can use these if you get my server from https://github.com/FoxNet-DDNet/FoxNet
 

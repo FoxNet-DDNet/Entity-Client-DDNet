@@ -83,6 +83,7 @@
 #include "components/entity/map_overview.h"
 #include "components/entity/mediaplayer/media_player.h"
 #include "components/entity/moderation/mod_menu.h"
+#include "components/entity/moderation/webhook.h"
 #include "components/entity/moving_tiles.h"
 #include "components/entity/performance_statistics.h"
 #include "components/entity/physicball.h"
@@ -283,6 +284,7 @@ public:
 	CEClient m_EClient;
 	CEntityInfo m_EntityInfo;
 	CFreezeKill m_FreezeKill;
+	CLocalPractice m_LocalPractice;
 	CMapFinishBrowser m_MapFinishBrowser;
 	CMapOverview m_MapOverview;
 	CMediaViewer m_MediaViewer;
@@ -290,8 +292,8 @@ public:
 	CPerformanceStatistics m_PerformanceStatistics;
 	CPhysicBalls m_PhysicBalls;
 	CPlayerActions m_PlayerActions;
-	CLocalPractice m_LocalPractice;
 	CSpecPauseRadio m_SpecPauseRadio;
+	CWebhook m_Webhook;
 
 	CMovingTiles m_MovingTilesBackground = CMovingTiles{false};
 	CMovingTiles m_MovingTilesForeground = CMovingTiles{true};
