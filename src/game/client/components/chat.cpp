@@ -1108,15 +1108,15 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 		const char *pFrom;
 		if(Line.m_Whisper)
-			pFrom = "whisper";
+			pFrom = "chat/whisper";
 		else if(Line.m_Team)
-			pFrom = "teamchat";
+			pFrom = "chat/team";
 		else if(Line.m_ClientId == SERVER_MSG)
-			pFrom = "server";
+			pFrom = "chat/server";
 		else if(Line.m_ClientId == CLIENT_MSG)
-			pFrom = "client";
+			pFrom = "chat/client";
 		else
-			pFrom = "chat";
+			pFrom = "chat/all";
 
 		log_info_color(color_cast<LOG_COLOR>(ChatLogColor), pFrom, "%s%s%s", Line.m_aName, Line.m_ClientId >= 0 ? ": " : "", Line.m_aText);
 	};

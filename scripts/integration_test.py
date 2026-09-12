@@ -669,7 +669,7 @@ def client_can_connect(test_env):
 	if "sixup=0" not in join:
 		raise AssertionError(f"sixup=0 not found in {join!r}")
 	server.exit()
-	client.wait_for_log_exact("client: offline error='Server shutdown'", timeout=10)
+	client.wait_for_log_exact("client: offline error='Server shutdown'")
 	client.exit()
 	server.wait_for_exit()
 	client.wait_for_exit()
@@ -685,7 +685,7 @@ def client_can_connect_7(test_env):
 	if "sixup=1" not in join:
 		raise AssertionError(f"sixup=0 not found in {join!r}")
 	server.exit()
-	client.wait_for_log_exact("client: offline error='Server shutdown'", timeout=10)
+	client.wait_for_log_exact("client: offline error='Server shutdown'")
 	client.exit()
 	server.wait_for_exit()
 	client.wait_for_exit()
@@ -703,7 +703,7 @@ def client_can_connect_websockets(test_env):
 	if "sixup=0" not in join:
 		raise AssertionError(f"sixup=0 not found in {join!r}")
 	server.exit()
-	client.wait_for_log_exact("client: offline error='Server shutdown'", timeout=10)
+	client.wait_for_log_exact("client: offline error='Server shutdown'")
 	client.exit()
 	server.wait_for_exit()
 	client.wait_for_exit()
@@ -791,7 +791,7 @@ def smoke_test(test_env):
 	""".strip().split("\n")
 		)
 	)
-	client1.wait_for_log_exact("server: *** the end", timeout=15)
+	client1.wait_for_log_exact("chat/server: *** the end", timeout=15)
 
 	server.command("stoprecord")
 	client1.command("stoprecord")
@@ -809,8 +809,8 @@ def smoke_test(test_env):
 	client1.command("play demos/server.demo")
 	client2.command("play demos/client1.demo")
 
-	client1.wait_for_log_prefix("server: *** client1 finished in:", timeout=20)
-	client2.wait_for_log_prefix("server: *** client1 finished in:", timeout=20)
+	client1.wait_for_log_prefix("chat/server: *** client1 finished in:", timeout=20)
+	client2.wait_for_log_prefix("chat/server: *** client1 finished in:", timeout=20)
 
 	client1.exit()
 	client2.exit()
