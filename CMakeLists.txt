@@ -145,6 +145,13 @@ if(EXTERNAL_STEAM_API_DYLIB AND NOT EXISTS "${EXTERNAL_STEAM_API_DYLIB}")
   message(FATAL_ERROR "EXTERNAL_STEAM_API_DYLIB does not exist: ${EXTERNAL_STEAM_API_DYLIB}")
 endif()
 
+list(LENGTH CMAKE_OSX_ARCHITECTURES NUM_OSX_ARCHITECTURES)
+if(PRECOMPILE_HEADERS AND NUM_OSX_ARCHITECTURES GREATER 1)
+  # Fat macOS builds with PCH break -mbranch-protection, since it's x86-64 only.
+  message(STATUS "Disabling precompiled headers for fat macOS build")
+  set(PRECOMPILE_HEADERS OFF)
+endif()
+
 if(TARGET_OS STREQUAL "mac" AND MACOS_CODESIGN)
   if(DEFINED ENV{MACOS_APP_IDENTITY})
     message(STATUS "Using MACOS_APP_IDENTITY as codesign signature")
