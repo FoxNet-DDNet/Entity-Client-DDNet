@@ -338,6 +338,8 @@ void CMediaViewer::ThreadMain()
 		bool AlbumArtLoaded = false;
 		auto LastPropsUpdate = std::chrono::steady_clock::now() - std::chrono::seconds(2);
 		auto LastAlbumArtAttempt = std::chrono::steady_clock::now() - std::chrono::seconds(10);
+		int PropertyRefreshRetries = 0;
+		auto NextPropertyRefresh = std::chrono::steady_clock::now();
 
 		while(!m_StopThread)
 		{
@@ -476,12 +478,26 @@ void CMediaViewer::ThreadMain()
 				HasMedia = true;
 
 				const auto Now = std::chrono::steady_clock::now();
-				// Normally driven by the event. The interval is only a backstop for players that
-				// publish state without ever announcing it.
+				// Some players signal MediaPropertiesChanged just before their new metadata is
+				// readable. Reading once in response would then retain the old thumbnail until the
+				// following track change, making the island appear one cover behind. Confirm the
+				// event twice shortly afterwards; the long interval remains a backstop for players
+				// that publish state without announcing it.
 				const bool PropertiesDirty = Wake.m_PropertiesDirty.exchange(false, std::memory_order_relaxed);
-				if(PropertiesDirty || Now - LastPropsUpdate >= std::chrono::seconds(5))
+				if(PropertiesDirty)
+				{
+					PropertyRefreshRetries = 2;
+					NextPropertyRefresh = Now + std::chrono::milliseconds(250);
+				}
+				const bool PropertyRefreshDue = PropertyRefreshRetries > 0 && Now >= NextPropertyRefresh;
+				if(PropertiesDirty || PropertyRefreshDue || Now - LastPropsUpdate >= std::chrono::seconds(5))
 				{
 					LastPropsUpdate = Now;
+					if(PropertyRefreshDue)
+					{
+						--PropertyRefreshRetries;
+						NextPropertyRefresh = Now + std::chrono::milliseconds(250);
+					}
 					try
 					{
 						const auto MediaPropsOp = Session.TryGetMediaPropertiesAsync();
