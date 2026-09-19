@@ -158,7 +158,7 @@ CChat::CChat()
 	});
 }
 
-void CChat::RegisterCommand(const char *pName, const char *pParams, const char *pHelpText)
+void CChat::RegisterCommand(const char *pName, const char *pParams, const char *pHelpText, bool UpdateCache)
 {
 	// Don't allow duplicate commands.
 	for(const auto &Command : m_vServerCommands)
@@ -168,13 +168,20 @@ void CChat::RegisterCommand(const char *pName, const char *pParams, const char *
 	m_vServerCommands.emplace_back(pName, pParams, pHelpText);
 	m_ServerCommandsNeedSorting = true;
 
-	GameClient()->m_Bindchat.CacheChatCommands();
+	if(UpdateCache)
+		UpdateCommandCache();
 }
 
-void CChat::UnregisterCommand(const char *pName)
+void CChat::UnregisterCommand(const char *pName, bool UpdateCache)
 {
 	m_vServerCommands.erase(std::remove_if(m_vServerCommands.begin(), m_vServerCommands.end(), [pName](const CCommand &Command) { return str_comp(Command.m_aName, pName) == 0; }), m_vServerCommands.end());
 
+	if(UpdateCache)
+		UpdateCommandCache();
+}
+
+void CChat::UpdateCommandCache()
+{
 	GameClient()->m_Bindchat.CacheChatCommands();
 }
 

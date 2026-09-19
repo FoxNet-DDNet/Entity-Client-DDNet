@@ -329,8 +329,9 @@ public:
 	void AddLine(int ClientId, int Team, const char *pLine);
 	void EnableMode(int Team);
 	void DisableMode();
-	void RegisterCommand(const char *pName, const char *pParams, const char *pHelpText);
-	void UnregisterCommand(const char *pName);
+	void RegisterCommand(const char *pName, const char *pParams, const char *pHelpText, bool UpdateCache = true);
+	void UnregisterCommand(const char *pName, bool UpdateCache = true);
+	void UpdateCommandCache();
 	void Echo(const char *pString);
 
 	void OnWindowResize() override;

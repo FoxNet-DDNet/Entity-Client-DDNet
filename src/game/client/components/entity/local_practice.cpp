@@ -316,9 +316,11 @@ void CLocalPractice::Start()
 	m_TeleSeed = (unsigned int)Client()->GameTick(g_Config.m_ClDummy);
 
 	// Registered with the chat so they autocomplete alongside the server's own, and taken back out
-	// again on the way out so they do not linger as commands that would go nowhere
+	// again on the way out so they do not linger as commands that would go nowhere. Rebuild the
+	// autocomplete cache once for the batch; rebuilding it for every command causes a visible hitch.
 	for(const CCommand &Command : ms_aCommands)
-		GameClient()->m_Chat.RegisterCommand(Command.m_pName, Command.m_pArgs, Command.m_pHelp);
+		GameClient()->m_Chat.RegisterCommand(Command.m_pName, Command.m_pArgs, Command.m_pHelp, false);
+	GameClient()->m_Chat.UpdateCommandCache();
 
 	Print("practice world started, /exit again to leave, /help for commands");
 }
@@ -339,7 +341,8 @@ void CLocalPractice::Stop()
 	m_WasControlling = false;
 
 	for(const CCommand &Command : ms_aCommands)
-		GameClient()->m_Chat.UnregisterCommand(Command.m_pName);
+		GameClient()->m_Chat.UnregisterCommand(Command.m_pName, false);
+	GameClient()->m_Chat.UpdateCommandCache();
 
 	m_Active = false;
 	m_pRenderCurWorld = nullptr;
