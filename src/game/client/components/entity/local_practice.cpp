@@ -1793,6 +1793,9 @@ bool CLocalPractice::OnChatCommand(const char *pInput)
 	if(!pInput || pInput[0] != '/')
 		return false;
 
+	if(!m_Active)
+		return false;
+
 	const char *pRest = pInput + 1;
 	for(const CCommand &Command : ms_aCommands)
 	{

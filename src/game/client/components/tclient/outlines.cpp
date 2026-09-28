@@ -59,8 +59,11 @@ public:
 		const auto *pLayer = GetLayer(pThis);
 		if(!pLayer)
 			return;
+		const int DataIndex = GetLayerData(pThis);
+		if(!pThis->Layers()->Map()->GetData(DataIndex))
+			return;
 		const size_t TileSize = m_Type == OutlineLayer::TELE ? sizeof(CTeleTile) : sizeof(CTile);
-		const int DataSize = pThis->Layers()->Map()->GetDataSize(GetLayerData(pThis));
+		const int DataSize = pThis->Layers()->Map()->GetDataSize(DataIndex);
 		if(DataSize <= 0 || (size_t)DataSize < (size_t)pLayer->m_Width * (size_t)pLayer->m_Height * TileSize)
 			return;
 		Size = {pLayer->m_Width, pLayer->m_Height};
@@ -69,6 +72,8 @@ public:
 	{
 		const auto *pLayer = GetLayer(pThis);
 		const auto *pTiles = (CTile *)pThis->Layers()->Map()->GetData(GetLayerData(pThis));
+		if(!pLayer || !pTiles)
+			return;
 		for(int y = 0; y < pLayer->m_Height; ++y)
 		{
 			for(int x = 0; x < pLayer->m_Width; ++x)
