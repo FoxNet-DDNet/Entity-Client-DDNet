@@ -428,6 +428,7 @@ MACRO_CONFIG_STR(ClWhiteFeetSkin, ec_white_feet_skin, 24, "x_ninja", CFGFLAG_CLI
 
 // Balls
 MACRO_CONFIG_STR(ClPhysicBallsSkin, ec_physic_balls_skin, 24, "volleyball", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Base skin for physic balls")
+MACRO_CONFIG_INT(ClPhysicBallsKillBorder, ec_physic_balls_kill_border, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether the kill border kills balls")
 
 // Moving Tiles
 MACRO_CONFIG_INT(ClShowMovingTilesEntities, ec_show_moving_tiles_entities, 1, 0, 3, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show server-side moving tiles in entities | 1 = map design | 2 = use entities color | 3 = map design with entities color")

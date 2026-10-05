@@ -17,7 +17,6 @@
 constexpr float PhysicBallRadiusScale = 0.25f;
 constexpr float PhysicBallDefaultSize = 60.0f;
 
-
 class CBall
 {
 public:
@@ -25,6 +24,7 @@ public:
 	vec2 m_Pos;
 	vec2 m_PrevPos;
 	vec2 m_Vel;
+	vec2 m_MapContactNormal = vec2(0.0f, 0.0f);
 
 	bool m_Grounded = false;
 	// Resting on another ball that is itself grounded or asleep, so stacks can sleep too.
@@ -35,6 +35,7 @@ public:
 
 	int m_TuneZone = 0;
 	float m_Rotation = 0.0f;
+	float m_AngularVelocity = 0.0f; // Radians per physics tick.
 
 	CBall(vec2 Pos, vec2 Vel, float Size) :
 		m_Size(Size), m_Pos(Pos), m_PrevPos(Pos), m_Vel(Vel)
@@ -42,6 +43,7 @@ public:
 	}
 
 	float Radius() const { return m_Size * PhysicBallRadiusScale; }
+	float RenderRadius() const { return m_Size * 0.5f; }
 
 	void WakeUp()
 	{
@@ -60,7 +62,7 @@ class CPhysicBalls : public CComponent
 	static void ConRemovePhysicBallsAtCursor(IConsole::IResult *pResult, void *pUserData);
 	static void ConResetPhysicBalls(IConsole::IResult *pResult, void *pUserData);
 
-	vec2 PlayerPos(float BallSize) const;
+	vec2 PlayerPos() const;
 
 	void RenderBalls();
 	void Update(float Dt);
@@ -72,17 +74,16 @@ class CPhysicBalls : public CComponent
 	void DoWeaponFireEffects(CBall *pBall, float Dt) const;
 	void UpdateSleepState(CBall *pBall, float Dt) const;
 
-	bool KillBall(const CBall *pBall);
+	bool KillBall(CBall &Ball);
 	void PruneDeadBalls();
 	void WakeAll();
 
-	bool GetNearestAirPos(vec2 Pos, vec2 PrevPos, vec2 *pOutPos, float Size) const;
+	bool GetNearestAirPos(vec2 Pos, vec2 *pOutPos, float Size) const;
 
 	int64_t m_LastPhysicsTime = 0;
 
 	bool HoldingHook() const;
 	bool HoldingFire() const;
-	bool PressedFire() const;
 	int CurrentWeapon() const;
 
 	// Half extent of the axis aligned box, i.e. the ball radius.
@@ -100,10 +101,19 @@ class CPhysicBalls : public CComponent
 	float m_Gravity = 0.0f;
 	float m_GroundFriction = 1.0f;
 	float m_AirFriction = 1.0f;
+	float m_AirAngularDamping = 1.0f;
 	int m_Weapon = -1;
 	bool m_FireHeld = false;
 	bool m_FirePressed = false;
+	int m_LastObservedFire = 0;
+	int m_LastObservedDummy = -1;
+	bool m_FireCounterInitialized = false;
+	bool m_HammerHitValid = false;
+	vec2 m_HammerHitPos = vec2(0.0f, 0.0f);
+	vec2 m_HammerPlayerPos = vec2(0.0f, 0.0f);
+	float m_HammerStrength = 0.0f;
 	void UpdateStepState();
+	void WakeForWeaponFire(CBall &Ball) const;
 
 	// Uniform grid broadphase, hashed into a flat bucket table so it does not depend
 	// on the map size and needs no per-step allocations once warmed up.
@@ -111,12 +121,13 @@ class CPhysicBalls : public CComponent
 	std::vector<uint32_t> m_vBucketStart;
 	std::vector<uint32_t> m_vBucketCursor;
 	std::vector<int> m_vBucketBalls;
+	std::vector<vec2> m_vPassStartPos;
 	float m_GridCellSize = 1.0f;
 	uint32_t m_BucketMask = 0;
 	void BuildBroadphase();
 	void CellOf(vec2 Pos, int *pCellX, int *pCellY) const;
 
-	std::vector<const CBall *> m_vpVisibleBalls;
+	std::vector<uint32_t> m_vVisibleBallIndices;
 
 public:
 	size_t GetBallCount() const { return m_vBalls.size(); }
