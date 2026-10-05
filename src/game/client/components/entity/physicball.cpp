@@ -29,8 +29,6 @@
 #include <limits>
 #include <vector>
 
-constexpr float PhysicBallSize = 60.0f;
-
 constexpr float PhysicBallKillMargin = 200.0f * 32.0f;
 
 constexpr float PhysicBallRestSpeed = 30.0f;
@@ -60,52 +58,60 @@ void CPhysicBalls::Reset()
 
 void CPhysicBalls::OnConsoleInit()
 {
-	Console()->Register("physic_ball_new", "?f[size]", CFGFLAG_CLIENT, ConNewPhysicBall, this, "Summon a new physic ball");
-	Console()->Register("physic_ball_new_cursor", "?f[size]", CFGFLAG_CLIENT, ConNewPhysicBallAtCursor, this, "Summon a new physic ball at the cursor");
+	Console()->Register("physic_ball_new", "?f[size] ?i[amount]", CFGFLAG_CLIENT, ConNewPhysicBall, this, "Summon a new physic ball");
+	Console()->Register("physic_ball_new_cursor", "?f[size] ?i[amount]", CFGFLAG_CLIENT, ConNewPhysicBallAtCursor, this, "Summon a new physic ball at the cursor");
 	Console()->Register("physic_balls_remove_cursor", "?f[radius]", CFGFLAG_CLIENT, ConRemovePhysicBallsAtCursor, this, "Removes ball at cursor");
 	Console()->Register("physic_balls_reset", "", CFGFLAG_CLIENT, ConResetPhysicBalls, this, "Reset all physic balls");
 }
 
-void CPhysicBalls::NewBallPlayer(float Size)
+void CPhysicBalls::NewBall(vec2 Pos, float Size, int Amount)
 {
 	if(Client()->State() != IClient::STATE_ONLINE)
 		return;
 
-	vec2 Pos = PlayerPos(Size);
+	m_vBalls.reserve(m_vBalls.size() + Amount);
 
-	m_vBalls.emplace_back(Pos, vec2(), Size);
-	WakeAll();
-}
-
-void CPhysicBalls::NewBallCursor(float Size)
-{
-	if(Client()->State() != IClient::STATE_ONLINE)
-		return;
-
-	vec2 Pos = GameClient()->GetCursorWorldPos();
 	vec2 OutPos;
 	if(GetNearestAirPos(Pos, Pos, &OutPos, Size))
 		Pos = OutPos;
-
-	m_vBalls.emplace_back(Pos, vec2(), Size);
+	
+	for(int i = 0; i < Amount; i++)
+		m_vBalls.emplace_back(Pos, vec2(), Size);
 	WakeAll();
+}
+
+void CPhysicBalls::NewBallPlayer(int Amount, float Size)
+{
+	if(Client()->State() != IClient::STATE_ONLINE)
+		return;
+
+	NewBall(PlayerPos(Size), Size, Amount);
+}
+
+void CPhysicBalls::NewBallCursor(int Amount, float Size)
+{
+	if(Client()->State() != IClient::STATE_ONLINE)
+		return;
+
+	NewBall(GameClient()->GetCursorWorldPos(), Size, Amount);
 }
 
 void CPhysicBalls::ConNewPhysicBall(IConsole::IResult *pResult, void *pUserData)
 {
 	CPhysicBalls *pSelf = static_cast<CPhysicBalls *>(pUserData);
-	float Size = pResult->NumArguments() > 0 ? pResult->GetFloat(0) : PhysicBallSize;
+	float Size = pResult->NumArguments() >= 1 ? pResult->GetFloat(0) : PhysicBallDefaultSize;
+	int Amount = pResult->NumArguments() >= 2 ? pResult->GetInteger(1) : 1;
 
-	pSelf->NewBallPlayer(Size);
+	pSelf->NewBallPlayer(Amount, Size);
 }
 
 void CPhysicBalls::ConNewPhysicBallAtCursor(IConsole::IResult *pResult, void *pUserData)
 {
 	CPhysicBalls *pSelf = static_cast<CPhysicBalls *>(pUserData);
+	float Size = pResult->NumArguments() >= 1 ? pResult->GetFloat(0) : PhysicBallDefaultSize;
+	int Amount = pResult->NumArguments() >= 2 ? pResult->GetInteger(1) : 1;
 
-	float Size = pResult->NumArguments() > 0 ? pResult->GetFloat(0) : PhysicBallSize;
-
-	pSelf->NewBallCursor(Size);
+	pSelf->NewBallCursor(Amount, Size);
 }
 
 void CPhysicBalls::ConRemovePhysicBallsAtCursor(IConsole::IResult *pResult, void *pUserData)

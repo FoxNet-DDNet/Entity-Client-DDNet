@@ -15,6 +15,8 @@
 // derived from this single scale, so raising it (towards ~0.34) makes balls rest
 // flush against the ground and against each other instead of visually overlapping.
 constexpr float PhysicBallRadiusScale = 0.25f;
+constexpr float PhysicBallDefaultSize = 60.0f;
+
 
 class CBall
 {
@@ -119,8 +121,9 @@ class CPhysicBalls : public CComponent
 public:
 	size_t GetBallCount() const { return m_vBalls.size(); }
 
-	void NewBallPlayer(float Size);
-	void NewBallCursor(float Size);
+	void NewBall(vec2 Pos, float Size = PhysicBallDefaultSize, int Amount = 1);
+	void NewBallPlayer(int Amount = 1, float Size = PhysicBallDefaultSize);
+	void NewBallCursor(int Amount = 1, float Size = PhysicBallDefaultSize);
 
 	void OnExplosion(vec2 Pos, bool SameTeam);
 

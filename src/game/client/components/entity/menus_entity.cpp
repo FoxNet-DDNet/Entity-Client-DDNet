@@ -4133,7 +4133,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				Button.VSplitLeft(0.0f, &SkinLabel, &SkinInput);
 				SkinLabel.VSplitLeft(25.0f, &SkinLabel, &SkinLabel);
 				SkinLabel.VSplitLeft(Length, &SkinLabel, &SkinInput);
-				Ui()->DoLabel(&SkinLabel, "Skin Name:", 13.0f, TEXTALIGN_ML);
+				Ui()->DoLabel(&SkinLabel, "Skin Name:", FontSize, TEXTALIGN_ML);
 				SkinInput.VSplitLeft(150.0f, &SkinInput, nullptr);
 				Ui()->DoEditBox(&s_Name, &SkinInput, EditBoxFontSize);
 			}
@@ -4220,7 +4220,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		FILTER_MISC,
 		{"execute", "before", "connect", "join", "console", "command", "startup", "run"},
 		[](bool HasSearch) {
-			return 80.0f;
+			return 90.0f;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -4229,9 +4229,10 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 			Ui()->DoLabel(&Button, EcLocalize("Startup Commands"), HeaderSize, HeaderAlignment);
 			{
-				auto RenderLabeledEditBox = [&](const char *pLabel, CLineInput *pLineInput, char *pBuffer, int BufferSize, const char *pEmptyText, float Length, float LabelFontSize = 12.5f) {
+				auto RenderLabeledEditBox = [&](const char *pLabel, CLineInput *pLineInput, char *pBuffer, int BufferSize, const char *pEmptyText) {
 					ModuleRect.HSplitTop(20.0f, &Button, &MainView);
 
+					float Length = TextRender()->TextBoundingBox(FontSize, pLabel).m_W + 3.5f; // Give it some breathing room
 					Button.VSplitLeft(0.0f, 0, &ModuleRect);
 					Button.VSplitLeft(Length, &Label, &Button);
 					Button.VSplitRight(0.0f, &Button, &MainView);
@@ -4241,24 +4242,18 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					Ui()->DoEditBox(pLineInput, &Button, EditBoxFontSize);
 
 					ModuleRect.HSplitTop(3.0f, &Button, &ModuleRect);
-					Ui()->DoLabel(&ModuleRect, pLabel, LabelFontSize, TEXTALIGN_LEFT);
+					Ui()->DoLabel(&ModuleRect, pLabel, FontSize, TEXTALIGN_LEFT);
 					ModuleRect.HSplitTop(-3.0f, &Button, &ModuleRect);
 				};
 
 				{
-					const char *pN = "Execute before connect";
-					float Length = TextRender()->TextBoundingBox(12.5f, pN).m_W + 3.5f; // Give it some breathing room
-
 					static CLineInput s_ReplyMsg;
-					RenderLabeledEditBox(pN, &s_ReplyMsg, g_Config.m_ClExecuteOnConnect, sizeof(g_Config.m_ClExecuteOnConnect), "Any Console Command", Length);
+					RenderLabeledEditBox("Execute before connect", &s_ReplyMsg, g_Config.m_ClExecuteOnConnect, sizeof(g_Config.m_ClExecuteOnConnect), "Any Console Command");
 				}
 				ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
 				{
-					const char *pN = "Execute on join";
-					float Length = TextRender()->TextBoundingBox(12.5f, pN).m_W + 3.5f; // Give it some breathing room
-
 					static CLineInput s_ReplyMsg;
-					RenderLabeledEditBox(pN, &s_ReplyMsg, g_Config.m_ClRunOnJoinConsole, sizeof(g_Config.m_ClRunOnJoinConsole), "Any Console Command", Length);
+					RenderLabeledEditBox("Execute on join", &s_ReplyMsg, g_Config.m_ClRunOnJoinConsole, sizeof(g_Config.m_ClRunOnJoinConsole), "Any Console Command");
 				}
 			}
 		},
@@ -4270,7 +4265,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		FILTER_VISUAL | FILTER_GAMEPLAY,
 		{"physic", "balls", "new", "ball", "cursor", "amount", "ball", "skin"},
 		[](bool HasSearch) {
-			return 120;
+			return 140;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -4285,7 +4280,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			str_format(aBuf, sizeof(aBuf), "Ball amount: %" PRIzu, GameClient()->m_PhysicBalls.GetBallCount());
 
 			CUIRect BallAmountLabel, ClearButton;
-			Button.VSplitRight(45.0f, &BallAmountLabel, &ClearButton);
+			Button.VSplitRight(25.0f, &BallAmountLabel, &ClearButton);
 			BallAmountLabel.VSplitRight(MarginSmall, &BallAmountLabel, nullptr);
 
 			Ui()->DoLabel(&BallAmountLabel, aBuf, FontSize, TEXTALIGN_ML);
@@ -4315,8 +4310,12 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				ModuleRect.HSplitTop(3.0f, &Button, &ModuleRect);
 				Ui()->DoLabel(&ModuleRect, pLabel, FontSize, TEXTALIGN_LEFT);
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 			}
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+			static int s_Amount = 1;
+			Ui()->DoScrollbarOption(&s_Amount, &s_Amount, &Button, EcLocalize("Spawn Amount"), 1, 100);
+
 			ModuleRect.HSplitTop(25.0f, &Button, &ModuleRect);
 			CUIRect SpawnButton, SpawnButtonCursor;
 			Button.VSplitLeft(110.0f, &SpawnButton, &Button);
@@ -4325,14 +4324,14 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 			static CButtonContainer s_SpawnBall, s_OtherBallButton;
 
-			if(DoButtonForceFontSize_Menu(&s_SpawnBall, EcLocalize("New Ball"), 0, &SpawnButton, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
+			if(DoButtonForceFontSize_Menu(&s_SpawnBall, EcLocalize("New Ball"), 0, &SpawnButton, FontSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
 			{
-				GameClient()->m_PhysicBalls.NewBallPlayer(60.0f);
+				GameClient()->m_PhysicBalls.NewBallPlayer(s_Amount);
 			}
 
-			if(DoButtonForceFontSize_Menu(&s_OtherBallButton, EcLocalize("New Ball Cursor"), 0, &SpawnButtonCursor, 12.0f, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
+			if(DoButtonForceFontSize_Menu(&s_OtherBallButton, EcLocalize("New Ball Cursor"), 0, &SpawnButtonCursor, FontSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ButtonColor))
 			{
-				GameClient()->m_PhysicBalls.NewBallCursor(60.0f);
+				GameClient()->m_PhysicBalls.NewBallCursor(s_Amount);
 			}
 		},
 	});
