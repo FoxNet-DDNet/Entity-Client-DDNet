@@ -132,7 +132,7 @@ CListboxItem CListBox::DoNextRow()
 	return Item;
 }
 
-CListboxItem CListBox::DoNextItem(const void *pId, bool Selected, float CornerRadius)
+CListboxItem CListBox::DoNextItem(const void *pId, bool Selected, float CornerRadius, unsigned ButtonFlags)
 {
 	if(m_AutoSpacing > 0.0f && m_ListBoxItemIndex > 0)
 		DoSpacing(m_AutoSpacing);
@@ -146,13 +146,17 @@ CListboxItem CListBox::DoNextItem(const void *pId, bool Selected, float CornerRa
 	}
 
 	CListboxItem Item = DoNextRow();
-	const int ItemClicked = Item.m_Visible ? Ui()->DoButtonLogic(pId, 0, &Item.m_Rect, BUTTONFLAG_LEFT) : 0;
-	if(ItemClicked)
+
+	// <EClient
+	const int ItemClicked = Item.m_Visible ? Ui()->DoButtonLogic(pId, 0, &Item.m_Rect, ButtonFlags) : 0;
+	Item.m_ButtonResult = ItemClicked;
+	if(ItemClicked == 1)
 	{
 		m_ListBoxNewSelected = ThisItemIndex;
 		m_ListBoxItemSelected = true;
 		m_Active = true;
 	}
+	// EClient>
 
 	// process input, regard selected index
 	if(m_ListBoxNewSelected == ThisItemIndex)

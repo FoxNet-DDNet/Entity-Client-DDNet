@@ -69,6 +69,8 @@ static ColorRGBA GetPingTextColor(int Latency)
 void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemActivated)
 {
 	static CListBox s_ListBox;
+	static SPopupMenuId s_PopupServerId;
+	static CPopupServerSelectionContext s_PopupServerContext;
 
 	CUIRect Headers;
 	View.HSplitTop(ms_ListheaderHeight, &Headers, &View);
@@ -302,7 +304,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 		}
 		CUIElement *pUiElement = vpServerBrowserUiElements[i];
 
-		const CListboxItem ListItem = s_ListBox.DoNextItem(pItem, str_comp(pItem->m_aAddress, g_Config.m_UiServerAddress) == 0);
+		const CListboxItem ListItem = s_ListBox.DoNextItem(pItem, str_comp(pItem->m_aAddress, g_Config.m_UiServerAddress) == 0, 5.0f, BUTTONFLAG_ALL);
 		if(ListItem.m_Selected)
 			m_SelectedIndex = i;
 
@@ -460,6 +462,28 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				Ui()->DoLabelStreamed(*pUiElement->Rect(UI_ELEM_PING), &Button, aTemp, FontSize, TEXTALIGN_MR);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
+		}
+		if(!Ui()->IsPopupOpen() && Ui()->HotItem() == pItem && GameClient()->m_BrowserMapPreview.HasAvailableMap(pItem->m_aMap))
+			GameClient()->m_Tooltips.DoToolTip(pItem, &ListItem.m_Rect, Localize("Right click to preview map"));
+
+		const bool RightClickedNewEntry = Ui()->IsPopupOpen(&s_PopupServerId) && Ui()->MouseButtonClicked(1) && Ui()->MouseInside(&ListItem.m_Rect) &&
+						  (str_comp(s_PopupServerContext.m_aMapName, pItem->m_aMap) || str_comp(s_PopupServerContext.m_aCommunityId, pItem->m_aCommunityId) || s_PopupServerContext.m_MapCrc != static_cast<unsigned>(pItem->m_MapCrc));
+		if(!Ui()->IsPopupHovered() && (ListItem.m_ButtonResult == 2 || RightClickedNewEntry))
+		{
+			Ui()->ClosePopupMenu(&s_PopupServerId);
+			s_PopupServerContext.m_pMenus = this;
+			str_copy(s_PopupServerContext.m_aMapName, pItem->m_aMap);
+			str_copy(s_PopupServerContext.m_aCommunityId, pItem->m_aCommunityId);
+			s_PopupServerContext.m_MapCrc = pItem->m_MapCrc;
+			s_PopupServerContext.m_pPopupId = &s_PopupServerId;
+			s_PopupServerContext.m_OpenedThisFrame = true;
+			GameClient()->m_BrowserMapPreview.LoadMap(pItem->m_aMap, pItem->m_aCommunityId, pItem->m_MapCrc);
+			const float RectWidth = ListItem.m_Rect.w;
+			s_PopupServerContext.m_PopupAnchor = ListItem.m_Rect.Center();
+			s_PopupServerContext.m_ExpandedWidth = std::clamp(RectWidth * 0.95f, 340.0f, 1080.0f);
+			s_PopupServerContext.m_ExpandedHeight = std::max(260.0f, std::min(View.h * 0.8f, s_PopupServerContext.m_ExpandedWidth * 10.0f / 16.0f + 60.0f));
+			Ui()->DoPopupMenu(&s_PopupServerId, s_PopupServerContext.m_PopupAnchor.x - 130.0f, s_PopupServerContext.m_PopupAnchor.y - 56.0f, 260.0f, 112.0f, &s_PopupServerContext, PopupServerSelection);
+			Ui()->UpdatePopupMenuRect(&s_PopupServerId, s_PopupServerContext.m_PopupAnchor.x - 130.0f, s_PopupServerContext.m_PopupAnchor.y - 56.0f, 260.0f, 112.0f);
 		}
 	}
 
@@ -2502,4 +2526,53 @@ void CMenus::RenderEntityClientUsers(CUIRect &View, CUIRect &List, CScrollRegion
 		List.HSplitTop(10.0f, &Space, &List);
 		ScrollRegion.AddRect(Space);
 	}
+}
+
+CUi::EPopupMenuFunctionResult CMenus::PopupServerSelection(void *pContext, CUIRect View, bool Active)
+{
+	CPopupServerSelectionContext *pPopupContext = static_cast<CPopupServerSelectionContext *>(pContext);
+	CMenus *pMenus = pPopupContext->m_pMenus;
+	const bool OpenedThisFrame = pPopupContext->m_OpenedThisFrame;
+	pPopupContext->m_OpenedThisFrame = false;
+	if(Active && !OpenedThisFrame && pMenus->Ui()->MouseButtonClicked(1))
+		return CUi::POPUP_CLOSE_CURRENT;
+
+	const float Margin = 5.0f;
+	View.Margin(Margin, &View);
+
+	CUIRect Container;
+	const float FontSize = 12.0f;
+
+	const char *pMapName = pPopupContext->m_aMapName;
+
+	View.HSplitTop(FontSize + 3.0f, &Container, &View);
+	pMenus->Ui()->DoLabel(&Container, pMapName, FontSize, TEXTALIGN_TL);
+
+	auto &Preview = pMenus->GameClient()->m_BrowserMapPreview;
+	Preview.LoadMap(pMapName, pPopupContext->m_aCommunityId, pPopupContext->m_MapCrc);
+	const float PopupWidth = Preview.HasLoadedMap() ? pPopupContext->m_ExpandedWidth : 260.0f;
+	const float PopupHeight = Preview.HasLoadedMap() ? pPopupContext->m_ExpandedHeight : 112.0f;
+	if(pMenus->Ui()->UpdatePopupMenuRect(pPopupContext->m_pPopupId, pPopupContext->m_PopupAnchor.x - PopupWidth / 2.0f, pPopupContext->m_PopupAnchor.y - PopupHeight / 2.0f, PopupWidth, PopupHeight))
+		return CUi::POPUP_KEEP_OPEN;
+	if(Preview.HasAlternativeMap())
+	{
+		CUIRect PreviewArea, Controls, ControlRow, VersionLabel, Button;
+		View.HSplitBottom(28.0f, &PreviewArea, &Controls);
+		Preview.Render(&PreviewArea);
+		Controls.HSplitTop(4.0f, nullptr, &Controls);
+		Controls.VMargin(8.0f, &Controls);
+		Controls.HSplitTop(20.0f, &ControlRow, nullptr);
+		ControlRow.VSplitRight(112.0f, &VersionLabel, &Button);
+		char aVersionLabel[128];
+		str_format(aVersionLabel, sizeof(aVersionLabel), "Version %" PRIzu " / %" PRIzu, Preview.SelectedVersionIndex(), Preview.MapVersionCount());
+		pMenus->Ui()->DoLabel(&VersionLabel, aVersionLabel, 10.0f, TEXTALIGN_ML);
+		if(Active && pMenus->DoButton_Menu(&pPopupContext->m_NextMapVersionButton, Localize("Next version"), 0, &Button))
+			Preview.SelectNextMapVersion();
+	}
+	else
+		Preview.Render(&View);
+	if(Active && Preview.IsDragging())
+		pMenus->Ui()->KeepPopupOpenOnOutsideRelease(pPopupContext->m_pPopupId);
+
+	return CUi::POPUP_KEEP_OPEN;
 }

@@ -476,6 +476,7 @@ private:
 		const SPopupMenuId *m_pId;
 		SPopupMenuProperties m_Props;
 		CUIRect m_Rect;
+		bool m_KeepOpenOnOutsideRelease = false;
 		void *m_pContext;
 		FPopupMenuFunction m_pfnFunc;
 	};
@@ -745,6 +746,8 @@ public:
 
 	// found in ui_popups.cpp
 	void DoPopupMenu(const SPopupMenuId *pId, float X, float Y, float Width, float Height, void *pContext, FPopupMenuFunction pfnFunc, const SPopupMenuProperties &Props = {});
+	bool UpdatePopupMenuRect(const SPopupMenuId *pId, float X, float Y, float Width, float Height);
+	void KeepPopupOpenOnOutsideRelease(const SPopupMenuId *pId);
 	void RenderPopupMenus();
 	void ClosePopupMenu(const SPopupMenuId *pId, bool IncludeDescendants = false);
 	void ClosePopupMenus();

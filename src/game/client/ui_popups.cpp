@@ -32,11 +32,37 @@ void CUi::DoPopupMenu(const SPopupMenuId *pId, float X, float Y, float Width, fl
 	pNewMenu->m_pfnFunc = pfnFunc;
 }
 
+bool CUi::UpdatePopupMenuRect(const SPopupMenuId *pId, float X, float Y, float Width, float Height)
+{
+	auto It = std::find_if(m_vPopupMenus.begin(), m_vPopupMenus.end(), [pId](const SPopupMenu &PopupMenu) { return PopupMenu.m_pId == pId; });
+	if(It == m_vPopupMenus.end())
+		return false;
+	constexpr float Margin = SPopupMenu::POPUP_BORDER + SPopupMenu::POPUP_MARGIN;
+	Width = std::clamp(Width, 2.0f * Margin, Screen()->w - 2.0f * Margin);
+	Height = std::clamp(Height, 2.0f * Margin, Screen()->h - 2.0f * Margin);
+	X = std::clamp(X, Margin, Screen()->w - Margin - Width);
+	Y = std::clamp(Y, Margin, Screen()->h - Margin - Height);
+	if(It->m_Rect.x == X && It->m_Rect.y == Y && It->m_Rect.w == Width && It->m_Rect.h == Height)
+		return false;
+	It->m_Rect.x = X;
+	It->m_Rect.y = Y;
+	It->m_Rect.w = Width;
+	It->m_Rect.h = Height;
+	return true;
+}
+
+void CUi::KeepPopupOpenOnOutsideRelease(const SPopupMenuId *pId)
+{
+	auto It = std::find_if(m_vPopupMenus.begin(), m_vPopupMenus.end(), [pId](const SPopupMenu &PopupMenu) { return PopupMenu.m_pId == pId; });
+	if(It != m_vPopupMenus.end())
+		It->m_KeepOpenOnOutsideRelease = true;
+}
+
 void CUi::RenderPopupMenus()
 {
 	for(size_t i = 0; i < m_vPopupMenus.size(); ++i)
 	{
-		const SPopupMenu &PopupMenu = m_vPopupMenus[i];
+		SPopupMenu &PopupMenu = m_vPopupMenus[i];
 		const SPopupMenuId *pId = PopupMenu.m_pId;
 		const bool Inside = MouseInside(&PopupMenu.m_Rect);
 		const bool Active = i == m_vPopupMenus.size() - 1;
@@ -51,7 +77,9 @@ void CUi::RenderPopupMenus()
 		{
 			if(!MouseButton(0))
 			{
-				if(!Inside)
+				const bool KeepOpen = PopupMenu.m_KeepOpenOnOutsideRelease;
+				PopupMenu.m_KeepOpenOnOutsideRelease = false;
+				if(!Inside && !KeepOpen)
 				{
 					ClosePopupMenu(pId);
 					--i;

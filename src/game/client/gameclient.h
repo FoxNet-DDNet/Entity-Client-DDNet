@@ -74,6 +74,7 @@
 // Entity
 #include "components/entity/anti_spawn_block.h"
 #include "components/entity/auto_dummy_connect.h"
+#include "components/entity/browser_map_preview.h"
 #include "components/entity/chat_bubbles.h"
 #include "components/entity/entity.h"
 #include "components/entity/freeze_kill.h"
@@ -243,7 +244,6 @@ public:
 	CCountryFlags m_CountryFlags;
 	CFlow m_Flow;
 	CHud m_Hud;
-	CHudEditor m_HudEditor; // EClient
 	CImportantAlert m_ImportantAlert;
 	CDebugHud m_DebugHud;
 	CControls m_Controls;
@@ -280,10 +280,12 @@ public:
 	// Entity
 	CAntiSpawnBlock m_AntiSpawnBlock;
 	CAutoDummyConnect m_AutoDummyConnect;
+	CBrowserMapPreview m_BrowserMapPreview;
 	CChatBubbles m_ChatBubbles;
 	CEClient m_EClient;
 	CEntityInfo m_EntityInfo;
 	CFreezeKill m_FreezeKill;
+	CHudEditor m_HudEditor;
 	CLocalPractice m_LocalPractice;
 	CMapFinishBrowser m_MapFinishBrowser;
 	CMapOverview m_MapOverview;

@@ -13,6 +13,7 @@
 #include <engine/console.h>
 #include <engine/demo.h>
 #include <engine/friends.h>
+#include <engine/map.h>
 #include <engine/serverbrowser.h>
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
@@ -1062,7 +1063,23 @@ private:
 	}
 
 	void RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect &MainView, const std::vector<CSettingsModule> &vModules, CLineInputBuffered<32> &SearchInput);
-	void DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect); // EClient
+	void DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect);
+
+	class CPopupServerSelectionContext
+	{
+	public:
+		CMenus *m_pMenus;
+		char m_aMapName[MAX_MAP_LENGTH];
+		char m_aCommunityId[CServerInfo::MAX_COMMUNITY_ID_LENGTH];
+		unsigned m_MapCrc;
+		const SPopupMenuId *m_pPopupId;
+		vec2 m_PopupAnchor;
+		float m_ExpandedWidth;
+		float m_ExpandedHeight;
+		bool m_OpenedThisFrame;
+		CButtonContainer m_NextMapVersionButton;
+	};
+	static CUi::EPopupMenuFunctionResult PopupServerSelection(void *pContext, CUIRect View, bool Active);
 
 public:
 	int DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake = false, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));

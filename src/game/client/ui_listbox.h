@@ -10,6 +10,8 @@ struct CListboxItem
 	bool m_Visible;
 	bool m_Selected;
 	CUIRect m_Rect;
+
+	int m_ButtonResult; // EClient
 };
 
 // Instances of CListBox must be static, as member addresses are used as UI item IDs
@@ -49,7 +51,7 @@ public:
 	void DoSpacing(float Spacing = 20.0f);
 	void DoStart(float RowHeight, int NumItems, int ItemsPerRow, int RowsPerScroll, int SelectedIndex, const CUIRect *pRect = nullptr, bool Background = true, int BackgroundCorners = IGraphics::CORNER_ALL, bool ForceShowScrollbar = false);
 	void ScrollToSelected() { m_ListBoxUpdateScroll = true; }
-	CListboxItem DoNextItem(const void *pId, bool Selected = false, float CornerRadius = 5.0f);
+	CListboxItem DoNextItem(const void *pId, bool Selected = false, float CornerRadius = 5.0f, unsigned ButtonFlags = BUTTONFLAG_LEFT);
 	CListboxItem DoSubheader();
 	int DoEnd();
 

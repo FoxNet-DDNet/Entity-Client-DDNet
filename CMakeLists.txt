@@ -2764,6 +2764,8 @@ if(CLIENT)
     components/entity/anti_spawn_block.h
     components/entity/auto_dummy_connect.cpp
     components/entity/auto_dummy_connect.h
+    components/entity/browser_map_preview.cpp
+    components/entity/browser_map_preview.h
     components/entity/chat_bubbles.cpp
     components/entity/chat_bubbles.h
     components/entity/commands.cpp

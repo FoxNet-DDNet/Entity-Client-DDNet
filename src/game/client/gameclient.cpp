@@ -167,6 +167,7 @@ void CGameClient::OnConsoleInit()
 					      &m_PlayerIndicator, // TClient
 					      &m_CustomCommunities, // TClient
 					      &m_MapOverview, // EClient
+					      &m_BrowserMapPreview, // EClient
 					      &m_Hud,
 					      &m_Spectator,
 					      &m_Emoticon,
