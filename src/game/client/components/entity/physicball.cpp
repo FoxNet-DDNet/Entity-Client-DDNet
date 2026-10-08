@@ -15,6 +15,7 @@
 #include <generated/client_data.h>
 #include <generated/protocol.h>
 
+#include <game/client/components/entity/local_practice.h>
 #include <game/client/components/particles.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
@@ -32,6 +33,7 @@
 constexpr float PhysicBallKillMargin = 200.0f * 32.0f;
 
 constexpr float PhysicBallRestSpeed = 30.0f;
+constexpr float PhysicBallMinRotationSpeed = 5.0f; // World units per second.
 constexpr float PhysicBallRestDuration = 0.4f;
 constexpr float PhysicBallMaxAngularSpeed = 1.5f; // Radians per physics tick.
 constexpr float PhysicBallHammerReach = 0.95f;
@@ -172,6 +174,7 @@ vec2 CPhysicBalls::PlayerPos() const
 {
 	if(Client()->State() != IClient::STATE_ONLINE)
 		return GameClient()->m_Camera.m_Center;
+	CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
 
 	auto GetPos = [&]() -> vec2 {
 		if(GameClient()->m_Snap.m_SpecInfo.m_Active)
@@ -231,6 +234,7 @@ void CPhysicBalls::RenderBalls()
 void CPhysicBalls::UpdateStepState()
 {
 	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
+	const bool PracticeActive = GameClient()->m_LocalPractice.IsActive();
 
 	m_Gravity = LocalId >= 0 ?
 			    (float)GameClient()->m_aClients[LocalId].m_Predicted.m_Tuning.m_Gravity :
@@ -248,7 +252,7 @@ void CPhysicBalls::UpdateStepState()
 	m_Weapon = GameClient()->m_Snap.m_SpecInfo.m_Active ? WEAPON_GUN : CurrentWeapon();
 	m_HammerHitValid = false;
 	if(m_FirePressed && m_Weapon == WEAPON_HAMMER &&
-		LocalId >= 0 && GameClient()->m_Snap.m_apPlayerInfos[LocalId])
+		LocalId >= 0 && (PracticeActive || GameClient()->m_Snap.m_apPlayerInfos[LocalId]))
 	{
 		const CGameClient::CClientData &LocalClient = GameClient()->m_aClients[LocalId];
 		if(!LocalClient.m_Predicted.m_HammerHitDisabled &&
@@ -265,26 +269,34 @@ void CPhysicBalls::UpdateStepState()
 	}
 
 	m_vPlayerColliders.clear();
-	if(LocalId < 0 || !GameClient()->m_Snap.m_apPlayerInfos[LocalId])
+	if(LocalId < 0 || (!PracticeActive && !GameClient()->m_Snap.m_apPlayerInfos[LocalId]))
 		return;
 
 	const CGameClient::CClientData &LocalClient = GameClient()->m_aClients[LocalId];
 
 	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
 	{
-		if(!GameClient()->m_Snap.m_apPlayerInfos[ClientId])
+		if(!PracticeActive && !GameClient()->m_Snap.m_apPlayerInfos[ClientId])
 			continue;
 
 		const CGameClient::CClientData &Client = GameClient()->m_aClients[ClientId];
-		if(!Client.m_Active || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
+		if(PracticeActive)
+		{
+			if(!GameClient()->m_LocalPractice.IsSimulated(ClientId))
+				continue;
+		}
+		else if(!Client.m_Active || !GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
 			continue;
 		if(ClientId != LocalId)
 		{
-			if(Client.m_CollisionDisabled || Client.m_Spec || Client.m_Predicted.m_Id < 0)
+			if((PracticeActive ? Client.m_Predicted.m_CollisionDisabled : Client.m_CollisionDisabled) ||
+				(!PracticeActive && Client.m_Spec) || Client.m_Predicted.m_Id < 0)
 				continue;
 			if(Client.m_Team != LocalClient.m_Team)
 				continue;
-			if(Client.m_Solo || LocalClient.m_Solo)
+			if(PracticeActive ?
+					(GameClient()->m_LocalPractice.IsPracticeSolo(ClientId) || GameClient()->m_LocalPractice.IsPracticeSolo(LocalId)) :
+					(Client.m_Solo || LocalClient.m_Solo))
 				continue;
 		}
 
@@ -417,6 +429,9 @@ bool CPhysicBalls::ResolveBallPair(CBall *pA, CBall *pB, float Elasticity, bool 
 	if(Distance >= ContactDistance)
 		return false;
 
+	pA->m_TouchingBall = true;
+	pB->m_TouchingBall = true;
+
 	if(pA->m_Asleep && pB->m_Asleep)
 		return false;
 	constexpr float Slop = 0.5f;
@@ -426,8 +441,12 @@ bool CPhysicBalls::ResolveBallPair(CBall *pA, CBall *pB, float Elasticity, bool 
 		(!ApplyImpulse || dot(pA->m_Vel - pB->m_Vel, Normal) >= 0.0f))
 		return false;
 
-	pA->WakeUp();
-	pB->WakeUp();
+	// Repeated resting contacts should not restart the sleep timer every frame.
+	// Position change below is still considered by UpdateSleepState.
+	if(pA->m_Asleep)
+		pA->WakeUp();
+	if(pB->m_Asleep)
+		pB->WakeUp();
 
 	const float MassA = pA->m_Size;
 	const float MassB = pB->m_Size;
@@ -467,7 +486,11 @@ bool CPhysicBalls::ResolveBallPair(CBall *pA, CBall *pB, float Elasticity, bool 
 		const vec2 Tangent(-Normal.y, Normal.x);
 		const float SpinRadiusA = pA->RenderRadius();
 		const float SpinRadiusB = pB->RenderRadius();
-		const float Slip = dot(RelativeVel, Tangent) - pA->m_AngularVelocity * SpinRadiusA - pB->m_AngularVelocity * SpinRadiusB;
+		// Stored velocities in a compressed pile can differ from the motion that
+		// actually happened. Use the pre-solver travel so resting contacts do not
+		// continuously create spin from velocity canceled by collision pushout.
+		const vec2 RelativeTravelVel = pA->m_StepVel - pB->m_StepVel;
+		const float Slip = dot(RelativeTravelVel, Tangent) - pA->m_AngularVelocity * SpinRadiusA - pB->m_AngularVelocity * SpinRadiusB;
 		const float SpinChange = Slip * 0.2f / (SpinRadiusA + SpinRadiusB);
 		pA->m_AngularVelocity = std::clamp(pA->m_AngularVelocity + SpinChange, -PhysicBallMaxAngularSpeed, PhysicBallMaxAngularSpeed);
 		pB->m_AngularVelocity = std::clamp(pB->m_AngularVelocity + SpinChange, -PhysicBallMaxAngularSpeed, PhysicBallMaxAngularSpeed);
@@ -728,18 +751,18 @@ void CPhysicBalls::WakeAll()
 		Ball.WakeUp();
 }
 
-void CPhysicBalls::UpdateSleepState(CBall *pBall, float Dt) const
+void CPhysicBalls::UpdateSleepState(CBall *pBall, float Dt, float MovedDistance) const
 {
 	if(Dt <= 0.0f)
 		return;
 
-	if(!pBall->m_Grounded && !pBall->m_Supported)
+	if(!pBall->m_Grounded && !pBall->m_Supported && !pBall->m_TouchingBall)
 	{
 		pBall->m_RestTime = 0.0f;
 		return;
 	}
 
-	if(length(pBall->m_Pos - pBall->m_PrevPos) > PhysicBallRestSpeed * Dt)
+	if(MovedDistance > PhysicBallRestSpeed * Dt)
 	{
 		pBall->m_RestTime = 0.0f;
 		return;
@@ -780,10 +803,6 @@ void CPhysicBalls::DoBallPhysics(CBall *pBall, float Dt, float Elasticity)
 	{
 		pBall->m_AngularVelocity *= m_AirAngularDamping;
 	}
-	pBall->m_Rotation += pBall->m_AngularVelocity * DtTicks;
-
-	if(pBall->m_Rotation > 2.0f * pi || pBall->m_Rotation < -2.0f * pi)
-		pBall->m_Rotation = std::fmod(pBall->m_Rotation, 2.0f * pi);
 }
 
 void CPhysicBalls::Update(float Dt)
@@ -809,10 +828,12 @@ void CPhysicBalls::Update(float Dt)
 	{
 		Ball.m_PrevPos = Ball.m_Pos;
 		Ball.m_Supported = false;
+		Ball.m_TouchingBall = false;
 		WakeForWeaponFire(Ball);
 	}
 
 	bool AnyAwake = false;
+	const float InvDtTicks = DtTicks > 0.0f ? 1.0f / DtTicks : 0.0f;
 	for(CBall &Ball : m_vBalls)
 	{
 		DoPlayerCollisions(&Ball, Elasticity);
@@ -822,11 +843,41 @@ void CPhysicBalls::Update(float Dt)
 			DoBallPhysics(&Ball, Dt, Elasticity);
 			AnyAwake = true;
 		}
+		Ball.m_StepVel = (Ball.m_Pos - Ball.m_PrevPos) * InvDtTicks;
 	}
 
 	// Resolve the positions produced by this step before they are rendered.
 	if(AnyAwake)
 		DoBallCollisions(Elasticity);
+
+	for(CBall &Ball : m_vBalls)
+	{
+		if(Ball.m_Asleep)
+			continue;
+
+		const vec2 Travel = Ball.m_Pos - Ball.m_PrevPos;
+		const float MovedDistance = length(Travel);
+		UpdateSleepState(&Ball, Dt, MovedDistance);
+		if(Ball.m_Asleep)
+			continue;
+
+		// Pair pushout changes position without necessarily adding velocity. Only
+		// rotate for movement that happened before pushout and still appears in
+		// the final travel direction; gravity alone can leave stored velocity in
+		// a constrained pile.
+		const float MinTravel = PhysicBallMinRotationSpeed * Dt;
+		const float DrivenDistance = MovedDistance > 0.0f ? dot(Ball.m_StepVel * DtTicks, Travel) / MovedDistance : 0.0f;
+		if(MovedDistance <= MinTravel || DrivenDistance <= MinTravel || dot(Ball.m_Vel, Ball.m_Vel) <= 0.0001f)
+		{
+			Ball.m_AngularVelocity = 0.0f;
+			continue;
+		}
+
+		const float MaxRotation = std::min(MovedDistance, DrivenDistance) / Ball.RenderRadius();
+		Ball.m_Rotation += std::clamp(Ball.m_AngularVelocity * DtTicks, -MaxRotation, MaxRotation);
+		if(Ball.m_Rotation > 2.0f * pi || Ball.m_Rotation < -2.0f * pi)
+			Ball.m_Rotation = std::fmod(Ball.m_Rotation, 2.0f * pi);
+	}
 
 	if(g_Config.m_ClPhysicBallsKillBorder)
 	{
@@ -835,9 +886,6 @@ void CPhysicBalls::Update(float Dt)
 
 		for(CBall &Ball : m_vBalls)
 		{
-			if(!Ball.m_Asleep)
-				UpdateSleepState(&Ball, Dt);
-
 			// Written inverted so that a non finite position is dropped as well.
 			if(!(Ball.m_Pos.x > -PhysicBallKillMargin && Ball.m_Pos.x < MaxX &&
 				   Ball.m_Pos.y > -PhysicBallKillMargin && Ball.m_Pos.y < MaxY))
@@ -852,6 +900,7 @@ void CPhysicBalls::OnRender()
 {
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
+	CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
 
 	const int64_t Now = time();
 	if(m_LastPhysicsTime == 0)
@@ -970,7 +1019,7 @@ void CPhysicBalls::OnExplosion(vec2 Pos, bool SameTeam)
 {
 	if(!SameTeam)
 		return;
-	if(GameClient()->m_Snap.m_SpecInfo.m_Active)
+	if(GameClient()->m_Snap.m_SpecInfo.m_Active && !GameClient()->m_LocalPractice.IsControlling())
 		return;
 
 	constexpr float Radius = 200.0f;

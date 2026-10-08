@@ -24,11 +24,14 @@ public:
 	vec2 m_Pos;
 	vec2 m_PrevPos;
 	vec2 m_Vel;
+	// Movement produced by this step before ball-pair pushout, in units per tick.
+	vec2 m_StepVel = vec2(0.0f, 0.0f);
 	vec2 m_MapContactNormal = vec2(0.0f, 0.0f);
 
 	bool m_Grounded = false;
 	// Resting on another ball that is itself grounded or asleep, so stacks can sleep too.
 	bool m_Supported = false;
+	bool m_TouchingBall = false;
 	bool m_Asleep = false;
 	bool m_Dead = false;
 	float m_RestTime = 0.0f;
@@ -72,7 +75,7 @@ class CPhysicBalls : public CComponent
 	void DoBallCollisions(float Elasticity);
 	bool ResolveBallPair(CBall *pA, CBall *pB, float Elasticity, bool ApplyImpulse) const;
 	void DoWeaponFireEffects(CBall *pBall, float Dt) const;
-	void UpdateSleepState(CBall *pBall, float Dt) const;
+	void UpdateSleepState(CBall *pBall, float Dt, float MovedDistance) const;
 
 	bool KillBall(CBall &Ball);
 	void PruneDeadBalls();
