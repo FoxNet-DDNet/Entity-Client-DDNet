@@ -428,6 +428,8 @@ void CBrowserMapPreview::LoadMap(const char *pMapName, const char *pCommunityId,
 	m_CommunityId = pCommunityId;
 	m_MapCrc = MapCrc;
 	m_Zoom = 1.0f;
+	m_TargetZoom = 1.0f;
+	m_LastZoomUpdate = std::chrono::nanoseconds::zero();
 	if(m_MapName.empty())
 		return;
 	m_CurrentWorker.m_pJob = std::make_shared<CJob>();
@@ -863,6 +865,24 @@ void CBrowserMapPreview::Render(CUIRect *pRect)
 	}
 	if(State == EState::READY && m_pData)
 	{
+		const std::chrono::nanoseconds Now = time_get_nanoseconds();
+		if(m_LastZoomUpdate != std::chrono::nanoseconds::zero() && m_Zoom != m_TargetZoom)
+		{
+			const float Elapsed = std::clamp(std::chrono::duration<float>(Now - m_LastZoomUpdate).count(), 0.0f, 0.05f);
+			const float Duration = g_Config.m_ClSmoothZoomTime / 1000.0f;
+			const float Factor = Duration > 0.0f ? 1.0f - std::exp(-3.0f * Elapsed / Duration) : 1.0f;
+			float NextZoom = m_Zoom + (m_TargetZoom - m_Zoom) * Factor;
+			if(std::abs(NextZoom - m_TargetZoom) < std::max(0.00001f, m_TargetZoom * 0.001f))
+				NextZoom = m_TargetZoom;
+			const float BaseScale = std::min(pRect->w / 960.0f, pRect->h / 540.0f);
+			if(BaseScale > 0.0f)
+			{
+				const vec2 CursorOffset = m_ZoomAnchorScreen - pRect->Center();
+				m_CameraCenter += CursorOffset / BaseScale * (1.0f / m_Zoom - 1.0f / NextZoom);
+			}
+			m_Zoom = NextZoom;
+		}
+		m_LastZoomUpdate = Now;
 		if(Ui()->MouseHovered(pRect) && Ui()->MouseButtonClicked(0))
 		{
 			m_Dragging = true;
@@ -882,10 +902,13 @@ void CBrowserMapPreview::Render(CUIRect *pRect)
 			// The camera stores zoom as world span; the preview stores its inverse.
 			const float MinZoom = 1.0f / (g_Config.m_ClLimitMaxZoomLevel ? (Graphics()->IsTileBufferingEnabled() ? 240.0f : 30.0f) : 240.0f);
 			const float MaxZoom = 1.0f / 0.01f;
+			const float PreviousTargetZoom = m_TargetZoom;
 			if(Input()->KeyPress(KEY_MOUSE_WHEEL_UP))
-				m_Zoom = std::min(m_Zoom / CCamera::ZOOM_STEP, MaxZoom);
+				m_TargetZoom = std::min(m_TargetZoom / CCamera::ZOOM_STEP, MaxZoom);
 			if(Input()->KeyPress(KEY_MOUSE_WHEEL_DOWN))
-				m_Zoom = std::max(m_Zoom * CCamera::ZOOM_STEP, MinZoom);
+				m_TargetZoom = std::max(m_TargetZoom * CCamera::ZOOM_STEP, MinZoom);
+			if(m_TargetZoom != PreviousTargetZoom)
+				m_ZoomAnchorScreen = Ui()->MousePos();
 		}
 		if(!RenderMap(*pRect))
 		{

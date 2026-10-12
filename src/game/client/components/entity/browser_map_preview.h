@@ -165,7 +165,10 @@ class CBrowserMapPreview : public CComponent
 	bool m_LegacyOverridesLoaded = false;
 	vec2 m_CameraCenter{0, 0};
 	vec2 m_LastDragMousePos{0, 0};
+	vec2 m_ZoomAnchorScreen{0, 0};
 	float m_Zoom = 1.0f;
+	float m_TargetZoom = 1.0f;
+	std::chrono::nanoseconds m_LastZoomUpdate{0};
 	bool m_Dragging = false;
 
 	static void MapLoadThread(const std::shared_ptr<CJob> &pJob);
