@@ -57,6 +57,8 @@ public:
 
 	// TClient
 	void SetFadeTime(const void *pId, float Time);
+	// EClient
+	void DoToolTipFade(const void *pId, const CUIRect *pNearRect, const char *pText, float FadeTime);
 
 	void OnReset() override;
 	void OnRender() override;

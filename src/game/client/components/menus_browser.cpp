@@ -464,7 +464,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 			}
 		}
 		if(!Ui()->IsPopupOpen() && Ui()->HotItem() == pItem && GameClient()->m_BrowserMapPreview.HasAvailableMap(pItem->m_aMap))
-			GameClient()->m_Tooltips.DoToolTip(pItem, &ListItem.m_Rect, Localize("Right click to preview map"));
+			GameClient()->m_Tooltips.DoToolTipFade(pItem, &ListItem.m_Rect, Localize("Right click to preview map"), 0.4f);
 
 		const bool RightClickedNewEntry = Ui()->IsPopupOpen(&s_PopupServerId) && Ui()->MouseButtonClicked(1) && Ui()->MouseInside(&ListItem.m_Rect) &&
 						  (str_comp(s_PopupServerContext.m_aMapName, pItem->m_aMap) || str_comp(s_PopupServerContext.m_aCommunityId, pItem->m_aCommunityId) || s_PopupServerContext.m_MapCrc != static_cast<unsigned>(pItem->m_MapCrc));

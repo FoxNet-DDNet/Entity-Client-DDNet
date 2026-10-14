@@ -2028,8 +2028,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		{
 			EntryRect.VSplitRight(20.0f, &EntryRect, &ToolTip);
 			RenderFontIcon(ToolTip, FontIcon::COMMENT, 18.0f, TEXTALIGN_MC);
-			GameClient()->m_Tooltips.DoToolTip(&s_vItemIds[i], &ToolTip, pEntry->m_aReason);
-			GameClient()->m_Tooltips.SetFadeTime(&s_vItemIds[i], 0.0f);
+			GameClient()->m_Tooltips.DoToolTipFade(&s_vItemIds[i], &ToolTip, pEntry->m_aReason, 0.0f);
 		}
 
 		EntryRect.HMargin(MarginExtraSmall, &EntryRect);

@@ -38,6 +38,32 @@ void CTooltips::SetFadeTime(const void *pId, float Time)
 	}
 }
 
+void CTooltips::DoToolTipFade(const void *pId, const CUIRect *pNearRect, const char *pText, float FadeTime)
+{
+	uintptr_t Id = reinterpret_cast<uintptr_t>(pId);
+	const auto &[Entry, WasInserted] = m_Tooltips.emplace(Id, CTooltip{
+									  pId,
+									  *pNearRect,
+									  pText,
+									  -1,
+									  false,
+									  FadeTime});
+	CTooltip &Tooltip = Entry->second;
+
+	if(!WasInserted)
+	{
+		Tooltip.m_Rect = *pNearRect; // update in case of window resize
+		Tooltip.m_pText = pText; // update in case of language change
+	}
+
+	Tooltip.m_OnScreen = true;
+
+	if(Ui()->HotItem() == Tooltip.m_pId)
+	{
+		SetActiveTooltip(Tooltip);
+	}
+}
+
 void CTooltips::DoToolTip(const void *pId, const CUIRect *pNearRect, const char *pText, float WidthHint)
 {
 	uintptr_t Id = reinterpret_cast<uintptr_t>(pId);
@@ -90,7 +116,7 @@ void CTooltips::OnRender()
 		m_PreviousTooltip.emplace(Tooltip);
 
 		// Delay tooltip until 1 second passed. Start fade-in in the last 0.25 seconds.
-		constexpr float SecondsBeforeFadeIn = 0.75f;
+		const float SecondsBeforeFadeIn = Tooltip.m_FadeTime;
 		const float SecondsSinceActivation = (time_get() - m_HoverTime) / (float)time_freq();
 		if(SecondsSinceActivation < SecondsBeforeFadeIn)
 			return;
