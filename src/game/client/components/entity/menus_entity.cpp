@@ -2028,7 +2028,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		{
 			EntryRect.VSplitRight(20.0f, &EntryRect, &ToolTip);
 			RenderFontIcon(ToolTip, FontIcon::COMMENT, 18.0f, TEXTALIGN_MC);
-			GameClient()->m_Tooltips.DoToolTipFade(&s_vItemIds[i], &ToolTip, pEntry->m_aReason, 0.0f);
+			Ui()->DoToolTipFade(&s_vItemIds[i], &ToolTip, pEntry->m_aReason, 0.0f);
 		}
 
 		EntryRect.HMargin(MarginExtraSmall, &EntryRect);
@@ -2043,7 +2043,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 		if(pEntry->m_TempEntry)
-			GameClient()->m_Tooltips.DoToolTip(&s_vItemIds[i], &EntryRect, "Temporary Entry");
+			Ui()->DoToolTip(&s_vItemIds[i], &EntryRect, "Temporary Entry");
 	}
 
 	const int NewSelectedEntry = s_EntriesListBox.DoEnd();
@@ -2272,7 +2272,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 			{
 				SetFlag(g_Config.m_ClWarlistBrowserFlags, i, !BrowserFlagSet);
 			}
-			GameClient()->m_Tooltips.DoToolTip(&s_vTypeBrowserHideButtons[i], &HideButton,
+			Ui()->DoToolTip(&s_vTypeBrowserHideButtons[i], &HideButton,
 				BrowserFlagSet ? EcLocalize("Hidden in server browser") : EcLocalize("Shown in server browser"));
 		}
 
@@ -2283,7 +2283,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		char aBuf[64];
 		str_format(aBuf, sizeof(aBuf), "%d %s", pType->m_NumEntries, EcLocalize("entries"));
 		s_vTypeEntriesText[i] = aBuf;
-		GameClient()->m_Tooltips.DoToolTip(&s_vTypeItemIds[i], &TypeRect, s_vTypeEntriesText[i].c_str());
+		Ui()->DoToolTip(&s_vTypeItemIds[i], &TypeRect, s_vTypeEntriesText[i].c_str());
 	}
 	const int NewSelectedType = s_WarTypeListBox.DoEnd();
 	if((SelectedOldType != NewSelectedType && NewSelectedType >= 0) || (NewSelectedType >= 0 && Ui()->HotItem() == &s_vTypeItemIds[NewSelectedType] && Ui()->MouseButtonClicked(0)))
@@ -3025,7 +3025,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				if(DoButton_CheckBox(&g_Config.m_ClChatBubble, ("Show Typing Indicator"), g_Config.m_ClChatBubble, &Button))
 					g_Config.m_ClChatBubble ^= 1;
-				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClChatBubble, &Button, "Lets others see the vanilla '...' icon above your tee while you're typing - not the floating chat text, that's the separate Chat Bubbles module");
+				Ui()->DoToolTip(&g_Config.m_ClChatBubble, &Button, "Lets others see the vanilla '...' icon above your tee while you're typing - not the floating chat text, that's the separate Chat Bubbles module");
 				ModuleRect.HSplitTop(2.5f, &Button, &ModuleRect);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowMutedInConsole, ("Show Messages of Muted People in The Console"), &g_Config.m_ClShowMutedInConsole, &ModuleRect, LineSize);
@@ -3034,7 +3034,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				if(DoButton_CheckBox(&g_Config.m_ClChatMath, ("Suggest Math Results in Chat"), g_Config.m_ClChatMath, &Button))
 					g_Config.m_ClChatMath ^= 1;
-				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClChatMath, &Button, "End a message with '=' to get the result suggested, press Tab to insert it");
+				Ui()->DoToolTip(&g_Config.m_ClChatMath, &Button, "End a message with '=' to get the result suggested, press Tab to insert it");
 
 				ModuleRect.HSplitTop(-10.0f, &Button, &ModuleRect);
 
@@ -3114,7 +3114,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.5f);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNightShift, EcLocalize("Use Night Shift"), &g_Config.m_ClNightShift, &ModuleRect, LineSize);
-			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClNightShift, &ModuleRect, "Shifts the colors of everything on screen towards red, which is easier on the eyes at night");
+			Ui()->DoToolTip(&g_Config.m_ClNightShift, &ModuleRect, "Shifts the colors of everything on screen towards red, which is easier on the eyes at night");
 
 			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
 
@@ -3143,7 +3143,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				g_Config.m_ClNightShiftTemperature = NeutralTemperature - Warmth * (NeutralTemperature - WarmestTemperature) / 100;
 			static char s_aWarmthTooltip[128];
 			str_format(s_aWarmthTooltip, sizeof(s_aWarmthTooltip), EcLocalize("Drag right to remove more blue light, currently %dK"), g_Config.m_ClNightShiftTemperature);
-			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClNightShiftTemperature, &ModuleRect, s_aWarmthTooltip);
+			Ui()->DoToolTip(&g_Config.m_ClNightShiftTemperature, &ModuleRect, s_aWarmthTooltip);
 
 			if(g_Config.m_ClNightShiftSchedule == NIGHT_SHIFT_SCHEDULE_CUSTOM || HasSearch)
 			{
@@ -3201,7 +3201,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			{
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				Ui()->DoScrollbarOption(&g_Config.m_ClNightShiftTransition, &g_Config.m_ClNightShiftTransition, &Button, EcLocalize("Fade"), 0, 180, &CUi::ms_LinearScrollbarScale, 0, EcLocalize(" minutes"));
-				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClNightShiftTransition, &ModuleRect, "How long the shift takes to fade in at the start and out at the end of its window");
+				Ui()->DoToolTip(&g_Config.m_ClNightShiftTransition, &ModuleRect, "How long the shift takes to fade in at the start and out at the end of its window");
 			}
 
 			char aStatus[128];
@@ -3388,7 +3388,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				//ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				//Ui()->DoScrollbarOption(&g_Config.m_ClMediaIslandAnimation, &g_Config.m_ClMediaIslandAnimation, &Button, "Animation Time", 0, 300, &CUi::ms_LinearScrollbarScale, 0u, "");
-				//GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClMediaIslandAnimation, &Button, "Time it takes for the Islands animation, lower = slower", FontSize);
+				//Ui()->DoToolTip(&g_Config.m_ClMediaIslandAnimation, &Button, "Time it takes for the Islands animation, lower = slower", FontSize);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMediaIslandVisualizer, "Show Visualizer", &g_Config.m_ClMediaIslandVisualizer, &ModuleRect, LineSize);
 
@@ -3571,7 +3571,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 			if(DoButton_CheckBox(&g_Config.m_ClAntiSpawnBlock, "Anti Spawn Block", g_Config.m_ClAntiSpawnBlock, &Button))
 				g_Config.m_ClAntiSpawnBlock ^= 1;
-			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you respawn and back to team 0 when close to start line");
+			Ui()->DoToolTip(&g_Config.m_ClAntiSpawnBlock, &Button, "Puts you into a random Team when you respawn and back to team 0 when close to start line");
 
 			{
 				static std::vector<CButtonContainer> s_vButtonContainers = {{}, {}, {}};
@@ -3791,7 +3791,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClEffectColors, ("Effect Color"), &g_Config.m_ClEffectColors, &ModuleRect, LineMargin);
 
-			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClEffectColors, &ModuleRect, "Doesn't work if the sprite already has a set color\nMake the sprite the color you want if it doesn't work");
+			Ui()->DoToolTip(&g_Config.m_ClEffectColors, &ModuleRect, "Doesn't work if the sprite already has a set color\nMake the sprite the color you want if it doesn't work");
 			if(g_Config.m_ClEffectColors)
 			{
 				static CButtonContainer s_EffectR;
@@ -4141,7 +4141,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 			if(DoButton_CheckBox(&g_Config.m_ClAutoAddOnNameChange, EcLocalize("Auto Add to Warlist on Name Change"), g_Config.m_ClAutoAddOnNameChange, &Button))
 				g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange ? 0 : 1;
-			GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClAutoAddOnNameChange, &Button, "Automatically adds players that change their name to the warlist again");
+			Ui()->DoToolTip(&g_Config.m_ClAutoAddOnNameChange, &Button, "Automatically adds players that change their name to the warlist again");
 
 			if(g_Config.m_ClAutoAddOnNameChange || HasSearch)
 			{
@@ -4403,7 +4403,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			Ui()->DoLabel(&Button, EcLocalize("Map Overview"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMapOverview, "Enable map overview", &g_Config.m_ClMapOverview, &ModuleRect, LineSize);
-				GameClient()->m_Tooltips.DoToolTip(&g_Config.m_ClMapOverview, &Button, "Renders areas darker that you have already explored", FontSize);
+				Ui()->DoToolTip(&g_Config.m_ClMapOverview, &Button, "Renders areas darker that you have already explored", FontSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMapOverviewSpectatingOnly, "Only show map overview while spectating", &g_Config.m_ClMapOverviewSpectatingOnly, &ModuleRect, LineSize);
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				Ui()->DoScrollbarOption(&g_Config.m_ClMapOverviewOpacity, &g_Config.m_ClMapOverviewOpacity, &Button, "Explored area opacity", 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
@@ -4746,7 +4746,7 @@ void CMenus::DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect)
 	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 
-	GameClient()->m_Tooltips.DoToolTip(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor");
+	Ui()->DoToolTip(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor");
 
 	if(Ui()->DoButtonLogic(pId, 0, &Button, BUTTONFLAG_LEFT) && Ingame)
 		GameClient()->m_HudEditor.ToggleHudEditor();

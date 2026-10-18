@@ -421,6 +421,7 @@ if(NOT MSVC AND NOT HAIKU)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wthread-safety)
   add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wthread-safety-negative)
   add_linker_flag_if_supported(OUR_FLAGS_LINK -Wno-alloc-size-larger-than) # save.cpp with LTO
+  add_linker_flag_if_supported(OUR_FLAGS_LINK -Wno-stringop-overflow) # str_copy with LTO
   # tidy-alphabetical-end
   # add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wdouble-promotion) # Many occurrences
   # add_cxx_compiler_flag_if_supported(OUR_FLAGS_OWN -Wnull-dereference) # Many occurrences
@@ -2701,6 +2702,8 @@ if(CLIENT)
     graphics_threaded_sprites.cpp
     input.cpp
     input.h
+    keyboard.cpp
+    keyboard.h
     keynames.cpp
     keynames.h
     notifications.cpp
@@ -2730,6 +2733,7 @@ if(CLIENT)
     # tidy-alphabetical-start
     animstate.cpp
     animstate.h
+    assets.cpp
     component.cpp
     component.h
     components/background.cpp
@@ -2910,8 +2914,6 @@ if(CLIENT)
     components/tclient/translate.h
     components/tclient/warlist.cpp
     components/tclient/warlist.h
-    components/tooltips.cpp
-    components/tooltips.h
     components/touch_controls.cpp
     components/touch_controls.h
     components/voting.cpp
@@ -2956,6 +2958,8 @@ if(CLIENT)
     sixup_translate_snapshot.cpp
     skin.cpp
     skin.h
+    tooltips.cpp
+    tooltips.h
     ui.cpp
     ui.h
     ui_listbox.cpp
@@ -3729,13 +3733,22 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
   list(APPEND TARGETS_LINK ${TARGET_TESTRUNNER})
 
   add_custom_target(run_cxx_tests
-    COMMAND $<TARGET_FILE:${TARGET_TESTRUNNER}> ${TESTRUNNER_ARGS}
+    COMMAND $<TARGET_FILE:${TARGET_TESTRUNNER}> --gtest_brief=1 ${TESTRUNNER_ARGS}
     COMMENT Running unit tests
     DEPENDS ${TARGET_TESTRUNNER}
     USES_TERMINAL
   )
   add_custom_target(run_tests
     DEPENDS run_cxx_tests
+  )
+  add_custom_target(run_cxx_tests_verbose
+    COMMAND $<TARGET_FILE:${TARGET_TESTRUNNER}> --no-capture ${TESTRUNNER_ARGS}
+    COMMENT Running unit tests
+    DEPENDS ${TARGET_TESTRUNNER}
+    USES_TERMINAL
+  )
+  add_custom_target(run_tests_verbose
+    DEPENDS run_cxx_tests_verbose
   )
   if(NOT MSVC OR CMAKE_BUILD_TYPE STREQUAL Release OR CMAKE_BUILD_TYPE STREQUAL RelWithDebInfo OR CMAKE_BUILD_TYPE STREQUAL MinSizeRel)
     # On MSVC, Rust tests only work in the release mode because we link our C++
@@ -3744,6 +3757,7 @@ if((GTEST_FOUND OR DOWNLOAD_GTEST) AND SERVER)
     #
     # See also https://github.com/rust-lang/rust/issues/39016.
     add_dependencies(run_tests run_rust_tests)
+    add_dependencies(run_tests_verbose run_rust_tests)
   endif()
 endif()
 
@@ -4303,7 +4317,7 @@ source_group_tree(src)
 
 if(ANTIBOT)
   # Allow the antibot library to use functions from the server binary.
-  add_cxx_compiler_flag_if_supported(OUR_FLAGS_LINK -rdynamic)
+  add_linker_flag_if_supported(OUR_FLAGS_LINK -rdynamic)
   set_own_rpath(game-server)
 endif()
 

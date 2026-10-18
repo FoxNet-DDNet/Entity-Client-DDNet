@@ -18,7 +18,6 @@
 #include <game/client/animstate.h>
 #include <game/client/components/console.h>
 #include <game/client/components/menus.h>
-#include <game/client/components/tooltips.h>
 #include <game/client/gameclient.h>
 #include <game/client/render.h>
 #include <game/client/ui.h>
@@ -987,7 +986,7 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 
 		if(GameClient()->m_Menus.DoButton_Menu(&m_ActionTypeButton, m_EditClientCommand ? EcLocalize("Client") : EcLocalize("Rcon"), 0, &TypeButton))
 			m_EditClientCommand = !m_EditClientCommand;
-		GameClient()->m_Tooltips.DoToolTip(&m_ActionTypeButton, &TypeButton, EcLocalize("Whether the action sends its command to rcon or runs it on the local console"), 200.0f);
+		Ui()->DoToolTip(&m_ActionTypeButton, &TypeButton, EcLocalize("Whether the action sends its command to rcon or runs it on the local console"), 200.0f);
 
 		// The syntax check is only a hint, a command is never rejected: servers can
 		// have commands that this client does not know about.
@@ -1023,7 +1022,7 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 					str_append(m_aCommandTooltip, pCommandInfo->Help());
 				}
 			}
-			GameClient()->m_Tooltips.DoToolTip(&m_ActionCommandInput, &Input, m_aCommandTooltip, 200.0f);
+			Ui()->DoToolTip(&m_ActionCommandInput, &Input, m_aCommandTooltip, 200.0f);
 		}
 
 		if(m_SelectedAction >= 0)
@@ -1206,7 +1205,7 @@ void CMenusModeration::RenderQuickActions(CUIRect View)
 				str_format(m_aHoveredCommand, sizeof(m_aHoveredCommand), "%s\n%s", Action.m_aCommand, EcLocalize("Client command"));
 			else
 				str_copy(m_aHoveredCommand, Action.m_aCommand);
-			GameClient()->m_Tooltips.DoToolTip(&m_aActionButtons[Index], &Tile, m_aHoveredCommand);
+			Ui()->DoToolTip(&m_aActionButtons[Index], &Tile, m_aHoveredCommand);
 		}
 
 		CUIRect TileLabel;

@@ -18,7 +18,7 @@
 
 #include <game/localization.h>
 
-#include <limits>
+constexpr float TOOLTIP_FONTSIZE = 14.0f;
 
 void CUIElement::Init(CUi *pUI, int RequestedRectCount)
 {
@@ -115,6 +115,8 @@ void CUi::Init(IKernel *pKernel)
 	CUIRect::Init(m_pGraphics);
 	CLineInput::Init(m_pClient, m_pGraphics, m_pInput, m_pTextRender);
 	CUIElementBase::Init(this);
+	m_pTooltips = std::make_unique<CTooltips>();
+	m_pTooltips->Init(this, m_pTextRender);
 }
 
 CUi::CUi()
@@ -878,6 +880,10 @@ CLabelResult CUi::DoLabel(const CUIRect *pRect, const char *pText, float Size, i
 	Cursor.m_vColorSplits = LabelProps.m_vColorSplits;
 	Cursor.m_LineWidth = (float)LabelProps.m_MaxWidth;
 	TextRender()->TextEx(&Cursor, pText, -1);
+	if(Cursor.m_Truncated && LabelProps.m_pTooltipId)
+	{
+		DoToolTip({LabelProps.m_pTooltipId, *pRect, pText, -1, Size, true});
+	}
 
 	return CLabelResult{Cursor.m_Truncated, CursorPos, Size, Cursor.m_LongestLineWidth};
 }
@@ -907,7 +913,7 @@ void CUi::DoLabel(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, cons
 	TextRender()->CreateTextContainer(RectEl.m_UITextContainer, &Cursor, pText, StrLen);
 	TextRender()->TextColor(RectEl.m_TextColor);
 	TextRender()->TextOutlineColor(RectEl.m_TextOutlineColor);
-	RectEl.m_Cursor = Cursor;
+	RectEl.m_Cursor = std::move(Cursor);
 }
 
 void CUi::DoLabelStreamed(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps, int StrLen, const CTextCursor *pReadCursor) const
@@ -963,6 +969,16 @@ void CUi::DoLabelStreamed(CUIElement::SUIElementRect &RectEl, const CUIRect *pRe
 	{
 		const vec2 CursorPos = CalcAlignedCursorPos(pRect, vec2(RectEl.m_Cursor.m_LongestLineWidth, RectEl.m_Cursor.Height()), Align);
 		TextRender()->RenderTextContainer(RectEl.m_UITextContainer, RectEl.m_TextColor, RectEl.m_TextOutlineColor, CursorPos.x, CursorPos.y);
+
+		if(RectEl.m_Cursor.m_Truncated && LabelProps.m_pTooltipId)
+		{
+			DoToolTip({LabelProps.m_pTooltipId,
+				*pRect,
+				pText,
+				-1,
+				Size,
+				true});
+		}
 	}
 }
 
@@ -1460,6 +1476,15 @@ float CUi::DoScrollbarV(const void *pId, const CUIRect *pRect, float Current)
 		const float Max = Rail.h - Handle.h;
 		const float Cur = MouseY() - m_ActiveScrollbarOffset;
 		ReturnValue = std::clamp((Cur - Min) / Max, 0.0f, 1.0f);
+
+		DoToolTip({
+			pId,
+			Handle,
+			Localize("Hold Shift to be more precise."),
+			-1.0f,
+			TOOLTIP_FONTSIZE,
+			false,
+		});
 	}
 
 	// render
@@ -1550,6 +1575,15 @@ float CUi::DoScrollbarH(const void *pId, const CUIRect *pRect, float Current, co
 		const float Max = Rail.w - Handle.w;
 		const float Cur = MouseX() - m_ActiveScrollbarOffset;
 		ReturnValue = std::clamp((Cur - Min) / Max, 0.0f, 1.0f);
+
+		DoToolTip({
+			pId,
+			Handle,
+			Localize("Hold Shift to be more precise."),
+			-1.0f,
+			TOOLTIP_FONTSIZE,
+			false,
+		});
 	}
 
 	// render
@@ -2081,4 +2115,24 @@ void CUi::RenderBackButton()
 	DoLabel(&m_BackButtonRect, FontIcon::CHEVRON_LEFT, m_BackButtonRect.w * 0.5f, TEXTALIGN_MC);
 	TextRender()->SetRenderFlags(0);
 	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
+}
+
+void CUi::DoToolTip(const void *pId, const CUIRect *pNearRect, const char *pText, float WidthHint) const
+{
+	DoToolTip({pId,
+		*pNearRect,
+		pText,
+		WidthHint,
+		TOOLTIP_FONTSIZE,
+		false});
+}
+
+void CUi::DoToolTip(const CTooltip &Tooltip) const
+{
+	m_pTooltips->DoToolTip(Tooltip);
+}
+
+void CUi::DoToolTipFade(const void *pId, const CUIRect *pNearRect, const char *pText, float FadeTime) const
+{
+	DoToolTip({pId, *pNearRect, pText, -1.0f, TOOLTIP_FONTSIZE, false, FadeTime});
 }

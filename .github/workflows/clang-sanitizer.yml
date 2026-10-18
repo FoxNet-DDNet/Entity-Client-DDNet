@@ -38,7 +38,6 @@ jobs:
     - name: Cache Rust dependencies
       uses: Swatinem/rust-cache@v2.9.2
       with:
-          cache-bin: false # WORKAROUND(https://github.com/Swatinem/rust-cache/issues/341)
           workspaces: |
               src/mastersrv
               src/masterping
@@ -50,7 +49,7 @@ jobs:
         cd clang-sanitizer
         export CC=clang
         export CXX=clang++
-        SAN_FLAGS="-fsanitize=address,undefined,leak -fsanitize-recover=all -fno-omit-frame-pointer -fno-common"
+        SAN_FLAGS="-fsanitize=address,undefined,leak -fsanitize-recover=all -fno-omit-frame-pointer -fno-common -Werror"
         export CXXFLAGS="$SAN_FLAGS"
         export CFLAGS="$SAN_FLAGS"
         cmake -G Ninja -DCMAKE_BUILD_TYPE=Debug -DHEADLESS_CLIENT=ON -Werror=dev -DDOWNLOAD_GTEST=ON -DDEV=ON ..

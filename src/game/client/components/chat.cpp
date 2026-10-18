@@ -535,6 +535,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		{
 			m_Input.Clear();
 			m_pHistoryEntry = nullptr;
+			m_EditingNewLine = true;
 		}
 	}
 	else if(Event.m_Flags & IInput::FLAG_PRESS && (Event.m_Key == KEY_RETURN || Event.m_Key == KEY_KP_ENTER))
@@ -583,6 +584,7 @@ bool CChat::OnInput(const IInput::CEvent &Event)
 		}
 
 		m_pHistoryEntry = nullptr;
+		m_EditingNewLine = true;
 		DisableMode();
 		GameClient()->OnRelease();
 		m_Input.Clear();
@@ -2158,11 +2160,7 @@ void CChat::OnRender()
 				float OffsetTeeY = TeeSize / 2.0f;
 				float FullHeightMinusTee = RowHeight - TeeSize;
 
-				const CAnimState *pIdleState = CAnimState::GetIdle();
-				vec2 OffsetToMid;
-				CRenderTools::GetRenderTeeOffsetToRenderedTee(pIdleState, &TeeRenderInfo, OffsetToMid);
-				vec2 TeeRenderPos(x + (RealMsgPaddingX + TeeSize) / 2.0f, y + OffsetTeeY + FullHeightMinusTee / 2.0f + OffsetToMid.y);
-				RenderTools()->RenderTee(pIdleState, &TeeRenderInfo, EMOTE_NORMAL, vec2(1, 0.1f), TeeRenderPos, Blend);
+				RenderTools()->RenderIdleTeeAtCenter(&TeeRenderInfo, vec2(x + (RealMsgPaddingX + TeeSize) / 2.0f, y + OffsetTeeY + FullHeightMinusTee / 2.0f), EMOTE_NORMAL, vec2(1, 0.1f), Blend);
 			}
 
 			const ColorRGBA TextColor = TextRender()->DefaultTextColor().WithMultipliedAlpha(Blend);
@@ -2616,7 +2614,7 @@ CUi::EPopupMenuFunctionResult CChat::CBackendPopupContext::Render(void *pContext
 			RenderPopupIcon(pUi, Icon, NeedsKey ? FontIcon::KEY : FontIcon::NETWORK_WIRED,
 				Ready ? ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f) : ColorRGBA(1.0f, 0.75f, 0.2f, 0.9f));
 		}
-		pPopup->m_pChat->GameClient()->m_Tooltips.DoToolTip(&pPopup->m_aBackendButtons[i], &Slot, pTooltip, POPUP_LANGUAGE_WIDTH);
+		pPopup->m_pChat->Ui()->DoToolTip(&pPopup->m_aBackendButtons[i], &Slot, pTooltip, POPUP_LANGUAGE_WIDTH);
 	}
 
 	return Result;
@@ -2667,7 +2665,7 @@ CUi::EPopupMenuFunctionResult CChat::CLanguagePopupContext::Render(void *pContex
 		{
 			CTranslate::SetLanguageInList(g_Config.m_EcTranslateLanguageWhitelist, sizeof(g_Config.m_EcTranslateLanguageWhitelist), pCode, !Whitelisted);
 		}
-		pPopup->m_pChat->GameClient()->m_Tooltips.DoToolTip(&pPopup->m_vWhitelistButtons[i], &Whitelist, Localize("Auto translate this language"));
+		pPopup->m_pChat->Ui()->DoToolTip(&pPopup->m_vWhitelistButtons[i], &Whitelist, Localize("Auto translate this language"));
 
 		const bool Blacklisted = CTranslate::IsLanguageInList(g_Config.m_EcTranslateLanguageBlacklist, pCode);
 		if(pUi->DoButton_FontIcon(&pPopup->m_vBlacklistButtons[i], FontIcon::BAN, Blacklisted, &Blacklist, BUTTONFLAG_LEFT,
@@ -2675,7 +2673,7 @@ CUi::EPopupMenuFunctionResult CChat::CLanguagePopupContext::Render(void *pContex
 		{
 			CTranslate::SetLanguageInList(g_Config.m_EcTranslateLanguageBlacklist, sizeof(g_Config.m_EcTranslateLanguageBlacklist), pCode, !Blacklisted);
 		}
-		pPopup->m_pChat->GameClient()->m_Tooltips.DoToolTip(&pPopup->m_vBlacklistButtons[i], &Blacklist, Localize("Never auto translate this language"));
+		pPopup->m_pChat->Ui()->DoToolTip(&pPopup->m_vBlacklistButtons[i], &Blacklist, Localize("Never auto translate this language"));
 	}
 
 	pPopup->m_ScrollRegion.End();

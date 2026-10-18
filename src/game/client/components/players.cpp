@@ -1036,7 +1036,7 @@ void CPlayers::RenderPlayer(
 			if(SinceStart < Client()->GameTickSpeed() / 5.0f)
 				Wiggle = SinceStart / (Client()->GameTickSpeed() / 5.0f);
 
-			float WiggleAngle = std::sin(5 * Wiggle);
+			float WiggleAngle = std::sin(2 * pi * Wiggle);
 
 			Graphics()->QuadsSetRotation(pi / 6 * WiggleAngle);
 

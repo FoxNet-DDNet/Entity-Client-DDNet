@@ -4,12 +4,14 @@
 #define GAME_CLIENT_UI_H
 
 #include "lineinput.h"
+#include "tooltips.h"
 #include "ui_rect.h"
 
 #include <engine/input.h>
 #include <engine/textrender.h>
 
 #include <chrono>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -17,6 +19,7 @@ class CScrollRegion;
 class IClient;
 class IGraphics;
 class IKernel;
+class CTooltip;
 
 enum class EEditState
 {
@@ -216,6 +219,7 @@ struct SLabelProperties
 	bool m_EnableWidthCheck = true;
 	float m_MinimumFontSize = 5.0f;
 	std::vector<STextColorSplit> m_vColorSplits;
+	void *m_pTooltipId = nullptr;
 
 	void SetColor(const ColorRGBA &Color);
 };
@@ -495,6 +499,7 @@ private:
 
 	std::vector<CUIElement *> m_vpOwnUIElements; // ui elements maintained by CUi class
 	std::vector<CUIElement *> m_vpUIElements;
+	std::unique_ptr<CTooltips> m_pTooltips;
 
 public:
 	static const CLinearScrollbarScale ms_LinearScrollbarScale;
@@ -862,6 +867,12 @@ public:
 
 	// EClient
 	float DoServerSideRainbowScrollbar(const void *pId, const CUIRect *pRect, float Current, const ColorRGBA *pColorInner, bool Draggable);
+
+	void DoToolTip(const void *pId, const CUIRect *pNearRect, const char *pText, float WidthHint = -1.0f) const;
+	void DoToolTip(const CTooltip &Tooltip) const;
+	void DoToolTipFade(const void *pId, const CUIRect *pNearRect, const char *pText, float FadeTime) const;
+	void OnRenderTooltip() const { m_pTooltips->OnRender(); }
+	void OnReset() const { m_pTooltips->OnReset(); }
 };
 
 #endif
