@@ -36,15 +36,17 @@ CSpecPauseRadio::CSpecPauseRadio()
 	OnReset();
 }
 
-void CSpecPauseRadio::SendSpecPause(int Type)
+void CSpecPauseRadio::SendSpecPause(ESpecPauseType Type)
 {
 	switch(Type)
 	{
-	case PAUSE_PAUSE:
+	case ESpecPauseType::PAUSE:
 		GameClient()->m_Chat.SendChat(0, "/pause");
 		break;
-	case PAUSE_SPEC:
+	case ESpecPauseType::SPEC:
 		GameClient()->m_Chat.SendChat(0, "/spec");
+		break;
+	default:
 		break;
 	}
 }
@@ -58,7 +60,7 @@ void CSpecPauseRadio::OnStateChange(int NewState, int OldState)
 void CSpecPauseRadio::OnReset()
 {
 	m_SelectorMouse = vec2(0.0f, 0.0f);
-	m_SelectedType = PAUSE_NONE;
+	m_SelectedType = ESpecPauseType::NONE;
 	m_Active = false;
 	m_WasActive = false;
 	m_TouchPressedOutside = false;
@@ -84,7 +86,7 @@ bool CSpecPauseRadio::OnInput(const IInput::CEvent &Event)
 {
 	if(m_Active && Event.m_Flags & IInput::FLAG_PRESS && Event.m_Key == KEY_ESCAPE)
 	{
-		m_SelectedType = PAUSE_NONE;
+		m_SelectedType = ESpecPauseType::NONE;
 		m_TouchPressedOutside = true;
 		OnRelease();
 		return true;
@@ -145,9 +147,9 @@ void CSpecPauseRadio::OnRender()
 		}
 
 		if(m_TouchPressedOutside || std::abs(m_SelectorMouse.x) <= SELECTION_DEAD_ZONE)
-			m_SelectedType = PAUSE_NONE;
+			m_SelectedType = ESpecPauseType::NONE;
 		else
-			m_SelectedType = m_SelectorMouse.x < 0.0f ? PAUSE_PAUSE : PAUSE_SPEC;
+			m_SelectedType = m_SelectorMouse.x < 0.0f ? ESpecPauseType::PAUSE : ESpecPauseType::SPEC;
 	}
 
 	if(m_ActiveSince > time_get() - time_freq() * g_Config.m_ClSpectatorRadioShowDelay * 0.001f)
@@ -171,11 +173,11 @@ void CSpecPauseRadio::OnRender()
 			g_Config.m_ClDummy ? g_Config.m_ClDummyColorBody : g_Config.m_ClPlayerColorBody,
 			g_Config.m_ClDummy ? g_Config.m_ClDummyColorFeet : g_Config.m_ClPlayerColorFeet);
 	}
-	PauseTeeInfo.m_Size = m_SelectedType == PAUSE_PAUSE ? SELECTED_TEE_SIZE : TEE_SIZE;
+	PauseTeeInfo.m_Size = m_SelectedType == ESpecPauseType::PAUSE ? SELECTED_TEE_SIZE : TEE_SIZE;
 
 	CTeeRenderInfo SpecTeeInfo;
 	SpecTeeInfo.Apply(GameClient()->m_Skins.Find("x_spec"));
-	SpecTeeInfo.m_Size = m_SelectedType == PAUSE_SPEC ? SELECTED_TEE_SIZE : TEE_SIZE;
+	SpecTeeInfo.m_Size = m_SelectedType == ESpecPauseType::SPEC ? SELECTED_TEE_SIZE : TEE_SIZE;
 
 	CAnimState PauseAnimation;
 	PauseAnimation.Set(&g_pData->m_aAnimations[ANIM_BASE], 0.0f);
@@ -214,7 +216,7 @@ void CSpecPauseRadio::ConOpenRadio(IConsole::IResult *pResult, void *pUserData)
 
 	if(!pSelf->m_Active)
 	{
-		pSelf->m_SelectedType = PAUSE_NONE;
+		pSelf->m_SelectedType = ESpecPauseType::NONE;
 		pSelf->m_TouchPressedOutside = false;
 	}
 

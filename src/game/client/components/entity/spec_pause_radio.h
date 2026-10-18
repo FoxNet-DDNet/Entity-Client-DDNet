@@ -11,18 +11,18 @@
 
 #include <cstdint>
 
-enum ESpecPauseType
+enum class ESpecPauseType
 {
-	PAUSE_NONE = -1,
-	PAUSE_PAUSE,
-	PAUSE_SPEC,
+	NONE = -1,
+	PAUSE,
+	SPEC,
 };
 
 class CSpecPauseRadio : public CComponent
 {
 	bool m_InitializedSelectorMouse = false;
 	vec2 m_SelectorMouse = vec2(0.0f, 0.0f);
-	int m_SelectedType = PAUSE_NONE;
+	ESpecPauseType m_SelectedType = ESpecPauseType::NONE;
 	bool m_Active = false;
 	bool m_WasActive = false;
 	CUi::CTouchState m_TouchState;
@@ -30,7 +30,7 @@ class CSpecPauseRadio : public CComponent
 
 	int64_t m_ActiveSince = 0;
 
-	void SendSpecPause(int Type);
+	void SendSpecPause(ESpecPauseType Type);
 	static void ConOpenRadio(IConsole::IResult *pResult, void *pUserData);
 
 public:

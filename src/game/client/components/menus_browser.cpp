@@ -389,8 +389,8 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				if(!Printed)
 					Ui()->DoLabelStreamed(*pUiElement->Rect(UI_ELEM_NAME_1), &Button, pItem->m_aName, FontSize, TEXTALIGN_ML, Props);
 				HoveringTruncatedLabel |= Ui()->MouseInside(&Button) &&
-					(pUiElement->Rect(UI_ELEM_NAME_1)->m_Cursor.m_Truncated ||
-						(Printed && (pUiElement->Rect(UI_ELEM_NAME_2)->m_Cursor.m_Truncated || pUiElement->Rect(UI_ELEM_NAME_3)->m_Cursor.m_Truncated)));
+							  (pUiElement->Rect(UI_ELEM_NAME_1)->m_Cursor.m_Truncated ||
+								  (Printed && (pUiElement->Rect(UI_ELEM_NAME_2)->m_Cursor.m_Truncated || pUiElement->Rect(UI_ELEM_NAME_3)->m_Cursor.m_Truncated)));
 			}
 			else if(Id == COL_GAMETYPE)
 			{
@@ -442,8 +442,8 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				if(!Printed)
 					Ui()->DoLabelStreamed(*pUiElement->Rect(UI_ELEM_MAP_1), &Button, pItem->m_aMap, FontSize, TEXTALIGN_ML, Props);
 				HoveringTruncatedLabel |= Ui()->MouseInside(&Button) &&
-					(pUiElement->Rect(UI_ELEM_MAP_1)->m_Cursor.m_Truncated ||
-						(Printed && (pUiElement->Rect(UI_ELEM_MAP_2)->m_Cursor.m_Truncated || pUiElement->Rect(UI_ELEM_MAP_3)->m_Cursor.m_Truncated)));
+							  (pUiElement->Rect(UI_ELEM_MAP_1)->m_Cursor.m_Truncated ||
+								  (Printed && (pUiElement->Rect(UI_ELEM_MAP_2)->m_Cursor.m_Truncated || pUiElement->Rect(UI_ELEM_MAP_3)->m_Cursor.m_Truncated)));
 			}
 			else if(Id == COL_FRIENDS)
 			{
