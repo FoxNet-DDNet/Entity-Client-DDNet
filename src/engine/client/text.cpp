@@ -448,8 +448,9 @@ private:
 
 	FT_UInt GetCharGlyph(int Chr, FT_Face *pFace, bool AllowReplacementCharacter)
 	{
-		// EClient: 0xE0073 is '󠁳', which doesn't get rendered if Noto Emoji is used as fallback font
-		if(Chr == 0xe0073)
+		// EClient: Unicode tag characters can have empty glyphs in Noto Emoji.
+		// Show the missing-glyph square instead of allowing invisible player names.
+		if(Chr == 0xe0001 || (Chr >= 0xe0020 && Chr <= 0xe007f))
 			Chr = REPLACEMENT_CHARACTER;
 
 		for(FT_Face Face : {m_SelectedFace, m_DefaultFace, m_VariantFace})
