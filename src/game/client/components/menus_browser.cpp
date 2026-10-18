@@ -19,12 +19,14 @@
 #include <game/client/animstate.h>
 #include <game/client/components/countryflags.h>
 #include <game/client/gameclient.h>
+#include <game/client/tooltips.h>
 #include <game/client/ui.h>
 #include <game/client/ui_listbox.h>
 #include <game/localization.h>
 
 static constexpr float PLAYER_AFK_COLOR_ALPHA = 0.65f; // EClient
 static constexpr ColorRGBA HIGHLIGHTED_TEXT_COLOR = ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f);
+static CTooltips s_ServerbrowserPreviewTooltips;
 
 static ColorRGBA PlayerBackgroundColor(bool Friend, bool Clan, bool Inside)
 {
@@ -66,6 +68,12 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 	static CListBox s_ListBox;
 	static SPopupMenuId s_PopupServerId;
 	static CPopupServerSelectionContext s_PopupServerContext;
+	static CUi *s_pPreviewTooltipUi = nullptr;
+	if(s_pPreviewTooltipUi != Ui())
+	{
+		s_ServerbrowserPreviewTooltips.Init(Ui(), TextRender());
+		s_pPreviewTooltipUi = Ui();
+	}
 
 	CUIRect Headers;
 	View.HSplitTop(ms_ListheaderHeight, &Headers, &View);
@@ -292,6 +300,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 		vServerbrowserElementIds.resize(NumServers);
 	}
 
+	bool PreviewTooltipRegistered = false;
 	for(int i = 0; i < NumServers; i++)
 	{
 		const CServerInfo *pItem = ServerBrowser()->SortedGet(i);
@@ -319,6 +328,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 
 		const float FontSize = 12.0f;
 		char aTemp[64];
+		bool HoveringTruncatedLabel = false;
 		for(const auto &Col : s_aCols)
 		{
 			CUIRect Button;
@@ -378,6 +388,9 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 					});
 				if(!Printed)
 					Ui()->DoLabelStreamed(*pUiElement->Rect(UI_ELEM_NAME_1), &Button, pItem->m_aName, FontSize, TEXTALIGN_ML, Props);
+				HoveringTruncatedLabel |= Ui()->MouseInside(&Button) &&
+					(pUiElement->Rect(UI_ELEM_NAME_1)->m_Cursor.m_Truncated ||
+						(Printed && (pUiElement->Rect(UI_ELEM_NAME_2)->m_Cursor.m_Truncated || pUiElement->Rect(UI_ELEM_NAME_3)->m_Cursor.m_Truncated)));
 			}
 			else if(Id == COL_GAMETYPE)
 			{
@@ -391,6 +404,7 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 					TextRender()->TextColor(pItem->m_GametypeColor);
 				}
 				Ui()->DoLabelStreamed(*pUiElement->Rect(UI_ELEM_GAMETYPE), &Button, pItem->m_aGameType, FontSize, TEXTALIGN_ML, Props);
+				HoveringTruncatedLabel |= Ui()->MouseInside(&Button) && pUiElement->Rect(UI_ELEM_GAMETYPE)->m_Cursor.m_Truncated;
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
 			else if(Id == COL_MAP)
@@ -427,6 +441,9 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 					});
 				if(!Printed)
 					Ui()->DoLabelStreamed(*pUiElement->Rect(UI_ELEM_MAP_1), &Button, pItem->m_aMap, FontSize, TEXTALIGN_ML, Props);
+				HoveringTruncatedLabel |= Ui()->MouseInside(&Button) &&
+					(pUiElement->Rect(UI_ELEM_MAP_1)->m_Cursor.m_Truncated ||
+						(Printed && (pUiElement->Rect(UI_ELEM_MAP_2)->m_Cursor.m_Truncated || pUiElement->Rect(UI_ELEM_MAP_3)->m_Cursor.m_Truncated)));
 			}
 			else if(Id == COL_FRIENDS)
 			{
@@ -465,8 +482,12 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
 		}
-		if(!Ui()->IsPopupOpen() && Ui()->HotItem() == pItem && GameClient()->m_BrowserMapPreview.HasAvailableMap(pItem->m_aMap))
-			Ui()->DoToolTipFade(pItem, &ListItem.m_Rect, Localize("Right click to preview map"), 0.4f);
+		const void *pRowId = &vServerbrowserElementIds[i];
+		if(!Ui()->IsPopupOpen() && !HoveringTruncatedLabel && Ui()->HotItem() == pRowId && GameClient()->m_BrowserMapPreview.HasAvailableMap(pItem->m_aMap))
+		{
+			s_ServerbrowserPreviewTooltips.DoToolTip({pRowId, ListItem.m_Rect, Localize("Right click to preview map"), -1.0f, 14.0f, false, 0.4f});
+			PreviewTooltipRegistered = true;
+		}
 
 		const bool RightClickedNewEntry = Ui()->IsPopupOpen(&s_PopupServerId) && Ui()->MouseButtonClicked(1) && Ui()->MouseInside(&ListItem.m_Rect) &&
 						  (str_comp(s_PopupServerContext.m_aMapName, pItem->m_aMap) || str_comp(s_PopupServerContext.m_aCommunityId, pItem->m_aCommunityId) || s_PopupServerContext.m_MapCrc != static_cast<unsigned>(pItem->m_MapCrc));
@@ -489,6 +510,8 @@ void CMenus::RenderServerbrowserServerList(CUIRect View, bool &WasListboxItemAct
 		}
 	}
 
+	if(!PreviewTooltipRegistered)
+		s_ServerbrowserPreviewTooltips.OnReset();
 	const int NewSelected = s_ListBox.DoEnd();
 	if(NewSelected != m_SelectedIndex)
 	{
@@ -1978,6 +2001,7 @@ void CMenus::RenderServerbrowser(CUIRect MainView)
 
 	RenderServerbrowserTabBar(TabBar);
 	RenderServerbrowserToolBox(ToolBox);
+	s_ServerbrowserPreviewTooltips.OnRender();
 }
 
 template<typename F>
