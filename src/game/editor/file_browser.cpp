@@ -481,6 +481,7 @@ void CFileBrowser::OnDialogClose()
 	m_PreviewImageHeight = -1;
 	Sound()->UnloadSample(m_PreviewSound);
 	m_PreviewSound = -1;
+	m_PreviewFileSize = -1;
 }
 
 bool CFileBrowser::CanPreviewFile() const
@@ -507,6 +508,7 @@ void CFileBrowser::UpdateFilePreview()
 			Graphics()->UnloadTexture(&m_PreviewImage);
 			m_PreviewImageWidth = PreviewImageInfo.m_Width;
 			m_PreviewImageHeight = PreviewImageInfo.m_Height;
+			m_PreviewFileSize = PreviewImageInfo.m_FileSize;
 			m_PreviewImage = Graphics()->LoadTextureRawMove(PreviewImageInfo, 0, aImagePath);
 			m_PreviewState = EPreviewState::LOADED;
 		}
@@ -535,7 +537,7 @@ void CFileBrowser::RenderFilePreview(CUIRect Preview)
 			Preview.HSplitTop(20.0f, &PreviewLabel, &PreviewImage);
 
 			char aSizeLabel[64];
-			str_format(aSizeLabel, sizeof(aSizeLabel), "Size: %d × %d", m_PreviewImageWidth, m_PreviewImageHeight);
+			str_format(aSizeLabel, sizeof(aSizeLabel), "Size: %d × %d (%.2f KB)", m_PreviewImageWidth, m_PreviewImageHeight, m_PreviewFileSize / 1024.0f);
 			Ui()->DoLabel(&PreviewLabel, aSizeLabel, 12.0f, TEXTALIGN_ML);
 
 			int Width = m_PreviewImageWidth;
@@ -566,6 +568,11 @@ void CFileBrowser::RenderFilePreview(CUIRect Preview)
 	{
 		if(m_PreviewState == EPreviewState::LOADED)
 		{
+			char aBuf[32];
+			str_format(aBuf, sizeof(aBuf), "%.2f KB", Sound()->SampleFileSize(m_PreviewSound) / 1024.0f);
+			Ui()->DoLabel(&Preview, aBuf, 12.0f, TEXTALIGN_LEFT);
+			Preview.HSplitTop(16.0f, nullptr, &Preview);
+
 			Preview.HSplitTop(20.0f, &Preview, nullptr);
 			Preview.VSplitLeft(Preview.h / 4.0f, nullptr, &Preview);
 			Editor()->DoAudioPreview(Preview, &m_ButtonPlayPauseId, &m_ButtonStopId, &m_SeekBarId, m_PreviewSound);

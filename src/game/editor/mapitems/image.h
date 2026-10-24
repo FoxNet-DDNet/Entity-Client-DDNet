@@ -16,12 +16,14 @@ public:
 	void OnAttach(CEditorMap *pMap) override;
 
 	void AnalyseTileFlags();
+	void UpdateCompressedSize();
 	void Free();
 
 	CEditorImage &operator=(CImageInfo &&Other);
 
 	IGraphics::CTextureHandle m_Texture;
 	int m_External = 0;
+	size_t m_CompressedSize = 0;
 	char m_aName[IO_MAX_PATH_LENGTH] = "";
 	unsigned char m_aTileFlags[256];
 

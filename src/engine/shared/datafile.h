@@ -48,6 +48,7 @@ public:
 	IOHANDLE File() const;
 
 	int GetDataSize(int Index) const;
+	int GetFileDataSize(int Index) const;
 	void *GetData(int Index);
 	void *GetDataSwapped(int Index); // makes sure that the data is 32bit LE ints when saved
 	const char *GetDataString(int Index);
@@ -143,6 +144,7 @@ public:
 	[[nodiscard]] bool Open(class IStorage *pStorage, const char *pFilename, int StorageType = IStorage::TYPE_SAVE);
 	int AddItem(int Type, int Id, size_t Size, const void *pData, const CUuid *pUuid = nullptr);
 	int AddData(size_t Size, const void *pData, ECompressionLevel CompressionLevel = COMPRESSION_DEFAULT);
+	static size_t GetCompressedDataSize(size_t Size, const void *pData, ECompressionLevel CompressionLevel = COMPRESSION_DEFAULT);
 	int AddDataSwapped(size_t Size, const void *pData);
 	int AddDataString(const char *pStr);
 	void Finish();

@@ -778,6 +778,15 @@ int CDataFileReader::GetDataSize(int Index) const
 	return m_pDataFile->GetDataSize(Index);
 }
 
+int CDataFileReader::GetFileDataSize(int Index) const
+{
+	dbg_assert(m_pDataFile != nullptr, "File not open");
+
+	if(Index < 0 || Index >= m_pDataFile->m_Header.m_NumRawData)
+		return 0;
+	return m_pDataFile->GetFileDataSize(Index);
+}
+
 void *CDataFileReader::GetData(int Index)
 {
 	dbg_assert(m_pDataFile != nullptr, "File not open");
@@ -1215,6 +1224,20 @@ static int CompressionLevelToZlib(CDataFileWriter::ECompressionLevel Compression
 	default:
 		dbg_assert_failed("Invalid CompressionLevel: %d", static_cast<int>(CompressionLevel));
 	}
+}
+
+size_t CDataFileWriter::GetCompressedDataSize(size_t Size, const void *pData, ECompressionLevel CompressionLevel)
+{
+	if(Size == 0 || Size > (size_t)std::numeric_limits<int>::max() || pData == nullptr)
+		return 0;
+
+	uLongf CompressedSize = compressBound(Size);
+	void *pCompressedData = malloc(CompressedSize);
+	if(pCompressedData == nullptr)
+		return 0;
+	const int Result = compress2(static_cast<Bytef *>(pCompressedData), &CompressedSize, static_cast<const Bytef *>(pData), Size, CompressionLevelToZlib(CompressionLevel));
+	free(pCompressedData);
+	return Result == Z_OK ? CompressedSize : 0;
 }
 
 void CDataFileWriter::Finish()

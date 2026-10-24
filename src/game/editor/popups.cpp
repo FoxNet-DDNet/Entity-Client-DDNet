@@ -1489,6 +1489,8 @@ CUi::EPopupMenuFunctionResult CEditor::PopupImage(void *pContext, CUIRect View, 
 				return CUi::POPUP_KEEP_OPEN;
 			}
 			pImg->m_External = 0;
+			if(pImg->m_CompressedSize == 0)
+				pImg->UpdateCompressedSize();
 			return CUi::POPUP_CLOSE_CURRENT;
 		}
 		View.HSplitTop(5.0f, nullptr, &View);

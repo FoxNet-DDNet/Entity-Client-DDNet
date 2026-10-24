@@ -64,6 +64,11 @@ public:
 	size_t m_Height = 0;
 
 	/**
+	 * Size of the source image file in bytes.
+	 */
+	size_t m_FileSize = 0;
+
+	/**
 	 * Format of the image.
 	 *
 	 * @see EImageFormat
