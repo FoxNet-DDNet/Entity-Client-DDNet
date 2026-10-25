@@ -23,21 +23,21 @@ jobs:
         include:
         - name: ubuntu-latest-fancy
           os: ubuntu-latest
-          cmake-args: -G Ninja -DDISCORD=ON -DDISCORD_DYNAMIC=ON -DPREFER_BUNDLED_LIBS=ON
+          cmake-args: -G Ninja -DVULKAN=ON -DDISCORD=ON -DDISCORD_DYNAMIC=ON -DPREFER_BUNDLED_LIBS=ON
           cmake-args-release: -DIPO=ON
           cmake-init-env: CXXFLAGS=-Werror
           package-file: "*-linux_x86_64.tar.xz"
         - name: ubuntu-22.04
           os: ubuntu-22.04
           cmake-path: /usr/bin/
-          cmake-args: -G "Unix Makefiles" -DTEST_MYSQL=ON -DPRECOMPILE_HEADERS=OFF
+          cmake-args: -G "Unix Makefiles" -DVULKAN=ON -DTEST_MYSQL=ON -DPRECOMPILE_HEADERS=OFF
           cmake-args-release: -DIPO=ON -DDISCORD=ON -DDISCORD_DYNAMIC=ON -DPREFER_BUNDLED_LIBS=ON
           cmake-init-env: CXXFLAGS=-Werror
           gtest-env: GTEST_FILTER=-*SQLite*
           package-file: "*-linux_x86_64.tar.xz"
         - name: macOS-latest
           os: macOS-latest
-          cmake-args: -G Ninja -DDISCORD=ON
+          cmake-args: -G Ninja -DVULKAN=ON -DDISCORD=ON
           cmake-args-release: -DIPO=ON
           cmake-init-env: CXXFLAGS=-Werror
           package-file: "*-macos.dmg"

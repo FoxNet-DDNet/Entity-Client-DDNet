@@ -16,15 +16,15 @@ jobs:
         os: [ubuntu-22.04, macOS-latest, windows-latest]
         include:
         - os: ubuntu-22.04
-          cmake-args: -G Ninja -DCMAKE_BUILD_TYPE=Release -DDISCORD=ON -DDISCORD_DYNAMIC=ON -DWEBSOCKETS=OFF -DPREFER_BUNDLED_LIBS=ON
+          cmake-args: -G Ninja -DCMAKE_BUILD_TYPE=Release -DVULKAN=ON -DDISCORD=ON -DDISCORD_DYNAMIC=ON -DWEBSOCKETS=OFF -DPREFER_BUNDLED_LIBS=ON
           cmake-init-env: CXXFLAGS= 
           package-file: "*-linux_x86_64.tar.xz"
         - os: macOS-latest
-          cmake-args: -G Ninja -DCMAKE_BUILD_TYPE=Release -DDISCORD=ON -DWEBSOCKETS=OFF -DPREFER_BUNDLED_LIBS=ON -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DCMAKE_SYSTEM_IGNORE_PATH=/usr/lib -DCMAKE_FIND_FRAMEWORK=LAST
+          cmake-args: -G Ninja -DCMAKE_BUILD_TYPE=Release -DVULKAN=ON -DDISCORD=ON -DWEBSOCKETS=OFF -DPREFER_BUNDLED_LIBS=ON -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0 -DCMAKE_SYSTEM_IGNORE_PATH=/usr/lib -DCMAKE_FIND_FRAMEWORK=LAST
           cmake-init-env: CXXFLAGS= 
           package-file: "*-macos.dmg"
         - os: windows-latest
-          cmake-args: -A x64 -DDISCORD=ON -DTOOLS=OFF
+          cmake-args: -A x64 -DVULKAN=ON -DDISCORD=ON -DTOOLS=OFF
           cmake-init-env: CXXFLAGS= LDFLAGS=
           package-file: "*-win64.zip"
         # - os: windows-latest
@@ -53,6 +53,24 @@ jobs:
         pip3 install --break-system-packages dmgbuild
         echo /Library/Frameworks/Python.framework/Versions/3.12/bin >> $GITHUB_PATH
         sudo rm -rf /Library/Developer/CommandLineTools
+
+    - name: Install Vulkan SDK on Windows
+      if: contains(matrix.os, 'windows')
+      uses: humbletim/install-vulkan-sdk@v1.2
+      with:
+        version: 1.3.296.0
+        cache: true
+
+    - name: Install Vulkan SDK on macOS
+      if: contains(matrix.os, 'macOS')
+      uses: humbletim/install-vulkan-sdk@v1.2
+      with:
+        version: 1.3.296.0
+        cache: true
+
+    - name: Check macOS Vulkan library architectures
+      if: contains(matrix.os, 'macOS')
+      run: lipo "$VULKAN_SDK/lib/libMoltenVK.dylib" -verify_arch arm64 x86_64
 
     - name: Add rust macOS
       if: contains(matrix.os, 'macOS')
