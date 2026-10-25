@@ -4746,7 +4746,7 @@ void CMenus::DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect)
 	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 
-	Ui()->DoToolTip(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor");
+	Ui()->DoToolTipFade(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor", Ingame ? 0.2f: 0.0f);
 
 	if(Ui()->DoButtonLogic(pId, 0, &Button, BUTTONFLAG_LEFT) && Ingame)
 		GameClient()->m_HudEditor.ToggleHudEditor();
