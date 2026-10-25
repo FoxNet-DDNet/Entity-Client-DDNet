@@ -3279,10 +3279,12 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_GAMEPLAY | FILTER_NETWORK | FILTER_NEW,
-		{"fast", "input", "reduced", "visual", "delay", "tick", "others", "flux", "classic", "mode", "prediction", "offset"},
+		{"fast", "input", "reduced", "visual", "delay", "tick", "others", "flux", "classic", "mode", "prediction", "offset", "uncapped"},
 		[](bool HasSearch) {
 			int Size = 122.0f;
 			if(g_Config.m_EcFastInput || HasSearch)
+				Size += 25.0f;
+			if(g_Config.m_EcFastInputMode == CGameClient::FAST_INPUT_MODE_FLUX && (g_Config.m_EcFastInput || HasSearch) && (g_Config.m_EcFastInputOthers || HasSearch))
 				Size += 25.0f;
 
 			return Size;
@@ -3326,6 +3328,13 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				static const std::vector<const char *> s_vFastInputOthersLabels = {EcLocalize("Fast input others"), EcLocalize("Flux input others")};
 				if(g_Config.m_EcFastInput || HasSearch)
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFastInputOthers, s_vFastInputOthersLabels[g_Config.m_EcFastInputMode], &g_Config.m_EcFastInputOthers, &ModuleRect, LineSize);
+				if(g_Config.m_EcFastInputMode == CGameClient::FAST_INPUT_MODE_FLUX && (g_Config.m_EcFastInput || HasSearch) && (g_Config.m_EcFastInputOthers || HasSearch))
+				{
+					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+					if(DoButton_CheckBox(&g_Config.m_EcFluxInputOthersUncapped, EcLocalize("Uncap Flux input others"), g_Config.m_EcFluxInputOthersUncapped, &Button))
+						g_Config.m_EcFluxInputOthersUncapped ^= 1;
+					Ui()->DoToolTip(&g_Config.m_EcFluxInputOthersUncapped, &Button, EcLocalize("Draw other tees at the full Flux offset without waiting for server pre-input."));
+				}
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSubTickAiming, EcLocalize("Sub-Tick aiming"), &g_Config.m_ClSubTickAiming, &ModuleRect, LineSize);
 			}
@@ -4746,7 +4755,7 @@ void CMenus::DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect)
 	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 	TextRender()->TextColor(TextRender()->DefaultTextColor());
 
-	Ui()->DoToolTipFade(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor", Ingame ? 0.2f: 0.0f);
+	Ui()->DoToolTipFade(pId, &Button, Ingame ? "Open the Hud Editor" : "Join a server to open the Hud Editor", Ingame ? 0.2f : 0.0f);
 
 	if(Ui()->DoButtonLogic(pId, 0, &Button, BUTTONFLAG_LEFT) && Ingame)
 		GameClient()->m_HudEditor.ToggleHudEditor();

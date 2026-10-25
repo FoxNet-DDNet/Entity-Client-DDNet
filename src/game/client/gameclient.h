@@ -462,7 +462,7 @@ public:
 	enum
 	{
 		FAST_INPUT_MODE_CLASSIC = 0, // offset in milliseconds, other tees mirror our own amount 1:1 or get nothing
-		FAST_INPUT_MODE_FLUX, // offset in ticks, other tees capped to one tick and held until the server sends a pre-input
+		FAST_INPUT_MODE_FLUX, // offset in ticks, other tees normally capped to one tick until the server sends a pre-input
 	};
 	int m_ServerMode;
 	CGameInfo m_GameInfo;

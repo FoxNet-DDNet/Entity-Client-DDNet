@@ -4507,7 +4507,9 @@ void CGameClient::UpdateRenderedCharacters()
 				if(g_Config.m_ClAntiPingSmooth)
 					Pos = GetSmoothPos(i);
 
-				if(g_Config.m_EcAntiPingImproved && m_aClients[i].m_ValidAntipingSmooth)
+				if(g_Config.m_EcFastInput && g_Config.m_EcFastInputMode == FAST_INPUT_MODE_FLUX && g_Config.m_EcFastInputOthers && g_Config.m_EcFluxInputOthersUncapped)
+					Pos = GetFastInputPos(i);
+				else if(g_Config.m_EcAntiPingImproved && m_aClients[i].m_ValidAntipingSmooth)
 					Pos = mix(m_aClients[i].m_PrevImprovedPredPos, m_aClients[i].m_ImprovedPredPos, Client()->PredIntraGameTick(g_Config.m_ClDummy));
 
 				if(g_Config.m_EcRemoveAnti && m_pClient->m_IsLocalFrozen)
@@ -4695,15 +4697,18 @@ float CGameClient::GetFastInputOffsetTicks() const
 }
 
 // EClient: the same offset for tees that aren't ours. Classic mirrors our own amount onto them 1:1
-// (or gives them nothing at all); flux caps them to a single tick no matter how far ahead we draw
-// ourselves, and holds off entirely until the server has sent a pre-input we are actually feeding
-// into the prediction -- without one we have no hint about their real input.
+// (or gives them nothing at all). Flux normally caps them to a single tick and waits for server
+// pre-input; the optional uncapped mode mirrors our full offset immediately.
 float CGameClient::GetFastInputOffsetTicksOthers() const
 {
 	if(!g_Config.m_EcFastInputOthers)
 		return 0.0f;
 	if(g_Config.m_EcFastInputMode == FAST_INPUT_MODE_FLUX)
+	{
+		if(g_Config.m_EcFluxInputOthersUncapped)
+			return GetFastInputOffsetTicks();
 		return m_ReceivedPreInput && g_Config.m_ClAntiPingPreInput ? std::min(GetFastInputOffsetTicks(), 1.0f) : 0.0f;
+	}
 	return GetFastInputOffsetTicks();
 }
 
@@ -4716,6 +4721,9 @@ float CGameClient::GetFastInputOffsetTicksFor(int ClientId) const
 
 vec2 CGameClient::GetSmoothPos(int ClientId)
 {
+	if(ClientId != m_Snap.m_LocalClientId && g_Config.m_EcFastInput && g_Config.m_EcFastInputMode == FAST_INPUT_MODE_FLUX && g_Config.m_EcFastInputOthers && g_Config.m_EcFluxInputOthersUncapped)
+		return GetFastInputPos(ClientId);
+
 	const int FastInputTicks = g_Config.m_EcFastInput ? (int)std::ceil(GetFastInputOffsetTicks()) : 0;
 	vec2 Pos = mix(m_aClients[ClientId].m_PrevPredicted.m_Pos, m_aClients[ClientId].m_Predicted.m_Pos, Client()->PredIntraGameTick(g_Config.m_ClDummy));
 	int64_t Now = time_get();

@@ -56,8 +56,9 @@ MACRO_CONFIG_COL(ClOutlineColorKill, ec_outline_color_kill, 2097217461, CFGFLAG_
 MACRO_CONFIG_INT(EcFastInput, ec_fast_input, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Uses input for prediction before the next tick")
 MACRO_CONFIG_INT(EcFastInputAmount, ec_fast_input_amount, 20, 1, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many milliseconds fast input will apply")
 MACRO_CONFIG_INT(EcFastInputOthers, ec_fast_input_others, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply fast input to other tees")
-MACRO_CONFIG_INT(EcFastInputMode, ec_fast_input_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fast input algorithm: 0 = classic, 1 = flux (caps other tees to one extrapolated tick and waits for server pre-input)")
+MACRO_CONFIG_INT(EcFastInputMode, ec_fast_input_mode, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Fast input algorithm: 0 = classic, 1 = flux (normally caps other tees to one tick and waits for server pre-input)")
 MACRO_CONFIG_INT(EcFluxInputAmount, ec_flux_input_amount, 100, 0, 500, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Flux prediction offset, in hundredths of a tick (100 = 1.00 ticks). Only used when ec_fast_input_mode is set to flux")
+MACRO_CONFIG_INT(EcFluxInputOthersUncapped, ec_flux_input_others_uncapped, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Apply the full Flux offset to other tees immediately, without waiting for server pre-input")
 
 // Anti Ping Smoothing
 MACRO_CONFIG_INT(EcAntiPingImproved, ec_antiping_improved, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Different antiping smoothing algorithm, not compatible with cl_antiping_smooth")
