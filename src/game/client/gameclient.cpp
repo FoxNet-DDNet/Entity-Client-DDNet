@@ -1547,9 +1547,9 @@ void CGameClient::ProcessDemoSnapshot(CSnapshot *pSnap)
 			// always record local camera info as follow mode
 			CNetObj_DDNetSpectatorInfo *pDDNetSpectatorInfo = (CNetObj_DDNetSpectatorInfo *)((void *)pItem->Data());
 			pDDNetSpectatorInfo->m_HasCameraInfo = true;
-			pDDNetSpectatorInfo->m_Zoom = (m_Camera.m_Zooming ? m_Camera.m_ZoomSmoothingTarget : m_Camera.m_Zoom) * 1000.0f;
+			pDDNetSpectatorInfo->m_Zoom = ((m_Camera.m_Zooming && !(g_Config.m_ClDyncam && g_Config.m_ClDyncamZoom)) ? m_Camera.m_ZoomSmoothingTarget : m_Camera.m_Zoom) * 1000.0f;
 			pDDNetSpectatorInfo->m_Deadzone = m_Camera.Deadzone();
-			pDDNetSpectatorInfo->m_FollowFactor = m_Camera.FollowFactor();
+			pDDNetSpectatorInfo->m_FollowFactor = m_Camera.NetworkFollowFactor(pDDNetSpectatorInfo->m_Zoom / 1000.0f);
 		}
 	}
 }
@@ -2499,9 +2499,11 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 
 		Zoom = m_Camera.m_ZoomSmoothingTarget;
 	}
+	if(g_Config.m_ClDyncam && g_Config.m_ClDyncamZoom)
+		Zoom = m_Camera.m_Zoom;
 
 	float Deadzone = m_Camera.Deadzone();
-	float FollowFactor = m_Camera.FollowFactor();
+	float FollowFactor = m_Camera.NetworkFollowFactor(Zoom);
 
 	if(m_Snap.m_SpecInfo.m_Active)
 	{
@@ -5477,6 +5479,8 @@ vec2 CGameClient::GetCursorWorldPos() const
 {
 	if(m_Snap.m_SpecInfo.m_Active)
 		return m_Camera.m_Center;
+	if(g_Config.m_ClDyncam && g_Config.m_ClDyncamZoom)
+		return m_Controls.CursorWorldPos();
 
 	vec2 Target = m_Controls.m_aMousePos[g_Config.m_ClDummy];
 

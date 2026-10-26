@@ -103,9 +103,10 @@ MACRO_CONFIG_STR(ClExecuteOnConnect, ec_execute_on_connect, 100, "", CFGFLAG_CLI
 MACRO_CONFIG_STR(ClRunOnJoinConsole, ec_run_on_join_console, 128, "onlineinfo", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 MACRO_CONFIG_INT(ClRunOnJoinConsoleDelay, ec_run_on_join_delay, 2, 1, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 
-// Limit Mouse
+// Mouse/zoom
 MACRO_CONFIG_INT(ClLimitMouseToScreen, ec_limit_mouse_to_screen, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Limit mouse to screen boundaries")
 MACRO_CONFIG_INT(ClScaleMouseDistance, ec_scale_mouse_distance, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Improve mouse precision by scaling max distance to 1000")
+MACRO_CONFIG_INT(ClDyncamZoom, ec_dyncam_zoom, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Scale dynamic camera follow distance with zoom")
 MACRO_CONFIG_INT(ClUiMouseBorderTeleport, ec_ui_mouse_border_teleport, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Teleport Mouse from one border to the other if it goes off screen")
 
 // Frozen Tee Display

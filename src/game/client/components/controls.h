@@ -59,15 +59,16 @@ public:
 	void ClampMousePos();
 	void ResetInput(int Dummy);
 	bool CheckNewInput();
+	vec2 CursorWorldPos() const;
 
 private:
+	vec2 DyncamZoomCursorTarget(vec2 MousePos) const;
 	static void ConKeyInputState(IConsole::IResult *pResult, void *pUserData);
 	static void ConKeyInputCounter(IConsole::IResult *pResult, void *pUserData);
 	static void ConKeyInputSet(IConsole::IResult *pResult, void *pUserData);
 	static void ConKeyInputNextPrevWeapon(IConsole::IResult *pResult, void *pUserData);
 	static void ConTpToCursor(IConsole::IResult *pResult, void *pUserData);
 	static void ConTpDummyToCursor(IConsole::IResult *pResult, void *pUserData);
-	vec2 CursorWorldPos() const;
 	void SendPracticeTeleportToCursor(int Conn);
 };
 #endif

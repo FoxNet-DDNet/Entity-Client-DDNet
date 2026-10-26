@@ -273,8 +273,8 @@ int CControls::SnapInput(int *pData)
 
 		// set the target anyway though so that we can keep seeing our surroundings,
 		// even if chat or menu are activated
-		vec2 Pos = GameClient()->m_Controls.m_aMousePos[g_Config.m_ClDummy];
-		if(g_Config.m_ClScaleMouseDistance && !GameClient()->m_Snap.m_SpecInfo.m_Active)
+		vec2 Pos = DyncamZoomCursorTarget(m_aMousePos[g_Config.m_ClDummy]);
+		if(g_Config.m_ClScaleMouseDistance && !(g_Config.m_ClDyncam && g_Config.m_ClDyncamZoom) && !GameClient()->m_Snap.m_SpecInfo.m_Active)
 		{
 			const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
 			if(MaxDistance > 5 && MaxDistance < 1000) // Don't scale if angle bind or reduces precision
@@ -304,7 +304,8 @@ int CControls::SnapInput(int *pData)
 		m_FastInputHookAction = false;
 		m_FastInputFireAction = false;
 
-		if(g_Config.m_ClScaleMouseDistance && !GameClient()->m_Snap.m_SpecInfo.m_Active)
+		Pos = DyncamZoomCursorTarget(Pos);
+		if(g_Config.m_ClScaleMouseDistance && !(g_Config.m_ClDyncam && g_Config.m_ClDyncamZoom) && !GameClient()->m_Snap.m_SpecInfo.m_Active)
 		{
 			const int MaxDistance = g_Config.m_ClDyncam ? g_Config.m_ClDyncamMaxDistance : g_Config.m_ClMouseMaxDistance;
 			if(MaxDistance > 5 && MaxDistance < 1000) // Don't scale if angle bind or reduces precision
@@ -435,7 +436,7 @@ void CControls::OnRender()
 		// make sure to compensate for smooth dyncam to ensure the cursor stays still in world space if zoomed
 		vec2 DyncamOffsetDelta = GameClient()->m_Camera.m_DyncamTargetCameraOffset - GameClient()->m_Camera.m_aDyncamCurrentCameraOffset[g_Config.m_ClDummy];
 		float Zoom = GameClient()->m_Camera.m_Zoom;
-		m_aTargetPos[g_Config.m_ClDummy] = GameClient()->m_LocalCharacterPos + m_aMousePos[g_Config.m_ClDummy] - DyncamOffsetDelta + DyncamOffsetDelta / Zoom;
+		m_aTargetPos[g_Config.m_ClDummy] = GameClient()->m_LocalCharacterPos + DyncamZoomCursorTarget(m_aMousePos[g_Config.m_ClDummy]) - DyncamOffsetDelta + DyncamOffsetDelta / Zoom;
 	}
 	else if(GameClient()->m_Snap.m_SpecInfo.m_Active && GameClient()->m_Snap.m_SpecInfo.m_UsePosition)
 	{
@@ -545,6 +546,20 @@ float CControls::GetMinMouseDistance() const
 	return g_Config.m_ClDyncam ? g_Config.m_ClDyncamMinDistance : g_Config.m_ClMouseMinDistance;
 }
 
+vec2 CControls::DyncamZoomCursorTarget(vec2 MousePos) const
+{
+	if(!g_Config.m_ClDyncam || !g_Config.m_ClDyncamZoom || GameClient()->m_Snap.m_SpecInfo.m_Active)
+		return MousePos;
+
+	const float Distance = length(MousePos);
+	if(Distance <= g_Config.m_ClDyncamDeadzone || GameClient()->m_Camera.NetworkFollowFactor(GameClient()->m_Camera.m_Zoom) == 0)
+		return MousePos;
+
+	const float BaseFollowFactor = g_Config.m_ClDyncamFollowFactor / 100.0f;
+	const float ExtraOffset = (Distance - g_Config.m_ClDyncamDeadzone) * BaseFollowFactor * (GameClient()->m_Camera.m_Zoom - 1.0f);
+	return MousePos + normalize_pre_length(MousePos, Distance) * ExtraOffset;
+}
+
 float CControls::GetMaxMouseDistance() const
 {
 	float CameraMaxDistance = 200.0f;
@@ -607,8 +622,9 @@ bool CControls::CheckNewInput()
 
 		if(SetMousePos)
 		{
-			TestInput.m_TargetX = (int)m_aMousePos[Dummy].x;
-			TestInput.m_TargetY = (int)m_aMousePos[Dummy].y;
+			const vec2 Pos = DyncamZoomCursorTarget(m_aMousePos[Dummy]);
+			TestInput.m_TargetX = (int)Pos.x;
+			TestInput.m_TargetY = (int)Pos.y;
 		}
 		else
 		{

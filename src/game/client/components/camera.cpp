@@ -628,9 +628,29 @@ int CCamera::Deadzone() const
 	return g_Config.m_ClDyncam ? g_Config.m_ClDyncamDeadzone : g_Config.m_ClMouseDeadzone;
 }
 
-int CCamera::FollowFactor() const
+float CCamera::FollowFactor() const
 {
-	return g_Config.m_ClDyncam ? g_Config.m_ClDyncamFollowFactor : g_Config.m_ClMouseFollowfactor;
+	float Factor = g_Config.m_ClDyncam ? g_Config.m_ClDyncamFollowFactor : g_Config.m_ClMouseFollowfactor;
+	if(g_Config.m_ClDyncam && g_Config.m_ClDyncamZoom)
+	{
+		const float BaseFactor = g_Config.m_ClDyncamFollowFactor / 100.0f;
+		const float CursorScale = 1.0f + BaseFactor * (m_Zoom - 1.0f);
+		Factor = NetworkFollowFactor(m_Zoom) * CursorScale;
+	}
+
+	return Factor;
+}
+
+int CCamera::NetworkFollowFactor(float Zoom) const
+{
+	if(!g_Config.m_ClDyncam || !g_Config.m_ClDyncamZoom)
+		return g_Config.m_ClDyncam ? g_Config.m_ClDyncamFollowFactor : g_Config.m_ClMouseFollowfactor;
+
+	const float BaseFactor = g_Config.m_ClDyncamFollowFactor / 100.0f;
+	const float CursorScale = 1.0f + BaseFactor * (Zoom - 1.0f);
+	// DyncamZoomCursorTarget scales the input vector by CursorScale past the deadzone.
+	// Use the integer sent to the server for both the local and spectator camera offsets.
+	return CursorScale > 0.0f ? round_to_int(std::clamp(g_Config.m_ClDyncamFollowFactor * Zoom / CursorScale, 0.0f, 200.0f)) : 0;
 }
 
 bool CCamera::CanUseAutoSpecCamera() const

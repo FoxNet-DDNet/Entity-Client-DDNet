@@ -103,7 +103,8 @@ public:
 	bool ZoomAllowed() const;
 
 	int Deadzone() const;
-	int FollowFactor() const;
+	float FollowFactor() const;
+	int NetworkFollowFactor(float Zoom) const;
 	int CamType() const { return m_CamType; }
 
 	void UpdateCamera();
