@@ -100,7 +100,7 @@ MACRO_CONFIG_INT(ClWarlistPrefixesServerInfo, ec_warlist_prefixes_server_info, 1
 
 // Run on Join
 MACRO_CONFIG_STR(ClExecuteOnConnect, ec_execute_on_connect, 100, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Run a console command before connect")
-MACRO_CONFIG_STR(ClRunOnJoinConsole, ec_run_on_join_console, 128, "onlineinfo", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
+MACRO_CONFIG_STR(ClRunOnJoinConsole, ec_run_on_join_console, 128, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "What it should run inside of the Console")
 MACRO_CONFIG_INT(ClRunOnJoinConsoleDelay, ec_run_on_join_delay, 2, 1, 50000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Tick Delay before using run on join")
 
 // Mouse/zoom
