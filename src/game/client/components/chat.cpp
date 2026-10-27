@@ -306,6 +306,11 @@ void CChat::ConEcho(IConsole::IResult *pResult, void *pUserData)
 	((CChat *)pUserData)->Echo(pResult->GetString(0));
 }
 
+void CChat::ConEchoConfig(IConsole::IResult *pResult, void *pUserData)
+{
+	((CChat *)pUserData)->EchoConfig(pResult->GetString(0));
+}
+
 void CChat::ConClearChat(IConsole::IResult *pResult, void *pUserData)
 {
 	((CChat *)pUserData)->ClearLines();
@@ -338,6 +343,21 @@ void CChat::Echo(const char *pString)
 	AddLine(CLIENT_MSG, 0, pString);
 }
 
+void CChat::EchoConfig(const char *pName)
+{
+	char aBuf[2048];
+	const SConfigVariable *pVariable = GameClient()->ConfigManager()->FindVariable(pName);
+	if(pVariable == nullptr)
+	{
+		str_format(aBuf, sizeof(aBuf), "Invalid config variable: %s", pName);
+	}
+	else
+	{
+		pVariable->SerializeHumanReadable(aBuf, sizeof(aBuf));
+	}
+	Echo(aBuf);
+}
+
 void CChat::OnConsoleInit()
 {
 	Console()->Register("say", "r[message]", CFGFLAG_CLIENT, ConSay, this, "Say in chat");
@@ -346,6 +366,7 @@ void CChat::OnConsoleInit()
 	Console()->Register("+show_chat", "", CFGFLAG_CLIENT, ConShowChat, this, "Show chat");
 	Console()->Register("echo", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConEcho, this, "Echo the text in chat window");
 	Console()->Register("message", "r[message]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClientMessage, this, "Echo the text in chat window");
+	Console()->Register("echo_config", "r[config]", CFGFLAG_CLIENT | CFGFLAG_STORE, ConEchoConfig, this, "Echo the config value in chat window");
 	Console()->Register("clear_chat", "", CFGFLAG_CLIENT | CFGFLAG_STORE, ConClearChat, this, "Clear chat messages");
 
 	Console()->Register("set_input", "r[input]", CFGFLAG_CLIENT, ConSetChatInput, this, "Opens chat and sets the input as the message"); // EClient [Player Actions]

@@ -4,6 +4,8 @@
 
 #include "chat.h"
 
+#include <base/dbg.h>
+
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 
@@ -15,7 +17,8 @@
 
 CEmoticon::CEmoticon()
 {
-	CEmoticon::OnReset();
+	m_SelectorMouse = vec2(0.0f, 0.0f);
+	OnReset();
 }
 
 void CEmoticon::ConKeyEmoticon(IConsole::IResult *pResult, void *pUserData)
@@ -51,12 +54,13 @@ void CEmoticon::OnReset()
 	m_Active = false;
 	m_SelectedEmote = -1;
 	m_SelectedEyeEmote = -1;
+	m_TouchState = CUi::CTouchState();
 	m_TouchPressedOutside = false;
 }
 
 void CEmoticon::OnRelease()
 {
-	m_Active = false;
+	OnReset();
 }
 
 bool CEmoticon::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
@@ -83,6 +87,13 @@ void CEmoticon::OnRender()
 {
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
+	if(GameClient()->m_Snap.m_SpecInfo.m_Active ||
+		!GameClient()->m_Snap.m_pLocalCharacter ||
+		GameClient()->m_Scoreboard.IsActive())
+	{
+		OnRelease();
+		return;
+	}
 
 	static const auto QuadEaseInOut = [](float t) -> float {
 		if(t == 0.0f)
@@ -315,6 +326,8 @@ void CEmoticon::EyeEmote(int Emote)
 	case EMOTE_BLINK:
 		str_format(aBuf, sizeof(aBuf), "/emote blink %d", g_Config.m_ClEyeDuration);
 		break;
+	default:
+		dbg_assert_failed("Invalid Emote: %d", Emote);
 	}
 	GameClient()->m_Chat.SendChat(TEAM_FLOCK, aBuf);
 }

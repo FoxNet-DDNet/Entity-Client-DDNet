@@ -38,6 +38,7 @@ CBinds::CBinds()
 {
 	mem_zero(m_aapKeyBindings, sizeof(m_aapKeyBindings));
 	m_SpecialBinds.m_pBinds = this;
+	m_HandlingNewBind = false;
 }
 
 CBinds::~CBinds()
@@ -133,16 +134,10 @@ bool CBinds::OnInput(const IInput::CEvent &Event)
 		});
 		if(ActiveBind == m_vActiveBinds.end())
 		{
+			m_HandlingNewBind = true;
 			const auto &&OnKeyPress = [&](int Mask) {
 				char aBind[512];
 				str_copy(aBind, m_aapKeyBindings[Mask][Event.m_Key], sizeof(aBind));
-				if(g_Config.m_ClSubTickAiming)
-				{
-					if(str_comp("+fire", aBind) == 0 || str_comp("+hook", aBind) == 0)
-					{
-						m_MouseOnAction = true;
-					}
-				}
 				if(g_Config.m_ClGoresMode && !GameClient()->m_EClient.m_WeaponsGot && str_find(aBind, "+fire") && !str_find(aBind, "+prevweapon"))
 				{
 					str_append(aBind, ";+prevweapon", sizeof(aBind));
@@ -164,6 +159,7 @@ bool CBinds::OnInput(const IInput::CEvent &Event)
 				OnKeyPress(KeyModifier::NONE);
 				Handled = true;
 			}
+			m_HandlingNewBind = false;
 		}
 		else
 		{
