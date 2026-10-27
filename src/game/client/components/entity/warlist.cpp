@@ -15,10 +15,14 @@
 #include <game/client/render.h>
 
 #include <algorithm>
+#include <utility>
 
 void CWarList::OnInit()
 {
 	MigrateLegacySettings();
+	m_WarMapsInitialized = true;
+	RebuildWarMaps();
+	m_ConfigEntryKeys.clear();
 	if(g_Config.m_ClFrozenHudUseWarlist < 0)
 	{
 		g_Config.m_ClFrozenHudUseWarlist = std::any_of(m_WarTypes.begin(), m_WarTypes.end(), [](const CWarType *pType) {
@@ -66,6 +70,11 @@ void CWarList::OnConsoleInit()
 
 void CWarList::RebuildWarMaps()
 {
+	// Config files can add thousands of entries before OnInit. Build the maps once
+	// after loading instead of rebuilding them for every entry.
+	if(!m_WarMapsInitialized)
+		return;
+
 	m_NameWarMap.clear();
 	m_ClanWarMap.clear();
 	m_MuteMap.clear();
@@ -597,8 +606,19 @@ void CWarList::AddWarEntry(const char *pName, const char *pClan, const char *pRe
 			return Existing.m_pWarType == m_pWarTypeMute && str_comp(Existing.m_aName, pName) == 0;
 		});
 	}
-	else if(!g_Config.m_ClWarListAllowDuplicates && !Temp)
-		RemoveWarEntryDuplicates(pName, pClan);
+	else
+	{
+		bool DuplicatePossible = true;
+		if(!m_WarMapsInitialized)
+		{
+			std::string Key(Entry.m_aName);
+			Key.push_back('\0');
+			Key.append(Entry.m_aClan);
+			DuplicatePossible = !m_ConfigEntryKeys.insert(std::move(Key)).second;
+		}
+		if(!g_Config.m_ClWarListAllowDuplicates && !Temp && DuplicatePossible)
+			RemoveWarEntryDuplicates(pName, pClan);
+	}
 	m_vWarEntries.push_back(Entry);
 
 	RebuildWarMaps(); // EClient

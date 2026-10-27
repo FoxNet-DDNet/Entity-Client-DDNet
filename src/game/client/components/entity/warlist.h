@@ -12,6 +12,7 @@
 
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 enum
@@ -234,6 +235,8 @@ public:
 	std::unordered_map<std::string, CWarEntry *> m_MuteMap;
 	std::unordered_map<std::string, std::vector<CWarType *>> m_NameWarTypeMatches;
 	std::unordered_map<std::string, std::vector<CWarType *>> m_ClanWarTypeMatches;
+	std::unordered_set<std::string> m_ConfigEntryKeys;
+	bool m_WarMapsInitialized = false;
 	void RebuildWarMaps();
 	void MigrateLegacySettings();
 	void InitializeGroupSettings(CWarType *pType, int Index);
