@@ -319,6 +319,20 @@ int str_comp_filenames(const char *a, const char *b);
 void str_clean_whitespaces(char *str);
 
 /**
+ * Copies a prefix, cleans its spaces, and adds one separating space if nonempty.
+ * The source string is not modified.
+ *
+ * @ingroup Strings
+ */
+void str_format_prefix(char *dst, const char *prefix, int dst_size);
+
+template<int N>
+void str_format_prefix(char (&dst)[N], const char *prefix)
+{
+	str_format_prefix(dst, prefix, N);
+}
+
+/**
  * Skips leading non-whitespace characters.
  *
  * @ingroup Strings

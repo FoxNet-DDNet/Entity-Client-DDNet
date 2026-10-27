@@ -148,7 +148,7 @@ bool CFreezeKill::HandleClients(int ClientId)
 	const CGameClient::CClientData &OtherTee = GameClient()->m_aClients[ClientId];
 
 	bool Solo = OtherTee.m_Solo;
-	bool Teammate = GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[2];
+	bool Teammate = GameClient()->m_WarList.GetWarData(ClientId).MatchesWarGroup(2);
 	bool SameTeam = GameClient()->m_Teams.SameTeam(ClientId, LocalId);
 
 	CScreenRect ScreenRect = Graphics()->GetScreen();

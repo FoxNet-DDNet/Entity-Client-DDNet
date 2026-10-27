@@ -348,9 +348,11 @@ void CMenus::RenderSettingsAppearance(CUIRect MainView)
 
 				if(Line.m_Friend && g_Config.m_ClMessageFriend)
 				{
+					char aPrefix[64];
+					str_format_prefix(aPrefix, g_Config.m_ClFriendPrefix);
 					if(Render)
 						TextRender()->TextColor(FriendColor);
-					TextRender()->TextEx(&LocalCursor, g_Config.m_ClFriendPrefix, -1);
+					TextRender()->TextEx(&LocalCursor, aPrefix, -1);
 				}
 			}
 

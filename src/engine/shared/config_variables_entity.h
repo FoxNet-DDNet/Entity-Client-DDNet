@@ -72,12 +72,12 @@ MACRO_CONFIG_INT(EcFrozenKatana, ec_frozen_katana, 0, 0, 1, CFGFLAG_CLIENT | CFG
 
 // War List
 MACRO_CONFIG_INT(ClWarList, ec_warlist, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles war list visuals")
-MACRO_CONFIG_INT(ClWarListShowClan, ec_warlist_show_clan_if_war, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show clan in nameplate if there is a war")
-MACRO_CONFIG_INT(ClWarListReason, ec_warlist_reason, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show war reason")
-MACRO_CONFIG_INT(ClWarListChat, ec_warlist_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show war colors in chat")
-MACRO_CONFIG_INT(ClWarlistPrefixes, ec_warlist_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Warlist Prefix")
-MACRO_CONFIG_INT(ClWarListScoreboard, ec_warlist_scoreboard, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show war colors in scoreboard")
-MACRO_CONFIG_INT(ClWarListSpecMenu, ec_warlist_specmenu, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show war colors in spectate menu")
+MACRO_CONFIG_INT(ClWarListShowClan, ec_warlist_show_clan_if_war, 0, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
+MACRO_CONFIG_INT(ClWarListReason, ec_warlist_reason, 1, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
+MACRO_CONFIG_INT(ClWarListChat, ec_warlist_chat, 0, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
+MACRO_CONFIG_INT(ClWarlistPrefixes, ec_warlist_prefixes, 1, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
+MACRO_CONFIG_INT(ClWarListScoreboard, ec_warlist_scoreboard, 1, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
+MACRO_CONFIG_INT(ClWarListSpecMenu, ec_warlist_specmenu, 1, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
 MACRO_CONFIG_INT(ClWarListAllowDuplicates, ec_warlist_allow_duplicates, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Allow duplicate war entries")
 
 MACRO_CONFIG_INT(ClWarListIndicator, ec_warlist_indicator, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use warlist for indicator")
@@ -86,17 +86,17 @@ MACRO_CONFIG_INT(ClWarListIndicatorAll, ec_warlist_indicator_all, 1, 0, 1, CFGFL
 MACRO_CONFIG_INT(ClWarListIndicatorEnemy, ec_warlist_indicator_enemy, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from the first group")
 MACRO_CONFIG_INT(ClWarListIndicatorTeam, ec_warlist_indicator_team, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show players from second group")
 
-MACRO_CONFIG_INT(ClWarListSwapNameReason, ec_warlist_swap_name_reason, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If a Player has a Reason, their Name will be switched with the Reason")
-MACRO_CONFIG_INT(ClWarListColorJoinLeave, ec_warlist_color_join_leave, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color a players name in the join/leave message")
+MACRO_CONFIG_INT(ClWarListSwapNameReason, ec_warlist_swap_name_reason, 0, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
+MACRO_CONFIG_INT(ClWarListColorJoinLeave, ec_warlist_color_join_leave, 0, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
 
 // Server Browser
 MACRO_CONFIG_INT(ClWarlistBrowser, ec_warlist_browser, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show online warlist players in the server browser or not")
-MACRO_CONFIG_INT(ClWarlistBrowserFlags, ec_warlist_browser_flags, 0, 0, 262144, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to hide wartypes in server browser")
-MACRO_CONFIG_INT(ClWarlistAutoAddFlags, ec_warlist_auto_add_flags, 4, 0, 262144, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to disable wartypes getting auto added")
-MACRO_CONFIG_INT(ClWarlistFrozenTeeFlags, ec_warlist_frozen_tee_flags, 0, 0, 262144, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Bit flags to hide/show wartypes getting in frozen tee hud")
+MACRO_CONFIG_INT(ClWarlistBrowserFlags, ec_warlist_browser_flags, 0, 0, 262144, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
+MACRO_CONFIG_INT(ClWarlistAutoAddFlags, ec_warlist_auto_add_flags, 4, 0, 262144, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
+MACRO_CONFIG_INT(ClWarlistFrozenTeeFlags, ec_warlist_frozen_tee_flags, 0, 0, 262144, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
 
 // Server Info
-MACRO_CONFIG_INT(ClWarlistPrefixesServerInfo, ec_warlist_prefixes_server_info, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Whether to show warlist prefixes in the server info")
+MACRO_CONFIG_INT(ClWarlistPrefixesServerInfo, ec_warlist_prefixes_server_info, 1, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
 
 // Run on Join
 MACRO_CONFIG_STR(ClExecuteOnConnect, ec_execute_on_connect, 100, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Run a console command before connect")
@@ -112,6 +112,7 @@ MACRO_CONFIG_INT(ClUiMouseBorderTeleport, ec_ui_mouse_border_teleport, 0, 0, 1, 
 // Frozen Tee Display
 MACRO_CONFIG_INT(ClShowFrozenText, ec_frozen_tees_text, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show how many tees in your team are currently frozen. (0 - off, 1 - show alive, 2 - show frozen)")
 MACRO_CONFIG_INT(ClShowFrozenHud, ec_frozen_tees_hud, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Show frozen tee HUD")
+MACRO_CONFIG_INT(ClFrozenHudUseWarlist, ec_frozen_tees_use_warlist, -1, -1, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Filter the frozen tee HUD by selected war groups (-1 migrates old selections)")
 MACRO_CONFIG_INT(ClShowFrozenHudSkins, ec_frozen_tees_hud_skins, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Use ninja skin, or darkened skin for frozen tees on hud")
 
 MACRO_CONFIG_INT(ClFrozenHudTeeSize, ec_frozen_tees_size, 15, 8, 20, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Size of tees in frozen tee hud. (Default : 15)")
@@ -209,18 +210,16 @@ MACRO_CONFIG_INT(ClChatClientPrefix, ec_do_chat_client_prefix, 1, 0, 1, CFGFLAG_
 MACRO_CONFIG_INT(ClSpectatePrefix, ec_do_spec_prefix, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Toggles Spectator Prefix Next to Names")
 
 // Prefixes
-MACRO_CONFIG_STR(ClClientPrefix, ec_client_prefix, 5, "— ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client (Echo) Message Prefix")
-MACRO_CONFIG_STR(ClServerPrefix, ec_server_prefix, 5, "*** ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Server Message Prefix")
-MACRO_CONFIG_STR(ClWarlistPrefix, ec_warlist_prefix, 5, "♦ ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Warlist Prefix")
-MACRO_CONFIG_STR(ClFriendPrefix, ec_friend_prefix, 5, "♥ ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Friend Prefix (alt + num3 = ♥)")
-MACRO_CONFIG_STR(ClSpecPrefix, ec_spec_prefix, 5, "• ", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spectating Prefix (alt + num7 = •)")
+MACRO_CONFIG_STR(ClClientPrefix, ec_client_prefix, 5, "—", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Client (Echo) Message Prefix")
+MACRO_CONFIG_STR(ClServerPrefix, ec_server_prefix, 5, "***", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Server Message Prefix")
+MACRO_CONFIG_STR(ClWarlistPrefix, ec_warlist_prefix, 5, "♦", CFGFLAG_CLIENT, "Legacy war group prefix for config migration")
+MACRO_CONFIG_STR(ClFriendPrefix, ec_friend_prefix, 5, "♥", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Friend Prefix (alt + num3 = ♥)")
+MACRO_CONFIG_STR(ClSpecPrefix, ec_spec_prefix, 5, "•", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Spectating Prefix (alt + num7 = •)")
 
 // Mutes
 MACRO_CONFIG_INT(ClReplyMuted, ec_reply_muted, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "replies to muted players if they ping you")
-MACRO_CONFIG_INT(ClShowMutedInConsole, ec_show_muted_in_console, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows messages of muted people in the console")
-MACRO_CONFIG_INT(ClHideEnemyChat, ec_hide_enemy_chat, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Hides Chat Messages of Enemies")
 MACRO_CONFIG_STR(ClAutoReplyMutedMsg, ec_auto_reply_muted_msg, 255, "I can't see your messages, you're muted", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Message to reply with then a muted player pings you")
-MACRO_CONFIG_COL(ClMutedColor, ec_muted_color, 12792139, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Muted Icon Color")
+MACRO_CONFIG_COL(ClMutedColor, ec_muted_color, 12792139, CFGFLAG_CLIENT, "Legacy muted icon color, migrated to the mute war group")
 
 // Saving/Restoring
 MACRO_CONFIG_INT(ClSavedCountry, saved_country, -1, -1000, 1000, CFGFLAG_SAVE | CFGFLAG_CLIENT | CFGFLAG_INSENSITIVE, "Saved to restore for !restore")
@@ -247,7 +246,7 @@ MACRO_CONFIG_STR(ClDiscordOnlineStatus, ec_discord_online_status, 128, "Online",
 MACRO_CONFIG_STR(ClDiscordOfflineStatus, ec_discord_offline_status, 128, "Offline", CFGFLAG_CLIENT | CFGFLAG_SAVE, "discord Offline Status")
 
 // Spec Menu Prefixes
-MACRO_CONFIG_INT(ClSpecMenuPrefixes, ec_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Turns on Prefixes Next to Names in The Spectate Menu")
+MACRO_CONFIG_INT(ClSpecMenuPrefixes, ec_specmenu_prefixes, 1, 0, 1, CFGFLAG_CLIENT, "Legacy war group setting for config migration")
 
 // Chat Detection
 MACRO_CONFIG_INT(ClDismissAdBots, ec_dismiss_adbots, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "If an AdBot messages you it hides their message")
@@ -259,7 +258,7 @@ MACRO_CONFIG_STR(ClAutoNotifyMsg, ec_auto_notify_msg, 256, "Your Fav Person Has 
 MACRO_CONFIG_INT(ClAutoJoinTeam, ec_auto_join_team, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Joins that players team if they join one")
 MACRO_CONFIG_STR(ClAutoJoinTeamName, ec_auto_join_team_name, 16, "", CFGFLAG_CLIENT | CFGFLAG_SAVE, "Name of Player to Whisper Something When They Join")
 
-MACRO_CONFIG_INT(ClAutoAddOnNameChange, ec_auto_add_on_name_change, 2, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Automatically adds a player back to a list if their name changed")
+MACRO_CONFIG_INT(ClAutoAddOnNameChange, ec_auto_add_on_name_change, 2, 0, 2, CFGFLAG_CLIENT, "Legacy war group auto-add setting for config migration")
 MACRO_CONFIG_INT(ClAutoJoinTest, ec_auto_join_test, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Auto Join Test")
 
 // Anti Spawn Block

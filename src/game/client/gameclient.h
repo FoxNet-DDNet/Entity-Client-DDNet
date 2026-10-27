@@ -92,6 +92,7 @@
 
 // Tater
 #include "component.h"
+#include "components/entity/warlist.h"
 #include "components/tclient/bg_draw.h"
 #include "components/tclient/bindchat.h"
 #include "components/tclient/bindwheel.h"
@@ -105,7 +106,6 @@
 #include "components/tclient/statusbar.h"
 #include "components/tclient/trails.h"
 #include "components/tclient/translate.h"
-#include "components/tclient/warlist.h"
 #include "ui.h"
 
 #include <base/types.h>

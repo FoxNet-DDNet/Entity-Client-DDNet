@@ -431,12 +431,12 @@ protected:
 
 		if(g_Config.m_ClWarList)
 		{
-			if(This.m_WarList.GetWarData(Data.m_ClientId).m_IsWarClan)
+			if(This.m_WarList.GetClanType(Data.m_ClientId) && This.m_WarList.GetClanType(Data.m_ClientId)->m_NameplateColor)
 				Color = This.m_WarList.GetClanColor(Data.m_ClientId);
 
-			if(!Data.m_ShowClanWarInName && This.m_WarList.GetWarData(Data.m_ClientId).m_IsWarName)
+			if(!Data.m_ShowClanWarInName && This.m_WarList.GetNameType(Data.m_ClientId) && This.m_WarList.GetNameType(Data.m_ClientId)->m_NameplateColor)
 				Color = This.m_WarList.GetNameplateColor(Data.m_ClientId);
-			else if(Data.m_ShowClanWarInName && This.m_WarList.GetWarData(Data.m_ClientId).m_IsWarClan)
+			else if(Data.m_ShowClanWarInName && This.m_WarList.GetClanType(Data.m_ClientId) && This.m_WarList.GetClanType(Data.m_ClientId)->m_NameplateColor)
 				Color = This.m_WarList.GetClanColor(Data.m_ClientId);
 		}
 
@@ -474,7 +474,7 @@ protected:
 		// EClient
 		ColorRGBA Color = Data.m_Color;
 
-		if(g_Config.m_ClWarList && Data.m_ClientId >= 0 && This.m_WarList.GetWarData(Data.m_ClientId).m_IsWarClan)
+		if(g_Config.m_ClWarList && Data.m_ClientId >= 0 && This.m_WarList.GetClanType(Data.m_ClientId) && This.m_WarList.GetClanType(Data.m_ClientId)->m_NameplateColor)
 			Color = This.m_WarList.GetClanColor(Data.m_ClientId).WithAlpha(Data.m_Color.a);
 
 		m_Color = Color.WithAlpha(Data.m_Color.a);
@@ -562,7 +562,7 @@ protected:
 		m_Size = vec2(Data.m_FontSize, Data.m_FontSize) * 1.2f;
 
 		m_Sprite = SPRITE_MUTED_ICON;
-		m_Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
+		m_Color = This.m_WarList.m_pWarTypeMute->m_Color;
 
 		m_Color.a = Data.m_Color.a;
 	}
@@ -853,7 +853,8 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 	const auto &ClientData = GameClient()->m_aClients[pPlayerInfo->m_ClientId];
 
 	// TClient
-	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || (g_Config.m_ClWarList && g_Config.m_ClWarListShowClan && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_IsWarClan);
+	CWarType *pClanType = GameClient()->m_WarList.GetClanType(pPlayerInfo->m_ClientId);
+	bool ShowClanPlate = g_Config.m_ClNamePlatesClan || (g_Config.m_ClWarList && pClanType && pClanType->m_ShowClan);
 	bool ShowClanWarInName = g_Config.m_ClWarList && !ShowClanPlate && GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_IsWarClan && !GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId).m_IsWarName;
 	Data.m_ShowClanWarInName = ShowClanWarInName;
 
@@ -873,9 +874,10 @@ void CNamePlates::RenderNamePlateGame(vec2 Position, const CNetObj_PlayerInfo *p
 		CWarDataCache Cache = GameClient()->m_WarList.GetWarData(pPlayerInfo->m_ClientId);
 
 		str_copy(Data.m_aReason, Cache.m_aReason);
-		Data.m_ShowReason = Data.m_ShowName && g_Config.m_ClWarListReason;
+		CWarType *pWarType = GameClient()->m_WarList.GetPriorityType(pPlayerInfo->m_ClientId);
+		Data.m_ShowReason = Data.m_ShowName && pWarType && pWarType->m_ShowReason;
 
-		if(g_Config.m_ClWarListSwapNameReason && Data.m_ShowReason && str_comp(Data.m_aReason, "") != 0)
+		if(pWarType && pWarType->m_SwapNameReason && Data.m_ShowReason && str_comp(Data.m_aReason, "") != 0)
 		{
 			char Reason[MAX_WARLIST_REASON_LENGTH] = "";
 			str_copy(Reason, Data.m_aReason);
@@ -1016,7 +1018,8 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 
 	// EClient
 	str_copy(Data.m_aReason, "Reason");
-	Data.m_ShowReason = g_Config.m_ClWarListReason;
+	static bool s_ShowReason = true;
+	Data.m_ShowReason = s_ShowReason;
 
 	Data.m_InGame = false;
 
@@ -1028,10 +1031,13 @@ void CNamePlates::RenderNamePlatePreview(vec2 Position, int Dummy)
 	{
 		static int s_Type = 1;
 		int Amount = GameClient()->m_WarList.m_WarTypes.size();
+		if(s_Type < Amount && GameClient()->m_WarList.m_WarTypes[s_Type] == GameClient()->m_WarList.m_pWarTypeMute)
+			s_Type++;
 
 		if(s_Type < Amount)
 		{
 			s_Color = GameClient()->m_WarList.m_WarTypes[s_Type]->m_Color;
+			s_ShowReason = GameClient()->m_WarList.m_WarTypes[s_Type]->m_ShowReason;
 			str_copy(s_Reason, GameClient()->m_WarList.m_WarTypes[s_Type]->m_aWarName);
 		}
 		else

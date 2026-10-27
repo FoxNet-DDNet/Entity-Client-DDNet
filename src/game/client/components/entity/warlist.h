@@ -1,5 +1,5 @@
-#ifndef GAME_CLIENT_COMPONENTS_TCLIENT_WARLIST_H
-#define GAME_CLIENT_COMPONENTS_TCLIENT_WARLIST_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_WARLIST_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_WARLIST_H
 
 #include <base/color.h>
 #include <base/str.h>
@@ -30,6 +30,26 @@ public:
 	ColorRGBA m_Color = ColorRGBA(1, 1, 1, 1);
 	bool m_Removable = true;
 	bool m_Imported = false;
+	bool m_NoHookLine = false;
+	bool m_NoEmotes = false;
+	bool m_Mute = false;
+	bool m_SettingsMigrated = false;
+	char m_aPrefix[32] = "♦";
+	bool m_ChatPrefix = true;
+	bool m_ServerInfoPrefix = true;
+	bool m_ChatColor = false;
+	bool m_ScoreboardColor = true;
+	bool m_SpecMenuColor = true;
+	bool m_SpecMenuPrefix = false;
+	bool m_NameplateColor = true;
+	bool m_ShowClan = false;
+	bool m_ShowReason = true;
+	bool m_SwapNameReason = false;
+	bool m_JoinLeaveColor = false;
+	bool m_BrowserVisible = true;
+	bool m_AutoAdd = true;
+	bool m_AutoAddNotify = false;
+	bool m_FrozenTee = false;
 	// <E-Client
 	int m_Index = 0;
 	int m_NumEntries = 0;
@@ -87,24 +107,6 @@ public:
 	}
 };
 
-// EClient [Mutes]
-class CMuteEntry
-{
-public:
-	char m_aMutedName[MAX_NAME_LENGTH] = "";
-	bool m_TempEntry = false;
-
-	CMuteEntry(const char *pName)
-	{
-		str_copy(m_aMutedName, pName);
-	}
-
-	bool operator==(const CMuteEntry &Other) const
-	{
-		return !str_comp(m_aMutedName, Other.m_aMutedName);
-	}
-};
-
 class CWarDataCache
 {
 public:
@@ -114,8 +116,14 @@ public:
 	bool m_IsWarClan = false;
 
 	bool m_IsMuted = false; // EClient [Mutes]
+	CWarType *m_pNameType = nullptr;
+	CWarType *m_pClanType = nullptr;
+	CWarType *m_pMuteType = nullptr;
+	bool m_NoHookLine = false;
+	bool m_NoEmotes = false;
 
-	std::vector<char> m_WarGroupMatches = {false, false, false, false};
+	std::vector<char> m_WarGroupMatches = {false, false, false, false, false};
+	bool MatchesWarGroup(size_t Index) const { return Index < m_WarGroupMatches.size() && m_WarGroupMatches[Index]; }
 
 	char m_aReason[MAX_WARLIST_REASON_LENGTH] = "";
 
@@ -144,6 +152,7 @@ class CWarList : public CComponent
 	//
 	// Backend commands
 	// update_war_group [index] [type] [color]
+	// update_war_group_meta [group] [property] [0|1]
 	// add_war_entry [type] [name] [clan] [reason]
 
 	// Preset war Commands
@@ -168,6 +177,9 @@ class CWarList : public CComponent
 	// Backend Commands for config file
 	static void ConAddWarEntry(IConsole::IResult *pResult, void *pUserData);
 	static void ConUpsertWarType(IConsole::IResult *pResult, void *pUserData);
+	static void ConUpdateWarGroupMeta(IConsole::IResult *pResult, void *pUserData);
+	static void ConLegacyHideEnemyChat(IConsole::IResult *pResult, void *pUserData);
+	static void ConLegacyShowMutedInConsole(IConsole::IResult *pResult, void *pUserData);
 
 	// EClient
 	static void ConAddMute(IConsole::IResult *pResult, void *pUserData);
@@ -195,13 +207,14 @@ public:
 		new CWarType("enemy", ColorRGBA(1.0f, 0.2f, 0.2f, 1.0f), false), // 1
 		new CWarType("team", ColorRGBA(0.0f, 0.9f, 0.2f, 1.0f), false), // 2
 		new CWarType("helper", ColorRGBA(0.9f, 0.87f, 0.2f, 1.0f), false), // 3
+		new CWarType("mute", ColorRGBA(1.0f, 1.0f, 1.0f, 1.0f), false), // 4
 	};
-
-	// EClient [Mutes]
-	std::vector<CMuteEntry> m_MuteEntries;
 
 	// None type war entries will float to the top of the list, so they can be assigned a type
 	CWarType *m_pWarTypeNone = m_WarTypes[0];
+	CWarType *m_pWarTypeMute = m_WarTypes[4];
+	bool m_LegacyGroupOrder = false;
+	bool m_LegacyHideEnemyChat = false;
 
 	// Duplicate war entries ARE allowed
 	std::vector<CWarEntry> m_vWarEntries;
@@ -211,14 +224,19 @@ public:
 	CWarDataCache m_WarPlayers[MAX_CLIENTS];
 
 	int Sizeof() const override { return sizeof(*this); }
+	void OnInit() override;
 	void OnNewSnapshot() override;
 	void OnConsoleInit() override;
 
 	// Fps Increase
 	std::unordered_map<std::string, CWarEntry *> m_NameWarMap;
 	std::unordered_map<std::string, CWarEntry *> m_ClanWarMap;
-	std::unordered_map<std::string, CMuteEntry *> m_MuteMap;
+	std::unordered_map<std::string, CWarEntry *> m_MuteMap;
+	std::unordered_map<std::string, std::vector<CWarType *>> m_NameWarTypeMatches;
+	std::unordered_map<std::string, std::vector<CWarType *>> m_ClanWarTypeMatches;
 	void RebuildWarMaps();
+	void MigrateLegacySettings();
+	void InitializeGroupSettings(CWarType *pType, int Index);
 
 	void UpdateWarPlayers();
 
@@ -253,6 +271,9 @@ public:
 	//void RemoveWarType(int Index);
 
 	ColorRGBA GetPriorityColor(int ClientId) const;
+	CWarType *GetPriorityType(int ClientId) const;
+	CWarType *GetNameType(int ClientId) const;
+	CWarType *GetClanType(int ClientId) const;
 	ColorRGBA GetNameplateColor(int ClientId) const;
 	ColorRGBA GetClanColor(int ClientId) const;
 	bool GetAnyWar(int ClientId) const;

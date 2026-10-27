@@ -5322,12 +5322,15 @@ try
 	pConsole->SetUnknownCommandCallback(SaveUnknownCommandCallback, pClient);
 	for(ConfigDomain ConfigDomain = ConfigDomain::START; ConfigDomain < ConfigDomain::NUM; ++ConfigDomain)
 	{
-		if(!pStorage->FileExists(s_aConfigDomains[ConfigDomain].m_aConfigPath, IStorage::TYPE_ALL))
+		const char *pConfigPath = s_aConfigDomains[ConfigDomain].m_aConfigPath;
+		if(ConfigDomain == ConfigDomain::ECLIENTWARLIST && !pStorage->FileExists(pConfigPath, IStorage::TYPE_ALL))
+			pConfigPath = "tclient_warlist.cfg";
+		if(!pStorage->FileExists(pConfigPath, IStorage::TYPE_ALL))
 			continue;
-		if(!pConsole->ExecuteFile(s_aConfigDomains[ConfigDomain].m_aConfigPath, IConsole::CLIENT_ID_UNSPECIFIED))
+		if(!pConsole->ExecuteFile(pConfigPath, IConsole::CLIENT_ID_UNSPECIFIED))
 		{
 			char aError[2048];
-			snprintf(aError, sizeof(aError), "Failed to load config from '%s'.", s_aConfigDomains[ConfigDomain].m_aConfigPath);
+			snprintf(aError, sizeof(aError), "Failed to load config from '%s'.", pConfigPath);
 			log_error("client", "%s", aError);
 			pClient->ShowMessageBox({.m_pTitle = "Config File Error", .m_pMessage = aError});
 			PerformAllCleanup();

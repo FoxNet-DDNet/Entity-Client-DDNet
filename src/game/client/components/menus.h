@@ -3,7 +3,7 @@
 #ifndef GAME_CLIENT_COMPONENTS_MENUS_H
 #define GAME_CLIENT_COMPONENTS_MENUS_H
 
-#include "tclient/warlist.h"
+#include "entity/warlist.h"
 
 #include <base/bytes.h>
 #include <base/str.h>
@@ -1082,6 +1082,15 @@ private:
 		CButtonContainer m_NextMapVersionButton;
 	};
 	static CUi::EPopupMenuFunctionResult PopupServerSelection(void *pContext, CUIRect View, bool Active);
+
+	class CPopupWarlistTypeConfigContext
+	{
+	public:
+		CMenus *m_pMenus;
+		size_t m_WarType;
+	};
+	static CUi::EPopupMenuFunctionResult PopupWarlistTypeConfig(void *pContext, CUIRect View, bool Active);
+	static CUi::EPopupMenuFunctionResult PopupFrozenHudWarlistConfig(void *pContext, CUIRect View, bool Active);
 
 public:
 	int DoButtonLineSize_Menu(CButtonContainer *pButtonContainer, const char *pText, int Checked, const CUIRect *pRect, float LineSize, bool Fake = false, const char *pImageName = nullptr, int Corners = IGraphics::CORNER_ALL, float Rounding = 5.0f, float FontFactor = 0.0f, ColorRGBA Color = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f));

@@ -343,7 +343,7 @@ private:
 		{
 			for(size_t WarlistType = 0; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
 			{
-				bool Matches = GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[WarlistType];
+				bool Matches = GameClient()->m_WarList.GetWarData(ClientId).MatchesWarGroup(WarlistType);
 
 				if(Matches)
 					return (int)WarlistType;
@@ -354,7 +354,7 @@ private:
 		{
 			for(size_t WarlistType = 0; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
 			{
-				bool Matches = GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[WarlistType];
+				bool Matches = GameClient()->m_WarList.GetWarData(ClientId).MatchesWarGroup(WarlistType);
 
 				if(Matches)
 					return GameClient()->m_WarList.GetWarTypeName(ClientId);

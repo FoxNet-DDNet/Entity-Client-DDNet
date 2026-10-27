@@ -183,6 +183,8 @@ void CPlayers::RenderHookCollLine(
 	Player = *pPlayerChar;
 
 	dbg_assert(in_range(ClientId, MAX_CLIENTS - 1), "invalid client id (%d)", ClientId);
+	if(GameClient()->m_WarList.GetWarData(ClientId).m_NoHookLine)
+		return;
 
 	if(!GameClient()->m_GameInfo.m_AllowHookColl)
 		return;
@@ -1016,7 +1018,7 @@ void CPlayers::RenderPlayer(
 		}
 	}
 
-	if(g_Config.m_ClShowEmotes && !GameClient()->m_aClients[ClientId].m_EmoticonIgnore && GameClient()->m_aClients[ClientId].m_EmoticonStartTick != -1)
+	if(g_Config.m_ClShowEmotes && !GameClient()->m_WarList.GetWarData(ClientId).m_NoEmotes && !GameClient()->m_aClients[ClientId].m_EmoticonIgnore && GameClient()->m_aClients[ClientId].m_EmoticonStartTick != -1)
 	{
 		float SinceStart = (Client()->GameTick(g_Config.m_ClDummy) - GameClient()->m_aClients[ClientId].m_EmoticonStartTick) + (Client()->IntraGameTickSincePrev(g_Config.m_ClDummy) - GameClient()->m_aClients[ClientId].m_EmoticonStartFraction);
 		float FromEnd = (2 * Client()->GameTickSpeed()) - SinceStart;
@@ -1188,12 +1190,12 @@ void CPlayers::BuildTeeRenderInfo(int ClientId, const CFrameSkins &Skins, CTeeRe
 		if(g_Config.m_ClWarList)
 		{
 			const CWarDataCache &WarData = GameClient()->m_WarList.GetWarData(ClientId);
-			if(WarData.m_IsWarClan)
+			if(WarData.m_IsWarClan && GameClient()->m_WarList.GetClanType(ClientId)->m_NameplateColor)
 				Color = GameClient()->m_WarList.GetClanColor(ClientId);
 
-			if(WarData.m_IsWarName)
+			if(WarData.m_IsWarName && GameClient()->m_WarList.GetNameType(ClientId)->m_NameplateColor)
 				Color = GameClient()->m_WarList.GetNameplateColor(ClientId);
-			else if(WarData.m_IsWarClan)
+			else if(WarData.m_IsWarClan && GameClient()->m_WarList.GetClanType(ClientId)->m_NameplateColor)
 				Color = GameClient()->m_WarList.GetClanColor(ClientId);
 		}
 

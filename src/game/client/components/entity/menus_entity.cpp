@@ -912,7 +912,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	DoButtonForConfig(&s_EClientConfig, EcLocalize("E-Client Setting"), s_aConfigDomains[ConfigDomain::ENTITY].m_aConfigPath);
 	DoButtonForConfig(&s_Config, EcLocalize("DDNet Settings"), s_aConfigDomains[ConfigDomain::DDNET].m_aConfigPath);
 	DoButtonForConfig(&s_Profiles, EcLocalize("Profiles"), s_aConfigDomains[ConfigDomain::TCLIENTPROFILES].m_aConfigPath);
-	DoButtonForConfig(&s_Warlist, EcLocalize("Warlist"), s_aConfigDomains[ConfigDomain::TCLIENTWARLIST].m_aConfigPath);
+	DoButtonForConfig(&s_Warlist, EcLocalize("Warlist"), s_aConfigDomains[ConfigDomain::ECLIENTWARLIST].m_aConfigPath);
 	DoButtonForConfig(&s_Chatbinds, EcLocalize("Chatbinds"), s_aConfigDomains[ConfigDomain::TCLIENTCHATBINDS].m_aConfigPath);
 
 	if(DoButtonLineSize_Menu(&s_FontFolder, EcLocalize("Fonts Folder"), 0, &FilesRight, LineSize, false, 0, IGraphics::CORNER_ALL, 5.0f, 0.0f, ColorRGBA(0.0f, 0.0f, 0.0f, 0.25f)))
@@ -1088,36 +1088,42 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 		if(Line.m_Player)
 		{
 			LocalCursor.m_X += RealMsgPaddingTee;
+			char aPrefix[64];
 
-			if(Line.m_Enemy && g_Config.m_ClWarlistPrefixes)
+			if(Line.m_Enemy && GameClient()->m_WarList.m_WarTypes[1]->m_ChatPrefix)
 			{
 				if(Render)
 					TextRender()->TextColor(EnemyColor);
-				TextRender()->TextEx(&LocalCursor, "♦ ", -1);
+				str_format_prefix(aPrefix, GameClient()->m_WarList.m_WarTypes[1]->m_aPrefix);
+				TextRender()->TextEx(&LocalCursor, aPrefix, -1);
 			}
-			if(Line.m_Helper && g_Config.m_ClWarlistPrefixes)
+			if(Line.m_Helper && GameClient()->m_WarList.m_WarTypes[3]->m_ChatPrefix)
 			{
 				if(Render)
 					TextRender()->TextColor(HelperColor);
-				TextRender()->TextEx(&LocalCursor, "♦ ", -1);
+				str_format_prefix(aPrefix, GameClient()->m_WarList.m_WarTypes[3]->m_aPrefix);
+				TextRender()->TextEx(&LocalCursor, aPrefix, -1);
 			}
-			if(Line.m_Teammate && g_Config.m_ClWarlistPrefixes)
+			if(Line.m_Teammate && GameClient()->m_WarList.m_WarTypes[2]->m_ChatPrefix)
 			{
 				if(Render)
 					TextRender()->TextColor(TeammateColor);
-				TextRender()->TextEx(&LocalCursor, "♦ ", -1);
+				str_format_prefix(aPrefix, GameClient()->m_WarList.m_WarTypes[2]->m_aPrefix);
+				TextRender()->TextEx(&LocalCursor, aPrefix, -1);
 			}
 			if(Line.m_Friend && g_Config.m_ClMessageFriend)
 			{
 				if(Render)
 					TextRender()->TextColor(FriendColor);
-				TextRender()->TextEx(&LocalCursor, g_Config.m_ClFriendPrefix, -1);
+				str_format_prefix(aPrefix, g_Config.m_ClFriendPrefix);
+				TextRender()->TextEx(&LocalCursor, aPrefix, -1);
 			}
 			if(Line.m_Spec && g_Config.m_ClSpectatePrefix)
 			{
 				if(Render)
 					TextRender()->TextColor(SpecColor);
-				TextRender()->TextEx(&LocalCursor, g_Config.m_ClSpecPrefix, -1);
+				str_format_prefix(aPrefix, g_Config.m_ClSpecPrefix);
+				TextRender()->TextEx(&LocalCursor, aPrefix, -1);
 			}
 		}
 
@@ -1181,22 +1187,19 @@ void CMenus::RenderChatPreview(CUIRect MainView)
 	// Set preview lines
 	{
 		char aLineBuilder[128];
+		char aServerPrefix[64], aClientPrefix[64];
+		str_format_prefix(aServerPrefix, g_Config.m_ClChatServerPrefix ? g_Config.m_ClServerPrefix : "***");
+		str_format_prefix(aClientPrefix, g_Config.m_ClChatClientPrefix ? g_Config.m_ClClientPrefix : "—");
 
 		str_format(aLineBuilder, sizeof(aLineBuilder), "'%s' entered and joined the game", aBuf);
-		if(g_Config.m_ClChatServerPrefix)
-			SetPreviewLine(PREVIEW_SYS, -1, g_Config.m_ClServerPrefix, aLineBuilder, 0, 0);
-		else
-			SetPreviewLine(PREVIEW_SYS, -1, "*** ", aLineBuilder, 0, 0);
+		SetPreviewLine(PREVIEW_SYS, -1, aServerPrefix, aLineBuilder, 0, 0);
 		str_format(aLineBuilder, sizeof(aLineBuilder), "Hey, how are you %s?", aBuf);
 		SetPreviewLine(PREVIEW_HIGHLIGHT, 7, "Random Tee", aLineBuilder, FLAG_HIGHLIGHT, 0, GameClient()->m_Skins.Find("pinky"));
 
 		SetPreviewLine(PREVIEW_TEAM, 11, "Your Teammate", "Let's speedrun this!", FLAG_TEAM, 0, GameClient()->m_Skins.Find("default_flower"));
 		SetPreviewLine(PREVIEW_FRIEND, 8, "Friend", "Hello there", FLAG_FRIEND, 0, GameClient()->m_Skins.Find("turtle"));
 		SetPreviewLine(PREVIEW_SPAMMER, 9, "Spammer", "Hey fools, I'm spamming here!", 0, 5, GameClient()->m_Skins.Find("beast"));
-		if(g_Config.m_ClChatClientPrefix)
-			SetPreviewLine(PREVIEW_CLIENT, -1, g_Config.m_ClClientPrefix, "Echo command executed", FLAG_CLIENT, 0);
-		else
-			SetPreviewLine(PREVIEW_CLIENT, -1, "— ", "Echo command executed", FLAG_CLIENT, 0);
+		SetPreviewLine(PREVIEW_CLIENT, -1, aClientPrefix, "Echo command executed", FLAG_CLIENT, 0);
 		SetPreviewLine(PREVIEW_ENEMY, 6, "Enemy", "Nobo", FLAG_ENEMY, 0, GameClient()->m_Skins.Find("default"));
 		SetPreviewLine(PREVIEW_HELPER, 3, "Helper", "Ima help this random :>", FLAG_HELPER, 0, GameClient()->m_Skins.Find("Robot"));
 		SetPreviewLine(PREVIEW_TEAMMATE, 10, "Teammate", "Help me!", FLAG_TEAMMATE, 0, GameClient()->m_Skins.Find("Catnoa"));
@@ -1899,6 +1902,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 
 void CMenus::RenderSettingsWarList(CUIRect MainView)
 {
+	GameClient()->m_WarList.MigrateLegacySettings();
 	CUIRect RightView, LeftView, Column1, Column2, Column3, Column4, Button, ButtonL, ButtonR, Label;
 
 	MainView.HSplitTop(MarginSmall, nullptr, &MainView);
@@ -1937,8 +1941,12 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	Column1.HSplitBottom(25.0f, &Column1, &EntriesSearch);
 	EntriesSearch.HSplitTop(MarginSmall, nullptr, &EntriesSearch);
 
-	static CWarEntry *s_pSelectedEntry = nullptr;
+	static int s_SelectedEntryIndex = -1;
+	auto &vWarEntries = GameClient()->m_WarList.m_vWarEntries;
+	CWarEntry *s_pSelectedEntry = s_SelectedEntryIndex >= 0 && s_SelectedEntryIndex < (int)vWarEntries.size() ? &vWarEntries[s_SelectedEntryIndex] : nullptr;
 	static CWarType *s_pSelectedType = GameClient()->m_WarList.m_WarTypes[0];
+	if(std::find(GameClient()->m_WarList.m_WarTypes.begin(), GameClient()->m_WarList.m_WarTypes.end(), s_pSelectedType) == GameClient()->m_WarList.m_WarTypes.end())
+		s_pSelectedType = GameClient()->m_WarList.m_WarTypes[0];
 
 	// Filter the list
 	static CLineInputBuffered<128> s_EntriesFilterInput;
@@ -1972,6 +1980,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	s_vItemIds.resize(MaxEntries);
 	s_vDeleteButtons.resize(MaxEntries);
 
+	CWarEntry *pEntryToRemove = nullptr;
 	for(size_t i = 0; i < vpFilteredEntries.size(); i++)
 	{
 		CWarEntry *pEntry = vpFilteredEntries[i];
@@ -1995,7 +2004,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		DeleteButton.VSplitRight(MarginExtraSmall, &DeleteButton, nullptr);
 
 		if(Ui()->DoButton_FontIcon(&s_vDeleteButtons[i], FontIcon::TRASH, 0, &DeleteButton, BUTTONFLAG_LEFT))
-			GameClient()->m_WarList.RemoveWarEntry(pEntry);
+			pEntryToRemove = pEntry;
 
 		bool IsClan = false;
 		char aBuf[32];
@@ -2047,10 +2056,21 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	}
 
 	const int NewSelectedEntry = s_EntriesListBox.DoEnd();
+	if(pEntryToRemove)
+	{
+		const int RemovedIndex = pEntryToRemove - vWarEntries.data();
+		if(s_SelectedEntryIndex == RemovedIndex)
+			s_SelectedEntryIndex = -1;
+		else if(s_SelectedEntryIndex > RemovedIndex)
+			--s_SelectedEntryIndex;
+		GameClient()->m_WarList.RemoveWarEntry(pEntryToRemove);
+		s_pSelectedEntry = s_SelectedEntryIndex >= 0 && s_SelectedEntryIndex < (int)vWarEntries.size() ? &vWarEntries[s_SelectedEntryIndex] : nullptr;
+	}
 	const bool HasValidNewSelectedEntry = NewSelectedEntry >= 0 && NewSelectedEntry < (int)vpFilteredEntries.size();
-	if(HasValidNewSelectedEntry && (SelectedOldEntry != NewSelectedEntry || (SelectedOldEntry >= 0 && Ui()->HotItem() == &s_vItemIds[NewSelectedEntry] && Ui()->MouseButtonClicked(0))))
+	if(!pEntryToRemove && HasValidNewSelectedEntry && (SelectedOldEntry != NewSelectedEntry || (SelectedOldEntry >= 0 && Ui()->HotItem() == &s_vItemIds[NewSelectedEntry] && Ui()->MouseButtonClicked(0))))
 	{
 		s_pSelectedEntry = vpFilteredEntries[NewSelectedEntry];
+		s_SelectedEntryIndex = s_pSelectedEntry - vWarEntries.data();
 		if(!Ui()->LastMouseButton(1) && !Ui()->LastMouseButton(2))
 		{
 			str_copy(s_aEntryName, s_pSelectedEntry->m_aName);
@@ -2072,6 +2092,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	else if(vpFilteredEntries.empty())
 	{
 		s_pSelectedEntry = nullptr;
+		s_SelectedEntryIndex = -1;
 	}
 
 	Ui()->DoEditBox_Search(&s_EntriesFilterInput, &EntriesSearch, 14.0f, !Ui()->IsPopupOpen() && !GameClient()->m_GameConsole.IsActive());
@@ -2144,7 +2165,8 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	Column2.HSplitTop(LineSize * 2.0f, &Button, &Column2);
 	Button.VSplitMid(&ButtonL, &ButtonR, MarginSmall);
 
-	if(DoButtonLineSize_Menu(&s_OverrideButton, EcLocalize("Override Entry"), 0, &ButtonL, LineSize) && s_pSelectedEntry)
+	const bool InvalidMuteEntry = s_pSelectedType == GameClient()->m_WarList.m_pWarTypeMute && (s_aEntryName[0] == '\0' || s_aEntryClan[0] != '\0');
+	if(DoButtonLineSize_Menu(&s_OverrideButton, EcLocalize("Override Entry"), 0, &ButtonL, LineSize, InvalidMuteEntry) && s_pSelectedEntry)
 	{
 		if(s_pSelectedEntry && s_pSelectedType && (str_comp(s_aEntryName, "") != 0 || str_comp(s_aEntryClan, "") != 0))
 		{
@@ -2152,12 +2174,17 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 			str_copy(s_pSelectedEntry->m_aClan, s_aEntryClan);
 			str_copy(s_pSelectedEntry->m_aReason, s_aEntryReason);
 			s_pSelectedEntry->m_pWarType = s_pSelectedType;
+			GameClient()->m_WarList.RebuildWarMaps();
 		}
 	}
-	if(DoButtonLineSize_Menu(&s_AddButton, EcLocalize("Add Entry"), 0, &ButtonR, LineSize))
+	if(DoButtonLineSize_Menu(&s_AddButton, EcLocalize("Add Entry"), 0, &ButtonR, LineSize, InvalidMuteEntry))
 	{
 		if(s_pSelectedType)
+		{
 			GameClient()->m_WarList.AddWarEntry(s_aEntryName, s_aEntryClan, s_aEntryReason, s_pSelectedType->m_aWarName);
+			s_SelectedEntryIndex = -1;
+			s_pSelectedEntry = nullptr;
+		}
 	}
 	Column2.HSplitTop(MarginSmall, nullptr, &Column2);
 	Column2.HSplitTop(HeadlineFontSize + MarginSmall, &Button, &Column2);
@@ -2177,13 +2204,6 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	Column2.HSplitTop(MarginSmall, nullptr, &Column2);
 
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarList, EcLocalize("Enable warlist"), &g_Config.m_ClWarList, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistPrefixes, EcLocalize("Warlist Chat Prefixes"), &g_Config.m_ClWarlistPrefixes, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarlistPrefixesServerInfo, EcLocalize("Warlist Prefix Server Info"), &g_Config.m_ClWarlistPrefixesServerInfo, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListChat, EcLocalize("Colors in chat"), &g_Config.m_ClWarListChat, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListScoreboard, EcLocalize("Colors in scoreboard"), &g_Config.m_ClWarListScoreboard, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSpecMenu, EcLocalize("Colors in specmenu"), &g_Config.m_ClWarListSpecMenu, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListShowClan, EcLocalize("Show clan if war"), &g_Config.m_ClWarListShowClan, &Column2, LineSize);
-	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListSwapNameReason, EcLocalize("Swap Reason with Name"), &g_Config.m_ClWarListSwapNameReason, &Column2, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarListAllowDuplicates, EcLocalize("Allow Duplicate Entries"), &g_Config.m_ClWarListAllowDuplicates, &Column2, LineSize);
 
 	// ======WAR TYPE EDITING======
@@ -2197,83 +2217,76 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	CUIRect WarTypeList;
 	Column3.HSplitBottom(180.0f, &WarTypeList, &Column3);
-	m_pRemoveWarType = nullptr;
 	int SelectedOldType = -1;
 	static CListBox s_WarTypeListBox;
 	s_WarTypeListBox.DoStart(25.0f, GameClient()->m_WarList.m_WarTypes.size(), 1, 2, SelectedOldType, &WarTypeList);
 
 	static std::vector<unsigned char> s_vTypeItemIds;
-	static std::vector<CButtonContainer> s_vTypeDeleteButtons;
-	static std::vector<CButtonContainer> s_vTypeBrowserHideButtons;
+	static std::vector<CButtonContainer> s_vTypeBrowserSettingsButtons;
 	static std::vector<std::string> s_vTypeEntriesText;
 
 	const int MaxTypes = GameClient()->m_WarList.m_WarTypes.size();
 	s_vTypeItemIds.resize(MaxTypes);
-	s_vTypeDeleteButtons.resize(MaxTypes);
-	s_vTypeBrowserHideButtons.resize(MaxTypes);
+	s_vTypeBrowserSettingsButtons.resize(MaxTypes);
 	s_vTypeEntriesText.resize(MaxTypes);
 
-	for(int i = 0; i < (int)GameClient()->m_WarList.m_WarTypes.size(); i++)
+	for(size_t WarType = 0; WarType < GameClient()->m_WarList.m_WarTypes.size(); WarType++)
 	{
-		CWarType *pType = GameClient()->m_WarList.m_WarTypes[i];
+		CWarType *pType = GameClient()->m_WarList.m_WarTypes[WarType];
 		if(!pType)
 			continue;
 
 		if(s_pSelectedType && pType == s_pSelectedType)
-			SelectedOldType = i;
+			SelectedOldType = WarType;
 
-		const CListboxItem Item = s_WarTypeListBox.DoNextItem(&s_vTypeItemIds[i], SelectedOldType >= 0 && SelectedOldType == i);
+		const CListboxItem Item = s_WarTypeListBox.DoNextItem(&s_vTypeItemIds[WarType], SelectedOldType >= 0 && SelectedOldType == (int)WarType);
 		if(!Item.m_Visible)
 			continue;
 
-		CUIRect TypeRect, DeleteButton, HideButton;
+		CUIRect TypeRect, ConfigButton;
 		Item.m_Rect.Margin(0.0f, &TypeRect);
 
-		if(Ui()->ActiveItem() == &s_vTypeItemIds[i])
+		if(Ui()->ActiveItem() == &s_vTypeItemIds[WarType])
 		{
 			// If dragging up/down the list, swap war types
 			if(Ui()->MouseButton(0))
 			{
 				int SwapIndex = -1;
 				if(Ui()->MouseY() < Item.m_Rect.y)
-					SwapIndex = i - 1;
+					SwapIndex = WarType - 1;
 				else if(Ui()->MouseY() > Item.m_Rect.y + Item.m_Rect.h)
-					SwapIndex = i + 1;
+					SwapIndex = WarType + 1;
 				if(SwapIndex >= 0 && SwapIndex < (int)GameClient()->m_WarList.m_WarTypes.size())
 				{
 					CWarType *pSwapType = GameClient()->m_WarList.m_WarTypes[SwapIndex];
-					CWarType *pThisType = GameClient()->m_WarList.m_WarTypes[i];
+					CWarType *pThisType = GameClient()->m_WarList.m_WarTypes[WarType];
 					if(pSwapType->m_Removable && pThisType->m_Removable)
 					{
-						std::swap(GameClient()->m_WarList.m_WarTypes[i], GameClient()->m_WarList.m_WarTypes[SwapIndex]);
+						std::swap(GameClient()->m_WarList.m_WarTypes[WarType], GameClient()->m_WarList.m_WarTypes[SwapIndex]);
 						Ui()->SetActiveItem(&s_vTypeItemIds[SwapIndex]);
 					}
 				}
 			}
 		}
 
-		if(pType->m_Removable)
+		if(pType != GameClient()->m_WarList.m_pWarTypeNone)
 		{
-			TypeRect.VSplitRight(20.0f, &TypeRect, &DeleteButton);
-			DeleteButton.HSplitTop(20.0f, &DeleteButton, nullptr);
-			DeleteButton.Margin(2.0f, &DeleteButton);
-			if(DoButtonNoRect_FontIcon(&s_vTypeDeleteButtons[i], FontIcon::TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL))
-				m_pRemoveWarType = pType;
-		}
-		if(g_Config.m_ClWarlistBrowser && pType != GameClient()->m_WarList.m_pWarTypeNone)
-		{
-			TypeRect.VSplitRight(20.0f, &TypeRect, &HideButton);
-			HideButton.HSplitTop(20.0f, &HideButton, nullptr);
-			HideButton.Margin(2.0f, &HideButton);
+			TypeRect.VSplitRight(20.0f, &TypeRect, &ConfigButton);
+			ConfigButton.HSplitTop(20.0f, &ConfigButton, nullptr);
+			ConfigButton.Margin(2.0f, &ConfigButton);
 
-			const bool BrowserFlagSet = IsFlagSet(g_Config.m_ClWarlistBrowserFlags, i);
-
-			if(DoButtonNoRect_FontIcon(&s_vTypeBrowserHideButtons[i], BrowserFlagSet ? FontIcon::EYE_SLASH : FontIcon::EYE, 0, &HideButton, IGraphics::CORNER_ALL))
+			if(DoButtonNoRect_FontIcon(&s_vTypeBrowserSettingsButtons[WarType], FontIcon::GEAR, 0, &ConfigButton, IGraphics::CORNER_ALL))
 			{
-				SetFlag(g_Config.m_ClWarlistBrowserFlags, i, !BrowserFlagSet);
+				static SPopupMenuId s_PopupWarTypeConfigId;
+				static CPopupWarlistTypeConfigContext s_PopupWarTypeConfigContext;
+				s_PopupWarTypeConfigContext.m_pMenus = this;
+				s_PopupWarTypeConfigContext.m_WarType = WarType;
+
+				const float Width = 430;
+				const float Height = 230;
+				Ui()->DoPopupMenu(&s_PopupWarTypeConfigId, Ui()->MouseX() - Width * 0.5f, Ui()->MouseY(), Width, Height, &s_PopupWarTypeConfigContext, PopupWarlistTypeConfig);
 			}
-			Ui()->DoToolTip(&s_vTypeBrowserHideButtons[i], &HideButton,
-				BrowserFlagSet ? EcLocalize("Hidden in server browser") : EcLocalize("Shown in server browser"));
+			Ui()->DoToolTip(&s_vTypeBrowserSettingsButtons[WarType], &ConfigButton, EcLocalize("Open Config"));
 		}
 
 		TextRender()->TextColor(pType->m_Color);
@@ -2282,8 +2295,8 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 		char aBuf[64];
 		str_format(aBuf, sizeof(aBuf), "%d %s", pType->m_NumEntries, EcLocalize("entries"));
-		s_vTypeEntriesText[i] = aBuf;
-		Ui()->DoToolTip(&s_vTypeItemIds[i], &TypeRect, s_vTypeEntriesText[i].c_str());
+		s_vTypeEntriesText[WarType] = aBuf;
+		Ui()->DoToolTip(&s_vTypeItemIds[WarType], &TypeRect, s_vTypeEntriesText[WarType].c_str());
 	}
 	const int NewSelectedType = s_WarTypeListBox.DoEnd();
 	if((SelectedOldType != NewSelectedType && NewSelectedType >= 0) || (NewSelectedType >= 0 && Ui()->HotItem() == &s_vTypeItemIds[NewSelectedType] && Ui()->MouseButtonClicked(0)))
@@ -2295,15 +2308,6 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 			s_GroupColor = s_pSelectedType->m_Color;
 		}
 	}
-	if(m_pRemoveWarType != nullptr)
-	{
-		char aMessage[256];
-		str_format(aMessage, sizeof(aMessage),
-			EcLocalize("Are you sure that you want to remove '%s' from your war groups?"),
-			m_pRemoveWarType->m_aWarName);
-		PopupConfirm(EcLocalize("Remove War Group"), aMessage, EcLocalize("Yes"), EcLocalize("No"), &CMenus::PopupConfirmRemoveWarType);
-	}
-
 	static CLineInput s_TypeNameInput;
 	Column3.HSplitTop(MarginSmall, nullptr, &Column3);
 	Column3.HSplitTop(HeadlineFontSize + MarginSmall, &Button, &Column3);
@@ -2320,12 +2324,13 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 
 	Column3.HSplitTop(LineSize * 2.0f, &Button, &Column3);
 	Button.VSplitMid(&ButtonL, &ButtonR, MarginSmall);
-	bool OverrideDisabled = NewSelectedType == 0;
+	bool OverrideDisabled = NewSelectedType == 0 || (s_pSelectedType == GameClient()->m_WarList.m_pWarTypeMute && str_comp(s_aTypeName, "mute") != 0);
 	if(DoButtonLineSize_Menu(&s_OverrideGroupButton, EcLocalize("Override Group"), 0, &ButtonL, LineSize, OverrideDisabled) && s_pSelectedType)
 	{
 		if(s_pSelectedType && str_comp(s_aTypeName, "") != 0)
 		{
-			str_copy(s_pSelectedType->m_aWarName, s_aTypeName);
+			if(s_pSelectedType != GameClient()->m_WarList.m_pWarTypeMute)
+				str_copy(s_pSelectedType->m_aWarName, s_aTypeName);
 			s_pSelectedType->m_Color = s_GroupColor;
 		}
 	}
@@ -3013,7 +3018,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		FILTER_CHAT,
 		{"chat", "typing", "indicator", "show", "mute", "console", "hide", "enemy", "friend", "spec", "server", "client", "warlist", "client", "id", "preview", "math", "expression", "calculator"},
 		[](bool HasSearch) {
-			return 415.0f;
+			return 355.0f;
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -3028,8 +3033,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				Ui()->DoToolTip(&g_Config.m_ClChatBubble, &Button, "Lets others see the vanilla '...' icon above your tee while you're typing - not the floating chat text, that's the separate Chat Bubbles module");
 				ModuleRect.HSplitTop(2.5f, &Button, &ModuleRect);
 
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowMutedInConsole, ("Show Messages of Muted People in The Console"), &g_Config.m_ClShowMutedInConsole, &ModuleRect, LineSize);
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHideEnemyChat, ("Hide Enemy Chat (Shows in Console)"), &g_Config.m_ClHideEnemyChat, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowIdsChat, ("Show Client Ids in Chat"), &g_Config.m_ClShowIdsChat, &ModuleRect, LineSize);
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				if(DoButton_CheckBox(&g_Config.m_ClChatMath, ("Suggest Math Results in Chat"), g_Config.m_ClChatMath, &Button))
@@ -3076,9 +3079,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				static CLineInput s_ClientInput;
 				RenderPrefixOption(&s_ClientInput, "Client Prefix", &g_Config.m_ClChatClientPrefix, g_Config.m_ClClientPrefix, "alt0151");
-
-				static CLineInput s_WarlistInput;
-				RenderPrefixOption(&s_WarlistInput, "Warlist Prefix", &g_Config.m_ClWarlistPrefixes, g_Config.m_ClWarlistPrefix, "alt4");
 
 				ModuleRect.HSplitTop(55.0f, &Button, &ModuleRect);
 				Ui()->DoLabel(&Button, EcLocalize("Chat Preview"), FontSize + 3, TEXTALIGN_ML);
@@ -3653,8 +3653,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, EcLocalize("Show Settings Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &ModuleRect, LineSize);
 
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuFriendColor, EcLocalize("Friend Color in Spectate Menu"), &g_Config.m_ClSpecMenuFriendColor, &ModuleRect, LineSize);
-
-				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSpecMenuPrefixes, EcLocalize("Player Prefixes in Spectate Menu"), &g_Config.m_ClSpecMenuPrefixes, &ModuleRect, LineSize);
 			}
 		},
 	});
@@ -4107,14 +4105,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_WARLIST,
-		{"warlist", "sweat", "skin", "auto", "add", "name", "change"},
-		[&](bool HasSearch) {
-			float Height = 180.0f;
-			if(g_Config.m_ClAutoAddOnNameChange || HasSearch)
-				Height += LineSize;
-
-			return Height;
-		},
+		{"warlist", "sweat", "skin"},
+		[](bool HasSearch) { return 150.0f; },
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 			ModuleRect.VMargin(Margin, &ModuleRect);
@@ -4144,20 +4136,6 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				Ui()->DoLabel(&SkinLabel, "Skin Name:", FontSize, TEXTALIGN_ML);
 				SkinInput.VSplitLeft(150.0f, &SkinInput, nullptr);
 				Ui()->DoEditBox(&s_Name, &SkinInput, EditBoxFontSize);
-			}
-
-			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
-			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-			if(DoButton_CheckBox(&g_Config.m_ClAutoAddOnNameChange, EcLocalize("Auto Add to Warlist on Name Change"), g_Config.m_ClAutoAddOnNameChange, &Button))
-				g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange ? 0 : 1;
-			Ui()->DoToolTip(&g_Config.m_ClAutoAddOnNameChange, &Button, "Automatically adds players that change their name to the warlist again");
-
-			if(g_Config.m_ClAutoAddOnNameChange || HasSearch)
-			{
-				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				static int s_NamePlatesStrong = 0;
-				if(DoButton_CheckBox(&s_NamePlatesStrong, "Notify you everytime someone gets auto added", g_Config.m_ClAutoAddOnNameChange == 2, &Button))
-					g_Config.m_ClAutoAddOnNameChange = g_Config.m_ClAutoAddOnNameChange != 2 ? 2 : 1;
 			}
 		},
 	});
@@ -4610,27 +4588,18 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 	/* Frozen Tee Hud */
 	{
-		static bool s_Open = false;
 		vModules.push_back({
 			ESettingsModuleColumn::RIGHT,
 			FILTER_HUD | FILTER_WARLIST,
 			{"frozen", "freeze", "display", "team", "ninja", "tee", "row", "size", "alive"},
 			[&](bool HasSearch) { // Doesnt show all on purpose, its ugly
-				int Size = 160.0f;
+				int Size = 180.0f;
 				if(g_Config.m_ClShowFrozenText || HasSearch)
 					Size += 20.0f;
-				if(g_Config.m_ClWarList && g_Config.m_ClShowFrozenHud)
-					Size += 64.0f;
-				if(s_Open)
-				{
-					const size_t WarTypes = GameClient()->m_WarList.m_WarTypes.size();
-					Size += WarTypes * LineSize;
-				}
 
 				return Size;
 			},
 			[&](CUIRect ModuleRect, bool HasSearch) {
-				const size_t WarTypes = GameClient()->m_WarList.m_WarTypes.size();
 				ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 				ModuleRect.VMargin(Margin, &ModuleRect);
 
@@ -4660,47 +4629,23 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 							g_Config.m_ClShowFrozenText = g_Config.m_ClShowFrozenText != 2 ? 2 : 1;
 					}
 
-					// This would be fancy asf as a popup ngl, like generally speaking any of these weird extra
-					// settings for other features could* (should) be inside popups cause they dont fucking fit
-					// Also, fuck UI coding
-					if(g_Config.m_ClWarList && g_Config.m_ClShowFrozenHud)
+					ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+					CUIRect Toggle, ConfigButton;
+					Button.VSplitRight(LineSize, &Toggle, &ConfigButton);
+					if(DoButton_CheckBox(&g_Config.m_ClFrozenHudUseWarlist, "Use warlist", g_Config.m_ClFrozenHudUseWarlist == 1, &Toggle))
+						g_Config.m_ClFrozenHudUseWarlist = g_Config.m_ClFrozenHudUseWarlist == 1 ? 0 : 1;
+					if(g_Config.m_ClFrozenHudUseWarlist == 1)
 					{
-						ModuleRect.HSplitTop(10.0f, nullptr, &ModuleRect);
-						ModuleRect.HSplitTop(FontSize, &Button, &ModuleRect);
-						Ui()->DoLabel(&Button, EcLocalize("Only show certain Wartypes in frozen tee display"), FontSize, TEXTALIGN_TL);
-						ModuleRect.HSplitTop(FontSize, &Button, &ModuleRect);
-						Ui()->DoLabel(&Button, EcLocalize("Select none to show all"), FontSize, TEXTALIGN_TL);
-						ModuleRect.HSplitTop(5.0f, nullptr, &ModuleRect);
-						ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-
-						static CButtonContainer s_OpenedEntries;
-						if(Ui()->DoButton_FontIcon(&s_OpenedEntries, s_Open ? FontIcon::CHEVRON_DOWN : FontIcon::CHEVRON_RIGHT, 0, &Button, BUTTONFLAG_LEFT))
-							s_Open = !s_Open;
-
-						CUIRect Button2;
-						ModuleRect.HSplitTop(0, &Button2, &ModuleRect);
-
-						if(s_Open)
+						static CButtonContainer s_ConfigButton;
+						ConfigButton.Margin(2.0f, &ConfigButton);
+						if(DoButtonNoRect_FontIcon(&s_ConfigButton, FontIcon::GEAR, 0, &ConfigButton, IGraphics::CORNER_ALL))
 						{
-							static std::vector<int> s_vFrozenWarTypeIds;
-							if(s_vFrozenWarTypeIds.size() < WarTypes)
-								s_vFrozenWarTypeIds.resize(WarTypes);
-
-							ModuleRect.HSplitTop(LineSize, &Button2, &ModuleRect);
-							if(DoButton_CheckBox(s_vFrozenWarTypeIds.data(), "Show players without entry", IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, 0), &Button2))
-								SetFlag(g_Config.m_ClWarlistFrozenTeeFlags, 0, !IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, 0));
-
-							for(size_t Type = 1; Type < WarTypes; Type++)
-							{
-								char aBuf[64];
-								str_format(aBuf, sizeof(aBuf), "%s '%s'", "Show", GameClient()->m_WarList.m_WarTypes.at(Type)->m_aWarName);
-								const bool FlagSet = IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, Type);
-
-								ModuleRect.HSplitTop(LineSize, &Button2, &ModuleRect);
-								if(DoButton_CheckBox(&s_vFrozenWarTypeIds[Type], aBuf, FlagSet, &Button2))
-									SetFlag(g_Config.m_ClWarlistFrozenTeeFlags, Type, !FlagSet);
-							}
+							static SPopupMenuId s_PopupId;
+							const float Width = 250.0f;
+							const float Height = std::min(360.0f, 45.0f + GameClient()->m_WarList.m_WarTypes.size() * LineSize);
+							Ui()->DoPopupMenu(&s_PopupId, Ui()->MouseX() - Width * 0.5f, Ui()->MouseY(), Width, Height, this, PopupFrozenHudWarlistConfig);
 						}
+						Ui()->DoToolTip(&s_ConfigButton, &ConfigButton, "Choose war groups for the frozen tee display");
 					}
 				}
 			},
@@ -4907,4 +4852,145 @@ bool CMenus::DoLine_KeyReader(CUIRect &View, CButtonContainer &ReaderButton, CBu
 		return true;
 	}
 	return false;
+}
+
+CUi::EPopupMenuFunctionResult CMenus::PopupFrozenHudWarlistConfig(void *pContext, CUIRect View, bool Active)
+{
+	CMenus *pMenus = static_cast<CMenus *>(pContext);
+	if(Active && pMenus->Ui()->MouseButtonClicked(1))
+		return CUi::POPUP_CLOSE_CURRENT;
+
+	View.Margin(5.0f, &View);
+	CUIRect Header, Footer;
+	View.HSplitTop(LineSize, &Header, &View);
+	pMenus->Ui()->DoLabel(&Header, "Show players in frozen tee display", StandardFontSize, TEXTALIGN_ML);
+	View.HSplitBottom(12.0f, &View, &Footer);
+	pMenus->Ui()->DoLabel(&Footer, "Right click to close", StandardFontSize * 0.6f, TEXTALIGN_ML);
+
+	static CScrollRegion s_ScrollRegion;
+	CScrollRegionParams ScrollParams;
+	ScrollParams.m_ScrollUnit = LineSize * 2.0f;
+	s_ScrollRegion.Begin(&View, &ScrollParams);
+	CUIRect Content = View;
+	for(CWarType *pType : pMenus->GameClient()->m_WarList.m_WarTypes)
+	{
+		CUIRect Row;
+		Content.HSplitTop(LineSize, &Row, &Content);
+		if(!s_ScrollRegion.AddRect(Row))
+			continue;
+		const char *pLabel = pType == pMenus->GameClient()->m_WarList.m_pWarTypeNone ? "Show players without entry" : pType->m_aWarName;
+		if(pMenus->DoButton_CheckBox(&pType->m_FrozenTee, pLabel, pType->m_FrozenTee, &Row) && Active)
+			pType->m_FrozenTee = !pType->m_FrozenTee;
+	}
+	s_ScrollRegion.End();
+	return CUi::POPUP_KEEP_OPEN;
+}
+
+CUi::EPopupMenuFunctionResult CMenus::PopupWarlistTypeConfig(void *pContext, CUIRect View, bool Active)
+{
+	CPopupWarlistTypeConfigContext *pPopupContext = static_cast<CPopupWarlistTypeConfigContext *>(pContext);
+	CMenus *pMenus = pPopupContext->m_pMenus;
+	const size_t WarType = pPopupContext->m_WarType;
+
+	if(Active && pMenus->Ui()->MouseButtonClicked(1))
+		return CUi::POPUP_CLOSE_CURRENT;
+
+	if(WarType >= pMenus->GameClient()->m_WarList.m_WarTypes.size())
+		return CUi::POPUP_CLOSE_CURRENT;
+	CWarType *pType = pMenus->GameClient()->m_WarList.m_WarTypes[WarType];
+	if(!pType)
+		return CUi::POPUP_CLOSE_CURRENT;
+
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "%s - %d entries", pType->m_aWarName, pType->m_NumEntries);
+
+	SLabelProperties LabelProps;
+	LabelProps.m_vColorSplits.emplace_back(0, str_length(pType->m_aWarName), pType->m_Color);
+
+	CUIRect Header, HeaderLabel;
+	View.HSplitTop(HeaderSize, &Header, &View);
+	HeaderLabel = Header;
+	if(pType->m_Removable)
+	{
+		static CButtonContainer s_DeleteButton;
+		CUIRect DeleteButton;
+		Header.VSplitRight(HeaderSize, &HeaderLabel, &DeleteButton);
+		DeleteButton.Margin(2.0f, &DeleteButton);
+		if(pMenus->DoButtonNoRect_FontIcon(&s_DeleteButton, FontIcon::TRASH, 0, &DeleteButton, IGraphics::CORNER_ALL) && Active)
+		{
+			pMenus->m_pRemoveWarType = pType;
+			char aMessage[256];
+			str_format(aMessage, sizeof(aMessage),
+				EcLocalize("Are you sure that you want to remove '%s' from your war groups?"),
+				pType->m_aWarName);
+			pMenus->PopupConfirm(EcLocalize("Remove War Group"), aMessage, EcLocalize("Yes"), EcLocalize("No"), &CMenus::PopupConfirmRemoveWarType);
+			return CUi::POPUP_CLOSE_CURRENT;
+		}
+	}
+	pMenus->Ui()->DoLabel(&HeaderLabel, aBuf, HeaderSize - 2.0f, TEXTALIGN_TL, LabelProps);
+
+	bool Changed = false;
+
+	CUIRect Left, Right;
+	View.VSplitMid(&Left, &Right, 8.0f);
+	auto CheckOption = [&](CUIRect &Column, const char *pLabel, bool &Value, bool Locked = false) {
+		CUIRect Button;
+		Column.HSplitTop(LineSize, &Button, &Column);
+		if(pMenus->DoButton_CheckBox(&Value, pLabel, Value, &Button) && !Locked)
+		{
+			Value = !Value;
+			Changed = true;
+		}
+	};
+	CheckOption(Left, "Show in server browser", pType->m_BrowserVisible);
+	CheckOption(Left, "Server info prefix", pType->m_ServerInfoPrefix);
+	CheckOption(Left, "Chat name color", pType->m_ChatColor);
+	CheckOption(Left, "Scoreboard colors", pType->m_ScoreboardColor);
+	CheckOption(Left, "Spec menu colors", pType->m_SpecMenuColor);
+	CheckOption(Left, "Spec menu prefix", pType->m_SpecMenuPrefix);
+	CheckOption(Left, "Nameplate colors", pType->m_NameplateColor);
+	CheckOption(Left, "Join/Leave msg color", pType->m_JoinLeaveColor);
+
+	CheckOption(Right, "Always show clan", pType->m_ShowClan);
+
+	Right.HSplitTop(MarginExtraSmall, nullptr, &Right);
+	CheckOption(Right, "Show reason", pType->m_ShowReason);
+	if(pType->m_ShowReason)
+		CheckOption(Right, "Swap name and reason", pType->m_SwapNameReason);
+
+	Right.HSplitTop(MarginExtraSmall, nullptr, &Right);
+
+	CheckOption(Right, "Auto add on rename", pType->m_AutoAdd);
+	if(pType->m_AutoAdd)
+		CheckOption(Right, "Notify on auto add", pType->m_AutoAddNotify);
+	Right.HSplitTop(MarginExtraSmall, nullptr, &Right);
+
+	CheckOption(Right, "Frozen tee display", pType->m_FrozenTee);
+	CheckOption(Right, "Hide hook line", pType->m_NoHookLine);
+	CheckOption(Right, "Hide emotes", pType->m_NoEmotes);
+	CheckOption(Right, pType == pMenus->GameClient()->m_WarList.m_pWarTypeMute ? "Mute (always on)" : "Mute", pType->m_Mute, pType == pMenus->GameClient()->m_WarList.m_pWarTypeMute);
+
+	CUIRect PrefixRow, PrefixToggle, PrefixEdit;
+	const char *pPrefixLabel = "Prefix:";
+	float LineWidth = pMenus->TextRender()->TextWidth(LineSize, pPrefixLabel) + 5.0f;
+	Left.HSplitTop(LineSize, &PrefixRow, &Left);
+	PrefixRow.VSplitLeft(LineWidth, &PrefixToggle, &PrefixRow);
+	PrefixRow.VSplitLeft(85.0f, &PrefixEdit, nullptr);
+	if(pMenus->DoButton_CheckBox(&pType->m_ChatPrefix, pPrefixLabel, pType->m_ChatPrefix, &PrefixToggle))
+	{
+		pType->m_ChatPrefix = !pType->m_ChatPrefix;
+		Changed = true;
+	}
+	static CLineInput s_PrefixInput;
+	s_PrefixInput.SetBuffer(pType->m_aPrefix, sizeof(pType->m_aPrefix));
+	pMenus->Ui()->DoEditBox(&s_PrefixInput, &PrefixEdit, EditBoxFontSize);
+
+	if(Changed)
+		pMenus->GameClient()->m_WarList.UpdateWarPlayers();
+
+	pMenus->TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f));
+	pMenus->Ui()->DoLabel(&View, "Right click close", StandardFontSize * 0.5f, TEXTALIGN_BL);
+	pMenus->TextRender()->TextColor(pMenus->TextRender()->DefaultTextColor());
+
+	return CUi::POPUP_KEEP_OPEN;
 }

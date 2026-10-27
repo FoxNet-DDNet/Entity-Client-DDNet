@@ -2809,6 +2809,8 @@ if(CLIENT)
     components/entity/player_actions.h
     components/entity/spec_pause_radio.cpp
     components/entity/spec_pause_radio.h
+    components/entity/warlist.cpp
+    components/entity/warlist.h
     components/envelope_state.cpp
     components/envelope_state.h
     components/flow.cpp
@@ -2912,8 +2914,6 @@ if(CLIENT)
     components/tclient/trails.h
     components/tclient/translate.cpp
     components/tclient/translate.h
-    components/tclient/warlist.cpp
-    components/tclient/warlist.h
     components/touch_controls.cpp
     components/touch_controls.h
     components/voting.cpp

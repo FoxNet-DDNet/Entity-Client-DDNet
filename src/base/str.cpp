@@ -320,6 +320,14 @@ void str_clean_whitespaces(char *str)
 	}
 }
 
+void str_format_prefix(char *dst, const char *prefix, int dst_size)
+{
+	str_copy(dst, prefix, dst_size);
+	str_clean_whitespaces(dst);
+	if(dst[0] != '\0')
+		str_append(dst, " ", dst_size);
+}
+
 char *str_skip_to_whitespace(char *str)
 {
 	while(*str && !str_isspace(*str))

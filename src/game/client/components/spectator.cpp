@@ -5,6 +5,8 @@
 
 #include "camera.h"
 
+#include <base/str.h>
+
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
@@ -543,7 +545,8 @@ void CSpectator::OnRender()
 
 			if(GameClient()->m_aClients[ClientId].m_Friend && g_Config.m_ClSpecMenuFriendColor)
 				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
-			if(g_Config.m_ClWarListSpecMenu)
+			CWarType *pWarType = GameClient()->m_WarList.GetPriorityType(ClientId);
+			if(pWarType && pWarType->m_SpecMenuColor)
 			{
 				if(GameClient()->m_WarList.GetAnyWar(ClientId) && g_Config.m_ClWarList)
 					Color = GameClient()->m_WarList.GetPriorityColor(ClientId);
@@ -603,17 +606,22 @@ void CSpectator::OnRender()
 
 		if(GameClient()->m_aClients[GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId].m_Friend)
 		{
+			char aPrefix[64];
+			str_format_prefix(aPrefix, g_Config.m_ClFriendPrefix);
 			TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(PlayerSelected ? 1.0f : 0.5f));
-			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClFriendPrefix, 220.0f);
+			TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, aPrefix, 220.0f);
 			TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 		}
-		else if(g_Config.m_ClSpecMenuPrefixes && g_Config.m_ClWarList)
+		else if(g_Config.m_ClWarList)
 		{
 			const int ClientId = GameClient()->m_Snap.m_apInfoByDDTeamName[i]->m_ClientId;
-			if(GameClient()->m_WarList.GetAnyWar(ClientId))
+			CWarType *pWarType = GameClient()->m_WarList.GetPriorityType(ClientId);
+			if(pWarType && pWarType->m_SpecMenuPrefix)
 			{
+				char aPrefix[64];
+				str_format_prefix(aPrefix, pWarType->m_aPrefix);
 				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(ClientId).WithAlpha(PlayerSelected ? 1.0f : 0.5f));
-				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, g_Config.m_ClWarlistPrefix, 220.0f);
+				TextRender()->Text(Width / 2.0f + x - TeeInfo.m_Size / 2.0f, Height / 2.0f + y + BoxMove + (LineHeight - FontSize) / 2.f, FontSize, aPrefix, 220.0f);
 				TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 			}
 		}

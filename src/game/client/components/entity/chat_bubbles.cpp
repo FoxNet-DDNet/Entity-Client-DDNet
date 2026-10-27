@@ -92,8 +92,6 @@ void CChatBubbles::AddBubble(int ClientId, int Team, const char *pText)
 			return;
 		if(GameClient()->m_WarList.m_WarPlayers[ClientId].m_IsMuted)
 			return;
-		else if(g_Config.m_ClWarList && g_Config.m_ClHideEnemyChat && GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
-			return;
 	}
 
 	CTextCursor Cursor;

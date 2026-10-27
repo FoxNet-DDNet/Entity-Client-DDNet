@@ -14,7 +14,7 @@
 
 #include <generated/protocol.h>
 
-#include <game/client/components/tclient/warlist.h>
+#include <game/client/components/entity/warlist.h>
 #include <game/client/gameclient.h>
 
 #include <cinttypes>
@@ -311,7 +311,7 @@ void CEClient::OnlineInfo()
 				continue;
 
 			CWarDataCache &WarData = GameClient()->m_WarList.GetWarData(Client.ClientId());
-			bool Matches = WarData.m_WarGroupMatches[WarlistType];
+			bool Matches = WarData.MatchesWarGroup(WarlistType);
 			bool Muted = WarData.m_IsMuted;
 
 			if(Muted && WarlistType == 1)

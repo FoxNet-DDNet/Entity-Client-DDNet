@@ -356,6 +356,7 @@ public:
 	void OnMessage(int MsgType, void *pRawMsg) override;
 	bool OnInput(const IInput::CEvent &Event) override;
 	void OnInit() override;
+	void OnShutdown() override;
 	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
 
 	void RebuildChat();

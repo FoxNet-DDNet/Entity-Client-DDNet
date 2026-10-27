@@ -4,7 +4,7 @@
 
 #include "camera.h"
 #include "controls.h"
-#include "tclient/warlist.h"
+#include "entity/warlist.h"
 #include "voting.h"
 
 #include <base/color.h>
@@ -2674,12 +2674,19 @@ void CHud::FreezeHelpers()
 			if(GameClient()->m_Teams.Team(i) != LocalTeamID)
 				continue;
 
-			if(g_Config.m_ClWarList && g_Config.m_ClWarlistFrozenTeeFlags != 0 && i != GameClient()->m_aLocalIds[0] && i != GameClient()->m_aLocalIds[1])
+			if(g_Config.m_ClFrozenHudUseWarlist == 1 && i != GameClient()->m_aLocalIds[0] && i != GameClient()->m_aLocalIds[1])
 			{
 				const CWarDataCache *pWarData = &GameClient()->m_WarList.GetWarData(i);
-				const bool ShowNoneType = IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, 0) && pWarData->m_WarTypeIndex == -1;
-
-				if(!IsFlagSet(g_Config.m_ClWarlistFrozenTeeFlags, pWarData->m_WarTypeIndex) && !ShowNoneType)
+				bool HasWarEntry = false;
+				bool ShowGroup = false;
+				for(size_t Type = 1; Type < GameClient()->m_WarList.m_WarTypes.size(); ++Type)
+				{
+					if(!pWarData->MatchesWarGroup(Type))
+						continue;
+					HasWarEntry = true;
+					ShowGroup |= GameClient()->m_WarList.m_WarTypes[Type]->m_FrozenTee;
+				}
+				if(!ShowGroup && !(GameClient()->m_WarList.m_pWarTypeNone->m_FrozenTee && !HasWarEntry))
 					continue;
 			}
 

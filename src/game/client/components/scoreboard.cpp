@@ -3,6 +3,7 @@
 #include "scoreboard.h"
 
 #include <base/dbg.h>
+#include <base/str.h>
 #include <base/time.h>
 
 #include <engine/console.h>
@@ -870,11 +871,13 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				float NameWidth = NameLength;
 				if(g_Config.m_ClSpectatePrefix && Paused)
 				{
+					char aPrefix[64];
+					str_format_prefix(aPrefix, g_Config.m_ClSpecPrefix);
 					TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
-					TextRender()->Text(NameX, TextY, FontSize, g_Config.m_ClSpecPrefix);
+					TextRender()->Text(NameX, TextY, FontSize, aPrefix);
 					TextRender()->TextColor(TextColor);
 
-					const float PrefixWidth = TextRender()->TextWidth(FontSize, g_Config.m_ClSpecPrefix);
+					const float PrefixWidth = TextRender()->TextWidth(FontSize, aPrefix);
 					NameX += PrefixWidth;
 					NameWidth -= PrefixWidth;
 				}
@@ -904,9 +907,10 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				if(g_Config.m_ClScoreboardFriendColor && ClientData.m_Friend)
 					NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
 
-				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard)
+				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList)
 				{
-					if(GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
+					CWarType *pType = GameClient()->m_WarList.GetPriorityType(pInfo->m_ClientId);
+					if(pType && pType->m_ScoreboardColor)
 						NameColor = GameClient()->m_WarList.GetNameplateColor(pInfo->m_ClientId);
 				}
 
@@ -932,7 +936,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 					bool Muted = GameClient()->m_WarList.m_WarPlayers[pInfo->m_ClientId].m_IsMuted;
 					if(Muted)
 					{
-						ColorRGBA Color = color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(g_Config.m_ClMutedColor));
+						ColorRGBA Color = GameClient()->m_WarList.m_pWarTypeMute->m_Color;
 
 						Graphics()->BlendNormal();
 						Graphics()->TextureSet(g_pData->m_aImages[IMAGE_MUTED_ICON].m_Id);
@@ -974,7 +978,7 @@ void CScoreboard::RenderScoreboard(CUIRect Scoreboard, int Team, int CountStart,
 				}
 
 				// TClient
-				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && g_Config.m_ClWarListScoreboard && GameClient()->m_WarList.GetAnyWar(pInfo->m_ClientId))
+				if(pInfo->m_ClientId >= 0 && g_Config.m_ClWarList && GameClient()->m_WarList.GetClanType(pInfo->m_ClientId) && GameClient()->m_WarList.GetClanType(pInfo->m_ClientId)->m_ScoreboardColor)
 					ClanColor = GameClient()->m_WarList.GetClanColor(pInfo->m_ClientId);
 
 				Player.m_Clan.Update(TextRender(), ClientData.m_aClan, FontSize, ClanLength, TEXTFLAG_RENDER | TEXTFLAG_ELLIPSIS_AT_END);
@@ -1451,7 +1455,7 @@ CUi::EPopupMenuFunctionResult CScoreboard::CScoreboardPopupContext::Render(void 
 		Container.VSplitLeft(ActionSpacing, nullptr, &Container);
 		Container.VSplitLeft(ActionSize, &Action, &Container);
 
-		bool Muted = pScoreboard->GameClient()->m_WarList.m_WarPlayers[pPopupContext->m_ClientId].m_IsMuted; // EClient
+		bool Muted = pScoreboard->GameClient()->m_WarList.m_MuteMap.contains(Client.m_aName); // EClient
 
 		if(pUi->DoButton_FontIcon(&pPopupContext->m_MuteAction, FontIcon::BAN, Muted, &Action, BUTTONFLAG_LEFT, ActionCorners))
 		{

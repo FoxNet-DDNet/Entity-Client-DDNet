@@ -4,6 +4,7 @@
 
 #include <base/dbg.h>
 #include <base/log.h>
+#include <base/str.h>
 #include <base/time.h>
 
 #include <engine/engine.h>
@@ -1459,7 +1460,7 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 			});
 		if(!Printed)
 		{
-			if(g_Config.m_ClWarlistPrefixesServerInfo && g_Config.m_ClWarList && pName)
+			if(g_Config.m_ClWarList && pName)
 			{
 				for(const CWarlistCache &Warlist : m_vWarlistCache)
 				{
@@ -1469,10 +1470,12 @@ void CMenus::RenderServerbrowserInfoScoreboard(CUIRect View, const CServerInfo *
 					bool NameMatch = str_comp(pName, Warlist.m_aName) == 0;
 					bool ClanMatch = str_comp(CurrentClient.m_aClan, Warlist.m_aClan) == 0 && CurrentClient.m_aClan[0] != '\0' && Warlist.m_aName[0] == '\0' && Warlist.m_aClan[0] != '\0';
 
-					if((NameMatch || ClanMatch))
+					if((NameMatch || ClanMatch) && Warlist.m_pWarType->m_ServerInfoPrefix)
 					{
+						char aPrefix[64];
+						str_format_prefix(aPrefix, Warlist.m_pWarType->m_aPrefix);
 						TextRender()->TextColor(Warlist.m_pWarType->m_Color);
-						TextRender()->TextEx(&NameCursor, g_Config.m_ClWarlistPrefix, -1);
+						TextRender()->TextEx(&NameCursor, aPrefix, -1);
 						TextRender()->TextColor(TextRender()->DefaultTextColor());
 						break;
 					}
@@ -2142,7 +2145,7 @@ void CMenus::UpdateOnlinePlayerCache()
 		}
 	}
 
-	std::unordered_set<const CServerInfo::CClient *> MatchedClients;
+	std::unordered_map<CWarType *, std::unordered_set<const CServerInfo::CClient *>> MatchedClients;
 
 	for(CWarEntry &Entry : GameClient()->m_WarList.m_vWarEntries)
 	{
@@ -2153,11 +2156,11 @@ void CMenus::UpdateOnlinePlayerCache()
 			{
 				for(const auto &[pClient, pServer] : It->second)
 				{
-					if(MatchedClients.contains(pClient))
+					if(MatchedClients[Entry.m_pWarType].contains(pClient))
 						continue;
 
 					m_vWarlistCache.emplace_back(&Entry, pClient, pServer);
-					MatchedClients.insert(pClient);
+					MatchedClients[Entry.m_pWarType].insert(pClient);
 				}
 			}
 		}
@@ -2168,11 +2171,11 @@ void CMenus::UpdateOnlinePlayerCache()
 			{
 				for(const auto &[pClient, pServer] : It->second)
 				{
-					if(MatchedClients.contains(pClient))
+					if(MatchedClients[Entry.m_pWarType].contains(pClient))
 						continue;
 
 					m_vWarlistCache.emplace_back(&Entry, pClient, pServer);
-					MatchedClients.insert(pClient);
+					MatchedClients[Entry.m_pWarType].insert(pClient);
 				}
 			}
 		}
@@ -2206,7 +2209,7 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 	char aBuf[256];
 	for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
 	{
-		if(IsFlagSet(g_Config.m_ClWarlistBrowserFlags, WarlistType))
+		if(!GameClient()->m_WarList.m_WarTypes[WarlistType]->m_BrowserVisible)
 			continue;
 
 		// Header for warlist type

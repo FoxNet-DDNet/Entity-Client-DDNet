@@ -117,7 +117,7 @@ void CPlayerIndicator::OnRender()
 					}
 					if(g_Config.m_ClWarListIndicatorTeam)
 					{
-						if(GameClient()->m_WarList.GetWarData(i).m_WarGroupMatches[2])
+						if(GameClient()->m_WarList.GetWarData(i).MatchesWarGroup(2))
 						{
 							Col = GameClient()->m_WarList.m_WarTypes[2]->m_Color;
 							HideIfNotWar = false;
@@ -125,7 +125,7 @@ void CPlayerIndicator::OnRender()
 					}
 					if(g_Config.m_ClWarListIndicatorEnemy)
 					{
-						if(GameClient()->m_WarList.GetWarData(i).m_WarGroupMatches[1])
+						if(GameClient()->m_WarList.GetWarData(i).MatchesWarGroup(1))
 						{
 							Col = GameClient()->m_WarList.m_WarTypes[1]->m_Color;
 							HideIfNotWar = false;

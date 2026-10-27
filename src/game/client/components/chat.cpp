@@ -3,8 +3,8 @@
 
 #include "chat.h"
 
+#include "entity/warlist.h"
 #include "tclient/bindchat.h"
-#include "tclient/warlist.h"
 
 #include <base/color.h>
 #include <base/io.h>
@@ -352,12 +352,27 @@ void CChat::OnConsoleInit()
 	Console()->Register("say_queued", "r[message]", CFGFLAG_CLIENT, ConSayQueued, this, "Say in queue chat"); // EClient
 }
 
+static void CleanConfiguredPrefixes()
+{
+	str_clean_whitespaces(g_Config.m_ClFriendPrefix);
+	str_clean_whitespaces(g_Config.m_ClSpecPrefix);
+	str_clean_whitespaces(g_Config.m_ClServerPrefix);
+	str_clean_whitespaces(g_Config.m_ClClientPrefix);
+	str_clean_whitespaces(g_Config.m_ClWarlistPrefix);
+}
+
 void CChat::OnInit()
 {
+	CleanConfiguredPrefixes();
 	Reset();
 	Console()->Chain("cl_chat_old", ConchainChatOld, this);
 	Console()->Chain("cl_chat_size", ConchainChatFontSize, this);
 	Console()->Chain("cl_chat_width", ConchainChatWidth, this);
+}
+
+void CChat::OnShutdown()
+{
+	CleanConfiguredPrefixes();
 }
 
 bool CChat::OnCursorMove(float x, float y, IInput::ECursorType CursorType)
@@ -1034,20 +1049,7 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 				str_format(Message, sizeof(Message), "← %s", GameClient()->m_aClients[ClientId].m_aName);
 
 			if(g_Config.m_ClMutedConsoleColor)
-				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
-
-			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Color);
-			return;
-		}
-		else if(g_Config.m_ClWarList && g_Config.m_ClHideEnemyChat && GameClient()->m_WarList.GetWarData(ClientId).m_WarGroupMatches[1])
-		{
-			char Message[MAX_LINE_LENGTH];
-			str_format(Message, sizeof(Message), "%s", GameClient()->m_aClients[ClientId].m_aName);
-			if(Team == 3)
-				str_format(Message, sizeof(Message), "← %s", GameClient()->m_aClients[ClientId].m_aName);
-
-			if(g_Config.m_ClMutedConsoleColor)
-				Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClMutedColor));
+				Color = GameClient()->m_WarList.m_pWarTypeMute->m_Color;
 
 			Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, Message, pLine, Color);
 			return;
@@ -1193,15 +1195,11 @@ void CChat::AddLine(int ClientId, int Team, const char *pLine)
 
 	if(CurrentLine.m_ClientId == SERVER_MSG)
 	{
-		str_copy(CurrentLine.m_aName, "*** ");
-		if(g_Config.m_ClChatServerPrefix)
-			str_copy(CurrentLine.m_aName, g_Config.m_ClServerPrefix);
+		str_format_prefix(CurrentLine.m_aName, g_Config.m_ClChatServerPrefix ? g_Config.m_ClServerPrefix : "***");
 	}
 	else if(CurrentLine.m_ClientId == CLIENT_MSG || CurrentLine.m_ClientId == ECLIENT_MSG)
 	{
-		str_copy(CurrentLine.m_aName, "— ");
-		if(g_Config.m_ClChatClientPrefix)
-			str_copy(CurrentLine.m_aName, g_Config.m_ClClientPrefix);
+		str_format_prefix(CurrentLine.m_aName, g_Config.m_ClChatClientPrefix ? g_Config.m_ClClientPrefix : "—");
 	}
 	else if(CurrentLine.m_ClientId == SILENT_MSG)
 	{
@@ -1469,17 +1467,22 @@ void CChat::OnPrepareLines(float y)
 			{
 				MeasureCursor.m_X += RealMsgPaddingTee;
 
-				if(Line.m_Paused && g_Config.m_ClSpectatePrefix)
+				char aPrefix[64];
+				if(Line.m_Paused && g_Config.m_ClSpectatePrefix && !Line.m_Whisper)
 				{
-					TextRender()->TextEx(&MeasureCursor, g_Config.m_ClSpecPrefix);
+					str_format_prefix(aPrefix, g_Config.m_ClSpecPrefix);
+					TextRender()->TextEx(&MeasureCursor, aPrefix);
 				}
-				if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].m_IsMuted) // EClient
+				CWarType *pWarType = GameClient()->m_WarList.GetPriorityType(Line.m_ClientId);
+				if(g_Config.m_ClWarList && pWarType && pWarType->m_ChatPrefix && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].m_IsMuted) // EClient
 				{
-					TextRender()->TextEx(&MeasureCursor, g_Config.m_ClWarlistPrefix);
+					str_format_prefix(aPrefix, pWarType->m_aPrefix);
+					TextRender()->TextEx(&MeasureCursor, aPrefix);
 				}
 				else if(Line.m_Friend && g_Config.m_ClMessageFriend)
 				{
-					TextRender()->TextEx(&MeasureCursor, g_Config.m_ClFriendPrefix);
+					str_format_prefix(aPrefix, g_Config.m_ClFriendPrefix);
+					TextRender()->TextEx(&MeasureCursor, aPrefix);
 				}
 			}
 
@@ -1578,7 +1581,7 @@ void CChat::OnPrepareLines(float y)
 			NameColor = ColorRGBA(1.0f, 0.5f, 0.5f, 1.0f);
 		else if(Line.m_NameColor == TEAM_BLUE)
 			NameColor = ColorRGBA(0.7f, 0.7f, 1.0f, 1.0f);
-		else if(g_Config.m_ClWarList && g_Config.m_ClWarListChat && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId)) // TClient
+		else if(g_Config.m_ClWarList && Line.m_ClientId >= 0 && GameClient()->m_WarList.GetPriorityType(Line.m_ClientId) && GameClient()->m_WarList.GetPriorityType(Line.m_ClientId)->m_ChatColor) // TClient
 			NameColor = GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId);
 		else if(Line.m_Friend && g_Config.m_ClChatFriendColor)
 			NameColor = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor));
@@ -1595,24 +1598,29 @@ void CChat::OnPrepareLines(float y)
 		// Message is from valid player
 		if(Line.m_ClientId >= 0 && Line.m_aName[0] != '\0')
 		{
+			char aPrefix[64];
 			if(g_Config.m_ClSpectatePrefix && Line.m_Paused && !Line.m_Whisper)
 			{
+				str_format_prefix(aPrefix, g_Config.m_ClSpecPrefix);
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClSpecColor)));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClSpecPrefix);
-				RawName += g_Config.m_ClSpecPrefix;
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, aPrefix);
+				RawName += aPrefix;
 			}
 
-			if(g_Config.m_ClWarList && g_Config.m_ClWarlistPrefixes && GameClient()->m_WarList.GetAnyWar(Line.m_ClientId) && !Line.m_Whisper) // TClient
+			CWarType *pWarType = GameClient()->m_WarList.GetPriorityType(Line.m_ClientId);
+			if(g_Config.m_ClWarList && pWarType && pWarType->m_ChatPrefix && !Line.m_Whisper && !GameClient()->m_WarList.m_WarPlayers[Line.m_ClientId].m_IsMuted) // TClient
 			{
+				str_format_prefix(aPrefix, pWarType->m_aPrefix);
 				TextRender()->TextColor(GameClient()->m_WarList.GetPriorityColor(Line.m_ClientId));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClWarlistPrefix);
-				RawName += g_Config.m_ClWarlistPrefix;
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, aPrefix);
+				RawName += aPrefix;
 			}
 			else if(Line.m_Friend && g_Config.m_ClMessageFriend)
 			{
+				str_format_prefix(aPrefix, g_Config.m_ClFriendPrefix);
 				TextRender()->TextColor(color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFriendColor)).WithAlpha(1.0f));
-				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, g_Config.m_ClFriendPrefix);
-				RawName += g_Config.m_ClFriendPrefix;
+				TextRender()->CreateOrAppendTextContainer(Line.m_TextContainerIndex, &LineCursor, aPrefix);
+				RawName += aPrefix;
 			}
 		}
 
@@ -2857,57 +2865,36 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 	if(ClientId == SERVER_MSG)
 	{
-		if(g_Config.m_ClAutoAddOnNameChange)
+		if(str_find_nocase(pLine, "changed name to"))
 		{
-			if(str_find_nocase(pLine, "changed name to"))
+			std::string NameBefore = FindName(0);
+			std::string NameAfter = FindName(1);
+
+			int PlayerCid = GameClient()->GetClientId(NameBefore.c_str());
+			if(PlayerCid >= 0 && !NameBefore.empty() && !NameAfter.empty())
 			{
-				std::string NameBefore = FindName(0);
-				std::string NameAfter = FindName(1);
+				const CWarDataCache Cache = GameClient()->m_WarList.GetWarData(PlayerCid);
+				const CWarEntry *pOldEntry = GameClient()->m_WarList.FindWarEntryWithName(NameBefore.c_str());
+				char aReason[128];
+				str_copy(aReason, pOldEntry && pOldEntry->m_aReason[0] ? pOldEntry->m_aReason : NameBefore.c_str());
 
-				int PlayerCid = GameClient()->GetClientId(NameBefore.c_str());
-
-				if(PlayerCid >= 0)
+				for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
 				{
-					const CWarDataCache Cache = GameClient()->m_WarList.GetWarData(PlayerCid);
-					const CWarEntry *ExistingEntry = GameClient()->m_WarList.FindWarEntryWithName(NameAfter.c_str());
-					const CWarEntry *OldEntry = GameClient()->m_WarList.FindWarEntryWithName(NameBefore.c_str());
+					CWarType *pWarType = GameClient()->m_WarList.m_WarTypes[WarlistType];
+					if(!pWarType->m_AutoAdd || !Cache.MatchesWarGroup(WarlistType))
+						continue;
+					const auto &vEntries = GameClient()->m_WarList.m_vWarEntries;
+					if(std::any_of(vEntries.begin(), vEntries.end(), [&](const CWarEntry &Entry) {
+						   return Entry.m_pWarType == pWarType && str_comp(Entry.m_aName, NameAfter.c_str()) == 0;
+					   }))
+						continue;
 
-					if(ExistingEntry && OldEntry && ExistingEntry->m_pWarType == OldEntry->m_pWarType && str_comp(ExistingEntry->m_aName, NameAfter.c_str()) == 0)
-						return false; // Already exists with the new name
-
-					char aBuf[128];
-					char aReason[128] = "";
-					str_copy(aReason, NameBefore.c_str());
-					if(OldEntry && OldEntry->m_aReason[0] != '\0')
-						str_copy(aReason, OldEntry->m_aReason);
-
-					if(ExistingEntry && ExistingEntry->m_pWarType->m_Index == 2)
+					GameClient()->m_WarList.AddWarEntry(NameAfter.c_str(), "", pWarType == GameClient()->m_WarList.m_pWarTypeMute ? "" : aReason, pWarType->m_aWarName, true);
+					if(pWarType->m_AutoAddNotify)
 					{
-						str_format(aBuf, sizeof(aBuf), "'%s' changed their name to a Teammates ['%s']", NameBefore.c_str(), NameAfter.c_str());
-						if(g_Config.m_ClAutoAddOnNameChange == 2)
-							GameClient()->ClientMessage(aBuf);
-					}
-					// Skip Wartype None
-					for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
-					{
-						if(IsFlagSet(g_Config.m_ClWarlistAutoAddFlags, WarlistType))
-							continue;
-						const char *pWarName = GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName;
-
-						if(Cache.m_WarGroupMatches[WarlistType])
-						{
-							GameClient()->m_WarList.AddWarEntry(NameAfter.c_str(), "", aReason, pWarName, true);
-							str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp '%s' list", NameAfter.c_str(), pWarName);
-							if(g_Config.m_ClAutoAddOnNameChange == 2)
-								GameClient()->ClientMessage(aBuf);
-						}
-					}
-					if(Cache.m_IsMuted)
-					{
-						GameClient()->m_WarList.AddMute(NameAfter.c_str(), true, true);
-						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp Mute list", NameAfter.c_str());
-						if(g_Config.m_ClAutoAddOnNameChange == 2)
-							GameClient()->ClientMessage(aBuf);
+						char aBuf[128];
+						str_format(aBuf, sizeof(aBuf), "Auto Added \"%s\" to Temp '%s' list", NameAfter.c_str(), pWarType->m_aWarName);
+						GameClient()->ClientMessage(aBuf);
 					}
 				}
 			}
@@ -3007,9 +2994,6 @@ bool CChat::ChatDetection(int ClientId, int Team, const char *pLine)
 
 void CChat::ColorizeLine(const CLine &Line, CTextCursor &Cursor)
 {
-	if(!g_Config.m_ClWarListColorJoinLeave)
-		return;
-
 	const char *pLine = Line.m_aText;
 
 	int ClientId = Line.m_ClientId;
@@ -3033,7 +3017,13 @@ void CChat::ColorizeLine(const CLine &Line, CTextCursor &Cursor)
 		return;
 
 	const CWarEntry *ExistingEntry = GameClient()->m_WarList.FindWarEntryWithName(Name.c_str());
-	if(!ExistingEntry || ExistingEntry->m_pWarType == nullptr)
+	if(!ExistingEntry)
+	{
+		const auto ItMute = GameClient()->m_WarList.m_MuteMap.find(Name);
+		if(ItMute != GameClient()->m_WarList.m_MuteMap.end())
+			ExistingEntry = ItMute->second;
+	}
+	if(!ExistingEntry || ExistingEntry->m_pWarType == nullptr || !ExistingEntry->m_pWarType->m_JoinLeaveColor)
 		return;
 
 	const int SplitIndex = Cursor.m_CharCount + (int)(pNameStart - 1 - pLine);
