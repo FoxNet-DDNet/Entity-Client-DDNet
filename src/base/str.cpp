@@ -320,14 +320,6 @@ void str_clean_whitespaces(char *str)
 	}
 }
 
-void str_format_prefix(char *dst, const char *prefix, int dst_size)
-{
-	str_copy(dst, prefix, dst_size);
-	str_clean_whitespaces(dst);
-	if(dst[0] != '\0')
-		str_append(dst, " ", dst_size);
-}
-
 char *str_skip_to_whitespace(char *str)
 {
 	while(*str && !str_isspace(*str))
@@ -1398,4 +1390,35 @@ int str_utf32_dist_buffer(const int *a, int a_len, const int *b, int b_len, int 
 	}
 	return B(a_len, b_len);
 #undef B
+}
+
+void str_format_prefix(char *dst, const char *pPrefix, int dst_size)
+{
+	str_copy(dst, pPrefix, dst_size);
+	str_clean_whitespaces(dst);
+	if(dst[0] != '\0')
+		str_append(dst, " ", dst_size);
+}
+
+void str_format_plural(char *dst, const char *pStr, int dst_size)
+{
+	str_copy(dst, pStr, dst_size);
+
+	if(str_endswith(dst, "s"))
+	{
+		str_append(dst, "'", dst_size);
+	}
+	else if(str_endswith(dst, "y"))
+	{
+		const int Len = str_length(dst);
+		if(Len >= 1)
+		{
+			dst[Len - 1] = '\0';
+			str_append(dst, "ies", dst_size);
+		}
+	}
+	else
+	{
+		str_append(dst, "s", dst_size);
+	}
 }

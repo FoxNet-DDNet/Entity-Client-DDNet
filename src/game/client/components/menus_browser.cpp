@@ -2227,7 +2227,9 @@ void CMenus::RenderWarlistPlayers(CUIRect &View, CUIRect &List, CScrollRegion &S
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 
-		str_format(aBuf, sizeof(aBuf), "%s (%d)", GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName, GetWartypePlayerCount(GameClient()->m_WarList.m_WarTypes[WarlistType]));
+		char aLabel[24];
+		str_format_plural(aLabel, GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName);
+		str_format(aBuf, sizeof(aBuf), "%s (%d)", aLabel, GetWartypePlayerCount(GameClient()->m_WarList.m_WarTypes[WarlistType]));
 		Ui()->DoLabel(&Label, aBuf, FontSize, TEXTALIGN_ML);
 
 		// Toggle on click

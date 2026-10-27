@@ -290,12 +290,12 @@ void CEClient::OnlineInfo()
 	class COnlineInfo
 	{
 	public:
-		char m_aLabel[16];
+		char m_aLabel[24];
 		int m_Amount;
 		int m_ActiveAmount;
 	};
 
-	std::vector<COnlineInfo> OnlineInfos;
+	std::vector<COnlineInfo> vOnlineInfo;
 
 	bool HasAny = false;
 	for(size_t WarlistType = 1; WarlistType < GameClient()->m_WarList.m_WarTypes.size(); ++WarlistType)
@@ -329,32 +329,17 @@ void CEClient::OnlineInfo()
 		}
 		COnlineInfo Info;
 
-		char Label[16] = "";
-		str_copy(Label, GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName);
+		const char *pWarName = GameClient()->m_WarList.m_WarTypes[WarlistType]->m_aWarName;
+		str_copy(Info.m_aLabel, pWarName);
 		if(Amount != 1)
-		{
-			if(str_endswith(Label, "s"))
-				str_append(Label, "'", sizeof(Label));
-			else if(str_endswith(Label, "y"))
-			{
-				const int Len = str_length(Label);
-				if(Len >= 1)
-				{
-					Label[Len - 1] = '\0';
-					str_append(Label, "ies", sizeof(Label));
-				}
-			}
-			else
-				str_append(Label, "s", sizeof(Label));
-		}
+			str_format_plural(Info.m_aLabel, pWarName);
 
-		if(Label[0] == '\0')
+		if(Info.m_aLabel[0] == '\0')
 			continue;
 
-		str_copy(Info.m_aLabel, Label);
 		Info.m_Amount = Amount;
 		Info.m_ActiveAmount = AmountActive;
-		OnlineInfos.push_back(Info);
+		vOnlineInfo.push_back(Info);
 	}
 
 	if(g_Config.m_ClClientUsersOnlineInfo)
@@ -379,7 +364,7 @@ void CEClient::OnlineInfo()
 			str_copy(Info.m_aLabel, Label, sizeof(Info.m_aLabel));
 			Info.m_Amount = Amount;
 			Info.m_ActiveAmount = AmountActive;
-			OnlineInfos.push_back(Info);
+			vOnlineInfo.push_back(Info);
 			HasAny = true;
 		}
 	}
@@ -399,7 +384,7 @@ void CEClient::OnlineInfo()
 		str_format(aBuf, sizeof(aBuf), "│ %d Mutes", Mutes);
 	GameClient()->ClientMessage(aBuf);
 	HasAny = false;
-	for(const COnlineInfo &Info : OnlineInfos)
+	for(const COnlineInfo &Info : vOnlineInfo)
 	{
 		const int ActiveAmount = Info.m_ActiveAmount;
 		const int AfkAmount = Info.m_Amount - Info.m_ActiveAmount;
@@ -425,10 +410,10 @@ void CEClient::OnlineInfo()
 
 void CEClient::PlayerInfo(const char *pName)
 {
-	char aBuf[1024];
+	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "Couldnt Find a Player With The Name \"%s\"", pName);
 
-	int Id = GameClient()->GetClientId(pName);
+	const int &Id = GameClient()->GetClientId(pName);
 
 	if(Id >= 0)
 	{
@@ -464,7 +449,7 @@ void CEClient::ConReplyLast(IConsole::IResult *pResult, void *pUserData)
 {
 	CEClient *pSelf = (CEClient *)pUserData;
 
-	CLastPing LastPing = pSelf->m_aLastPing;
+	const CLastPing &LastPing = pSelf->m_aLastPing;
 
 	if(!str_comp(LastPing.m_aName, "") || LastPing.m_aName[0] == '\0')
 	{
@@ -497,7 +482,7 @@ void CEClient::ConSpectateId(IConsole::IResult *pResult, void *pUserData)
 	CEClient *pSelf = (CEClient *)pUserData;
 	const char *pName = pSelf->GameClient()->GetClientName(pResult->GetInteger(0));
 
-	char pCmd[64];
+	char pCmd[32];
 	str_format(pCmd, sizeof(pCmd), "/spec %s", pName);
 	pSelf->GameClient()->m_Chat.SendChat(0, pCmd);
 }
