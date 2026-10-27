@@ -5,9 +5,9 @@
 
 #include "camera.h"
 
-#include <base/str.h>
 #include <base/dbg.h>
 #include <base/log.h>
+#include <base/str.h>
 
 #include <engine/graphics.h>
 #include <engine/shared/config.h>

@@ -3275,6 +3275,9 @@ void CClient::RegisterInterfaces()
 #if defined(CONF_AUTOUPDATE)
 	Kernel()->RegisterInterface(static_cast<IUpdater *>(&m_Updater), false);
 #endif
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+	Kernel()->RegisterInterface(static_cast<IEClientUpdater *>(&m_EClientUpdater), false);
+#endif
 	Kernel()->RegisterInterface(static_cast<IFriends *>(&m_Friends), false);
 	Kernel()->ReregisterInterface(static_cast<IFriends *>(&m_Foes));
 }
@@ -3306,7 +3309,6 @@ void CClient::InitInterfaces()
 #if defined(CONF_AUTOUPDATE)
 	m_Updater.Init();
 #endif
-
 	m_pConfigManager->RegisterCallback(IFavorites::ConfigSaveCallback, m_pFavorites);
 	m_Friends.Init();
 	m_Foes.Init(true);
@@ -3350,6 +3352,10 @@ void CClient::Run()
 		ShowMessageBox({.m_pTitle = "HTTP Error", .m_pMessage = pErrorMessage});
 		return;
 	}
+
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+	m_EClientUpdater.Init();
+#endif
 
 	// init graphics
 	m_pGraphics = CreateEngineGraphicsThreaded();
@@ -3520,6 +3526,9 @@ void CClient::Run()
 
 #if defined(CONF_AUTOUPDATE)
 		Updater()->Update();
+#endif
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+		m_EClientUpdater.Update();
 #endif
 
 		// update sound
@@ -5467,6 +5476,13 @@ try
 #endif
 
 	std::vector<SWarning> vQuittingWarnings = pClient->QuittingWarnings();
+#if !defined(CONF_PLATFORM_ANDROID)
+	bool EClientUpdateLaunched = false;
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+	if(Restarting && pClient->EClientUpdater()->HasPendingInstall())
+		EClientUpdateLaunched = pClient->EClientUpdater()->LaunchInstaller();
+#endif
+#endif
 
 	PerformCleanup();
 
@@ -5480,7 +5496,8 @@ try
 #if defined(CONF_PLATFORM_ANDROID)
 		RestartAndroidApp();
 #else
-		process_execute(aRestartBinaryPath, EShellExecuteWindowState::FOREGROUND);
+		if(!EClientUpdateLaunched)
+			process_execute(aRestartBinaryPath, EShellExecuteWindowState::FOREGROUND);
 #endif
 	}
 

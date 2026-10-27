@@ -117,6 +117,13 @@ option(WEBSOCKETS "Enable websockets support" OFF)
 option(MYSQL "Enable mysql support" OFF)
 option(TEST_MYSQL "Test mysql support in unit tests (also sets -DMYSQL=ON)" OFF)
 option(AUTOUPDATE "Enable the autoupdater" OFF)
+# <E-Client
+if(AUTOUPDATE)
+  message(WARNING "The DDNet updater is disabled in E-Client; GitHub Releases are used instead")
+  set(AUTOUPDATE OFF CACHE BOOL "Enable the autoupdater" FORCE)
+endif()
+option(ECLIENT_AUTOUPDATE "Enable the E-Client GitHub Releases updater" OFF)
+# E-Client>
 option(INFORM_UPDATE "Inform about available updates" OFF)
 option(VIDEORECORDER "Enable video recording support via FFmpeg" ON)
 option(UPNP "Enable UPnP support" OFF)
@@ -2688,6 +2695,8 @@ if(CLIENT)
     demoedit.cpp
     demoedit.h
     discord.cpp
+    eclient_updater.cpp
+    eclient_updater.h
     enums.h
     favorites.cpp
     friends.cpp
@@ -4061,6 +4070,14 @@ if(CLIENT AND DMGBUILD_FOUND)
   endif()
 
   set(DMG_TMPDIR pack_${CPACK_PACKAGE_FILE_NAME}_dmg)
+  set(DMG_GENERATED_FILE_COMMANDS)
+  foreach(file ${CPACK_GEN_FILES})
+    get_filename_component(parent_path ${file} PATH)
+    list(APPEND DMG_GENERATED_FILE_COMMANDS
+      COMMAND ${CMAKE_COMMAND} -E make_directory ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Resources/${parent_path}
+      COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/${file} ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Resources/${file}
+    )
+  endforeach()
   set(DMG_MKDIRS
     # tidy-alphabetical-start
     ${CLIENT_EXECUTABLE}.app
@@ -4193,6 +4210,7 @@ if(CLIENT AND DMGBUILD_FOUND)
 
     # CLIENT
     COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_SOURCE_DIR}/data ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Resources/data
+    ${DMG_GENERATED_FILE_COMMANDS}
     COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_SOURCE_DIR}/other/icons/${CLIENT_EXECUTABLE}.icns ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/Resources/
     COMMAND ${CMAKE_COMMAND} -E copy bundle/client/Info.plist ${PROJECT_SOURCE_DIR}/other/bundle/client/PkgInfo ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/
     COMMAND ${CMAKE_COMMAND} -E copy $<TARGET_FILE:game-client> ${TARGET_TOOLS_FILES} ${DMG_TMPDIR}/${CLIENT_EXECUTABLE}.app/Contents/MacOS/
@@ -4512,6 +4530,9 @@ foreach(target ${TARGETS_OWN})
   endif()
   if(AUTOUPDATE AND NOT STEAM)
     target_compile_definitions(${target} PRIVATE CONF_AUTOUPDATE)
+  endif()
+  if(ECLIENT_AUTOUPDATE AND CLIENT AND NOT STEAM AND (TARGET_OS STREQUAL "mac" OR ((TARGET_OS STREQUAL "windows" OR TARGET_OS STREQUAL "linux") AND TARGET_CPU_ARCHITECTURE STREQUAL "x86_64")))
+    target_compile_definitions(${target} PRIVATE CONF_ECLIENT_AUTOUPDATE)
   endif()
   if(INFORM_UPDATE AND NOT STEAM)
     target_compile_definitions(${target} PRIVATE CONF_INFORM_UPDATE)

@@ -23,33 +23,33 @@ jobs:
         include:
         - name: ubuntu-latest-fancy
           os: ubuntu-latest
-          cmake-args: -G Ninja -DVULKAN=ON -DDISCORD=ON -DDISCORD_DYNAMIC=ON -DPREFER_BUNDLED_LIBS=ON
+          cmake-args: -G Ninja -DVULKAN=ON -DDISCORD=ON -DDISCORD_DYNAMIC=ON -DPREFER_BUNDLED_LIBS=ON -DECLIENT_AUTOUPDATE=ON
           cmake-args-release: -DIPO=ON
           cmake-init-env: CXXFLAGS=-Werror
           package-file: "*-linux_x86_64.tar.xz"
         - name: ubuntu-22.04
           os: ubuntu-22.04
           cmake-path: /usr/bin/
-          cmake-args: -G "Unix Makefiles" -DVULKAN=ON -DTEST_MYSQL=ON -DPRECOMPILE_HEADERS=OFF
+          cmake-args: -G "Unix Makefiles" -DVULKAN=ON -DTEST_MYSQL=ON -DPRECOMPILE_HEADERS=OFF -DECLIENT_AUTOUPDATE=ON
           cmake-args-release: -DIPO=ON -DDISCORD=ON -DDISCORD_DYNAMIC=ON -DPREFER_BUNDLED_LIBS=ON
           cmake-init-env: CXXFLAGS=-Werror
           gtest-env: GTEST_FILTER=-*SQLite*
           package-file: "*-linux_x86_64.tar.xz"
         - name: macOS-latest
           os: macOS-latest
-          cmake-args: -G Ninja -DVULKAN=ON -DDISCORD=ON
+          cmake-args: -G Ninja -DVULKAN=ON -DDISCORD=ON -DECLIENT_AUTOUPDATE=ON
           cmake-args-release: -DIPO=ON
           cmake-init-env: CXXFLAGS=-Werror
           package-file: "*-macos.dmg"
         - name: windows-latest
           os: windows-latest
-          cmake-args: -A x64 -DEXCEPTION_HANDLING=ON -DVULKAN=ON -DDISCORD=ON
+          cmake-args: -A x64 -DEXCEPTION_HANDLING=ON -DVULKAN=ON -DDISCORD=ON -DECLIENT_AUTOUPDATE=ON
           cmake-init-env: CXXFLAGS=/WX LDFLAGS=/WX
           package-file: "*-win64.zip"
           executable-suffix: .exe
         - name: windows-latest-mingw
           os: windows-latest
-          cmake-args: -G Ninja -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DEXCEPTION_HANDLING=ON -DCMAKE_RC_COMPILER=windres -DCMAKE_AR=ar -DVULKAN=ON -DDISCORD=ON
+          cmake-args: -G Ninja -DCMAKE_SYSTEM_NAME=Windows -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++ -DEXCEPTION_HANDLING=ON -DCMAKE_RC_COMPILER=windres -DCMAKE_AR=ar -DVULKAN=ON -DDISCORD=ON -DECLIENT_AUTOUPDATE=ON
           cmake-init-env: CXXFLAGS=-Werror LDFLAGS=-Werror
           package-file: "*-win64.zip"
           executable-suffix: .exe

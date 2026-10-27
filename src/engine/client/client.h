@@ -11,6 +11,9 @@
 
 #include <engine/client.h>
 #include <engine/client/checksum.h>
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+#include <engine/client/eclient_updater.h>
+#endif
 #include <engine/client/friends.h>
 #include <engine/client/ghost.h>
 #include <engine/client/serverbrowser.h>
@@ -86,6 +89,9 @@ class CClient : public IClient, public CDemoPlayer::IListener
 	CGhostLoader m_GhostLoader;
 	CServerBrowser m_ServerBrowser;
 	CUpdater m_Updater;
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+	CEClientUpdater m_EClientUpdater;
+#endif
 	CFriends m_Friends;
 	CFriends m_Foes;
 
@@ -296,6 +302,9 @@ public:
 	IStorage *Storage() { return m_pStorage; }
 	IEngineTextRender *TextRender() { return m_pTextRender; }
 	IUpdater *Updater() { return m_pUpdater; }
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+	CEClientUpdater *EClientUpdater() { return &m_EClientUpdater; }
+#endif
 	IHttp *Http() { return m_pHttp; }
 
 	CClient();

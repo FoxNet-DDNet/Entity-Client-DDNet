@@ -13,6 +13,9 @@
 
 #include <engine/client.h>
 #include <engine/client/updater.h>
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+#include <engine/client/eclient_updater.h>
+#endif
 #include <engine/config.h>
 #include <engine/editor.h>
 #include <engine/font_icons.h>
@@ -654,11 +657,16 @@ void CMenus::RenderMenubar(CUIRect Box, IClient::EClientState ClientState)
 			GotNewsOrUpdate = true;
 		}
 #endif
+#if defined(CONF_ECLIENT_AUTOUPDATE)
+		GotNewsOrUpdate |= Kernel()->RequestInterface<IEClientUpdater>()->State() == IEClientUpdater::EState::AVAILABLE;
+#endif
 
 		GotNewsOrUpdate |= (bool)g_Config.m_UiUnreadNews;
 
+#if !defined(CONF_ECLIENT_AUTOUPDATE)
 		if(g_Config.m_ClInformUpdate)
 			GotNewsOrUpdate |= str_comp(GameClient()->m_EntityInfo.m_aVersionStr, "0") != 0;
+#endif
 
 		ColorRGBA HomeButtonColorAlert(0, 1, 0, 0.25f);
 		ColorRGBA HomeButtonColorAlertHover(0, 1, 0, 0.5f);
