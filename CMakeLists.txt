@@ -2814,12 +2814,16 @@ if(CLIENT)
     components/entity/performance_statistics.h
     components/entity/physicball.cpp
     components/entity/physicball.h 
-    components/entity/player_actions.cpp
-    components/entity/player_actions.h
     components/entity/spec_pause_radio.cpp
     components/entity/spec_pause_radio.h
     components/entity/warlist.cpp
     components/entity/warlist.h
+    components/entity/wheels/bindwheel.cpp
+    components/entity/wheels/bindwheel.h
+    components/entity/wheels/player_actions.cpp
+    components/entity/wheels/player_actions.h
+    components/entity/wheels/wheel.cpp
+    components/entity/wheels/wheel.h
     components/envelope_state.cpp
     components/envelope_state.h
     components/flow.cpp
@@ -2899,8 +2903,6 @@ if(CLIENT)
     components/tclient/bg_draw_file.h
     components/tclient/bindchat.cpp
     components/tclient/bindchat.h
-    components/tclient/bindwheel.cpp
-    components/tclient/bindwheel.h
     components/tclient/custom_communities.cpp
     components/tclient/custom_communities.h
     components/tclient/mumble.cpp

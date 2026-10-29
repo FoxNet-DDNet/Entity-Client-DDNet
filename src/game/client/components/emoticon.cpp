@@ -87,9 +87,7 @@ void CEmoticon::OnRender()
 {
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
-	if(GameClient()->m_Snap.m_SpecInfo.m_Active ||
-		!GameClient()->m_Snap.m_pLocalCharacter ||
-		GameClient()->m_Scoreboard.IsActive())
+	if(GameClient()->m_Scoreboard.IsActive())
 	{
 		OnRelease();
 		return;

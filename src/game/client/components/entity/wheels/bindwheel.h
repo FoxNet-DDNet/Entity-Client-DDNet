@@ -1,13 +1,12 @@
-#ifndef GAME_CLIENT_COMPONENTS_TCLIENT_BINDWHEEL_H
-#define GAME_CLIENT_COMPONENTS_TCLIENT_BINDWHEEL_H
+#ifndef GAME_CLIENT_COMPONENTS_ENTITY_WHEELS_BINDWHEEL_H
+#define GAME_CLIENT_COMPONENTS_ENTITY_WHEELS_BINDWHEEL_H
 
-#include <base/system.h>
+#include "wheel.h"
 
 #include <engine/console.h>
+#include <engine/input.h>
 
 #include <game/client/component.h>
-
-#include <vector>
 
 class IConfigManager;
 
@@ -20,14 +19,6 @@ enum
 
 class CBindWheel : public CComponent
 {
-	float m_AnimationTime = 0.0f;
-	float m_aAnimationTimeItems[BINDWHEEL_MAX_BINDS] = {0};
-
-	bool m_Active = false;
-	bool m_WasActive = false;
-
-	int m_SelectedBind;
-
 	static void ConOpenBindwheel(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddBindwheelLegacy(IConsole::IResult *pResult, void *pUserData);
 	static void ConAddBindwheel(IConsole::IResult *pResult, void *pUserData);
@@ -38,22 +29,13 @@ class CBindWheel : public CComponent
 	static void ConfigSaveCallback(IConfigManager *pConfigManager, void *pUserData);
 
 public:
-	class CBind
-	{
-	public:
-		char m_aName[BINDWHEEL_MAX_NAME] = "*";
-		char m_aCommand[BINDWHEEL_MAX_CMD] = "";
-
-		bool operator==(const CBind &Other) const
-		{
-			return !str_comp(m_aName, Other.m_aName) && !str_comp(m_aCommand, Other.m_aCommand);
-		}
-	};
-
-	std::vector<CBind> m_vBinds;
-
 	CBindWheel();
 	int Sizeof() const override { return sizeof(*this); }
+
+	CWheel m_Wheel;
+
+	void AddBind(const char *pName, const char *pCommand);
+	void UpdateBind(int Index, const char *pName, const char *pCommand);
 
 	void OnReset() override;
 	void OnRender() override;
@@ -62,15 +44,7 @@ public:
 	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
 	bool OnInput(const IInput::CEvent &Event) override;
 
-	void AddBind(const char *Name, const char *Command);
-	void RemoveBind(const char *Name, const char *Command);
-	void RemoveBind(int Index);
-	void RemoveAllBinds();
-
-	void ExecuteHoveredBind();
-	void ExecuteBind(int Bind);
-
-	bool IsActive() const { return m_Active; }
+	bool IsActive() const { return m_Wheel.m_Active; }
 };
 
-#endif
+#endif // GAME_CLIENT_COMPONENTS_ENTITY_WHEELS_BINDWHEEL_H

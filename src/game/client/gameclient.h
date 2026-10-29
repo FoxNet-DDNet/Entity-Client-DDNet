@@ -87,15 +87,15 @@
 #include "components/entity/moving_tiles.h"
 #include "components/entity/performance_statistics.h"
 #include "components/entity/physicball.h"
-#include "components/entity/player_actions.h"
 #include "components/entity/spec_pause_radio.h"
+#include "components/entity/wheels/bindwheel.h"
+#include "components/entity/wheels/player_actions.h"
 
 // Tater
 #include "component.h"
 #include "components/entity/warlist.h"
 #include "components/tclient/bg_draw.h"
 #include "components/tclient/bindchat.h"
-#include "components/tclient/bindwheel.h"
 #include "components/tclient/custom_communities.h"
 #include "components/tclient/mumble.h"
 #include "components/tclient/outlines.h"
