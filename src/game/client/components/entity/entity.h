@@ -83,8 +83,6 @@ public:
 	int64_t DeathCount() const { return m_DeathCounter; }
 	int64_t Playtime() const { return m_Playtime; }
 
-	bool m_WeaponsGot;
-
 	void Votekick(const char *pName, const char *pReason);
 
 	void PlayerInfo(const char *pName);
@@ -127,8 +125,6 @@ public:
 	}
 
 	int64_t m_RainbowDelay;
-
-	void GoresMode();
 
 	int64_t m_JoinTeam;
 	void AutoJoinTeam();

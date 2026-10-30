@@ -63,6 +63,7 @@ public:
 	vec2 CursorWorldPos() const;
 
 private:
+	void ApplyGoresMode(CNetObj_PlayerInput &Input) const;
 	vec2 DyncamZoomCursorTarget(vec2 MousePos) const;
 	static void ConKeyInputState(IConsole::IResult *pResult, void *pUserData);
 	static void ConKeyInputCounter(IConsole::IResult *pResult, void *pUserData);

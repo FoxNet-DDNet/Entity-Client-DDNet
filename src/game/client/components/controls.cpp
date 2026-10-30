@@ -238,6 +238,29 @@ void CControls::OnMessage(int Msg, void *pRawMsg)
 	}
 }
 
+void CControls::ApplyGoresMode(CNetObj_PlayerInput &Input) const
+{
+	if(!g_Config.m_ClGoresMode)
+		return;
+
+	const CCharacterCore &Core = g_Config.m_EcFastInput && GameClient()->m_Snap.m_LocalClientId >= 0 ?
+					     GameClient()->m_aClients[GameClient()->m_Snap.m_LocalClientId].m_RegularPredicted :
+					     GameClient()->m_PredictedChar;
+	if(g_Config.m_ClGoresModeDisableIfWeapons && (Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got))
+		return;
+
+	if(Input.m_Fire & 1)
+	{
+		if(Core.m_ActiveWeapon != WEAPON_HAMMER)
+		{
+			Input.m_WantedWeapon = 0;
+			Input.m_PrevWeapon += 2;
+		}
+	}
+	else
+		Input.m_WantedWeapon = WEAPON_GUN + 1;
+}
+
 int CControls::SnapInput(int *pData)
 {
 	// update player state
@@ -334,6 +357,8 @@ int CControls::SnapInput(int *pData)
 			m_aInputData[g_Config.m_ClDummy].m_Direction = -1;
 		if(!m_aInputDirectionLeft[g_Config.m_ClDummy] && m_aInputDirectionRight[g_Config.m_ClDummy])
 			m_aInputData[g_Config.m_ClDummy].m_Direction = 1;
+
+		ApplyGoresMode(m_aInputData[g_Config.m_ClDummy]);
 
 		// dummy copy moves
 		if(g_Config.m_ClDummyCopyMoves)
@@ -593,6 +618,9 @@ bool CControls::CheckNewInput()
 				TestInput.m_Direction = -1;
 			if(!m_aInputDirectionLeft[Dummy] && m_aInputDirectionRight[Dummy])
 				TestInput.m_Direction = 1;
+			if(GameClient()->m_Snap.m_pLocalCharacter && !GameClient()->m_Snap.m_SpecInfo.m_Active &&
+				!GameClient()->m_Chat.IsActive() && !GameClient()->m_Menus.IsActive())
+				ApplyGoresMode(TestInput);
 		}
 
 		if(m_aFastInput[Dummy].m_Direction != TestInput.m_Direction)

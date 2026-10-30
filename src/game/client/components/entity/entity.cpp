@@ -212,31 +212,6 @@ void CEClient::AutoJoinTeam()
 	}
 }
 
-void CEClient::GoresMode()
-{
-	// if turning off kog mode and it was on before, rebind to previous bind
-	if(!GameClient()->m_Snap.m_pLocalCharacter)
-		return;
-	if(!g_Config.m_ClGoresMode)
-		return;
-
-	CCharacterCore Core = GameClient()->m_PredictedPrevChar;
-
-	if(g_Config.m_ClGoresModeDisableIfWeapons)
-	{
-		if(Core.m_aWeapons[WEAPON_GRENADE].m_Got || Core.m_aWeapons[WEAPON_LASER].m_Got || Core.m_aWeapons[WEAPON_SHOTGUN].m_Got)
-			m_WeaponsGot = true;
-		if((!Core.m_aWeapons[WEAPON_GRENADE].m_Got && !Core.m_aWeapons[WEAPON_LASER].m_Got && !Core.m_aWeapons[WEAPON_SHOTGUN].m_Got) && m_WeaponsGot)
-			m_WeaponsGot = false;
-
-		if(m_WeaponsGot)
-			return;
-	}
-
-	if(GameClient()->m_Snap.m_pLocalCharacter->m_Weapon == 0)
-		GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = WEAPON_GUN + 1;
-}
-
 void CEClient::OnConnect(int Conn)
 {
 	if(Conn != IClient::CONN_MAIN)
@@ -591,7 +566,6 @@ void CEClient::OnRender()
 		return;
 
 	UpdateRainbow();
-	GoresMode();
 
 	if(GameClient()->m_Controls.m_aInputData[g_Config.m_ClDummy].m_Jump || (GameClient()->m_Controls.m_aInputDirectionLeft[g_Config.m_ClDummy] || GameClient()->m_Controls.m_aInputDirectionRight[g_Config.m_ClDummy]))
 	{
