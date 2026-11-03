@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   check-style:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       CARGO_HTTP_MULTIPLEXING: false
     steps:

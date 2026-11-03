@@ -13,7 +13,7 @@ concurrency:
 
 jobs:
   check-clang-san:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     env:
       CARGO_HTTP_MULTIPLEXING: false
       UBSAN_OPTIONS: log_path=SAN:print_stacktrace=1:halt_on_error=0
