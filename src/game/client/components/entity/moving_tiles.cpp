@@ -104,6 +104,9 @@ void CMovingTiles::OnRender()
 	if(m_vQuads.empty())
 		return;
 
+	// `CEnvelopeState` caches the envelope time, so it has to be refreshed once per frame
+	m_EnvEvaluator.Update();
+
 	const float Alpha = g_Config.m_ClOverlayEntities * 0.01f;
 
 	const vec2 Center = GameClient()->m_Camera.m_Center;

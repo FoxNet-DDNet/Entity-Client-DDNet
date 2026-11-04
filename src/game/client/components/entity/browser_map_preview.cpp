@@ -61,6 +61,9 @@ class CPreviewRenderLayerTile : public CRenderLayerTile
 
 protected:
 	void *GetRawData() const override { return m_pPreviewTiles; }
+	// The tiles belong to `CMapPreviewData`, not to an `IMap`: there is no map to
+	// call `UnloadData` on, so the CPU copy must never be dropped after upload.
+	bool IsDesignLayer() const override { return false; }
 
 public:
 	CPreviewRenderLayerTile(int GroupId, int LayerId, CMapItemLayerTilemap *pMapItem, CTile *pTiles) :
@@ -691,7 +694,7 @@ void CBrowserMapPreview::InitTileLayerCache(const CMapPreviewData::CLayer &Layer
 	Cache.m_pRenderLayer = std::make_shared<CPreviewRenderLayerTile>(static_cast<int>(GroupIndex), static_cast<int>(LayerIndex), Cache.m_pMapItem.get(), const_cast<CTile *>(Layer.m_vTiles.data()));
 	std::shared_ptr<CEnvelopeManager> pNoEnvelopeManager;
 	std::optional<FCallbackLayerInit> NoInitCallback;
-	Cache.m_pRenderLayer->OnInit(Graphics(), TextRender(), m_pRenderMap.get(), pNoEnvelopeManager, nullptr, m_pMapImages.get(), NoInitCallback);
+	Cache.m_pRenderLayer->OnInit(Graphics(), TextRender(), m_pRenderMap.get(), pNoEnvelopeManager, nullptr, m_pMapImages.get(), NoInitCallback, true);
 	Cache.m_pRenderLayer->Init();
 }
 bool CBrowserMapPreview::RenderMap(const CUIRect &Rect)
