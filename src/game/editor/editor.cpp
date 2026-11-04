@@ -602,16 +602,16 @@ void CEditor::DoToolbarLayers(CUIRect ToolBar)
 		// undo/redo group
 		ToolbarTop.VSplitLeft(25.0f, &Button, &ToolbarTop);
 		static int s_UndoButton = 0;
-		if(DoButton_FontIcon(&s_UndoButton, FontIcon::UNDO, Map()->m_EditorHistory.CanUndo() - 1, &Button, BUTTONFLAG_LEFT, "[Ctrl+Z] Undo the last action.", IGraphics::CORNER_L))
+		if(DoButton_FontIcon(&s_UndoButton, FontIcon::UNDO, m_QuickActionUndo.Disabled() ? -1 : 0, &Button, BUTTONFLAG_LEFT, m_QuickActionUndo.Description(), IGraphics::CORNER_L))
 		{
-			Map()->m_EditorHistory.Undo();
+			m_QuickActionUndo.Call();
 		}
 
 		ToolbarTop.VSplitLeft(25.0f, &Button, &ToolbarTop);
 		static int s_RedoButton = 0;
-		if(DoButton_FontIcon(&s_RedoButton, FontIcon::REDO, Map()->m_EditorHistory.CanRedo() - 1, &Button, BUTTONFLAG_LEFT, "[Ctrl+Y] Redo the last action.", IGraphics::CORNER_R))
+		if(DoButton_FontIcon(&s_RedoButton, FontIcon::REDO, m_QuickActionRedo.Disabled() ? -1 : 0, &Button, BUTTONFLAG_LEFT, m_QuickActionRedo.Description(), IGraphics::CORNER_R))
 		{
-			Map()->m_EditorHistory.Redo();
+			m_QuickActionRedo.Call();
 		}
 
 		ToolbarTop.VSplitLeft(5.0f, nullptr, &ToolbarTop);
@@ -867,14 +867,6 @@ void CEditor::DoToolbarSounds(CUIRect ToolBar)
 		ToolBarBottom.VSplitLeft(5.0f, nullptr, &ToolBarBottom);
 		Ui()->DoLabel(&ToolBarBottom, aBuf, 12.0f, TEXTALIGN_ML);
 	}
-}
-
-static void Rotate(const CPoint *pCenter, CPoint *pPoint, float Rotation)
-{
-	int x = pPoint->x - pCenter->x;
-	int y = pPoint->y - pCenter->y;
-	pPoint->x = (int)(x * std::cos(Rotation) - y * std::sin(Rotation) + pCenter->x);
-	pPoint->y = (int)(x * std::sin(Rotation) + y * std::cos(Rotation) + pCenter->y);
 }
 
 void CEditor::DoSoundSource(int LayerIndex, CSoundSource *pSource, int Index)
@@ -1599,8 +1591,8 @@ void CEditor::DoQuad(int LayerIndex, const std::shared_ptr<CLayerQuads> &pLayer,
 					for(int v = 0; v < 4; v++)
 					{
 						pCurrentQuad->m_aPoints[v] = s_vvRotatePoints[i][v];
-						Rotate(&pCurrentQuad->m_aPoints[4], &pCurrentQuad->m_aPoints[v], s_RotateAngle);
 					}
+					RotatePoints(pCurrentQuad->m_aPoints[4], pCurrentQuad->m_aPoints, 4, s_RotateAngle);
 				}
 
 				s_RotateAngle += Ui()->MouseDeltaX() * (Input()->ShiftIsPressed() ? 0.0001f : 0.002f);
@@ -2121,19 +2113,17 @@ void CEditor::DoQuadEnvelopes(const CLayerQuads *pLayerQuads)
 
 			const CPoint *pPoints;
 			CPoint aRotated[4];
-			if(Rotation != 0.0f)
-			{
-				std::copy_n(pQuad->m_aPoints, std::size(aRotated), aRotated);
-				for(auto &Point : aRotated)
-				{
-					Rotate(&pQuad->m_aPoints[4], &Point, Rotation);
-				}
-				pPoints = aRotated;
-			}
-			else
+			if(Rotation == 0.0f)
 			{
 				pPoints = pQuad->m_aPoints;
 			}
+			else
+			{
+				std::copy_n(pQuad->m_aPoints, std::size(aRotated), aRotated);
+				RotatePoints(pQuad->m_aPoints[4], aRotated, std::size(aRotated), Rotation);
+				pPoints = aRotated;
+			}
+
 			Graphics()->QuadsSetSubsetFree(
 				fx2f(pQuad->m_aTexcoords[0].x), fx2f(pQuad->m_aTexcoords[0].y),
 				fx2f(pQuad->m_aTexcoords[1].x), fx2f(pQuad->m_aTexcoords[1].y),
