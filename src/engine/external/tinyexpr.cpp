@@ -170,6 +170,7 @@ static double fn_floor(double a) { return floor(a); }
 static double fn_log(double a) { return log(a); }
 static double fn_log10(double a) { return log10(a); }
 static double fn_pow(double a, double b) { return pow(a, b); }
+static double fn_round(double a) { return round(a); }
 static double fn_sin(double a) { return sin(a); }
 static double fn_sinh(double a) { return sinh(a); }
 static double fn_sqrt(double a) { return sqrt(a); }
@@ -201,6 +202,7 @@ static const te_variable functions[] = {
     {"npr", {(void*)fn_npr}, TE_FUNCTION2 | TE_FLAG_PURE, 0},
     {"pi", {(void*)fn_pi}, TE_FUNCTION0 | TE_FLAG_PURE, 0},
     {"pow", {(void*)fn_pow}, TE_FUNCTION2 | TE_FLAG_PURE, 0},
+    {"round", {(void*)fn_round}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"sin", {(void*)fn_sin}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"sinh", {(void*)fn_sinh}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
     {"sqrt", {(void*)fn_sqrt}, TE_FUNCTION1 | TE_FLAG_PURE, 0},
