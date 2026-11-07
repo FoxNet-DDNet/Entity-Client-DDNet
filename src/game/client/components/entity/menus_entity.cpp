@@ -545,7 +545,7 @@ void CMenus::RenderEClientNewsPage(CUIRect MainView)
 	static std::string s_LastNews;
 	static std::vector<CSelectedNewsLine> s_vSelectedLines;
 
-	const char *pNews = GameClient()->m_EntityInfo.m_aNews;
+	const char *pNews = GameClient()->m_EntityInfo.m_News.c_str();
 	if(s_LastNews != pNews)
 	{
 		s_LastNews = pNews;

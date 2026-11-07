@@ -5,10 +5,27 @@
 #include <game/client/gameclient.h>
 #include <game/version.h>
 
+#include <cstdlib>
+#include <string>
 #include <tuple>
 
 static constexpr const char *ECLIENT_INFO_FILE = "eclient-info.json";
 static constexpr const char *ECLIENT_INFO_URL[2] = {"https://raw.githubusercontent.com/qxdFox/FoxSite/refs/heads/main/docs/info.json", "https://www.entityclient.net/info.json"};
+
+void CEntityInfo::UpdateNews(const json_value &Json)
+{
+	const json_value &CurrentNews = Json["news"];
+	if(CurrentNews.type != json_string)
+		return;
+
+	const char *pCurrentNews = CurrentNews;
+
+	// Only mark the news button if something new was added to the news
+	if(!m_News.empty() && m_News.find(pCurrentNews) == std::string::npos)
+		g_Config.m_EcUnreadNews = true;
+
+	m_News = pCurrentNews;
+}
 
 void CEntityInfo::OnInit()
 {
@@ -18,16 +35,13 @@ void CEntityInfo::OnInit()
 		return;
 
 	json_value *pJson = json_parse((const char *)pBuf, Length);
-	const json_value &Json = *pJson;
-	const json_value &CurrentNews = Json["news"];
+	free(pBuf);
+	if(!pJson)
+		return;
 
-	if(CurrentNews.type == json_string)
-	{
-		if(m_aNews[0] && !str_find(m_aNews, CurrentNews))
-			g_Config.m_EcUnreadNews = true;
+	UpdateNews(*pJson);
 
-		str_copy(m_aNews, CurrentNews);
-	}
+	json_value_free(pJson);
 }
 
 void CEntityInfo::OnRender()
@@ -97,9 +111,11 @@ void CEntityInfo::FinishEClientInfo()
 {
 	void *pBuf;
 	unsigned Length;
-	json_value *pJson = nullptr;
-	if(Storage()->ReadFile(ECLIENT_INFO_FILE, IStorage::TYPE_SAVE, &pBuf, &Length))
-		pJson = json_parse((const char *)pBuf, Length);
+	if(!Storage()->ReadFile(ECLIENT_INFO_FILE, IStorage::TYPE_SAVE, &pBuf, &Length))
+		return;
+
+	json_value *pJson = json_parse((const char *)pBuf, Length);
+	free(pBuf);
 	if(!pJson)
 		return;
 	const json_value &Json = *pJson;
@@ -121,15 +137,7 @@ void CEntityInfo::FinishEClientInfo()
 			m_aVersionStr[1] = '\0';
 		}
 	}
-	const json_value &CurrentNews = Json["news"];
-
-	if(CurrentNews.type == json_string)
-	{
-		if(m_aNews[0] && !str_find(m_aNews, CurrentNews))
-			g_Config.m_EcUnreadNews = true;
-
-		str_copy(m_aNews, CurrentNews);
-	}
+	UpdateNews(Json);
 
 	json_value_free(pJson);
 }

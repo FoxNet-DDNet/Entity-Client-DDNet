@@ -6,6 +6,9 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
+
+typedef struct _json_value json_value;
 
 class CEntityInfo : public CComponent
 {
@@ -18,10 +21,13 @@ public:
 	bool m_Retried = false;
 
 	char m_aVersionStr[10] = "0";
-	char m_aNews[5000] = "";
+	std::string m_News;
 	int Sizeof() const override { return sizeof(*this); }
 	void OnRender() override;
 	void OnInit() override;
+
+private:
+	void UpdateNews(const json_value &Json);
 };
 
 #endif
