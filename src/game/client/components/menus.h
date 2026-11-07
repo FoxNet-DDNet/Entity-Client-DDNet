@@ -136,6 +136,8 @@ private:
 	ColorHSLA DoButton_ColorPicker(const CUIRect *pRect, unsigned int *pHslaColor, bool Alpha);
 
 	int DoButton_GridHeader(const void *pId, const char *pText, int Checked, const CUIRect *pRect, int Align = TEXTALIGN_ML);
+	// Variant that keeps the caption's text container across frames, for grid headers that are rendered every frame.
+	int DoButton_GridHeader(const void *pId, CUIElement::SUIElementRect &RectEl, const char *pText, int Checked, const CUIRect *pRect, int Align = TEXTALIGN_ML);
 	int DoButton_Favorite(const void *pButtonId, const void *pParentId, bool Checked, const CUIRect *pRect);
 
 	std::optional<std::chrono::nanoseconds> m_SkinList7LastRefreshTime;

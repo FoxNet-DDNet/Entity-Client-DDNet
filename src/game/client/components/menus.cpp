@@ -301,7 +301,22 @@ int CMenus::DoButton_GridHeader(const void *pId, const char *pText, int Checked,
 
 	CUIRect Temp;
 	pRect->VMargin(5.0f, &Temp);
-	Ui()->DoLabel(&Temp, pText, pRect->h * CUi::ms_FontmodHeight, Align);
+	if(pText[0] != '\0')
+		Ui()->DoLabel(&Temp, pText, pRect->h * CUi::ms_FontmodHeight, Align);
+	return Ui()->DoButtonLogic(pId, Checked, pRect, BUTTONFLAG_LEFT);
+}
+
+int CMenus::DoButton_GridHeader(const void *pId, CUIElement::SUIElementRect &RectEl, const char *pText, int Checked, const CUIRect *pRect, int Align)
+{
+	if(Checked == 2)
+		pRect->Draw(ColorRGBA(1, 0.98f, 0.5f, 0.55f), IGraphics::CORNER_T, 5.0f);
+	else if(Checked)
+		pRect->Draw(ColorRGBA(1, 1, 1, 0.5f), IGraphics::CORNER_T, 5.0f);
+
+	CUIRect Temp;
+	pRect->VMargin(5.0f, &Temp);
+	if(pText[0] != '\0')
+		Ui()->DoLabelStreamed(RectEl, &Temp, pText, pRect->h * CUi::ms_FontmodHeight, Align);
 	return Ui()->DoButtonLogic(pId, Checked, pRect, BUTTONFLAG_LEFT);
 }
 
