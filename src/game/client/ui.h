@@ -454,6 +454,11 @@ private:
 
 	unsigned m_HotkeysPressed = 0;
 
+	// EClient: what DoLabelSearch does with a label, see its declaration. Both idle by default, so
+	// every other label in the client is drawn the way it always was.
+	std::vector<std::string> *m_pSearchRecorder = nullptr;
+	std::string m_SearchQuery;
+
 	enum class EBackButtonOp
 	{
 		NONE,
@@ -650,6 +655,38 @@ public:
 
 	CLabelResult DoLabel(const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps = {}) const;
 	CLabelResult DoLabel_AutoLineSize(const char *pText, float FontSize, int Align, CUIRect *pRect, float LineSize, const SLabelProperties &LabelProps = {}) const;
+
+	// <EClient: a label the settings search can see.
+	//
+	// A settings module used to be findable only through a keyword list written by hand beside it,
+	// and such a list drifts away from the text on screen as settings are added: of the 368 distinct
+	// words a reader can see in the labels, 159 matched nothing, so "circles", "scoreboard" and
+	// "opacity" were all plainly visible and none of them findable. So the index is taken from the
+	// labels themselves. Drawing a module into an off-screen rect with a recorder set collects the
+	// text of every label it draws instead of drawing it, and the keyword lists stay on top of that
+	// as synonyms, so "fps" still finds Performance.
+	//
+	// With a query set while the modules draw, the same call colors the letters it matched inside a
+	// label, the way the server browser colors the part of a server name a filter matched.
+	//
+	// Idle, this is DoLabel and nothing else.
+	CLabelResult DoLabelSearch(const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps = {}) const;
+	void SetSearchRecorder(std::vector<std::string> *pRecorder) { m_pSearchRecorder = pRecorder; }
+	void SetSearchQuery(const char *pQuery) { m_SearchQuery = pQuery == nullptr ? "" : pQuery; }
+
+	// Splits a query on its spaces. Every token has to be found for something to match.
+	static void SearchTokenize(const char *pQuery, std::vector<std::string> &vTokens);
+
+	// Scores the best place pToken sits inside pText, and says where that was so the letters can be
+	// colored. Zero means the token is not in there at all. Where a hit sits decides what it is
+	// worth: a whole word is what the reader typed, the start of a word is what they were reaching
+	// for, and anything buried mid-word is a coincidence as often as not.
+	static int SearchScore(const char *pText, const char *pToken, int *pOffset, int *pLength);
+
+	static constexpr int SEARCH_SCORE_WHOLE_WORD = 100;
+	static constexpr int SEARCH_SCORE_WORD_START = 70;
+	static constexpr int SEARCH_SCORE_INSIDE_WORD = 30;
+	// EClient>
 
 	void DoLabel(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps = {}, int StrLen = -1, const CTextCursor *pReadCursor = nullptr) const;
 	void DoLabelStreamed(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps = {}, int StrLen = -1, const CTextCursor *pReadCursor = nullptr) const;

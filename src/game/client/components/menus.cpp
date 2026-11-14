@@ -158,7 +158,7 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 
 	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
 	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
-	Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+	Ui()->DoLabelSearch(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC); // EClient
 
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, Flags);
 }
@@ -195,10 +195,11 @@ int CMenus::DoButton_Menu(CButtonContainer *pButtonContainer, const char *pText,
 
 	Text.HMargin(pRect->h >= 20.0f ? 2.0f : 1.0f, &Text);
 	Text.HMargin((Text.h * FontFactor) / 2.0f, &Text);
+	// EClient: DoLabelSearch, so a radio option's text is searchable like any other label
 	if(Size == 0.0f)
-		Ui()->DoLabel(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+		Ui()->DoLabelSearch(&Text, pText, Text.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
 	else
-		Ui()->DoLabel(&Text, pText, Size, TEXTALIGN_MC);
+		Ui()->DoLabelSearch(&Text, pText, Size, TEXTALIGN_MC);
 
 	return Ui()->DoButtonLogic(pButtonContainer, Checked, pRect, Flags);
 }
@@ -361,7 +362,7 @@ int CMenus::DoButton_CheckBox_Common(const void *pId, const char *pText, const c
 	}
 
 	TextRender()->SetRenderFlags(0);
-	Ui()->DoLabel(&Label, pText, Box.h * CUi::ms_FontmodHeight, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, pText, Box.h * CUi::ms_FontmodHeight, TEXTALIGN_ML); // EClient
 
 	return Ui()->DoButtonLogic(pId, 0, pRect, Flags);
 }
@@ -378,7 +379,7 @@ bool CMenus::DoLine_RadioMenu(CUIRect &View, const char *pLabel, std::vector<CBu
 	View.HSplitTop(ButtonHeight, &Buttons, &View);
 	Buttons.VSplitMid(&Label, &Buttons, 10.0f);
 	Buttons.HMargin(2.0f, &Buttons);
-	Ui()->DoLabel(&Label, pLabel, 13.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, pLabel, 13.0f, TEXTALIGN_ML); // EClient
 	const float W = Buttons.w / N;
 	bool Pressed = false;
 	for(int i = 0; i < N; ++i)
@@ -451,7 +452,7 @@ bool CMenus::DoLine_RadioMenu_Compact(CUIRect &View, const char *pLabel, std::ve
 	Buttons.VSplitLeft(LabelSpacing, nullptr, &Buttons);
 	Buttons.HMargin(2.0f, &Buttons);
 
-	Ui()->DoLabel(&Label, pLabel, LabelFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, pLabel, LabelFontSize, TEXTALIGN_ML); // EClient
 
 	const float W = Buttons.w / N;
 	bool Pressed = false;
@@ -503,7 +504,7 @@ ColorHSLA CMenus::DoLine_ColorPicker(CButtonContainer *pResetId, const float Lin
 	}
 	if(pCheckBoxValue == nullptr)
 	{
-		Ui()->DoLabel(&Label, pText, LabelSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&Label, pText, LabelSize, TEXTALIGN_ML); // EClient
 	}
 
 	const ColorHSLA PickedColor = DoButton_ColorPicker(&ColorPickerButton, pColorValue, Alpha);

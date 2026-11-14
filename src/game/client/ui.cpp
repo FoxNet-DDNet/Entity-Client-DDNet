@@ -888,6 +888,149 @@ CLabelResult CUi::DoLabel(const CUIRect *pRect, const char *pText, float Size, i
 	return CLabelResult{Cursor.m_Truncated, CursorPos, Size, Cursor.m_LongestLineWidth};
 }
 
+// <EClient: the settings search, see DoLabelSearch in ui.h
+// The same blue the server browser colors a matched server name with, so a match reads the same
+// wherever the user meets one.
+static constexpr ColorRGBA gs_SearchHighlightColor = ColorRGBA(0.4f, 0.4f, 1.0f, 1.0f);
+
+static bool IsSearchWordChar(char Char)
+{
+	return (Char >= 'a' && Char <= 'z') || (Char >= 'A' && Char <= 'Z') || (Char >= '0' && Char <= '9');
+}
+
+void CUi::SearchTokenize(const char *pQuery, std::vector<std::string> &vTokens)
+{
+	if(pQuery == nullptr)
+		return;
+
+	std::string Token;
+	for(const char *pChar = pQuery; *pChar != '\0'; ++pChar)
+	{
+		if(*pChar == ' ')
+		{
+			if(!Token.empty())
+			{
+				vTokens.push_back(Token);
+				Token.clear();
+			}
+			continue;
+		}
+
+		Token += *pChar;
+	}
+
+	if(!Token.empty())
+		vTokens.push_back(Token);
+}
+
+int CUi::SearchScore(const char *pText, const char *pToken, int *pOffset, int *pLength)
+{
+	int Best = 0;
+	const char *pSearch = pText;
+
+	while(*pSearch != '\0')
+	{
+		const char *pEnd = nullptr;
+		const char *pFound = str_utf8_find_nocase(pSearch, pToken, &pEnd);
+		if(pFound == nullptr || pEnd == nullptr)
+			break;
+
+		const bool AtWordStart = pFound == pText || !IsSearchWordChar(pFound[-1]);
+		const bool AtWordEnd = !IsSearchWordChar(*pEnd);
+
+		int Score = SEARCH_SCORE_INSIDE_WORD;
+		if(AtWordStart && AtWordEnd)
+			Score = SEARCH_SCORE_WHOLE_WORD;
+		else if(AtWordStart)
+			Score = SEARCH_SCORE_WORD_START;
+
+		if(Score > Best)
+		{
+			Best = Score;
+			if(pOffset != nullptr)
+				*pOffset = (int)(pFound - pText);
+			if(pLength != nullptr)
+				*pLength = (int)(pEnd - pFound);
+		}
+
+		if(Best == SEARCH_SCORE_WHOLE_WORD)
+			break;
+
+		pSearch = pFound + str_utf8_forward(pFound, 0);
+	}
+
+	return Best;
+}
+
+CLabelResult CUi::DoLabelSearch(const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps) const
+{
+	// A recorder is set only while the settings page is harvesting its index, and then the label
+	// goes into it instead of onto the screen.
+	if(m_pSearchRecorder != nullptr)
+	{
+		// An icon, the X in a checkbox and a bare number say nothing about what a setting does. Two
+		// letters is the shortest thing worth putting in the index.
+		int Letters = 0;
+		for(const char *pChar = pText; *pChar != '\0'; ++pChar)
+		{
+			if((*pChar >= 'a' && *pChar <= 'z') || (*pChar >= 'A' && *pChar <= 'Z'))
+				++Letters;
+		}
+
+		bool Known = false;
+		for(const std::string &Label : *m_pSearchRecorder)
+			Known |= Label == pText;
+
+		if(Letters >= 2 && !Known)
+			m_pSearchRecorder->emplace_back(pText);
+
+		return CLabelResult{false, vec2(pRect->x, pRect->y), Size, 0.0f};
+	}
+
+	// Whoever passed color splits of their own meant those colors, so leave the label alone.
+	if(m_SearchQuery.empty() || pText[0] == '\0' || !LabelProps.m_vColorSplits.empty())
+		return DoLabel(pRect, pText, Size, Align, LabelProps);
+
+	std::vector<std::string> vTokens;
+	SearchTokenize(m_SearchQuery.c_str(), vTokens);
+
+	std::vector<STextColorSplit> vSplits;
+	for(const std::string &Token : vTokens)
+	{
+		int Offset = 0;
+		int Length = 0;
+		if(SearchScore(pText, Token.c_str(), &Offset, &Length) == 0)
+			continue;
+
+		vSplits.emplace_back(Offset, Length, gs_SearchHighlightColor);
+	}
+
+	if(vSplits.empty())
+		return DoLabel(pRect, pText, Size, Align, LabelProps);
+
+	// The text render walks the splits in order and never looks back, so they have to arrive sorted
+	// and without overlaps: two tokens landing on the same word become one range.
+	std::sort(vSplits.begin(), vSplits.end(), [](const STextColorSplit &Left, const STextColorSplit &Right) {
+		return Left.m_CharIndex < Right.m_CharIndex;
+	});
+
+	SLabelProperties HighlightProps = LabelProps;
+	for(const STextColorSplit &Split : vSplits)
+	{
+		if(!HighlightProps.m_vColorSplits.empty() && Split.m_CharIndex <= HighlightProps.m_vColorSplits.back().m_CharIndex + HighlightProps.m_vColorSplits.back().m_Length)
+		{
+			STextColorSplit &Last = HighlightProps.m_vColorSplits.back();
+			Last.m_Length = std::max(Last.m_CharIndex + Last.m_Length, Split.m_CharIndex + Split.m_Length) - Last.m_CharIndex;
+			continue;
+		}
+
+		HighlightProps.m_vColorSplits.push_back(Split);
+	}
+
+	return DoLabel(pRect, pText, Size, Align, HighlightProps);
+}
+// EClient>
+
 void CUi::DoLabel(CUIElement::SUIElementRect &RectEl, const CUIRect *pRect, const char *pText, float Size, int Align, const SLabelProperties &LabelProps, int StrLen, const CTextCursor *pReadCursor) const
 {
 	const int Flags = GetFlagsForLabelProperties(LabelProps, pReadCursor);
@@ -1673,7 +1816,7 @@ bool CUi::DoScrollbarOption(const void *pId, int *pOption, const CUIRect *pRect,
 		pRect->VSplitMid(&Label, &ScrollBar, std::min(10.0f, pRect->w * 0.05f));
 
 	const float FontSize = Label.h * CUi::ms_FontmodHeight * 0.8f;
-	DoLabel(&Label, aBuf, FontSize, TEXTALIGN_ML);
+	DoLabelSearch(&Label, aBuf, FontSize, TEXTALIGN_ML); // EClient
 
 	Value = pScale->ToAbsolute(DoScrollbarH(pId, &ScrollBar, pScale->ToRelative(Value, Min, Max)), Min, Max);
 	if(NoClampValue && ((Value == Min && PrevValue < Min) || (Value == Max && PrevValue > Max)))

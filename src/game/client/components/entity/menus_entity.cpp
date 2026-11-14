@@ -35,6 +35,7 @@
 #include <functional>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 using namespace std::chrono_literals;
@@ -104,69 +105,160 @@ static bool SettingsModuleMatchesFilter(const CSettingsModule &Module)
 	return gs_SettingsModuleFilter == FILTER_NONE || (Module.m_Filters & gs_SettingsModuleFilter) != 0;
 }
 
-static bool SettingsModuleMatchesSearch(const CSettingsModule &Module, const char *pSearch)
+// The labels each module draws, by module order, so a search looks through the words the reader can
+// see rather than a keyword list written beside the module. Harvested off the modules themselves,
+// see HarvestSettingsModuleLabels and CUi::DoLabelSearch.
+static std::vector<std::vector<std::string>> gs_vSettingsModuleLabels;
+
+// What a hit is worth beyond where it sits inside the label, which CUi::SearchScore decides
+constexpr int SettingsSearchLabelStartBonus = 30; // The label begins with what was typed
+// Scaled by how much of the label the hit covers. This one trades against the gap between a whole
+// word and the start of one in CUi::SearchScore, which is 30 points: raise it and a short label the
+// query nearly fills wins over a longer label the query matches a whole word of ("Teeth" would beat
+// "Tee Size" for "tee"), lower it and a long label with the word loose inside it wins over the short
+// label the query is most of ("In-Game Automation" would beat "Input" for "in"). Both hold anywhere
+// between 110 and 120; the middle keeps the most room on either side.
+constexpr int SettingsSearchCoverageWeight = 115;
+constexpr int SettingsSearchHeadingWeight = 150; // Percent, for a hit in the module's heading
+constexpr int SettingsSearchSynonymScore = 20; // A keyword nobody can see on the page
+
+static const std::vector<std::string> &SettingsModuleLabels(size_t Index)
 {
+	// Before the first harvest there is nothing to look through, and the keyword lists carry the
+	// search on their own, the way they used to
+	static const std::vector<std::string> s_vNoLabels;
+	return Index < gs_vSettingsModuleLabels.size() ? gs_vSettingsModuleLabels[Index] : s_vNoLabels;
+}
+
+// Every whitespace-separated token of the query has to be found somewhere in the module for it to
+// show, and the score says how well it was found. Modules sort by it, so the closest match is the
+// one at the top of the page.
+static bool SettingsModuleMatchesSearch(const CSettingsModule &Module, size_t Index, const char *pSearch, int *pScore)
+{
+	if(pScore != nullptr)
+		*pScore = 0;
+
 	if(pSearch == nullptr || pSearch[0] == '\0')
 		return true;
 
-	std::string Search = pSearch;
-	size_t Start = 0;
+	std::vector<std::string> vTokens;
+	CUi::SearchTokenize(pSearch, vTokens);
 
-	while(Start < Search.size())
+	const std::vector<std::string> &vLabels = SettingsModuleLabels(Index);
+	int Total = 0;
+
+	for(const std::string &Token : vTokens)
 	{
-		// Skip spaces
-		while(Start < Search.size() && Search[Start] == ' ')
-			++Start;
+		int Best = 0;
 
-		if(Start >= Search.size())
-			break;
-
-		// Find token end
-		size_t End = Search.find(' ', Start);
-		if(End == std::string::npos)
-			End = Search.size();
-
-		// IMPORTANT: actual null-terminated string
-		std::string Token = Search.substr(Start, End - Start);
-
-		bool Found = false;
-
-		for(const std::string_view Term : Module.m_vSearchTerms)
+		for(size_t Label = 0; Label < vLabels.size(); ++Label)
 		{
-			if(!Term.empty() &&
-				str_find_nocase(Term.data(), Token.c_str()) != nullptr)
+			int Offset = 0;
+			int Length = 0;
+			int Score = CUi::SearchScore(vLabels[Label].c_str(), Token.c_str(), &Offset, &Length);
+			if(Score == 0)
+				continue;
+
+			// Where the token sits is only half of it: how much label there is around the hit says
+			// how much the label is about the thing being searched for. "in" is the whole of
+			// "Input" bar three letters, and a sliver of "Notify when in-game character is being
+			// moved", so it should mean the former long before it means the latter. A hit buried
+			// mid-word is a coincidence as often as not, so it earns none of this.
+			if(Score >= CUi::SEARCH_SCORE_WORD_START)
 			{
-				Found = true;
-				break;
+				const int LabelLength = (int)vLabels[Label].size();
+				if(Offset == 0)
+					Score += SettingsSearchLabelStartBonus;
+				if(LabelLength > 0)
+					Score += SettingsSearchCoverageWeight * Length / LabelLength;
+			}
+
+			// The first label a module draws is its heading, which names the module, so a hit
+			// there counts for half again as much as the same hit on a row below it. It scales
+			// rather than adds, or a long heading would lose its own name to whichever other
+			// module happens to have a short row label with the word in it.
+			if(Label == 0)
+				Score = Score * SettingsSearchHeadingWeight / 100;
+
+			Best = std::max(Best, Score);
+		}
+
+		// A keyword was put there to be searched for, so where the token sits inside it says
+		// nothing, and it counts for less than the text the reader can actually see.
+		if(Best < SettingsSearchSynonymScore)
+		{
+			for(const std::string_view Term : Module.m_vSearchTerms)
+			{
+				if(!Term.empty() && CUi::SearchScore(std::string(Term).c_str(), Token.c_str(), nullptr, nullptr) != 0)
+				{
+					Best = SettingsSearchSynonymScore;
+					break;
+				}
 			}
 		}
 
-		// every token must match
-		if(!Found)
+		// Every token has to be found somewhere
+		if(Best == 0)
 			return false;
 
-		Start = End + 1;
+		Total += Best;
 	}
+
+	if(pScore != nullptr)
+		*pScore = Total;
 
 	return true;
 }
 
 // The filter and the search narrow the page together: a chip picks the topic, the search box picks
 // the setting inside it.
-static bool SettingsModuleVisible(const CSettingsModule &Module, const char *pSearch)
+static bool SettingsModuleVisible(const CSettingsModule &Module, size_t Index, const char *pSearch, int *pScore = nullptr)
 {
-	return SettingsModuleMatchesFilter(Module) && SettingsModuleMatchesSearch(Module, pSearch);
+	return SettingsModuleMatchesFilter(Module) && SettingsModuleMatchesSearch(Module, Index, pSearch, pScore);
 }
 
 static bool HasMatchingSettingsModules(const std::vector<CSettingsModule> &vModules, const char *pSearch)
 {
-	for(const CSettingsModule &Module : vModules)
+	for(size_t Index = 0; Index < vModules.size(); ++Index)
 	{
-		if(SettingsModuleVisible(Module, pSearch))
+		if(SettingsModuleVisible(vModules[Index], Index, pSearch))
 			return true;
 	}
 
 	return false;
+}
+
+// Draws every module once into an off-screen rect with recording on, which collects the text of
+// every label they draw instead of rendering it. Called when the index is missing or might have
+// gone stale, never per frame.
+//
+// Nothing drawn off screen can be hovered, so no widget can become hot and none can become active,
+// but a widget that writes its setting back on the way through (a scrollbar rounding its value,
+// say) would still leave that behind. The config goes back the way it was afterwards, so a harvest
+// cannot change anything at all.
+static void HarvestSettingsModuleLabels(CUi *pUi, const std::vector<CSettingsModule> &vModules)
+{
+	gs_vSettingsModuleLabels.assign(vModules.size(), {});
+
+	const CConfig Snapshot = g_Config;
+	const bool WasEnabled = pUi->Enabled();
+	pUi->SetEnabled(false);
+
+	CUIRect OffScreen;
+	OffScreen.x = -100000.0f;
+	OffScreen.y = -100000.0f;
+	OffScreen.w = 400.0f; // About as wide as a real column, so nothing lays out differently
+	OffScreen.h = 100000.0f; // Tall enough that no module runs out of room
+
+	for(size_t Index = 0; Index < vModules.size(); ++Index)
+	{
+		pUi->SetSearchRecorder(&gs_vSettingsModuleLabels[Index]);
+		vModules[Index].m_Render(OffScreen, true); // As if searching, so every collapsed row opens
+		pUi->SetSearchRecorder(nullptr);
+	}
+
+	pUi->SetEnabled(WasEnabled);
+	g_Config = Snapshot;
 }
 
 //static int CountMatchingSettingsModules(const std::vector<CSettingsModule> &vModules, const char *pSearch)
@@ -250,7 +342,7 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 
 		TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 		TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_PIXEL_ALIGNMENT | ETextRenderFlags::TEXT_RENDER_FLAG_NO_OVERSIZE);
-		Ui()->DoLabel(&EditBox, FontIcon::MAGNIFYING_GLASS, EditBoxFontSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&EditBox, FontIcon::MAGNIFYING_GLASS, EditBoxFontSize, TEXTALIGN_ML);
 		TextRender()->SetRenderFlags(0);
 		TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 		EditBox.VSplitLeft(SearchWidth, nullptr, &EditBox);
@@ -284,7 +376,7 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 				pRect->Draw(Color, IGraphics::CORNER_ALL, ChipCorner);
 
 				TextRender()->TextColor(Active ? ChipActiveTextColor : ChipInactiveTextColor);
-				Ui()->DoLabel(pRect, pLabel, ChipFontSize, TEXTALIGN_MC);
+				Ui()->DoLabelSearch(pRect, pLabel, ChipFontSize, TEXTALIGN_MC);
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 				return Ui()->DoButtonLogic(pId, Active, pRect, BUTTONFLAG_LEFT | BUTTONFLAG_RIGHT);
@@ -328,7 +420,7 @@ void CMenus::RenderSettingsModuleSearchBar(CScrollRegion &ScrollRegion, CUIRect 
 		//else
 		//	str_format(aBuf, sizeof(aBuf), "Modules: %d · search matches: %d", ShownModules, SearchMatches);
 		//TextRender()->TextColor(ColorRGBA(0.8f, 0.8f, 0.8f, 1.0f));
-		//Ui()->DoLabel(&Status, aBuf, StatusFontSize, TEXTALIGN_ML);
+		//Ui()->DoLabelSearch(&Status, aBuf, StatusFontSize, TEXTALIGN_ML);
 		//TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 }
@@ -356,24 +448,41 @@ static void RenderSettingsModules(CScrollRegion &ScrollRegion, CUIRect &ColumnRe
 	}
 }
 
-static void PackSettingsModuleColumns(const std::vector<CSettingsModule> &vModules, const char *pSearch, bool HasSearch, std::vector<size_t> &vLeft, std::vector<size_t> &vRight)
+static void PackSettingsModuleColumns(const std::vector<CSettingsModule> &vModules, const char *pSearch, bool HasSearch, bool SingleColumn, std::vector<size_t> &vLeft, std::vector<size_t> &vRight)
 {
 	const bool Narrowed = gs_SettingsModuleFilter != FILTER_NONE || HasSearch;
+
+	// While searching, the closest match leads, so the module the query was aimed at is the one at
+	// the top of the page instead of whichever happens to be declared first.
+	std::vector<std::pair<int, size_t>> vMatches;
+	for(size_t Index = 0; Index < vModules.size(); ++Index)
+	{
+		const CSettingsModule &Module = vModules[Index];
+		int Score = 0;
+		if(!SettingsModuleVisible(Module, Index, pSearch, &Score))
+			continue;
+
+		if(Module.m_GetHeight(HasSearch) <= 0.0f)
+			continue;
+
+		vMatches.emplace_back(Score, Index);
+	}
+
+	if(HasSearch)
+	{
+		std::stable_sort(vMatches.begin(), vMatches.end(), [](const std::pair<int, size_t> &Left, const std::pair<int, size_t> &Right) {
+			return Left.first > Right.first;
+		});
+	}
 
 	float LeftHeight = 0.0f;
 	float RightHeight = 0.0f;
 
-	for(size_t Index = 0; Index < vModules.size(); ++Index)
+	for(const auto &[Score, Index] : vMatches)
 	{
 		const CSettingsModule &Module = vModules[Index];
-		if(!SettingsModuleVisible(Module, pSearch))
-			continue;
-
 		const float ModuleHeight = Module.m_GetHeight(HasSearch);
-		if(ModuleHeight <= 0.0f)
-			continue;
-
-		const bool Left = Narrowed ? LeftHeight <= RightHeight : Module.m_Column == ESettingsModuleColumn::LEFT;
+		const bool Left = SingleColumn || (Narrowed ? LeftHeight <= RightHeight : Module.m_Column == ESettingsModuleColumn::LEFT);
 
 		if(Left)
 		{
@@ -388,29 +497,31 @@ static void PackSettingsModuleColumns(const std::vector<CSettingsModule> &vModul
 	}
 }
 
-static void RenderSettingsModuleColumns(CScrollRegion &ScrollRegion, CUIRect MainView, const std::vector<CSettingsModule> &vModules, const char *pSearch)
+static void RenderSettingsModuleColumns(CUi *pUi, CScrollRegion &ScrollRegion, CUIRect MainView, const std::vector<CSettingsModule> &vModules, const char *pSearch)
 {
 	constexpr float MinColumnWidth = 350.0f;
 	const bool HasSearch = pSearch != nullptr && pSearch[0] != '\0';
+	const bool SingleColumn = (MainView.w - Margin) * 0.5f < MinColumnWidth;
 
 	std::vector<size_t> vLeft, vRight;
-	PackSettingsModuleColumns(vModules, pSearch, HasSearch, vLeft, vRight);
+	PackSettingsModuleColumns(vModules, pSearch, HasSearch, SingleColumn, vLeft, vRight);
 
-	if((MainView.w - Margin) * 0.5f < MinColumnWidth)
+	// The query is live while the modules draw, so every label colors the letters it matched
+	pUi->SetSearchQuery(pSearch);
+
+	if(SingleColumn)
 	{
-		std::vector<size_t> vBoth;
-		vBoth.reserve(vLeft.size() + vRight.size());
-		vBoth.insert(vBoth.end(), vLeft.begin(), vLeft.end());
-		vBoth.insert(vBoth.end(), vRight.begin(), vRight.end());
-		std::sort(vBoth.begin(), vBoth.end());
-		RenderSettingsModules(ScrollRegion, MainView, vModules, vBoth, HasSearch);
-		return;
+		RenderSettingsModules(ScrollRegion, MainView, vModules, vLeft, HasSearch);
+	}
+	else
+	{
+		CUIRect ViewLeft, ViewRight;
+		MainView.VSplitMid(&ViewLeft, &ViewRight, Margin);
+		RenderSettingsModules(ScrollRegion, ViewLeft, vModules, vLeft, HasSearch);
+		RenderSettingsModules(ScrollRegion, ViewRight, vModules, vRight, HasSearch);
 	}
 
-	CUIRect ViewLeft, ViewRight;
-	MainView.VSplitMid(&ViewLeft, &ViewRight, Margin);
-	RenderSettingsModules(ScrollRegion, ViewLeft, vModules, vLeft, HasSearch);
-	RenderSettingsModules(ScrollRegion, ViewRight, vModules, vRight, HasSearch);
+	pUi->SetSearchQuery("");
 }
 
 void CMenus::RenderSettingsEntity(CUIRect MainView)
@@ -802,7 +913,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 
 	// Left Side
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
-	Ui()->DoLabel(&Label, EcLocalize("Developers:"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Developers:"), HeadlineFontSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 
@@ -815,7 +926,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 		Label.VSplitLeft(TextRender()->TextWidth(LineSize, pName), &Label, &Button);
 		Button.VSplitLeft(MarginSmall, nullptr, &Button);
 		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
-		Ui()->DoLabel(&Label, pName, LineSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&Label, pName, LineSize, TEXTALIGN_ML);
 		if(Ui()->DoButton_FontIcon(&s_LinkButton1, FontIcon::ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, BUTTONFLAG_LEFT))
 			Client()->ViewLink("https://github.com/qxdFox");
 		TeePos1 = TeeRect.Center();
@@ -828,14 +939,14 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 		Label.VSplitLeft(TextRender()->TextWidth(LineSize, pName), &Label, &Button);
 		Button.VSplitLeft(MarginSmall, nullptr, &Button);
 		Button.w = LineSize, Button.h = LineSize, Button.y = Label.y + (Label.h / 2.0f - Button.h / 2.0f);
-		Ui()->DoLabel(&Label, pName, LineSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&Label, pName, LineSize, TEXTALIGN_ML);
 		if(Ui()->DoButton_FontIcon(&s_LinkButton2, FontIcon::ARROW_UP_RIGHT_FROM_SQUARE, 0, &Button, BUTTONFLAG_LEFT))
 			Client()->ViewLink("https://github.com/Miro8D");
 		TeePos2 = TeeRect.Center();
 	}
 
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
-	Ui()->DoLabel(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, "Hide Settings Tabs", LineSize, TEXTALIGN_ML);
 
 	static int s_ShowSettings = IsFlagSet(g_Config.m_ClHideSettingsTabs, SettingTab::SETTINGS);
 	DoButton_CheckBoxAutoVMarginAndSet(&s_ShowSettings, EcLocalize("Settings"), &s_ShowSettings, &LeftView, LineSize);
@@ -860,7 +971,7 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	char aDeathBuf[32];
 	str_format(aDeathBuf, sizeof(aDeathBuf), "Deaths: %" PRId64, GameClient()->m_EClient.DeathCount());
 
-	Ui()->DoLabel(&LeftView, aDeathBuf, FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&LeftView, aDeathBuf, FontSize, TEXTALIGN_ML);
 
 	auto FormatPlaytime = [](int64_t Time) -> const char * {
 		// playtime is saved in minutes
@@ -882,11 +993,11 @@ void CMenus::RenderEClientInfoPage(CUIRect MainView)
 	LeftView.HSplitTop(LineSize + FontSize * 0.5f, &LeftView, &LeftView);
 	char aPlaytimeBuf[48];
 	str_format(aPlaytimeBuf, sizeof(aPlaytimeBuf), "Playtime: %s", FormatPlaytime(GameClient()->m_EClient.Playtime()));
-	Ui()->DoLabel(&LeftView, aPlaytimeBuf, FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&LeftView, aPlaytimeBuf, FontSize, TEXTALIGN_ML);
 
 	// Right Side
 	RightView.HSplitTop(HeadlineHeight, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("Config Files"), HeadlineFontSize, TEXTALIGN_MR);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Config Files"), HeadlineFontSize, TEXTALIGN_MR);
 	RightView.HSplitTop(MarginSmall, nullptr, &RightView);
 
 	char aBuf[128 + IO_MAX_PATH_LENGTH];
@@ -1315,7 +1426,7 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 	RightView.VSplitRight(MarginSmall, &RightView, nullptr);
 
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
-	Ui()->DoLabel(&Label, EcLocalize("Status Bar"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Status Bar"), HeadlineFontSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatusBar, EcLocalize("Show status bar"), &g_Config.m_ClStatusBar, &LeftView, LineSize);
@@ -1326,14 +1437,14 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
 
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
-	Ui()->DoLabel(&Label, EcLocalize("Local Time"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Local Time"), HeadlineFontSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatusBar12HourClock, EcLocalize("Use 12 hour clock"), &g_Config.m_ClStatusBar12HourClock, &LeftView, LineSize);
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatusBarLocalTimeSeconds, EcLocalize("Show seconds on clock"), &g_Config.m_ClStatusBarLocalTimeSeconds, &LeftView, LineSize);
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
 
 	LeftView.HSplitTop(HeadlineHeight, &Label, &LeftView);
-	Ui()->DoLabel(&Label, EcLocalize("Colors"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Colors"), HeadlineFontSize, TEXTALIGN_ML);
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	static CButtonContainer s_StatusbarColor, s_StatusbarTextColor;
 
@@ -1345,28 +1456,28 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 	Ui()->DoScrollbarOption(&g_Config.m_ClStatusBarTextAlpha, &g_Config.m_ClStatusBarTextAlpha, &Button, EcLocalize("Text alpha"), 0, 100);
 
 	RightView.HSplitTop(HeadlineHeight, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("Status Bar Codes:"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Status Bar Codes:"), HeadlineFontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(MarginSmall, nullptr, &RightView);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("a = Angle"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("a = Angle"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("p = Ping"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("p = Ping"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("d = Prediction"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("d = Prediction"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("c = Position"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("c = Position"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("l = Local Time"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("l = Local Time"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("r = Race Time"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("r = Race Time"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("f = FPS"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("f = FPS"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("v = Velocity"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("v = Velocity"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("z = Zoom"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("z = Zoom"), FontSize, TEXTALIGN_ML);
 	RightView.HSplitTop(LineSize, &Label, &RightView);
-	Ui()->DoLabel(&Label, EcLocalize("_ or \' \' = Space"), FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("_ or \' \' = Space"), FontSize, TEXTALIGN_ML);
 	static int s_SelectedItem = -1;
 	static int s_TypeSelectedOld = -1;
 
@@ -1377,7 +1488,7 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 	StatusScheme.HSplitTop(MarginSmall, nullptr, &StatusScheme);
 
 	if(s_TypeSelectedOld >= 0)
-		Ui()->DoLabel(&ItemLabel, GameClient()->m_StatusBar.m_StatusItemTypes[s_TypeSelectedOld].m_aDesc, FontSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&ItemLabel, GameClient()->m_StatusBar.m_StatusItemTypes[s_TypeSelectedOld].m_aDesc, FontSize, TEXTALIGN_ML);
 
 	StatusScheme.VSplitMid(&StatusButtons, &StatusScheme, MarginSmall);
 	StatusScheme.VSplitMid(&Label, &StatusScheme, MarginSmall);
@@ -1388,7 +1499,7 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 		GameClient()->m_StatusBar.UpdateStatusBarScheme(g_Config.m_ClStatusBarScheme);
 		s_SelectedItem = -1;
 	}
-	Ui()->DoLabel(&Label, EcLocalize("Status Scheme:"), FontSize, TEXTALIGN_MR);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Status Scheme:"), FontSize, TEXTALIGN_MR);
 	static CLineInput s_StatusScheme(g_Config.m_ClStatusBarScheme, sizeof(g_Config.m_ClStatusBarScheme));
 	s_StatusScheme.SetEmptyText("");
 	Ui()->DoEditBox(&s_StatusScheme, &StatusScheme, EditBoxFontSize);
@@ -1438,7 +1549,7 @@ void CMenus::RenderSettingsStatusbar(CUIRect MainView)
 	StatusBar.VSplitLeft(MarginExtraSmall, nullptr, &StatusBar);
 	if(ItemCount <= 0)
 	{
-		Ui()->DoLabel(&StatusBar, EcLocalize("No status bar items configured"), FontSize, TEXTALIGN_MC);
+		Ui()->DoLabelSearch(&StatusBar, EcLocalize("No status bar items configured"), FontSize, TEXTALIGN_MC);
 		return;
 	}
 
@@ -1620,7 +1731,7 @@ void CMenus::RenderSettingsPlayerActions(CUIRect MainView)
 
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
 	Button.VSplitLeft(100.0f, &Label, &Button);
-	Ui()->DoLabel(&Label, EcLocalize("Name:"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Name:"), 14.0f, TEXTALIGN_ML);
 	static CLineInput s_NameInput;
 	s_NameInput.SetBuffer(s_aBindName, sizeof(s_aBindName));
 	s_NameInput.SetEmptyText("Name");
@@ -1629,7 +1740,7 @@ void CMenus::RenderSettingsPlayerActions(CUIRect MainView)
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
 	Button.VSplitLeft(100.0f, &Label, &Button);
-	Ui()->DoLabel(&Label, EcLocalize("Command:"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Command:"), 14.0f, TEXTALIGN_ML);
 	static CLineInput s_BindInput;
 	s_BindInput.SetBuffer(s_aBindCommand, sizeof(s_aBindCommand));
 	s_BindInput.SetEmptyText(EcLocalize("Command"));
@@ -1672,16 +1783,16 @@ void CMenus::RenderSettingsPlayerActions(CUIRect MainView)
 
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, "Use left mouse to select", 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, "Use left mouse to select", 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, "Use right mouse to swap with selected", 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, "Use right mouse to swap with selected", 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, "Use middle mouse select without copy", 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, "Use middle mouse select without copy", 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, "To use the name of the target player do \"%s\"", 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, "To use the name of the target player do \"%s\"", 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, "To get the Client Id do \"%d\"", 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, "To get the Client Id do \"%d\"", 14.0f, TEXTALIGN_ML);
 
 	// RenderTee
 	{
@@ -1813,7 +1924,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
 	Button.VSplitLeft(100.0f, &Label, &Button);
-	Ui()->DoLabel(&Label, EcLocalize("Name:"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Name:"), 14.0f, TEXTALIGN_ML);
 	static CLineInput s_NameInput;
 	s_NameInput.SetBuffer(s_aBindName, sizeof(s_aBindName));
 	s_NameInput.SetEmptyText("Name");
@@ -1822,7 +1933,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	LeftView.HSplitTop(LineSize, &Button, &LeftView);
 	Button.VSplitLeft(100.0f, &Label, &Button);
-	Ui()->DoLabel(&Label, EcLocalize("Command:"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Command:"), 14.0f, TEXTALIGN_ML);
 	static CLineInput s_BindInput;
 	s_BindInput.SetBuffer(s_aBindCommand, sizeof(s_aBindCommand));
 	s_BindInput.SetEmptyText(EcLocalize("Command"));
@@ -1865,11 +1976,11 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 
 	LeftView.HSplitTop(MarginSmall, nullptr, &LeftView);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, EcLocalize("Use left mouse to select"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Use left mouse to select"), 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, EcLocalize("Use right mouse to swap with selected"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Use right mouse to swap with selected"), 14.0f, TEXTALIGN_ML);
 	LeftView.HSplitTop(LineSize, &Label, &LeftView);
-	Ui()->DoLabel(&Label, EcLocalize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Use middle mouse select without copy"), 14.0f, TEXTALIGN_ML);
 
 	CUIRect KeyLabel;
 	LeftView.HSplitBottom(LineSize, &LeftView, &Button);
@@ -1885,7 +1996,7 @@ void CMenus::RenderSettingsBindwheel(CUIRect MainView)
 	CUIRect CopyRight;
 	MainView.HSplitBottom(20.0f, 0, &CopyRight);
 	CopyRight.VSplitLeft(255.0f, &CopyRight, &CopyRight);
-	Ui()->DoLabel(&CopyRight, "© Tater", 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&CopyRight, "© Tater", 14.0f, TEXTALIGN_ML);
 }
 
 void CMenus::RenderSettingsWarList(CUIRect MainView)
@@ -1915,7 +2026,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	// ======WAR ENTRIES======
 	Column1.HSplitTop(HeadlineHeight, &Label, &Column1);
 	Label.VSplitRight(25.0f, &Label, &Button);
-	Ui()->DoLabel(&Label, EcLocalize("War Entries"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("War Entries"), HeadlineFontSize, TEXTALIGN_ML);
 	Column1.HSplitTop(MarginSmall, nullptr, &Column1);
 
 	static CButtonContainer s_ReverseEntries;
@@ -2034,9 +2145,9 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		if(pEntry->m_TempEntry)
 			str_append(aBuf, " ⏳");
 
-		Ui()->DoLabel(&EntryRect, aBuf, StandardFontSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&EntryRect, aBuf, StandardFontSize, TEXTALIGN_ML);
 		TextRender()->TextColor(pEntry->m_pWarType->m_Color);
-		Ui()->DoLabel(&WarType, pEntry->m_pWarType->m_aWarName, StandardFontSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&WarType, pEntry->m_pWarType->m_aWarName, StandardFontSize, TEXTALIGN_ML);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 		if(pEntry->m_TempEntry)
@@ -2088,7 +2199,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	// ======WAR ENTRY EDITING======
 	Column2.HSplitTop(HeadlineHeight, &Label, &Column2);
 	Label.VSplitRight(25.0f, &Label, &Button);
-	Ui()->DoLabel(&Label, EcLocalize("Edit Entry"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Edit Entry"), HeadlineFontSize, TEXTALIGN_ML);
 	Column2.HSplitTop(MarginSmall, nullptr, &Column2);
 	Column2.HSplitTop(HeadlineFontSize, &Button, &Column2);
 
@@ -2181,14 +2292,14 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		float Shade = 0.0f;
 		Button.Draw(ColorRGBA(Shade, Shade, Shade, 0.25f), 15, 3.0f);
 		TextRender()->TextColor(s_pSelectedType->m_Color);
-		Ui()->DoLabel(&Button, s_pSelectedType->m_aWarName, HeadlineFontSize, TEXTALIGN_MC);
+		Ui()->DoLabelSearch(&Button, s_pSelectedType->m_aWarName, HeadlineFontSize, TEXTALIGN_MC);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 	}
 
 	Column2.HSplitBottom(200.0f, nullptr, &Column2);
 
 	Column2.HSplitTop(HeadlineHeight, &Label, &Column2);
-	Ui()->DoLabel(&Label, EcLocalize("Settings"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Settings"), HeadlineFontSize, TEXTALIGN_ML);
 	Column2.HSplitTop(MarginSmall, nullptr, &Column2);
 
 	DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarList, EcLocalize("Enable warlist"), &g_Config.m_ClWarList, &Column2, LineSize);
@@ -2197,7 +2308,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	// ======WAR TYPE EDITING======
 
 	Column3.HSplitTop(HeadlineHeight, &Label, &Column3);
-	Ui()->DoLabel(&Label, EcLocalize("War Groups"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("War Groups"), HeadlineFontSize, TEXTALIGN_ML);
 	Column3.HSplitTop(MarginSmall, nullptr, &Column3);
 
 	static char s_aTypeName[MAX_WARLIST_TYPE_LENGTH];
@@ -2278,7 +2389,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		}
 
 		TextRender()->TextColor(pType->m_Color);
-		Ui()->DoLabel(&TypeRect, pType->m_aWarName, StandardFontSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&TypeRect, pType->m_aWarName, StandardFontSize, TEXTALIGN_ML);
 		TextRender()->TextColor(TextRender()->DefaultTextColor());
 
 		char aBuf[64];
@@ -2331,7 +2442,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 	// ======ONLINE PLAYER LIST======
 
 	Column4.HSplitTop(HeadlineHeight, &Label, &Column4);
-	Ui()->DoLabel(&Label, EcLocalize("Online Players"), HeadlineFontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Label, EcLocalize("Online Players"), HeadlineFontSize, TEXTALIGN_ML);
 	Column4.HSplitTop(MarginSmall, nullptr, &Column4);
 
 	CUIRect PlayerList;
@@ -2378,7 +2489,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		ColorRGBA NameButtonColor = Ui()->CheckActiveItem(&s_vNameButtons[ClientId]) ? ColorRGBA(1, 1, 1, 0.75f) :
 											       (Ui()->HotItem() == &s_vNameButtons[ClientId] ? ColorRGBA(1, 1, 1, 0.33f) : ColorRGBA(1, 1, 1, 0.0f));
 		PlayerRect.Draw(NameButtonColor, IGraphics::CORNER_L, 5.0f);
-		Ui()->DoLabel(&NameRect, GameClient()->m_aClients[ClientId].m_aName, StandardFontSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&NameRect, GameClient()->m_aClients[ClientId].m_aName, StandardFontSize, TEXTALIGN_ML);
 		if(Ui()->DoButtonLogic(&s_vNameButtons[ClientId], false, &PlayerRect, BUTTONFLAG_ALL))
 		{
 			s_IsName = 1;
@@ -2390,7 +2501,7 @@ void CMenus::RenderSettingsWarList(CUIRect MainView)
 		ColorRGBA ClanButtonColor = Ui()->CheckActiveItem(&s_vClanButtons[ClientId]) ? ColorRGBA(1, 1, 1, 0.75f) :
 											       (Ui()->HotItem() == &s_vClanButtons[ClientId] ? ColorRGBA(1, 1, 1, 0.33f) : ColorRGBA(1, 1, 1, 0.0f));
 		ClanRect.Draw(ClanButtonColor, IGraphics::CORNER_R, 5.0f);
-		Ui()->DoLabel(&ClanRect, GameClient()->m_aClients[ClientId].m_aClan, StandardFontSize, TEXTALIGN_ML);
+		Ui()->DoLabelSearch(&ClanRect, GameClient()->m_aClients[ClientId].m_aClan, StandardFontSize, TEXTALIGN_ML);
 		if(Ui()->DoButtonLogic(&s_vClanButtons[ClientId], false, &ClanRect, BUTTONFLAG_ALL))
 		{
 			s_IsName = 0;
@@ -2516,20 +2627,20 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 				char aBuf[256];
 				Rect.HSplitTop(Height, &Label, &Rect);
 				str_format(aBuf, sizeof(aBuf), EcLocalize("Name: %s"), Profile.m_Name);
-				Ui()->DoLabel(&Label, aBuf, Height / LineSize * FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label, aBuf, Height / LineSize * FontSize, TEXTALIGN_ML);
 				Rect.HSplitTop(Height, &Label, &Rect);
 				str_format(aBuf, sizeof(aBuf), EcLocalize("Clan: %s"), Profile.m_Clan);
-				Ui()->DoLabel(&Label, aBuf, Height / LineSize * FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label, aBuf, Height / LineSize * FontSize, TEXTALIGN_ML);
 				Rect.HSplitTop(Height, &Label, &Rect);
 				str_format(aBuf, sizeof(aBuf), EcLocalize("Skin: %s"), Profile.m_SkinName);
-				Ui()->DoLabel(&Label, aBuf, Height / LineSize * FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label, aBuf, Height / LineSize * FontSize, TEXTALIGN_ML);
 			}
 			else
 			{
 				Rect.HSplitTop(Height, &Label, &Rect);
-				Ui()->DoLabel(&Label, Profile.m_Name, Height / LineSize * FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label, Profile.m_Name, Height / LineSize * FontSize, TEXTALIGN_ML);
 				Rect.HSplitTop(Height, &Label, &Rect);
-				Ui()->DoLabel(&Label, Profile.m_Clan, Height / LineSize * FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label, Profile.m_Clan, Height / LineSize * FontSize, TEXTALIGN_ML);
 			}
 		}
 	};
@@ -2542,7 +2653,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 		{
 			CUIRect Skin;
 			Profiles.HSplitTop(LineSize, &Label, &Profiles);
-			Ui()->DoLabel(&Label, EcLocalize("Your profile"), FontSize, TEXTALIGN_ML);
+			Ui()->DoLabelSearch(&Label, EcLocalize("Your profile"), FontSize, TEXTALIGN_ML);
 			Profiles.HSplitTop(MarginSmall, nullptr, &Profiles);
 			Profiles.HSplitTop(50.0f, &Skin, &Profiles);
 			FRenderProfile(Skin, CurrentProfile, true);
@@ -2552,7 +2663,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 			{
 				Profiles.HSplitTop(MarginSmall, nullptr, &Profiles);
 				Profiles.HSplitTop(LineSize, &Label, &Profiles);
-				Ui()->DoLabel(&Label, EcLocalize("After Load"), FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label, EcLocalize("After Load"), FontSize, TEXTALIGN_ML);
 				Profiles.HSplitTop(MarginSmall, nullptr, &Profiles);
 				Profiles.HSplitTop(50.0f, &Skin, &Profiles);
 
@@ -2704,7 +2815,7 @@ void CMenus::RenderSettingsProfiles(CUIRect MainView)
 	CUIRect Tater;
 	MainView.HSplitBottom(-30.0f, 0, &Tater);
 	Tater.VSplitLeft(135.0f, &Tater, &Tater);
-	Ui()->DoLabel(&Tater, "© Tater", 14.0f, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&Tater, "© Tater", 14.0f, TEXTALIGN_ML);
 }
 
 void CMenus::RenderSettingsEClient(CUIRect MainView)
@@ -2755,9 +2866,13 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 		Temp.Draw4(TopLeft.WithAlpha(NEWRectAlpha), TopRight.WithAlpha(NEWRectAlpha), BottomLeft.WithAlpha(NEWRectAlpha), BottomRight.WithAlpha(NEWRectAlpha), IGraphics::CORNER_ALL, 3.0f);
 
-		Ui()->DoLabel(&Temp, pText, Temp.h * CUi::ms_FontmodHeight * 0.7f, TEXTALIGN_MC);
+		Ui()->DoLabelSearch(&Temp, pText, Temp.h * CUi::ms_FontmodHeight * 0.7f, TEXTALIGN_MC);
 	};
 
+	// The third field of a module is its keyword list, and it is only for synonyms now: words the
+	// module is about that are written nowhere in it, like "kelvin" for Night Shift. The labels are
+	// searched directly (see HarvestSettingsModuleLabels), so listing a word that is already on
+	// screen adds nothing, and a module with nothing to add leaves the list empty.
 	std::vector<CSettingsModule> vModules;
 
 	CUIRect Label, Button;
@@ -2766,7 +2881,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_CHAT,
-		{"notify", "notifications", "join", "message", "last", "player", "name", "moved", "tabbed", "out", "flash", "window"},
+		{"join", "tabbed", "flash", "window"},
 		[](bool HasSearch) {
 			int OffSet = 0;
 			if(g_Config.m_ClNotifyOnJoin || HasSearch)
@@ -2781,7 +2896,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Notifications"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Notifications"), HeaderSize, HeaderAlignment);
 			{
 				auto RenderToggleEditBox = [&](const char *pLabel, int *pConfigValue, CLineInput *pLineInput, char *pBuffer, int BufferSize, const char *pEmptyText, float Length) {
 					ModuleRect.HSplitTop(20.0f, &Button, &MainView);
@@ -2812,7 +2927,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					Ui()->DoEditBox(pLineInput, &Button, EditBoxFontSize);
 
 					ModuleRect.HSplitTop(3.0f, &Button, &ModuleRect);
-					Ui()->DoLabel(&ModuleRect, pLabel, LabelFontSize, TEXTALIGN_LEFT);
+					Ui()->DoLabelSearch(&ModuleRect, pLabel, LabelFontSize, TEXTALIGN_LEFT);
 					ModuleRect.HSplitTop(-3.0f, &Button, &ModuleRect);
 				};
 
@@ -2859,7 +2974,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 						Ui()->DoEditBox(&s_LastMessage, &Button, EditBoxFontSize);
 
 						ModuleRect.HSplitTop(20.0f, &Button, &ModuleRect);
-						Ui()->DoLabel(&ModuleRect, "Text to Show", 12.5f, TEXTALIGN_ML);
+						Ui()->DoLabelSearch(&ModuleRect, "Text to Show", 12.5f, TEXTALIGN_ML);
 						ModuleRect.HSplitTop(-20.0f, &Button, &ModuleRect);
 
 						static CButtonContainer s_LastColor;
@@ -2880,7 +2995,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_CHAT,
-		{"auto", "reply", "tabbed", "muted", "reply", "message", "tab"},
+		{"tabbed", "muted"},
 		[](bool HasSearch) {
 			return 80.0f;
 		},
@@ -2889,7 +3004,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Auto Reply"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Auto Reply"), HeaderSize, HeaderAlignment);
 			{
 				auto RenderToggleEditBox = [&](const char *pLabel, int *pConfigValue, CLineInput *pLineInput, char *pBuffer, int BufferSize, const char *pEmptyText, float Length) {
 					ModuleRect.HSplitTop(20.0f, &Button, &MainView);
@@ -2927,7 +3042,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_HUD | FILTER_VISUAL | FILTER_WARLIST,
-		{"player", "indicator", "size", "offset", "distance", "warlist", "groups", "colors", "freeze", "circle", "opacity"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			int Size = 80.0f;
 			if(g_Config.m_ClPlayerIndicator || HasSearch)
@@ -2948,7 +3063,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Player Indicator"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Player Indicator"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClPlayerIndicator, EcLocalize("Show any enabled Indicators"), &g_Config.m_ClPlayerIndicator, &ModuleRect, LineSize);
 
@@ -3004,7 +3119,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_CHAT,
-		{"chat", "typing", "indicator", "show", "mute", "console", "hide", "enemy", "friend", "spec", "server", "client", "warlist", "client", "id", "preview", "math", "expression", "calculator"},
+		{"mute", "console", "hide", "enemy", "friend", "spec", "server", "warlist", "expression", "calculator"},
 		[](bool HasSearch) {
 			return 355.0f;
 		},
@@ -3013,7 +3128,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Chat Settings"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Chat Settings"), HeaderSize, HeaderAlignment);
 			{
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				if(DoButton_CheckBox(&g_Config.m_ClChatBubble, ("Show Typing Indicator"), g_Config.m_ClChatBubble, &Button))
@@ -3069,7 +3184,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				RenderPrefixOption(&s_ClientInput, "Client Prefix", &g_Config.m_ClChatClientPrefix, g_Config.m_ClClientPrefix, "alt0151");
 
 				ModuleRect.HSplitTop(55.0f, &Button, &ModuleRect);
-				Ui()->DoLabel(&Button, EcLocalize("Chat Preview"), FontSize + 3, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Button, EcLocalize("Chat Preview"), FontSize + 3, TEXTALIGN_ML);
 				ModuleRect.HSplitTop(-15.0f, &Button, &ModuleRect);
 
 				RenderChatPreview(ModuleRect);
@@ -3081,7 +3196,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_VISUAL | FILTER_NEW,
-		{"night", "shift", "warm", "temperature", "kelvin", "blue", "light", "eye", "strain", "sunset", "sunrise", "schedule", "latitude", "longitude"},
+		{"temperature", "kelvin", "eye", "strain", "sunset", "sunrise", "schedule"},
 		[&](bool HasSearch) {
 			const bool Scheduled = g_Config.m_ClNightShiftSchedule != NIGHT_SHIFT_SCHEDULE_ALWAYS;
 			float Height = HeaderHeight + LineSize * 4.0f + MarginSmall + MarginExtraSmall + MarginSmall;
@@ -3098,7 +3213,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("Night Shift"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Night Shift"), HeaderSize, HeaderAlignment);
 			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.5f);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNightShift, EcLocalize("Use Night Shift"), &g_Config.m_ClNightShift, &ModuleRect, LineSize);
@@ -3153,13 +3268,13 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				CUIRect EditBoxRect;
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				Button.VSplitMid(&Label, &EditBoxRect, std::min(10.0f, Button.w * 0.05f));
-				Ui()->DoLabel(&Label, EcLocalize("Latitude"), FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label, EcLocalize("Latitude"), FontSize, TEXTALIGN_ML);
 				if(Ui()->DoEditBox(&s_LatitudeInput, &EditBoxRect, EditBoxFontSize))
 					g_Config.m_ClNightShiftLatitude = std::clamp((int)(s_LatitudeInput.GetFloat() * 100.0f), -9000, 9000);
 
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				Button.VSplitMid(&Label, &EditBoxRect, std::min(10.0f, Button.w * 0.05f));
-				Ui()->DoLabel(&Label, EcLocalize("Longitude"), FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label, EcLocalize("Longitude"), FontSize, TEXTALIGN_ML);
 				if(Ui()->DoEditBox(&s_LongitudeInput, &EditBoxRect, EditBoxFontSize))
 					g_Config.m_ClNightShiftLongitude = std::clamp((int)(s_LongitudeInput.GetFloat() * 100.0f), -18000, 18000);
 
@@ -3182,7 +3297,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					break;
 				}
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-				Ui()->DoLabel(&Button, aBuf, FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Button, aBuf, FontSize, TEXTALIGN_ML);
 			}
 
 			if(g_Config.m_ClNightShiftSchedule != NIGHT_SHIFT_SCHEDULE_ALWAYS || HasSearch)
@@ -3199,7 +3314,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			else
 				str_format(aStatus, sizeof(aStatus), EcLocalize("Local time %02d:%02d, shift at %d%%"), Now / 60, Now % 60, (int)(CNightShift::Strength() * 100.0f + 0.5f));
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, aStatus, FontSize, TEXTALIGN_ML);
+			Ui()->DoLabelSearch(&Button, aStatus, FontSize, TEXTALIGN_ML);
 
 			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
 		},
@@ -3209,7 +3324,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_GAMEPLAY | FILTER_VISUAL,
-		{"ghost", "prediction", "players", "swap", "hide"},
+		{"prediction"},
 		[](bool HasSearch) {
 			return 180.0f;
 		},
@@ -3218,7 +3333,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Ghost Tools"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Ghost Tools"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcShowOthersGhosts, EcLocalize("Show unpredicted ghosts for other players"), &g_Config.m_EcShowOthersGhosts, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcSwapGhosts, EcLocalize("Swap ghosts and normal players"), &g_Config.m_EcSwapGhosts, &ModuleRect, LineSize);
@@ -3240,7 +3355,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_MISC,
-		{"performance", "high", "lower", "process", "discord", "priority", "ddnet"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			return 80.0f;
 		},
@@ -3249,7 +3364,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Performance"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Performance"), HeaderSize, HeaderAlignment);
 
 			if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClHighProcessPriority, ("High DDNet Process Priority"), &g_Config.m_ClHighProcessPriority, &ModuleRect, LineSize))
 				GameClient()->m_EClient.SetDDNetProcessPriority(g_Config.m_ClHighProcessPriority);
@@ -3267,7 +3382,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_GAMEPLAY | FILTER_NETWORK | FILTER_NEW,
-		{"fast", "input", "reduced", "visual", "delay", "tick", "others", "flux", "classic", "mode", "prediction", "offset", "uncapped"},
+		{"reduced", "delay", "classic", "uncapped"},
 		[](bool HasSearch) {
 			int Size = 122.0f;
 			if(g_Config.m_EcFastInput || HasSearch)
@@ -3282,7 +3397,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
 			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.2f);
 			{
 				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFastInput, EcLocalize("Enable Fast Input"), &g_Config.m_EcFastInput, &ModuleRect, LineSize))
@@ -3303,7 +3418,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 					char aBuf[64];
 					str_format(aBuf, sizeof(aBuf), "%s: %.2f %s", EcLocalize("Prediction offset"), Value / 100.0f, EcLocalize("ticks"));
-					Ui()->DoLabel(&FastInputLabel, aBuf, FastInputLabel.h * CUi::ms_FontmodHeight * 0.8f, TEXTALIGN_ML);
+					Ui()->DoLabelSearch(&FastInputLabel, aBuf, FastInputLabel.h * CUi::ms_FontmodHeight * 0.8f, TEXTALIGN_ML);
 
 					const float Relative = CUi::ms_LinearScrollbarScale.ToRelative(Value, 0, 500);
 					Value = CUi::ms_LinearScrollbarScale.ToAbsolute(Ui()->DoScrollbarH(&g_Config.m_EcFluxInputAmount, &FastInputScrollBar, Relative), 0, 500);
@@ -3329,11 +3444,11 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		},
 	});
 
-	/* Anti Ping Smoothing */
+	/* AntiPing Smoothing */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_NETWORK | FILTER_GAMEPLAY,
-		{"anti", "ping", "smoothing", "new", "algorithm", "optimistic", "prediction", "stable", "direction", "remember", "instability", "longer", "uncertainty", "duration"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			return 120.0f;
 		},
@@ -3342,7 +3457,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Anti Ping Smoothing"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("AntiPing Smoothing"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcAntiPingImproved, EcLocalize("Use new smoothing algorithm"), &g_Config.m_EcAntiPingImproved, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcAntiPingStableDirection, EcLocalize("Optimistic prediction in stable direction"), &g_Config.m_EcAntiPingStableDirection, &ModuleRect, LineSize);
@@ -3358,7 +3473,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_HUD,
-		{"media", "music", "island", "visualizer", "size", "alignment", "bottom", "center"},
+		{"music"},
 		[](bool HasSearch) {
 			int Offset = 0;
 
@@ -3375,7 +3490,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			RenderHudEditorButton(&Id, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Media Island"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Media Island"), HeaderSize, HeaderAlignment);
 
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMediaIsland, "Enable media island", &g_Config.m_ClMediaIsland, &ModuleRect, LineSize);
@@ -3407,7 +3522,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_GAMEPLAY,
-		{"gores", "mode", "advanced", "disable", "weapons", "automation", "enable", "gametype"},
+		{"weapons", "automation"},
 		[](bool HasSearch) {
 			return 100.0f;
 		},
@@ -3416,7 +3531,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Gores Mode"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Gores Mode"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClGoresMode, EcLocalize("Enable Gores Mode"), &g_Config.m_ClGoresMode, &ModuleRect, LineSize);
 
@@ -3429,7 +3544,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_MISC | FILTER_VISUAL | FILTER_HUD,
-		{"miscellaneous", "custom", "font", "options", "ping", "circles", "names", "old", "team", "moving", "tiles", "entities", "entity", "cursor"},
+		{"entities"},
 		[](bool HasSearch) {
 			return 175.0f;
 		},
@@ -3438,7 +3553,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Miscellaneous"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Miscellaneous"), HeaderSize, HeaderAlignment);
 			{
 				// T-Client
 				{
@@ -3465,7 +3580,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					FontDropDownRect.VSplitRight(20.0f, &FontDropDownRect, &FontDirectory);
 					FontDropDownRect.VSplitRight(MarginSmall, &FontDropDownRect, nullptr);
 
-					Ui()->DoLabel(&Label, EcLocalize("Custom Font:"), FontSize, TEXTALIGN_ML);
+					Ui()->DoLabelSearch(&Label, EcLocalize("Custom Font:"), FontSize, TEXTALIGN_ML);
 					const int FontSelectedNew = Ui()->DoDropDown(&FontDropDownRect, FontSelectedOld, s_FontDropDownNames.data(), s_FontDropDownNames.size(), s_FontDropDownState);
 					Ui()->UpdatePopupMenuOffset(&s_FontDropDownState.m_SelectionPopupContext, FontDropDownRect.x, FontDropDownRect.y);
 
@@ -3530,7 +3645,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_HUD | FILTER_NEW,
-		{"stats", "fps", "ping", "snap", "rate", "show"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			return 100;
 		},
@@ -3539,7 +3654,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("Stats"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Stats"), HeaderSize, HeaderAlignment);
 			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.0f);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowFps, EcLocalize("Show FPS"), &g_Config.m_ClStatisticsShowFps, &ModuleRect, LineSize);
@@ -3553,7 +3668,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_GAMEPLAY | FILTER_NEW,
-		{"ingame", "in-game", "game", "automation", "auto", "dummy", "connect", "switch", "spawn", "anti", "block"},
+		{"ingame", "connect"},
 		[](bool HasSearch) {
 			return 80.0f;
 		},
@@ -3562,7 +3677,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("In-Game Automation"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("In-Game Automation"), HeaderSize, HeaderAlignment);
 			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.8f);
 
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
@@ -3596,7 +3711,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_CHAT | FILTER_VISUAL,
-		{"chat", "bubble", "player", "fade", "in", "out", "size"},
+		{"fade"},
 		[](bool HasSearch) {
 			return 145.0f;
 		},
@@ -3605,7 +3720,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Chat Bubbles"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Chat Bubbles"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClChatBubbles, EcLocalize("Show Chatbubbles above players"), &g_Config.m_ClChatBubbles, &ModuleRect, LineSize);
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
@@ -3627,7 +3742,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_MISC,
-		{"menu", "settings", "friend", "prefix", "icon", "show", "others", "in", "menu", "spec"},
+		{"prefix"},
 		[](bool HasSearch) {
 			return 100.0f;
 		},
@@ -3636,7 +3751,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Menu Settings"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Menu Settings"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowOthersInMenu, EcLocalize("Show Settings Icon When Tee's in a Menu"), &g_Config.m_ClShowOthersInMenu, &ModuleRect, LineSize);
 
@@ -3649,7 +3764,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_GAMEPLAY,
-		{"freeze", "kill", "protection", "not", "moving", "only", "full", "frozen", "team", "in", "view", "wait", "until", "milli"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			int Offset = 0;
 			if(g_Config.m_ClFreezeKill || HasSearch)
@@ -3666,7 +3781,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Freeze Kill"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Freeze Kill"), HeaderSize, HeaderAlignment);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeKill, EcLocalize("Kill on Freeze"), &g_Config.m_ClFreezeKill, &ModuleRect, LineSize);
 
 			if(g_Config.m_ClFreezeKill || HasSearch)
@@ -3690,7 +3805,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_NETWORK | FILTER_GAMEPLAY,
-		{"latency", "tools", "prediction", "anti", "ping", "margin", "frozen", "freeze"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			int Offset = 0;
 			if(g_Config.m_EcRemoveAnti || HasSearch)
@@ -3705,7 +3820,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Anti Latency Tools"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Anti Latency Tools"), HeaderSize, HeaderAlignment);
 			{
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				Ui()->DoScrollbarOption(&g_Config.m_ClPredictionMargin, &g_Config.m_ClPredictionMargin, &Button, EcLocalize("Prediction Margin"), 10, 75, &CUi::ms_LinearScrollbarScale, CUi::SCROLLBAR_OPTION_NOCLAMPVALUE, "ms");
@@ -3735,7 +3850,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_VISUAL,
-		{"cosmetic", "settings", "small", "skin", "effects", "color", "others", "rainbow", "tees", "weapons", "hook", "others", "speed"},
+		{"effects"},
 		[&](bool HasSearch) {
 			int Offset = 0;
 			if(RainbowOn || HasSearch)
@@ -3748,7 +3863,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Cosmetic Settings"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Cosmetic Settings"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClSmallSkins, ("Small Skins"), &g_Config.m_ClSmallSkins, &ModuleRect, LineMargin);
 
@@ -3841,7 +3956,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_VISUAL,
-		{"server", "rainbow", "preview", "color", "hue", "saturation", "lightness", "alpha"},
+		{"preview", "color", "hue", "saturation", "lightness", "alpha"},
 		[](bool HasSearch) {
 			return 255;
 		},
@@ -3850,7 +3965,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Server-Side Rainbow"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Server-Side Rainbow"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClServerRainbow, EcLocalize("Enable Serverside Rainbow"), &g_Config.m_ClServerRainbow, &ModuleRect, LineSize);
 
@@ -4004,7 +4119,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 				char aBuf[32];
 				str_format(aBuf, sizeof(aBuf), "%s: %03d", apLabels[i], round_to_int(Color[i] * 255.0f));
-				Ui()->DoLabel(&Label2, aBuf, 14.0f, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&Label2, aBuf, 14.0f, TEXTALIGN_ML);
 
 				ColorRGBA HandleColor;
 				Graphics()->TextureClear();
@@ -4093,14 +4208,14 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_WARLIST,
-		{"warlist", "sweat", "skin"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) { return 150.0f; },
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Warlist"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Warlist"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClWarList, ("Use Warlist"), &g_Config.m_ClWarList, &ModuleRect, LineMargin);
 			ModuleRect.HSplitTop(5, &Button, &ModuleRect);
@@ -4121,7 +4236,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				Button.VSplitLeft(0.0f, &SkinLabel, &SkinInput);
 				SkinLabel.VSplitLeft(25.0f, &SkinLabel, &SkinLabel);
 				SkinLabel.VSplitLeft(Length, &SkinLabel, &SkinInput);
-				Ui()->DoLabel(&SkinLabel, "Skin Name:", FontSize, TEXTALIGN_ML);
+				Ui()->DoLabelSearch(&SkinLabel, "Skin Name:", FontSize, TEXTALIGN_ML);
 				SkinInput.VSplitLeft(150.0f, &SkinInput, nullptr);
 				Ui()->DoEditBox(&s_Name, &SkinInput, EditBoxFontSize);
 			}
@@ -4132,7 +4247,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_VISUAL,
-		{"trail", "settings", "color", "mode", "solid", "tee", "rainbow", "speed", "width", "length", "alpha"},
+		{"rainbow", "speed"},
 		[](bool HasSearch) {
 			int Offset = 0;
 			if(g_Config.m_EcTeeTrailColorMode == CTrails::COLORMODE_SOLID || HasSearch)
@@ -4145,7 +4260,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Tee Trails"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Tee Trails"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrail, EcLocalize("Enable tee trails"), &g_Config.m_EcTeeTrail, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcTeeTrailOthers, EcLocalize("Show other tees' trails"), &g_Config.m_EcTeeTrailOthers, &ModuleRect, LineSize);
@@ -4192,7 +4307,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_MISC,
-		{"execute", "before", "connect", "join", "console", "command", "startup", "run"},
+		{"execute", "connect", "join", "console"},
 		[](bool HasSearch) {
 			return 90.0f;
 		},
@@ -4201,7 +4316,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Startup Commands"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Startup Commands"), HeaderSize, HeaderAlignment);
 			{
 				auto RenderLabeledEditBox = [&](const char *pLabel, CLineInput *pLineInput, char *pBuffer, int BufferSize, const char *pEmptyText) {
 					ModuleRect.HSplitTop(20.0f, &Button, &MainView);
@@ -4216,7 +4331,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 					Ui()->DoEditBox(pLineInput, &Button, EditBoxFontSize);
 
 					ModuleRect.HSplitTop(3.0f, &Button, &ModuleRect);
-					Ui()->DoLabel(&ModuleRect, pLabel, FontSize, TEXTALIGN_LEFT);
+					Ui()->DoLabelSearch(&ModuleRect, pLabel, FontSize, TEXTALIGN_LEFT);
 					ModuleRect.HSplitTop(-3.0f, &Button, &ModuleRect);
 				};
 
@@ -4237,7 +4352,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
 		FILTER_VISUAL | FILTER_GAMEPLAY,
-		{"physic", "balls", "new", "ball", "cursor", "amount", "ball", "skin"},
+		{"cursor", "skin"},
 		[](bool HasSearch) {
 			return 140;
 		},
@@ -4246,7 +4361,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, "Physic Balls", HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, "Physic Balls", HeaderSize, HeaderAlignment);
 
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 
@@ -4257,7 +4372,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			Button.VSplitRight(25.0f, &BallAmountLabel, &ClearButton);
 			BallAmountLabel.VSplitRight(MarginSmall, &BallAmountLabel, nullptr);
 
-			Ui()->DoLabel(&BallAmountLabel, aBuf, FontSize, TEXTALIGN_ML);
+			Ui()->DoLabelSearch(&BallAmountLabel, aBuf, FontSize, TEXTALIGN_ML);
 
 			static CButtonContainer s_ClearBallsButton;
 			const ColorRGBA ButtonColor = ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f);
@@ -4283,7 +4398,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				Ui()->DoEditBox(&s_NotifyMsg, &Button, EditBoxFontSize);
 
 				ModuleRect.HSplitTop(3.0f, &Button, &ModuleRect);
-				Ui()->DoLabel(&ModuleRect, pLabel, FontSize, TEXTALIGN_LEFT);
+				Ui()->DoLabelSearch(&ModuleRect, pLabel, FontSize, TEXTALIGN_LEFT);
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 			}
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
@@ -4314,7 +4429,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_VISUAL | FILTER_NEW,
-		{"frozen", "freeze", "stars", "katana", "colored", "tee", "skins", "white", "feet"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			int Offset = 0;
 			if(g_Config.m_ClWhiteFeet || HasSearch)
@@ -4327,7 +4442,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabel(&Button, EcLocalize("Tee Appearance"), HeaderSize, HeaderAlignment);
+			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Tee Appearance"), HeaderSize, HeaderAlignment);
 			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.3f);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderWeaponsInFreeze, EcLocalize("Show Players' weapon while they're frozen"), &g_Config.m_ClRenderWeaponsInFreeze, &ModuleRect, LineSize);
@@ -4366,7 +4481,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_HUD | FILTER_VISUAL,
-		{"map", "overview", "options", "opacity", "explore", "dark"},
+		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			return 100.0f;
 		},
@@ -4375,7 +4490,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Map Overview"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Map Overview"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMapOverview, "Enable map overview", &g_Config.m_ClMapOverview, &ModuleRect, LineSize);
 				Ui()->DoToolTip(&g_Config.m_ClMapOverview, &Button, "Renders areas darker that you have already explored", FontSize);
@@ -4391,7 +4506,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_MISC,
-		{"discord", "rpc", "rich", "presence", "offline", "online", "message"},
+		{"offline", "online"},
 		[](bool HasSearch) {
 			return 125.0f;
 		},
@@ -4400,7 +4515,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Discord RPC"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Discord RPC"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordRPC, "Use Discord Rich Presence", &g_Config.m_ClDiscordRPC, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClDiscordMapStatus, "Show what Map you're on", &g_Config.m_ClDiscordMapStatus, &ModuleRect, LineSize);
@@ -4416,7 +4531,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 					LabelRect = Row;
 					LabelRect.HSplitTop(2.5f, nullptr, &LabelRect);
-					Ui()->DoLabel(&LabelRect, pLabelText, FontSize, TEXTALIGN_TL);
+					Ui()->DoLabelSearch(&LabelRect, pLabelText, FontSize, TEXTALIGN_TL);
 
 					EditRect = Row;
 					EditRect.VSplitLeft(Length, nullptr, &EditRect);
@@ -4444,7 +4559,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_VISUAL | FILTER_GAMEPLAY,
-		{"tile", "outline", "freeze", "deep", "solid", "tele", "kill", "width"},
+		std::vector<std::string_view>{},
 		[&](bool HasSearch) {
 			int Size = 80.0f;
 			if(g_Config.m_ClOutline || HasSearch)
@@ -4469,7 +4584,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			Ui()->DoLabel(&Button, EcLocalize("Tile Outlines"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Tile Outlines"), HeaderSize, HeaderAlignment);
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClOutline, EcLocalize("Show any enabled outlines"), &g_Config.m_ClOutline, &ModuleRect, LineSize);
 
@@ -4544,7 +4659,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
 		FILTER_VISUAL,
-		{"back", "ground", "draw", "time", "until", "stroke", "disappear", "mouse"},
+		{"mouse"},
 		[&](bool HasSearch) {
 			return 180.0f;
 		},
@@ -4554,7 +4669,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
 
-			Ui()->DoLabel(&Button, EcLocalize("Background Draw"), HeaderSize, HeaderAlignment);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Background Draw"), HeaderSize, HeaderAlignment);
 			ModuleRect.HSplitTop(MarginSmall, nullptr, &ModuleRect);
 
 			static CButtonContainer s_BgDrawColor;
@@ -4579,7 +4694,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		vModules.push_back({
 			ESettingsModuleColumn::RIGHT,
 			FILTER_HUD | FILTER_WARLIST,
-			{"frozen", "freeze", "display", "team", "ninja", "tee", "row", "size", "alive"},
+			{"freeze"},
 			[&](bool HasSearch) { // Doesnt show all on purpose, its ugly
 				int Size = 180.0f;
 				if(g_Config.m_ClShowFrozenText || HasSearch)
@@ -4595,7 +4710,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				RenderHudEditorButton(&Id, &ModuleRect);
 
 				ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-				Ui()->DoLabel(&Button, EcLocalize("Frozen Tee Display"), HeaderSize, HeaderAlignment);
+				Ui()->DoLabelSearch(&Button, EcLocalize("Frozen Tee Display"), HeaderSize, HeaderAlignment);
 				{
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHud, EcLocalize("Show frozen tee display"), &g_Config.m_ClShowFrozenHud, &ModuleRect, LineSize);
 					DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowFrozenHudSkins, EcLocalize("Use skins instead of ninja tees"), &g_Config.m_ClShowFrozenHudSkins, &ModuleRect, LineSize);
@@ -4645,16 +4760,38 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 
 	const char *pSearch = s_SettingsSearchInput.GetString();
 
+	// A label can read the setting next to it ("Notify on Join" turns into "Notify on Join Name"
+	// once the name field is there), so the index is taken again the moment the user starts typing,
+	// when it is both needed and current.
+	static bool s_HadSearch = false;
+	static bool s_LabelsStale = true;
+	const bool HasSearch = pSearch[0] != '\0';
+	if(gs_vSettingsModuleLabels.size() != vModules.size() || (HasSearch && !s_HadSearch))
+		s_LabelsStale = true;
+	s_HadSearch = HasSearch;
+
+	// Harvesting draws every module a second time this frame, which would run the logic of a widget
+	// the user is holding twice over. Nothing is held between frames, so waiting for the next one
+	// costs nothing. The modules write their layout back through the rects they captured, MainView
+	// among them, so it goes back the way it was.
+	if(s_LabelsStale && !Ui()->IsPopupOpen() && (Ui()->ActiveItem() == nullptr || Ui()->ActiveItem() == &s_SettingsSearchInput))
+	{
+		const CUIRect ViewBeforeHarvest = MainView;
+		HarvestSettingsModuleLabels(Ui(), vModules);
+		MainView = ViewBeforeHarvest;
+		s_LabelsStale = false;
+	}
+
 	if(HasMatchingSettingsModules(vModules, pSearch))
 	{
-		RenderSettingsModuleColumns(s_ScrollRegion, MainView, vModules, pSearch);
+		RenderSettingsModuleColumns(Ui(), s_ScrollRegion, MainView, vModules, pSearch);
 	}
 	else
 	{
 		CUIRect NoResultsRect;
 		MainView.HSplitTop(LineSize, &NoResultsRect, &MainView);
 		if(s_ScrollRegion.AddRect(NoResultsRect))
-			Ui()->DoLabel(&NoResultsRect, "No settings match your search", FontSize, TEXTALIGN_MC);
+			Ui()->DoLabelSearch(&NoResultsRect, "No settings match your search", FontSize, TEXTALIGN_MC);
 	}
 
 	s_ScrollRegion.End();
@@ -4682,7 +4819,7 @@ void CMenus::DoHudEditorButton(CButtonContainer *pId, const CUIRect *pRect)
 	Button.Draw(Color, IGraphics::CORNER_ALL, 5.0f);
 
 	// Sized off the rect rather than a constant, so it fits whichever of the two places it is in
-	Ui()->DoLabel(&Button, FontIcon::BRUSH, Button.h * CUi::ms_FontmodHeight * 0.7f, TEXTALIGN_MC);
+	Ui()->DoLabelSearch(&Button, FontIcon::BRUSH, Button.h * CUi::ms_FontmodHeight * 0.7f, TEXTALIGN_MC);
 
 	TextRender()->SetRenderFlags(0);
 	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
@@ -4704,7 +4841,7 @@ void CMenus::RenderFontIcon(CUIRect Rect, const char *pText, float Size, int Ali
 {
 	TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
 	TextRender()->SetRenderFlags(ETextRenderFlags::TEXT_RENDER_FLAG_ONLY_ADVANCE_WIDTH | ETextRenderFlags::TEXT_RENDER_FLAG_NO_X_BEARING | ETextRenderFlags::TEXT_RENDER_FLAG_NO_Y_BEARING);
-	Ui()->DoLabel(&Rect, pText, Size, Align);
+	Ui()->DoLabelSearch(&Rect, pText, Size, Align);
 	TextRender()->SetRenderFlags(0);
 	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 }
@@ -4721,7 +4858,7 @@ int CMenus::DoButtonNoRect_FontIcon(CButtonContainer *pButtonContainer, const ch
 	}
 	CUIRect Temp;
 	pRect->HMargin(0.0f, &Temp);
-	Ui()->DoLabel(&Temp, pText, Temp.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
+	Ui()->DoLabelSearch(&Temp, pText, Temp.h * CUi::ms_FontmodHeight, TEXTALIGN_MC);
 	TextRender()->SetRenderFlags(0);
 	TextRender()->SetFontPreset(EFontPreset::DEFAULT_FONT);
 
@@ -4826,7 +4963,7 @@ bool CMenus::DoLine_KeyReader(CUIRect &View, CButtonContainer &ReaderButton, CBu
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "%s", pName);
-	Ui()->DoLabel(&KeyLabel, aBuf, FontSize, TEXTALIGN_ML);
+	Ui()->DoLabelSearch(&KeyLabel, aBuf, FontSize, TEXTALIGN_ML);
 
 	View.HSplitTop(MarginExtraSmall, nullptr, &View);
 
@@ -4851,9 +4988,9 @@ CUi::EPopupMenuFunctionResult CMenus::PopupFrozenHudWarlistConfig(void *pContext
 	View.Margin(5.0f, &View);
 	CUIRect Header, Footer;
 	View.HSplitTop(LineSize, &Header, &View);
-	pMenus->Ui()->DoLabel(&Header, "Show players in frozen tee display", StandardFontSize, TEXTALIGN_ML);
+	pMenus->Ui()->DoLabelSearch(&Header, "Show players in frozen tee display", StandardFontSize, TEXTALIGN_ML);
 	View.HSplitBottom(12.0f, &View, &Footer);
-	pMenus->Ui()->DoLabel(&Footer, "Right click to close", StandardFontSize * 0.6f, TEXTALIGN_ML);
+	pMenus->Ui()->DoLabelSearch(&Footer, "Right click to close", StandardFontSize * 0.6f, TEXTALIGN_ML);
 
 	static CScrollRegion s_ScrollRegion;
 	CScrollRegionParams ScrollParams;
@@ -4915,7 +5052,7 @@ CUi::EPopupMenuFunctionResult CMenus::PopupWarlistTypeConfig(void *pContext, CUI
 			return CUi::POPUP_CLOSE_CURRENT;
 		}
 	}
-	pMenus->Ui()->DoLabel(&HeaderLabel, aBuf, HeaderSize - 2.0f, TEXTALIGN_TL, LabelProps);
+	pMenus->Ui()->DoLabelSearch(&HeaderLabel, aBuf, HeaderSize - 2.0f, TEXTALIGN_TL, LabelProps);
 
 	bool Changed = false;
 
@@ -4977,7 +5114,7 @@ CUi::EPopupMenuFunctionResult CMenus::PopupWarlistTypeConfig(void *pContext, CUI
 		pMenus->GameClient()->m_WarList.UpdateWarPlayers();
 
 	pMenus->TextRender()->TextColor(ColorRGBA(0.7f, 0.7f, 0.7f, 1.0f));
-	pMenus->Ui()->DoLabel(&View, "Right click close", StandardFontSize * 0.5f, TEXTALIGN_BL);
+	pMenus->Ui()->DoLabelSearch(&View, "Right click close", StandardFontSize * 0.5f, TEXTALIGN_BL);
 	pMenus->TextRender()->TextColor(pMenus->TextRender()->DefaultTextColor());
 
 	return CUi::POPUP_KEEP_OPEN;
