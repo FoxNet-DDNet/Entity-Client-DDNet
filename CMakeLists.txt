@@ -2785,6 +2785,8 @@ if(CLIENT)
     components/entity/commands.cpp
     components/entity/entity.cpp
     components/entity/entity.h 
+    components/entity/finish_prediction.cpp
+    components/entity/finish_prediction.h
     components/entity/freeze_kill.cpp
     components/entity/freeze_kill.h 
     components/entity/hud/hud_editor.cpp

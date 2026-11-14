@@ -2263,6 +2263,7 @@ void CHud::OnRender()
 		}
 		// EClient: scopes itself, since it only draws on the frames it has something to say
 		GameClient()->m_LocalPractice.RenderMovedAlert(PreviewActive());
+		GameClient()->m_FinishPrediction.RenderHud(PreviewActive());
 	}
 	RenderCursor();
 

@@ -3195,7 +3195,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Night Shift */
 	vModules.push_back({
 		ESettingsModuleColumn::LEFT,
-		FILTER_VISUAL | FILTER_NEW,
+		FILTER_VISUAL,
 		{"temperature", "kelvin", "eye", "strain", "sunset", "sunrise", "schedule"},
 		[&](bool HasSearch) {
 			const bool Scheduled = g_Config.m_ClNightShiftSchedule != NIGHT_SHIFT_SCHEDULE_ALWAYS;
@@ -3213,8 +3213,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Night Shift"), HeaderSize, HeaderAlignment);
-			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.5f);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Night Shift"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClNightShift, EcLocalize("Use Night Shift"), &g_Config.m_ClNightShift, &ModuleRect, LineSize);
 			Ui()->DoToolTip(&g_Config.m_ClNightShift, &ModuleRect, "Shifts the colors of everything on screen towards red, which is easier on the eyes at night");
@@ -3381,7 +3380,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Fast Input */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		FILTER_GAMEPLAY | FILTER_NETWORK | FILTER_NEW,
+		FILTER_GAMEPLAY | FILTER_NETWORK,
 		{"reduced", "delay", "classic", "uncapped"},
 		[](bool HasSearch) {
 			int Size = 122.0f;
@@ -3397,8 +3396,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
-			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.2f);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Input"), HeaderSize, HeaderAlignment);
+
 			{
 				if(DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_EcFastInput, EcLocalize("Enable Fast Input"), &g_Config.m_EcFastInput, &ModuleRect, LineSize))
 					Client()->SendFastInputsInfo(g_Config.m_ClDummy);
@@ -3644,7 +3643,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Stats */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		FILTER_HUD | FILTER_NEW,
+		FILTER_HUD,
 		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			return 100;
@@ -3654,8 +3653,8 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Stats"), HeaderSize, HeaderAlignment);
-			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.0f);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Stats"), HeaderSize, HeaderAlignment);
+
 			{
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowFps, EcLocalize("Show FPS"), &g_Config.m_ClStatisticsShowFps, &ModuleRect, LineSize);
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClStatisticsShowPing, EcLocalize("Show Ping"), &g_Config.m_ClStatisticsShowPing, &ModuleRect, LineSize);
@@ -3667,7 +3666,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* In-Game Automation */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		FILTER_GAMEPLAY | FILTER_NEW,
+		FILTER_GAMEPLAY,
 		{"ingame", "connect"},
 		[](bool HasSearch) {
 			return 80.0f;
@@ -3677,8 +3676,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("In-Game Automation"), HeaderSize, HeaderAlignment);
-			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.8f);
+			Ui()->DoLabelSearch(&Button, EcLocalize("In-Game Automation"), HeaderSize, HeaderAlignment);
 
 			ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 			if(DoButton_CheckBox(&g_Config.m_ClAntiSpawnBlock, "Anti Spawn Block", g_Config.m_ClAntiSpawnBlock, &Button))
@@ -4428,7 +4426,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 	/* Tee Appearance */
 	vModules.push_back({
 		ESettingsModuleColumn::RIGHT,
-		FILTER_VISUAL | FILTER_NEW,
+		FILTER_VISUAL,
 		std::vector<std::string_view>{},
 		[](bool HasSearch) {
 			int Offset = 0;
@@ -4442,8 +4440,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			ModuleRect.VMargin(Margin, &ModuleRect);
 
 			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
-			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Tee Appearance"), HeaderSize, HeaderAlignment);
-			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.3f);
+			Ui()->DoLabelSearch(&Button, EcLocalize("Tee Appearance"), HeaderSize, HeaderAlignment);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClRenderWeaponsInFreeze, EcLocalize("Show Players' weapon while they're frozen"), &g_Config.m_ClRenderWeaponsInFreeze, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFreezeStars, EcLocalize("Freeze stars"), &g_Config.m_ClFreezeStars, &ModuleRect, LineSize);
@@ -4497,6 +4494,66 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 				DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClMapOverviewSpectatingOnly, "Only show map overview while spectating", &g_Config.m_ClMapOverviewSpectatingOnly, &ModuleRect, LineSize);
 				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
 				Ui()->DoScrollbarOption(&g_Config.m_ClMapOverviewOpacity, &g_Config.m_ClMapOverviewOpacity, &Button, "Explored area opacity", 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
+			}
+		},
+	});
+
+	/* Finish Prediction */
+	vModules.push_back({
+		ESettingsModuleColumn::RIGHT,
+		FILTER_HUD | FILTER_VISUAL | FILTER_NEW,
+		std::vector<std::string_view>{},
+		[](bool HasSearch) {
+			return 160.0f + (g_Config.m_ClFinishPredictionRoute || HasSearch ? 75.0f : 0.0f);
+		},
+		[&](CUIRect ModuleRect, bool HasSearch) {
+			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
+			ModuleRect.VMargin(Margin, &ModuleRect);
+
+			static CButtonContainer Id;
+			RenderHudEditorButton(&Id, &ModuleRect);
+
+			ModuleRect.HSplitTop(HeaderHeight, &Button, &ModuleRect);
+			const CLabelResult Res = Ui()->DoLabelSearch(&Button, EcLocalize("Finish Prediction"), HeaderSize, HeaderAlignment);
+			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.3f);
+
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPrediction, EcLocalize("Show how far through the map you are"), &g_Config.m_ClShowhudFinishPrediction, &ModuleRect, LineSize);
+			Ui()->DoToolTip(&g_Config.m_ClShowhudFinishPrediction, &Button, EcLocalize("A route from the start tiles to the finish is searched for in the background on map load, and your progress is measured along it"), FontSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPredictionTime, EcLocalize("Show the predicted finish time"), &g_Config.m_ClShowhudFinishPredictionTime, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPredictionPercent, EcLocalize("Show the percentage"), &g_Config.m_ClShowhudFinishPredictionPercent, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPredictionBar, EcLocalize("Show the progress bar"), &g_Config.m_ClShowhudFinishPredictionBar, &ModuleRect, LineSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPredictionHideNoRoute, EcLocalize("Hide it on maps with no route"), &g_Config.m_ClShowhudFinishPredictionHideNoRoute, &ModuleRect, LineSize);
+			Ui()->DoToolTip(&g_Config.m_ClShowhudFinishPredictionHideNoRoute, &Button, EcLocalize("Some maps have no route this can find. Hide the readout on those rather than leaving a question mark on screen"), FontSize);
+
+			{
+				static std::vector<CButtonContainer> s_vRouteButtons = {{}, {}, {}};
+				static const std::vector<const char *> s_vRouteTooltips = {
+					EcLocalize("Do not draw the route"),
+					EcLocalize("Draw the route the search found"),
+					EcLocalize("Draw the route, and while you are off it the way from you back onto it"),
+				};
+				int Value = g_Config.m_ClFinishPredictionRoute;
+				if(DoLine_RadioMenu_Compact(ModuleRect, EcLocalize("Draw the route:"),
+					   s_vRouteButtons,
+					   {"Off", "Route", "Both"},
+					   {0, 1, 2},
+					   Value,
+					   5.0f,
+					   &s_vRouteTooltips))
+				{
+					g_Config.m_ClFinishPredictionRoute = Value;
+				}
+			}
+
+			if(g_Config.m_ClFinishPredictionRoute || HasSearch)
+			{
+				ModuleRect.HSplitTop(LineSize, &Button, &ModuleRect);
+				Ui()->DoScrollbarOption(&g_Config.m_ClFinishPredictionRouteAlpha, &g_Config.m_ClFinishPredictionRouteAlpha, &Button, EcLocalize("Route opacity"), 0, 100, &CUi::ms_LinearScrollbarScale, 0u, "");
+
+				static CButtonContainer s_RouteColor;
+				static CButtonContainer s_RouteDoneColor;
+				DoLine_ColorPicker(&s_RouteColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Route ahead"), &g_Config.m_ClFinishPredictionRouteColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClFinishPredictionRouteColor)), false);
+				DoLine_ColorPicker(&s_RouteDoneColor, ColorPickerLineSize, ColorPickerLabelSize, ColorPickerLineSpacing, &ModuleRect, EcLocalize("Route covered"), &g_Config.m_ClFinishPredictionRouteDoneColor, color_cast<ColorRGBA, ColorHSLA>(ColorHSLA(DefaultConfig::ClFinishPredictionRouteDoneColor)), false);
 			}
 		},
 	});

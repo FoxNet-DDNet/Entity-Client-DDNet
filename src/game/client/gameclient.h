@@ -76,6 +76,7 @@
 #include "components/entity/browser_map_preview.h"
 #include "components/entity/chat_bubbles.h"
 #include "components/entity/entity.h"
+#include "components/entity/finish_prediction.h"
 #include "components/entity/freeze_kill.h"
 #include "components/entity/info.h"
 #include "components/entity/local_practice.h"
@@ -280,6 +281,7 @@ public:
 	CChatBubbles m_ChatBubbles;
 	CEClient m_EClient;
 	CEntityInfo m_EntityInfo;
+	CFinishPrediction m_FinishPrediction;
 	CFreezeKill m_FreezeKill;
 	CHudEditor m_HudEditor;
 	CLocalPractice m_LocalPractice;

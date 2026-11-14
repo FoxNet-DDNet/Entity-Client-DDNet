@@ -142,6 +142,10 @@ static const CHudElementDef gs_aHudElements[] = {
 	// only ever present while practicing. It measures its own text, so this is the size before it
 	// has said anything.
 	{"Local practice notice", EHudElement::PRACTICE_ALERT, "local_practice_alert", EHudAnchor::TOP_CENTER, EHudOriginX::FROM_CENTER, vec2(-45.0f, 30.0f), vec2(90.0f, 10.0f), 45, EHudPushDirection::DOWN, 2.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClLocalPracticeAlert, nullptr, nullptr, nullptr, nullptr, nullptr},
+	// finish_prediction.cpp CFinishPrediction::RenderHud: right aligned under the records, one or
+	// two 8 unit lines depending on whether it has a time to predict yet. It measures its own
+	// text, so this is only what it looks like before it has said anything.
+	{"Finish prediction", EHudElement::FINISH_PREDICTION, "finish_prediction", EHudAnchor::TOP_LEFT, EHudOriginX::FROM_LEFT, vec2(0.0f, 125.0f), vec2(76.0f, 16.5f), 68, EHudPushDirection::DOWN, 2.0f, EHudElement::RECORD, EHudPushDirection::DOWN, 2.0f, true, &g_Config.m_ClShowhudFinishPrediction, nullptr, &g_Config.m_ClShowhudFinishPredictionTime, "Predicted time", nullptr, nullptr},
 };
 
 static_assert(std::size(gs_aHudElements) == (size_t)EHudElement::NUM_HUD_ELEMENTS,
