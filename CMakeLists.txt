@@ -2947,8 +2947,12 @@ if(CLIENT)
     prediction/entities/door.h
     prediction/entities/dragger.cpp
     prediction/entities/dragger.h
+    prediction/entities/gun.cpp
+    prediction/entities/gun.h
     prediction/entities/laser.cpp
     prediction/entities/laser.h
+    prediction/entities/light.cpp
+    prediction/entities/light.h
     prediction/entities/pickup.cpp
     prediction/entities/pickup.h
     prediction/entities/plasma.cpp

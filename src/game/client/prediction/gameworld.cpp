@@ -6,7 +6,9 @@
 #include "entities/character.h"
 #include "entities/door.h"
 #include "entities/dragger.h"
+#include "entities/gun.h"
 #include "entities/laser.h"
+#include "entities/light.h"
 #include "entities/pickup.h"
 #include "entities/plasma.h"
 #include "entities/projectile.h"
@@ -725,6 +727,10 @@ void CGameWorld::CopyWorldClean(CGameWorld *pFrom)
 				pCopy = new CPickup(*((CPickup *)pEnt));
 			else if(Type == ENTTYPE_PLASMA)
 				pCopy = new CPlasma(*((CPlasma *)pEnt));
+			else if(Type == ENTTYPE_GUN)
+				pCopy = new CGun(*((CGun *)pEnt));
+			else if(Type == ENTTYPE_LIGHT)
+				pCopy = new CLight(*((CLight *)pEnt));
 			if(pCopy)
 			{
 				pCopy->m_pParent = nullptr;
@@ -779,6 +785,10 @@ void CGameWorld::CopyWorld(CGameWorld *pFrom)
 				pCopy = new CPickup(*((CPickup *)pEnt));
 			else if(Type == ENTTYPE_PLASMA)
 				pCopy = new CPlasma(*((CPlasma *)pEnt));
+			else if(Type == ENTTYPE_GUN)
+				pCopy = new CGun(*((CGun *)pEnt));
+			else if(Type == ENTTYPE_LIGHT)
+				pCopy = new CLight(*((CLight *)pEnt));
 			if(pCopy)
 			{
 				pCopy->m_pParent = pEnt;

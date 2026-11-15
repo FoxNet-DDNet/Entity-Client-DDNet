@@ -15,6 +15,11 @@ class CEntity;
 class CQuadZones;
 class CMapBugs;
 
+// EClient: told which weapon a tee just picked up in this world. A world with a server behind it
+// has no use for it -- the server says so itself, as Sv_WeaponPickup -- so only the local practice
+// world sets one; see CLocalPractice::Start.
+typedef void (*CALLBACK_WEAPONPICKUP)(int ClientId, int Weapon, void *pUser);
+
 class CGameWorld
 {
 public:
@@ -61,6 +66,22 @@ public:
 	int GameTickSpeed() const { return SERVER_TICK_SPEED; }
 	const CCollision *Collision() const { return m_pCollision; }
 	CCollision *Collision() { return m_pCollision; }
+	// EClient: points this world at another collision, for one that wants a door layer of its own
+	// rather than the one the server's snapshots are stamping; see CCollision::CopyMap
+	void SetCollision(CCollision *pCollision) { m_pCollision = pCollision; }
+
+	// EClient: deliberately not carried across by CopyWorldClean or CopyWorld. A speculative copy
+	// re-runs the same ticks every frame, so one pickup there would report itself over and over.
+	void SetWeaponPickupCallback(CALLBACK_WEAPONPICKUP pfnWeaponPickup, void *pUser)
+	{
+		m_pfnWeaponPickup = pfnWeaponPickup;
+		m_pWeaponPickupUser = pUser;
+	}
+	void OnWeaponPickup(int ClientId, int Weapon)
+	{
+		if(m_pfnWeaponPickup)
+			m_pfnWeaponPickup(ClientId, Weapon, m_pWeaponPickupUser);
+	}
 	// <FoxNet
 	CQuadZones *QuadZones() { return m_pQuadZones; }
 	// FoxNet>
@@ -155,6 +176,9 @@ private:
 	CCharacter *m_apCharacters[MAX_CLIENTS];
 
 	CCollision *m_pCollision;
+	// EClient
+	CALLBACK_WEAPONPICKUP m_pfnWeaponPickup = nullptr;
+	void *m_pWeaponPickupUser = nullptr;
 	CQuadZones *m_pQuadZones;
 	CTuningParams *m_pTuningList;
 	const CMapBugs *m_pMapBugs;

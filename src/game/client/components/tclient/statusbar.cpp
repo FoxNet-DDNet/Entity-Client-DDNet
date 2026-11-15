@@ -64,17 +64,46 @@ float CStatusBar::AngleWidth()
 
 	return TextRender()->TextWidth(m_FontSize, "000.00");
 }
+// EClient
+bool CStatusBar::ReadoutCharacters(const CNetObj_Character **ppPrev, const CNetObj_Character **ppCur, float *pIntraTick) const
+{
+	if(GameClient()->m_LocalPractice.IsSimulated(m_PlayerId))
+	{
+		*ppPrev = &GameClient()->m_aClients[m_PlayerId].m_RenderPrev;
+		*ppCur = &GameClient()->m_aClients[m_PlayerId].m_RenderCur;
+		// This world runs on the prediction clock, so that is the fraction its pair sits either
+		// side of
+		*pIntraTick = Client()->PredIntraGameTick(g_Config.m_ClDummy);
+		return true;
+	}
+
+	*ppPrev = &GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_Prev;
+	*ppCur = &GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_Cur;
+	*pIntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
+	return false;
+}
+
 void CStatusBar::AngleRender()
 {
-	CNetObj_Character *pCharacter = &GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_Cur;
+	const CNetObj_Character *pPrevChar;
+	const CNetObj_Character *pCurChar;
+	float IntraTick;
+	const bool Practice = ReadoutCharacters(&pPrevChar, &pCurChar, &IntraTick);
+
 	float Angle = 0.0f;
-	if(GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_HasExtendedDisplayInfo)
+	if(Practice)
+	{
+		// Nothing sends a practice tee extended data to read a target out of, and the angle in its
+		// character is the one its core worked out, so the aim is asked for the way it is drawn
+		Angle = GameClient()->m_Players.GetPlayerTargetAngle(pPrevChar, pCurChar, m_PlayerId, IntraTick);
+	}
+	else if(GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_HasExtendedDisplayInfo)
 	{
 		CNetObj_DDNetCharacter *pExtendedData = &GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_ExtendedData;
 		Angle = atan2f(pExtendedData->m_TargetY, pExtendedData->m_TargetX);
 	}
 	else
-		Angle = pCharacter->m_Angle / 256.0f;
+		Angle = pCurChar->m_Angle / 256.0f;
 	if(Angle < 0)
 		Angle += 2.0f * pi;
 	char aBuf[32];
@@ -176,9 +205,10 @@ float CStatusBar::PositionWidth()
 }
 void CStatusBar::PositionRender()
 {
-	const CNetObj_Character *pPrevChar = &GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_Prev;
-	const CNetObj_Character *pCurChar = &GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_Cur;
-	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
+	const CNetObj_Character *pPrevChar;
+	const CNetObj_Character *pCurChar;
+	float IntraTick;
+	ReadoutCharacters(&pPrevChar, &pCurChar, &IntraTick);
 	// To make the player position relative to blocks we need to divide by the block size
 	const vec2 Pos = mix(vec2(pPrevChar->m_X, pPrevChar->m_Y), vec2(pCurChar->m_X, pCurChar->m_Y), IntraTick) / 32.0f;
 	char aBuf[32];
@@ -195,9 +225,10 @@ float CStatusBar::VelocityWidth()
 }
 void CStatusBar::VelocityRender()
 {
-	const CNetObj_Character *pPrevChar = &GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_Prev;
-	const CNetObj_Character *pCurChar = &GameClient()->m_Snap.m_aCharacters[m_PlayerId].m_Cur;
-	const float IntraTick = Client()->IntraGameTick(g_Config.m_ClDummy);
+	const CNetObj_Character *pPrevChar;
+	const CNetObj_Character *pCurChar;
+	float IntraTick;
+	ReadoutCharacters(&pPrevChar, &pCurChar, &IntraTick);
 	const vec2 Vel = mix(vec2(pPrevChar->m_VelX, pPrevChar->m_VelY), vec2(pCurChar->m_VelX, pCurChar->m_VelY), IntraTick);
 	float VelspeedX = Vel.x / 256.0f * Client()->GameTickSpeed();
 	if(Vel.x >= -1 && Vel.x <= 1)
@@ -306,6 +337,10 @@ void CStatusBar::UpdateStatusBarScheme(char *pScheme)
 
 void CStatusBar::OnRender()
 {
+	// EClient: the readouts below describe the tee being played, which while practicing is the
+	// practice one
+	CLocalPractice::CScope PracticeScope(&GameClient()->m_LocalPractice);
+
 	m_PingActive = false;
 
 	if(Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)

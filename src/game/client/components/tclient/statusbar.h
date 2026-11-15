@@ -3,6 +3,8 @@
 
 #include <game/client/component.h>
 
+struct CNetObj_Character; // EClient
+
 enum
 {
 	STATUSBAR_MAX_SIZE = 16,
@@ -64,6 +66,19 @@ public:
 private:
 	float m_FrameTimeAverage = 0.0f;
 	int m_PlayerId = 0;
+
+	/**
+	 * EClient: the pair of characters the position, velocity and angle readouts describe, and the
+	 * fraction to mix them by.
+	 *
+	 * The snapshot is the right source for every tee the server is simulating. A local practice tee
+	 * is not one of those: the snapshot describes the real tee it stands in for, standing still
+	 * wherever practice started, so the readouts would all report that one instead. Its own pair is
+	 * kept in the client data, which OnRender's scope swaps in.
+	 *
+	 * @return true when this is a practice tee, whose aim is worth asking for properly as well.
+	 */
+	bool ReadoutCharacters(const CNetObj_Character **ppPrev, const CNetObj_Character **ppCur, float *pIntraTick) const;
 	float m_FontSize = 12.0f;
 	float m_CursorX, m_CursorY, m_BarX = 0.0f, m_BarY;
 	float m_Width, m_Height;

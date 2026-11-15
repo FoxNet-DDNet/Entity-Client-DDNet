@@ -145,6 +145,39 @@ void CCollision::Init(class CLayers *pLayers)
 	}
 }
 
+// EClient
+void CCollision::CopyMap(const CCollision *pFrom)
+{
+	if(pFrom == this || !pFrom)
+		return;
+	Unload();
+
+	m_pLayers = pFrom->m_pLayers;
+	m_Width = pFrom->m_Width;
+	m_Height = pFrom->m_Height;
+	m_pTiles = pFrom->m_pTiles;
+	m_pTele = pFrom->m_pTele;
+	m_pSpeedup = pFrom->m_pSpeedup;
+	m_pFront = pFrom->m_pFront;
+	m_pSwitch = pFrom->m_pSwitch;
+	m_pTune = pFrom->m_pTune;
+	m_HighestSwitchNumber = pFrom->m_HighestSwitchNumber;
+	m_HasHookTeleIns = pFrom->m_HasHookTeleIns;
+	m_TeleIns = pFrom->m_TeleIns;
+	m_TeleOuts = pFrom->m_TeleOuts;
+	m_TeleCheckOuts = pFrom->m_TeleCheckOuts;
+	m_TeleOthers = pFrom->m_TeleOthers;
+
+	// The one thing not shared, and the only reason to make a copy at all. It starts empty rather
+	// than copied: whoever wants doors in here puts its own in, and until then there are none
+	// instead of a stale set nothing will ever clear.
+	if(pFrom->m_pDoor)
+	{
+		m_pDoor = new CDoorTile[(size_t)m_Width * m_Height];
+		mem_zero(m_pDoor, (size_t)m_Width * m_Height * sizeof(CDoorTile));
+	}
+}
+
 void CCollision::Unload()
 {
 	m_pTiles = nullptr;

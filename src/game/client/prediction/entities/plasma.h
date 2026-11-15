@@ -24,6 +24,10 @@ public:
 
 	bool Match(const CPlasma *pPlasma) const;
 	void Read(const CLaserData *pData);
+	bool GetFreeze() const { return m_Freeze; }
+	bool GetExplosive() const { return m_Explosive; }
+	int GetEvalTick() const { return m_EvalTick; }
+	int GetForClientId() const { return m_ForClientId; }
 
 	void Reset();
 	void Tick() override;

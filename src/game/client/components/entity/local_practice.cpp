@@ -16,14 +16,22 @@
 #include <game/client/components/players.h>
 #include <game/client/components/sounds.h>
 #include <game/client/gameclient.h>
+#include <game/client/laser_data.h>
+#include <game/client/pickup_data.h>
 #include <game/client/prediction/entities/character.h>
+#include <game/client/prediction/entities/door.h>
+#include <game/client/prediction/entities/dragger.h>
+#include <game/client/prediction/entities/gun.h>
 #include <game/client/prediction/entities/laser.h>
+#include <game/client/prediction/entities/light.h>
+#include <game/client/prediction/entities/pickup.h>
 #include <game/client/prediction/entities/projectile.h>
 #include <game/client/render.h>
 #include <game/collision.h>
 #include <game/mapitems.h>
 
 #include <algorithm>
+#include <cmath>
 #include <cstdarg>
 #include <cstdio>
 #include <iterator>
@@ -39,6 +47,22 @@ static const int gs_MissingSnapsForDeath = 10;
 
 static const float gs_GhostFadeNear = 28.0f;
 static const float gs_GhostFadeFar = 96.0f;
+
+// How far around a practice tee, in tiles, the map's own pickups and draggers are built, and how
+// far that tee may then travel before they are built again around where it has got to.
+//
+// Map-wide would be simpler, but every tick of this world is copied whole, and with fast input on
+// so is every speculative tick, so the entity count is most of what the practice world costs. A
+// pickup or a dragger outside this radius could not reach the tee in any case: a dragger's reach is
+// sv_dragger_range, a pickup's a few pixels. The radius only has to stay ahead of the screen, so
+// that the pickups drawn out of this world do not stop at the edge of where they were built.
+static const int gs_StaticEntityRadius = 96;
+static const int gs_StaticEntityDrift = 48;
+
+// The eight tiles around an entity tile, in the order IGameController::OnEntity checks them: a beam
+// on side n leaves at pi / 4 * n, which points along (sin, cos) of that angle.
+static const int gs_aSideOffsetX[8] = {0, 1, 1, 1, 0, -1, -1, -1};
+static const int gs_aSideOffsetY[8] = {1, 1, 0, -1, -1, -1, 0, 1};
 
 const CLocalPractice::CCommand CLocalPractice::ms_aCommands[] = {
 	{"exit", "", "Toggle the local practice world", &CLocalPractice::CmdPractice},
@@ -111,6 +135,15 @@ void CLocalPractice::OnStateChange(int NewState, int OldState)
 {
 	if(NewState != IClient::STATE_ONLINE)
 		OnReset();
+}
+
+void CLocalPractice::OnPracticeWeaponPickup(int ClientId, int Weapon, void *pUser)
+{
+	CLocalPractice *pThis = (CLocalPractice *)pUser;
+	const int Conn = pThis->LocalConn(ClientId);
+	if(Conn < 0)
+		return;
+	pThis->GameClient()->m_Controls.OnWeaponPickup(Conn, Weapon);
 }
 
 void CLocalPractice::ConPractice(IConsole::IResult *pResult, void *pUserData)
@@ -271,6 +304,22 @@ void CLocalPractice::Start()
 	m_World.CopyWorldClean(&GameClient()->m_PredictedWorld);
 	m_World.m_LocalClientId = LocalId;
 
+	// After the copy, which brings the server's collision across with everything else. Door
+	// collision is the only part of a map written while the game runs, and the two worlds disagree
+	// about doors in both directions -- practice forks the switch state, and it goes places the
+	// server sends no doors for -- so from here on this world reads and writes a door layer of its
+	// own. Every world copied from it shares the same one.
+	m_Collision.CopyMap(GameClient()->Collision());
+	m_World.SetCollision(&m_Collision);
+	m_World.SetWeaponPickupCallback(&CLocalPractice::OnPracticeWeaponPickup, this);
+	// A character core keeps the collision it was handed rather than asking its world each time, and
+	// the copy above wired the tees it brought across to the one it copied. Theirs is what actually
+	// moves them, so it has to be pointed here as well, or a practice tee would go on reading the
+	// doors the server is stamping. Anything inserted from here on is wired by InsertEntity.
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+		if(CCharacter *pChar = m_World.GetCharacterById(ClientId))
+			pChar->SetCoreWorld(&m_World);
+
 	// Nothing in here is ever second-guessed against a server, so every "how much do we dare
 	// predict" switch goes on. They exist to keep mispredictions down, and a world with no server
 	// behind it has no mispredictions to keep down. Left at the user's settings, cl_antiping_weapons
@@ -291,6 +340,9 @@ void CLocalPractice::Start()
 	// sounds and explosions out of the real world's dedup list.
 	m_World.m_PredictedEvents.clear();
 
+	// Before RemoveForeignEntities, which is what takes the other players' share of it back out
+	SeedSnapshotEntities();
+
 	RemoveForeignEntities();
 	CollectSpawns();
 
@@ -306,6 +358,9 @@ void CLocalPractice::Start()
 		if(m_World.GetCharacterById(ClientId))
 			BeginConn(Conn);
 	}
+
+	// After the tees, since the area it builds is the area around them
+	SeedStaticEntities();
 
 	m_PrevWorld.CopyWorldClean(&m_World);
 	m_AlertReason = EMoveReason::NONE;
@@ -336,6 +391,7 @@ void CLocalPractice::Stop()
 			ResyncCounters(Conn);
 	mem_zero(m_aSeeded, sizeof(m_aSeeded));
 	mem_zero(m_aWatchArmed, sizeof(m_aWatchArmed));
+	mem_zero(m_aHasStaticCenter, sizeof(m_aHasStaticCenter));
 	for(CPracticeTee &Tee : m_aPracticeTee)
 		Tee.m_Valid = false;
 	m_WasControlling = false;
@@ -347,8 +403,14 @@ void CLocalPractice::Stop()
 	m_Active = false;
 	m_pRenderCurWorld = nullptr;
 	m_pRenderPrevWorld = nullptr;
+	m_World.SetWeaponPickupCallback(nullptr, nullptr);
+	// The doors go first, while the collision they stamped is still there to be cleared out of, and
+	// the speculative worlds with them: nothing may be left holding a collision that is about to go
 	m_World.Clear();
 	m_PrevWorld.Clear();
+	for(CGameWorld &LookWorld : m_aLookWorld)
+		LookWorld.Clear();
+	m_Collision.Unload();
 	if(Client()->State() == IClient::STATE_ONLINE)
 		Print("left local practice");
 }
@@ -377,6 +439,374 @@ void CLocalPractice::RemoveForeignEntities()
 		pNext = pEnt->TypeNext();
 		if(!IsLocalId(((CLaser *)pEnt)->GetOwner()))
 			pEnt->Destroy();
+	}
+}
+
+void CLocalPractice::SeedSnapshotEntities()
+{
+	// Whatever a tee has in flight when practice starts comes across with it. The copied world is
+	// no help for that: the prediction only builds projectiles and lasers when the user has
+	// antiping weapons switched on, and builds none of them with antiping off, while the practice
+	// world predicts the lot regardless. So they are read straight off the snapshot instead.
+	//
+	// Only the tees' own shots, though. Everything else a snapshot carries -- pickups, draggers,
+	// doors, turrets, freeze lasers, the bouncing shotgun bullets -- belongs to the map, and
+	// SeedStaticEntities builds those out of the map itself, where they come with the state the
+	// wire leaves out and cover more than the small part of the map that happens to be in view of a
+	// tee standing still. Projectiles with no owner are the map's as well; RemoveForeignEntities
+	// takes those back out again straight after this.
+	for(const CSnapEntities &EntData : GameClient()->SnapEntities())
+	{
+		const int Type = EntData.m_Item.m_Type;
+		if(Type == NETOBJTYPE_LASER || Type == NETOBJTYPE_DDNETLASER)
+		{
+			const CLaserData Data = ExtractLaserInfo(Type, EntData.m_Item.m_pData, &m_World, EntData.m_pDataEx);
+			if(Data.m_Type >= 0 && Data.m_Type != LASERTYPE_RIFLE && Data.m_Type != LASERTYPE_SHOTGUN)
+				continue;
+		}
+		else if(Type != NETOBJTYPE_PROJECTILE && Type != NETOBJTYPE_DDRACEPROJECTILE && Type != NETOBJTYPE_DDNETPROJECTILE)
+		{
+			continue;
+		}
+		m_World.NetObjAdd(EntData.m_Item.m_Id, Type, EntData.m_Item.m_pData, EntData.m_pDataEx);
+	}
+}
+
+void CLocalPractice::AddStaticEntity(int Index, int x, int y, int Layer, int Flags, int Number, CStaticIds &Ids)
+{
+	// Every branch here is IGameController::OnEntity's, reading the same tiles into the same
+	// entities. The client's versions of them take their state through a constructor instead of
+	// through the laser object the server would have snapped, where there is one; where the
+	// prediction only knows how to build an entity out of that laser object, one is written out
+	// here exactly as the server would have written it.
+	//
+	// Read through this world's own collision rather than the client's. Both answer the same for
+	// everything asked here, since the map's layers are shared, but a door stamps itself into the
+	// one its world holds and that one has to be this world's.
+	const CCollision *pCollision = &m_Collision;
+	const vec2 Pos(x * 32.0f + 16.0f, y * 32.0f + 16.0f);
+
+	if(Index >= ENTITY_DRAGGER_WEAK && Index <= ENTITY_DRAGGER_STRONG_NW)
+	{
+		const bool IgnoreWalls = Index >= ENTITY_DRAGGER_WEAK_NW;
+		const int Strength = Index - (IgnoreWalls ? ENTITY_DRAGGER_WEAK_NW : ENTITY_DRAGGER_WEAK) + 1;
+
+		// CDragger::Snap packs the strength and the ignore-walls flag into the subtype, and names
+		// the tee being dragged as the owner, which a dragger that has only just been built has none
+		CLaserData Data = {};
+		Data.m_From = Pos;
+		Data.m_To = Pos;
+		Data.m_StartTick = -1;
+		Data.m_ExtraInfo = true;
+		Data.m_Owner = -1;
+		Data.m_Type = LASERTYPE_DRAGGER;
+		Data.m_SwitchNumber = Number;
+		Data.m_Subtype = (IgnoreWalls ? 1 : 0) | ((Strength - 1) << 1);
+		Data.m_Predict = true;
+		m_World.InsertEntity(new CDragger(&m_World, Ids.m_Dragger++, &Data));
+		return;
+	}
+
+	if(Index == ENTITY_DOOR)
+	{
+		// One door per side with a length tile next to it, as on the server. CDoor works out its
+		// own geometry from the map in ResetCollision, which runs once the whole set is up, so all
+		// it is handed here is the far end the server would have snapped: the configured length
+		// along the side the door faces.
+		for(int Side = 0; Side < 8; Side++)
+		{
+			const int Neighbour = pCollision->Entity(x + gs_aSideOffsetX[Side], y + gs_aSideOffsetY[Side], Layer);
+			if(Neighbour < ENTITY_LASER_SHORT || Neighbour > ENTITY_LASER_LONG)
+				continue;
+
+			const int Length = 32 * 3 + 32 * (Neighbour - ENTITY_LASER_SHORT) * 3;
+			const vec2 Direction = vec2(std::sin(pi / 4 * Side), std::cos(pi / 4 * Side));
+
+			// Where the beam ends, which is as far along the door as the map lets it reach. This is
+			// what gets drawn, and it is not the span the collision is laid down along: that one
+			// runs the full configured length and ResetCollision works it out from the map again.
+			vec2 To;
+			pCollision->IntersectNoLaser(Pos, Pos + Direction * Length, &To, nullptr);
+
+			// CDoor::Snap puts the door itself at the far end of the laser object and the end of
+			// its beam at the near one, and CDoor::Read flips them back
+			CLaserData Data = {};
+			Data.m_To = Pos;
+			Data.m_From = To;
+			Data.m_StartTick = -1;
+			Data.m_ExtraInfo = true;
+			Data.m_Owner = -1;
+			Data.m_Type = LASERTYPE_DOOR;
+			Data.m_SwitchNumber = Number;
+			Data.m_Subtype = 0;
+			Data.m_Predict = true;
+			m_World.InsertEntity(new CDoor(&m_World, Ids.m_Door++, &Data));
+		}
+		return;
+	}
+
+	if(Index == ENTITY_PLASMAE || Index == ENTITY_PLASMAF || Index == ENTITY_PLASMA || Index == ENTITY_PLASMAU)
+	{
+		const bool Freeze = Index == ENTITY_PLASMAF || Index == ENTITY_PLASMA;
+		const bool Explosive = Index == ENTITY_PLASMAE || Index == ENTITY_PLASMA;
+		m_World.InsertEntity(new CGun(&m_World, Ids.m_Gun++, Pos, Freeze, Explosive, Layer, Number));
+		return;
+	}
+
+	if(Index >= ENTITY_LASER_FAST_CCW && Index <= ENTITY_LASER_FAST_CW)
+	{
+		// Which way round and how fast the beam sweeps comes off how far the tile is from the one
+		// that stands still, ENTITY_LASER_STOP, and which side of it it falls on
+		int Ind = Index - ENTITY_LASER_STOP;
+		int Sign;
+		if(Ind < 0)
+		{
+			Ind = -Ind;
+			Sign = 1;
+		}
+		else if(Ind == 0)
+			Sign = 0;
+		else
+			Sign = -1;
+
+		float AngularSpeed = 0.0f;
+		if(Ind == 1)
+			AngularSpeed = pi / 360;
+		else if(Ind == 2)
+			AngularSpeed = pi / 180;
+		else if(Ind == 3)
+			AngularSpeed = pi / 90;
+		AngularSpeed *= Sign;
+
+		for(int Side = 0; Side < 8; Side++)
+		{
+			const int Neighbour = pCollision->Entity(x + gs_aSideOffsetX[Side], y + gs_aSideOffsetY[Side], Layer);
+			if(Neighbour < ENTITY_LASER_SHORT || Neighbour > ENTITY_LASER_LONG)
+				continue;
+
+			const int Length = 32 * 3 + 32 * (Neighbour - ENTITY_LASER_SHORT) * 3;
+
+			// A second tile, two out on the same side, is what makes the beam grow and shrink
+			// rather than hold its length: closing from its full length, or opening from nothing.
+			const int Modifier = pCollision->Entity(x + gs_aSideOffsetX[Side] * 2, y + gs_aSideOffsetY[Side] * 2, Layer);
+			int Speed = 0;
+			int CurveLength = Length;
+			if(Modifier >= ENTITY_LASER_C_SLOW && Modifier <= ENTITY_LASER_C_FAST)
+			{
+				Speed = 1 + (Modifier - ENTITY_LASER_C_SLOW) * 2;
+				CurveLength = Length;
+			}
+			else if(Modifier >= ENTITY_LASER_O_SLOW && Modifier <= ENTITY_LASER_O_FAST)
+			{
+				Speed = 1 + (Modifier - ENTITY_LASER_O_SLOW) * 2;
+				CurveLength = 0;
+			}
+
+			m_World.InsertEntity(new CLight(&m_World, Ids.m_Light++, Pos, pi / 4 * Side, Length, Layer, Number,
+				AngularSpeed, Speed, CurveLength));
+		}
+		return;
+	}
+
+	if(Index == ENTITY_CRAZY_SHOTGUN_EX || Index == ENTITY_CRAZY_SHOTGUN)
+	{
+		const bool Explosive = Index == ENTITY_CRAZY_SHOTGUN_EX;
+
+		int Dir;
+		if(!Flags)
+			Dir = 0;
+		else if(Flags == ROTATION_90)
+			Dir = 1;
+		else if(Flags == ROTATION_180)
+			Dir = 2;
+		else
+			Dir = 3;
+		const float Deg = Dir * (pi / 2);
+		const vec2 Direction = vec2(std::sin(Deg), std::cos(Deg));
+
+		// These never expire and are never reconciled against anything, so this world's are at
+		// whatever point of their bounce they were built at rather than where the server's have got
+		// to. A span of -2 is what keeps them alive; the constructor adds itself to the world.
+		const int SoundImpact = (!Explosive || g_Config.m_SvShotgunBulletSound) ? SOUND_GRENADE_EXPLODE : -1;
+		CProjectile *pBullet = new CProjectile(&m_World, WEAPON_SHOTGUN, -1, Pos, Direction, -2,
+			true, Explosive, SoundImpact, Layer, Number);
+		pBullet->SetBouncing(2 - (Dir % 2));
+		return;
+	}
+
+	// The same tiles OnEntity turns into a pickup, and the same types
+	int Type = -1;
+	int Subtype = 0;
+	switch(Index)
+	{
+	case ENTITY_ARMOR_1:
+		Type = POWERUP_ARMOR;
+		break;
+	case ENTITY_ARMOR_SHOTGUN:
+		Type = POWERUP_ARMOR_SHOTGUN;
+		break;
+	case ENTITY_ARMOR_GRENADE:
+		Type = POWERUP_ARMOR_GRENADE;
+		break;
+	case ENTITY_ARMOR_NINJA:
+		Type = POWERUP_ARMOR_NINJA;
+		break;
+	case ENTITY_ARMOR_LASER:
+		Type = POWERUP_ARMOR_LASER;
+		break;
+	case ENTITY_HEALTH_1:
+		Type = POWERUP_FREEZE;
+		break;
+	case ENTITY_WEAPON_SHOTGUN:
+		Type = POWERUP_WEAPON;
+		Subtype = WEAPON_SHOTGUN;
+		break;
+	case ENTITY_WEAPON_GRENADE:
+		Type = POWERUP_WEAPON;
+		Subtype = WEAPON_GRENADE;
+		break;
+	case ENTITY_WEAPON_LASER:
+		Type = POWERUP_WEAPON;
+		Subtype = WEAPON_LASER;
+		break;
+	case ENTITY_POWERUP_NINJA:
+		Type = POWERUP_NINJA;
+		Subtype = WEAPON_NINJA;
+		break;
+	default:
+		return;
+	}
+
+	CPickupData Data;
+	Data.m_Pos = Pos;
+	Data.m_Type = Type;
+	Data.m_Subtype = Subtype;
+	Data.m_SwitchNumber = Number;
+	Data.m_Flags = 0;
+	if(Flags & TILEFLAG_XFLIP)
+		Data.m_Flags |= PICKUPFLAG_XFLIP;
+	if(Flags & TILEFLAG_YFLIP)
+		Data.m_Flags |= PICKUPFLAG_YFLIP;
+	if(Flags & TILEFLAG_ROTATE)
+		Data.m_Flags |= PICKUPFLAG_ROTATE;
+	m_World.InsertEntity(new CPickup(&m_World, Ids.m_Pickup++, &Data), true);
+}
+
+void CLocalPractice::SeedStaticEntities()
+{
+	// The map's own entities -- pickups, draggers, doors, turrets, freeze lasers and the bouncing
+	// shotgun bullets -- read off the same three layers the server reads them off at map load. They cannot
+	// come from the snapshot, which carries only what is in view of the tee it is sent to, and that
+	// tee stands still for as long as practice runs: a practice tee that has moved off would be
+	// running through a map with nothing in it. The snapshot would not be enough even in view,
+	// since it carries where a beam currently ends but not the sweep that swings it, and nothing at
+	// all of a turret's firing clock.
+	CEntity *pNext = nullptr;
+	for(const int ClearType : {CGameWorld::ENTTYPE_PICKUP, CGameWorld::ENTTYPE_DRAGGER, CGameWorld::ENTTYPE_GUN, CGameWorld::ENTTYPE_LIGHT, CGameWorld::ENTTYPE_DOOR})
+		for(CEntity *pEnt = m_World.FindFirst(ClearType); pEnt; pEnt = pNext)
+		{
+			pNext = pEnt->TypeNext();
+			pEnt->Destroy();
+		}
+	// Only the map's bullets, which are the ownerless ones. A tee's own shots are in flight and
+	// have nothing to do with which part of the map has been built.
+	for(CEntity *pEnt = m_World.FindFirst(CGameWorld::ENTTYPE_PROJECTILE); pEnt; pEnt = pNext)
+	{
+		pNext = pEnt->TypeNext();
+		if(((CProjectile *)pEnt)->GetOwner() < 0)
+			pEnt->Destroy();
+	}
+
+	mem_zero(m_aHasStaticCenter, sizeof(m_aHasStaticCenter));
+
+	const CCollision *pCollision = &m_Collision;
+	const CTile *pTiles = pCollision->GameLayer();
+	if(!pTiles)
+		return;
+	const CTile *pFront = pCollision->FrontLayer();
+	const CSwitchTile *pSwitch = pCollision->SwitchLayer();
+	const int Width = pCollision->GetWidth();
+	const int Height = pCollision->GetHeight();
+
+	// One area per tee that is in the world, so that a dummy practicing elsewhere is not left
+	// standing in an empty map. Where two areas overlap the tiles are walked once: a pickup built
+	// twice would be picked up twice, and a dragger built twice would drag twice as hard.
+	int aMinX[NUM_DUMMIES], aMinY[NUM_DUMMIES], aMaxX[NUM_DUMMIES], aMaxY[NUM_DUMMIES];
+	int NumAreas = 0;
+	for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
+	{
+		CCharacter *pChar = PracticeChar(Conn);
+		if(!pChar)
+			continue;
+
+		const vec2 Pos = pChar->Core()->m_Pos;
+		m_aStaticCenter[Conn] = Pos;
+		m_aHasStaticCenter[Conn] = true;
+
+		const int TileX = round_to_int(Pos.x) / 32;
+		const int TileY = round_to_int(Pos.y) / 32;
+		aMinX[NumAreas] = std::max(TileX - gs_StaticEntityRadius, 0);
+		aMinY[NumAreas] = std::max(TileY - gs_StaticEntityRadius, 0);
+		aMaxX[NumAreas] = std::min(TileX + gs_StaticEntityRadius, Width - 1);
+		aMaxY[NumAreas] = std::min(TileY + gs_StaticEntityRadius, Height - 1);
+		NumAreas++;
+	}
+
+	CStaticIds Ids;
+	for(int Area = 0; Area < NumAreas; Area++)
+	{
+		for(int y = aMinY[Area]; y <= aMaxY[Area]; y++)
+		{
+			for(int x = aMinX[Area]; x <= aMaxX[Area]; x++)
+			{
+				bool Walked = false;
+				for(int Earlier = 0; Earlier < Area; Earlier++)
+					if(x >= aMinX[Earlier] && x <= aMaxX[Earlier] && y >= aMinY[Earlier] && y <= aMaxY[Earlier])
+						Walked = true;
+				if(Walked)
+					continue;
+
+				const int Index = y * Width + x;
+				if(pTiles[Index].m_Index >= ENTITY_OFFSET)
+					AddStaticEntity(pTiles[Index].m_Index - ENTITY_OFFSET, x, y, LAYER_GAME, pTiles[Index].m_Flags, 0, Ids);
+				if(pFront && pFront[Index].m_Index >= ENTITY_OFFSET)
+					AddStaticEntity(pFront[Index].m_Index - ENTITY_OFFSET, x, y, LAYER_FRONT, pFront[Index].m_Flags, 0, Ids);
+				if(pSwitch && pSwitch[Index].m_Type >= ENTITY_OFFSET)
+					AddStaticEntity(pSwitch[Index].m_Type - ENTITY_OFFSET, x, y, LAYER_SWITCH, pSwitch[Index].m_Flags, pSwitch[Index].m_Number, Ids);
+			}
+		}
+	}
+
+	// Once every door exists, never one at a time: a door's collision is laid down along its whole
+	// length, and two doors can share tiles, so the set has to be stamped in map order to come out
+	// the way it does on a server. It is also why the doors above were cleared as a set.
+	m_World.ResetDoorCollision();
+}
+
+void CLocalPractice::UpdateStaticEntities()
+{
+	// A tee that has walked, teleported or been dragged out of the area built around it gets a new
+	// one. Rebuilding walks tiles, so it waits on the drift rather than happening every tick.
+	for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
+	{
+		CCharacter *pChar = PracticeChar(Conn);
+		if(!pChar)
+		{
+			// A tee taken out of the world by /spec takes its area with it
+			if(m_aHasStaticCenter[Conn])
+			{
+				SeedStaticEntities();
+				return;
+			}
+			continue;
+		}
+
+		if(!m_aHasStaticCenter[Conn] ||
+			distance(pChar->Core()->m_Pos, m_aStaticCenter[Conn]) > gs_StaticEntityDrift * 32.0f)
+		{
+			SeedStaticEntities();
+			return;
+		}
 	}
 }
 
@@ -923,6 +1353,9 @@ void CLocalPractice::UpdateLookahead()
 
 void CLocalPractice::TickPracticeWorld()
 {
+	// Before the previous world is taken, so that both halves of this tick hold the same entities
+	UpdateStaticEntities();
+
 	m_PrevWorld.CopyWorldClean(&m_World);
 
 	// Only on the ticks that really happen: the speculative ones re-run every frame and would turn
@@ -1103,7 +1536,16 @@ void CLocalPractice::AdvanceInputCounters()
 		// A swap exchanges the two connections' counters and a feature change swaps the source out
 		// from under us. Both look like a jump and neither is anything the player did.
 		if(!SameSource)
+		{
+			// Except for the dummy hammer, which starts hammering the instant it is taken up: the
+			// cadence counter OnSnapInput paces it with sits at zero when the feature goes on, so
+			// the real dummy's first hammer lands on the very next input snap -- possibly the same
+			// one this tick is reading. Only baselining the counter here would swallow that press
+			// and leave the practice dummy waiting out a full cadence before its first hammer.
+			if(SourceId == 1)
+				m_aFireCounter[Conn] = (m_aFireCounter[Conn] + 1) | 1;
 			continue;
+		}
 
 		if(SourceId == 1)
 		{
@@ -1387,6 +1829,33 @@ void CLocalPractice::NeutralizeInput(CNetObj_PlayerInput *pInput, int Conn) cons
 		pInput->m_TargetX = 1;
 }
 
+bool CLocalPractice::AimDirection(int ClientId, vec2 &Out) const
+{
+	if(!m_Active)
+		return false;
+
+	const int MainConn = g_Config.m_ClDummy;
+	const int Conn = LocalConn(ClientId);
+	if(Conn < 0 || Conn == MainConn || !g_Config.m_ClDummyHammer)
+		return false;
+
+	const int MainId = GameClient()->m_aLocalIds[MainConn];
+	if(MainId < 0)
+		return false;
+
+	// Read out of the world the tees are drawn from, and out of the characters rather than the
+	// swapped render state, which holds the real tees' while a scope is open. The same two
+	// positions BuildInput takes the fire direction from, so the aim and the hammer agree.
+	CGameWorld *pWorld = m_pRenderCurWorld ? m_pRenderCurWorld : const_cast<CGameWorld *>(&m_World);
+	CCharacter *pDummy = pWorld->GetCharacterById(ClientId);
+	CCharacter *pMain = pWorld->GetCharacterById(MainId);
+	if(!pDummy || !pMain)
+		return false;
+
+	Out = pMain->Core()->m_Pos - pDummy->Core()->m_Pos;
+	return Out != vec2(0.0f, 0.0f);
+}
+
 void CLocalPractice::BuildRenderState()
 {
 	for(int Conn = 0; Conn < NUM_DUMMIES; Conn++)
@@ -1432,17 +1901,20 @@ void CLocalPractice::BuildRenderState()
 
 		// The core's freeze stamps are ticks on whichever clock froze the tee, and the remaining
 		// freeze time is the one clock independent fact, so they are rebuilt from it on the clock
-		// the freeze bar and the frozen skin actually read.
-		const int ServerTick = Client()->GameTick(g_Config.m_ClDummy);
+		// the freeze bar and the frozen skin actually read. That is the prediction clock, not the
+		// server's: CFreezeBars::RenderFreezeBar picks its clock off m_IsPredictedLocal, which this
+		// tee sets, and measuring a stamp written on one clock against the other leaves the bar
+		// short by however far ahead the prediction is running.
+		const int Now = Client()->PredGameTick(g_Config.m_ClDummy);
 		const int TotalFreeze = std::max(1, g_Config.m_SvFreezeDelay * SERVER_TICK_SPEED);
 		if(pChar->Core()->m_DeepFrozen)
 		{
-			Tee.m_Predicted.m_FreezeStart = ServerTick - TotalFreeze;
+			Tee.m_Predicted.m_FreezeStart = Now - TotalFreeze;
 			Tee.m_Predicted.m_FreezeEnd = -1;
 		}
 		else if(pChar->m_FreezeTime > 0)
 		{
-			Tee.m_Predicted.m_FreezeEnd = ServerTick + pChar->m_FreezeTime;
+			Tee.m_Predicted.m_FreezeEnd = Now + pChar->m_FreezeTime;
 			Tee.m_Predicted.m_FreezeStart = Tee.m_Predicted.m_FreezeEnd - std::max(TotalFreeze, pChar->m_FreezeTime + 1);
 		}
 		else
@@ -1454,6 +1926,27 @@ void CLocalPractice::BuildRenderState()
 		Tee.m_PrevPredicted.m_FreezeEnd = Tee.m_Predicted.m_FreezeEnd;
 		// The frozen skin and the freeze bar read this one rather than m_Predicted
 		Tee.m_RegularPredicted = Tee.m_Predicted;
+
+		// The status flags, off the same core, since nothing is going to send this tee an extended
+		// snapshot to fill them in from
+		Tee.m_FreezeEnd = Tee.m_Predicted.m_FreezeEnd;
+		Tee.m_Solo = Tee.m_Predicted.m_Solo;
+		Tee.m_Jetpack = Tee.m_Predicted.m_Jetpack;
+		Tee.m_CollisionDisabled = Tee.m_Predicted.m_CollisionDisabled;
+		Tee.m_EndlessHook = Tee.m_Predicted.m_EndlessHook;
+		Tee.m_EndlessJump = Tee.m_Predicted.m_EndlessJump;
+		Tee.m_HammerHitDisabled = Tee.m_Predicted.m_HammerHitDisabled;
+		Tee.m_GrenadeHitDisabled = Tee.m_Predicted.m_GrenadeHitDisabled;
+		Tee.m_LaserHitDisabled = Tee.m_Predicted.m_LaserHitDisabled;
+		Tee.m_ShotgunHitDisabled = Tee.m_Predicted.m_ShotgunHitDisabled;
+		Tee.m_HookHitDisabled = Tee.m_Predicted.m_HookHitDisabled;
+		Tee.m_Super = Tee.m_Predicted.m_Super;
+		Tee.m_Invincible = Tee.m_Predicted.m_Invincible;
+		Tee.m_HasTelegunGun = Tee.m_Predicted.m_HasTelegunGun;
+		Tee.m_HasTelegunGrenade = Tee.m_Predicted.m_HasTelegunGrenade;
+		Tee.m_HasTelegunLaser = Tee.m_Predicted.m_HasTelegunLaser;
+		Tee.m_DeepFrozen = Tee.m_Predicted.m_DeepFrozen;
+		Tee.m_LiveFrozen = Tee.m_Predicted.m_LiveFrozen;
 
 		// Derived from this world alone, so the real tee's eyes cannot drive the practice tee's.
 		// The cost is that /emote does not reach it, since nothing on the wire tells a chosen emote
@@ -1473,6 +1966,9 @@ void CLocalPractice::BuildRenderState()
 		// Its own pause, so the sitting animation answers to this world rather than to the server
 		Tee.m_Paused = IsPaused(Conn);
 		Tee.m_Afk = false;
+		// A QFr quad freezes without the core knowing, so this is the practice tee's own answer to
+		// "is it standing in freeze", which is what decides whether the freeze bar is drawn at all
+		Tee.m_InsideQuadFreeze = pChar->m_InsideQuadFreeze;
 		Tee.m_Valid = true;
 	}
 }
@@ -1499,6 +1995,25 @@ void CLocalPractice::SwapPracticeTees()
 		std::swap(Data.m_IsPredictedLocal, Tee.m_IsPredictedLocal);
 		std::swap(Data.m_Paused, Tee.m_Paused);
 		std::swap(Data.m_Afk, Tee.m_Afk);
+		std::swap(Data.m_InsideQuadFreeze, Tee.m_InsideQuadFreeze);
+		std::swap(Data.m_FreezeEnd, Tee.m_FreezeEnd);
+		std::swap(Data.m_Solo, Tee.m_Solo);
+		std::swap(Data.m_Jetpack, Tee.m_Jetpack);
+		std::swap(Data.m_CollisionDisabled, Tee.m_CollisionDisabled);
+		std::swap(Data.m_EndlessHook, Tee.m_EndlessHook);
+		std::swap(Data.m_EndlessJump, Tee.m_EndlessJump);
+		std::swap(Data.m_HammerHitDisabled, Tee.m_HammerHitDisabled);
+		std::swap(Data.m_GrenadeHitDisabled, Tee.m_GrenadeHitDisabled);
+		std::swap(Data.m_LaserHitDisabled, Tee.m_LaserHitDisabled);
+		std::swap(Data.m_ShotgunHitDisabled, Tee.m_ShotgunHitDisabled);
+		std::swap(Data.m_HookHitDisabled, Tee.m_HookHitDisabled);
+		std::swap(Data.m_Super, Tee.m_Super);
+		std::swap(Data.m_Invincible, Tee.m_Invincible);
+		std::swap(Data.m_HasTelegunGun, Tee.m_HasTelegunGun);
+		std::swap(Data.m_HasTelegunGrenade, Tee.m_HasTelegunGrenade);
+		std::swap(Data.m_HasTelegunLaser, Tee.m_HasTelegunLaser);
+		std::swap(Data.m_DeepFrozen, Tee.m_DeepFrozen);
+		std::swap(Data.m_LiveFrozen, Tee.m_LiveFrozen);
 	}
 }
 

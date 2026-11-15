@@ -1050,6 +1050,13 @@ void CHud::RenderPlayerState(const int ClientId)
 	CNetObj_Character *pPlayer = &GameClient()->m_aClients[ClientId].m_RenderCur;
 	int TotalJumpsToDisplay = 0;
 
+	// EClient: a practice tee has no snapshot of its own to carry extended display info, and the
+	// real tee's carries none at all once that tee is paused. What is swapped in here is its core,
+	// which is the real thing rather than something interpolated, so everything the client gates on
+	// that info is available for it.
+	const bool HasDisplayInfo = GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo ||
+				    GameClient()->m_LocalPractice.IsSimulated(ClientId);
+
 	// EClient: this used to shift itself down by the height of the health, armor and ammo rows by
 	// hand, which assumed those were always drawn at full size. The push solver stacks it under
 	// whatever health_ammo actually turned out to be now, so it scales with it.
@@ -1060,7 +1067,7 @@ void CHud::RenderPlayerState(const int ClientId)
 	if(g_Config.m_ClShowhudJumpsIndicator)
 	{
 		int AvailableJumpsToDisplay;
-		if(GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
+		if(HasDisplayInfo)
 		{
 			const bool Grounded = Collision()->IsOnGround(vec2(pPlayer->m_X, pPlayer->m_Y), CCharacterCore::PhysicalSize());
 			int UsedJumps = pCharacter->m_JumpedTotal;
@@ -1146,7 +1153,7 @@ void CHud::RenderPlayerState(const int ClientId)
 		{
 			const int Max = g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000;
 			float NinjaProgress = std::clamp(pCharacter->m_Ninja.m_ActivationTick + g_pData->m_Weapons.m_Ninja.m_Duration * Client()->GameTickSpeed() / 1000 - Client()->GameTick(g_Config.m_ClDummy), 0, Max) / (float)Max;
-			if(NinjaProgress > 0.0f && GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
+			if(NinjaProgress > 0.0f && HasDisplayInfo)
 			{
 				RenderNinjaBarPos(x, y - 12, 6.f, 24.f, NinjaProgress);
 			}
@@ -2133,7 +2140,11 @@ void CHud::OnRender()
 					RenderAmmoHealthAndArmor(Preview ? &PreviewLocalCharacter : GameClient()->m_Snap.m_pLocalCharacter);
 				}
 			}
-			if(GameClient()->m_Snap.m_aCharacters[GameClient()->m_Snap.m_LocalClientId].m_HasExtendedData && g_Config.m_ClShowhudDDRace && GameClient()->m_GameInfo.m_HudDDRace)
+			// EClient: IsSimulated, because the practice tee's state is all there whether or not the
+			// server is still sending extended data for the tee it stands in for
+			if((GameClient()->m_Snap.m_aCharacters[GameClient()->m_Snap.m_LocalClientId].m_HasExtendedData ||
+				   GameClient()->m_LocalPractice.IsSimulated(GameClient()->m_Snap.m_LocalClientId)) &&
+				g_Config.m_ClShowhudDDRace && GameClient()->m_GameInfo.m_HudDDRace)
 			{
 				if(!m_HudLayout.IsOccluded(EHudElement::PLAYER_STATE))
 				{

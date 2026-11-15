@@ -11,6 +11,7 @@
 #include <game/client/component.h>
 #include <game/client/components/players.h>
 #include <game/client/prediction/gameworld.h>
+#include <game/collision.h>
 
 #include <cstddef>
 #include <vector>
@@ -129,6 +130,20 @@ public:
 	bool AimsWithLocalInput(int ClientId) const;
 
 	/**
+	 * The direction this tee is aiming in, where the practice world works it out rather than taking
+	 * it from the mouse.
+	 *
+	 * Only the hammering dummy does: CGameClient::OnSnapInput aims m_HammerInput from one real tee
+	 * at the other, and both of those are standing still while practice runs, so the aim drawn from
+	 * it has nothing to do with where the practice dummy is hammering. The fire direction is right
+	 * because BuildInput works that one out again from the tees in here; this is the same thing for
+	 * the places that draw an aim.
+	 *
+	 * @return false for a tee whose aim is the mouse's, which the caller already has.
+	 */
+	bool AimDirection(int ClientId, vec2 &Out) const;
+
+	/**
 	 * Fills in the practice tees' render state for this frame. Called after the client has filled
 	 * in the real ones, since it copies what it does not override.
 	 */
@@ -182,6 +197,16 @@ public:
 	 * The worlds CItems draws locally simulated projectiles, lasers and pickups out of.
 	 */
 	CGameWorld *PrevRenderWorld() { return m_pRenderPrevWorld ? m_pRenderPrevWorld : &m_PrevWorld; }
+
+	/**
+	 * The world that owns the doors, which is the only one that has any.
+	 *
+	 * A door's whole state is the stamp it leaves in the collision, which every copy of this world
+	 * shares, so the copies need no door entities of their own -- and must not have any, since
+	 * destroying a copy's door would clear collision the original still wants. Doors never move, so
+	 * there is nothing for a previous world to interpolate out of either.
+	 */
+	CGameWorld *DoorWorld() { return &m_World; }
 
 	/**
 	 * Runs a practice command typed into chat. Returns true if it was one of ours and was handled,
@@ -266,6 +291,13 @@ private:
 	CGameWorld m_World;
 	CGameWorld m_PrevWorld;
 
+	// A second view of the same map, sharing every one of its layers and owning only the door
+	// layer, which is the one thing a running game writes into. Doors here can therefore stand open
+	// while the server has them shut, and the doors this world builds for the far side of the map
+	// are not wiped the moment the server stops sending any. All of this world's copies share it,
+	// so a door only ever has to be stamped into it once, by the one world that owns the entities.
+	CCollision m_Collision;
+
 	// Speculative ticks for fast input: the pair the tee is actually drawn between when it is asked
 	// to be drawn further along than the simulation has reached.
 	CGameWorld m_aLookWorld[2];
@@ -328,6 +360,31 @@ private:
 		bool m_IsPredictedLocal = false;
 		bool m_Paused = false;
 		bool m_Afk = false;
+		bool m_InsideQuadFreeze = false;
+
+		// The DDNet status flags the client keeps beside every tee, which it fills in from that
+		// tee's extended snapshot data. A practice tee has no snapshot, so they are taken off its
+		// core instead, and everything that reads them off the client data rather than out of the
+		// core -- the frozen and sparkle looks, the freeze effects, the HUD's frozen-teammate rows
+		// -- then describes the tee being played.
+		bool m_Solo = false;
+		bool m_Jetpack = false;
+		bool m_CollisionDisabled = false;
+		bool m_EndlessHook = false;
+		bool m_EndlessJump = false;
+		bool m_HammerHitDisabled = false;
+		bool m_GrenadeHitDisabled = false;
+		bool m_LaserHitDisabled = false;
+		bool m_ShotgunHitDisabled = false;
+		bool m_HookHitDisabled = false;
+		bool m_Super = false;
+		bool m_Invincible = false;
+		bool m_HasTelegunGun = false;
+		bool m_HasTelegunGrenade = false;
+		bool m_HasTelegunLaser = false;
+		bool m_DeepFrozen = false;
+		bool m_LiveFrozen = false;
+		int m_FreezeEnd = 0;
 	};
 	CPracticeTee m_aPracticeTee[NUM_DUMMIES];
 	// Whether the client data currently holds the practice tees rather than the real ones
@@ -345,9 +402,35 @@ private:
 	std::vector<vec2> m_vSpawns;
 	size_t m_NextSpawn = 0;
 
+	// Where each practice tee stood when the map's own pickups and draggers were last built around
+	// it. Those are built per area rather than map-wide and rebuilt once a tee has walked far
+	// enough out of the area it was given, see SeedStaticEntities.
+	vec2 m_aStaticCenter[NUM_DUMMIES];
+	bool m_aHasStaticCenter[NUM_DUMMIES] = {false, false};
+
 	void CollectSpawns();
 	void Respawn(int Conn);
 	void SeedCharacter(int ClientId);
+	void SeedSnapshotEntities();
+
+	/**
+	 * Running ids for the map entities built into the practice world. Nothing ever matches these
+	 * against a snapshot, so they only have to be unique within their own entity type, which is
+	 * what lets the previous world's copy of an entity be found again while drawing.
+	 */
+	class CStaticIds
+	{
+	public:
+		int m_Pickup = 0;
+		int m_Dragger = 0;
+		int m_Gun = 0;
+		int m_Light = 0;
+		int m_Door = 0;
+	};
+
+	void SeedStaticEntities();
+	void UpdateStaticEntities();
+	void AddStaticEntity(int Index, int x, int y, int Layer, int Flags, int Number, CStaticIds &Ids);
 	void BeginConn(int Conn);
 	void EndConn(int Conn);
 	void ResyncCounters(int Conn);
@@ -430,6 +513,13 @@ private:
 	void CmdAddWeapon(const char *pArgs);
 	void CmdRemoveWeapon(const char *pArgs);
 	void CmdHelp(const char *pArgs);
+
+	/**
+	 * Hands a weapon picked up in the practice world to the controls, which is what decides whether
+	 * to switch to it, so that cl_autoswitch_weapons means the same thing in here as it does on a
+	 * server. Only ever called from the one world that really ticks, never a speculative copy.
+	 */
+	static void OnPracticeWeaponPickup(int ClientId, int Weapon, void *pUser);
 
 	static void ConPractice(IConsole::IResult *pResult, void *pUserData);
 	static void ConPracticeCommand(IConsole::IResult *pResult, void *pUserData);

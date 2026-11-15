@@ -231,11 +231,19 @@ void CControls::OnMessage(int Msg, void *pRawMsg)
 	if(Msg == NETMSGTYPE_SV_WEAPONPICKUP)
 	{
 		CNetMsg_Sv_WeaponPickup *pMsg = (CNetMsg_Sv_WeaponPickup *)pRawMsg;
-		if(g_Config.m_ClAutoswitchWeapons)
-			m_aInputData[g_Config.m_ClDummy].m_WantedWeapon = pMsg->m_Weapon + 1;
-		// We don't really know ammo count, until we'll switch to that weapon, but any non-zero count will suffice here
-		m_aAmmoCount[std::max(0, pMsg->m_Weapon % NUM_WEAPONS)] = 10;
+		OnWeaponPickup(g_Config.m_ClDummy, pMsg->m_Weapon); // EClient
 	}
+}
+
+// EClient
+void CControls::OnWeaponPickup(int Conn, int Weapon)
+{
+	if(Conn < 0 || Conn >= NUM_DUMMIES)
+		return;
+	if(g_Config.m_ClAutoswitchWeapons)
+		m_aInputData[Conn].m_WantedWeapon = Weapon + 1;
+	// We don't really know ammo count, until we'll switch to that weapon, but any non-zero count will suffice here
+	m_aAmmoCount[std::max(0, Weapon % NUM_WEAPONS)] = 10;
 }
 
 void CControls::ApplyGoresMode(CNetObj_PlayerInput &Input) const

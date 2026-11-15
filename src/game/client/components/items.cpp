@@ -3,6 +3,7 @@
 #include "items.h"
 
 #include <base/log.h>
+#include <base/math.h>
 
 #include <engine/demo.h>
 #include <engine/graphics.h>
@@ -15,8 +16,14 @@
 #include <game/client/gameclient.h>
 #include <game/client/laser_data.h>
 #include <game/client/pickup_data.h>
+#include <game/client/prediction/entities/character.h>
+#include <game/client/prediction/entities/door.h>
+#include <game/client/prediction/entities/dragger.h>
+#include <game/client/prediction/entities/gun.h>
 #include <game/client/prediction/entities/laser.h>
+#include <game/client/prediction/entities/light.h>
 #include <game/client/prediction/entities/pickup.h>
+#include <game/client/prediction/entities/plasma.h>
 #include <game/client/prediction/entities/projectile.h>
 #include <game/client/projectile_data.h>
 #include <game/mapitems.h>
@@ -471,6 +478,12 @@ void CItems::OnRender()
 	int GunStartTick = (Client()->GameTick(g_Config.m_ClDummy) / 7) * 7;
 
 	bool UsePredicted = GameClient()->Predict() && GameClient()->AntiPingGunfire();
+	// EClient: while practice runs, the world entities on screen are the practice world's, not the
+	// server's. It keeps switch state of its own, and the set it keeps is built out of the map
+	// rather than out of whatever is in view of the real tee, which is standing still somewhere
+	// else entirely -- so the server's would at best be drawn on top of the practice ones and at
+	// worst draw them open while practice has them shut.
+	const bool PracticeOwnsWorldEntities = GameClient()->m_LocalPractice.IsActive();
 	auto &aSwitchers = GameClient()->Switchers();
 
 	CScreenRect ScreenRectLaser = Graphics()->GetScreen();
@@ -515,15 +528,136 @@ void CItems::OnRender()
 			if(!IsSuper && pPickup->m_Layer == LAYER_SWITCH && pPickup->m_Number > 0 && pPickup->m_Number < (int)vSwitchers.size() && !vSwitchers[pPickup->m_Number].m_aStatus[SwitcherTeam] && BlinkingPickup)
 				continue;
 
-			if(pPickup->InDDNetTile())
+			// EClient: in the practice world these are the only pickups there are to draw. Most of
+			// them sit on a plain tile and so would never pass the test the real world uses to
+			// decide which of the two halves draws which, and the snapshot pass below leaves the
+			// server's alone for as long as practice runs.
+			if(!LocalWorld && !pPickup->InDDNetTile())
+				continue;
+			// A practice world covers far more map than a screen does, so unlike the handful the
+			// real world draws here these are worth culling
+			if(LocalWorld && !ScreenRectPickup.Inside(pPickup->m_Pos))
+				continue;
+
+			if(auto *pPrev = (CPickup *)pWorld->GetEntity(pPickup->GetId(), CGameWorld::ENTTYPE_PICKUP))
 			{
-				if(auto *pPrev = (CPickup *)pWorld->GetEntity(pPickup->GetId(), CGameWorld::ENTTYPE_PICKUP))
-				{
-					CNetObj_Pickup Data, Prev;
-					pPickup->FillInfo(&Data);
-					pPrev->FillInfo(&Prev);
-					RenderPickup(&Prev, &Data, true, pPickup->Flags());
-				}
+				CNetObj_Pickup Data, Prev;
+				pPickup->FillInfo(&Data);
+				pPrev->FillInfo(&Prev);
+				RenderPickup(&Prev, &Data, true, pPickup->Flags());
+			}
+		}
+		// EClient: and the draggers, which the real world leaves to the snapshot entirely. Written
+		// out the way the server snaps them: a beam from the dragger to whichever tee it has hold
+		// of, or nothing but the dragger itself where it rests.
+		if(LocalWorld)
+		{
+			// Doors come out of the world that owns them rather than out of pWorld, which is a copy
+			// and deliberately has none; see CLocalPractice::DoorWorld. They never move, so there
+			// is nothing a previous world would have interpolated anyway.
+			for(CEntity *pEnt = GameClient()->m_LocalPractice.DoorWorld()->FindFirst(CGameWorld::ENTTYPE_DOOR); pEnt; pEnt = pEnt->NextEntity())
+			{
+				auto *const pDoor = dynamic_cast<CDoor *>(pEnt);
+				if(!pDoor)
+					continue;
+				const bool Inactive = !IsSuper && pDoor->m_Number > 0 && pDoor->m_Number < (int)vSwitchers.size() && !vSwitchers[pDoor->m_Number].m_aStatus[SwitcherTeam];
+
+				CLaserData Data = {};
+				// A door whose switch is off, or that a super tee is looking at, is drawn as
+				// nothing: both ends collapse onto the door itself
+				Data.m_From = (Inactive || IsSuper) ? pDoor->m_Pos : pDoor->To();
+				Data.m_To = pDoor->m_Pos;
+				Data.m_StartTick = Client()->GameTick(g_Config.m_ClDummy);
+				Data.m_ExtraInfo = true;
+				Data.m_Owner = -1;
+				Data.m_Type = LASERTYPE_DOOR;
+				Data.m_SwitchNumber = pDoor->m_Number;
+				if(!IsLaserInside(Data))
+					continue;
+				RenderLaser(&Data);
+			}
+			for(CEntity *pEnt = pWorld->FindFirst(CGameWorld::ENTTYPE_DRAGGER); pEnt; pEnt = pEnt->NextEntity())
+			{
+				auto *const pDragger = dynamic_cast<CDragger *>(pEnt);
+				if(!pDragger)
+					continue;
+				if(!IsSuper && pDragger->m_Layer == LAYER_SWITCH && pDragger->m_Number > 0 && pDragger->m_Number < (int)vSwitchers.size() && !vSwitchers[pDragger->m_Number].m_aStatus[SwitcherTeam] && BlinkingDragger)
+					continue;
+
+				const CCharacter *pTarget = pWorld->GetCharacterById(pDragger->GetTargetId());
+
+				CLaserData Data = {};
+				Data.m_From = pDragger->m_Pos;
+				Data.m_To = pTarget ? pTarget->m_Pos : pDragger->m_Pos;
+				Data.m_StartTick = DraggerStartTick;
+				Data.m_ExtraInfo = true;
+				Data.m_Owner = -1;
+				Data.m_Type = LASERTYPE_DRAGGER;
+				Data.m_SwitchNumber = pDragger->m_Number;
+				Data.m_Subtype = (pDragger->GetIgnoreWalls() ? 1 : 0) | ((round_to_int(pDragger->GetStrength()) - 1) << 1);
+				if(!IsLaserInside(Data))
+					continue;
+				RenderLaser(&Data);
+			}
+			for(CEntity *pEnt = pWorld->FindFirst(CGameWorld::ENTTYPE_GUN); pEnt; pEnt = pEnt->NextEntity())
+			{
+				auto *const pGun = static_cast<CGun *>(pEnt);
+				const bool Inactive = !IsSuper && pGun->m_Number > 0 && pGun->m_Number < (int)vSwitchers.size() && !vSwitchers[pGun->m_Number].m_aStatus[SwitcherTeam];
+				if(Inactive && BlinkingGun)
+					continue;
+
+				CLaserData Data = {};
+				Data.m_From = pGun->m_Pos;
+				Data.m_To = pGun->m_Pos;
+				Data.m_StartTick = GunStartTick;
+				Data.m_ExtraInfo = true;
+				Data.m_Owner = -1;
+				Data.m_Type = LASERTYPE_GUN;
+				Data.m_SwitchNumber = pGun->m_Number;
+				Data.m_Subtype = (pGun->GetExplosive() ? 1 : 0) | (pGun->GetFreeze() ? 2 : 0);
+				if(!IsLaserInside(Data))
+					continue;
+				RenderLaser(&Data);
+			}
+			for(CEntity *pEnt = pWorld->FindFirst(CGameWorld::ENTTYPE_LIGHT); pEnt; pEnt = pEnt->NextEntity())
+			{
+				auto *const pLight = static_cast<CLight *>(pEnt);
+				const bool Inactive = !IsSuper && pLight->m_Number > 0 && pLight->m_Number < (int)vSwitchers.size() && !vSwitchers[pLight->m_Number].m_aStatus[SwitcherTeam];
+				if(Inactive && BlinkingLight)
+					continue;
+
+				CLaserData Data = {};
+				// CLight::Snap sends the beam from where it ends back to the light, and collapses it
+				// onto the light itself while its switch is off or the tee is super
+				Data.m_From = (Inactive || IsSuper) ? pLight->m_Pos : pLight->To();
+				Data.m_To = pLight->m_Pos;
+				Data.m_StartTick = DraggerStartTick;
+				Data.m_ExtraInfo = true;
+				Data.m_Owner = -1;
+				Data.m_Type = LASERTYPE_FREEZE;
+				Data.m_SwitchNumber = pLight->m_Number;
+				if(!IsLaserInside(Data))
+					continue;
+				RenderLaser(&Data);
+			}
+			for(CEntity *pEnt = pWorld->FindFirst(CGameWorld::ENTTYPE_PLASMA); pEnt; pEnt = pEnt->NextEntity())
+			{
+				auto *const pPlasma = static_cast<CPlasma *>(pEnt);
+
+				CLaserData Data = {};
+				Data.m_From = pPlasma->m_Pos;
+				Data.m_To = pPlasma->m_Pos;
+				Data.m_StartTick = pPlasma->GetEvalTick();
+				Data.m_ExtraInfo = true;
+				Data.m_Owner = pPlasma->GetForClientId();
+				Data.m_Type = LASERTYPE_PLASMA;
+				Data.m_SwitchNumber = pPlasma->m_Number;
+				Data.m_Subtype = (pPlasma->GetExplosive() ? 1 : 0) | (pPlasma->GetFreeze() ? 2 : 0);
+				if(!IsLaserInside(Data))
+					continue;
+				// The only one of these whose start tick is this world's own, so the only one that
+				// has to be measured against the prediction clock rather than the server's
+				RenderLaser(&Data, true);
 			}
 		}
 	};
@@ -575,6 +709,12 @@ void CItems::OnRender()
 		else if(Item.m_Type == NETOBJTYPE_PICKUP || Item.m_Type == NETOBJTYPE_DDNETPICKUP)
 		{
 			CPickupData Data = ExtractPickupInfo(Item.m_Type, pData, pEntEx);
+			// EClient: while practice runs its world owns the map's pickups and draws its own, so
+			// the server's would only be drawn on top of them. The ones marked unpredictable are
+			// not the map's -- that is the weapon a tee is carrying, drawn over its head -- so
+			// those still come from here.
+			if(PracticeOwnsWorldEntities && !(Data.m_Flags & PICKUPFLAG_NO_PREDICT))
+				continue;
 			if(!ScreenRectPickup.Inside(Data.m_Pos))
 				continue;
 			bool Inactive = !IsSuper && Data.m_SwitchNumber > 0 && Data.m_SwitchNumber < (int)aSwitchers.size() && !aSwitchers[Data.m_SwitchNumber].m_aStatus[SwitcherTeam];
@@ -601,6 +741,14 @@ void CItems::OnRender()
 			}
 
 			CLaserData Data = ExtractLaserInfo(Item.m_Type, pData, &GameClient()->m_GameWorld, pEntEx);
+			// EClient: every laser object the map is behind -- doors, draggers, turrets, freeze
+			// lasers and their plasma -- is the practice world's to draw while practice runs, since
+			// it has its own switch state and its own set, reaching further than the part of the
+			// map the server is sending. What is left is the tees' own shots, and anything from a
+			// server too old to say which it sent.
+			if(PracticeOwnsWorldEntities && Data.m_Type >= 0 &&
+				Data.m_Type != LASERTYPE_RIFLE && Data.m_Type != LASERTYPE_SHOTGUN)
+				continue;
 			if(!IsLaserInside(Data))
 				continue;
 			bool Inactive = !IsSuper && Data.m_SwitchNumber > 0 && Data.m_SwitchNumber < (int)aSwitchers.size() && !aSwitchers[Data.m_SwitchNumber].m_aStatus[SwitcherTeam];

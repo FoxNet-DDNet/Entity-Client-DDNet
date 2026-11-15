@@ -103,12 +103,18 @@ float CPlayers::GetPlayerTargetAngle(
 {
 	// EClient: AimsWithLocalInput is false for the real tee behind a practice one. The dummy input
 	// below is what the client is driving its dummy with right now, and while practicing that is
-	// aiming the practice dummy -- m_HammerInput even points at the practice tee, since its target
-	// is worked out from m_LocalCharacterPos. The real dummy is standing still and keeps the aim
-	// the server has for it.
+	// aiming the practice dummy. The real dummy is standing still and keeps the aim the server has
+	// for it.
 	if(GameClient()->PredictDummy() && GameClient()->m_aLocalIds[!g_Config.m_ClDummy] == ClientId &&
 		GameClient()->m_LocalPractice.AimsWithLocalInput(ClientId))
 	{
+		// EClient: m_HammerInput's target is the line between the two tees on the server, and while
+		// practicing both of those are standing still somewhere else entirely, so the practice
+		// world is asked where its dummy is really hammering
+		vec2 PracticeAim;
+		if(GameClient()->m_LocalPractice.AimDirection(ClientId, PracticeAim))
+			return angle(PracticeAim);
+
 		const CNetObj_PlayerInput &Input = g_Config.m_ClDummyHammer ? GameClient()->m_HammerInput : GameClient()->m_DummyInput;
 		return angle(vec2(Input.m_TargetX, Input.m_TargetY));
 	}

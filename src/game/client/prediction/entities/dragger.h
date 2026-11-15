@@ -22,6 +22,8 @@ public:
 	bool Match(CDragger *pDragger);
 	void Read(const CLaserData *pData);
 	float GetStrength() const { return m_Strength; }
+	bool GetIgnoreWalls() const { return m_IgnoreWalls; }
+	int GetTargetId() const { return m_TargetId; }
 
 	void Tick() override;
 };

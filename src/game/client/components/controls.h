@@ -52,6 +52,14 @@ public:
 	void OnReset() override;
 	void OnRender() override;
 	void OnMessage(int MsgType, void *pRawMsg) override;
+
+	/**
+	 * EClient: the weapon switch picking a weapon up causes.
+	 *
+	 * Split out of OnMessage, which hears about it as Sv_WeaponPickup, for the local practice
+	 * world: it collects its own pickups and there is no message to carry it.
+	 */
+	void OnWeaponPickup(int Conn, int Weapon);
 	bool OnCursorMove(float x, float y, IInput::ECursorType CursorType) override;
 	void OnConsoleInit() override;
 	virtual void OnPlayerDeath();

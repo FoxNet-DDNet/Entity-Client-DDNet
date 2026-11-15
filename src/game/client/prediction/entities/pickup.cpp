@@ -127,6 +127,10 @@ void CPickup::Tick()
 				{
 					pChr->GiveWeapon(m_Subtype);
 
+					// EClient: exactly where the server sends Sv_WeaponPickup, so that a world with
+					// no server behind it causes the same weapon switch
+					GameWorld()->OnWeaponPickup(pChr->GetCid(), m_Subtype);
+
 					if(GameWorld()->m_WorldConfig.m_IsDDRace && GameWorld()->m_WorldConfig.m_PredictDDRace)
 					{
 						if(m_Subtype == WEAPON_GRENADE)

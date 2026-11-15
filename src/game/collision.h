@@ -38,6 +38,21 @@ public:
 	~CCollision();
 
 	void Init(CLayers *pLayers);
+
+	/**
+	 * EClient: makes this a second view of the same map as pFrom, with a door layer of its own.
+	 *
+	 * Everything a map brings is read only and is shared by pointer, so this costs one allocation
+	 * rather than a copy of the map. The door layer is the one thing written while the game runs:
+	 * giving a copy its own means a world can hold a different set of doors than the one the server
+	 * is sending without the two stamping over each other, which is what the local practice world
+	 * needs -- its switch state forks from the server's, and it reaches parts of the map the server
+	 * is not sending any doors for at all.
+	 *
+	 * pFrom owns the map, so it has to outlive the copy.
+	 */
+	void CopyMap(const CCollision *pFrom);
+
 	void Unload();
 	void FillAntibot(CAntibotMapData *pMapData) const;
 

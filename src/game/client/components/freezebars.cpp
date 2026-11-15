@@ -66,17 +66,23 @@ void CFreezeBars::RenderFreezeBar(int ClientId)
 	// pCharacter contains the predicted character for local players or the last snap for players who are spectated
 	CCharacterCore *pCharacter = &GameClient()->m_aClients[ClientId].m_RegularPredicted;
 
+	// EClient: a practice tee, swapped in by the scope in OnRender, has no snapshot of its own. The
+	// real tee's says nothing about it and carries no extended data at all while that tee is
+	// paused, so the two checks that ask the server about this freeze are skipped: there is nothing
+	// to confirm and nothing to mispredict in a world with no server behind it.
+	const bool Simulated = GameClient()->m_LocalPractice.IsSimulated(ClientId);
+
 	// A QFr quad freezes just like a freeze tile does, but the server flags only the tiles, see
 	// CCharacter::m_InsideQuadFreeze
 	const bool IsInFreeze = pCharacter->m_IsInFreeze || GameClient()->m_aClients[ClientId].m_InsideQuadFreeze;
 
-	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo || (IsInFreeze && g_Config.m_ClFreezeBarsAlphaInsideFreeze == 0))
+	if(pCharacter->m_FreezeEnd <= 0 || pCharacter->m_FreezeStart == 0 || pCharacter->m_FreezeEnd <= pCharacter->m_FreezeStart || (!Simulated && !GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo) || (IsInFreeze && g_Config.m_ClFreezeBarsAlphaInsideFreeze == 0))
 	{
 		return;
 	}
 
 	// only show the freeze bar once the server confirmed the freeze, so mispredicted freezes are not shown
-	if(GameClient()->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_FreezeEnd <= 0)
+	if(!Simulated && GameClient()->m_Snap.m_aCharacters[ClientId].m_ExtendedData.m_FreezeEnd <= 0)
 	{
 		return;
 	}
@@ -267,6 +273,10 @@ void CFreezeBars::RenderFreezeBarPos(float x, const float y, const float Width, 
 
 inline bool CFreezeBars::IsPlayerInfoAvailable(int ClientId) const
 {
+	// EClient: a practice tee is there to draw a bar under whether or not the real tee behind it is
+	// on the wire, which it is not once that tee is paused
+	if(GameClient()->m_LocalPractice.IsSimulated(ClientId))
+		return true;
 	return GameClient()->m_Snap.m_aCharacters[ClientId].m_Active &&
 	       GameClient()->m_Snap.m_apPrevPlayerInfos[ClientId] != nullptr &&
 	       GameClient()->m_Snap.m_apPlayerInfos[ClientId] != nullptr;

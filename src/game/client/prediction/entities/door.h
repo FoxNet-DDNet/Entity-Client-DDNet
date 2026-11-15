@@ -21,6 +21,9 @@ public:
 	void ResetCollision();
 	bool Match(const CDoor *pDoor) const;
 	void Read(const CLaserData *pData);
+	// EClient: where the beam ends, which is what the server puts on the wire and what gets drawn.
+	// Not the same as the span the collision is laid down along, see ResetCollision.
+	vec2 To() const { return m_To; }
 
 	void Destroy() override;
 };
