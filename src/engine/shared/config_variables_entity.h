@@ -522,7 +522,7 @@ MACRO_CONFIG_INT(ClShowhudFinishPredictionHideNoRoute, ec_showhud_finish_predict
 MACRO_CONFIG_INT(ClFinishPredictionFreezePenalty, ec_finish_prediction_freeze_penalty, 200, 1, 2000, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many tiles of detour the route will take to avoid one tile of freeze")
 MACRO_CONFIG_INT(ClFinishPredictionTeleporterBias, ec_finish_prediction_teleporter_bias, 20, 0, 500, CFGFLAG_CLIENT | CFGFLAG_SAVE, "How many tiles of detour the route will take rather than go through a teleporter")
 MACRO_CONFIG_INT(ClFinishPredictionOffPath, ec_finish_prediction_off_path, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Keep reporting progress while off the route, from how far you still have to go. Needed on team maps, where a drag part puts the two tees on different paths")
-MACRO_CONFIG_INT(ClFinishPredictionRoute, ec_finish_prediction_route, 2, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draw the route the finish prediction found (1 = the route, 2 = the way back onto it as well while you are off it)")
+MACRO_CONFIG_INT(ClFinishPredictionRoute, ec_finish_prediction_route, 0, 0, 2, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Draw the route the finish prediction found (1 = the route, 2 = the way back onto it as well while you are off it)")
 MACRO_CONFIG_INT(ClFinishPredictionRouteAlpha, ec_finish_prediction_route_alpha, 60, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Opacity of the drawn route")
 MACRO_CONFIG_COL(ClFinishPredictionRouteColor, ec_finish_prediction_route_color, 8765337, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of the route still ahead of you")
 MACRO_CONFIG_COL(ClFinishPredictionBranchColor, ec_finish_prediction_branch_color, 1428628, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Color of the branch drawn from you back to the route while you are off it")

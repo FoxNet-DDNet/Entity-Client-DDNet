@@ -307,6 +307,10 @@ private:
 	int m_RoutePenalty = 0;
 	int m_SeenPenalty = 0;
 	float m_PenaltyChangedAt = 0.0f;
+	// Whether the readout was switched on when the map was loaded or when the setting was last
+	// looked at, so that switching it on mid-map starts the search this map never ran, and
+	// switching it off gives the route back.
+	bool m_SeenEnabled = false;
 	int m_PredictedTicks = -1;
 	float m_PredictionBlend = 0.0f;
 
@@ -354,6 +358,7 @@ private:
 
 	void StopWorker();
 	void StartSearch();
+	void Discard();
 	void PollSettings();
 	bool BuildGrid(CGrid *pGrid) const;
 	void CollectJob();

@@ -969,7 +969,7 @@ void CPlayers::RenderPlayer(
 	float TeeAnimScale, TeeBaseSize;
 	CRenderTools::GetRenderTeeAnimScaleAndBaseSize(&RenderInfo, TeeAnimScale, TeeBaseSize);
 	vec2 BodyPos = Position + vec2(State.GetBody()->m_X, State.GetBody()->m_Y) * TeeAnimScale;
-	const bool Frozen = GameClient()->m_aClients[ClientId].m_FreezeEnd != 0;
+	const bool Frozen = ClientId >= 0 && GameClient()->m_aClients[ClientId].m_FreezeEnd != 0;
 
 	if(RenderInfo.m_TeeRenderFlags & TEE_EFFECT_FROZEN)
 	{

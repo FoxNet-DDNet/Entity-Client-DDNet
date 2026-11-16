@@ -1467,7 +1467,13 @@ void CFinishPrediction::StopWorker()
 	m_pJob = nullptr;
 }
 
-void CFinishPrediction::OnMapLoad()
+/**
+ * Drops the route and everything tracked against it, and stops any search in flight.
+ *
+ * A map change and the readout being switched off want the same thing: nothing of the old route
+ * left behind, and no worker still holding a grid.
+ */
+void CFinishPrediction::Discard()
 {
 	StopWorker();
 	m_pRoute = nullptr;
@@ -1485,8 +1491,15 @@ void CFinishPrediction::OnMapLoad()
 	m_PredictedTicks = -1;
 	m_PredictionBlend = 0.0f;
 	ResetPace();
+}
 
-	StartSearch();
+void CFinishPrediction::OnMapLoad()
+{
+	Discard();
+
+	m_SeenEnabled = g_Config.m_ClShowhudFinishPrediction != 0;
+	if(m_SeenEnabled)
+		StartSearch();
 }
 
 void CFinishPrediction::StartSearch()
@@ -1511,7 +1524,11 @@ void CFinishPrediction::StartSearch()
 }
 
 /**
- * Re-searches when the freeze penalty changes, once it has stopped changing.
+ * Picks up the two settings that a route cannot be adjusted to after the fact: whether the
+ * readout is on at all, and the freeze penalty.
+ *
+ * Both are watched here rather than through a conchain, because the settings page writes
+ * g_Config directly and never goes through the console.
  *
  * The penalty is baked into the route, so it cannot be applied to one already found, and it gets
  * tuned by eye. Waiting out the drag matters: without it, every frame of a slider drag would
@@ -1519,6 +1536,21 @@ void CFinishPrediction::StartSearch()
  */
 void CFinishPrediction::PollSettings()
 {
+	// Switching the readout on is what starts the first search on a map loaded with it off, and
+	// switching it off hands the route and the worker back rather than leaving them to idle.
+	const bool Enabled = g_Config.m_ClShowhudFinishPrediction != 0;
+	if(Enabled != m_SeenEnabled)
+	{
+		m_SeenEnabled = Enabled;
+		if(Enabled)
+			StartSearch();
+		else
+			Discard();
+		return;
+	}
+	if(!Enabled)
+		return;
+
 	const int Penalty = std::max(1, g_Config.m_ClFinishPredictionFreezePenalty);
 	if(Penalty != m_SeenPenalty)
 	{
@@ -2077,7 +2109,12 @@ void CFinishPrediction::OnRender()
 	if(!GameClient()->m_Snap.m_pGameInfoObj)
 		return;
 
+	// Polled before the switch is consulted, because noticing that it has just been turned on is
+	// what starts the search.
 	PollSettings();
+	if(!g_Config.m_ClShowhudFinishPrediction)
+		return;
+
 	UpdateProgress();
 	RenderRoute();
 }
@@ -2348,6 +2385,13 @@ void CFinishPrediction::RenderHud(bool Preview)
 void CFinishPrediction::ConFinishPredictionStatus(IConsole::IResult *pResult, void *pUserData)
 {
 	CFinishPrediction *pThis = (CFinishPrediction *)pUserData;
+	// Said outright, because with the readout off there is no route to report on and no search
+	// to wait for, which otherwise reads the same as a map with nothing to race between.
+	if(!g_Config.m_ClShowhudFinishPrediction)
+	{
+		pThis->GameClient()->Echo("Finish prediction: off, nothing searched for (ec_showhud_finish_prediction 1 to switch it on)");
+		return;
+	}
 	const CRoute *pRoute = pThis->m_pRoute.get();
 	char aBuf[256];
 	if(!pRoute)
