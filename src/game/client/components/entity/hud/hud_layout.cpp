@@ -145,7 +145,21 @@ static const CHudElementDef gs_aHudElements[] = {
 	// finish_prediction.cpp CFinishPrediction::RenderHud: right aligned under the records, one or
 	// two 8 unit lines depending on whether it has a time to predict yet. It measures its own
 	// text, so this is only what it looks like before it has said anything.
-	{"Finish prediction", EHudElement::FINISH_PREDICTION, "finish_prediction", EHudAnchor::TOP_LEFT, EHudOriginX::FROM_LEFT, vec2(0.0f, 125.0f), vec2(76.0f, 16.5f), 68, EHudPushDirection::DOWN, 2.0f, EHudElement::RECORD, EHudPushDirection::DOWN, 2.0f, true, &g_Config.m_ClShowhudFinishPrediction, nullptr, &g_Config.m_ClShowhudFinishPredictionTime, "Predicted time", nullptr, nullptr},
+	{"Finish prediction", EHudElement::FINISH_PREDICTION, "finish_prediction", EHudAnchor::TOP_LEFT, EHudOriginX::FROM_LEFT, vec2(0.0f, 125.0f), vec2(76.0f, 16.5f), 68, EHudPushDirection::DOWN, 2.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, &g_Config.m_ClShowhudFinishPrediction, nullptr, &g_Config.m_ClShowhudFinishPredictionTime, "Predicted time", nullptr, nullptr},
+	// hud.cpp RenderDDRaceEffects: the difference from the last checkpoint during a run, and from
+	// the record for six seconds after a finish. One 10 unit line centred near the top, measuring
+	// its own text, so the width here is what a typical reading comes to.
+	//
+	// Attached under the finish shout, which is the one place it has to be: the two were a single
+	// two line readout upstream, and the gap of 2 is what puts it back on the line it used to be
+	// drawn at. An attachment only holds while its target is on screen, so during a run the
+	// readout is free of it and only has the race timer and the frozen count to get out of the way
+	// of, which is where it used to step to by hand.
+	{"Time difference", EHudElement::TIME_CP_DIFF, "time_cp_diff", EHudAnchor::TOP_CENTER, EHudOriginX::FROM_CENTER, vec2(0.0f, 12.0f), vec2(36.0f, 10.0f), 57, EHudPushDirection::DOWN, 2.0f, EHudElement::FINISH_TIME, EHudPushDirection::DOWN, 2.0f, true, &g_Config.m_ClShowhudTimeCpDiff, nullptr, nullptr, nullptr, nullptr, nullptr},
+	// hud.cpp RenderDDRaceEffects: the finish shout, a single 12 unit line at y = 20, up for six
+	// seconds after a finish. It measures its own text. Placed before the difference readout, which
+	// attaches to it, so its priority has to be the higher of the two.
+	{"Finish time", EHudElement::FINISH_TIME, "finish_time", EHudAnchor::TOP_CENTER, EHudOriginX::FROM_CENTER, vec2(0.0f, 20.0f), vec2(110.0f, 12.0f), 58, EHudPushDirection::DOWN, 2.0f, ATTACH_NONE, EHudPushDirection::NONE, 0.0f, true, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr},
 };
 
 static_assert(std::size(gs_aHudElements) == (size_t)EHudElement::NUM_HUD_ELEMENTS,
@@ -204,16 +218,22 @@ CHudLayout::CHudLayout()
 	for(int i = 0; i < (int)EHudElement::NUM_HUD_ELEMENTS; i++)
 	{
 		dbg_assert(gs_aHudElements[i].m_Element == (EHudElement)i, "gs_aHudElements is out of order");
-		m_aPlacements[i].m_Anchor = gs_aHudElements[i].m_DefaultAnchor;
-		m_aPlacements[i].m_PushPriority = gs_aHudElements[i].m_PushPriority;
-		m_aPlacements[i].m_PushDirection = gs_aHudElements[i].m_PushDirection;
-		m_aPlacements[i].m_PushGap = gs_aHudElements[i].m_PushGap;
-		m_aPlacements[i].m_AttachTarget = gs_aHudElements[i].m_AttachTarget;
-		m_aPlacements[i].m_AttachSide = gs_aHudElements[i].m_AttachSide;
-		m_aPlacements[i].m_AttachGap = gs_aHudElements[i].m_AttachGap;
-		m_aPlacements[i].m_HideWhenCovered = gs_aHudElements[i].m_HideWhenCovered;
-		m_aPushOffsets[i] = vec2(0.0f, 0.0f);
+		ResetPlacement(i);
 	}
+}
+
+void CHudLayout::ResetPlacement(int Index)
+{
+	m_aPlacements[Index] = CPlacement();
+	m_aPlacements[Index].m_Anchor = gs_aHudElements[Index].m_DefaultAnchor;
+	m_aPlacements[Index].m_PushPriority = gs_aHudElements[Index].m_PushPriority;
+	m_aPlacements[Index].m_PushDirection = gs_aHudElements[Index].m_PushDirection;
+	m_aPlacements[Index].m_PushGap = gs_aHudElements[Index].m_PushGap;
+	m_aPlacements[Index].m_AttachTarget = gs_aHudElements[Index].m_AttachTarget;
+	m_aPlacements[Index].m_AttachSide = gs_aHudElements[Index].m_AttachSide;
+	m_aPlacements[Index].m_AttachGap = gs_aHudElements[Index].m_AttachGap;
+	m_aPlacements[Index].m_HideWhenCovered = gs_aHudElements[Index].m_HideWhenCovered;
+	m_aPushOffsets[Index] = vec2(0.0f, 0.0f);
 }
 
 void CHudLayout::OnBaseScreenSet(vec2 BaseSize)
@@ -254,9 +274,16 @@ void CHudLayout::SolvePushes()
 
 		CRect Rect = RectForOffset(Element, Placement.m_Offset);
 
-		// An attachment holds every frame, so it is settled before anything gets shoved around.
-		// Skipped for whatever is being dragged, so the cursor still wins over it.
-		if(Element != m_Held &&
+		// An attachment is settled before anything gets shoved around, since a push should act on
+		// where the attachment put the element rather than the other way about.
+		//
+		// Suspended with the rest of the solver while the editor is open, and for the same
+		// reason: the editor shows the placement, not the placement plus what the solver made of
+		// it. Left running it fought the cursor -- an attached element snapped back to its
+		// attached position the instant the drag ended, since releasing clears m_Held and the
+		// attachment immediately overrode the offset the drag had just written. Holding shift
+		// runs the solver, which is where to see what the attachment is actually going to do.
+		if(Element != m_Held && !m_PushSuspended &&
 			Placement.m_AttachSide != EHudPushDirection::NONE &&
 			Placement.m_AttachTarget != ATTACH_NONE &&
 			Placement.m_AttachTarget != Element &&
@@ -265,10 +292,18 @@ void CHudLayout::SolvePushes()
 			const CRect Target = m_aPlacedRects[(int)Placement.m_AttachTarget];
 			if(Target.m_Size.x > 0.0f && Target.m_Size.y > 0.0f)
 			{
-				// Carrying however far the target has been moved from where it draws itself is
-				// what makes the two travel together, rather than only lining up on one axis
-				const CRect TargetNatural = NaturalRect(Placement.m_AttachTarget);
-				const vec2 Carry = Target.m_Pos - TargetNatural.m_Pos;
+				// Carrying however far the target has been moved is what makes the two travel
+				// together, rather than only lining up on one axis.
+				//
+				// Measured against where the target would sit with no offset but the same scale,
+				// not against its natural rect. The natural rect has not been scaled, so the
+				// difference from it mixes "the user moved this by X" together with "scaling it
+				// about its anchor shifted its corner by Y". Only the first of those should
+				// reach the attached element, which has its own size, scale and anchor and will
+				// have been shifted by its own scaling already. Handing it the target's as well
+				// slid it tens of units away from what it was attached to.
+				const vec2 TargetUnmoved = RectForOffset(Placement.m_AttachTarget, vec2(0.0f, 0.0f)).m_Pos;
+				const vec2 Carry = Target.m_Pos - TargetUnmoved;
 				const float Gap = Placement.m_AttachGap;
 
 				vec2 Wanted = Rect.m_Pos + Carry;
@@ -507,8 +542,12 @@ CHudLayout::CRect CHudLayout::NaturalRect(EHudElement Element) const
 	// a constant and some elements rest somewhere that depends on the screen or on config
 	if(m_aNominalState[(int)Element] == ENominalState::REPORTED)
 		return m_aNominal[(int)Element];
-	if(m_aNominalState[(int)Element] == ENominalState::WITHDRAWN)
-		return CRect();
+
+	// A withdrawn element falls through to the table, which is where it would go if it were
+	// switched on. Withdrawing says "I have nothing on screen", and the solver already acts on
+	// that through IsLive; it does not have to mean nobody can be told where the thing belongs.
+	// Returning nothing here hid four elements from the editor outright while every other
+	// switched-off element kept a dimmed box, purely because of how each component is written.
 
 	const CHudElementDef &Def = gs_aHudElements[(int)Element];
 
@@ -1054,16 +1093,12 @@ void CHudLayout::ConHudReset(IConsole::IResult *pResult, void *pUserData)
 			return;
 		}
 
-		pThis->m_aPlacements[(int)Element] = CPlacement();
-		pThis->m_aPlacements[(int)Element].m_Anchor = gs_aHudElements[(int)Element].m_DefaultAnchor;
+		pThis->ResetPlacement((int)Element);
 	}
 	else
 	{
 		for(int i = 0; i < (int)EHudElement::NUM_HUD_ELEMENTS; i++)
-		{
-			pThis->m_aPlacements[i] = CPlacement();
-			pThis->m_aPlacements[i].m_Anchor = gs_aHudElements[i].m_DefaultAnchor;
-		}
+			pThis->ResetPlacement(i);
 	}
 
 	pThis->m_ContainersDirty = true;
@@ -1079,9 +1114,13 @@ void CHudLayout::ConHudList(IConsole::IResult *pResult, void *pUserData)
 		const CRect Rect = pThis->ResolvedRect((EHudElement)i);
 
 		char aBuf[256];
+		// Whether it is live is worth a column of its own: an element that is not reporting
+		// anything neither pushes nor can be attached to, and both of those fail silently. Read
+		// as "I attached something to this and nothing happened", with no way to tell why.
 		str_format(aBuf, sizeof(aBuf),
-			"%-16s offset %7.1f %7.1f  scale %5.2f  anchor %-11s  push %-5s pri %3d  attach %-16s %-5s  rect %6.1f %6.1f %6.1f %6.1f",
+			"%-16s %-4s offset %7.1f %7.1f  scale %5.2f  anchor %-11s  push %-5s pri %3d  attach %-16s %-5s gap %5.1f  rect %6.1f %6.1f %6.1f %6.1f",
 			gs_aHudElements[i].m_pName,
+			pThis->IsLive((EHudElement)i) ? "live" : "--",
 			Placement.m_Offset.x, Placement.m_Offset.y,
 			Placement.m_Scale,
 			gs_apAnchorNames[(int)Placement.m_Anchor],
@@ -1089,6 +1128,7 @@ void CHudLayout::ConHudList(IConsole::IResult *pResult, void *pUserData)
 			Placement.m_PushPriority,
 			Placement.m_AttachTarget == ATTACH_NONE ? "none" : gs_aHudElements[(int)Placement.m_AttachTarget].m_pName,
 			gs_apPushDirectionNames[(int)Placement.m_AttachSide],
+			Placement.m_AttachGap,
 			Rect.m_Pos.x, Rect.m_Pos.y, Rect.m_Size.x, Rect.m_Size.y);
 		pThis->Console()->Print(IConsole::OUTPUT_LEVEL_STANDARD, "hud_layout", aBuf);
 	}
@@ -1155,16 +1195,7 @@ void CHudLayout::SetAnchor(EHudElement Element, EHudAnchor Anchor)
 
 void CHudLayout::ResetElement(EHudElement Element)
 {
-	const CHudElementDef &Def = gs_aHudElements[(int)Element];
-	m_aPlacements[(int)Element] = CPlacement();
-	m_aPlacements[(int)Element].m_Anchor = Def.m_DefaultAnchor;
-	m_aPlacements[(int)Element].m_PushPriority = Def.m_PushPriority;
-	m_aPlacements[(int)Element].m_PushDirection = Def.m_PushDirection;
-	m_aPlacements[(int)Element].m_PushGap = Def.m_PushGap;
-	m_aPlacements[(int)Element].m_AttachTarget = Def.m_AttachTarget;
-	m_aPlacements[(int)Element].m_AttachSide = Def.m_AttachSide;
-	m_aPlacements[(int)Element].m_AttachGap = Def.m_AttachGap;
-	m_aPlacements[(int)Element].m_HideWhenCovered = Def.m_HideWhenCovered;
+	ResetPlacement((int)Element);
 	m_ContainersDirty = true;
 }
 
@@ -1213,11 +1244,6 @@ bool CHudLayout::IsOccluded(EHudElement Element)
 		HoldNaturalRect(Element);
 
 	return Occluded;
-}
-
-bool CHudLayout::IsPresent(EHudElement Element) const
-{
-	return IsLive(Element) || m_aNominalState[(int)Element] != ENominalState::WITHDRAWN;
 }
 
 bool CHudLayout::IsLive(EHudElement Element) const

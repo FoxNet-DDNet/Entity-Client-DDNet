@@ -41,6 +41,8 @@ enum class EHudElement
 	NOTIFY_LAST,
 	PRACTICE_ALERT,
 	FINISH_PREDICTION,
+	TIME_CP_DIFF,
+	FINISH_TIME,
 	NUM_HUD_ELEMENTS,
 };
 
@@ -225,7 +227,6 @@ public:
 	 * Whether the element exists at all right now, as against being switched off but still having
 	 * somewhere it would go.
 	 */
-	bool IsPresent(EHudElement Element) const;
 
 	/**
 	 * The rect an element occupies when it is left alone, in base HUD units.
@@ -297,6 +298,13 @@ public:
 	 * off so that neighbouring panels read as one surface instead of two boxes with a seam.
 	 */
 	int CornerFlags(EHudElement Element) const;
+	/**
+	 * Puts one element's placement back to what the table says, offsets and all.
+	 *
+	 * Everything the table has an opinion about has to come from here, or a reset quietly drops
+	 * it: anchor, push order, attachment and whether the scoreboard covers it.
+	 */
+	void ResetPlacement(int Index);
 
 	/**
 	 * Whether anything lies flush against one whole side of an element, the screen edge included.

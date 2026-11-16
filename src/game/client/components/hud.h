@@ -68,6 +68,9 @@ class CHud : public CComponent
 	SScoreInfo m_aScoreInfo[2];
 	STextContainerIndex m_FPSTextContainerIndex;
 	STextContainerIndex m_DDRaceEffectsTextContainerIndex;
+	// EClient: the difference readout is its own element, drawn alongside the finish shout rather
+	// than appended to it, so it needs a container of its own
+	STextContainerIndex m_TimeDiffTextContainerIndex;
 	STextContainerIndex m_PlayerAngleTextContainerIndex;
 	float m_PlayerPrevAngle;
 	STextContainerIndex m_aPlayerSpeedTextContainers[2];

@@ -125,7 +125,7 @@ std::optional<EHudElement> CHudEditor::ElementAt(vec2 Pos) const
 
 	for(int i = 0; i < (int)EHudElement::NUM_HUD_ELEMENTS; i++)
 	{
-		if(!CHudLayout::IsMovable((EHudElement)i) || !Layout().IsPresent((EHudElement)i))
+		if(!CHudLayout::IsMovable((EHudElement)i))
 			continue;
 
 		const CHudLayout::CRect Rect = Layout().ResolvedRect((EHudElement)i);
@@ -245,9 +245,6 @@ void CHudEditor::SnapOffset(EHudElement Element, vec2 &Offset)
 
 void CHudEditor::RenderElement(EHudElement Element, bool Hovered) const
 {
-	if(!Layout().IsPresent(Element))
-		return;
-
 	const CHudLayout::CRect Rect = Layout().ResolvedRect(Element);
 	if(Rect.m_Size.x <= 0.0f || Rect.m_Size.y <= 0.0f)
 		return;
