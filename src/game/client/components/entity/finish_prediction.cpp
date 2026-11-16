@@ -1490,6 +1490,7 @@ void CFinishPrediction::Discard()
 	m_TrackedRaceTick = -1;
 	m_PredictedTicks = -1;
 	m_PredictionBlend = 0.0f;
+	m_HeldRemaining = -1;
 	ResetPace();
 }
 
@@ -1562,6 +1563,7 @@ void CFinishPrediction::PollSettings()
 		m_TrackNode = -1;
 		m_PredictedTicks = -1;
 		m_PredictionBlend = 0.0f;
+		m_HeldRemaining = -1;
 		m_pRoute = nullptr;
 		StartSearch();
 	}
@@ -1574,6 +1576,7 @@ void CFinishPrediction::OnReset()
 	m_HasProgress = false;
 	m_PredictedTicks = -1;
 	m_PredictionBlend = 0.0f;
+	m_HeldRemaining = -1;
 }
 
 void CFinishPrediction::OnShutdown()
@@ -1987,6 +1990,7 @@ void CFinishPrediction::UpdateProgress()
 		m_HasLastPos = false;
 		m_PredictedTicks = -1;
 		m_PredictionBlend = 0.0f;
+		m_HeldRemaining = -1;
 		ResetPace();
 		m_RushProgress = true;
 		m_SnapProgress = false;
@@ -2091,12 +2095,31 @@ void CFinishPrediction::UpdateProgress()
 			m_PredictedTicks = m_PredictedTicks < 0 ? Estimate : (int)mix((float)m_PredictedTicks, (float)Estimate, TimeBlend * 0.5f);
 			m_PredictedTicks = std::max(m_PredictedTicks, Elapsed);
 			m_PredictionBlend = std::min(1.0f, m_PredictionBlend + TimeBlend);
+			// What the figure on screen says is still to come, taken from the eased value and not
+			// from the raw estimate, so that the held case below carries on from the same number
+			// it was showing on the frame the window went quiet
+			m_HeldRemaining = m_PredictedTicks - Elapsed;
+		}
+		else if(m_PredictedTicks > 0 && m_HeldRemaining >= 0)
+		{
+			// The window has nothing to say: the tee is sitting in freeze, or waiting on a
+			// teammate at a drag, or simply not moving. What is left to run is held at the last
+			// thing it did say, and the time going by reaches the figure through elapsed -- which
+			// is what the window itself did for the first ten seconds of standing still, before
+			// the zero gain slices evicted the moving ones and it stopped answering. This is only
+			// the rest of that.
+			//
+			// Holding the whole estimate instead stops it dead while the clock it is a time on
+			// carries on, so a long enough wait predicted a finish earlier than the time already
+			// on the timer.
+			m_PredictedTicks = Elapsed + m_HeldRemaining;
 		}
 	}
 	else
 	{
 		m_PredictedTicks = -1;
 		m_PredictionBlend = 0.0f;
+		m_HeldRemaining = -1;
 	}
 }
 

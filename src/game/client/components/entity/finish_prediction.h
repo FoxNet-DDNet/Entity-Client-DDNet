@@ -313,6 +313,10 @@ private:
 	bool m_SeenEnabled = false;
 	int m_PredictedTicks = -1;
 	float m_PredictionBlend = 0.0f;
+	// How much of the run the pace window last said was still to come, in ticks. Held so that a
+	// stretch of standing still pushes the predicted finish out rather than stopping it dead.
+	// Only meaningful while m_PredictedTicks is positive, and -1 before there has been one.
+	int m_HeldRemaining = -1;
 
 	/**
 	 * Where the tee was along the route, and when, kept for the last little while.
