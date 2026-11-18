@@ -1613,9 +1613,39 @@ int CLocalPractice::PickTeleOut(int Tick, int Size) const
 	return (int)(Hash % (unsigned int)Size);
 }
 
-void CLocalPractice::TeleportChar(CCharacter *pChar, vec2 Pos, bool ResetVel, bool ReleaseHooked, CGameWorld &World)
+void CLocalPractice::PlaceChar(CGameWorld &World, CCharacter *pChar, vec2 Pos)
 {
 	pChar->Core()->m_Pos = Pos;
+
+	// The entity position is only synced from the core during the tick, and this can run after it
+	pChar->m_Pos = Pos;
+	pChar->m_PrevPos = Pos;
+	pChar->m_PrevPrevPos = Pos;
+
+	// Which world holds the tick being drawn against depends on which one is being stepped: the
+	// real one is drawn against m_PrevWorld, and the pair fast input draws instead is the last two
+	// look-ahead ticks, of which m_aLookWorld[1] is the earlier one. A copy taken for an earlier
+	// look-ahead tick is overwritten before anything is drawn out of it, so there is nothing to
+	// move in it.
+	CGameWorld *pPrevWorld = nullptr;
+	if(&World == &m_World)
+		pPrevWorld = &m_PrevWorld;
+	else if(&World == &m_aLookWorld[0])
+		pPrevWorld = &m_aLookWorld[1];
+	if(!pPrevWorld)
+		return;
+
+	if(CCharacter *pPrevChar = pPrevWorld->GetCharacterById(pChar->GetCid()))
+	{
+		pPrevChar->Core()->m_Pos = Pos;
+		pPrevChar->m_Pos = Pos;
+		pPrevChar->m_PrevPos = Pos;
+		pPrevChar->m_PrevPrevPos = Pos;
+	}
+}
+
+void CLocalPractice::TeleportChar(CCharacter *pChar, vec2 Pos, bool ResetVel, bool ReleaseHooked, CGameWorld &World)
+{
 	if(ResetVel)
 		pChar->Core()->m_Vel = vec2(0.0f, 0.0f);
 
@@ -1626,10 +1656,7 @@ void CLocalPractice::TeleportChar(CCharacter *pChar, vec2 Pos, bool ResetVel, bo
 			World.ReleaseHooked(pChar->GetCid());
 	}
 
-	// The entity position is only synced from the core during the tick, and this runs after it
-	pChar->m_Pos = Pos;
-	pChar->m_PrevPos = Pos;
-	pChar->m_PrevPrevPos = Pos;
+	PlaceChar(World, pChar, Pos);
 }
 
 void CLocalPractice::LoseWeapons(CCharacter *pChar)
@@ -1750,10 +1777,7 @@ void CLocalPractice::HandleTeleporters(CGameWorld &World, int Tick)
 			else
 			{
 				// The old behaviour moves the tee and touches nothing else
-				pChar->Core()->m_Pos = Out;
-				pChar->m_Pos = Out;
-				pChar->m_PrevPos = Out;
-				pChar->m_PrevPrevPos = Out;
+				PlaceChar(World, pChar, Out);
 			}
 			continue;
 		}
@@ -2384,13 +2408,10 @@ bool CLocalPractice::TeleportTo(int Conn, vec2 Pos)
 	m_aHasLastTp[Conn] = true;
 
 	CCharacterCore Core = pChar->GetCore();
-	Core.m_Pos = Pos;
 	Core.m_Vel = vec2(0.0f, 0.0f);
 	pChar->SetCore(Core);
 	pChar->ResetHook();
-	pChar->m_Pos = Pos;
-	pChar->m_PrevPos = Pos;
-	pChar->m_PrevPrevPos = Pos;
+	PlaceChar(m_World, pChar, Pos);
 
 	// Landing somewhere frozen with no way out is never what a teleport was for
 	ClearFreeze(pChar);

@@ -880,9 +880,8 @@ void CGameClient::OnRender()
 	m_Camera.UpdateCamera();
 
 	{
-		// EClient: the cursor is anchored to the tee it belongs to, and while practicing that is
-		// the practice tee -- otherwise /tpcursor and everything else built on the cursor's world
-		// position measures out from the real tee standing somewhere else entirely.
+		// EClient: the displayed cursor is anchored to the tee it belongs to, and while practicing
+		// that is the practice tee rather than the real one left standing somewhere else.
 		CLocalPractice::CScope PracticeScope(&m_LocalPractice);
 		UpdateSpectatorCursor();
 	}
@@ -5503,7 +5502,11 @@ vec2 CGameClient::GetCursorWorldPos() const
 		TargetCameraOffset = normalize(Target) * OffsetAmount;
 	}
 
-	vec2 Position = m_CursorInfo.Position();
+	// EClient: the tee the cursor hangs off, which is the one CControls clamps the mouse against.
+	// m_CursorInfo holds this position too, but only keeps it up to date while the spectator cursor
+	// has snapshot data to draw -- a local tee sitting in /spec leaves behind the position it had
+	// when it paused, and a local practice tee would be measured, and teleported, out from there.
+	vec2 Position = m_LocalCharacterPos;
 
 	const float Zoom = m_Camera.m_Zoom;
 	vec2 WorldTarget = Position + (Target - TargetCameraOffset) * Zoom + TargetCameraOffset;

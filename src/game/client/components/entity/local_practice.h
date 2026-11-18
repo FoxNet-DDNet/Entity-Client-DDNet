@@ -442,6 +442,16 @@ private:
 	void HandleDeathTiles(CGameWorld &World, int Tick);
 	bool IsDeathTileAt(vec2 Pos, float ProximityRadius) const;
 	int PickTeleOut(int Tick, int Size) const;
+	/**
+	 * Puts a character at a position, and the copy of it in the world holding the previous tick
+	 * with it.
+	 *
+	 * A tee is drawn between where it was on the previous tick and where it is on this one, so a
+	 * jump left in that pair is drawn as a slide across everything between the two positions. The
+	 * distance test the prediction makes do with in CCharacter::Read cannot help here: it cannot
+	 * tell a two tile teleporter from running.
+	 */
+	void PlaceChar(CGameWorld &World, CCharacter *pChar, vec2 Pos);
 	void TeleportChar(CCharacter *pChar, vec2 Pos, bool ResetVel, bool ReleaseHooked, CGameWorld &World);
 	static void LoseWeapons(CCharacter *pChar);
 	CNetObj_PlayerInput BuildInput(CGameWorld &World, int Conn, int Tick) const;
