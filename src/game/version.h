@@ -22,7 +22,7 @@ extern const char *GIT_SHORTREV_HASH;
 
 // EClient
 #define CLIENT_NAME "E-Client"
-#define ECLIENT_VERSION "3.2"
+#define ECLIENT_VERSION "3.2.1"
 
 #define FOXNET_MOVING_TILES_VERSION 1
 #endif
