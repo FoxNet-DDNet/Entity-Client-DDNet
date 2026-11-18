@@ -2224,19 +2224,12 @@ void CFinishPrediction::RenderHud(bool Preview)
 {
 	CHudLayout &Layout = GameClient()->m_Hud.HudLayout();
 
-	// The setting decides, and the editor does not get to overrule it. Preview only stands in for
-	// content the editor cannot arrange -- a route it has not searched for -- so that the slot is
-	// something to aim at rather than an empty one; it is not a reason to show an element that
-	// has been switched off. Withdrawn rather than merely idle, so a readout that cannot appear
-	// is not left in the layout pushing the rest of the HUD around.
 	if(!g_Config.m_ClShowhudFinishPrediction)
 	{
 		Layout.ClearNominalRect(EHudElement::FINISH_PREDICTION);
 		return;
 	}
 
-	// Each part of the readout can be turned off on its own, and with all three off there is
-	// nothing to place, so the element withdraws rather than leaving an empty box in the layout.
 	const bool ShowTime = g_Config.m_ClShowhudFinishPredictionTime != 0;
 	const bool ShowPercent = g_Config.m_ClShowhudFinishPredictionPercent != 0;
 	const bool ShowBar = g_Config.m_ClShowhudFinishPredictionBar != 0;
@@ -2252,21 +2245,12 @@ void CFinishPrediction::RenderHud(bool Preview)
 	const float Padding = 2.5f;
 	const float BarHeight = 3.0f;
 	const float BarGap = 1.5f;
-	// One width, always. Not a floor and not a measurement: an element that has been placed
-	// somewhere should hold its shape, rather than changing it when a figure arrives, when a
-	// part is switched off, or when a prediction rolls past an hour.
-	//
-	// Wider than the 62 units the other right-hand panels use, because a predicted time and a
-	// percentage side by side need appreciably more room than the label they replaced, and wide
-	// enough that the bar reads as a bar. Both columns fit inside it with room to spare: the
-	// widest realistic pair comes to about 58 of the 71 that is left after the padding, so even
-	// a twelve-hour prediction has nowhere to overflow to.
-	const float Width = 76.0f;
-	const float InnerWidth = Width - Padding * 2.0f;
-	// Flush with the left edge and just under the records panel. The layout table attaches it
-	// below that panel as well, which keeps the two together when either is moved or resized;
-	// this is where it sits when the records panel is switched off and there is nothing to
-	// attach to.
+	// How long the bar is drawn. The bar is the one part with a length of its own: a figure is as
+	// wide as it reads, a bar has to be long enough to read as a bar.
+	const float BarWidth = 76.0f;
+	// Between the two figures when both are on, so they cannot meet in the middle
+	const float ColumnGap = 4.0f;
+
 	const float Left = 0.0f;
 	const float Top = 125.0f;
 
@@ -2323,25 +2307,44 @@ void CFinishPrediction::RenderHud(bool Preview)
 			str_format(aPrediction, sizeof(aPrediction), "~%s", aTime);
 		}
 	}
-
-	// What is reserved is decided by the settings, and only what is written in it by the frame.
-	// The bar keeps its strip whether or not there is a figure to fill it yet, and the row of
-	// figures keeps its line whether or not either figure has anything to say.
 	const bool HasPrediction = ShowTime && aPrediction[0] != '\0';
 	const bool HasValue = ShowPercent;
 	const bool HasRow = ShowTime || ShowPercent;
 	const bool HasBar = ShowBar;
-	// One exception, so the panel is not a visibly empty box: where the only thing switched on is
-	// the time and the run has not predicted one yet, there is nothing to show at all
 	if(!HasPrediction && !HasValue && !HasBar)
 	{
 		Layout.ClearNominalRect(EHudElement::FINISH_PREDICTION);
 		return;
 	}
 
-	// Only to put the percentage against the right edge. Nothing here is measured to decide how
-	// big the panel is any more.
 	const float ValueWidth = HasValue ? TextRender()->TextWidth(FontSize, aValue, -1, -1.0f) : 0.0f;
+	// Each column is measured from a reference and not from the figure standing in it, so the panel
+	// keeps one width while the digits change underneath and so a column is already its full size
+	// before its figure has arrived. A figure wider than its reference -- a prediction that has run
+	// past the hour -- still gets the room it needs.
+	float RowWidth = 0.0f;
+	if(HasRow)
+	{
+		RowWidth = Padding * 2.0f;
+		if(ShowTime)
+		{
+			RowWidth += std::max(TextRender()->TextWidth(FontSize, "~00:00.00", -1, -1.0f),
+				HasPrediction ? TextRender()->TextWidth(FontSize, aPrediction, -1, -1.0f) : 0.0f);
+		}
+		if(ShowPercent)
+			RowWidth += std::max(TextRender()->TextWidth(FontSize, "100.0%", -1, -1.0f), ValueWidth);
+		if(ShowTime && ShowPercent)
+			RowWidth += ColumnGap;
+	}
+	// The panel is the parts that are in it and nothing else. Switching the bar off takes its
+	// length away with it rather than leaving it reserved behind the figures, and switching both
+	// figures off leaves the bar's strip on its own.
+	//
+	// The floor is two of the shared corner radii, so that there is always a side left between the
+	// arcs for them to be drawn against; nothing the font can measure comes anywhere near it, but a
+	// panel that cannot be rounded is not worth the one comparison it costs to rule out.
+	const float Width = std::max(10.0f, std::max(HasBar ? BarWidth : 0.0f, RowWidth));
+	const float InnerWidth = Width - Padding * 2.0f;
 	const float Height = Padding * 2.0f + (HasRow ? LineHeight : 0.0f) +
 			     (HasBar ? (HasRow ? BarGap : 0.0f) + BarHeight : 0.0f);
 	const float x = Left;
@@ -2352,15 +2355,10 @@ void CFinishPrediction::RenderHud(bool Preview)
 
 	CHudLayout::CScope Scope(&Layout, EHudElement::FINISH_PREDICTION);
 
-	// The shared colour and radius, and the layout's own idea of which corners to round, so that
-	// this sits with the rest of the HUD instead of near it. CornerFlags squares off whichever
-	// side another element is flush against.
-	//
-	// The radius is held to half the shorter side, the same clamp the bar below needs and for the
-	// same reason: DrawRect does not check its corner arcs fit, so a radius over half the height
-	// folds the top and bottom corners into each other. The shared five units is fine on a panel
-	// with a row of text in it and too big for one holding nothing but the bar, which is eight
-	// units tall in total.
+	// Held to half the shorter side, because DrawRect does not check its corner arcs fit and a
+	// radius over half the height folds the top and bottom corners into each other. The shared five
+	// units is right for a panel with a row of figures in it and too much for one holding nothing
+	// but the bar, which is eight units tall in all.
 	const float PanelRounding = std::min(5.0f, std::min(Width, Height) * 0.5f);
 	Graphics()->DrawRect(x, Top, Width, Height, CHudLayout::BackgroundColor(),
 		Layout.CornerFlags(EHudElement::FINISH_PREDICTION), PanelRounding);
@@ -2368,8 +2366,6 @@ void CFinishPrediction::RenderHud(bool Preview)
 	float y = Top + Padding;
 	if(HasRow)
 	{
-		// Each keeps its own column whatever the other is doing, so turning one off does not
-		// shuffle the other across
 		if(HasPrediction)
 			TextRender()->Text(x + Padding, y, FontSize, aPrediction, -1.0f);
 		if(HasValue)
@@ -2381,19 +2377,14 @@ void CFinishPrediction::RenderHud(bool Preview)
 	{
 		if(HasRow)
 			y += BarGap;
-		// DrawRect draws its corner arcs without checking they fit, so a radius taller than half
-		// the bar folds the top and bottom corners into each other and pinches it
 		const float Rounding = BarHeight * 0.5f;
 		Graphics()->DrawRect(x + Padding, y, InnerWidth, BarHeight,
 			ColorRGBA(1.0f, 1.0f, 1.0f, 0.15f), IGraphics::CORNER_ALL, Rounding);
-		// The same colour the route ahead is drawn in, so the two read as one thing
+
 		const ColorRGBA Fill = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFinishPredictionRouteColor));
 		const float Filled = InnerWidth * Fraction;
 		if(Filled > 0.0f)
 		{
-			// The same clamp again, now against the width: the fill is narrower than the track
-			// at every figure below about a tenth, and a radius wider than the fill itself turned
-			// the first six per cent into nothing at all rather than into a short bar.
 			Graphics()->DrawRect(x + Padding, y, Filled, BarHeight, Fill, IGraphics::CORNER_ALL,
 				std::min(Rounding, Filled * 0.5f));
 		}
