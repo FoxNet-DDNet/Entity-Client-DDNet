@@ -47,18 +47,6 @@ CHud::CHud()
 	m_FPSTextContainerIndex.Reset();
 	m_DDRaceEffectsTextContainerIndex.Reset();
 	m_TimeDiffTextContainerIndex.Reset(); // EClient
-	m_PlayerAngleTextContainerIndex.Reset();
-	m_PlayerCheckpointTextContainerIndex.Reset(); // EClient
-	m_PlayerPrevAngle = -INFINITY;
-	m_PlayerPrevCheckpoint = -1; // EClient
-
-	for(int i = 0; i < 2; i++)
-	{
-		m_aPlayerSpeedTextContainers[i].Reset();
-		m_aPlayerPrevSpeed[i] = -INFINITY;
-		m_aPlayerPositionContainers[i].Reset();
-		m_aPlayerPrevPosition[i] = -INFINITY;
-	}
 
 	// EClient
 	m_Island.Reset();
@@ -86,16 +74,6 @@ void CHud::ResetHudContainers()
 	TextRender()->DeleteTextContainer(m_FPSTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_DDRaceEffectsTextContainerIndex);
 	TextRender()->DeleteTextContainer(m_TimeDiffTextContainerIndex); // EClient
-	TextRender()->DeleteTextContainer(m_PlayerAngleTextContainerIndex);
-	TextRender()->DeleteTextContainer(m_PlayerCheckpointTextContainerIndex); // EClient
-	m_PlayerPrevAngle = -INFINITY;
-	for(int i = 0; i < 2; i++)
-	{
-		TextRender()->DeleteTextContainer(m_aPlayerSpeedTextContainers[i]);
-		m_aPlayerPrevSpeed[i] = -INFINITY;
-		TextRender()->DeleteTextContainer(m_aPlayerPositionContainers[i]);
-		m_aPlayerPrevPosition[i] = -INFINITY;
-	}
 
 	// EClient
 	m_TextWidthScore10 = TextRender()->TextWidth(14.0f, "10", -1, -1.0f);
@@ -115,6 +93,8 @@ void CHud::ResetHudContainers()
 	}
 	m_PlayerInfoPrevPosition = vec2(-INFINITY, -INFINITY);
 	m_PlayerInfoPrevSpeed = vec2(-INFINITY, -INFINITY);
+
+	ResetCachedTexts();
 }
 
 void CHud::OnWindowResize()
@@ -255,18 +235,18 @@ void CHud::RenderGameTimer(vec2 Pos, float Size, float ClipRight)
 			TextRender()->TextColor(1.0f, 0.25f, 0.25f, Alpha);
 		}
 
-		CTextCursor Cursor;
-		Cursor.SetPosition(vec2(Pos.x - w / 2, Pos.y));
-		Cursor.m_FontSize = Size;
-		Cursor.m_Flags = TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END;
-		Cursor.m_LineWidth = ClipRight > 0.0f ? std::max(ClipRight - Cursor.m_X, 0.001f) : -1.0f;
-
-		TextRender()->TextEx(&Cursor, aBuf);
+		// EClient: the timer reads the same for a whole second at a time, so it is kept in a
+		// container instead of being laid out and uploaded again for every frame of it
+		const float TimerX = Pos.x - w / 2;
+		RenderCachedText(m_GameTimerText, TimerX, Pos.y, Size, aBuf,
+			ClipRight > 0.0f ? std::max(ClipRight - TimerX, 0.001f) : -1.0f, TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END);
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 
 		if(g_Config.m_ClShowHudTimerStartedFlag && !(GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_SUDDENDEATH) && (GameClient()->m_Snap.m_pGameInfoObj->m_GameStateFlags & GAMESTATEFLAG_RACETIME))
 		{
+			CTextCursor Cursor;
 			Cursor.m_FontSize = Size * 0.55f;
+			Cursor.m_Flags = TEXTFLAG_RENDER | TEXTFLAG_STOP_AT_END;
 			Cursor.SetPosition(vec2(Pos.x + w * 0.5f, Pos.y + Size * 0.25f));
 			Cursor.m_LineWidth = ClipRight > 0.0f ? std::max(ClipRight - Cursor.m_X, 0.001f) : -1.0f;
 			TextRender()->SetFontPreset(EFontPreset::ICON_FONT);
@@ -1619,27 +1599,39 @@ inline float CHud::GetMovementInformationBoxHeight()
 	return BoxHeight;
 }
 
-void CHud::UpdateMovementInformationTextContainer(STextContainerIndex &TextContainer, float FontSize, float Value, float &PrevValue)
+void CHud::RenderMovementInformationValue(CCachedText &Cached, float FontSize, float Value, const ColorRGBA &Color, float X, float Y)
 {
 	Value = std::round(Value * 100.0f) / 100.0f; // Round to 2dp
-	if(TextContainer.Valid() && PrevValue == Value)
-		return;
-	PrevValue = Value;
 
 	char aBuf[128];
 	str_format(aBuf, sizeof(aBuf), "%.2f", Value);
 
-	CTextCursor Cursor;
-	Cursor.m_FontSize = FontSize;
-	TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
+	Cached.Update(TextRender(), aBuf, FontSize);
+	Cached.Render(TextRender(), vec2(X - Cached.Width(), Y), Color);
 }
 
-void CHud::RenderMovementInformationTextContainer(STextContainerIndex &TextContainer, const ColorRGBA &Color, float X, float Y)
+void CHud::RenderCachedText(CCachedText &Cached, float X, float Y, float FontSize, const char *pText, float LineWidth, int Flags)
 {
-	if(TextContainer.Valid())
+	Cached.Update(TextRender(), pText, FontSize, LineWidth, Flags);
+	Cached.Render(TextRender(), vec2(X, Y), TextRender()->GetTextColor());
+}
+
+void CHud::ResetCachedTexts()
+{
+	for(CCachedText &Label : m_aMovementLabels)
 	{
-		TextRender()->RenderTextContainer(TextContainer, Color, TextRender()->DefaultTextOutlineColor(), X - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, Y);
+		Label.Reset(TextRender());
 	}
+	for(int i = 0; i < 2; i++)
+	{
+		m_aPlayerPositionTexts[i].Reset(TextRender());
+		m_aPlayerSpeedTexts[i].Reset(TextRender());
+	}
+	m_PlayerAngleText.Reset(TextRender());
+	m_PlayerCheckpointText.Reset(TextRender());
+	m_GameTimerText.Reset(TextRender());
+	m_LocalTimeText.Reset(TextRender());
+	m_aLocalTimeWidthText[0] = '\0';
 }
 
 CHud::CMovementInformation CHud::GetMovementInformation(int ClientId, int Conn) const
@@ -1737,14 +1729,13 @@ void CHud::RenderMovementInformation()
 
 	if(g_Config.m_ClShowhudPlayerPosition)
 	{
-		TextRender()->Text(LeftX, y, Fontsize, Localize("Position:"), -1.0f);
+		RenderCachedText(m_aMovementLabels[(int)EMovementLabel::POSITION], LeftX, y, Fontsize, Localize("Position:"));
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		for(int i = 0; i < 2; i++)
 		{
-			TextRender()->Text(LeftX, y, Fontsize, aaCoordinates[i], -1.0f);
-			UpdateMovementInformationTextContainer(m_aPlayerPositionContainers[i], Fontsize, i == 0 ? Info.m_Pos.x : Info.m_Pos.y, m_aPlayerPrevPosition[i]);
-			RenderMovementInformationTextContainer(m_aPlayerPositionContainers[i], TextRender()->DefaultTextColor(), RightX, y);
+			RenderCachedText(m_aMovementLabels[(int)EMovementLabel::POSITION_X + i], LeftX, y, Fontsize, aaCoordinates[i]);
+			RenderMovementInformationValue(m_aPlayerPositionTexts[i], Fontsize, i == 0 ? Info.m_Pos.x : Info.m_Pos.y, TextRender()->DefaultTextColor(), RightX, y);
 			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 		}
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
@@ -1754,7 +1745,7 @@ void CHud::RenderMovementInformation()
 		return;
 	if(g_Config.m_ClShowhudPlayerSpeed)
 	{
-		TextRender()->Text(LeftX, y, Fontsize, Localize("Speed:"), -1.0f);
+		RenderCachedText(m_aMovementLabels[(int)EMovementLabel::SPEED], LeftX, y, Fontsize, Localize("Speed:"));
 		y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
 		for(int i = 0; i < 2; i++)
@@ -1764,65 +1755,46 @@ void CHud::RenderMovementInformation()
 				Color = ColorRGBA(0.0f, 1.0f, 0.0f, 1.0f);
 			if(m_aLastPlayerSpeedChange[i] == ESpeedChange::DECREASE)
 				Color = ColorRGBA(1.0f, 0.5f, 0.5f, 1.0f);
-			TextRender()->Text(LeftX, y, Fontsize, aaCoordinates[i], -1.0f);
-			UpdateMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Fontsize, i == 0 ? Info.m_Speed.x : Info.m_Speed.y, m_aPlayerPrevSpeed[i]);
-			RenderMovementInformationTextContainer(m_aPlayerSpeedTextContainers[i], Color, RightX, y);
+			RenderCachedText(m_aMovementLabels[(int)EMovementLabel::SPEED_X + i], LeftX, y, Fontsize, aaCoordinates[i]);
+			RenderMovementInformationValue(m_aPlayerSpeedTexts[i], Fontsize, i == 0 ? Info.m_Speed.x : Info.m_Speed.y, Color, RightX, y);
 			y += MOVEMENT_INFORMATION_LINE_HEIGHT;
 		}
 
 		TextRender()->TextColor(1.0f, 1.0f, 1.0f, 1.0f);
 	}
 
-	auto RenderSoloInfo = [this](const char *pLabel, float FontSize, STextContainerIndex &TextContainer, int Value, int &PrevValue, float OffLeftX, float OffRightX, float &OffY) {
-		TextRender()->Text(OffLeftX, OffY, FontSize, Localize(pLabel), -1.0f);
+	auto RenderSoloInfo = [this](const char *pLabel, CCachedText &LabelCache, float FontSize, CCachedText &ValueCache, int Value, float OffLeftX, float OffRightX, float &OffY) {
+		RenderCachedText(LabelCache, OffLeftX, OffY, FontSize, Localize(pLabel));
 		if(!g_Config.m_ClShowhudPlayerCompact)
 			OffY += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
-		if(!TextContainer.Valid() || PrevValue != Value)
-		{
-			PrevValue = Value;
-
-			char aBuf[8];
-			str_format(aBuf, sizeof(aBuf), "%d", Value);
-
-			CTextCursor Cursor;
-			Cursor.m_FontSize = FontSize;
-			TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
-		}
-		if(TextContainer.Valid())
-			TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), OffRightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, OffY);
+		char aBuf[8];
+		str_format(aBuf, sizeof(aBuf), "%d", Value);
+		ValueCache.Update(TextRender(), aBuf, FontSize);
+		ValueCache.Render(TextRender(), vec2(OffRightX - ValueCache.Width(), OffY), TextRender()->DefaultTextColor());
 		OffY += MOVEMENT_INFORMATION_LINE_HEIGHT;
 	};
 
-	auto RenderSoloInfoFloat = [this](const char *pLabel, float FontSize, STextContainerIndex &TextContainer, float Value, float &PrevValue, float OffLeftX, float OffRightX, float &OffY) {
-		TextRender()->Text(OffLeftX, OffY, FontSize, Localize(pLabel), -1.0f);
+	auto RenderSoloInfoFloat = [this](const char *pLabel, CCachedText &LabelCache, float FontSize, CCachedText &ValueCache, float Value, float OffLeftX, float OffRightX, float &OffY) {
+		RenderCachedText(LabelCache, OffLeftX, OffY, FontSize, Localize(pLabel));
 		if(!g_Config.m_ClShowhudPlayerCompact)
 			OffY += MOVEMENT_INFORMATION_LINE_HEIGHT;
 
-		if(!TextContainer.Valid() || PrevValue != Value)
-		{
-			PrevValue = Value;
-
-			char aBuf[8];
-			str_format(aBuf, sizeof(aBuf), "%.2f", Value);
-
-			CTextCursor Cursor;
-			Cursor.m_FontSize = FontSize;
-			TextRender()->RecreateTextContainer(TextContainer, &Cursor, aBuf);
-		}
-		if(TextContainer.Valid())
-			TextRender()->RenderTextContainer(TextContainer, TextRender()->DefaultTextColor(), TextRender()->DefaultTextOutlineColor(), OffRightX - TextRender()->GetBoundingBoxTextContainer(TextContainer).m_W, OffY);
+		char aBuf[8];
+		str_format(aBuf, sizeof(aBuf), "%.2f", Value);
+		ValueCache.Update(TextRender(), aBuf, FontSize);
+		ValueCache.Render(TextRender(), vec2(OffRightX - ValueCache.Width(), OffY), TextRender()->DefaultTextColor());
 		OffY += MOVEMENT_INFORMATION_LINE_HEIGHT;
 	};
 
 	if(g_Config.m_ClShowhudPlayerAngle)
-		RenderSoloInfoFloat("Angle:", Fontsize, m_PlayerAngleTextContainerIndex, Info.m_Angle, m_PlayerPrevAngle, LeftX, RightX, y);
+		RenderSoloInfoFloat("Angle:", m_aMovementLabels[(int)EMovementLabel::ANGLE], Fontsize, m_PlayerAngleText, Info.m_Angle, LeftX, RightX, y);
 
 	if(CheckpointInfoEnabled())
 	{
 		const CCharacter *pCharacter = GameClient()->m_GameWorld.GetCharacterById(ClientId);
 		if(pCharacter)
-			RenderSoloInfo("Checkpoint:", Fontsize, m_PlayerCheckpointTextContainerIndex, pCharacter->m_TeleCheckpoint, m_PlayerPrevCheckpoint, LeftX, RightX, y);
+			RenderSoloInfo("Checkpoint:", m_aMovementLabels[(int)EMovementLabel::CHECKPOINT], Fontsize, m_PlayerCheckpointText, pCharacter->m_TeleCheckpoint, LeftX, RightX, y);
 	}
 }
 
@@ -1887,13 +1859,20 @@ void CHud::RenderLocalTime(float x)
 
 	char aTimeStr[16];
 	str_timestamp_format(aTimeStr, sizeof(aTimeStr), Seconds ? "%H:%M.%S" : "%H:%M");
-	const float Width = std::round(TextRender()->TextBoundingBox(5.0f, aTimeStr).m_W);
+	// EClient: TextBoundingBox lays the whole string out, which is wasted on a clock that reads
+	// the same until the next second ticks over
+	if(str_comp(m_aLocalTimeWidthText, aTimeStr) != 0)
+	{
+		str_copy(m_aLocalTimeWidthText, aTimeStr);
+		m_LocalTimeWidth = std::round(TextRender()->TextBoundingBox(5.0f, aTimeStr).m_W);
+	}
+	const float Width = m_LocalTimeWidth;
 
 	// EClient
 	m_HudLayout.ReportNaturalRect(EHudElement::LOCAL_TIME, vec2(x - (Width + 15.0f), 0.0f), vec2(Width + 10.0f, 12.5f));
 
 	Graphics()->DrawRect(x - (Width + 15.0f), 0.0f, Width + 10.0f, 12.5f, CHudLayout::BackgroundColor(), m_HudLayout.CornerFlags(EHudElement::LOCAL_TIME), 3.75f);
-	TextRender()->Text(x - (Width + 10.0f), (12.5f - 5.f) / 2.f, 5.0f, aTimeStr, -1.0f);
+	RenderCachedText(m_LocalTimeText, x - (Width + 10.0f), (12.5f - 5.f) / 2.f, 5.0f, aTimeStr);
 
 	// Graphics()->DrawRect(x - 30.0f, 0.0f, 25.0f, 12.5f, CHudLayout::BackgroundColor(), IGraphics::CORNER_B, 3.75f);
 	// TextRender()->Text(x - 25.0f, (12.5f - 5.f) / 2.f, 5.0f, aTimeStr, -1.0f);
@@ -3520,7 +3499,7 @@ void CHud::RenderIsland()
 					GameTimerSize + VerticalClipPadding * 2.0f};
 				RenderClipped(LocalTimeClipRect, [&]() {
 					const float TextX = TimerRect.Center().x - NoGameTimerLocalTimeWidth * 0.5f;
-					TextRender()->Text(TextX, IslandRect.y + CollapsedIslandRect.h * 0.25f, GameTimerSize, aTimeStr, std::max(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
+					RenderCachedText(m_LocalTimeText, TextX, IslandRect.y + CollapsedIslandRect.h * 0.25f, GameTimerSize, aTimeStr, std::max(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
 				});
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}
@@ -3534,7 +3513,7 @@ void CHud::RenderIsland()
 					LocalTimeSize + VerticalClipPadding * 2.0f};
 				RenderClipped(LocalTimeClipRect, [&]() {
 					const float TextX = TimerRect.Center().x - LocalTimeWidth * 0.5f;
-					TextRender()->Text(TextX, TimerYOff, LocalTimeSize, aTimeStr, std::max(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
+					RenderCachedText(m_LocalTimeText, TextX, TimerYOff, LocalTimeSize, aTimeStr, std::max(LocalTimeClipRect.x + LocalTimeClipRect.w - TextX, 0.001f));
 				});
 				TextRender()->TextColor(TextRender()->DefaultTextColor());
 			}

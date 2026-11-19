@@ -2861,6 +2861,16 @@ void CClient::PumpNetwork()
 	}
 
 	// process packets
+	// Draining an idle socket still costs one receive syscall per connection and address
+	// family, while the main loop can run hundreds of thousands of times per second when the
+	// refresh rate is uncapped. Poll the sockets at a bounded rate instead. Each poll drains
+	// everything that has arrived, so this only delays a packet by at most the interval below,
+	// which is orders of magnitude shorter than the network latency it is waiting on.
+	const int64_t Now = time_get();
+	if(Now - m_LastPacketPollTime < time_freq() / PACKET_POLL_RATE)
+		return;
+	m_LastPacketPollTime = Now;
+
 	CNetChunk Packet;
 	SECURITY_TOKEN ResponseToken;
 	for(int Conn = 0; Conn < NUM_CONNS; Conn++)

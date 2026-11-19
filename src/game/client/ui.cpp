@@ -2025,9 +2025,21 @@ void CUi::RenderProgressBar(CUIRect ProgressBar, float Progress)
 	ProgressBar.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.5f), IGraphics::CORNER_ALL, Rounding);
 }
 
-void CCachedText::Update(ITextRender *pTextRender, const char *pText, float FontSize, float LineWidth, int CursorFlags)
+static bool ColorSplitsEqual(const std::vector<STextColorSplit> &vLeft, const std::vector<STextColorSplit> &vRight)
 {
-	if(m_FontSize == FontSize && m_LineWidth == LineWidth && m_CursorFlags == CursorFlags && m_Text == pText)
+	if(vLeft.size() != vRight.size())
+		return false;
+	for(size_t i = 0; i < vLeft.size(); ++i)
+	{
+		if(vLeft[i].m_CharIndex != vRight[i].m_CharIndex || vLeft[i].m_Length != vRight[i].m_Length || vLeft[i].m_Color != vRight[i].m_Color)
+			return false;
+	}
+	return true;
+}
+
+void CCachedText::Update(ITextRender *pTextRender, const char *pText, float FontSize, float LineWidth, int CursorFlags, const std::vector<STextColorSplit> &vColorSplits)
+{
+	if(m_FontSize == FontSize && m_LineWidth == LineWidth && m_CursorFlags == CursorFlags && m_Text == pText && ColorSplitsEqual(m_vColorSplits, vColorSplits))
 		return;
 
 	// The render flags of a text container are fixed when it is created and depend on the
@@ -2039,11 +2051,13 @@ void CCachedText::Update(ITextRender *pTextRender, const char *pText, float Font
 	m_FontSize = FontSize;
 	m_LineWidth = LineWidth;
 	m_CursorFlags = CursorFlags;
+	m_vColorSplits = vColorSplits;
 
 	CTextCursor Cursor;
 	Cursor.m_FontSize = FontSize;
 	Cursor.m_LineWidth = LineWidth;
 	Cursor.m_Flags = CursorFlags;
+	Cursor.m_vColorSplits = vColorSplits;
 
 	// The color is applied when rendering, so it must not be baked into the quads.
 	const ColorRGBA OldColor = pTextRender->GetTextColor();
@@ -2075,6 +2089,7 @@ void CCachedText::Reset(ITextRender *pTextRender)
 	m_FontSize = -1.0f;
 	m_LineWidth = -1.0f;
 	m_CursorFlags = 0;
+	m_vColorSplits.clear();
 	m_BoundingBox = {0.0f, 0.0f, 0.0f, 0.0f};
 	m_MaxCharacterHeight = 0.0f;
 }

@@ -111,6 +111,10 @@ class CClient : public IClient, public CDemoPlayer::IListener
 
 	int64_t m_LastRenderTime;
 
+	// How often per second PumpNetwork() reads from the sockets, and when it last did.
+	static constexpr int64_t PACKET_POLL_RATE = 10000;
+	int64_t m_LastPacketPollTime = 0;
+
 	int m_SnapCrcErrors = 0;
 	bool m_AutoScreenshotRecycle = false;
 	bool m_AutoStatScreenshotRecycle = false;

@@ -16,6 +16,7 @@
 
 #include <algorithm>
 #include <cstdint>
+#include <vector>
 
 constexpr float TextSize = 23.5f;
 constexpr float Padding = 22.0f;
@@ -51,6 +52,14 @@ void CPerformanceStatistics::UpdateServerStats()
 	}
 }
 
+void CPerformanceStatistics::DeleteTextContainers()
+{
+	for(CModule &Module : m_aModules)
+	{
+		Module.m_Text.Reset(TextRender());
+	}
+}
+
 void CPerformanceStatistics::OnReset()
 {
 	m_LastGameTick = -1;
@@ -65,8 +74,16 @@ void CPerformanceStatistics::OnReset()
 	OnWindowResize();
 }
 
+void CPerformanceStatistics::OnShutdown()
+{
+	DeleteTextContainers();
+}
+
 void CPerformanceStatistics::OnWindowResize()
 {
+	// The containers were laid out for the old screen, so they go with it
+	DeleteTextContainers();
+
 	m_DigitWidth0 = TextRender()->TextWidth(TextSize, "0", -1, -1.0f);
 	m_DigitWidth00 = TextRender()->TextWidth(TextSize, "00", -1, -1.0f);
 	m_DigitWidth000 = TextRender()->TextWidth(TextSize, "000", -1, -1.0f);
@@ -86,6 +103,36 @@ inline int GetDigitsIndex(int Value, int Max)
 	}
 	int DigitsIndex = std::log10((Value ? Value : 1));
 	return std::clamp(DigitsIndex, 0, Max);
+}
+
+void CPerformanceStatistics::RenderModule(CUIRect &Rect, int Module, const char *pLabel, float LabelWidth, int Value)
+{
+	static constexpr int NumDigitWidths = 5;
+	const float s_aDigitWidth[NumDigitWidths] = {m_DigitWidth0, m_DigitWidth00, m_DigitWidth000, m_DigitWidth0000, m_DigitWidth00000};
+
+	const int DigitIndex = GetDigitsIndex(Value, NumDigitWidths - 1);
+	const float TotalWidth = LabelWidth + s_aDigitWidth[DigitIndex];
+
+	if(Rect.x <= 0.0f)
+		Rect = {Padding, 0.0f, TotalWidth + TextSize, TextSize * 1.35f};
+	else
+	{
+		Rect.x += Rect.w + Padding;
+		Rect.w = TotalWidth + TextSize;
+	}
+
+	Rect.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.15f), 0, 0);
+
+	// Label and value in one string. They were two TextEx calls off a shared cursor, which laid
+	// out and uploaded both every frame; one container holds the same run and the colour split
+	// keeps the value in its own colour.
+	char aBuf[64];
+	str_format(aBuf, sizeof(aBuf), "%s%d", pLabel, Value);
+	CModule &Cache = m_aModules[Module];
+	if(Cache.m_vColorSplits.empty())
+		Cache.m_vColorSplits.emplace_back(str_length(pLabel), -1, ColorRGBA(0.3f, 0.8f, 0.6f, 1.0f));
+	Cache.m_Text.Update(TextRender(), aBuf, TextSize, -1.0f, TEXTFLAG_RENDER, Cache.m_vColorSplits);
+	Cache.m_Text.Render(TextRender(), vec2(Rect.x + Padding * 0.5f, TextSize * 0.2f), TextRender()->DefaultTextColor());
 }
 
 void CPerformanceStatistics::OnRender()
@@ -109,45 +156,14 @@ void CPerformanceStatistics::OnRender()
 		m_LastFpsUpdateTime = time_get();
 	}
 
-	auto RenderModule = [this](CUIRect &Rect, const char *pText, float LabelWidth, int Value) {
-		static constexpr int NumDigitWidths = 5;
-		const float s_aDigitWidth[NumDigitWidths] = {m_DigitWidth0, m_DigitWidth00, m_DigitWidth000, m_DigitWidth0000, m_DigitWidth00000};
-
-		int DigitIndex = GetDigitsIndex(Value, NumDigitWidths - 1);
-		float TotalWidth = LabelWidth + s_aDigitWidth[DigitIndex];
-
-		if(Rect.x <= 0.0f)
-			Rect = {Padding, 0.0f, TotalWidth + TextSize, TextSize * 1.35f};
-		else
-		{
-			Rect.x += Rect.w + Padding;
-			Rect.w = TotalWidth + TextSize;
-		}
-
-		Rect.Draw(ColorRGBA(1.0f, 1.0f, 1.0f, 0.15f), 0, 0);
-
-		CTextCursor Cursor;
-		Cursor.SetPosition(vec2(Rect.x + Padding * 0.5f, TextSize * 0.2f));
-		Cursor.m_FontSize = TextSize;
-		Cursor.m_LineWidth = -1;
-		Cursor.m_Flags = TEXTFLAG_RENDER;
-
-		TextRender()->TextEx(&Cursor, pText, -1);
-		TextRender()->TextColor(ColorRGBA(0.3f, 0.8f, 0.6f, 1.0f));
-		char aBuf[24];
-		str_format(aBuf, sizeof(aBuf), "%d", Value);
-		TextRender()->TextEx(&Cursor, aBuf, -1);
-		TextRender()->TextColor(TextRender()->DefaultTextColor());
-	};
-
 	// The labels never change and TextSize is constexpr, so measure them once instead of laying
 	// them out again every frame.
 
 	CUIRect CurRect = {-1, -1, -1, -1};
 	if(g_Config.m_ClStatisticsShowFps)
-		RenderModule(CurRect, "FPS: ", m_FpsLabelWidth, m_CurrentFPS);
+		RenderModule(CurRect, MODULE_FPS, "FPS: ", m_FpsLabelWidth, m_CurrentFPS);
 	if(g_Config.m_ClStatisticsShowPing)
-		RenderModule(CurRect, "Ping: ", m_PingLabelWidth, Client()->GetPredictionTime());
+		RenderModule(CurRect, MODULE_PING, "Ping: ", m_PingLabelWidth, Client()->GetPredictionTime());
 	if(g_Config.m_ClStatisticsShowSnapRate)
-		RenderModule(CurRect, "Snap Rate: ", m_SnapRateLabelWidth, m_SnapshotRate + 1);
+		RenderModule(CurRect, MODULE_SNAP_RATE, "Snap Rate: ", m_SnapRateLabelWidth, m_SnapshotRate + 1);
 }

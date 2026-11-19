@@ -68,7 +68,7 @@ public:
 			return;
 		Size = {pLayer->m_Width, pLayer->m_Height};
 	}
-	void SetData(CGameClient *pThis, int *pData, const ivec2 &Size) const
+	void SetData(CGameClient *pThis, uint8_t *pData, const ivec2 &Size) const
 	{
 		const auto *pLayer = GetLayer(pThis);
 		const auto *pTiles = (CTile *)pThis->Layers()->Map()->GetData(GetLayerData(pThis));
@@ -106,12 +106,16 @@ public:
 // The order of this determines order of priority into the one map (tele + freeze = tele)
 static constexpr COutLineLayer OUTLINE_LAYERS[] = {{OutlineLayer::TELE}, {OutlineLayer::GAME}, {OutlineLayer::FRONT}};
 
+// Offsets of the eight neighbours, in the order the edge tests below expect them.
+static constexpr int NEIGHBOR_OFFSETS[8][2] = {
+	{-1, -1}, {0, -1}, {1, -1}, {-1, 0}, {1, 0}, {-1, 1}, {0, 1}, {1, 1}};
+
 void COutlines::OnMapLoad()
 {
-	if(m_pMapData)
+	if(m_pTileInfo)
 	{
-		delete[] m_pMapData;
-		m_pMapData = nullptr;
+		delete[] m_pTileInfo;
+		m_pTileInfo = nullptr;
 	}
 
 	// Find valid layers and size
@@ -129,18 +133,47 @@ void COutlines::OnMapLoad()
 	}
 	if(m_MapDataSize.x <= 0 || m_MapDataSize.y <= 0)
 		return;
-	m_pMapData = new int[m_MapDataSize.x * m_MapDataSize.y](OUTLINE_NONE);
+
+	const size_t NumTiles = (size_t)m_MapDataSize.x * (size_t)m_MapDataSize.y;
+	std::vector<uint8_t> vTypes(NumTiles, OUTLINE_NONE);
 
 	// Do it
 	for(const auto *pLayer : vValidOutlineLayers)
 	{
-		pLayer->SetData(GameClient(), m_pMapData, m_MapDataSize);
+		pLayer->SetData(GameClient(), vTypes.data(), m_MapDataSize);
+	}
+
+	// Resolve the neighbourhood of every tile once, so rendering a tile is a single lookup rather
+	// than nine clamped ones. Which neighbours count is decided against the tile's own type, which
+	// is why the answer can be baked in here at all.
+	m_pTileInfo = new uint16_t[NumTiles];
+	const int Width = m_MapDataSize.x;
+	const int Height = m_MapDataSize.y;
+	for(int y = 0; y < Height; ++y)
+	{
+		for(int x = 0; x < Width; ++x)
+		{
+			const size_t Index = (size_t)y * Width + x;
+			const uint8_t Type = vTypes[Index];
+			uint16_t Info = Type;
+			if(Type != OUTLINE_NONE)
+			{
+				for(int n = 0; n < 8; ++n)
+				{
+					const int Nx = std::clamp(x + NEIGHBOR_OFFSETS[n][0], 0, Width - 1);
+					const int Ny = std::clamp(y + NEIGHBOR_OFFSETS[n][1], 0, Height - 1);
+					if(vTypes[(size_t)Ny * Width + Nx] >= Type)
+						Info |= (uint16_t)(1u << (NEIGHBOR_SHIFT + n));
+				}
+			}
+			m_pTileInfo[Index] = Info;
+		}
 	}
 }
 
 void COutlines::OnRender()
 {
-	if(!m_pMapData)
+	if(!m_pTileInfo)
 		return;
 	if(GameClient()->m_MapLayersBackground.m_OnlineOnly && Client()->State() != IClient::STATE_ONLINE && Client()->State() != IClient::STATE_DEMOPLAYBACK)
 		return;
@@ -167,115 +200,131 @@ void COutlines::OnRender()
 		EndY -= EdgeY / 2;
 	}
 
-	auto GetTile = [&](int x, int y) {
-		x = std::clamp(x, 0, m_MapDataSize.x - 1);
-		y = std::clamp(y, 0, m_MapDataSize.y - 1);
-		return m_pMapData[y * m_MapDataSize.x + x];
-	};
-
 	// These only depend on config, but the HSL to RGB conversion used to run once per outlined
 	// tile on screen, every frame. Resolve all of them up front instead.
 	class COutlineConfig
 	{
 	public:
-		int m_Enable;
-		int m_Width;
+		bool m_Used;
+		float m_Width;
 		ColorRGBA m_Color;
 	};
 	const auto MakeConfig = [](int Enable, int Width, unsigned int Color) {
 		const bool Used = Enable && Width > 0;
-		return COutlineConfig{Enable, Width, Used ? color_cast<ColorRGBA>(ColorHSLA(Color, true)) : ColorRGBA()};
+		return COutlineConfig{Used, (float)Width, Used ? color_cast<ColorRGBA>(ColorHSLA(Color, true)) : ColorRGBA()};
 	};
 	// Indexed by the outline type, so the order has to match the enum above.
 	const COutlineConfig aConfigs[NUM_OUTLINES] = {
-		COutlineConfig{0, 0, ColorRGBA()}, // OUTLINE_NONE, never drawn
+		COutlineConfig{false, 0.0f, ColorRGBA()}, // OUTLINE_NONE, never drawn
 		MakeConfig(g_Config.m_ClOutlineUnfreeze, g_Config.m_ClOutlineWidthUnfreeze, g_Config.m_ClOutlineColorUnfreeze),
 		MakeConfig(g_Config.m_ClOutlineFreeze, g_Config.m_ClOutlineWidthFreeze, g_Config.m_ClOutlineColorFreeze),
 		MakeConfig(g_Config.m_ClOutlineTele, g_Config.m_ClOutlineWidthTele, g_Config.m_ClOutlineColorTele),
 		MakeConfig(g_Config.m_ClOutlineKill, g_Config.m_ClOutlineWidthKill, g_Config.m_ClOutlineColorKill),
 		MakeConfig(g_Config.m_ClOutlineSolid, g_Config.m_ClOutlineWidthSolid, g_Config.m_ClOutlineColorSolid)};
 
+	bool AnyUsed = false;
+	for(const COutlineConfig &Config : aConfigs)
+		AnyUsed = AnyUsed || Config.m_Used;
+	if(!AnyUsed)
+		return;
+
 	Graphics()->TextureClear();
 	Graphics()->QuadsBegin();
 
-	// Neighbouring tiles are nearly always the same type, so only push a color to the backend
-	// when it actually changes rather than ahead of every batch of quads.
+	// Neighbouring tiles are nearly always the same type, so a quad batch is held open across
+	// them and only handed to the backend when the colour changes or it fills up. One draw call
+	// per tile was most of what this loop cost.
+	IGraphics::CQuadItem aBatch[256];
+	int NumBatched = 0;
 	int LastColorType = OUTLINE_NONE;
+	const auto Flush = [&]() {
+		if(NumBatched > 0)
+		{
+			Graphics()->QuadsDrawTL(aBatch, NumBatched);
+			NumBatched = 0;
+		}
+	};
 
+	const int Width = m_MapDataSize.x;
+	const int Height = m_MapDataSize.y;
 	for(int y = StartY; y < EndY; y++)
 	{
+		// Hoisted: every tile of this row resolves to the same clamped row.
+		const uint16_t *pRow = &m_pTileInfo[(size_t)std::clamp(y, 0, Height - 1) * Width];
+		const float TileY = y * Scale;
 		for(int x = StartX; x < EndX; x++)
 		{
-			const int Type = GetTile(x, y);
+			const uint16_t Info = pRow[std::clamp(x, 0, Width - 1)];
+			const int Type = Info & TYPE_MASK;
 			if(Type == OUTLINE_NONE)
 				continue;
 			dbg_assert(Type > OUTLINE_NONE && Type < NUM_OUTLINES, "Invalid value for Type at %d, %d/%d, %d", x, y, m_MapDataSize.x, m_MapDataSize.y);
 			const COutlineConfig &Config = aConfigs[Type];
-			if(!Config.m_Enable || Config.m_Width <= 0)
+			if(!Config.m_Used)
 				continue;
-			// Find neighbours
-			const bool aNeighbors[8] = {
-				GetTile(x - 1, y - 1) >= Type,
-				GetTile(x - 0, y - 1) >= Type,
-				GetTile(x + 1, y - 1) >= Type,
-				GetTile(x - 1, y + 0) >= Type,
-				GetTile(x + 1, y + 0) >= Type,
-				GetTile(x - 1, y + 1) >= Type,
-				GetTile(x + 0, y + 1) >= Type,
-				GetTile(x + 1, y + 1) >= Type,
-			};
+			const unsigned Neighbors = Info >> NEIGHBOR_SHIFT;
+			const auto Neighbor = [Neighbors](int Index) { return (Neighbors & (1u << Index)) != 0; };
+			const float OutlineWidth = Config.m_Width;
+			const float TileX = x * Scale;
 			// Figure out edges
 			IGraphics::CQuadItem aQuads[8];
 			int NumQuads = 0;
 			// Lone corners first
-			if(!aNeighbors[0] && aNeighbors[1] && aNeighbors[3])
-				aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale, y * Scale, Config.m_Width, Config.m_Width);
-			if(!aNeighbors[2] && aNeighbors[1] && aNeighbors[4])
-				aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale + Scale - Config.m_Width, y * Scale, Config.m_Width, Config.m_Width);
-			if(!aNeighbors[5] && aNeighbors[3] && aNeighbors[6])
-				aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale, y * Scale + Scale - Config.m_Width, Config.m_Width, Config.m_Width);
-			if(!aNeighbors[7] && aNeighbors[6] && aNeighbors[4])
-				aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale + Scale - Config.m_Width, y * Scale + Scale - Config.m_Width, Config.m_Width, Config.m_Width);
+			if(!Neighbor(0) && Neighbor(1) && Neighbor(3))
+				aQuads[NumQuads++] = IGraphics::CQuadItem(TileX, TileY, OutlineWidth, OutlineWidth);
+			if(!Neighbor(2) && Neighbor(1) && Neighbor(4))
+				aQuads[NumQuads++] = IGraphics::CQuadItem(TileX + Scale - OutlineWidth, TileY, OutlineWidth, OutlineWidth);
+			if(!Neighbor(5) && Neighbor(3) && Neighbor(6))
+				aQuads[NumQuads++] = IGraphics::CQuadItem(TileX, TileY + Scale - OutlineWidth, OutlineWidth, OutlineWidth);
+			if(!Neighbor(7) && Neighbor(6) && Neighbor(4))
+				aQuads[NumQuads++] = IGraphics::CQuadItem(TileX + Scale - OutlineWidth, TileY + Scale - OutlineWidth, OutlineWidth, OutlineWidth);
 			// Top
-			if(!aNeighbors[1])
-				aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale, y * Scale, Scale, Config.m_Width);
+			if(!Neighbor(1))
+				aQuads[NumQuads++] = IGraphics::CQuadItem(TileX, TileY, Scale, OutlineWidth);
 			// Bottom
-			if(!aNeighbors[6])
-				aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale, y * Scale + Scale - Config.m_Width, Scale, Config.m_Width);
+			if(!Neighbor(6))
+				aQuads[NumQuads++] = IGraphics::CQuadItem(TileX, TileY + Scale - OutlineWidth, Scale, OutlineWidth);
 			// Left
-			if(!aNeighbors[3])
+			if(!Neighbor(3))
 			{
-				if(aNeighbors[1] && aNeighbors[6])
-					aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale, y * Scale, Config.m_Width, Scale);
-				else if(aNeighbors[6])
-					aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale, y * Scale + Config.m_Width, Config.m_Width, Scale - Config.m_Width);
-				else if(aNeighbors[1])
-					aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale, y * Scale, Config.m_Width, Scale - Config.m_Width);
+				if(Neighbor(1) && Neighbor(6))
+					aQuads[NumQuads++] = IGraphics::CQuadItem(TileX, TileY, OutlineWidth, Scale);
+				else if(Neighbor(6))
+					aQuads[NumQuads++] = IGraphics::CQuadItem(TileX, TileY + OutlineWidth, OutlineWidth, Scale - OutlineWidth);
+				else if(Neighbor(1))
+					aQuads[NumQuads++] = IGraphics::CQuadItem(TileX, TileY, OutlineWidth, Scale - OutlineWidth);
 				else
-					aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale, y * Scale + Config.m_Width, Config.m_Width, Scale - Config.m_Width * 2.0f);
+					aQuads[NumQuads++] = IGraphics::CQuadItem(TileX, TileY + OutlineWidth, OutlineWidth, Scale - OutlineWidth * 2.0f);
 			}
 			// Right
-			if(!aNeighbors[4])
+			if(!Neighbor(4))
 			{
-				if(aNeighbors[1] && aNeighbors[6])
-					aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale + Scale - Config.m_Width, y * Scale, Config.m_Width, Scale);
-				else if(aNeighbors[6])
-					aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale + Scale - Config.m_Width, y * Scale + Config.m_Width, Config.m_Width, Scale - Config.m_Width);
-				else if(aNeighbors[1])
-					aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale + Scale - Config.m_Width, y * Scale, Config.m_Width, Scale - Config.m_Width);
+				if(Neighbor(1) && Neighbor(6))
+					aQuads[NumQuads++] = IGraphics::CQuadItem(TileX + Scale - OutlineWidth, TileY, OutlineWidth, Scale);
+				else if(Neighbor(6))
+					aQuads[NumQuads++] = IGraphics::CQuadItem(TileX + Scale - OutlineWidth, TileY + OutlineWidth, OutlineWidth, Scale - OutlineWidth);
+				else if(Neighbor(1))
+					aQuads[NumQuads++] = IGraphics::CQuadItem(TileX + Scale - OutlineWidth, TileY, OutlineWidth, Scale - OutlineWidth);
 				else
-					aQuads[NumQuads++] = IGraphics::CQuadItem(x * Scale + Scale - Config.m_Width, y * Scale + Config.m_Width, Config.m_Width, Scale - Config.m_Width * 2.0f);
+					aQuads[NumQuads++] = IGraphics::CQuadItem(TileX + Scale - OutlineWidth, TileY + OutlineWidth, OutlineWidth, Scale - OutlineWidth * 2.0f);
 			}
 			if(NumQuads <= 0)
 				continue;
 			if(Type != LastColorType)
 			{
+				Flush();
 				Graphics()->SetColor(Config.m_Color);
 				LastColorType = Type;
 			}
-			Graphics()->QuadsDrawTL(aQuads, NumQuads);
+			else if(NumBatched + NumQuads > (int)std::size(aBatch))
+			{
+				Flush();
+			}
+			for(int i = 0; i < NumQuads; ++i)
+				aBatch[NumBatched++] = aQuads[i];
 		}
 	}
+	Flush();
 
 	Graphics()->QuadsEnd();
 }

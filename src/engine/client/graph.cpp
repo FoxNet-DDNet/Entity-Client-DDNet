@@ -9,6 +9,7 @@
 #include <engine/graphics.h>
 #include <engine/textrender.h>
 
+#include <algorithm>
 #include <limits>
 
 CGraph::CGraph(int MaxEntries, int Precision, bool SummaryStats) :
@@ -174,18 +175,51 @@ void CGraph::RenderDataLines(IGraphics *pGraphics, float x, float y, float w, fl
 	pGraphics->LinesBatchBegin(&LineItemBatch);
 
 	const int64_t StartTime = m_pFirstScaled->m_Time;
+	// Precalculate the axis scaling factors instead of dividing for every entry. One entry
+	// is added per rendered frame and all of them are rendered again every frame, so the
+	// cost of this loop grows quadratically with the framerate.
+	const float TimeScale = m_RenderedTotalTime == 0 ? 0.0f : w / (float)m_RenderedTotalTime;
+	const float ValueRange = m_MaxAxis - m_MinAxis;
+	const float ValueScale = ValueRange == 0.0f ? 0.0f : h / ValueRange;
 
 	CEntry *pEntry0 = m_pFirstScaled;
-	int a0 = round_to_int((pEntry0->m_Time - StartTime) * w / m_RenderedTotalTime);
-	int v0 = round_to_int((pEntry0->m_Value - m_MinAxis) * h / (m_MaxAxis - m_MinAxis));
-	while(pEntry0 != nullptr)
+	int a0 = round_to_int((pEntry0->m_Time - StartTime) * TimeScale);
+	int v0 = round_to_int((pEntry0->m_Value - m_MinAxis) * ValueScale);
+	// Entries that fall into the same pixel column are collapsed into a single vertical line
+	// from the lowest to the highest value of that column. As the coordinates are rounded to
+	// whole pixels anyway, this covers exactly the same pixels as the individual segments
+	// between those entries would, while drawing at most two lines per pixel column.
+	int ColumnMinValue = v0;
+	int ColumnMaxValue = v0;
+	while(true)
 	{
 		CEntry *pEntry1 = m_Entries.Next(pEntry0);
 		if(pEntry1 == nullptr)
 			break;
 
-		const int a1 = round_to_int((pEntry1->m_Time - StartTime) * w / m_RenderedTotalTime);
-		const int v1 = round_to_int((pEntry1->m_Value - m_MinAxis) * h / (m_MaxAxis - m_MinAxis));
+		const int a1 = round_to_int((pEntry1->m_Time - StartTime) * TimeScale);
+		const int v1 = round_to_int((pEntry1->m_Value - m_MinAxis) * ValueScale);
+
+		// Only entries which do not start a new color can be collapsed, so the collapsed
+		// line always has the color that is already active for the current batch.
+		if(a1 == a0 && !pEntry1->m_ApplyColor)
+		{
+			ColumnMinValue = std::min(ColumnMinValue, v1);
+			ColumnMaxValue = std::max(ColumnMaxValue, v1);
+			pEntry0 = pEntry1;
+			v0 = v1;
+			continue;
+		}
+
+		if(ColumnMinValue != ColumnMaxValue)
+		{
+			const IGraphics::CLineItem ItemColumn = IGraphics::CLineItem(
+				x + a0,
+				y + h - ColumnMinValue,
+				x + a0,
+				y + h - ColumnMaxValue);
+			pGraphics->LinesBatchDraw(&LineItemBatch, &ItemColumn, 1);
+		}
 
 		if(pEntry1->m_ApplyColor)
 		{
@@ -203,7 +237,20 @@ void CGraph::RenderDataLines(IGraphics *pGraphics, float x, float y, float w, fl
 		pEntry0 = pEntry1;
 		a0 = a1;
 		v0 = v1;
+		ColumnMinValue = v1;
+		ColumnMaxValue = v1;
 	}
+
+	if(ColumnMinValue != ColumnMaxValue)
+	{
+		const IGraphics::CLineItem ItemColumn = IGraphics::CLineItem(
+			x + a0,
+			y + h - ColumnMinValue,
+			x + a0,
+			y + h - ColumnMaxValue);
+		pGraphics->LinesBatchDraw(&LineItemBatch, &ItemColumn, 1);
+	}
+
 	pGraphics->LinesBatchEnd(&LineItemBatch);
 }
 

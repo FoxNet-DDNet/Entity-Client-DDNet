@@ -15,6 +15,7 @@
 #include <generated/protocol.h>
 
 #include <game/client/component.h>
+#include <game/client/ui.h>
 
 #include <cstdint>
 
@@ -71,10 +72,11 @@ class CHud : public CComponent
 	// EClient: the difference readout is its own element, drawn alongside the finish shout rather
 	// than appended to it, so it needs a container of its own
 	STextContainerIndex m_TimeDiffTextContainerIndex;
-	STextContainerIndex m_PlayerAngleTextContainerIndex;
-	float m_PlayerPrevAngle;
-	STextContainerIndex m_aPlayerSpeedTextContainers[2];
-	float m_aPlayerPrevSpeed[2];
+	// EClient: these read out values that change on nearly every frame while the tee is moving,
+	// so they go through CCachedText, which reuses the container's buffer instead of dropping it
+	// and allocating a new one for each new value
+	CCachedText m_PlayerAngleText;
+	CCachedText m_aPlayerSpeedTexts[2];
 	int m_aPlayerSpeed[2];
 	enum class ESpeedChange
 	{
@@ -83,12 +85,10 @@ class CHud : public CComponent
 		DECREASE
 	};
 	ESpeedChange m_aLastPlayerSpeedChange[2];
-	STextContainerIndex m_aPlayerPositionContainers[2];
-	float m_aPlayerPrevPosition[2];
+	CCachedText m_aPlayerPositionTexts[2];
 
 	// EClient
-	STextContainerIndex m_PlayerCheckpointTextContainerIndex;
-	int m_PlayerPrevCheckpoint;
+	CCachedText m_PlayerCheckpointText;
 
 	// EClient: compact player info
 	STextContainerIndex m_aPlayerInfoTextContainers[2]; // 0 = Position, 1 = Speed
@@ -129,8 +129,34 @@ class CHud : public CComponent
 	void RenderDummyActions();
 	void RenderMovementInformation();
 
-	void UpdateMovementInformationTextContainer(STextContainerIndex &TextContainer, float FontSize, float Value, float &PrevValue);
-	void RenderMovementInformationTextContainer(STextContainerIndex &TextContainer, const ColorRGBA &Color, float X, float Y);
+	// Lays out a rounded value right-aligned at X, rebuilding the text only when it reads differently
+	void RenderMovementInformationValue(CCachedText &Cached, float FontSize, float Value, const ColorRGBA &Color, float X, float Y);
+
+	// EClient: a drop-in replacement for TextRender()->Text() for text that stays the same from
+	// frame to frame, see CCachedText. Takes the colour that is active the way Text() does.
+	void RenderCachedText(CCachedText &Cached, float X, float Y, float FontSize, const char *pText, float LineWidth = -1.0f, int Flags = TEXTFLAG_RENDER);
+	void ResetCachedTexts();
+	// The race timer and the clock: both redrawn every frame, both changing once a second at most
+	CCachedText m_GameTimerText;
+	CCachedText m_LocalTimeText;
+	// TextBoundingBox lays the whole string out, so the clock's width is kept with the string it
+	// was measured for rather than measured again every frame
+	char m_aLocalTimeWidthText[16] = "";
+	float m_LocalTimeWidth = 0.0f;
+	// The movement information labels, in the order they are drawn
+	enum class EMovementLabel
+	{
+		POSITION,
+		POSITION_X,
+		POSITION_Y,
+		SPEED,
+		SPEED_X,
+		SPEED_Y,
+		ANGLE,
+		CHECKPOINT,
+		NUM_MOVEMENT_LABELS,
+	};
+	CCachedText m_aMovementLabels[(int)EMovementLabel::NUM_MOVEMENT_LABELS];
 
 	class CMovementInformation
 	{
