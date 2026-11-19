@@ -22,6 +22,10 @@ public:
 	vec2 m_AabbMin = vec2(0, 0);
 	vec2 m_AabbMax = vec2(0, 0);
 
+	// The same bounds over the local corners, so a quad that only shifts can skip rebuilding them
+	vec2 m_LocalAabbMin = vec2(0, 0);
+	vec2 m_LocalAabbMax = vec2(0, 0);
+
 	int m_PosEnv = -1;
 	int m_PosEnvOffset = 0;
 
@@ -57,6 +61,16 @@ public:
 		m_PosEnv = Quad.m_PosEnv;
 		m_PosEnvOffset = Quad.m_PosEnvOffset;
 
+		m_LocalAabbMin = m_aLocalPoints[0];
+		m_LocalAabbMax = m_aLocalPoints[0];
+		for(int i = 1; i < 4; i++)
+		{
+			m_LocalAabbMin.x = std::min(m_LocalAabbMin.x, m_aLocalPoints[i].x);
+			m_LocalAabbMin.y = std::min(m_LocalAabbMin.y, m_aLocalPoints[i].y);
+			m_LocalAabbMax.x = std::max(m_LocalAabbMax.x, m_aLocalPoints[i].x);
+			m_LocalAabbMax.y = std::max(m_LocalAabbMax.y, m_aLocalPoints[i].y);
+		}
+
 		UpdateAabb();
 	}
 
@@ -71,6 +85,20 @@ public:
 			m_AabbMax.x = std::max(m_AabbMax.x, m_aPoints[i].x);
 			m_AabbMax.y = std::max(m_AabbMax.y, m_aPoints[i].y);
 		}
+	}
+
+	/*
+	 * Puts the quad at Offset without turning it. Shifting every corner by the same amount shifts
+	 * the bounds by it too, so the min and max come straight off the local ones instead of out of
+	 * a pass over the corners, which is what this runs for thousands of quads a tick to avoid.
+	 */
+	void MoveTo(vec2 Offset)
+	{
+		for(int i = 0; i < 4; i++)
+			m_aPoints[i] = m_aLocalPoints[i] + Offset;
+
+		m_AabbMin = m_LocalAabbMin + Offset;
+		m_AabbMax = m_LocalAabbMax + Offset;
 	}
 
 	vec2 MotionAt(vec2 Pos) const

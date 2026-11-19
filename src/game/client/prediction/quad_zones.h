@@ -29,6 +29,46 @@ enum class EPredictedZone
 };
 
 /*
+ * One position envelope read at one offset, which is all a quad's placement depends on. A zone
+ * layer points whole runs of quads at the same pair, so the envelope is walked once per pair per
+ * tick and every quad behind it just reads the answer, see CQuadZones::UpdateTransforms.
+ */
+class CQuadEnvKey
+{
+public:
+	int m_PosEnv = -1;
+	int m_PosEnvOffset = 0;
+
+	// Resolved once at map load, null when no envelope of the map backs the index
+	const CMapItemEnvelope *m_pEnvelope = nullptr;
+	// Whether any quad using this pair asks how it moved, which costs a second walk
+	bool m_NeedsMotion = false;
+};
+
+// Where one key's envelope stands on one tick, which is the whole of what a tick changes
+class CQuadTransform
+{
+public:
+	vec2 m_Offset = vec2(0.0f, 0.0f);
+	float m_Rotation = 0.0f;
+	vec2 m_PrevOffset = vec2(0.0f, 0.0f);
+	float m_PrevRotation = 0.0f;
+	bool m_Teleported = false;
+};
+
+/*
+ * A quad's bounds before any envelope moves it, kept apart from the quad itself so that the
+ * overlap scan walks a tight array instead of striding over whole quads.
+ */
+class CQuadBound
+{
+public:
+	vec2 m_Min = vec2(0.0f, 0.0f);
+	vec2 m_Max = vec2(0.0f, 0.0f);
+	int m_EnvKey = -1;
+};
+
+/*
  * The moving zones of FoxNet servers, and the one thing on the client that knows where any of
  * their quads is. The server acts on whoever stands in one of them once per tick from its own
  * component tick, see CFreezeZone::OnTick, CUnfreezeZone::OnTick and CCollidableZone::OnTick,
@@ -45,10 +85,17 @@ enum class EPredictedZone
  *
  * Quad layers of a minigame group belong to that minigame whatever they are named, so those
  * groups are skipped here the same way, see CZoneManager::OnMapLoad.
+ *
+ * The quads themselves are kept where the map put them and are never walked per tick. A tick
+ * only moves the handful of envelope keys behind them, and a question about a point is answered
+ * by asking it of the key's own frame instead, see Inside. Only QStopa, which hands the push its
+ * corners and its speed, is placed for real, and only once something asks for it.
  */
 class CQuadZones
 {
 public:
+	CQuadZones() { Reset(); }
+
 	void OnMapLoad(IMap *pMap);
 	void Reset();
 
@@ -61,11 +108,11 @@ public:
 	bool StopAGivesDj() const { return m_StopAGivesDj; }
 
 	/*
-	 * Moves every quad to where it stands on this tick. Called once at the top of the world tick
-	 * so that everything acting during that tick
-	 * agrees on where the quads are, the way the server settles them before any zone runs, see
-	 * CZoneManager::OnTick. The prediction replays a whole range of ticks every frame, so this
-	 * caches the tick it last ran for and does nothing when asked for it twice.
+	 * Settles where the envelopes stand on this tick, so that everything acting during it agrees
+	 * on where the quads are, the way the server settles them before any zone runs, see
+	 * CZoneManager::OnTick. Several predicted worlds replay overlapping ranges of ticks every
+	 * frame, see CGameClient::OnPredict, so the answer is kept per tick rather than only for the
+	 * last one asked for.
 	 */
 	void UpdateTo(int Tick);
 
@@ -74,18 +121,44 @@ public:
 	bool Inside(EPredictedZone Type, vec2 Pos, int Tick);
 
 private:
-	void UpdateQuad(CQuadData &Quad, std::chrono::nanoseconds Time, std::chrono::nanoseconds PrevTime, bool WithMotion) const;
-	void EvalPosEnvelope(const CQuadData &Quad, std::chrono::nanoseconds Time, vec2 &Offset, float &Rotation) const;
+	/*
+	 * How many ticks' worth of envelope positions are kept at once. The worlds of one frame span
+	 * the ticks between the last snapshot and the prediction's end plus what fast input and the
+	 * smoothing add, which stays far inside this.
+	 */
+	static constexpr int TICK_CACHE_SIZE = 64;
+
+	// Forgets every tick settled so far, for when the quads are somewhere else entirely
+	void DropCachedTicks();
+	// The pair this quad reads its placement from, adding it to the table when it is a new one
+	int AddEnvKey(int PosEnv, int PosEnvOffset, bool NeedsMotion);
+	void UpdateTransforms(int Tick);
+	// Places the quads of one zone for the settled tick, for the callers that need their corners
+	void Materialize(EPredictedZone Type);
+	void UpdateQuad(CQuadData &Quad, const CQuadTransform *pTransform, bool WithMotion) const;
+	void EvalPosEnvelope(const CQuadEnvKey &Key, std::chrono::nanoseconds Time, vec2 &Offset, float &Rotation) const;
 	// Whether the envelope put the quad somewhere else between these two times instead of moving it there
-	bool QuadJumped(const CQuadData &Quad, std::chrono::nanoseconds Time, std::chrono::nanoseconds PrevTime) const;
+	bool QuadJumped(const CQuadEnvKey &Key, std::chrono::nanoseconds Time, std::chrono::nanoseconds PrevTime) const;
 
 	std::vector<CQuadData> m_avQuads[(int)EPredictedZone::Num];
+	// Parallel to m_avQuads, what the overlap scan reads instead of the quads
+	std::vector<CQuadBound> m_avBounds[(int)EPredictedZone::Num];
+
+	std::vector<CQuadEnvKey> m_vEnvKeys;
+	std::vector<CQuadTransform> m_vTransforms; // where those keys stand on m_CachedTick
+	std::vector<CQuadTransform> m_avTickCache[TICK_CACHE_SIZE];
+	int m_aTickCacheTick[TICK_CACHE_SIZE];
+
 	std::unique_ptr<CMapBasedEnvelopePointAccess> m_pEnvelopePoints;
 	IMap *m_pMap = nullptr;
 	bool m_Active = false;
 	bool m_StopAGivesDj = false;
 	int m_QuadStartTick = 0;
 	int m_CachedTick = -1;
+	// The tick each zone's quads were last placed for, see Materialize
+	int m_aMaterializedTick[(int)EPredictedZone::Num];
+	// Whether any key turns its quads on this tick, which no shift of the asking point can undo
+	bool m_AnyRotation = false;
 };
 
 #endif // GAME_CLIENT_PREDICTION_QUAD_ZONES_H
