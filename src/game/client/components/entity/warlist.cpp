@@ -70,6 +70,8 @@ void CWarList::OnConsoleInit()
 
 void CWarList::RebuildWarMaps()
 {
+	m_WarMapsGeneration++; // EClient
+
 	// Config files can add thousands of entries before OnInit. Build the maps once
 	// after loading instead of rebuilding them for every entry.
 	if(!m_WarMapsInitialized)
@@ -858,11 +860,45 @@ void CWarList::SortWarEntries()
 	// TODO
 }
 
+// EClient
+uint32_t CWarList::WarTypesHash() const
+{
+	// a CWarType holds nothing but fixed size members, so hashing its bytes catches every
+	// settings change, and at worst reports a change that did not happen
+	uint32_t Hash = 2166136261u;
+	const auto &&HashBytes = [&Hash](const void *pData, size_t Size) {
+		const unsigned char *pBytes = static_cast<const unsigned char *>(pData);
+		for(size_t Byte = 0; Byte < Size; Byte++)
+		{
+			Hash = (Hash ^ pBytes[Byte]) * 16777619u;
+		}
+	};
+	const size_t NumWarTypes = m_WarTypes.size();
+	HashBytes(&NumWarTypes, sizeof(NumWarTypes));
+	for(const CWarType *pWarType : m_WarTypes)
+	{
+		HashBytes(pWarType, sizeof(*pWarType));
+	}
+	return Hash;
+}
+
 void CWarList::UpdateWarPlayers()
 {
 	MigrateLegacySettings();
 	for(int i = 0; i < (int)m_WarTypes.size(); ++i)
 		m_WarTypes[i]->m_Index = i;
+
+	// EClient
+	const uint32_t WarTypesHashNow = WarTypesHash();
+	if(m_UpdatedForClientInfoVersion == GameClient()->m_ClientInfoVersion &&
+		m_UpdatedForWarMapsGeneration == m_WarMapsGeneration &&
+		m_UpdatedForWarTypesHash == WarTypesHashNow)
+	{
+		return;
+	}
+	m_UpdatedForClientInfoVersion = GameClient()->m_ClientInfoVersion;
+	m_UpdatedForWarMapsGeneration = m_WarMapsGeneration;
+	m_UpdatedForWarTypesHash = WarTypesHashNow;
 
 	for(int i = 0; i < MAX_CLIENTS; ++i)
 	{

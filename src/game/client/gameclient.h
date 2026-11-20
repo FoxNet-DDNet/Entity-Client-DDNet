@@ -706,9 +706,20 @@ public:
 
 		// EClient
 		bool m_IsEntityClientUser;
+
+		// EClient: the snapshot repeats every player's ClientInfo every tick although it
+		// practically never changes, and decoding one costs about a microsecond. The raw
+		// item of the last decode is kept so that unchanged ones can be skipped.
+		CNetObj_ClientInfo m_DecodedClientInfo;
+		bool m_HasDecodedClientInfo;
+		bool m_DecodedAllowXSkins;
 	};
 
 	CClientData m_aClients[MAX_CLIENTS];
+
+	// EClient: changes whenever a player's decoded ClientInfo did, so that work derived
+	// from the names and clans can be skipped while they are all unchanged
+	int m_ClientInfoVersion = 0;
 
 	class CClientStats
 	{

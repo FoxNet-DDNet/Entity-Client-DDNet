@@ -519,6 +519,10 @@ int CSnapshotDelta::UnpackDelta(const CSnapshot *pFrom, CSnapshotBuffer *pTo, co
 	CSnapshotBuilder Builder;
 	Builder.Init();
 
+	// EClient: one lookup per updated item, which used to scan all of pFrom each time
+	CSnapshotItemIndex FromIndex;
+	FromIndex.Invalidate();
+
 	// unpack deleted stuff
 	int *pDeleted = pData;
 	if(pDelta->m_NumDeletedItems < 0)
@@ -602,15 +606,15 @@ int CSnapshotDelta::UnpackDelta(const CSnapshot *pFrom, CSnapshotBuffer *pTo, co
 		if(!pNewData)
 			return -302;
 
-		const int FromIndex = pFrom->GetItemIndex(Key);
-		if(FromIndex != -1)
+		const int FromItemIndex = FromIndex.ItemIndex(pFrom, Key);
+		if(FromItemIndex != -1)
 		{
-			if(pFrom->GetItemSize(FromIndex) != ItemSize)
+			if(pFrom->GetItemSize(FromItemIndex) != ItemSize)
 			{
 				return -207;
 			}
 			// we got an update so we need to apply the diff
-			UndiffItem(pFrom->GetItem(FromIndex)->Data(), pData, pNewData, ItemSize / sizeof(int32_t), &m_aSnapshotDataRate[Type]);
+			UndiffItem(pFrom->GetItem(FromItemIndex)->Data(), pData, pNewData, ItemSize / sizeof(int32_t), &m_aSnapshotDataRate[Type]);
 		}
 		else // no previous, just copy the pData
 		{
@@ -624,6 +628,144 @@ int CSnapshotDelta::UnpackDelta(const CSnapshot *pFrom, CSnapshotBuffer *pTo, co
 
 	// finish up
 	return Builder.Finish(pTo);
+}
+
+// CSnapshotItemTypes (EClient)
+
+int CSnapshotItemTypes::CacheIndex(int InternalType)
+{
+	const int Index = CSnapshot::MAX_TYPE - InternalType;
+	return Index >= 0 && Index < NUM_TYPES ? Index : -1;
+}
+
+void CSnapshotItemTypes::Build(const CSnapshot *pSnapshot)
+{
+	m_pSnapshot = pSnapshot;
+	for(int &ExternalType : m_aExternalTypes)
+	{
+		ExternalType = UUID_UNKNOWN;
+	}
+
+	for(int i = 0; i < pSnapshot->NumItems(); i++)
+	{
+		const CSnapshotItem *pItem = pSnapshot->GetItem(i);
+		if(pItem->InternalType() != 0) // NETOBJTYPE_EX
+		{
+			continue;
+		}
+		const int Index = CacheIndex(pItem->Id());
+		if(Index < 0 || m_aExternalTypes[Index] != UUID_UNKNOWN)
+		{
+			// out of the cached range, or a duplicate declaration, of which the
+			// uncached path would also have used the first one
+			continue;
+		}
+		if(pSnapshot->GetItemSize(i) < (int)sizeof(CUuid))
+		{
+			continue;
+		}
+		m_aExternalTypes[Index] = g_UuidManager.LookupUuid(UuidFromInts(pItem->Data()));
+	}
+}
+
+int CSnapshotItemTypes::ItemType(const CSnapshot *pSnapshot, int Index)
+{
+	const int InternalType = pSnapshot->GetItem(Index)->InternalType();
+	if(InternalType < CSnapshot::OFFSET_UUID_TYPE)
+	{
+		return InternalType;
+	}
+	const int CachedIndex = CacheIndex(InternalType);
+	if(CachedIndex < 0)
+	{
+		return pSnapshot->GetExternalItemType(InternalType);
+	}
+	if(m_pSnapshot != pSnapshot)
+	{
+		Build(pSnapshot);
+	}
+	return m_aExternalTypes[CachedIndex];
+}
+
+int CSnapshotItemTypes::InternalItemType(const CSnapshot *pSnapshot, int ExternalType)
+{
+	dbg_assert(ExternalType >= OFFSET_UUID, "not an extended item type: %d", ExternalType);
+	if(m_pSnapshot != pSnapshot)
+	{
+		Build(pSnapshot);
+	}
+	for(int Index = 0; Index < NUM_TYPES; Index++)
+	{
+		if(m_aExternalTypes[Index] == ExternalType)
+		{
+			return CSnapshot::MAX_TYPE - Index;
+		}
+	}
+	return -1;
+}
+
+// CSnapshotItemIndex (EClient)
+
+// Fibonacci hashing, which spreads the (Type << 16) | Id keys over the whole table
+// where taking the low bits would pile all items of one type into few slots
+static int SnapItemIndexSlot(int Key, int Capacity)
+{
+	return (int)(((uint32_t)Key * 2654435761u) >> 16) & (Capacity - 1);
+}
+
+int CSnapshotItemIndex::Slot(int Key)
+{
+	return SnapItemIndexSlot(Key, CAPACITY);
+}
+
+void CSnapshotItemIndex::Build(const CSnapshot *pSnapshot)
+{
+	m_pSnapshot = pSnapshot;
+	for(int &ItemIndex : m_aItemIndices)
+	{
+		ItemIndex = -1;
+	}
+
+	const int NumItems = pSnapshot->NumItems();
+	dbg_assert(NumItems <= CAPACITY / 2, "snapshot has too many items to index: %d", NumItems);
+	for(int i = 0; i < NumItems; i++)
+	{
+		const int Key = pSnapshot->GetItem(i)->Key();
+		int Slot = CSnapshotItemIndex::Slot(Key);
+		bool Duplicate = false;
+		while(m_aItemIndices[Slot] != -1)
+		{
+			if(pSnapshot->GetItem(m_aItemIndices[Slot])->Key() == Key)
+			{
+				// keep the first one, which is what the linear scan would have found
+				Duplicate = true;
+				break;
+			}
+			Slot = (Slot + 1) & (CAPACITY - 1);
+		}
+		if(!Duplicate)
+		{
+			m_aItemIndices[Slot] = i;
+		}
+	}
+}
+
+int CSnapshotItemIndex::ItemIndex(const CSnapshot *pSnapshot, int Key)
+{
+	if(m_pSnapshot != pSnapshot)
+	{
+		Build(pSnapshot);
+	}
+
+	for(int Slot = CSnapshotItemIndex::Slot(Key); m_aItemIndices[Slot] != -1; Slot = (Slot + 1) & (CAPACITY - 1))
+	{
+		const int ItemIndex = m_aItemIndices[Slot];
+		if(pSnapshot->GetItem(ItemIndex)->Key() == Key)
+		{
+			return ItemIndex;
+		}
+	}
+	return -1;
 }
 
 // CSnapshotStorage
@@ -692,11 +834,15 @@ void CSnapshotStorage::Add(int Tick, int64_t Tagtime, size_t DataSize, const voi
 		pHolder->m_pAltSnap = static_cast<CSnapshot *>(malloc(AltDataSize));
 		mem_copy(pHolder->m_pAltSnap, pAltData, AltDataSize);
 		pHolder->m_AltSnapSize = AltDataSize;
+		pHolder->m_AltSnapTypes.Invalidate(); // EClient
+		pHolder->m_AltSnapIndex.Invalidate(); // EClient
 	}
 	else
 	{
 		pHolder->m_pAltSnap = nullptr;
 		pHolder->m_AltSnapSize = 0;
+		pHolder->m_AltSnapTypes.Invalidate(); // EClient
+		pHolder->m_AltSnapIndex.Invalidate(); // EClient
 	}
 
 	// link
@@ -751,6 +897,7 @@ void CSnapshotBuilder::Init(bool Sixup)
 	m_Building = true;
 	m_HasDroppedItem = false;
 	m_Sixup = Sixup;
+	m_ItemIndexBuilt = false; // EClient
 
 	for(int i = 0; i < m_NumExtendedItemTypes; i++)
 	{
@@ -777,14 +924,50 @@ int *CSnapshotBuilder::GetItemData(int Index)
 	return GetItem(Index)->Data();
 }
 
-std::optional<int> CSnapshotBuilder::FindItemIndexByKey(int Key)
+// EClient
+void CSnapshotBuilder::AddToItemIndex(int Key, int ItemIndex)
 {
+	int Slot = SnapItemIndexSlot(Key, ITEM_INDEX_CAPACITY);
+	while(m_aItemIndices[Slot] != -1)
+	{
+		if(GetItem(m_aItemIndices[Slot])->Key() == Key)
+		{
+			// keep the first one, which is what a scan would have found
+			return;
+		}
+		Slot = (Slot + 1) & (ITEM_INDEX_CAPACITY - 1);
+	}
+	m_aItemIndices[Slot] = ItemIndex;
+}
+
+// EClient
+void CSnapshotBuilder::BuildItemIndex()
+{
+	dbg_assert(m_NumItems <= ITEM_INDEX_CAPACITY / 2, "too many items to index: %d", m_NumItems);
+	for(int &ItemIndex : m_aItemIndices)
+	{
+		ItemIndex = -1;
+	}
+	m_ItemIndexBuilt = true;
 	for(int i = 0; i < m_NumItems; i++)
 	{
-		CSnapshotItem *pItem = GetItem(i);
-		if(pItem->Key() == Key)
+		AddToItemIndex(GetItem(i)->Key(), i);
+	}
+}
+
+std::optional<int> CSnapshotBuilder::FindItemIndexByKey(int Key)
+{
+	if(!m_ItemIndexBuilt)
+	{
+		BuildItemIndex();
+	}
+
+	for(int Slot = SnapItemIndexSlot(Key, ITEM_INDEX_CAPACITY); m_aItemIndices[Slot] != -1; Slot = (Slot + 1) & (ITEM_INDEX_CAPACITY - 1))
+	{
+		const int ItemIndex = m_aItemIndices[Slot];
+		if(GetItem(ItemIndex)->Key() == Key)
 		{
-			return i;
+			return ItemIndex;
 		}
 	}
 	return std::nullopt;
@@ -928,6 +1111,10 @@ void *CSnapshotBuilder::NewItemRaw(int Type, int Id, int Size)
 	m_aOffsets[m_NumItems] = m_DataSize;
 	m_DataSize += ItemSize;
 	m_NumItems++;
+	if(m_ItemIndexBuilt) // EClient
+	{
+		AddToItemIndex(pObj->m_TypeAndId, m_NumItems - 1);
+	}
 
 	mem_zero(pObj->Data(), Size);
 	return pObj->Data();

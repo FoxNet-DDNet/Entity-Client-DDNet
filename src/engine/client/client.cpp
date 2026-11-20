@@ -988,10 +988,11 @@ void CClient::LoadDebugFont()
 IClient::CSnapItem CClient::SnapGetItem(int SnapId, int Index) const
 {
 	dbg_assert(SnapId >= 0 && SnapId < NUM_SNAPSHOT_TYPES, "invalid SnapId");
-	const CSnapshot *pSnapshot = m_aapSnapshots[g_Config.m_ClDummy][SnapId]->m_pAltSnap;
+	CSnapshotStorage::CHolder *pHolder = m_aapSnapshots[g_Config.m_ClDummy][SnapId];
+	const CSnapshot *pSnapshot = pHolder->m_pAltSnap;
 	const CSnapshotItem *pSnapshotItem = pSnapshot->GetItem(Index);
 	CSnapItem Item;
-	Item.m_Type = pSnapshot->GetItemType(Index);
+	Item.m_Type = pHolder->m_AltSnapTypes.ItemType(pSnapshot, Index); // EClient
 	Item.m_Id = pSnapshotItem->Id();
 	Item.m_pData = pSnapshotItem->Data();
 	Item.m_DataSize = pSnapshot->GetItemSize(Index);
@@ -1007,10 +1008,24 @@ const void *CClient::SnapFindItem(int Conn, int SnapId, int Type, int Id) const
 {
 	dbg_assert(SnapId >= 0 && SnapId < NUM_SNAPSHOT_TYPES, "invalid SnapId");
 	dbg_assert(Conn >= 0 && Conn < NUM_DUMMIES, "invalid Conn");
-	if(!m_aapSnapshots[Conn][SnapId])
+	CSnapshotStorage::CHolder *pHolder = m_aapSnapshots[Conn][SnapId];
+	if(!pHolder)
 		return nullptr;
 
-	return m_aapSnapshots[Conn][SnapId]->m_pAltSnap->FindItem(Type, Id);
+	// EClient: resolve the extended type through the snapshot's type cache instead of
+	// letting FindItem scan for the declaration item on every call
+	const CSnapshot *pSnapshot = pHolder->m_pAltSnap;
+	int InternalType = Type;
+	if(Type >= OFFSET_UUID)
+	{
+		InternalType = pHolder->m_AltSnapTypes.InternalItemType(pSnapshot, Type);
+		if(InternalType < 0)
+		{
+			return nullptr;
+		}
+	}
+	const int ItemIndex = pHolder->m_AltSnapIndex.ItemIndex(pSnapshot, (InternalType << 16) | Id);
+	return ItemIndex < 0 ? nullptr : pSnapshot->GetItem(ItemIndex)->Data();
 }
 
 int CClient::SnapNumItems(int SnapId) const
@@ -2566,12 +2581,15 @@ int CClient::UnpackAndValidateSnapshot(CSnapshot *pFrom, CSnapshotBuffer *pTo)
 	Builder.Init();
 	CNetObjHandler *pNetObjHandler = GameClient()->GetNetObjHandler();
 
+	CSnapshotItemTypes ItemTypes; // EClient
+	ItemTypes.Invalidate();
+
 	int Num = pFrom->NumItems();
 	for(int Index = 0; Index < Num; Index++)
 	{
 		const CSnapshotItem *pFromItem = pFrom->GetItem(Index);
 		const int FromItemSize = pFrom->GetItemSize(Index);
-		const int ItemType = pFrom->GetItemType(Index);
+		const int ItemType = ItemTypes.ItemType(pFrom, Index); // EClient
 		const void *pData = pFromItem->Data();
 		Unpacker.Reset(pData, FromItemSize);
 
@@ -2927,6 +2945,8 @@ void CClient::OnDemoPlayerSnapshot(void *pData, int Size)
 	std::swap(m_aapSnapshots[0][SNAP_PREV], m_aapSnapshots[0][SNAP_CURRENT]);
 	mem_copy(m_aapSnapshots[0][SNAP_CURRENT]->m_pSnap, pData, Size);
 	mem_copy(m_aapSnapshots[0][SNAP_CURRENT]->m_pAltSnap, &AltSnapBuffer, AltSnapSize);
+	m_aapSnapshots[0][SNAP_CURRENT]->m_AltSnapTypes.Invalidate(); // EClient
+	m_aapSnapshots[0][SNAP_CURRENT]->m_AltSnapIndex.Invalidate(); // EClient
 
 	GameClient()->OnNewSnapshot(false);
 }
@@ -4304,6 +4324,8 @@ const char *CClient::DemoPlayer_Play(const char *pFilename, int StorageType)
 		m_aapSnapshots[0][SnapshotType] = &m_aDemorecSnapshotHolders[SnapshotType];
 		m_aapSnapshots[0][SnapshotType]->m_pSnap = m_aaDemorecSnapshotData[SnapshotType][0].AsSnapshot();
 		m_aapSnapshots[0][SnapshotType]->m_pAltSnap = m_aaDemorecSnapshotData[SnapshotType][1].AsSnapshot();
+		m_aapSnapshots[0][SnapshotType]->m_AltSnapTypes.Invalidate(); // EClient
+		m_aapSnapshots[0][SnapshotType]->m_AltSnapIndex.Invalidate(); // EClient
 		m_aapSnapshots[0][SnapshotType]->m_SnapSize = 0;
 		m_aapSnapshots[0][SnapshotType]->m_AltSnapSize = 0;
 		m_aapSnapshots[0][SnapshotType]->m_Tick = -1;

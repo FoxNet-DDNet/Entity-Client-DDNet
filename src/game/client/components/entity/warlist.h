@@ -238,6 +238,16 @@ public:
 	std::unordered_set<std::string> m_ConfigEntryKeys;
 	bool m_WarMapsInitialized = false;
 	void RebuildWarMaps();
+
+	// EClient: UpdateWarPlayers is a pure function of the players' names and clans, of the
+	// war maps and of the war group settings, but it ran for every player on every snapshot
+	// (five string keyed lookups and a vector rebuild each), which measured ~64us per
+	// snapshot with ~84 players. It is skipped while none of those inputs changed.
+	int m_WarMapsGeneration = 0;
+	int m_UpdatedForWarMapsGeneration = -1;
+	int m_UpdatedForClientInfoVersion = -1;
+	uint32_t m_UpdatedForWarTypesHash = 0;
+	uint32_t WarTypesHash() const;
 	void MigrateLegacySettings();
 	void InitializeGroupSettings(CWarType *pType, int Index);
 

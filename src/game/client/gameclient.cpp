@@ -719,6 +719,7 @@ void CGameClient::OnReset()
 
 	for(auto &Client : m_aClients)
 		Client.Reset();
+	m_ClientInfoVersion++; // EClient
 
 	for(auto &Stats : m_aStats)
 		Stats.Reset();
@@ -1863,11 +1864,26 @@ void CGameClient::InvalidateSnapshot()
 
 void CGameClient::OnNewSnapshot(bool DummySwapped)
 {
-	auto &&Evolve = [this](CNetObj_Character *pCharacter, int Tick) {
-		CWorldCore TempWorld;
+	// EClient: the world and the teams are only ever read while evolving (the core never
+	// registers itself in the world and never leaves m_Id at anything but -1), so there is no
+	// reason to build one of each per call, which clears MAX_CLIENTS pointers and walks
+	// MAX_CLIENTS team entries respectively. Measuring afterwards showed that the cost of an
+	// evolve is almost entirely the ticks it simulates, so expect little from this; the guard
+	// below, which skips the calls that have no tick to simulate at all, is what pays.
+	CWorldCore EvolveWorld;
+	CTeamsCore EvolveTeams;
+	auto &&Evolve = [this, &EvolveWorld, &EvolveTeams](CNetObj_Character *pCharacter, int Tick) {
+		// EClient: with nothing to evolve this would only read the character into a core
+		// and write it straight back out, which round-trips every field exactly: the
+		// positions are integers, the velocities and hook directions are scaled by 256,
+		// and Read's SetHookedPlayer only assigns while m_Id is -1, as it is here.
+		if(pCharacter->m_Tick >= Tick)
+		{
+			return;
+		}
+
 		CCharacterCore TempCore = CCharacterCore();
-		CTeamsCore TempTeams = CTeamsCore();
-		TempCore.Init(&TempWorld, Collision(), &TempTeams);
+		TempCore.Init(&EvolveWorld, Collision(), &EvolveTeams);
 		TempCore.Read(pCharacter);
 		TempCore.m_ActiveWeapon = pCharacter->m_Weapon;
 
@@ -1931,6 +1947,19 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 				if(ClientId < MAX_CLIENTS)
 				{
 					CClientData *pClient = &m_aClients[ClientId];
+
+					// EClient: nothing below depends on anything but the item itself and
+					// m_AllowXSkins, so an unchanged item decodes to what is already there
+					if(pClient->m_HasDecodedClientInfo &&
+						pClient->m_DecodedAllowXSkins == m_GameInfo.m_AllowXSkins &&
+						mem_comp(&pClient->m_DecodedClientInfo, pInfo, sizeof(*pInfo)) == 0)
+					{
+						continue;
+					}
+					pClient->m_DecodedClientInfo = *pInfo;
+					pClient->m_HasDecodedClientInfo = true;
+					pClient->m_DecodedAllowXSkins = m_GameInfo.m_AllowXSkins;
+					m_ClientInfoVersion++;
 
 					if(!IntsToStr(pInfo->m_aName, std::size(pInfo->m_aName), pClient->m_aName, std::size(pClient->m_aName)))
 					{
@@ -2337,6 +2366,7 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 		{
 			m_aClients[i].Reset();
 			m_aStats[i].Reset();
+			m_ClientInfoVersion++; // EClient
 		}
 	}
 
@@ -2359,8 +2389,11 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 	m_ReceivedDDNetPlayerFinishTimesMillis = m_ReceivedDDNetPlayer && HasTrueMillisecondFinishTimes;
 
 	// sort player infos by name
+	// EClient: every non-null entry sits at its own client id, so the slots past the highest
+	// one are all null and sorting them only moves nulls around.
+	const int NumSortedSlots = std::clamp(m_Snap.m_HighestClientId + 1, 0, (int)MAX_CLIENTS);
 	mem_copy(m_Snap.m_apInfoByName, m_Snap.m_apPlayerInfos, sizeof(m_Snap.m_apInfoByName));
-	std::stable_sort(m_Snap.m_apInfoByName, m_Snap.m_apInfoByName + MAX_CLIENTS,
+	std::stable_sort(m_Snap.m_apInfoByName, m_Snap.m_apInfoByName + NumSortedSlots,
 		[this](const CNetObj_PlayerInfo *pPlayer1, const CNetObj_PlayerInfo *pPlayer2) -> bool {
 			if(!pPlayer2)
 				return static_cast<bool>(pPlayer1);
@@ -2384,29 +2417,41 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 			return TimeComparator(m_aClients[pPlayer1->m_ClientId].m_FinishTimeSeconds, m_aClients[pPlayer2->m_ClientId].m_FinishTimeSeconds, m_aClients[pPlayer1->m_ClientId].m_FinishTimeMillis, m_aClients[pPlayer2->m_ClientId].m_FinishTimeMillis);
 		return TimeComparator(pPlayer1->m_Score, pPlayer2->m_Score, 0, 0);
 	};
-	std::stable_sort(m_Snap.m_apInfoByScore, m_Snap.m_apInfoByScore + MAX_CLIENTS, SortByTimeScore);
+	std::stable_sort(m_Snap.m_apInfoByScore, m_Snap.m_apInfoByScore + NumSortedSlots, SortByTimeScore);
+
+	// EClient: group an already sorted list by DDRace team, keeping the order within each
+	// team. Counting the teams in one pass replaces a loop over every team crossed with
+	// every client, which with MAX_CLIENTS at 128 was 2 x 16512 iterations (plus as many
+	// calls into CTeamsCore) per snapshot, ~108us of it.
+	const auto &&GroupByDDTeam = [this, NumSortedSlots](const CNetObj_PlayerInfo **ppSorted, const CNetObj_PlayerInfo **ppGrouped) {
+		int aTeamStarts[NUM_DDRACE_TEAMS + 1] = {0};
+		for(int i = 0; i < NumSortedSlots; i++)
+		{
+			if(!ppSorted[i])
+				continue;
+			const int Team = m_Teams.Team(ppSorted[i]->m_ClientId);
+			if(in_range(Team, (int)TEAM_FLOCK, NUM_DDRACE_TEAMS - 1))
+				aTeamStarts[Team + 1]++;
+		}
+		for(int Team = TEAM_FLOCK; Team < NUM_DDRACE_TEAMS; ++Team)
+		{
+			aTeamStarts[Team + 1] += aTeamStarts[Team];
+		}
+		for(int i = 0; i < NumSortedSlots; i++)
+		{
+			if(!ppSorted[i])
+				continue;
+			const int Team = m_Teams.Team(ppSorted[i]->m_ClientId);
+			if(in_range(Team, (int)TEAM_FLOCK, NUM_DDRACE_TEAMS - 1))
+				ppGrouped[aTeamStarts[Team]++] = ppSorted[i];
+		}
+	};
 
 	// sort player infos by DDRace Team (and score between)
-	int Index = 0;
-	for(int Team = TEAM_FLOCK; Team < NUM_DDRACE_TEAMS; ++Team)
-	{
-		for(int i = 0; i < MAX_CLIENTS && Index < MAX_CLIENTS; ++i)
-		{
-			if(m_Snap.m_apInfoByScore[i] && m_Teams.Team(m_Snap.m_apInfoByScore[i]->m_ClientId) == Team)
-				m_Snap.m_apInfoByDDTeamScore[Index++] = m_Snap.m_apInfoByScore[i];
-		}
-	}
+	GroupByDDTeam(m_Snap.m_apInfoByScore, m_Snap.m_apInfoByDDTeamScore);
 
 	// sort player infos by DDRace Team (and name between)
-	Index = 0;
-	for(int Team = TEAM_FLOCK; Team < NUM_DDRACE_TEAMS; ++Team)
-	{
-		for(int i = 0; i < MAX_CLIENTS && Index < MAX_CLIENTS; ++i)
-		{
-			if(m_Snap.m_apInfoByName[i] && m_Teams.Team(m_Snap.m_apInfoByName[i]->m_ClientId) == Team)
-				m_Snap.m_apInfoByDDTeamName[Index++] = m_Snap.m_apInfoByName[i];
-		}
-	}
+	GroupByDDTeam(m_Snap.m_apInfoByName, m_Snap.m_apInfoByDDTeamName);
 
 	if(ServerInfo.m_aGameType[0] != '0')
 	{
@@ -3567,6 +3612,7 @@ void CGameClient::CClientData::UpdateRenderInfo()
 
 void CGameClient::CClientData::Reset()
 {
+	m_HasDecodedClientInfo = false; // EClient
 	m_UseCustomColor = 0;
 	m_ColorBody = 0;
 	m_ColorFeet = 0;

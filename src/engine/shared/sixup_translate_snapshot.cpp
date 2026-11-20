@@ -12,6 +12,7 @@ void CSnapshotBuilder::Init7(const CSnapshot *pSnapshot)
 	m_Building = true;
 	m_HasDroppedItem = false;
 	m_Sixup = false;
+	m_ItemIndexBuilt = false; // EClient: the items below are copied in, not added one by one
 
 	m_DataSize = pSnapshot->m_DataSize;
 	m_NumItems = pSnapshot->m_NumItems;

@@ -129,6 +129,63 @@ public:
 
 // CSnapshotStorage
 
+// EClient: resolving the type of an extended (uuid) item means finding its
+// NETOBJTYPE_EX declaration item by a linear scan and then looking the uuid up, which
+// `CSnapshot` does again for every single item of every sweep over a snapshot. On a busy
+// server roughly a third of the items are extended and the snapshot is walked several
+// times per tick, which measured ~100us per sweep. This resolves every declaration of
+// one snapshot in a single pass and answers from the table afterwards. The results are
+// identical to `CSnapshot::GetItemType`, including -1 for a missing or unknown type.
+class CSnapshotItemTypes
+{
+	// Only the types a `CSnapshotBuilder` can emit are cached, anything else falls back
+	// to the uncached path.
+	enum
+	{
+		NUM_TYPES = 64,
+	};
+
+	const CSnapshot *m_pSnapshot;
+	int m_aExternalTypes[NUM_TYPES];
+
+	void Build(const CSnapshot *pSnapshot);
+	static int CacheIndex(int InternalType);
+
+public:
+	// Must be called before first use and whenever the snapshot's contents change. Holders
+	// are allocated without running constructors, so this is not a constructor.
+	void Invalidate() { m_pSnapshot = nullptr; }
+
+	int ItemType(const CSnapshot *pSnapshot, int Index);
+	int InternalItemType(const CSnapshot *pSnapshot, int ExternalType);
+};
+
+// EClient: key -> item index for one snapshot. `CSnapshot::GetItemIndex` is a linear
+// scan ("this should not be a linear search. very bad") and the client runs one per
+// player and per character of every snapshot, so the cost grows with the square of the
+// player count. Lookups answer from this table instead, which reports the same index as
+// the scan, the first one when a key occurs twice.
+class CSnapshotItemIndex
+{
+	enum
+	{
+		// power of two, kept well above CSnapshot::MAX_ITEMS so probes stay short
+		CAPACITY = 2048,
+	};
+
+	const CSnapshot *m_pSnapshot;
+	int m_aItemIndices[CAPACITY];
+
+	void Build(const CSnapshot *pSnapshot);
+	static int Slot(int Key);
+
+public:
+	// Must be called before first use and whenever the snapshot's contents change.
+	void Invalidate() { m_pSnapshot = nullptr; }
+
+	int ItemIndex(const CSnapshot *pSnapshot, int Key);
+};
+
 class CSnapshotStorage
 {
 public:
@@ -146,6 +203,8 @@ public:
 
 		CSnapshot *m_pSnap;
 		CSnapshot *m_pAltSnap;
+		CSnapshotItemTypes m_AltSnapTypes; // EClient
+		CSnapshotItemIndex m_AltSnapIndex; // EClient
 	};
 
 	CHolder *m_pFirst;
@@ -172,6 +231,19 @@ class CSnapshotBuilder
 
 	int m_aOffsets[CSnapshot::MAX_ITEMS];
 	int m_NumItems;
+
+	// EClient: key -> item index for the items added so far, so that repeated
+	// `FindItemIndexByKey` calls do not each scan the whole builder. Built on the first
+	// lookup and maintained from there, which keeps it off the path of users that only
+	// ever add items, like the server building its snapshots.
+	enum
+	{
+		ITEM_INDEX_CAPACITY = 2048,
+	};
+	int m_aItemIndices[ITEM_INDEX_CAPACITY];
+	bool m_ItemIndexBuilt = false;
+	void BuildItemIndex();
+	void AddToItemIndex(int Key, int ItemIndex);
 
 	int m_aExtendedItemTypes[MAX_EXTENDED_ITEM_TYPES];
 	int m_NumExtendedItemTypes = 0;
