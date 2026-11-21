@@ -581,7 +581,9 @@ void CRenderMap::RenderTilemap(CTile *pTiles, int w, int h, float Scale, ColorRG
 	float FinalTileSize = Scale / ScreenRect.Width() * Graphics()->ScreenWidth();
 	float FinalTilesetScale = FinalTileSize / TilePixelSize;
 
-	if(Graphics()->HasTextureArraysSupport())
+	const bool TextureArrays = Graphics()->HasTextureArraysSupport();
+
+	if(TextureArrays)
 		Graphics()->QuadsTex3DBegin();
 	else
 		Graphics()->QuadsBegin();
@@ -624,10 +626,20 @@ void CRenderMap::RenderTilemap(CTile *pTiles, int w, int h, float Scale, ColorRG
 
 	for(int y = StartY; y < EndY; y++)
 	{
+		int my = y;
+		if(ExtendTiles)
+		{
+			if(my < 0)
+				my = 0;
+			if(my >= h)
+				my = h - 1;
+		}
+
+		const CTile *pRow = pTiles + (size_t)my * w;
+
 		for(int x = StartX; x < EndX; x++)
 		{
 			int mx = x;
-			int my = y;
 
 			if(ExtendTiles)
 			{
@@ -635,47 +647,44 @@ void CRenderMap::RenderTilemap(CTile *pTiles, int w, int h, float Scale, ColorRG
 					mx = 0;
 				if(mx >= w)
 					mx = w - 1;
-				if(my < 0)
-					my = 0;
-				if(my >= h)
-					my = h - 1;
 			}
 
-			int c = mx + my * w;
-
-			unsigned char Index = pTiles[c].m_Index;
+			unsigned char Index = pRow[mx].m_Index;
 			if(Index)
 			{
-				unsigned char Flags = pTiles[c].m_Flags;
+				unsigned char Flags = pRow[mx].m_Flags;
 
 				if(IgnoreOpaque || ((Flags & TILEFLAG_OPAQUE) != 0) == RequireOpaque)
 				{
-					int tx = Index % 16;
-					int ty = Index / 16;
-					int Px0 = tx * (1024 / 16);
-					int Py0 = ty * (1024 / 16);
-					int Px1 = Px0 + (1024 / 16) - 1;
-					int Py1 = Py0 + (1024 / 16) - 1;
-
-					float x0 = Nudge + Px0 / TexSize + Frac;
-					float y0 = Nudge + Py0 / TexSize + Frac;
-					float x1 = Nudge + Px1 / TexSize - Frac;
-					float y1 = Nudge + Py0 / TexSize + Frac;
-					float x2 = Nudge + Px1 / TexSize - Frac;
-					float y2 = Nudge + Py1 / TexSize - Frac;
-					float x3 = Nudge + Px0 / TexSize + Frac;
-					float y3 = Nudge + Py1 / TexSize - Frac;
-
-					if(Graphics()->HasTextureArraysSupport())
+					float x0, y0, x1, y1, x2, y2, x3, y3;
+					if(TextureArrays)
 					{
-						x0 = 0;
-						y0 = 0;
-						x1 = x0 + 1;
-						y1 = y0;
-						x2 = x0 + 1;
-						y2 = y0 + 1;
-						x3 = x0;
-						y3 = y0 + 1;
+						x0 = 0.0f;
+						y0 = 0.0f;
+						x1 = 1.0f;
+						y1 = 0.0f;
+						x2 = 1.0f;
+						y2 = 1.0f;
+						x3 = 0.0f;
+						y3 = 1.0f;
+					}
+					else
+					{
+						const int tx = Index % 16;
+						const int ty = Index / 16;
+						const int Px0 = tx * (1024 / 16);
+						const int Py0 = ty * (1024 / 16);
+						const int Px1 = Px0 + (1024 / 16) - 1;
+						const int Py1 = Py0 + (1024 / 16) - 1;
+
+						x0 = Nudge + Px0 / TexSize + Frac;
+						y0 = Nudge + Py0 / TexSize + Frac;
+						x1 = Nudge + Px1 / TexSize - Frac;
+						y1 = Nudge + Py0 / TexSize + Frac;
+						x2 = Nudge + Px1 / TexSize - Frac;
+						y2 = Nudge + Py1 / TexSize - Frac;
+						x3 = Nudge + Px0 / TexSize + Frac;
+						y3 = Nudge + Py1 / TexSize - Frac;
 					}
 
 					if(Flags & TILEFLAG_XFLIP)
@@ -708,25 +717,24 @@ void CRenderMap::RenderTilemap(CTile *pTiles, int w, int h, float Scale, ColorRG
 						y1 = Tmp;
 					}
 
-					if(Graphics()->HasTextureArraysSupport())
+					const IGraphics::CQuadItem QuadItem(x * Scale, y * Scale, Scale, Scale);
+					if(TextureArrays)
 					{
 						Graphics()->QuadsSetSubsetFree(x0, y0, x1, y1, x2, y2, x3, y3, Index);
-						IGraphics::CQuadItem QuadItem(x * Scale, y * Scale, Scale, Scale);
 						Graphics()->QuadsTex3DDrawTL(&QuadItem, 1);
 					}
 					else
 					{
 						Graphics()->QuadsSetSubsetFree(x0, y0, x1, y1, x2, y2, x3, y3);
-						IGraphics::CQuadItem QuadItem(x * Scale, y * Scale, Scale, Scale);
 						Graphics()->QuadsDrawTL(&QuadItem, 1);
 					}
 				}
 			}
-			x += pTiles[c].m_Skip;
+			x += pRow[mx].m_Skip;
 		}
 	}
 
-	if(Graphics()->HasTextureArraysSupport())
+	if(TextureArrays)
 		Graphics()->QuadsTex3DEnd();
 	else
 		Graphics()->QuadsEnd();
