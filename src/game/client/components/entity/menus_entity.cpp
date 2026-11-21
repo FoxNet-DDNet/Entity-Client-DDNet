@@ -4504,7 +4504,7 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 		FILTER_HUD | FILTER_VISUAL | FILTER_NEW,
 		std::vector<std::string_view>{},
 		[](bool HasSearch) {
-			return 160.0f + (g_Config.m_ClFinishPredictionRoute || HasSearch ? 75.0f : 0.0f);
+			return 180.0f + (g_Config.m_ClFinishPredictionRoute || HasSearch ? 75.0f : 0.0f);
 		},
 		[&](CUIRect ModuleRect, bool HasSearch) {
 			ModuleRect.Draw(BackgroundColor, IGraphics::CORNER_ALL, CornerRoundness);
@@ -4518,12 +4518,14 @@ void CMenus::RenderSettingsEClient(CUIRect MainView)
 			RenderNEWLabel(Res.m_TextPos.x + Res.m_TextWidth + MarginExtraSmall, Res.m_TextPos.y + MarginExtraSmall, 0.3f);
 
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPrediction, EcLocalize("Show how far through the map you are"), &g_Config.m_ClShowhudFinishPrediction, &ModuleRect, LineSize);
-			Ui()->DoToolTip(&g_Config.m_ClShowhudFinishPrediction, &Button, EcLocalize("A route from the start tiles to the finish is searched for in the background on map load, and your progress is measured along it"), FontSize);
+			Ui()->DoToolTip(&g_Config.m_ClShowhudFinishPrediction, &Button, EcLocalize("A route from the start tiles to the finish is searched for in the background on map load, and progress along it is measured. While you are spectating a player it reads their run instead of yours"), FontSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPredictionTime, EcLocalize("Show the predicted finish time"), &g_Config.m_ClShowhudFinishPredictionTime, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPredictionPercent, EcLocalize("Show the percentage"), &g_Config.m_ClShowhudFinishPredictionPercent, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPredictionBar, EcLocalize("Show the progress bar"), &g_Config.m_ClShowhudFinishPredictionBar, &ModuleRect, LineSize);
 			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClShowhudFinishPredictionHideNoRoute, EcLocalize("Hide it on maps with no route"), &g_Config.m_ClShowhudFinishPredictionHideNoRoute, &ModuleRect, LineSize);
 			Ui()->DoToolTip(&g_Config.m_ClShowhudFinishPredictionHideNoRoute, &Button, EcLocalize("Some maps have no route this can find. Hide the readout on those rather than leaving a question mark on screen"), FontSize);
+			DoButton_CheckBoxAutoVMarginAndSet(&g_Config.m_ClFinishPredictionTeam, EcLocalize("Measure the whole team or multi-view"), &g_Config.m_ClFinishPredictionTeam, &ModuleRect, LineSize);
+			Ui()->DoToolTip(&g_Config.m_ClFinishPredictionTeam, &Button, EcLocalize("A team finishes when its last member does, so the readout reports whoever is furthest behind rather than you. Everyone in a multi-view counts as one team. Teams in team0mode race individually and are left alone"), FontSize);
 
 			{
 				static std::vector<CButtonContainer> s_vRouteButtons = {{}, {}, {}};

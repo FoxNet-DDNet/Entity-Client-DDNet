@@ -5,6 +5,7 @@
 #include <base/vmath.h>
 
 #include <engine/console.h>
+#include <engine/shared/protocol.h>
 
 #include <game/client/component.h>
 
@@ -24,6 +25,10 @@
  * which walks a route from the start tiles to the finish tiles. Progress is then the arc length
  * of the point on that route nearest the tee, over the route's total length, and the predicted
  * time is the elapsed race time divided by that fraction.
+ *
+ * The tee is the local one, or whoever is being spectated while a particular player is. Only one
+ * is tracked at a time: the tracking is a running account of where one tee has been, so the
+ * readout starts over when the tee it is about changes.
  *
  * The route is found in two passes, because a single pass that treats freeze as impassable fails
  * on every map that requires a freeze crossing, and a single pass that ignores freeze walks
@@ -275,32 +280,77 @@ private:
 		BRANCH, // On a path of its own, placed between where it left the route and where it rejoins
 		REMAINING, // Off the route, placed by how far it has left to travel
 	};
-	ESource m_Source = ESource::NONE;
-
 	// Why the last search produced nothing, for the console. A literal, never owned.
 	const char *m_pFailureReason = "";
-	int m_TrackNode = -1;
+
+	/**
+	 * Everything the readout remembers about where one tee has got to.
+	 *
+	 * One of these per tee rather than one for the component, because a team is measured by all
+	 * of its members at once and every one of them needs its own history: where it was last
+	 * frame, which node it was placed at, and which branch of the map it is on. Sharing a single
+	 * set between them had every tee reacquiring from the last one's node every frame.
+	 */
+	class CTrack
+	{
+	public:
+		int m_Node = -1;
+		// The last node the tee was placed at by sight, which is where it left the route. Taking
+		// a branch is not the same as falling back, so off-route placement is not allowed to
+		// read as less progress than this.
+		int m_BranchNode = -1;
+		// Where the tee was last frame, to tell being moved from going somewhere. Both kinds of
+		// tracking above are claims about a tee that walked, and neither survives a teleport.
+		vec2 m_LastPos = vec2(0.0f, 0.0f);
+		bool m_HasLastPos = false;
+		// Where along the route the tee was placed, in the arc's own units. Normally just the arc
+		// of the node it was placed at, but a branch places it between two nodes, which no single
+		// node can express.
+		float m_PlacedArc = 0.0f;
+		// The node the branch the tee is on comes back to, and the furthest it has been from that
+		// point while on this branch, which is what the interpolation measures against.
+		int m_BranchRejoin = -1;
+		int m_BranchTravel = 0;
+		std::vector<vec2> m_vBranchPath;
+		// How this tee was placed this frame, for the status line
+		ESource m_Source = ESource::NONE;
+		// Its progress as of this frame, which is what the team's figure is taken from
+		float m_Progress = 0.0f;
+		bool m_HasProgress = false;
+
+		void Forget()
+		{
+			m_Node = -1;
+			m_BranchNode = -1;
+			m_BranchRejoin = -1;
+			m_BranchTravel = 0;
+			m_vBranchPath.clear();
+			m_HasLastPos = false;
+		}
+	};
+
+	CTrack m_aTracks[MAX_CLIENTS];
+	// How many tees may still pay for a cold start this frame. See NodeAt.
+	int m_ColdBudget = 0;
 	// Scratch for NodeAt's cold start, kept here only so that the frames which use it are not
-	// the frames that allocate it
+	// the frames that allocate it. Shared, since only one tee is ever being placed at a time.
 	std::vector<int> m_vColdStart;
-	// The last node the tee was placed at by sight, which is where it left the route. Taking a
-	// branch is not the same as falling back, so off-route placement is not allowed to read as
-	// less progress than this.
-	int m_BranchNode = -1;
-	// Where the tee was last frame, to tell being moved from going somewhere. Both kinds of
-	// tracking above are claims about a tee that walked, and neither survives a teleport.
-	vec2 m_LastPos = vec2(0.0f, 0.0f);
-	bool m_HasLastPos = false;
-	// Where along the route the tee was placed, in the arc's own units. Normally just the arc of
-	// the node it was placed at, but a branch places it between two nodes, which no single node
-	// can express.
-	float m_PlacedArc = 0.0f;
-	// The node the branch the tee is on comes back to, and the furthest it has been from that
-	// point while on this branch, which is what the interpolation measures against.
-	int m_BranchRejoin = -1;
-	int m_BranchTravel = 0;
-	std::vector<vec2> m_vBranchPath;
+	// The tees the figure is currently taken from, which is one tee on a solo run and the whole
+	// team on a team one, and the one of them that is furthest behind. Rebuilt every frame.
+	int m_aMembers[MAX_CLIENTS];
+	int m_MemberCount = 0;
+	int m_LaggardId = -1;
+	// A hash of the team's roster as the server states it, and what it was last frame, to notice
+	// a team gaining or losing somebody. Not a count of m_aMembers: that counts who could be
+	// placed, which dips for a moment every time a teammate dies.
+	unsigned m_Roster = 0;
+	unsigned m_SeenRoster = 0;
 	int m_TrackedRaceTick = -1;
+	// The tee the readout is currently about, which is the spectated one while a particular
+	// player is being spectated and the local one otherwise. Held so that changing who is
+	// spectated starts the tracking over: two tees that began their runs on the same tick have
+	// the same race tick, so that alone does not notice the switch.
+	int m_TrackedClientId = -1;
 	// The freeze penalty the live route was searched with, and the one the config last said,
 	// which are compared every frame so that dragging the setting re-searches. A conchain cannot
 	// do this: the settings page writes g_Config directly and never goes through the console.
@@ -330,13 +380,34 @@ private:
 	 *
 	 * Taking the pace from a window of the recent past instead means the opening leaves the
 	 * reckoning entirely once the window has moved past it, rather than being divided down.
+	 *
+	 * The window is long -- three quarters of a minute -- because a short one has the opposite
+	 * problem. Progress on these maps is made in bursts, and a window of a few seconds mostly
+	 * reports whichever part of the burst cycle it is sitting in, so the figure swung between a
+	 * record pace and a crawl depending on nothing but when it was read.
 	 */
 	/**
 	 * One slice of the window: how long it lasted and how much ground was made up during it.
 	 *
-	 * Slices rather than positions, because the rate is wanted per unit of time spent moving and
-	 * not per unit of wall clock. A tee that stops contributes slices of no gain, and those are
-	 * left out of the reckoning rather than diluting it.
+	 * Slices rather than positions, so that the window can be read as a rate over a span of the
+	 * run without having to care how many frames went into it.
+	 *
+	 * The window answers one question only: how fast the tee covers ground while it is covering
+	 * ground. Slices it got nowhere during are left out of that, since they are not evidence of a
+	 * speed.
+	 *
+	 * They are not thrown away, though. How much of a run is spent stopped is the other half of
+	 * the rate, and it is kept separately as a duty cycle over a far longer span -- see
+	 * m_DutyTicks. The two were one measurement at first, both read off this window, and that was
+	 * wrong in both directions in turn: leaving the still slices out entirely measured a burst
+	 * pace and predicted a finish several times too early, and counting them in the window
+	 * measured the last forty-five seconds' worth of stopping and let one long stall inflate the
+	 * finish as though the rest of the map would be stalled to match. They are two quantities
+	 * with two natural spans and they are measured over two spans.
+	 *
+	 * Standing still is not double counted. Elapsed accounts for the stops that have already
+	 * happened; the duty cycle is what says how many more to expect, and it is the only thing
+	 * that does.
 	 */
 	class CPaceSample
 	{
@@ -347,7 +418,7 @@ private:
 	};
 	enum
 	{
-		PACE_SAMPLES = 24
+		PACE_SAMPLES = 90
 	};
 	CPaceSample m_aPace[PACE_SAMPLES];
 	int m_PaceCount = 0;
@@ -355,10 +426,57 @@ private:
 	int m_PaceLastTick = -1;
 	float m_PaceLastProgress = 0.0f;
 
+	// The fraction of the run spent travelling, as a running total of ticks and of the ticks
+	// among them that got anywhere, decayed to a bounded horizon. Not taken from the window
+	// above: how much of a run is spent stopped is the character of the run rather than a recent
+	// event, and reading it off forty-five seconds made a single long stall inflate the predicted
+	// finish as though the rest of the map would be stalled in the same proportion.
+	float m_DutyTicks = 0.0f;
+	float m_DutyMovingTicks = 0.0f;
+
 	void ResetPace();
-	void SamplePace(int Tick, float Progress);
-	/** Progress per tick over the window, or -1 where there is not enough to go on. */
+	void SamplePace(int Tick, float Progress, int RaceTick);
+	/**
+	 * Progress per tick of wall clock, or -1 where there is not enough to go on.
+	 *
+	 * The product of two terms measured over two spans: how fast the tee travels while
+	 * travelling, from the window, and what fraction of the time it travels at all, from the
+	 * duty cycle.
+	 */
 	float PaceRate(int Tick, float Progress, int RaceTick) const;
+
+	/**
+	 * The tee the readout is about, and where it is: the one being spectated, or our own.
+	 *
+	 * False where there is no tee to follow at all, which is a spectator who never had one on
+	 * this map and a tee the server is not showing us.
+	 *
+	 * The position cannot simply be read off m_aClients afterwards, because a tee that is paused
+	 * or in spectators has no character in the snapshot and so is never rendered, which leaves
+	 * its m_RenderPos at whatever it last said. The server leaves such a tee behind as a
+	 * spectator character, and that is both where it is and where it will carry on from, so it
+	 * is what the readout should be measuring.
+	 */
+	bool TrackedTee(int *pClientId, vec2 *pPos) const;
+	/**
+	 * Where a tee is, or false where the server is not showing us one.
+	 *
+	 * A tee that is paused or in spectators has no character in the snapshot and so is never
+	 * rendered, which leaves its m_RenderPos at whatever it last said. The server leaves such a
+	 * tee behind as a spectator character, and that is both where it is and where it will carry
+	 * on from, so it is what the readout should be measuring.
+	 */
+	bool TeePos(int ClientId, vec2 *pPos) const;
+	/**
+	 * The tick the tracked tee's run started on, or -1 where it has not started one.
+	 *
+	 * For the local tee this is the race tick the client already keeps. For a spectated one it
+	 * has to come out of the game info object, where the server puts the spectated tee's start
+	 * time for the timer in the HUD -- that timer is the only thing a spectator is told about
+	 * someone else's run. m_aLastRaceTick is no use there, since it is deliberately left at
+	 * whatever it last said before spectating began.
+	 */
+	int TrackedRaceTick(int ClientId) const;
 
 	void StopWorker();
 	void StartSearch();
@@ -367,11 +485,27 @@ private:
 	bool BuildGrid(CGrid *pGrid) const;
 	void CollectJob();
 	void UpdateProgress();
+	/**
+	 * Fills m_aMembers with the tees the figure is to be taken from, and says whether they are a
+	 * group rather than one tee on its own.
+	 *
+	 * In a real team the run finishes when the last member reaches the finish, so the team is
+	 * only as far along as whoever is furthest behind and every member has to be measured. A
+	 * team in team0 mode is not one of these: the server says so with CHARACTERFLAG_TEAM0_MODE,
+	 * and the members race individually, so each is measured on its own as if unteamed.
+	 *
+	 * A multi-view is treated as a group whatever the tees in it are to each other, since they
+	 * are the tees on screen and the readout is about what is on screen. Where that multi-view
+	 * is of a team it is that team, and nothing below can tell the difference.
+	 */
+	bool CollectMembers(int TrackedId);
+	/** Places one tee and leaves its progress in its track. */
+	void UpdateTrack(int ClientId, bool Started);
 	void RenderRoute();
-	int NodeAt(vec2 Pos);
+	int NodeAt(CTrack *pTrack, vec2 Pos);
 	int NodeForTravelLeft(int TravelLeft) const;
 	int NodeForArc(float Arc) const;
-	int PlaceOnBranch(int Cell);
+	int PlaceOnBranch(CTrack *pTrack, int Cell);
 
 	static void Search(const std::shared_ptr<CJob> &pJob);
 	static bool Coarse(const CGrid &Grid, const std::atomic<bool> &Abort, std::vector<int> *pvDistance, std::vector<int> *pvNext);

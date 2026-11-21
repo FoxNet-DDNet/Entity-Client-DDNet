@@ -11,6 +11,7 @@
 
 #include <game/client/components/entity/hud/hud_layout.h>
 #include <game/client/components/hud.h>
+#include <game/client/components/multiview.h>
 #include <game/client/gameclient.h>
 #include <game/collision.h>
 #include <game/mapitems.h>
@@ -24,15 +25,15 @@
 // A straight step, in the hundredths-of-a-tile units everything below is costed in. The diagonal
 // is that step scaled by sqrt(2), so a staircase costs what the diagonal does and the route does
 // not prefer one of them for being counted cheaper than it is.
-static const int gs_StepCost = 100;
-static const int gs_DiagonalCost = 141;
+static constexpr int gs_StepCost = 100;
+static constexpr int gs_DiagonalCost = 141;
 // A teleporter is nearly free to take, but not free, so that a chain of them cannot tie with a
 // shorter walk and leave the trace wandering between exits.
-static const int gs_TeleCost = 10;
+static constexpr int gs_TeleCost = 10;
 // Deep freeze costs this much more than ordinary freeze, because time alone never clears it. A
 // multiple of ec_finish_prediction_freeze_penalty, which is the real knob: the number of tiles of
 // detour the route will take rather than enter one tile of freeze.
-static const int gs_DeepMultiplier = 2;
+static constexpr int gs_DeepMultiplier = 2;
 // Travelling one tile while frozen, on top of the step. This is the cost of being out of control
 // rather than of the freeze itself, so it is a flat couple of tiles and not a multiple of the
 // penalty.
@@ -43,32 +44,32 @@ static const int gs_DeepMultiplier = 2;
 // what air cost and the route had no reason left to leave it. It would avoid freeze beautifully
 // right up to the first crossing and then plough through every patch after it, which is precisely
 // what that looks like from inside the game.
-static const int gs_FrozenDriftCost = 200;
+static constexpr int gs_FrozenDriftCost = 200;
 // Waiting a freeze out where no unfreeze tile is in reach. Flat, and not large: a tee thaws by
 // itself in a few seconds, so this is the time that costs, which is worth some tens of tiles
 // however hard the route is trying to stay dry.
-static const int gs_ThawCost = 4000;
+static constexpr int gs_ThawCost = 4000;
 // An edge skip costs this many freeze crossings per hazardous side. Two, because threading the
 // exact point where two tiles meet is harder than walking into freeze that at least has an
 // unfreeze tile somewhere after it, and a squeeze with freeze on both sides pays it twice.
-static const int gs_EdgeSkipMultiplier = 2;
+static constexpr int gs_EdgeSkipMultiplier = 2;
 // What one tile of freeze is worth to the progress field, as a multiple of a step. Nothing like
 // the routing penalty, and that is the point: the route is being drawn, so it should go a long
 // way round rather than touch freeze, but a tee that is already standing on a path with freeze
 // ahead of it is going to push through, not walk two thirds of the map backwards. Weighting its
 // way out the way the route is weighted makes the readout claim it has further to go than the
 // start line did.
-static const int gs_TravelFreezeMultiplier = 8;
+static constexpr int gs_TravelFreezeMultiplier = 8;
 // And what an edge skip is worth to it, per hazardous side. The travel field is naive on purpose,
 // but not about this: it is the field the branch back to the route is drawn from, and a branch
 // that threads the corner between two freeze tiles is no more walkable than a route that does.
 // Charged on the cost, which picks the way through, and not on the travel that comes out.
-static const int gs_TravelEdgeSkipMultiplier = 32;
+static constexpr int gs_TravelEdgeSkipMultiplier = 32;
 // Stepping onto a checkpoint teleporter entrance on a map where the search could not afford the
 // checkpoint dimension. There is then no destination to follow, so the tile is one to stay off,
 // which is usually right: these carpet the places a run goes wrong. Where the dimension is on
 // the entrance is a portal like any other and this is not charged at all.
-static const int gs_TrapMultiplier = 100;
+static constexpr int gs_TrapMultiplier = 100;
 // How far a tee may walk, on dry ground, from a checkpoint tile to a checkpoint teleporter
 // entrance before the search stops treating that entrance as the way onward.
 //
@@ -88,7 +89,7 @@ static const int gs_TrapMultiplier = 100;
 // Panic 4 not one of the eighteen is: its checkpoints sit in freeze, where a tee cannot reach the
 // entrance beside it under its own power at all and the pairing is a coincidence of layout. A box
 // drawn round the checkpoint keeps those; asking whether a tee could walk it does not.
-static const int gs_TrapReach = 8;
+static constexpr int gs_TrapReach = 8;
 // And how much of that reach may be freeze. A tee cannot walk through freeze, but on a DDRace map
 // it does not have to: it gets hooked. So the first tiles out of a checkpoint are allowed to be
 // freeze, which covers the pair a tee is carried across by momentum or by a teammate, while a
@@ -99,7 +100,7 @@ static const int gs_TrapReach = 8;
 // has no route at all without the long freeze-bound jumps, because that is how the map is joined
 // -- two players, one hooking the other through freeze. Allowing those back gives it a route
 // built on a move no single tee can make, which is worse than saying there is none.
-static const int gs_TrapCarry = 2;
+static constexpr int gs_TrapCarry = 2;
 // What taking a checkpoint teleporter costs, counted in freeze crossings, because that is the
 // scale the rest of the search is priced on and a death is not a cheap move.
 //
@@ -111,11 +112,11 @@ static const int gs_TrapCarry = 2;
 // and the entrance the route took: a hundred and seventy-four and sixty-eight nodes at the old
 // price, seven and three once a death costs this, which is the mapper's own touch-and-go and
 // nothing else. It saturates well below this figure, so it is not a delicate one.
-static const int gs_TrapDeathFreezes = 20;
+static constexpr int gs_TrapDeathFreezes = 20;
 // Beyond this the search would cost more memory than the rest of the client. Nothing in DDNet
 // comes near it; the limit is only here so a corrupt or hostile map cannot ask for an unbounded
 // allocation.
-static const int gs_MaxCells = 4 * 1024 * 1024;
+static constexpr int gs_MaxCells = 4 * 1024 * 1024;
 // The refined search holds two ints per state, and the checkpoint dimension multiplies the state
 // count by the number of groups, so this ceiling is a hundred and twenty-eight megabytes held by
 // the worker while it runs and freed as soon as it is done. High, deliberately, because the maps
@@ -124,43 +125,76 @@ static const int gs_MaxCells = 4 * 1024 * 1024;
 // with thirty of them to fourteen million. Past the ceiling the dimension is dropped and
 // checkpoint teleporters go back to being tiles to stay off, which loses the route on a map built
 // around them but is better than an allocation nobody asked for.
-static const int gs_MaxStates = 16 * 1024 * 1024;
+static constexpr int gs_MaxStates = 16 * 1024 * 1024;
 // Guards the packing of a distance into the top half of the queue key, and any map pathological
 // enough to reach it is not one this is going to say anything useful about anyway.
-static const int gs_MaxDistance = 1 << 30;
+static constexpr int gs_MaxDistance = 1 << 30;
 
 // How far back and forward along the route the tee is looked for, in nodes, before the search
 // gives up and reacquires from anywhere on the map. A window is needed because a route that
 // doubles back through its own corridor has two nodes equally near the tee, and only the one it
 // came from is the right answer.
-static const int gs_TrackBack = 96;
-static const int gs_TrackForward = 384;
+static constexpr int gs_TrackBack = 96;
+static constexpr int gs_TrackForward = 384;
 // How far off the route the tee may be and still count as on it, in world units
-static const float gs_TrackSnap = 480.0f;
+static constexpr float gs_TrackSnap = 480.0f;
 // How quickly the shown percentage closes the gap to the real one, as a proportion per second,
 // and the least it will move per second regardless.
 //
 // The rate alone is an exponential approach, which never actually arrives: coming down from a
 // long run it would crawl across the last percent for a third of a second after everything else
 // had settled. The floor gives the tail a constant speed so it lands.
-static const float gs_ProgressBlendRate = 8.0f;
-static const float gs_ProgressMinRate = 0.25f;
+static constexpr float gs_ProgressBlendRate = 8.0f;
+static constexpr float gs_ProgressMinRate = 0.25f;
 // And the pair used to bring a finished run down, which is a good deal brisker. Measured against
 // the drop that prompted it, sixty-four per cent to nothing: 0.52s on the ordinary pair, 0.23s on
 // this one. Fast enough not to sit there being wrong, slow enough to read as the run ending
 // rather than as the figure blinking out, and the same either side of a frame rate change --
 // 0.233s at sixty frames a second against 0.229s at a hundred and forty-four.
 // The pace window: how often it takes a reading, how many it wants before it will answer, and
-// how long a stretch those have to cover. Half-second readings over twelve seconds, and it will
-// not speak until it has two and a half seconds of them, which is about as little as can be
-// stretched into a claim about the rest of a map.
-static const int gs_PaceIntervalDivisor = 2;
-static const int gs_PaceMinSamples = 5;
-static const float gs_PaceMinSpan = 2.5f;
-// The least the window may have gained before its rate is used. Below this the tee is waiting on
-// a teammate, or stuck, and dividing by it would put the finish hours away; the previous estimate
-// stands instead, which is the honest thing to say about a tee that is not moving.
-static const float gs_PaceMinGain = 0.002f;
+// how long a stretch those have to cover. Half-second readings over forty-five seconds, and it
+// will not speak until it has eight of them.
+//
+// The window has to be long because progress on a DDRace map is not made at anything like a
+// steady rate. A tee flows for three seconds, freezes, climbs back, waits for a teammate, and
+// flows again; over twelve seconds the answer depended almost entirely on which part of that
+// cycle the window happened to be sitting in, and the flowing part of the cycle is the part that
+// looks like a record pace. Forty-five seconds is long enough for a few of those cycles to be in
+// it at once.
+//
+// Eight seconds before it will speak for the same reason. Two and a half seconds is one burst,
+// and one burst is exactly the thing that should not be extrapolated over the rest of a map.
+static constexpr int gs_PaceIntervalDivisor = 2;
+static constexpr int gs_PaceMinSamples = 10;
+static constexpr float gs_PaceMinSpan = 8.0f;
+// And how much of that span has to have been spent actually travelling before the speed term is
+// taken from it, so that the speed is not read off a sliver of movement in an otherwise still
+// window. Separate from the span above, which is wall clock: a tee that stalls a great deal
+// should still get a figure, just a slow one.
+static constexpr float gs_PaceMinMoving = 2.5f;
+// Over what span the duty cycle -- the fraction of the run spent travelling at all -- is taken.
+//
+// Long, because it is the character of the whole run and not a recent event. Three minutes is
+// enough that one wait at a drag is worth a fraction of it rather than all of it, and short
+// enough that a run which settles down after a bad opening is not judged by that opening
+// forever.
+static constexpr float gs_DutyHorizon = 180.0f;
+// The least the window may have gained before its rate is used. Below this the tee has spent the
+// best part of a minute going nowhere, so there is no speed left to measure at all; the previous
+// estimate stands instead, which is the honest thing to say about a tee that is not moving.
+static constexpr float gs_PaceMinGain = 0.002f;
+// How readily the figure may come down, as a fraction of how readily it goes up.
+//
+// A burst of speed is the normal texture of a run rather than news about the rest of it, so it is
+// not allowed to drag the predicted finish earlier as quickly as a genuine slowdown pushes it
+// later. The window above decides what the run is doing; this decides how much benefit of the
+// doubt a sudden improvement gets, and the answer is: less than a sudden deterioration.
+//
+// The easing approaches at 4 * this per second, so the figure goes up with a time constant of a
+// quarter of a second and comes down with one of about one and two thirds. Worth stating because
+// the obvious-looking values do nothing: at 0.35 the two are 0.25s and 0.71s, a difference
+// nobody can see. This is the knob to turn if the readout still flatters a burst.
+static constexpr float gs_PredictionFallBias = 0.15f;
 // How much of the start of a run is left out of the pace altogether.
 //
 // The window clears an unrepresentative opening on its own, but only once it has slid past it,
@@ -169,30 +203,30 @@ static const float gs_PaceMinGain = 0.002f;
 // map opening with a three second swing this is the difference between a first honest answer six
 // seconds in and sixteen, with nothing but nonsense in between -- better than half a minute of
 // the figure the whole-run average gave, which was still eight per cent fast a minute in.
-static const float gs_PaceSkipOpening = 4.0f;
-static const float gs_ProgressRushRate = 14.0f;
-static const float gs_ProgressRushMinRate = 1.0f;
+static constexpr float gs_PaceSkipOpening = 4.0f;
+static constexpr float gs_ProgressRushRate = 14.0f;
+static constexpr float gs_ProgressRushMinRate = 1.0f;
 // How many of the nodes in range a cold start will trace a line to before giving up. Only ever
 // paid on a frame that has no previous node to work from, so a handful is plenty.
-static const size_t gs_ColdStartTraces = 16;
+static constexpr size_t gs_ColdStartTraces = 16;
 // How far back of where the tee left the route an off-route reading may be and still count as a
 // branch rather than a fall back, as a fraction of the whole route.
-static const float gs_BranchSlack = 0.25f;
+static constexpr float gs_BranchSlack = 0.25f;
 // Moving further than this between two frames was not moving, it was being moved: a map
 // teleporter, a practice teleport, a spawn. Scaled by the frame time so that a low frame rate
 // does not read a fast tee as having been teleported, with a floor for a high one.
-static const float gs_TeleportSpeed = 8000.0f;
-static const float gs_TeleportFloor = 320.0f;
+static constexpr float gs_TeleportSpeed = 8000.0f;
+static constexpr float gs_TeleportFloor = 320.0f;
 // How many tiles of branch the walk will follow before giving up. A branch is normally tens of
 // tiles; this is only here so that a field pointing somewhere strange cannot cost a frame.
-static const int gs_BranchSteps = 4096;
+static constexpr int gs_BranchSteps = 4096;
 
 // The refined pass's extra state bit, as an offset into the same arrays rather than a second set
-static const int gs_StateMobile = 0;
-static const int gs_StateFrozen = 1;
+static constexpr int gs_StateMobile = 0;
+static constexpr int gs_StateFrozen = 1;
 
 // The four orthogonal steps, as (dx, dy, the CANTMOVE_* that forbids them)
-static const int gs_aaSteps[4][3] = {
+static constexpr int gs_aaSteps[4][3] = {
 	{1, 0, CANTMOVE_RIGHT},
 	{0, 1, CANTMOVE_DOWN},
 	{-1, 0, CANTMOVE_LEFT},
@@ -1484,10 +1518,13 @@ void CFinishPrediction::Discard()
 	m_ShownProgress = 0.0f;
 	m_SnapProgress = true;
 	m_RushProgress = false;
-	m_TrackNode = -1;
-	m_BranchNode = -1;
-	m_HasLastPos = false;
+	for(CTrack &Track : m_aTracks)
+		Track.Forget();
 	m_TrackedRaceTick = -1;
+	m_TrackedClientId = -1;
+	m_MemberCount = 0;
+	m_SeenRoster = 0;
+	m_LaggardId = -1;
 	m_PredictedTicks = -1;
 	m_PredictionBlend = 0.0f;
 	m_HeldRemaining = -1;
@@ -1560,7 +1597,8 @@ void CFinishPrediction::PollSettings()
 	}
 	else if(Penalty != m_RoutePenalty && Client()->LocalTime() - m_PenaltyChangedAt > 0.4f)
 	{
-		m_TrackNode = -1;
+		for(CTrack &Track : m_aTracks)
+			Track.Forget();
 		m_PredictedTicks = -1;
 		m_PredictionBlend = 0.0f;
 		m_HeldRemaining = -1;
@@ -1571,8 +1609,11 @@ void CFinishPrediction::PollSettings()
 
 void CFinishPrediction::OnReset()
 {
-	m_TrackNode = -1;
-	m_BranchNode = -1;
+	for(CTrack &Track : m_aTracks)
+		Track.Forget();
+	m_TrackedClientId = -1;
+	m_MemberCount = 0;
+	m_LaggardId = -1;
 	m_HasProgress = false;
 	m_PredictedTicks = -1;
 	m_PredictionBlend = 0.0f;
@@ -1587,11 +1628,15 @@ void CFinishPrediction::OnShutdown()
 
 void CFinishPrediction::OnSelfDeath(bool Dummy)
 {
+	// Only where the readout is about our own tee. While someone else is being spectated our own
+	// death is not the run on screen ending, and the spectated tee's own death arrives as the
+	// race tick it is tracked by going away.
+	if(m_TrackedClientId >= 0 && m_TrackedClientId != GameClient()->m_Snap.m_LocalClientId)
+		return;
 	if(Dummy == (g_Config.m_ClDummy != 0))
 	{
-		m_TrackNode = -1;
-		m_BranchNode = -1;
-		m_HasLastPos = false;
+		for(CTrack &Track : m_aTracks)
+			Track.Forget();
 		// Eased down rather than snapped, and the snap is withdrawn in case something else has
 		// already asked for one: being put back on the start line is part of dying, not a
 		// separate teleport to be treated on its own.
@@ -1726,11 +1771,11 @@ int CFinishPrediction::NodeForArc(float Arc) const
  * Returns -1 when there is nothing to interpolate between: no known branch point, or a field that
  * leads off without ever meeting the route again. The caller falls back to distance left.
  */
-int CFinishPrediction::PlaceOnBranch(int Cell)
+int CFinishPrediction::PlaceOnBranch(CTrack *pTrack, int Cell)
 {
 	const CRoute *pRoute = m_pRoute.get();
-	m_vBranchPath.clear();
-	if(m_BranchNode < 0 || m_BranchNode >= (int)pRoute->m_vPath.size() ||
+	pTrack->m_vBranchPath.clear();
+	if(pTrack->m_BranchNode < 0 || pTrack->m_BranchNode >= (int)pRoute->m_vPath.size() ||
 		pRoute->m_vTravelNext.empty() || pRoute->m_RouteNodeByCell.empty())
 		return -1;
 
@@ -1747,7 +1792,7 @@ int CFinishPrediction::PlaceOnBranch(int Cell)
 			Rejoin = Found->second;
 			break;
 		}
-		m_vBranchPath.push_back(vec2((Walk % Width) * 32.0f + 16.0f, (Walk / Width) * 32.0f + 16.0f));
+		pTrack->m_vBranchPath.push_back(vec2((Walk % Width) * 32.0f + 16.0f, (Walk / Width) * 32.0f + 16.0f));
 		const int Next = pRoute->m_vTravelNext[Walk];
 		if(Next < 0)
 			break;
@@ -1760,27 +1805,27 @@ int CFinishPrediction::PlaceOnBranch(int Cell)
 	}
 
 	// A rejoin behind where the tee left is not a way onward, it is the way it came
-	if(Rejoin <= m_BranchNode)
+	if(Rejoin <= pTrack->m_BranchNode)
 	{
-		m_vBranchPath.clear();
+		pTrack->m_vBranchPath.clear();
 		return -1;
 	}
-	m_vBranchPath.push_back(pRoute->m_vPath[Rejoin]);
+	pTrack->m_vBranchPath.push_back(pRoute->m_vPath[Rejoin]);
 
 	// The furthest this tee has been from its rejoin on this branch, which is the length the
 	// fraction is taken against. Kept as a maximum so that wandering further out reads as no
 	// progress rather than as a jump backwards.
-	m_BranchTravel = std::max(m_BranchTravel, Travel);
-	const float Fraction = m_BranchTravel > 0 ?
-				       std::clamp(1.0f - (float)Travel / (float)m_BranchTravel, 0.0f, 1.0f) :
+	pTrack->m_BranchTravel = std::max(pTrack->m_BranchTravel, Travel);
+	const float Fraction = pTrack->m_BranchTravel > 0 ?
+				       std::clamp(1.0f - (float)Travel / (float)pTrack->m_BranchTravel, 0.0f, 1.0f) :
 				       1.0f;
-	m_BranchRejoin = Rejoin;
-	m_Source = ESource::BRANCH;
-	m_PlacedArc = mix(pRoute->m_vArc[m_BranchNode], pRoute->m_vArc[Rejoin], Fraction);
-	return NodeForArc(m_PlacedArc);
+	pTrack->m_BranchRejoin = Rejoin;
+	pTrack->m_Source = ESource::BRANCH;
+	pTrack->m_PlacedArc = mix(pRoute->m_vArc[pTrack->m_BranchNode], pRoute->m_vArc[Rejoin], Fraction);
+	return NodeForArc(pTrack->m_PlacedArc);
 }
 
-int CFinishPrediction::NodeAt(vec2 Pos)
+int CFinishPrediction::NodeAt(CTrack *pTrack, vec2 Pos)
 {
 	const CRoute *pRoute = m_pRoute.get();
 	const int x = round_to_int(Pos.x) / 32;
@@ -1798,13 +1843,13 @@ int CFinishPrediction::NodeAt(vec2 Pos)
 	// continues, and until it was written the only thing that ever gave tracking its first node
 	// was the off-route reading further down. On a map where that reading is not available the
 	// readout then sat at nothing for an entire run with a perfectly good route drawn over it.
-	const bool Cold = m_TrackNode < 0 || m_TrackNode > Last;
+	const bool Cold = pTrack->m_Node < 0 || pTrack->m_Node > Last;
 	{
 		int Best = -1;
 		if(!Cold)
 		{
-			const int First = std::max(0, m_TrackNode - gs_TrackBack);
-			const int End = std::min(Last, m_TrackNode + gs_TrackForward);
+			const int First = std::max(0, pTrack->m_Node - gs_TrackBack);
+			const int End = std::min(Last, pTrack->m_Node + gs_TrackForward);
 			float BestDistance = gs_TrackSnap * gs_TrackSnap;
 			for(int Node = First; Node <= End; Node++)
 			{
@@ -1821,8 +1866,14 @@ int CFinishPrediction::NodeAt(vec2 Pos)
 			if(Best >= 0 && GameClient()->Collision()->IntersectLine(Pos, pRoute->m_vPath[Best], nullptr, nullptr))
 				Best = -1;
 		}
-		else
+		// A cold start walks the whole route and traces a line to each of the nearest few, so it
+		// is much the most expensive thing here, and a team run would otherwise pay for it once
+		// per member per frame. One a frame is enough: a tee that misses its turn falls through
+		// to the off-route reading below exactly as if the scan had found nothing, and gets its
+		// turn on the next frame. The watched tee is placed first, so it is never the one waiting.
+		else if(m_ColdBudget > 0)
 		{
+			m_ColdBudget--;
 			// Cold, so the nearest few are all tried rather than only the nearest: there is no
 			// previous position to sanity-check the pick against, and across a whole route the
 			// nearest node is quite often the one on the other side of a wall.
@@ -1850,12 +1901,12 @@ int CFinishPrediction::NodeAt(vec2 Pos)
 
 		if(Best >= 0)
 		{
-			m_Source = ESource::SIGHT;
-			m_BranchNode = Best;
-			m_BranchTravel = 0;
-			m_BranchRejoin = -1;
-			m_vBranchPath.clear();
-			m_PlacedArc = pRoute->m_vArc[Best];
+			pTrack->m_Source = ESource::SIGHT;
+			pTrack->m_BranchNode = Best;
+			pTrack->m_BranchTravel = 0;
+			pTrack->m_BranchRejoin = -1;
+			pTrack->m_vBranchPath.clear();
+			pTrack->m_PlacedArc = pRoute->m_vArc[Best];
 			return Best;
 		}
 	}
@@ -1867,7 +1918,7 @@ int CFinishPrediction::NodeAt(vec2 Pos)
 		// It used to be gated on the node table below as well, which it never reads, and that
 		// table is dropped whenever the field does not cover the whole route -- so on the maps
 		// where the field is patchy the branch was switched off for no reason at all.
-		if(const int Branch = PlaceOnBranch(Cell); Branch >= 0)
+		if(const int Branch = PlaceOnBranch(pTrack, Cell); Branch >= 0)
 			return Branch;
 
 		const int TravelLeft = pRoute->m_vTravelLeft[Cell];
@@ -1875,7 +1926,7 @@ int CFinishPrediction::NodeAt(vec2 Pos)
 		// correct where every node in it came from the field rather than carried over a gap.
 		if(TravelLeft >= 0 && pRoute->m_vNodeTravelLeft.size() == pRoute->m_vPath.size())
 		{
-			m_Source = ESource::REMAINING;
+			pTrack->m_Source = ESource::REMAINING;
 			int Node = NodeForTravelLeft(TravelLeft);
 			// A second path to the same place is not a step backwards, however far round it goes.
 			// Distance left cannot say so on its own: from the near end of a branch with anything
@@ -1886,10 +1937,10 @@ int CFinishPrediction::NodeAt(vec2 Pos)
 			//
 			// Only within a margin, because something really can go backwards: a long fall onto
 			// an earlier part of the map is a regression and should read as one.
-			if(m_BranchNode >= 0 && m_BranchNode <= Last && Node < m_BranchNode &&
-				pRoute->m_vArc[m_BranchNode] - pRoute->m_vArc[Node] < pRoute->m_Length * gs_BranchSlack)
-				Node = m_BranchNode;
-			m_PlacedArc = pRoute->m_vArc[Node];
+			if(pTrack->m_BranchNode >= 0 && pTrack->m_BranchNode <= Last && Node < pTrack->m_BranchNode &&
+				pRoute->m_vArc[pTrack->m_BranchNode] - pRoute->m_vArc[Node] < pRoute->m_Length * gs_BranchSlack)
+				Node = pTrack->m_BranchNode;
+			pTrack->m_PlacedArc = pRoute->m_vArc[Node];
 			return Node;
 		}
 	}
@@ -1903,9 +1954,11 @@ void CFinishPrediction::ResetPace()
 	m_PaceNext = 0;
 	m_PaceLastTick = -1;
 	m_PaceLastProgress = 0.0f;
+	m_DutyTicks = 0.0f;
+	m_DutyMovingTicks = 0.0f;
 }
 
-void CFinishPrediction::SamplePace(int Tick, float Progress)
+void CFinishPrediction::SamplePace(int Tick, float Progress, int RaceTick)
 {
 	const int Interval = std::max(1, Client()->GameTickSpeed() / gs_PaceIntervalDivisor);
 	// A slice every half second rather than every frame, so the window covers a span measured in
@@ -1918,13 +1971,36 @@ void CFinishPrediction::SamplePace(int Tick, float Progress)
 	}
 	if(Tick - m_PaceLastTick < Interval)
 		return;
+	const int Ticks = Tick - m_PaceLastTick;
+	const float Gained = Progress - m_PaceLastProgress;
 	m_aPace[m_PaceNext].m_End = Tick;
-	m_aPace[m_PaceNext].m_Ticks = Tick - m_PaceLastTick;
-	m_aPace[m_PaceNext].m_Gained = Progress - m_PaceLastProgress;
+	m_aPace[m_PaceNext].m_Ticks = Ticks;
+	m_aPace[m_PaceNext].m_Gained = Gained;
 	m_PaceNext = (m_PaceNext + 1) % (int)PACE_SAMPLES;
 	m_PaceCount = std::min(m_PaceCount + 1, (int)PACE_SAMPLES);
 	m_PaceLastTick = Tick;
 	m_PaceLastProgress = Progress;
+
+	// The duty cycle runs over a far longer span than the window, so it is accumulated here
+	// rather than summed out of the ring. Slices inside the opening are left out of it for the
+	// same reason they are left out of the window.
+	const int TickSpeed = std::max(1, Client()->GameTickSpeed());
+	if(Tick - Ticks < RaceTick + (int)(gs_PaceSkipOpening * (float)TickSpeed))
+		return;
+	m_DutyTicks += (float)Ticks;
+	if(Gained > 0.0f)
+		m_DutyMovingTicks += (float)Ticks;
+	// Bounded so that it is a long memory and not a perfect one. Scaling both totals keeps the
+	// ratio while capping the span they represent, which makes this an exponential average over
+	// about the horizon: the first minute of a twenty minute run should not still be deciding
+	// what the run looks like.
+	const float Horizon = gs_DutyHorizon * (float)TickSpeed;
+	if(m_DutyTicks > Horizon)
+	{
+		const float Scale = Horizon / m_DutyTicks;
+		m_DutyTicks *= Scale;
+		m_DutyMovingTicks *= Scale;
+	}
 }
 
 float CFinishPrediction::PaceRate(int Tick, float Progress, int RaceTick) const
@@ -1935,6 +2011,7 @@ float CFinishPrediction::PaceRate(int Tick, float Progress, int RaceTick) const
 	const int Earliest = RaceTick + (int)(gs_PaceSkipOpening * (float)TickSpeed);
 
 	float Gained = 0.0f;
+	int Ticks = 0;
 	int MovingTicks = 0;
 	int Slices = 0;
 	for(int i = 0; i < m_PaceCount; i++)
@@ -1942,58 +2019,198 @@ float CFinishPrediction::PaceRate(int Tick, float Progress, int RaceTick) const
 		const CPaceSample &Slice = m_aPace[(m_PaceNext - m_PaceCount + i + (int)PACE_SAMPLES) % (int)PACE_SAMPLES];
 		if(Slice.m_Ticks <= 0 || Slice.m_End - Slice.m_Ticks < Earliest)
 			continue;
-		// A slice that went backwards is thrown out rather than subtracted: a tee that fell has
-		// not started finishing in the other direction, and it is not evidence of a pace either.
-		if(Slice.m_Gained <= 0.0f)
-			continue;
-		Gained += Slice.m_Gained;
-		MovingTicks += Slice.m_Ticks;
 		Slices++;
+		Ticks += Slice.m_Ticks;
+		// A slice that went backwards is not evidence of a speed: a tee that fell has not started
+		// finishing in the other direction. It counts as time not spent travelling, which is what
+		// the duty cycle below is for.
+		if(Slice.m_Gained > 0.0f)
+		{
+			Gained += Slice.m_Gained;
+			MovingTicks += Slice.m_Ticks;
+		}
 	}
 	if(Slices < gs_PaceMinSamples || Gained < gs_PaceMinGain)
 		return -1.0f;
-	if((float)MovingTicks < gs_PaceMinSpan * (float)TickSpeed)
+	if((float)Ticks < gs_PaceMinSpan * (float)TickSpeed)
 		return -1.0f;
-	// Per tick of moving, which is why standing still leaves this where it was instead of halving
-	// it. The time spent standing still reaches the finish time through elapsed, once, rather
-	// than through elapsed and again through a rate it had no business changing.
-	return Gained / (float)MovingTicks;
+	if((float)MovingTicks < gs_PaceMinMoving * (float)TickSpeed)
+		return -1.0f;
+
+	// Two separate questions, asked over two separate spans.
+	//
+	// How fast the tee covers ground while it is covering ground is a recent matter and comes
+	// from the window: it changes with the terrain, and the last three quarters of a minute is
+	// the right amount of evidence about the next stretch.
+	//
+	// What fraction of the time it is covering ground at all is not a recent matter. It is the
+	// character of the run -- how much of it is freeze, falls and waiting -- and it belongs over
+	// the longest span there is. Reading it off the window instead, which is what this did at
+	// first, meant one stall of twenty seconds was extrapolated as though the rest of the map
+	// would be stalled in the same proportion, and the predicted finish leapt.
+	//
+	// The product of the two is progress per tick of wall clock, which is what the caller wants.
+	// A stall still pushes the finish out -- it lowers the duty cycle, and it reaches the figure
+	// through elapsed as well -- but by what it is worth against the whole run rather than
+	// against the last forty-five seconds of it.
+	const float Speed = Gained / (float)MovingTicks;
+	const float Duty = m_DutyTicks > 0.0f ? std::clamp(m_DutyMovingTicks / m_DutyTicks, 0.0f, 1.0f) :
+						(float)MovingTicks / (float)Ticks;
+	if(Duty <= 0.0f)
+		return -1.0f;
+	return Speed * Duty;
 }
 
-void CFinishPrediction::UpdateProgress()
+bool CFinishPrediction::TeePos(int ClientId, vec2 *pPos) const
 {
-	m_HasProgress = false;
-	m_Source = ESource::NONE;
-	if(m_State != EState::READY || !m_pRoute || m_pRoute->m_vPath.empty())
-		return;
+	if(ClientId < 0 || ClientId >= MAX_CLIENTS)
+		return false;
 
-	const int Conn = g_Config.m_ClDummy;
-	const int LocalId = GameClient()->m_Snap.m_LocalClientId;
-	if(LocalId < 0 || LocalId >= MAX_CLIENTS || !GameClient()->m_Snap.m_aCharacters[LocalId].m_Active)
+	// Not named Client, which is the method that reaches the engine client
+	const CGameClient::CClientData &Data = GameClient()->m_aClients[ClientId];
+	if(GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
 	{
-		m_TrackNode = -1;
-		m_BranchNode = -1;
-		m_HasLastPos = false;
-		return;
+		*pPos = Data.m_RenderPos;
+		return true;
+	}
+	// Paused or in spectators: no character of its own in the snapshot, but a spectator character
+	// standing where it left off, which is the position to measure. Not interpolated, because
+	// there is nothing to interpolate -- a tee that is not in the world is not going anywhere.
+	if(Data.m_SpecCharPresent)
+	{
+		*pPos = Data.m_SpecChar;
+		return true;
+	}
+	return false;
+}
+
+bool CFinishPrediction::TrackedTee(int *pClientId, vec2 *pPos) const
+{
+	const CGameClient::CSnapState &Snap = GameClient()->m_Snap;
+	// Which is what the server itself does for the race timer in the HUD: a spectated player if
+	// there is one, and otherwise our own tee, which in free view is still ours whenever there is
+	// one to have -- a tee that is merely paused is sitting on the route where it left off.
+	const int ClientId = Snap.m_SpecInfo.m_Active && Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW ?
+				     Snap.m_SpecInfo.m_SpectatorId :
+				     Snap.m_LocalClientId;
+	if(!TeePos(ClientId, pPos))
+		return false;
+	*pClientId = ClientId;
+	return true;
+}
+
+int CFinishPrediction::TrackedRaceTick(int ClientId) const
+{
+	if(ClientId == GameClient()->m_Snap.m_LocalClientId)
+		return GameClient()->LastRaceTick(g_Config.m_ClDummy);
+
+	const CNetObj_GameInfo *pGameInfo = GameClient()->m_Snap.m_pGameInfoObj;
+	if(!pGameInfo || !(pGameInfo->m_GameStateFlags & GAMESTATEFLAG_RACETIME))
+		return -1;
+	return -pGameInfo->m_WarmupTimer;
+}
+
+bool CFinishPrediction::CollectMembers(int TrackedId)
+{
+	m_MemberCount = 0;
+	m_Roster = 0;
+
+	if(!g_Config.m_ClFinishPredictionTeam)
+	{
+		m_aMembers[m_MemberCount++] = TrackedId;
+		return false;
 	}
 
-	// A fresh race starts the tracking over, so a restart cannot be read as having fallen all the
-	// way back through the old one.
-	const int RaceTick = GameClient()->LastRaceTick(Conn);
-	if(RaceTick != m_TrackedRaceTick)
+	// Multi-view is asked first, because it is the more specific answer: a multi-view of a team
+	// is that team, and a multi-view of a loose set of tees is a group the tees themselves know
+	// nothing about. Either way the tees on screen are the ones the figure should be about, which
+	// is why this does not go on to ask what they are to each other -- not even whether the team
+	// is in team0mode. Putting tees in a multi-view is a deliberate act of watching them
+	// together, and that is a plainer statement of intent than anything the server has said about
+	// them. The one cost is that a set of tees running separate races has no shared start tick,
+	// so the clock the prediction rests on is the spectated tee's; ec_finish_prediction_status
+	// says so when that is the case.
+	const bool MultiView = GameClient()->m_MultiView.IsActivated();
+	int Group = 0;
+	if(MultiView)
 	{
-		m_TrackedRaceTick = RaceTick;
-		m_TrackNode = -1;
-		m_BranchNode = -1;
-		m_BranchTravel = 0;
-		m_vBranchPath.clear();
-		m_HasLastPos = false;
-		m_PredictedTicks = -1;
-		m_PredictionBlend = 0.0f;
-		m_HeldRemaining = -1;
-		ResetPace();
-		m_RushProgress = true;
-		m_SnapProgress = false;
+		Group = 1;
+	}
+	else
+	{
+		const int Team = GameClient()->m_Teams.Team(TrackedId);
+		// TEAM_FLOCK is "no team", and TEAM_SUPER is the one team whose members are not running
+		// anything together at all
+		if(Team == TEAM_FLOCK || Team == TEAM_SUPER || Team < 0 || Team >= MAX_CLIENTS)
+		{
+			m_aMembers[m_MemberCount++] = TrackedId;
+			return false;
+		}
+		// team0mode makes a numbered team behave like team 0: the members still share the team,
+		// but they start and finish one at a time, so the team is not a thing with a single
+		// progress and each tee is measured on its own. The server says so per character.
+		const CGameClient::CSnapState::CCharacterInfo &Info = GameClient()->m_Snap.m_aCharacters[TrackedId];
+		if(Info.m_HasExtendedDisplayInfo && (Info.m_ExtendedData.m_Flags & CHARACTERFLAG_TEAM0_MODE) != 0)
+		{
+			m_aMembers[m_MemberCount++] = TrackedId;
+			return false;
+		}
+		Group = Team + 2;
+	}
+
+	// The roster covers every member, the tracked one included, so that it identifies the group
+	// and not the group-as-seen-from-one-of-its-members. That matters most in multi-view, where
+	// the client really does spectate whichever viewed tee is nearest the camera and so the
+	// tracked tee changes as the camera pans: a roster that left the tracked tee out changed with
+	// every pan, and the reset below would have thrown the pace window away each time.
+	//
+	// It is also taken from membership rather than from who could be placed, because those are
+	// not the same thing for a frame or two at a time. A member that dies has no character and no
+	// spectator character until it respawns, and keying the reset on the placeable count made
+	// every death in the group wipe the window.
+	m_Roster = (unsigned)Group;
+	for(int ClientId = 0; ClientId < MAX_CLIENTS; ClientId++)
+	{
+		const bool Member = ClientId == TrackedId ||
+				    (GameClient()->m_aClients[ClientId].m_Active &&
+					    (MultiView ? GameClient()->m_MultiView.IsViewed(ClientId) :
+							 GameClient()->m_Teams.Team(ClientId) == GameClient()->m_Teams.Team(TrackedId)));
+		if(!Member)
+			continue;
+		m_Roster = m_Roster * 65599 + ClientId + 1;
+		// A member the server is not showing us cannot be measured. It is still holding the group
+		// up, but guessing where it is would be worse than leaving it out: the figure would be
+		// wrong in a way nothing on screen explains.
+		vec2 Pos;
+		if(ClientId != TrackedId && !TeePos(ClientId, &Pos))
+			continue;
+		m_aMembers[m_MemberCount++] = ClientId;
+	}
+	// The tracked tee goes first, because it is placed first and the cold start budget in NodeAt
+	// gives its one turn a frame to whoever comes first. The tee the camera is on is the one that
+	// must never be the one waiting for a turn.
+	for(int i = 1; i < m_MemberCount; i++)
+	{
+		if(m_aMembers[i] != TrackedId)
+			continue;
+		std::swap(m_aMembers[0], m_aMembers[i]);
+		break;
+	}
+	// A multi-view of one tee is not a group, and should not be reported as one
+	return m_MemberCount > 1;
+}
+
+void CFinishPrediction::UpdateTrack(int ClientId, bool Started)
+{
+	CTrack *pTrack = &m_aTracks[ClientId];
+	pTrack->m_HasProgress = false;
+	pTrack->m_Source = ESource::NONE;
+
+	vec2 Pos;
+	if(!TeePos(ClientId, &Pos))
+	{
+		pTrack->Forget();
+		return;
 	}
 
 	// Being moved invalidates both kinds of tracking. The window would recover on its own, but
@@ -2001,32 +2218,29 @@ void CFinishPrediction::UpdateProgress()
 	// place, and a tee that was picked up and put down somewhere else did no such thing. Left
 	// alone it pins the readout to the furthest point reached and a teleport backwards never
 	// shows, which is exactly what it did.
-	const vec2 Pos = GameClient()->m_aClients[LocalId].m_RenderPos;
-	const float Moved = m_HasLastPos ? distance(m_LastPos, Pos) : 0.0f;
-	m_LastPos = Pos;
-	m_HasLastPos = true;
+	const float Moved = pTrack->m_HasLastPos ? distance(pTrack->m_LastPos, Pos) : 0.0f;
+	pTrack->m_LastPos = Pos;
+	pTrack->m_HasLastPos = true;
 	if(Moved > std::max(gs_TeleportFloor, gs_TeleportSpeed * Client()->RenderFrameTime()))
 	{
-		m_TrackNode = -1;
-		m_BranchNode = -1;
-		m_BranchTravel = 0;
-		m_BranchRejoin = -1;
-		m_vBranchPath.clear();
+		pTrack->m_Node = -1;
+		pTrack->m_BranchNode = -1;
+		pTrack->m_BranchTravel = 0;
+		pTrack->m_BranchRejoin = -1;
+		pTrack->m_vBranchPath.clear();
 		// Unless a run has just ended, in which case this is the respawn and the figure is
 		// already on its way down
 		if(!m_RushProgress)
 			m_SnapProgress = true;
 	}
 
-	const int Node = NodeAt(Pos);
+	const int Node = NodeAt(pTrack, Pos);
 	if(Node < 0)
 	{
-		m_TrackNode = -1;
+		pTrack->m_Node = -1;
 		return;
 	}
-	m_TrackNode = Node;
-
-	m_Progress = std::clamp(m_PlacedArc / m_pRoute->m_Length, 0.0f, 1.0f);
+	pTrack->m_Node = Node;
 	// A tee that has not crossed the start line has made no progress, whatever node it happens to
 	// be standing nearest to. Tracking still runs, so the figure is right the moment the race
 	// does start; it is only the reported number that is held at nothing.
@@ -2035,8 +2249,100 @@ void CFinishPrediction::UpdateProgress()
 	// long has one tile the route was measured from and the tee may spawn at the other end of it,
 	// and a route that passes back by the start later can be nearer still. Purple Panic 4 opened
 	// at three per cent before the race had begun.
-	if(!GameClient()->StartedRace(Conn))
-		m_Progress = 0.0f;
+	pTrack->m_Progress = Started ? std::clamp(pTrack->m_PlacedArc / m_pRoute->m_Length, 0.0f, 1.0f) : 0.0f;
+	pTrack->m_HasProgress = true;
+}
+
+void CFinishPrediction::UpdateProgress()
+{
+	m_HasProgress = false;
+	if(m_State != EState::READY || !m_pRoute || m_pRoute->m_vPath.empty())
+		return;
+
+	const int Conn = g_Config.m_ClDummy;
+	int TrackedId = -1;
+	vec2 Pos = vec2(0.0f, 0.0f);
+	if(!TrackedTee(&TrackedId, &Pos))
+	{
+		m_TrackedClientId = -1;
+		m_MemberCount = 0;
+		m_LaggardId = -1;
+		for(CTrack &Track : m_aTracks)
+			Track.Forget();
+		return;
+	}
+
+	const bool Grouped = CollectMembers(TrackedId);
+
+	// A fresh race starts the tracking over, so a restart cannot be read as having fallen all the
+	// way back through the old one. So does the group changing: none of what is tracked below is
+	// about a route, it is all about where some particular tees have been, and the figure is the
+	// slowest of them.
+	//
+	// A different tracked tee only counts where there is no group. Within one, which tee the
+	// camera happens to be on says nothing about what is being measured -- and in multi-view it
+	// changes on its own as the camera pans.
+	const int RaceTick = TrackedRaceTick(TrackedId);
+	const bool Started = RaceTick != -1;
+	const bool Moved = TrackedId != m_TrackedClientId;
+	const bool Switched = m_Roster != m_SeenRoster || (!Grouped && Moved);
+	// Members of a real team share a start tick, so a group whose tick changes under a camera
+	// move is a group that does not -- a loose multi-view, where the tees are running separate
+	// races and the server only ever tells us the time of the one we are spectating. Taking that
+	// as a restart would throw the window away on every pan, so the new tick is adopted quietly.
+	// It is only a baseline for elapsed; the pace itself is a delta and does not care.
+	const bool Restarted = RaceTick != m_TrackedRaceTick && !(Grouped && Moved);
+	if(Restarted || Switched)
+	{
+		m_TrackedRaceTick = RaceTick;
+		m_TrackedClientId = TrackedId;
+		m_SeenRoster = m_Roster;
+		for(CTrack &Track : m_aTracks)
+			Track.Forget();
+		m_PredictedTicks = -1;
+		m_PredictionBlend = 0.0f;
+		m_HeldRemaining = -1;
+		ResetPace();
+		// Switching to another tee is not a run coming to an end, so there is nothing to bring
+		// down: the figure is simply about somebody else now and should say so at once. Easing
+		// across would read as the tee it was about having moved.
+		m_SnapProgress = Switched;
+		m_RushProgress = !Switched;
+	}
+	else
+	{
+		m_TrackedRaceTick = RaceTick;
+		m_TrackedClientId = TrackedId;
+	}
+
+	// Every member is placed, because a team run is only as far along as whoever is furthest
+	// behind -- the server finishes the team when the last of them reaches the finish, so the
+	// laggard is the one whose progress the whole team's time will be decided by.
+	float Slowest = 1.0f;
+	bool Any = false;
+	m_LaggardId = -1;
+	m_ColdBudget = 1;
+	for(int i = 0; i < m_MemberCount; i++)
+	{
+		const int ClientId = m_aMembers[i];
+		UpdateTrack(ClientId, Started);
+		const CTrack &Track = m_aTracks[ClientId];
+		if(!Track.m_HasProgress)
+			continue;
+		if(!Any || Track.m_Progress < Slowest)
+		{
+			Slowest = Track.m_Progress;
+			m_LaggardId = ClientId;
+		}
+		Any = true;
+	}
+	// Nobody could be placed at all. One member that could is enough once the figure is the
+	// group's: requiring the tracked tee as well meant that watching a teammate who had wandered
+	// off the route hid a figure the laggard was perfectly able to supply.
+	if(!Any)
+		return;
+
+	m_Progress = Slowest;
 	m_HasProgress = true;
 
 	// The readout is smoothed because the nearest node hops a whole tile at a time, and a
@@ -2079,10 +2385,10 @@ void CFinishPrediction::UpdateProgress()
 	// eased towards rather than replaced outright.
 	const float TimeBlend = std::clamp(Dt * 8.0f, 0.0f, 1.0f);
 	const int Tick = Client()->GameTick(Conn);
-	const int Elapsed = GameClient()->StartedRace(Conn) ? Tick - RaceTick : 0;
+	const int Elapsed = Started ? Tick - RaceTick : 0;
 	if(Elapsed > 0)
 	{
-		SamplePace(Tick, m_Progress);
+		SamplePace(Tick, m_Progress, RaceTick);
 		// Elapsed plus what is left at the pace of the last few seconds. The window answers only
 		// once it has something to say, so the garbage the old reckoning showed over the opening
 		// is not shown slightly better -- it is not shown at all until there is a figure worth
@@ -2092,7 +2398,20 @@ void CFinishPrediction::UpdateProgress()
 		{
 			const float Remaining = std::max(0.0f, 1.0f - m_Progress) / Rate;
 			const int Estimate = Elapsed + (int)std::min(Remaining, (float)gs_MaxDistance);
-			m_PredictedTicks = m_PredictedTicks < 0 ? Estimate : (int)mix((float)m_PredictedTicks, (float)Estimate, TimeBlend * 0.5f);
+			if(m_PredictedTicks < 0)
+			{
+				m_PredictedTicks = Estimate;
+			}
+			else
+			{
+				// Asymmetric: a later finish is approached at the full rate, an earlier one at a
+				// fraction of it. The window is already slow to be talked into a fast pace by a
+				// few good seconds, and this is the second half of the same argument -- between
+				// them, flowing briefly on a map that is mostly not flowed can no longer show a
+				// time the run was never going to make.
+				const float Approach = TimeBlend * 0.5f * (Estimate < m_PredictedTicks ? gs_PredictionFallBias : 1.0f);
+				m_PredictedTicks = (int)mix((float)m_PredictedTicks, (float)Estimate, Approach);
+			}
 			m_PredictedTicks = std::max(m_PredictedTicks, Elapsed);
 			m_PredictionBlend = std::min(1.0f, m_PredictionBlend + TimeBlend);
 			// What the figure on screen says is still to come, taken from the eased value and not
@@ -2102,12 +2421,15 @@ void CFinishPrediction::UpdateProgress()
 		}
 		else if(m_PredictedTicks > 0 && m_HeldRemaining >= 0)
 		{
-			// The window has nothing to say: the tee is sitting in freeze, or waiting on a
-			// teammate at a drag, or simply not moving. What is left to run is held at the last
-			// thing it did say, and the time going by reaches the figure through elapsed -- which
-			// is what the window itself did for the first ten seconds of standing still, before
-			// the zero gain slices evicted the moving ones and it stopped answering. This is only
-			// the rest of that.
+			// The window has nothing to say: the tee has got essentially nowhere for the best
+			// part of a minute, so there is no rate to divide by. A shorter wait than that does
+			// not come through here at all any more -- the window counts the still slices, so it
+			// answers with a rate that has already been dragged down by them, which is the right
+			// answer and a better one than this. This is only for a stall long enough that there
+			// is no pace left to measure.
+			//
+			// What is left to run is held at the last thing the window did say, and the time
+			// going by reaches the figure through elapsed.
 			//
 			// Holding the whole estimate instead stops it dead while the clock it is a time on
 			// carries on, so a long enough wait predicted a finish earlier than the time already
@@ -2153,7 +2475,11 @@ void CFinishPrediction::RenderRoute()
 	const ColorRGBA Behind = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFinishPredictionRouteDoneColor));
 	const ColorRGBA Ahead = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFinishPredictionRouteColor));
 	const float Alpha = (float)g_Config.m_ClFinishPredictionRouteAlpha / 100.0f;
-	const int Here = m_HasProgress ? m_TrackNode : -1;
+	// The tee being watched, not the laggard: the covered stretch is drawn where the eye is, and
+	// on a team run the figure may be about somebody else entirely.
+	const bool Watching = m_TrackedClientId >= 0 && m_TrackedClientId < MAX_CLIENTS;
+	const CTrack &Watched = m_aTracks[Watching ? m_TrackedClientId : 0];
+	const int Here = m_HasProgress && Watching ? Watched.m_Node : -1;
 
 	// Only what is in view is drawn. A long route is tens of thousands of segments, and the ones
 	// off screen cost as much to hand the renderer as the ones on it.
@@ -2184,15 +2510,15 @@ void CFinishPrediction::RenderRoute()
 	// The way back onto the route from wherever the tee has got to, which is the thing the
 	// readout is interpolating along while it is off the route. Drawn on the "both" setting,
 	// which is what that setting now means.
-	if(g_Config.m_ClFinishPredictionRoute == 2 && !m_vBranchPath.empty())
+	if(g_Config.m_ClFinishPredictionRoute == 2 && Watching && !Watched.m_vBranchPath.empty())
 	{
 		ColorRGBA Color = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFinishPredictionBranchColor));
 		Color.a *= Alpha;
 		Graphics()->SetColor(Color);
-		for(size_t Node = 1; Node < m_vBranchPath.size(); Node++)
+		for(size_t Node = 1; Node < Watched.m_vBranchPath.size(); Node++)
 		{
-			const vec2 From = m_vBranchPath[Node - 1];
-			const vec2 To = m_vBranchPath[Node];
+			const vec2 From = Watched.m_vBranchPath[Node - 1];
+			const vec2 To = Watched.m_vBranchPath[Node];
 			if(distance(From, To) > 64.0f)
 				continue;
 			const IGraphics::CLineItem Line(From, To);
@@ -2423,9 +2749,28 @@ void CFinishPrediction::ConFinishPredictionStatus(IConsole::IResult *pResult, vo
 	pThis->GameClient()->Echo(aBuf);
 	static const char *s_apSources[] = {"not tracking (the finish is not reachable from here)",
 		"by line of sight", "on a branch back to the route", "by the distance left to travel"};
+	const int WatchedId = std::clamp(pThis->m_TrackedClientId, 0, MAX_CLIENTS - 1);
 	str_format(aBuf, sizeof(aBuf), "  placed %s, %d of %d start tiles and %d finish tiles usable",
-		s_apSources[(int)pThis->m_Source], pRoute->m_UsableStarts, pRoute->m_TotalStarts, pRoute->m_TotalFinishes);
+		s_apSources[(int)pThis->m_aTracks[WatchedId].m_Source], pRoute->m_UsableStarts, pRoute->m_TotalStarts,
+		pRoute->m_TotalFinishes);
 	pThis->GameClient()->Echo(aBuf);
+	// Which tees the figure came from, since on a group run it is somebody else's progress and
+	// there is otherwise nothing on screen that says so
+	if(pThis->m_MemberCount > 1)
+	{
+		const bool MultiView = pThis->GameClient()->m_MultiView.IsActivated();
+		// A team shares one start tick, so its elapsed time is the team's. A loose multi-view
+		// does not: the tees are running separate races and the server only ever sends the time
+		// of the one being spectated, so the clock the prediction is built on is that tee's while
+		// the percentage is the whole group's. Worth saying, since nothing on screen does.
+		const int Team = pThis->GameClient()->m_Teams.Team(pThis->m_TrackedClientId);
+		const bool Shared = Team != TEAM_FLOCK && Team != TEAM_SUPER;
+		str_format(aBuf, sizeof(aBuf), "  %s of %d, figure taken from %s, who is furthest behind%s",
+			MultiView ? "multi-view" : "team", pThis->m_MemberCount,
+			pThis->m_LaggardId >= 0 ? pThis->GameClient()->m_aClients[pThis->m_LaggardId].m_aName : "nobody",
+			Shared ? "" : " (no shared start tick, so the time is the spectated tee's)");
+		pThis->GameClient()->Echo(aBuf);
+	}
 	// Both of these turn parts of this off without the route itself looking any different, which
 	// is the sort of thing that is much easier to find written down than to deduce from in-game.
 	str_format(aBuf, sizeof(aBuf), "  %d checkpoint teleporter group%s, %s, off-route tracking available",
