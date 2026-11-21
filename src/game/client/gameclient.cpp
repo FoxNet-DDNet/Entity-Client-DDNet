@@ -4356,7 +4356,14 @@ void CGameClient::UpdateSpectatorCursor()
 
 	const vec2 Target = vec2(CharInfo.m_ExtendedData.m_TargetX, CharInfo.m_ExtendedData.m_TargetY);
 
-	if(IsDemoPlaybackPaused())
+	if(!g_Config.m_ClSpecCursorInterpolation)
+	{
+		// EClient: show the cursor exactly where the snapshot of this frame has it, without the
+		// interpolation delay and smoothing, so the cursor of a demo frame is the real one
+		m_CursorInfo.m_NumSamples = 0;
+		m_CursorInfo.m_Target = Target;
+	}
+	else if(IsDemoPlaybackPaused())
 	{
 		m_CursorInfo.m_CursorOwnerId = -1;
 		m_CursorInfo.m_NumSamples = 0;

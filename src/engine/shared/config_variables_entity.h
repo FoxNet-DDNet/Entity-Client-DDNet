@@ -126,6 +126,7 @@ MACRO_CONFIG_COL(ClNotifyWhenLastColor, ec_last_notify_color, 29057, CFGFLAG_CLI
 
 // Spectate Cursor
 MACRO_CONFIG_INT(ClCursorOpacitySpec, ec_cursor_opacity_spec, 0, 0, 100, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Opacity of your cursor when spectating in freeview")
+MACRO_CONFIG_INT(ClSpecCursorInterpolation, ec_spec_cursor_interpolation, 1, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Interpolate the cursor and aim of players while spectating and in demos, disable to see the exact aim the server had on each tick (for moderation)")
 
 // Pingcircle next to name
 MACRO_CONFIG_INT(ClPingNameCircle, ec_nameplate_ping_circle, 0, 0, 1, CFGFLAG_CLIENT | CFGFLAG_SAVE, "Shows a circle next to nameplate to indicate ping")

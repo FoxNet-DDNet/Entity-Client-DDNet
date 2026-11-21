@@ -138,11 +138,16 @@ float CPlayers::GetPlayerTargetAngle(
 	if(ClientId >= 0)
 		Intra = Client()->IntraGameTick(g_Config.m_ClDummy);
 
+	// EClient: while spectating or watching a demo, the aim can be shown exactly as the server had
+	// it on this tick instead of interpolated between two ticks, which matters for moderation
+	const bool ExactAim = ClientId >= 0 && !g_Config.m_ClSpecCursorInterpolation &&
+			      (GameClient()->m_Snap.m_SpecInfo.m_Active || Client()->State() == IClient::STATE_DEMOPLAYBACK);
+
 	if(ClientId >= 0 && GameClient()->m_Snap.m_aCharacters[ClientId].m_HasExtendedDisplayInfo)
 	{
 		const CNetObj_DDNetCharacter *pExtendedData = &GameClient()->m_Snap.m_aCharacters[ClientId].m_ExtendedData;
 		const CNetObj_DDNetCharacter *pPrevExtendedData = GameClient()->m_Snap.m_aCharacters[ClientId].m_pPrevExtendedData;
-		if(pPrevExtendedData)
+		if(pPrevExtendedData && !ExactAim)
 		{
 			float MixX = mix((float)pPrevExtendedData->m_TargetX, (float)pExtendedData->m_TargetX, Intra);
 			float MixY = mix((float)pPrevExtendedData->m_TargetY, (float)pExtendedData->m_TargetY, Intra);
@@ -155,6 +160,9 @@ float CPlayers::GetPlayerTargetAngle(
 	}
 	else
 	{
+		if(ExactAim)
+			return pPlayerChar->m_Angle / 256.0f;
+
 		// If the player moves their weapon through top, then change
 		// the end angle by 2*Pi, so that the mix function will use the
 		// short path and not the long one.
