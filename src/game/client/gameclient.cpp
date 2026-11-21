@@ -131,6 +131,7 @@ void CGameClient::OnConsoleInit()
 					      &m_Binds.m_SpecialBinds,
 					      &m_Controls,
 					      &m_Camera,
+					      &m_MultiView,
 					      &m_Sounds,
 					      &m_Voting,
 					      &m_Particles, // doesn't render anything, just updates all the particles
@@ -767,10 +768,6 @@ void CGameClient::OnReset()
 	m_LastFollowFactor = 0.0f;
 	m_LastDummyConnected = false;
 
-	m_MultiViewPersonalZoom = 0.0f;
-	m_MultiViewActivated = false;
-	m_MultiView.m_IsInit = false;
-
 	m_CursorInfo.m_CursorOwnerId = -1;
 	m_CursorInfo.m_NumSamples = 0;
 
@@ -798,9 +795,9 @@ void CGameClient::UpdatePositions()
 	// spectator position
 	if(m_Snap.m_SpecInfo.m_Active)
 	{
-		if(m_MultiViewActivated)
+		if(m_MultiView.IsActivated())
 		{
-			HandleMultiView();
+			m_MultiView.UpdateView();
 		}
 		else if(Client()->State() == IClient::STATE_DEMOPLAYBACK && m_DemoSpecId != SPEC_FOLLOW && m_Snap.m_SpecInfo.m_SpectatorId != SPEC_FREEVIEW)
 		{
@@ -821,8 +818,7 @@ void CGameClient::UpdatePositions()
 		}
 	}
 
-	if(!m_MultiViewActivated && m_MultiView.m_IsInit)
-		ResetMultiView();
+	m_MultiView.CheckReset();
 
 	UpdateRenderedCharacters();
 
@@ -838,20 +834,7 @@ void CGameClient::OnRender()
 	Graphics()->Clear(ClearColor.r, ClearColor.g, ClearColor.b);
 
 	// check if multi view got activated
-	if(!m_MultiView.m_IsInit && m_MultiViewActivated)
-	{
-		int TeamId = 0;
-		if(m_Snap.m_SpecInfo.m_SpectatorId >= 0)
-			TeamId = m_Teams.Team(m_Snap.m_SpecInfo.m_SpectatorId);
-
-		if(TeamId > MAX_CLIENTS || TeamId < 0)
-			TeamId = 0;
-
-		if(!InitMultiView(TeamId))
-		{
-			ResetMultiView();
-		}
-	}
+	m_MultiView.UpdateActivation();
 
 	// EClient: before UpdatePositions, so the camera and everything else laying out against the
 	// local tee sees this frame's practice state rather than the previous frame's
@@ -1344,33 +1327,6 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker, int Conn, bool Dumm
 			if(CCharacter *pChar = m_GameWorld.GetCharacterById(pMsg->m_Victim))
 				pChar->ResetPrediction();
 			m_GameWorld.ReleaseHooked(pMsg->m_Victim);
-		}
-
-		// if we are spectating a static id set (team 0) and somebody killed, and its not a guy in solo, we remove them from the list
-		// never remove players from the list if it is a pvp server
-		if(IsMultiViewIdSet() && m_MultiViewTeam == 0 && m_aMultiViewId[pMsg->m_Victim] && !m_aClients[pMsg->m_Victim].m_Spec && !m_MultiView.m_Solo && !m_GameInfo.m_Pvp)
-		{
-			m_aMultiViewId[pMsg->m_Victim] = false;
-
-			// if everyone of a team killed, we have no ids to spectate anymore, so we disable multi view
-			if(!IsMultiViewIdSet())
-			{
-				ResetMultiView();
-			}
-			else
-			{
-				// the "main" tee killed, search a new one
-				if(m_Snap.m_SpecInfo.m_SpectatorId == pMsg->m_Victim)
-				{
-					int NewClientId = FindFirstMultiViewId();
-					if(NewClientId < MAX_CLIENTS && NewClientId >= 0)
-					{
-						CleanMultiViewId(NewClientId);
-						m_aMultiViewId[NewClientId] = true;
-						m_Spectator.Spectate(NewClientId);
-					}
-				}
-			}
 		}
 	}
 	else if(MsgId == NETMSGTYPE_SV_KILLMSGTEAM)
@@ -2502,7 +2458,7 @@ void CGameClient::OnNewSnapshot(bool DummySwapped)
 		m_aDDRaceMsgSent[i] = true;
 	}
 
-	if(m_Snap.m_SpecInfo.m_Active && m_MultiViewActivated)
+	if(m_Snap.m_SpecInfo.m_Active && m_MultiView.IsActivated())
 	{
 		// dont show other teams while spectating in multi view
 		CNetMsg_Cl_ShowOthers Msg;
@@ -4376,7 +4332,7 @@ void CGameClient::UpdateSpectatorCursor()
 		m_CursorInfo.m_CursorOwnerId = CursorOwnerId;
 	}
 
-	if(m_MultiViewActivated || CursorOwnerId < 0 || CursorOwnerId >= MAX_CLIENTS)
+	if(m_MultiView.IsActivated() || CursorOwnerId < 0 || CursorOwnerId >= MAX_CLIENTS)
 	{
 		// do not show spec cursor in multi-view
 		m_CursorInfo.m_Available = false;
