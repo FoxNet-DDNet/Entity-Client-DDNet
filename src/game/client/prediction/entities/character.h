@@ -12,6 +12,8 @@
 
 #include <vector>
 
+class CQuadZones; // FoxNet
+
 enum
 {
 	FAKETUNE_FREEZE = 1 << 0,
@@ -196,8 +198,34 @@ private:
 	void DDRaceTick();
 	void DDRacePostCoreTick();
 	// <FoxNet
-	void QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData> &vQuads, vec2 QuadMotion, bool GivesDj);
+	void QuadZonePush(CQuadZones *pQuadZones, int Tick, int Index, const std::vector<CQuadData> &vQuads, vec2 QuadMotion, bool GivesDj);
+	// How far apart this tick's travel may be sampled without a quad on it being stepped over
+	float QuadSampleStep(CQuadZones *pQuadZones, int Tick, const vec2 &From, const vec2 &To);
+	/*
+	 * Runs the push at points along the travel rather than only at its end, which is what keeps a
+	 * quad from being stepped over at speed. Travel short enough to be in no danger of that is one
+	 * sample at the end, which is the behaviour this always had.
+	 * Mirrors CCollidableZone::SweepResolve.
+	 */
+	void QuadZoneSweep(CQuadZones *pQuadZones, int Tick);
+	void QuadResolveOverlaps(CQuadZones *pQuadZones, int Tick);
 	void QuadZoneTick();
+
+	// Floor on the sampling step, so a sliver of a quad cannot ask for an unbounded number
+	static constexpr float ms_MinQuadSampleStep = 4.0f;
+	// Ceiling on how many samples one tick of travel is cut into
+	static constexpr int ms_MaxQuadSampleSteps = 64;
+
+	// Where this character stood before the move of this tick, the line the sweep walks. Held
+	// against the tick so a sweep never runs on a stale one, as on the tick a snapshot places it.
+	vec2 m_QuadSweepFrom = vec2(0.0f, 0.0f);
+	int m_QuadSweepTick = -1;
+	// Scratch kept off the per-push path, which would otherwise allocate once per contact.
+	// Three lists because the passes nest: a push happens inside a walk of one of the others.
+	std::vector<int> m_vQuadCandidates;
+	std::vector<int> m_vQuadSweepCandidates;
+	std::vector<int> m_vQuadNeighbourIds;
+	std::vector<const CQuadData *> m_vpQuadNeighbours;
 	// FoxNet>
 	void HandleTuneLayer();
 

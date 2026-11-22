@@ -1159,6 +1159,8 @@ private:
 	// What the map turns on for FoxNet, the server reads the same settings
 	bool m_MapMovingTiles = false;
 	bool m_MapQStopaGivesDj = false;
+	// Only ever turned off by a map, so the default is the path behaviour
+	bool m_MapQuadFreezePathOff = false;
 	// FoxNet>
 
 	// tunings for every zone on the map, 0 is a global tune

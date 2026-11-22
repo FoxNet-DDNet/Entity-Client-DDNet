@@ -674,6 +674,10 @@ void CCharacter::Tick()
 
 void CCharacter::TickDeferred()
 {
+	// <FoxNet, the line QuadZoneSweep walks
+	m_QuadSweepFrom = m_Core.m_Pos;
+	m_QuadSweepTick = GameWorld()->GameTick();
+	// FoxNet>
 	m_Core.Move();
 	m_Core.Quantize();
 	m_Pos = m_Core.m_Pos;
@@ -1104,8 +1108,9 @@ void CCharacter::HandleTuneLayer()
 }
 
 // <FoxNet
-void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData> &vQuads, vec2 QuadMotion, bool GivesDj)
+void CCharacter::QuadZonePush(CQuadZones *pQuadZones, int Tick, int Index, const std::vector<CQuadData> &vQuads, vec2 QuadMotion, bool GivesDj)
 {
+	const CQuadData &Quad = vQuads[Index];
 	const float Radius = m_ProximityRadius * 0.55f;
 	const vec2 Pos = m_Pos;
 
@@ -1127,18 +1132,12 @@ void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData
 		}
 	}
 
-	// Only a quad overlapping this one can hide one of its edges, and that is a handful of the layer
-	std::vector<const CQuadData *> vpNeighbours;
-	for(const CQuadData &Other : vQuads)
-	{
-		if(&Other == &Quad)
-			continue;
-		if(Other.m_AabbMax.x < Quad.m_AabbMin.x || Other.m_AabbMin.x > Quad.m_AabbMax.x)
-			continue;
-		if(Other.m_AabbMax.y < Quad.m_AabbMin.y || Other.m_AabbMin.y > Quad.m_AabbMax.y)
-			continue;
-		vpNeighbours.push_back(&Other);
-	}
+	// Only a quad overlapping this one can hide one of its edges, and those are settled at load
+	std::vector<const CQuadData *> &vpNeighbours = m_vpQuadNeighbours;
+	vpNeighbours.clear();
+	pQuadZones->QueryNeighbours(EPredictedZone::StopA, Tick, Index, m_vQuadNeighbourIds);
+	for(int OtherIndex : m_vQuadNeighbourIds)
+		vpNeighbours.push_back(&vQuads[OtherIndex]);
 
 	const auto BuriedAt = [&](const vec2 &Point) {
 		for(const CQuadData *pOther : vpNeighbours)
@@ -1308,6 +1307,119 @@ void CCharacter::QuadZonePush(const CQuadData &Quad, const std::vector<CQuadData
 }
 // FoxNet>
 
+/*
+ * How far apart the travel may be sampled. The push sends the character out by the nearest edge,
+ * so to be sent back the way it came, a sample has to land while it is still outside the face it
+ * is about to cross and within Radius of it. That band is Radius deep outside the face and half
+ * the quad's waist inside it, so a step no larger than that always puts a sample in it. Caught on
+ * the far side instead, the nearest edge is the one it was leaving by and the push would shove it
+ * the rest of the way through. Mirrors CCollidableZone::SampleStep.
+ */
+float CCharacter::QuadSampleStep(CQuadZones *pQuadZones, int Tick, const vec2 &From, const vec2 &To)
+{
+	const float Radius = m_ProximityRadius * 0.55f;
+	const std::vector<CQuadData> &vQuads = pQuadZones->Quads(EPredictedZone::StopA, Tick);
+
+	pQuadZones->QueryQuads(EPredictedZone::StopA, Tick,
+		vec2(std::min(From.x, To.x) - Radius, std::min(From.y, To.y) - Radius),
+		vec2(std::max(From.x, To.x) + Radius, std::max(From.y, To.y) + Radius),
+		m_vQuadSweepCandidates);
+
+	float Step = std::numeric_limits<float>::max();
+	for(int Index : m_vQuadSweepCandidates)
+		Step = std::min(Step, Radius + vQuads[Index].m_Waist * 0.5f);
+
+	if(Step == std::numeric_limits<float>::max())
+		return 0.0f; // nothing on the path, so the whole travel is one step
+
+	return std::max(Step, ms_MinQuadSampleStep);
+}
+
+void CCharacter::QuadZoneSweep(CQuadZones *pQuadZones, int Tick)
+{
+	if(m_QuadSweepTick != Tick)
+	{
+		QuadResolveOverlaps(pQuadZones, Tick); // nothing recorded this tick, no path to walk
+		return;
+	}
+
+	const vec2 To = m_Pos;
+	const vec2 From = m_QuadSweepFrom;
+	const vec2 Travel = To - From;
+	const float Length = length(Travel);
+
+	int Steps = 1;
+	if(Length > m_ProximityRadius * 0.55f)
+	{
+		const float Step = QuadSampleStep(pQuadZones, Tick, From, To);
+		if(Step > 0.0f)
+			Steps = std::clamp((int)std::ceil(Length / Step), 1, ms_MaxQuadSampleSteps);
+	}
+
+	// One step is the end of the travel, which is where this has always acted -- so slow enough
+	// to be in no danger of stepping over a quad, nothing about this changes a thing
+	if(Steps <= 1)
+	{
+		QuadResolveOverlaps(pQuadZones, Tick);
+		return;
+	}
+
+	vec2 Offset = vec2(0.0f, 0.0f);
+	for(int Step = 1; Step <= Steps; Step++)
+	{
+		const vec2 Target = From + Travel * ((float)Step / (float)Steps) + Offset;
+		m_Pos = Target;
+		m_Core.m_Pos = Target;
+		QuadResolveOverlaps(pQuadZones, Tick);
+		// Carry what the push changed into the rest of the travel, so it keeps sliding along a
+		// surface instead of being dragged back onto the original line
+		Offset += m_Pos - Target;
+	}
+
+	/*
+	 * A push quantizes where it lands, but a sample that pushed nothing leaves the carried offset
+	 * on the position as it stands. Ending a tick on a fractional position is something no other
+	 * path here does, and the snapshot this is reconciled against carries whole units, so settle
+	 * it -- the server settles the same way, see CCollidableZone::SweepResolve.
+	 */
+	if(Offset != vec2(0.0f, 0.0f))
+	{
+		m_Core.Quantize();
+		m_Pos = m_Core.m_Pos;
+	}
+}
+
+// The push pass, unchanged but for being narrowed by the bounds scan and taken in map order
+void CCharacter::QuadResolveOverlaps(CQuadZones *pQuadZones, int Tick)
+{
+	const vec2 Size = vec2(m_ProximityRadius, m_ProximityRadius) * 0.55f;
+	const std::vector<CQuadData> &vStopA = pQuadZones->Quads(EPredictedZone::StopA, Tick);
+	if(vStopA.empty())
+		return;
+
+	// Twice the box, so a quad that a push of this pass moves this into is already listed
+	const vec2 Margin = Size * 2.0f;
+	pQuadZones->QueryQuads(EPredictedZone::StopA, Tick,
+		vec2(m_Pos.x - Margin.x, m_Pos.y - Margin.y),
+		vec2(m_Pos.x + Margin.x, m_Pos.y + Margin.y),
+		m_vQuadCandidates);
+
+	// Map order, as the walk of the whole layer had: the pushes are cumulative, so which quad
+	// goes first is part of the answer and the scan hands them back in bounds order
+	std::sort(m_vQuadCandidates.begin(), m_vQuadCandidates.end());
+
+	for(int Index : m_vQuadCandidates)
+	{
+		const CQuadData &Quad = vStopA[Index];
+		// Re-read, since every push of this loop moves this character
+		const vec2 TestPos = m_Pos;
+		if(!Quad.Overlaps(TestPos, Size))
+			continue;
+
+		QuadZonePush(pQuadZones, Tick, Index, vStopA, Quad.MotionAt(TestPos), pQuadZones->StopAGivesDj());
+	}
+}
+
 void CCharacter::QuadZoneTick()
 {
 	CQuadZones *pQuadZones = GameWorld()->QuadZones();
@@ -1319,34 +1431,39 @@ void CCharacter::QuadZoneTick()
 
 	const int Tick = GameWorld()->GameTick();
 
+	/*
+	 * The whole path of this tick, not only where it ended: a quad thinner than one tick of
+	 * travel was otherwise passed straight through at speed. A map can put that back with
+	 * sv_quad_freeze_path 0, and then the original point test comes back with it rather than a
+	 * path of no length, so the edges answer exactly as they used to -- see CFreezeZone.
+	 */
+	const bool QuadPath = pQuadZones->FreezePath();
+	const vec2 QuadFrom = QuadPath && m_QuadSweepTick == Tick ? m_QuadSweepFrom : m_Pos;
+
+	const auto InsideQuadZone = [&](EPredictedZone Zone) {
+		return QuadPath ? pQuadZones->SegmentInside(Zone, QuadFrom, m_Pos, Tick) :
+				  pQuadZones->Inside(Zone, m_Pos, Tick);
+	};
+
 	if(!m_Core.m_IsInFreeze && !m_Core.m_DeepFrozen && !m_Core.m_LiveFrozen)
 	{
 		if(m_TileIndex != TILE_UNFREEZE && m_TileFIndex != TILE_UNFREEZE &&
-			pQuadZones->Inside(EPredictedZone::Freeze, m_Pos, Tick))
+			InsideQuadZone(EPredictedZone::Freeze))
 		{
 			Freeze();
 			m_InsideQuadFreeze = true;
 		}
 
 		if((m_FreezeTime != 0 || m_InsideQuadFreeze) &&
-			pQuadZones->Inside(EPredictedZone::Unfreeze, m_Pos, Tick))
+			InsideQuadZone(EPredictedZone::Unfreeze))
 		{
 			Unfreeze();
 			m_InsideQuadFreeze = false;
 		}
 	}
 
-	const vec2 Size = vec2(m_ProximityRadius, m_ProximityRadius) * 0.55f;
-	const std::vector<CQuadData> &vStopA = pQuadZones->Quads(EPredictedZone::StopA, Tick);
-	for(const CQuadData &Quad : vStopA)
-	{
-		const vec2 TestPos = m_Pos;
-		const vec2 QuadMotion = Quad.MotionAt(TestPos);
-		if(Quad.Overlaps(TestPos, Size))
-			QuadZonePush(Quad, vStopA, QuadMotion, pQuadZones->StopAGivesDj());
-	}
+	QuadZoneSweep(pQuadZones, Tick);
 }
-
 void CCharacter::DDRaceTick()
 {
 	mem_copy(&m_Input, &m_SavedInput, sizeof(m_Input));

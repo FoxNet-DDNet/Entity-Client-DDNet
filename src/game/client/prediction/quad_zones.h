@@ -102,10 +102,13 @@ public:
 	// The prediction has no way back to the client, so these are pushed in once per snapshot
 	void SetActive(bool Active);
 	void SetStopAGivesDj(bool GivesDj) { m_StopAGivesDj = GivesDj; }
+	// Whether QFr and QUnFr act on the whole path of a tick, see sv_quad_freeze_path
+	void SetFreezePath(bool Path) { m_FreezePath = Path; }
 	void SetQuadStartTick(int QuadStartTick);
 
 	bool Active() const { return m_Active; }
 	bool StopAGivesDj() const { return m_StopAGivesDj; }
+	bool FreezePath() const { return m_FreezePath; }
 
 	/*
 	 * Settles where the envelopes stand on this tick, so that everything acting during it agrees
@@ -119,6 +122,27 @@ public:
 	// The quads of one zone as they stand on this tick, empty while the prediction is off
 	const std::vector<CQuadData> &Quads(EPredictedZone Type, int Tick);
 	bool Inside(EPredictedZone Type, vec2 Pos, int Tick);
+	/*
+	 * Whether the path From->To touches any quad of this zone along it, rather than only where it
+	 * ends. A quad thinner than one tick of travel is otherwise passed straight through at speed.
+	 * Nothing is resolved here, so unlike the push this needs no sampling -- the question is only
+	 * whether the path crossed the quad. Mirrors CQuadZone::SegmentInsideQuad.
+	 */
+	bool SegmentInside(EPredictedZone Type, vec2 From, vec2 To, int Tick);
+	/*
+	 * Indices into Quads of those whose bounds reach this box, replacing whatever vOut held. The
+	 * sweep asks several times a tick and the push once per contact, which is too often to walk
+	 * a layer of thousands, see CCharacter::QuadZoneSweep.
+	 */
+	void QueryQuads(EPredictedZone Type, int Tick, vec2 Min, vec2 Max, std::vector<int> &vOut);
+	/*
+	 * The quads of one zone overlapping the one at Index, itself excluded. Asking QueryQuads for
+	 * them reads that quad's own bounds, and one long diagonal quad reaches across a great deal of
+	 * the layer, so the scan came back with a dozen answers after looking at all of them. Which
+	 * quads that never move overlap which never changes, so it is settled once; a quad that moves
+	 * is asked for as it stands. Mirrors CQuadZone::QueryNeighbours.
+	 */
+	void QueryNeighbours(EPredictedZone Type, int Tick, int Index, std::vector<int> &vOut);
 
 private:
 	/*
@@ -130,6 +154,7 @@ private:
 
 	// Forgets every tick settled so far, for when the quads are somewhere else entirely
 	void DropCachedTicks();
+	void BuildNeighbourCache(EPredictedZone Type);
 	// The pair this quad reads its placement from, adding it to the table when it is a new one
 	int AddEnvKey(int PosEnv, int PosEnvOffset, bool NeedsMotion);
 	void UpdateTransforms(int Tick);
@@ -144,6 +169,12 @@ private:
 	// Parallel to m_avQuads, what the overlap scan reads instead of the quads
 	std::vector<CQuadBound> m_avBounds[(int)EPredictedZone::Num];
 
+	// Parallel to m_avQuads: each never-moving quad's never-moving neighbours, settled once
+	std::vector<int> m_avNeighbourStart[(int)EPredictedZone::Num];
+	std::vector<int> m_avNeighbourIndices[(int)EPredictedZone::Num];
+	bool m_aNeighbourCacheValid[(int)EPredictedZone::Num] = {};
+	std::vector<int> m_vNeighbourScratch;
+
 	std::vector<CQuadEnvKey> m_vEnvKeys;
 	std::vector<CQuadTransform> m_vTransforms; // where those keys stand on m_CachedTick
 	std::vector<CQuadTransform> m_avTickCache[TICK_CACHE_SIZE];
@@ -153,6 +184,7 @@ private:
 	IMap *m_pMap = nullptr;
 	bool m_Active = false;
 	bool m_StopAGivesDj = false;
+	bool m_FreezePath = true;
 	int m_QuadStartTick = 0;
 	int m_CachedTick = -1;
 	// The tick each zone's quads were last placed for, see Materialize

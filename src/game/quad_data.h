@@ -7,6 +7,7 @@
 #include <game/mapitems.h>
 
 #include <algorithm>
+#include <limits>
 
 class CQuadData
 {
@@ -21,6 +22,14 @@ public:
 
 	vec2 m_AabbMin = vec2(0, 0);
 	vec2 m_AabbMax = vec2(0, 0);
+
+	/*
+	 * The narrowest way through this quad: the shortest of the two triangle halves' heights. It
+	 * bounds how far apart the collision may sample a path before this quad could be stepped
+	 * over, see CCharacter::QuadZoneSweep. Rigid motion does not change it, so it is settled
+	 * once at load even for a quad that moves. Kept identical to the server, see CQuadData::Init.
+	 */
+	float m_Waist = 0.0f;
 
 	// The same bounds over the local corners, so a quad that only shifts can skip rebuilding them
 	vec2 m_LocalAabbMin = vec2(0, 0);
@@ -61,6 +70,8 @@ public:
 		m_PosEnv = Quad.m_PosEnv;
 		m_PosEnvOffset = Quad.m_PosEnvOffset;
 
+		m_Waist = NarrowestWaist();
+
 		m_LocalAabbMin = m_aLocalPoints[0];
 		m_LocalAabbMax = m_aLocalPoints[0];
 		for(int i = 1; i < 4; i++)
@@ -72,6 +83,30 @@ public:
 		}
 
 		UpdateAabb();
+	}
+
+	// Shortest height of either triangle half, which is the least a crossing path has to cover.
+	// Split in two because an editor quad can be concave and a triangle never is.
+	float NarrowestWaist() const
+	{
+		static const int s_aaTriangles[2][3] = {{0, 1, 2}, {0, 2, 3}};
+
+		float Waist = std::numeric_limits<float>::max();
+		for(const auto &aTriangle : s_aaTriangles)
+		{
+			const vec2 &A = m_aLocalPoints[aTriangle[0]];
+			const vec2 &B = m_aLocalPoints[aTriangle[1]];
+			const vec2 &C = m_aLocalPoints[aTriangle[2]];
+
+			const float TwiceArea = absolute((B.x - A.x) * (C.y - A.y) - (B.y - A.y) * (C.x - A.x));
+			const float Longest = std::max(std::max(distance(A, B), distance(B, C)), distance(C, A));
+			if(TwiceArea <= 1e-3f || Longest <= 1e-3f)
+				continue; // degenerate, the other half speaks for the quad
+
+			Waist = std::min(Waist, TwiceArea / Longest);
+		}
+
+		return Waist == std::numeric_limits<float>::max() ? 0.0f : Waist;
 	}
 
 	void UpdateAabb()

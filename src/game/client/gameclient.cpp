@@ -4196,6 +4196,7 @@ void CGameClient::UpdatePrediction()
 	const bool PredictMovingTiles = Client()->m_FoxNetVersion != 0 && Client()->m_FoxNetMovingTilesVersion == FOXNET_MOVING_TILES_VERSION;
 	m_QuadZones.SetActive(g_Config.m_ClPredictMovingTiles && m_MapMovingTiles && PredictMovingTiles);
 	m_QuadZones.SetStopAGivesDj(m_MapQStopaGivesDj);
+	m_QuadZones.SetFreezePath(!m_MapQuadFreezePathOff);
 	// FoxNet animates the quads from this tick on and snaps it as the round start, see CGameControllerDDRace::Snap
 	m_QuadZones.SetQuadStartTick(m_Snap.m_pGameInfoObj ? m_Snap.m_pGameInfoObj->m_RoundStartTick : 0);
 	// FoxNet>
@@ -5118,6 +5119,7 @@ void CGameClient::LoadMapSettings()
 	// <FoxNet
 	m_MapMovingTiles = false;
 	m_MapQStopaGivesDj = false;
+	m_MapQuadFreezePathOff = false;
 	// FoxNet>
 
 	// Reset Tunezones
@@ -5159,6 +5161,9 @@ void CGameClient::LoadMapSettings()
 				m_MapMovingTiles = true;
 			if(str_find_nocase(pNext, "sv_qstopa_gives_dj 1"))
 				m_MapQStopaGivesDj = true;
+			// Turned off by the map, since the server's own default is on
+			if(str_find_nocase(pNext, "sv_quad_freeze_path 0"))
+				m_MapQuadFreezePathOff = true;
 			// FoxNet>
 
 			int StrSize = str_length(pNext) + 1;

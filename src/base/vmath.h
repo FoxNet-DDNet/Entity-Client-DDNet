@@ -286,6 +286,57 @@ inline bool InsideQuadrilateral(const vec2 &Pos, const vec2 aPoints[4], const ve
 	return false;
 }
 
+// Whether the segment From->To touches the quadrilateral anywhere along it, rather than only
+// where it ends. Split in two because an editor quad can be concave and a triangle never is.
+inline bool SegmentHitsQuadrilateral(const vec2 &From, const vec2 &To, const vec2 aPoints[4])
+{
+	static const int s_aaTriangles[2][3] = {{0, 1, 2}, {0, 2, 3}};
+
+	for(const auto &aTriangle : s_aaTriangles)
+	{
+		float Enter = 0.0f;
+		float Exit = 1.0f;
+		bool Outside = false;
+
+		for(int i = 0; i < 3; i++)
+		{
+			const vec2 &A = aPoints[aTriangle[i]];
+			const vec2 &B = aPoints[aTriangle[(i + 1) % 3]];
+			// Outward, left unnormalized: Plane, Start and End all scale with it, so the signs
+			// and the crossing time come out the same and this needs no sqrt
+			const vec2 Normal = vec2(B.y - A.y, A.x - B.x);
+			if(dot(Normal, Normal) <= 1e-6f)
+			{
+				Outside = true; // degenerate, the other half speaks for the quad
+				break;
+			}
+
+			const float Plane = dot(Normal, A);
+			const float Start = dot(Normal, From) - Plane;
+			const float End = dot(Normal, To) - Plane;
+
+			if(Start > 0.0f && End > 0.0f)
+			{
+				Outside = true; // outside this edge for the whole segment
+				break;
+			}
+			if(Start <= 0.0f && End <= 0.0f)
+				continue; // behind it for the whole segment
+
+			const float Time = Start / (Start - End);
+			if(Start > 0.0f)
+				Enter = std::max(Enter, Time);
+			else
+				Exit = std::min(Exit, Time);
+		}
+
+		if(!Outside && Enter <= Exit)
+			return true;
+	}
+
+	return false;
+}
+
 inline void Rotate(const vec2 &Center, vec2 *pPoint, const float &Rotation)
 {
 	float x = pPoint->x - Center.x;

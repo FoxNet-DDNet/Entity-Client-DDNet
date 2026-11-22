@@ -31,6 +31,12 @@ void CQuadZones::Reset()
 {
 	for(std::vector<CQuadData> &vQuads : m_avQuads)
 		vQuads.clear();
+	for(bool &Valid : m_aNeighbourCacheValid)
+		Valid = false;
+	for(std::vector<int> &vStart : m_avNeighbourStart)
+		vStart.clear();
+	for(std::vector<int> &vIndices : m_avNeighbourIndices)
+		vIndices.clear();
 	for(std::vector<CQuadBound> &vBounds : m_avBounds)
 		vBounds.clear();
 	m_vEnvKeys.clear();
@@ -459,4 +465,186 @@ bool CQuadZones::Inside(EPredictedZone Type, vec2 Pos, int Tick)
 			return true;
 	}
 	return false;
+}
+
+bool CQuadZones::SegmentInside(EPredictedZone Type, vec2 From, vec2 To, int Tick)
+{
+	if(!m_Active)
+		return false;
+
+	const int TypeIndex = (int)Type;
+	const std::vector<CQuadBound> &vBounds = m_avBounds[TypeIndex];
+	if(vBounds.empty())
+		return false;
+
+	UpdateTo(Tick);
+
+	// Same trick as Inside: a quad that only shifts is asked in its own frame, so both ends of
+	// the path are carried back into it rather than the quad being walked to where it stands
+	if(m_AnyRotation)
+	{
+		Materialize(Type);
+		for(const CQuadData &Quad : m_avQuads[TypeIndex])
+		{
+			if(std::max(From.x, To.x) < Quad.m_AabbMin.x || std::min(From.x, To.x) > Quad.m_AabbMax.x)
+				continue;
+			if(std::max(From.y, To.y) < Quad.m_AabbMin.y || std::min(From.y, To.y) > Quad.m_AabbMax.y)
+				continue;
+			if(SegmentHitsQuadrilateral(From, To, Quad.m_aPoints))
+				return true;
+		}
+		return false;
+	}
+
+	const std::vector<CQuadData> &vQuads = m_avQuads[TypeIndex];
+	for(size_t Index = 0; Index < vBounds.size(); Index++)
+	{
+		const CQuadBound &Bound = vBounds[Index];
+		const vec2 Offset = Bound.m_EnvKey < 0 ? vec2(0.0f, 0.0f) : m_vTransforms[Bound.m_EnvKey].m_Offset;
+		const vec2 LocalFrom = From - Offset;
+		const vec2 LocalTo = To - Offset;
+
+		if(std::max(LocalFrom.x, LocalTo.x) < Bound.m_Min.x || std::min(LocalFrom.x, LocalTo.x) > Bound.m_Max.x)
+			continue;
+		if(std::max(LocalFrom.y, LocalTo.y) < Bound.m_Min.y || std::min(LocalFrom.y, LocalTo.y) > Bound.m_Max.y)
+			continue;
+
+		if(SegmentHitsQuadrilateral(LocalFrom, LocalTo, vQuads[Index].m_aLocalPoints))
+			return true;
+	}
+	return false;
+}
+
+void CQuadZones::BuildNeighbourCache(EPredictedZone Type)
+{
+	const int TypeIndex = (int)Type;
+	std::vector<int> &vStart = m_avNeighbourStart[TypeIndex];
+	std::vector<int> &vIndices = m_avNeighbourIndices[TypeIndex];
+	const std::vector<CQuadData> &vQuads = m_avQuads[TypeIndex];
+	const std::vector<CQuadBound> &vBounds = m_avBounds[TypeIndex];
+
+	m_aNeighbourCacheValid[TypeIndex] = false;
+	vStart.assign(vQuads.size() + 1, 0);
+	vIndices.clear();
+
+	if(vQuads.empty())
+		return;
+
+	for(size_t Index = 0; Index < vQuads.size(); Index++)
+	{
+		vStart[Index] = (int)vIndices.size();
+
+		// A quad an envelope moves stands somewhere else every tick, so nothing is settled here
+		if(vBounds[Index].m_EnvKey >= 0)
+			continue;
+
+		const CQuadData &Quad = vQuads[Index];
+		for(size_t OtherIndex = 0; OtherIndex < vQuads.size(); OtherIndex++)
+		{
+			if(OtherIndex == Index || vBounds[OtherIndex].m_EnvKey >= 0)
+				continue;
+			const CQuadData &Other = vQuads[OtherIndex];
+			if(Other.m_AabbMax.x < Quad.m_AabbMin.x || Other.m_AabbMin.x > Quad.m_AabbMax.x)
+				continue;
+			if(Other.m_AabbMax.y < Quad.m_AabbMin.y || Other.m_AabbMin.y > Quad.m_AabbMax.y)
+				continue;
+			vIndices.push_back((int)OtherIndex);
+		}
+	}
+	vStart[vQuads.size()] = (int)vIndices.size();
+
+	m_aNeighbourCacheValid[TypeIndex] = true;
+}
+
+void CQuadZones::QueryNeighbours(EPredictedZone Type, int Tick, int Index, std::vector<int> &vOut)
+{
+	vOut.clear();
+
+	if(!m_Active)
+		return;
+
+	const int TypeIndex = (int)Type;
+	const std::vector<CQuadData> &vQuads = m_avQuads[TypeIndex];
+	if(Index < 0 || (size_t)Index >= vQuads.size())
+		return;
+
+	UpdateTo(Tick);
+	Materialize(Type);
+
+	if(!m_aNeighbourCacheValid[TypeIndex])
+		BuildNeighbourCache(Type);
+
+	const std::vector<CQuadBound> &vBounds = m_avBounds[TypeIndex];
+	const CQuadData &Quad = vQuads[Index];
+
+	// Nothing is settled about a quad an envelope moves, so this one is asked for real
+	if(!m_aNeighbourCacheValid[TypeIndex] || vBounds[Index].m_EnvKey >= 0)
+	{
+		QueryQuads(Type, Tick, Quad.m_AabbMin, Quad.m_AabbMax, vOut);
+		vOut.erase(std::remove(vOut.begin(), vOut.end(), Index), vOut.end());
+		return;
+	}
+
+	const std::vector<int> &vStart = m_avNeighbourStart[TypeIndex];
+	for(int i = vStart[Index]; i < vStart[Index + 1]; i++)
+		vOut.push_back(m_avNeighbourIndices[TypeIndex][i]);
+
+	// The moving ones are few, so they are tested against as they stand now
+	for(size_t OtherIndex = 0; OtherIndex < vQuads.size(); OtherIndex++)
+	{
+		if((int)OtherIndex == Index || vBounds[OtherIndex].m_EnvKey < 0)
+			continue;
+		const CQuadData &Other = vQuads[OtherIndex];
+		if(Other.m_AabbMax.x < Quad.m_AabbMin.x || Other.m_AabbMin.x > Quad.m_AabbMax.x)
+			continue;
+		if(Other.m_AabbMax.y < Quad.m_AabbMin.y || Other.m_AabbMin.y > Quad.m_AabbMax.y)
+			continue;
+		vOut.push_back((int)OtherIndex);
+	}
+}
+
+void CQuadZones::QueryQuads(EPredictedZone Type, int Tick, vec2 Min, vec2 Max, std::vector<int> &vOut)
+{
+	vOut.clear();
+
+	if(!m_Active)
+		return;
+
+	const int TypeIndex = (int)Type;
+	const std::vector<CQuadBound> &vBounds = m_avBounds[TypeIndex];
+	if(vBounds.empty())
+		return;
+
+	UpdateTo(Tick);
+	Materialize(Type);
+
+	// A turning quad is not a shifted copy of itself, so there its placed bounds are the only
+	// ones that answer; the shifting case is the box carried into the quad's frame, as in Inside
+	if(m_AnyRotation)
+	{
+		const std::vector<CQuadData> &vQuads = m_avQuads[TypeIndex];
+		for(size_t Index = 0; Index < vQuads.size(); Index++)
+		{
+			const CQuadData &Quad = vQuads[Index];
+			if(Quad.m_AabbMax.x < Min.x || Quad.m_AabbMin.x > Max.x)
+				continue;
+			if(Quad.m_AabbMax.y < Min.y || Quad.m_AabbMin.y > Max.y)
+				continue;
+			vOut.push_back((int)Index);
+		}
+		return;
+	}
+
+	for(size_t Index = 0; Index < vBounds.size(); Index++)
+	{
+		const CQuadBound &Bound = vBounds[Index];
+		const vec2 Offset = Bound.m_EnvKey < 0 ? vec2(0.0f, 0.0f) : m_vTransforms[Bound.m_EnvKey].m_Offset;
+
+		if(Bound.m_Max.x + Offset.x < Min.x || Bound.m_Min.x + Offset.x > Max.x)
+			continue;
+		if(Bound.m_Max.y + Offset.y < Min.y || Bound.m_Min.y + Offset.y > Max.y)
+			continue;
+
+		vOut.push_back((int)Index);
+	}
 }
