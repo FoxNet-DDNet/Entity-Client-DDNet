@@ -863,8 +863,8 @@ void CWarList::SortWarEntries()
 // EClient
 uint32_t CWarList::WarTypesHash() const
 {
-	// a CWarType holds nothing but fixed size members, so hashing its bytes catches every
-	// settings change, and at worst reports a change that did not happen
+	// Hash every settings member of a CWarType individually. Hashing the whole object
+	// instead would read its uninitialized padding bytes.
 	uint32_t Hash = 2166136261u;
 	const auto &&HashBytes = [&Hash](const void *pData, size_t Size) {
 		const unsigned char *pBytes = static_cast<const unsigned char *>(pData);
@@ -873,11 +873,48 @@ uint32_t CWarList::WarTypesHash() const
 			Hash = (Hash ^ pBytes[Byte]) * 16777619u;
 		}
 	};
-	const size_t NumWarTypes = m_WarTypes.size();
-	HashBytes(&NumWarTypes, sizeof(NumWarTypes));
+	const auto &&HashFloat = [&HashBytes](float Value) {
+		HashBytes(&Value, sizeof(Value));
+	};
+	const auto &&HashInt = [&HashBytes](int Value) {
+		HashBytes(&Value, sizeof(Value));
+	};
+	const auto &&HashBool = [&HashBytes](bool Value) {
+		const unsigned char Byte = Value ? 1 : 0;
+		HashBytes(&Byte, sizeof(Byte));
+	};
+	HashInt((int)m_WarTypes.size());
 	for(const CWarType *pWarType : m_WarTypes)
 	{
-		HashBytes(pWarType, sizeof(*pWarType));
+		HashBytes(pWarType->m_aWarName, sizeof(pWarType->m_aWarName));
+		HashFloat(pWarType->m_Color.r);
+		HashFloat(pWarType->m_Color.g);
+		HashFloat(pWarType->m_Color.b);
+		HashFloat(pWarType->m_Color.a);
+		HashBool(pWarType->m_Removable);
+		HashBool(pWarType->m_Imported);
+		HashBool(pWarType->m_NoHookLine);
+		HashBool(pWarType->m_NoEmotes);
+		HashBool(pWarType->m_Mute);
+		HashBool(pWarType->m_SettingsMigrated);
+		HashBytes(pWarType->m_aPrefix, sizeof(pWarType->m_aPrefix));
+		HashBool(pWarType->m_ChatPrefix);
+		HashBool(pWarType->m_ServerInfoPrefix);
+		HashBool(pWarType->m_ChatColor);
+		HashBool(pWarType->m_ScoreboardColor);
+		HashBool(pWarType->m_SpecMenuColor);
+		HashBool(pWarType->m_SpecMenuPrefix);
+		HashBool(pWarType->m_NameplateColor);
+		HashBool(pWarType->m_ShowClan);
+		HashBool(pWarType->m_ShowReason);
+		HashBool(pWarType->m_SwapNameReason);
+		HashBool(pWarType->m_JoinLeaveColor);
+		HashBool(pWarType->m_BrowserVisible);
+		HashBool(pWarType->m_AutoAdd);
+		HashBool(pWarType->m_AutoAddNotify);
+		HashBool(pWarType->m_FrozenTee);
+		HashInt(pWarType->m_Index);
+		HashInt(pWarType->m_NumEntries);
 	}
 	return Hash;
 }
