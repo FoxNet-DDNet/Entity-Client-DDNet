@@ -2703,16 +2703,67 @@ void CFinishPrediction::RenderHud(bool Preview)
 	{
 		if(HasRow)
 			y += BarGap;
+		const float BarLeft = x + Padding;
 		const float Rounding = BarHeight * 0.5f;
-		Graphics()->DrawRect(x + Padding, y, InnerWidth, BarHeight,
+		Graphics()->DrawRect(BarLeft, y, InnerWidth, BarHeight,
 			ColorRGBA(1.0f, 1.0f, 1.0f, 0.15f), IGraphics::CORNER_ALL, Rounding);
 
 		const ColorRGBA Fill = color_cast<ColorRGBA>(ColorHSLA(g_Config.m_ClFinishPredictionRouteColor));
 		const float Filled = InnerWidth * Fraction;
-		if(Filled > 0.0f)
+		if(Filled >= BarHeight)
 		{
-			Graphics()->DrawRect(x + Padding, y, Filled, BarHeight, Fill, IGraphics::CORNER_ALL,
-				std::min(Rounding, Filled * 0.5f));
+			// Long enough to hold both of its own caps, which is all DrawRect asks of it
+			Graphics()->DrawRect(BarLeft, y, Filled, BarHeight, Fill, IGraphics::CORNER_ALL, Rounding);
+		}
+		else if(Filled > 0.0f)
+		{
+			// Shorter than one pill there is no length left to put two caps in, and a radius
+			// scaled down to fit is what made the opening of a run look wrong: it leaves a
+			// near-square sliver whose corners stand outside the track's rounded end. The right
+			// shape is what you get by cutting a full pill down to the progress, which is a
+			// rounded clip -- and the renderer only has a rectangular scissor.
+			//
+			// So the cut is faked out of two pills that are long enough to be drawn (the shortest
+			// one is a circle, a pill as long as it is tall), each clipped to the half of the
+			// progress whose cap it owns: one sitting at the left end of the track for the left
+			// cap, one ending at the progress for the right. Both carry the track's own radius, so
+			// the left arc lands exactly on the track's and the two arcs are the same height
+			// where they meet -- together they read as one short rounded fill, not as two pieces.
+			const CScreenRect Screen = Graphics()->GetScreen();
+			// The scissor is in screen pixels, so unlike the drawing it cannot ride the element's
+			// screen mapping and has to be put through it by hand
+			const float PixelsPerUnitX = Graphics()->ScreenWidth() / Screen.Width();
+			const float PixelsPerUnitY = Graphics()->ScreenHeight() / Screen.Height();
+			const int LeftPx = round_to_int((BarLeft - Screen.m_TopLeft.x) * PixelsPerUnitX);
+			const int RightPx = round_to_int((BarLeft + Filled - Screen.m_TopLeft.x) * PixelsPerUnitX);
+			const int TopPx = round_to_int((y - Screen.m_TopLeft.y) * PixelsPerUnitY);
+			const int HeightPx = round_to_int(BarHeight * PixelsPerUnitY);
+			// The two arcs cross at the middle of the progress, so that is where the cut belongs:
+			// left of it the left cap is the inner of the two, right of it the right cap is. Both
+			// halves are cut at one shared pixel column rather than each rounding the middle on
+			// its own, so they can leave neither a gap nor a doubled column between them, and the
+			// column the crossing falls inside is given to the left half, whose arc is the
+			// track's own and so cannot land outside it. Rounding that column the other way lets
+			// the right cap stand a little proud of the socket, which is the whole complaint.
+			const int SeamPx = std::clamp((int)std::ceil((BarLeft + Filled * 0.5f - Screen.m_TopLeft.x) * PixelsPerUnitX), LeftPx, RightPx);
+			// Under a pixel of progress there is nothing to draw, and the scissor would be told to
+			// keep a column no pixels wide
+			if(RightPx > LeftPx && HeightPx > 0)
+			{
+				if(SeamPx > LeftPx)
+				{
+					Graphics()->ClipEnable(LeftPx, TopPx, SeamPx - LeftPx, HeightPx);
+					Graphics()->DrawRect(BarLeft, y, BarHeight, BarHeight, Fill,
+						IGraphics::CORNER_ALL, Rounding);
+				}
+				if(RightPx > SeamPx)
+				{
+					Graphics()->ClipEnable(SeamPx, TopPx, RightPx - SeamPx, HeightPx);
+					Graphics()->DrawRect(BarLeft + Filled - BarHeight, y, BarHeight, BarHeight, Fill,
+						IGraphics::CORNER_ALL, Rounding);
+				}
+				Graphics()->ClipDisable();
+			}
 		}
 		y += BarHeight;
 	}
