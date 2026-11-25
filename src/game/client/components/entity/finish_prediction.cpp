@@ -5,6 +5,7 @@
 #include <base/math.h>
 #include <base/system.h>
 
+#include <engine/demo.h>
 #include <engine/graphics.h>
 #include <engine/shared/config.h>
 #include <engine/textrender.h>
@@ -172,6 +173,11 @@ static constexpr float gs_PaceMinSpan = 8.0f;
 // window. Separate from the span above, which is wall clock: a tee that stalls a great deal
 // should still get a figure, just a slow one.
 static constexpr float gs_PaceMinMoving = 2.5f;
+// The longest a single reading may span before it is thrown away rather than recorded. Readings
+// are meant to be one interval apart; a much longer one means time passed that was not being
+// measured -- a demo seeked forward, or the readout switched on mid-run -- and the progress made
+// across it cannot be attributed to the span it is credited with.
+static constexpr float gs_PaceMaxSliceSpan = 2.0f;
 // Over what span the duty cycle -- the fraction of the run spent travelling at all -- is taken.
 //
 // Long, because it is the character of the whole run and not a recent event. Three minutes is
@@ -1522,6 +1528,7 @@ void CFinishPrediction::Discard()
 		Track.Forget();
 	m_TrackedRaceTick = -1;
 	m_TrackedClientId = -1;
+	m_LastTick = -1;
 	m_MemberCount = 0;
 	m_SeenRoster = 0;
 	m_LaggardId = -1;
@@ -1969,6 +1976,21 @@ void CFinishPrediction::SamplePace(int Tick, float Progress, int RaceTick)
 		m_PaceLastProgress = Progress;
 		return;
 	}
+	// A reading that spans far more than an interval would be one enormous slice of however long
+	// went unmeasured, carrying whatever progress was made across a stretch nobody watched. A
+	// single slice of two minutes in a window of forty-five seconds is not a measurement, so the
+	// gap is simply not measured and the next reading starts from here.
+	//
+	// Seeking a demo forward is the obvious way to get one, but so is the readout being switched
+	// on mid-run, or any stretch where these were not being taken. A backward seek does not reach
+	// this, because UpdateProgress treats the clock going backwards as a discontinuity and has
+	// already reset the window by the time this is called.
+	if(Tick - m_PaceLastTick > (int)(gs_PaceMaxSliceSpan * (float)Client()->GameTickSpeed()))
+	{
+		m_PaceLastTick = Tick;
+		m_PaceLastProgress = Progress;
+		return;
+	}
 	if(Tick - m_PaceLastTick < Interval)
 		return;
 	const int Ticks = Tick - m_PaceLastTick;
@@ -2101,7 +2123,12 @@ bool CFinishPrediction::TrackedTee(int *pClientId, vec2 *pPos) const
 
 int CFinishPrediction::TrackedRaceTick(int ClientId) const
 {
-	if(ClientId == GameClient()->m_Snap.m_LocalClientId)
+	// m_aLastRaceTick is only kept up to date while actually connected to a server, so in a demo
+	// it stays at -1 whoever is being followed -- which pinned the readout to nothing for a whole
+	// demo. The game info object is the only source there, and it is a good one: it holds what the
+	// recording client was sent, so for the usual kind of demo, recorded by the tee that was
+	// racing, it carries exactly that tee's start tick.
+	if(Client()->State() == IClient::STATE_ONLINE && ClientId == GameClient()->m_Snap.m_LocalClientId)
 		return GameClient()->LastRaceTick(g_Config.m_ClDummy);
 
 	const CNetObj_GameInfo *pGameInfo = GameClient()->m_Snap.m_pGameInfoObj;
@@ -2285,6 +2312,26 @@ void CFinishPrediction::UpdateProgress()
 	const int RaceTick = TrackedRaceTick(TrackedId);
 	const bool Started = RaceTick != -1;
 	const bool Moved = TrackedId != m_TrackedClientId;
+	// Seeking a demo moves the clock the way nothing in a live game does. Backwards, everything
+	// held here is about a stretch of run that no longer leads to where playback now is; forwards,
+	// there is a hole in the middle of it. Either way what is remembered is not evidence about
+	// this moment, and the figure should start again rather than carry a stale prediction across
+	// the cut. The tee jumping is caught by the teleport guard further down, but that only knows
+	// about positions -- it says nothing about the window or the predicted time.
+	//
+	// Forwards needs a threshold, and the threshold has to know how fast the clock is meant to be
+	// running: a demo plays at up to sixty-four times speed, where a single slow frame genuinely
+	// advances thousands of ticks and is not a seek at all. So the bar is whatever the elapsed
+	// frame could honestly have covered at the current playback speed, with room to spare, and
+	// never less than a couple of seconds.
+	const int Now = Client()->GameTick(Conn);
+	float Speed = 1.0f;
+	if(Client()->State() == IClient::STATE_DEMOPLAYBACK && DemoPlayer()->BaseInfo())
+		Speed = std::max(1.0f, DemoPlayer()->BaseInfo()->m_Speed);
+	const float Honest = (float)Client()->GameTickSpeed() * Speed * std::max(Client()->RenderFrameTime(), 0.0f) * 4.0f;
+	const int Bar = std::max((int)(gs_PaceMaxSliceSpan * (float)Client()->GameTickSpeed()), (int)Honest);
+	const bool Seeked = m_LastTick >= 0 && (Now < m_LastTick || Now - m_LastTick > Bar);
+	m_LastTick = Now;
 	const bool Switched = m_Roster != m_SeenRoster || (!Grouped && Moved);
 	// Members of a real team share a start tick, so a group whose tick changes under a camera
 	// move is a group that does not -- a loose multi-view, where the tees are running separate
@@ -2292,7 +2339,7 @@ void CFinishPrediction::UpdateProgress()
 	// as a restart would throw the window away on every pan, so the new tick is adopted quietly.
 	// It is only a baseline for elapsed; the pace itself is a delta and does not care.
 	const bool Restarted = RaceTick != m_TrackedRaceTick && !(Grouped && Moved);
-	if(Restarted || Switched)
+	if(Restarted || Switched || Seeked)
 	{
 		m_TrackedRaceTick = RaceTick;
 		m_TrackedClientId = TrackedId;
@@ -2306,8 +2353,8 @@ void CFinishPrediction::UpdateProgress()
 		// Switching to another tee is not a run coming to an end, so there is nothing to bring
 		// down: the figure is simply about somebody else now and should say so at once. Easing
 		// across would read as the tee it was about having moved.
-		m_SnapProgress = Switched;
-		m_RushProgress = !Switched;
+		m_SnapProgress = Switched || Seeked;
+		m_RushProgress = !Switched && !Seeked;
 	}
 	else
 	{
@@ -2384,7 +2431,7 @@ void CFinishPrediction::UpdateProgress()
 	// large part of a small elapsed time, so it waits until there is something behind it and is
 	// eased towards rather than replaced outright.
 	const float TimeBlend = std::clamp(Dt * 8.0f, 0.0f, 1.0f);
-	const int Tick = Client()->GameTick(Conn);
+	const int Tick = Now;
 	const int Elapsed = Started ? Tick - RaceTick : 0;
 	if(Elapsed > 0)
 	{

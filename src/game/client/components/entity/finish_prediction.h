@@ -346,6 +346,9 @@ private:
 	unsigned m_Roster = 0;
 	unsigned m_SeenRoster = 0;
 	int m_TrackedRaceTick = -1;
+	// The game tick as of the last frame, to notice the clock jumping. Seeking a demo is the one
+	// thing that moves it other than forwards at one tick per tick.
+	int m_LastTick = -1;
 	// The tee the readout is currently about, which is the spectated one while a particular
 	// player is being spectated and the local one otherwise. Held so that changing who is
 	// spectated starts the tracking over: two tees that began their runs on the same tick have
