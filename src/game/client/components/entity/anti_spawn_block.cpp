@@ -45,13 +45,16 @@ void CAntiSpawnBlock::OnRender()
 
 bool CAntiSpawnBlock::GetPos(int Conn, int ClientId, vec2 &Pos) const
 {
-	if(GameClient()->m_Snap.m_aCharacters[ClientId].m_Active)
+	// CGameClient::UpdatePrediction destroys the characters of other teams, so m_Predicted
+	// stops being updated the moment our other tee joins its own team and keeps the position
+	// it had back then. Only read it while the prediction actually runs for that tee.
+	if(GameClient()->m_Snap.m_aCharacters[ClientId].m_Active && !GameClient()->IsOtherTeam(ClientId))
 	{
 		Pos = GameClient()->m_aClients[ClientId].m_Predicted.m_Pos;
 		return true;
 	}
 
-	// Once our other tee sits in its own team it can be missing from the snapshot of the
+	// Once our other tee sits in its own team it can also be missing from the snapshot of the
 	// connection we are playing on, but its own connection always receives it. Without this
 	// we would never see it come back to the start and leave it locked in that team forever.
 	const auto *pCharacter = (const CNetObj_Character *)Client()->SnapFindItem(Conn, IClient::SNAP_CURRENT, NETOBJTYPE_CHARACTER, ClientId);
