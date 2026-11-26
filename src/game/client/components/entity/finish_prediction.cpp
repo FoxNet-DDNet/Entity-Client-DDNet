@@ -175,7 +175,7 @@ static constexpr float gs_PaceMinSpan = 8.0f;
 static constexpr float gs_PaceMinMoving = 2.5f;
 // The longest a single reading may span before it is thrown away rather than recorded. Readings
 // are meant to be one interval apart; a much longer one means time passed that was not being
-// measured -- a demo seeked forward, or the readout switched on mid-run -- and the progress made
+// measured -- a demo sought forward, or the readout switched on mid-run -- and the progress made
 // across it cannot be attributed to the span it is credited with.
 static constexpr float gs_PaceMaxSliceSpan = 2.0f;
 // Over what span the duty cycle -- the fraction of the run spent travelling at all -- is taken.
@@ -2330,7 +2330,7 @@ void CFinishPrediction::UpdateProgress()
 		Speed = std::max(1.0f, DemoPlayer()->BaseInfo()->m_Speed);
 	const float Honest = (float)Client()->GameTickSpeed() * Speed * std::max(Client()->RenderFrameTime(), 0.0f) * 4.0f;
 	const int Bar = std::max((int)(gs_PaceMaxSliceSpan * (float)Client()->GameTickSpeed()), (int)Honest);
-	const bool Seeked = m_LastTick >= 0 && (Now < m_LastTick || Now - m_LastTick > Bar);
+	const bool Sought = m_LastTick >= 0 && (Now < m_LastTick || Now - m_LastTick > Bar);
 	m_LastTick = Now;
 	const bool Switched = m_Roster != m_SeenRoster || (!Grouped && Moved);
 	// Members of a real team share a start tick, so a group whose tick changes under a camera
@@ -2339,7 +2339,7 @@ void CFinishPrediction::UpdateProgress()
 	// as a restart would throw the window away on every pan, so the new tick is adopted quietly.
 	// It is only a baseline for elapsed; the pace itself is a delta and does not care.
 	const bool Restarted = RaceTick != m_TrackedRaceTick && !(Grouped && Moved);
-	if(Restarted || Switched || Seeked)
+	if(Restarted || Switched || Sought)
 	{
 		m_TrackedRaceTick = RaceTick;
 		m_TrackedClientId = TrackedId;
@@ -2353,8 +2353,8 @@ void CFinishPrediction::UpdateProgress()
 		// Switching to another tee is not a run coming to an end, so there is nothing to bring
 		// down: the figure is simply about somebody else now and should say so at once. Easing
 		// across would read as the tee it was about having moved.
-		m_SnapProgress = Switched || Seeked;
-		m_RushProgress = !Switched && !Seeked;
+		m_SnapProgress = Switched || Sought;
+		m_RushProgress = !Switched && !Sought;
 	}
 	else
 	{
