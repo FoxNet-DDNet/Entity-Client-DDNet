@@ -36,8 +36,26 @@ static constexpr int gs_TeleCost = 10;
 // detour the route will take rather than enter one tile of freeze.
 static constexpr int gs_DeepMultiplier = 2;
 // Travelling one tile while frozen, on top of the step. This is the cost of being out of control
-// rather than of the freeze itself, so it is a flat couple of tiles and not a multiple of the
-// penalty.
+// rather than of the freeze itself, so it is a flat figure and not a multiple of the penalty.
+//
+// Ten tiles of it, where it was two, because a frozen tee does not travel under its own power at
+// all: it carries whatever momentum put it there, and it stays frozen until something unfreezes
+// it. Read against gs_ThawCost this is how far the route will glide frozen before it would rather
+// stop and wait -- four tiles at this figure and thirteen at the old one, and thirteen tiles is a
+// long way to sail through open air in a state the tee cannot steer out of. The glide was the
+// visible symptom: on Afternight the route crossed one tile of freeze and then carried on frozen
+// for thirteen more, with unfreeze tiles on the map it could have been heading for.
+//
+// Measured over seven maps, raising it changes which freeze the route crosses on none of them and
+// the route's length by under ten nodes either way, and takes the gliding out: the longest glide
+// goes from thirteen tiles to four on Afternight and from twenty-nine to three on Red-Solo, and
+// the air crossed frozen over the two from a hundred and fifty-nine tiles to thirty-two.
+//
+// What a flat figure cannot do is cost the tenth tile of a glide more than the second. A cost
+// that grows with how long the tee has been frozen is not a property of the tile it is standing
+// on, so the frozen state would have to carry an age and the search would hold a copy of itself
+// per age. Flat and high picks the same routes on every map tried, which is a great deal cheaper
+// than being exactly right about the shape of the curve.
 //
 // It has to be separate from the cost of entering freeze, and the two were one and the same
 // until this comment was written. A single surcharge on "the tee ends up frozen" is paid by the
@@ -45,7 +63,7 @@ static constexpr int gs_DeepMultiplier = 2;
 // what air cost and the route had no reason left to leave it. It would avoid freeze beautifully
 // right up to the first crossing and then plough through every patch after it, which is precisely
 // what that looks like from inside the game.
-static constexpr int gs_FrozenDriftCost = 200;
+static constexpr int gs_FrozenDriftCost = 1000;
 // Waiting a freeze out where no unfreeze tile is in reach. Flat, and not large: a tee thaws by
 // itself in a few seconds, so this is the time that costs, which is worth some tens of tiles
 // however hard the route is trying to stay dry.
@@ -1241,6 +1259,50 @@ int CFinishPrediction::StartState(const CGrid &Grid, int Cell)
 	return ((Layer * 2) + Frozen) * Grid.Cells() + Cell;
 }
 
+/**
+ * Which of a start tile's states the route is actually traced from.
+ *
+ * The nominal one wherever it has a route, so on the maps this has always worked on nothing
+ * changes at all. What follows is for the maps where it does not.
+ *
+ * The nominal layer says the tee has touched no checkpoint, which is true of a tee on a start
+ * line and not true of a tee that spawned on a checkpoint tile. demon does exactly that: its ten
+ * spawns are its ten checkpoint tiles, and its start line is sixteen checkpoint teleporter
+ * entrances, so crossing the line is what sends the tee to the course. In layer zero those
+ * entrances are dead ends, and correctly so -- the server walks the tee's checkpoint down looking
+ * for an exit, finds none at all for a tee holding nothing, and puts it back on the spawn.
+ *
+ * So the one layer the search asked about was the one layer the route cannot exist in, and a map
+ * with no usable start loses the refined route entirely and keeps the coarse one, which ignores
+ * freeze. On demon that was 432 nodes with 210 of them freeze, against 898 nodes crossing one
+ * freeze tile once the other layers are asked.
+ *
+ * Trying them is a loosening rather than a guess: it says the tee may be holding a checkpoint
+ * when it crosses the line, which is the only way a line laid on these tiles leads anywhere.
+ */
+int CFinishPrediction::StartStateIn(const CGrid &Grid, int Cell, const std::vector<int> &vDistance)
+{
+	const int Nominal = StartState(Grid, Cell);
+	if((size_t)Nominal < vDistance.size() && vDistance[Nominal] >= 0)
+		return Nominal;
+	// A start tile that is itself a checkpoint tile belongs to that checkpoint's layer and to no
+	// other, so the nominal state is the only one it has.
+	if(Grid.Has(Cell, TILEINFO_CHECK))
+		return -1;
+	const int Frozen = Grid.Has(Cell, TILEINFO_FREEZE) ? gs_StateFrozen : gs_StateMobile;
+	const int Cells = Grid.Cells();
+	int Best = -1;
+	for(int Layer = 1; Layer < std::max(1, Grid.m_CheckpointLayers); Layer++)
+	{
+		const int State = ((Layer * 2) + Frozen) * Cells + Cell;
+		if((size_t)State >= vDistance.size() || vDistance[State] < 0)
+			continue;
+		if(Best < 0 || vDistance[State] < vDistance[Best])
+			Best = State;
+	}
+	return Best;
+}
+
 int CFinishPrediction::PickStart(const CGrid &Grid, const std::vector<int> &vRank, const std::vector<int> &vReachable,
 	bool Layered)
 {
@@ -1250,7 +1312,7 @@ int CFinishPrediction::PickStart(const CGrid &Grid, const std::vector<int> &vRan
 	{
 		if(!Grid.Passable(Candidate) || vRank[Candidate] < 0)
 			continue;
-		const int State = Layered ? StartState(Grid, Candidate) : Candidate;
+		const int State = Layered ? StartStateIn(Grid, Candidate, vReachable) : Candidate;
 		if(State < 0 || (size_t)State >= vReachable.size() || vReachable[State] < 0)
 			continue;
 		if(vRank[Candidate] > Best)
@@ -1328,8 +1390,7 @@ void CFinishPrediction::Search(const std::shared_ptr<CJob> &pJob)
 					// describes. See StartState.
 					for(int Candidate : Grid.m_vStarts)
 					{
-						const int State = StartState(Grid, Candidate);
-						if(Grid.Passable(Candidate) && (size_t)State < vDistance.size() && vDistance[State] >= 0)
+						if(Grid.Passable(Candidate) && StartStateIn(Grid, Candidate, vDistance) >= 0)
 							UsableStarts++;
 					}
 				}
@@ -1362,9 +1423,8 @@ void CFinishPrediction::Search(const std::shared_ptr<CJob> &pJob)
 			Start = PickStart(Grid, vCoarseDistance, vDistance, true);
 			for(int Candidate : Grid.m_vStarts)
 			{
-				const int State = StartState(Grid, Candidate);
 				if(Grid.Passable(Candidate) && vCoarseDistance[Candidate] >= 0 &&
-					(size_t)State < vDistance.size() && vDistance[State] >= 0)
+					StartStateIn(Grid, Candidate, vDistance) >= 0)
 					UsableStarts++;
 			}
 			if(Start >= 0)

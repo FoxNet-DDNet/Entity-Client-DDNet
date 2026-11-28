@@ -530,6 +530,11 @@ private:
 	/** The state a tee standing on this start tile is in: its freeze state and its checkpoint. */
 	static int StartState(const CGrid &Grid, int Cell);
 	/**
+	 * The same, resolved against a refined field: the state this start tile has a route from, or
+	 * -1 if it has none in any layer.
+	 */
+	static int StartStateIn(const CGrid &Grid, int Cell, const std::vector<int> &vDistance);
+	/**
 	 * Picks the start tile, and returns the state to trace from rather than the cell.
 	 *
 	 * Layered says whether vReachable is the refined field, which has a state per cell per freeze
