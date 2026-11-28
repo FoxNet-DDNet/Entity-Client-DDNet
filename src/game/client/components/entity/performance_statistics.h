@@ -17,6 +17,11 @@ class CPerformanceStatistics : public CComponent
 	float m_EffectiveTps = 0.0f;
 	float m_SnapshotRate = 0.0f;
 	int m_SnapshotCount = 0;
+	// Demo playback is measured in demo ticks rather than against the wall clock, so these count
+	// only the snapshots whose spacing was plausible playback and the ticks they covered.
+	int m_PlaybackSnapshotCount = 0;
+	int m_PlaybackSnapshotTicks = 0;
+	bool m_MeasuringPlayback = false;
 
 	int m_CurrentFPS = 0;
 	int64_t m_LastFpsUpdateTime = 0;
@@ -26,6 +31,7 @@ class CPerformanceStatistics : public CComponent
 	float m_DigitWidth000 = 0;
 	float m_DigitWidth0000 = 0;
 	float m_DigitWidth00000 = 0;
+	float m_MinusWidth = 0;
 	float m_FpsLabelWidth = 0;
 	float m_PingLabelWidth = 0;
 	float m_SnapRateLabelWidth = 0;
@@ -50,6 +56,7 @@ class CPerformanceStatistics : public CComponent
 	};
 	CModule m_aModules[NUM_MODULES];
 
+	int CurrentGameTick() const;
 	void RenderModule(CUIRect &Rect, int Module, const char *pLabel, float LabelWidth, int Value);
 	void DeleteTextContainers();
 
@@ -59,6 +66,7 @@ public:
 	void OnReset() override;
 	void OnWindowResize() override;
 	void OnShutdown() override;
+	void OnNewSnapshot() override;
 
 	int Sizeof() const override { return sizeof(*this); }
 	void OnRender() override;
